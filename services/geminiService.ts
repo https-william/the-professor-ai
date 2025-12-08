@@ -5,8 +5,8 @@ import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile } from "../type
 // Helper to safely get the AI instance
 const getAI = () => {
   // Check standard process.env.API_KEY or React specific REACT_APP_GEMINI_API_KEY
-  const apiKey = (typeof process !== 'undefined' && process.env) 
-    ? (process.env.API_KEY || process.env.REACT_APP_GEMINI_API_KEY) 
+  const apiKey = (typeof process !== 'undefined' && process.env)
+    ? (process.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY)
     : undefined;
 
   if (!apiKey) {
@@ -26,7 +26,7 @@ const handleGeminiError = (error: any): never => {
   if (msg.includes('API_KEY') || status === 400 || status === 401 || status === 403) {
     throw new Error("Access Denied: The API Key is invalid or expired. Please check your configuration.");
   }
-  
+
   // Rate Limiting (The most common issue)
   if (status === 429 || msg.includes('429') || msg.includes('quota')) {
     throw new Error("Neural Overload: The Professor is handling too many students right now (Rate Limit). Please wait 30 seconds and try again.");
@@ -58,7 +58,7 @@ const handleGeminiError = (error: any): never => {
 export const generateQuizFromText = async (text: string, config: QuizConfig, userProfile?: UserProfile): Promise<QuizQuestion[]> => {
   try {
     const ai = getAI();
-    const model = "gemini-2.5-flash"; 
+    const model = "gemini-2.5-flash";
 
     const { difficulty, questionType, questionCount } = config;
 
@@ -92,7 +92,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
     const prompt = `
       You are a strict university professor. 
-      Analyze the text provided and generate EXACTLY ${questionCount} questions based on the key concepts.
+    Analyze the text provided and generate EXACTLY ${questionCount} questions based on the key concepts.
       
       Configuration:
       - Difficulty: ${difficulty}
@@ -104,7 +104,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
       ${difficultyPrompt}
       ${weaknessPrompt}
       - Ensure the 'correct_answer' is exactly one of the strings in 'options'.
-      - The 'explanation' should be detailed. ${userProfile?.feedbackDetail === 'Deep Dive' ? 'Provide historical context or derivation where possible.' : 'Keep it concise and direct.'}
+      - The 'explanation' should be detailed but brief. ${userProfile?.feedbackDetail === 'Deep Dive' ? 'Provide historical context or derivation where possible.' : 'Keep it concise and direct.'}
       - Return ONLY the JSON object.
       
       Text Content:
