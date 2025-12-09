@@ -1,56 +1,73 @@
 
-import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
   signOut,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
+  Auth
 } from "firebase/auth";
+import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { SubscriptionTier } from "../types";
 
-// --- SECURITY CRITICAL ---
-// All hardcoded keys have been removed. 
-// This file now strictly reads from your .env file.
-// Ensure your .env file contains these exact keys.
+// --- ENVIRONMENT CONFIGURATION ---
+// Helper to support both Vite (import.meta.env) and standard (process.env)
+const getEnv = (key: string): string => {
+  // Vite Support
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) {
+    return (import.meta as any).env[key];
+  }
+  // Standard/Legacy Support
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+    return process.env[key];
+  }
+  return "";
+};
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: getEnv("VITE_FIREBASE_API_KEY") || getEnv("REACT_APP_FIREBASE_API_KEY"),
+  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN") || getEnv("REACT_APP_FIREBASE_AUTH_DOMAIN"),
+  projectId: getEnv("VITE_FIREBASE_PROJECT_ID") || getEnv("REACT_APP_FIREBASE_PROJECT_ID"),
+  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET") || getEnv("REACT_APP_FIREBASE_STORAGE_BUCKET"),
+  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID") || getEnv("REACT_APP_FIREBASE_MESSAGING_SENDER_ID"),
+  appId: getEnv("VITE_FIREBASE_APP_ID") || getEnv("REACT_APP_FIREBASE_APP_ID"),
+  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID") || getEnv("REACT_APP_FIREBASE_MEASUREMENT_ID")
 };
 
 // Initialize Firebase
-// We check if the config exists to prevent app crashes, but we do not provide fallbacks.
 let app;
-let auth: any;
-let googleProvider: any;
+let auth: Auth;
+let googleProvider: GoogleAuthProvider;
+let db: any;
 
 try {
-  if (firebaseConfig.apiKey) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    googleProvider = new GoogleAuthProvider();
+  if (!firebaseConfig.apiKey) {
+    console.warn("Firebase Configuration Missing: Check your .env file or Vercel Environment Variables.");
   } else {
-    // This will only show if you forgot your .env file locally
-    console.warn("Firebase Config: Missing API Key in environment variables.");
+    // Check if firebase is already initialized to avoid re-initialization error
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
+    auth = getAuth(app);
+    db = getFirestore(app);
+    googleProvider = new GoogleAuthProvider();
   }
 } catch (error) {
   console.error("Firebase Initialization Error:", error);
 }
 
-export { auth, googleProvider };
+export { auth, db, googleProvider };
 
 export const isConfigured = () => {
   return !!firebaseConfig.apiKey;
 };
 
 export const signInWithGoogle = async () => {
-  if (!auth) throw new Error("Firebase not initialized. Check your .env file.");
+  if (!auth) throw new Error("System not initialized. Missing configuration.");
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
@@ -60,7 +77,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const registerWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("Firebase not initialized. Check your .env file.");
+  if (!auth) throw new Error("System not initialized. Missing configuration.");
   try {
     return await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -70,7 +87,7 @@ export const registerWithEmail = async (email: string, password: string) => {
 };
 
 export const loginWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("Firebase not initialized. Check your .env file.");
+  if (!auth) throw new Error("System not initialized. Missing configuration.");
   try {
     return await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -85,5 +102,79 @@ export const logout = async () => {
     await signOut(auth);
   } catch (error) {
     console.error("Error signing out", error);
+  }
+};
+
+// --- SYSTEM & ADMIN ACTIONS ---
+
+export const logSystemAction = async (action: string, details: string, targetUserId?: string) => {
+  if (!auth?.currentUser || !db) return;
+  try {
+    await addDoc(collection(db, "system_logs"), {
+       action,
+       details,
+       targetUserId: targetUserId || null,
+       adminEmail: auth.currentUser.email,
+       timestamp: serverTimestamp()
+    });
+  } catch (e: any) {
+    // Suppress permission-denied errors in console to avoid noise if user is not admin
+    if (e.code !== 'permission-denied') {
+      console.error("Failed to log action", e);
+    }
+  }
+};
+
+export const logPayment = async (userId: string, tier: string, amount: number, ref: string) => {
+  if (!db) return;
+  try {
+    await addDoc(collection(db, "payments"), {
+      userId,
+      tier,
+      amount,
+      reference: ref,
+      timestamp: serverTimestamp()
+    });
+  } catch (e) {
+    console.error("Failed to log payment", e);
+  }
+};
+
+export const updateUserPlan = async (userId: string, newPlan: SubscriptionTier) => {
+    if (!db) return;
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, { plan: newPlan });
+    await logSystemAction("UPDATE_PLAN", `Updated plan to ${newPlan}`, userId);
+};
+
+export const toggleBanUser = async (userId: string, currentBanStatus: boolean) => {
+    if (!db) return;
+    const userRef = doc(db, "users", userId);
+    const newStatus = !currentBanStatus;
+    await updateDoc(userRef, { isBanned: newStatus });
+    await logSystemAction(newStatus ? "BAN_USER" : "UNBAN_USER", `User ban status set to ${newStatus}`, userId);
+};
+
+export const deleteUserAccount = async (userId: string) => {
+    if (!db) return;
+    const userRef = doc(db, "users", userId);
+    await deleteDoc(userRef);
+    await logSystemAction("DELETE_USER", "Deleted user account", userId);
+};
+
+export const resetUserLimits = async (userId: string) => {
+    if (!db) return;
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, { dailyQuizzesGenerated: 0 });
+    await logSystemAction("RESET_LIMITS", "Reset daily generation limits", userId);
+};
+
+export const updateUserUsage = async (userId: string, usage: number) => {
+  if (!db) return;
+  try {
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, { dailyQuizzesGenerated: usage });
+  } catch(e) {
+      // Ignore permission errors for silent updates
   }
 };

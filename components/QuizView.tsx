@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { QuizState, QuizQuestion } from '../types';
 
@@ -21,7 +20,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
 }) => {
   const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining } = quizState;
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-  const [isMobilePaletteOpen, setIsMobilePaletteOpen] = useState(false);
+  const [copiedExpl, setCopiedExpl] = useState<number | null>(null);
   
   // Timer Logic
   useEffect(() => {
@@ -37,6 +36,42 @@ export const QuizView: React.FC<QuizViewProps> = ({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const copyExplanation = (text: string, id: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedExpl(id);
+    setTimeout(() => setCopiedExpl(null), 2000);
+  };
+
+  const downloadReport = () => {
+    const lines = [
+      "THE PROFESSOR - EXAM REPORT",
+      "===========================",
+      `Score: ${score} / ${questions.length} (${percentage}%)`,
+      `Date: ${new Date().toLocaleDateString()}`,
+      "===========================\n",
+    ];
+
+    questions.forEach((q, i) => {
+      const userAnswer = userAnswers[q.id] || "Skipped";
+      const isCorrect = userAnswer === q.correct_answer;
+      lines.push(`Q${i + 1}: ${q.question}`);
+      lines.push(`Your Answer: ${userAnswer} ${isCorrect ? '(CORRECT)' : '(INCORRECT)'}`);
+      if (!isCorrect) lines.push(`Correct Answer: ${q.correct_answer}`);
+      lines.push(`Explanation: ${q.explanation}\n`);
+      lines.push("---------------------------\n");
+    });
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Exam_Report_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const getVerdict = (percentage: number) => {
@@ -60,9 +95,15 @@ export const QuizView: React.FC<QuizViewProps> = ({
            <h2 className="text-xl font-bold flex items-center gap-2">
              <span className="text-2xl">📊</span> Results
            </h2>
-           <button onClick={onReset} className="px-6 py-2 bg-white/10 hover:bg-white text-white hover:text-black rounded-full font-bold transition-all text-sm uppercase tracking-wider">
-             Exit
-           </button>
+           <div className="flex gap-2">
+             <button onClick={downloadReport} className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-full font-bold transition-all text-xs uppercase tracking-wider flex items-center gap-2">
+               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0l-4 4m4-4v12" /></svg>
+               Download
+             </button>
+             <button onClick={onReset} className="px-6 py-2 bg-white/10 hover:bg-white text-white hover:text-black rounded-full font-bold transition-all text-xs uppercase tracking-wider">
+               Exit
+             </button>
+           </div>
         </div>
 
         <div className="glass-panel rounded-[2.5rem] p-8 md:p-12 mb-12 relative overflow-hidden text-center border-t border-white/10">
@@ -108,9 +149,20 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         </div>
                       )}
                     </div>
-                    <div className="bg-black/20 p-4 rounded-lg border border-white/5">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="bg-black/20 p-4 rounded-lg border border-white/5 relative group">
+                      <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] uppercase font-bold opacity-50">Explanation</span>
+                        <button 
+                          onClick={() => copyExplanation(q.explanation, q.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded"
+                          title="Copy Explanation"
+                        >
+                          {copiedExpl === q.id ? (
+                             <span className="text-green-400 text-xs font-bold">Copied</span>
+                          ) : (
+                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                          )}
+                        </button>
                       </div>
                       <p className="opacity-80 text-sm leading-relaxed">{q.explanation}</p>
                     </div>
@@ -125,14 +177,16 @@ export const QuizView: React.FC<QuizViewProps> = ({
   }
 
   // --- EXAM MODE (Active) ---
-  const QuestionPalette = () => (
-    <div className="flex flex-col h-full">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-xs font-bold opacity-50 uppercase tracking-widest">Question Palette</span>
-          <span className="text-xs opacity-60">{Object.keys(userAnswers).length}/{questions.length} Answered</span>
-        </div>
+  const QuestionPalette = ({ isHorizontal = false }) => (
+    <div className={`flex ${isHorizontal ? 'flex-row gap-2 overflow-x-auto pb-2' : 'flex-col h-full'}`}>
+        {!isHorizontal && (
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-xs font-bold opacity-50 uppercase tracking-widest">Question Palette</span>
+            <span className="text-xs opacity-60">{Object.keys(userAnswers).length}/{questions.length} Answered</span>
+          </div>
+        )}
         
-        <div className="grid grid-cols-5 gap-2 overflow-y-auto custom-scrollbar pr-2 content-start flex-1">
+        <div className={`${isHorizontal ? 'flex gap-2' : 'grid grid-cols-5 gap-2 overflow-y-auto custom-scrollbar pr-2 content-start flex-1'}`}>
            {questions.map((q, idx) => {
              const isActive = idx === currentQuestionIdx;
              const isAnswered = !!userAnswers[q.id];
@@ -140,9 +194,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
              return (
                <button
                  key={q.id}
-                 onClick={() => { setCurrentQuestionIdx(idx); setIsMobilePaletteOpen(false); }}
+                 onClick={() => { setCurrentQuestionIdx(idx); }}
                  className={`
-                   relative h-10 rounded-lg text-sm font-bold transition-all
+                   relative rounded-lg text-sm font-bold transition-all flex-shrink-0
+                   ${isHorizontal ? 'w-10 h-10' : 'h-10'}
                    ${isActive 
                       ? 'bg-blue-600 text-white shadow-lg ring-1 ring-blue-400' 
                       : isAnswered 
@@ -157,14 +212,17 @@ export const QuizView: React.FC<QuizViewProps> = ({
              )
            })}
         </div>
-        <div className="mt-6 pt-6 border-t border-white/5">
-             <button 
-                onClick={onSubmit}
-                className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-gray-200 transition-colors shadow-lg"
-             >
-               Submit Exam
-             </button>
-        </div>
+        
+        {!isHorizontal && (
+          <div className="mt-6 pt-6 border-t border-white/5">
+               <button 
+                  onClick={onSubmit}
+                  className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-gray-200 transition-colors shadow-lg"
+               >
+                 Submit Exam
+               </button>
+          </div>
+        )}
     </div>
   );
 
@@ -188,29 +246,29 @@ export const QuizView: React.FC<QuizViewProps> = ({
         </div>
       </div>
 
-      {/* --- MOBILE HUD & DRAWER --- */}
-      <div className="lg:hidden flex items-center justify-between glass-panel p-4 rounded-xl mb-2 sticky top-20 z-30">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setIsMobilePaletteOpen(true)} className="p-2 bg-white/10 rounded-lg">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-          </button>
-          <span className="text-sm font-bold uppercase tracking-wider">Q {currentQuestionIdx + 1}</span>
-        </div>
-        <div className="font-mono font-bold text-xl tabular-nums">
+      {/* --- MOBILE HUD (Sticky Top) --- */}
+      <div className="lg:hidden glass-panel p-3 rounded-xl mb-4 sticky top-16 z-30 flex items-center justify-between border-white/10 shadow-xl">
+         <div className="flex items-center gap-4 flex-1 min-w-0">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-400 whitespace-nowrap">Q {currentQuestionIdx + 1} / {questions.length}</span>
+            {/* Horizontal Palette */}
+            <div className="flex-1 overflow-x-auto no-scrollbar">
+               <div className="flex gap-1.5">
+                  {questions.map((q, idx) => (
+                    <div 
+                      key={q.id} 
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                         idx === currentQuestionIdx ? 'bg-blue-500' : 
+                         userAnswers[q.id] ? 'bg-blue-900' : 'bg-gray-700'
+                      }`}
+                    />
+                  ))}
+               </div>
+            </div>
+         </div>
+         <div className={`font-mono font-bold text-lg tabular-nums pl-4 border-l border-white/10 ${timeRemaining && timeRemaining < 60 ? 'text-red-500 animate-pulse' : ''}`}>
            {timeRemaining !== null ? formatTime(timeRemaining) : "∞"}
-        </div>
+         </div>
       </div>
-
-      {/* Mobile Drawer Overlay */}
-      {isMobilePaletteOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsMobilePaletteOpen(false)}></div>
-          <div className="absolute bottom-0 left-0 right-0 bg-[#18181b] rounded-t-3xl p-6 h-[70vh] border-t border-white/10 flex flex-col animate-slide-up-fade">
-             <div className="w-12 h-1 bg-gray-700 rounded-full mx-auto mb-6"></div>
-             <QuestionPalette />
-          </div>
-        </div>
-      )}
 
       {/* --- MAIN QUESTION AREA --- */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
@@ -220,7 +278,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
            <div className="flex justify-between items-start mb-6 md:mb-8 pb-6 border-b border-white/5 relative">
               <div className="pr-12">
                 <span className="text-blue-500 font-mono text-xs font-bold uppercase tracking-widest mb-2 block">Question {currentQuestionIdx + 1}</span>
-                <h2 className="text-xl md:text-2xl font-serif leading-relaxed font-medium">
+                <h2 className="text-lg md:text-2xl font-serif leading-relaxed font-medium">
                   {currentQ.question}
                 </h2>
               </div>
@@ -248,7 +306,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
            </div>
 
            {/* Options */}
-           <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
+           <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
              {currentQ.options.map((option, i) => {
                const isSelected = userAnswers[currentQ.id] === option;
                const alphabet = String.fromCharCode(65 + i);
@@ -257,18 +315,18 @@ export const QuizView: React.FC<QuizViewProps> = ({
                  <button
                    key={option}
                    onClick={() => onAnswerSelect(currentQ.id, option)}
-                   className={`w-full text-left p-4 md:p-5 rounded-2xl border-2 transition-all duration-200 group flex items-start gap-4 md:gap-5 ${
+                   className={`w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 group flex items-start gap-4 ${
                      isSelected 
                        ? 'bg-blue-600/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.1)]' 
                        : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
                    }`}
                  >
-                   <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-sm md:text-lg border transition-colors ${
+                   <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-sm border transition-colors ${
                      isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'bg-black/20 border-white/10 opacity-60 group-hover:opacity-100 group-hover:border-white/30'
                    }`}>
                      {alphabet}
                    </div>
-                   <span className={`text-base md:text-lg font-light pt-0.5 ${isSelected ? '' : 'opacity-80 group-hover:opacity-100'}`}>
+                   <span className={`text-sm md:text-lg font-light pt-1 ${isSelected ? '' : 'opacity-80 group-hover:opacity-100'}`}>
                      {option}
                    </span>
                  </button>
@@ -276,22 +334,34 @@ export const QuizView: React.FC<QuizViewProps> = ({
              })}
            </div>
 
+           {/* Mobile Submit Button (Only on last question) */}
+           {currentQuestionIdx === questions.length - 1 && (
+             <div className="lg:hidden mb-4">
+                 <button onClick={onSubmit} className="w-full py-3 bg-white text-black font-bold uppercase rounded-xl">Submit Exam</button>
+             </div>
+           )}
+
            {/* Footer Nav */}
-           <div className="flex justify-between items-center pt-6 border-t border-white/5 mt-auto">
+           <div className="flex justify-between items-center pt-4 border-t border-white/5 mt-auto gap-4">
               <button 
                 onClick={() => setCurrentQuestionIdx(prev => Math.max(0, prev - 1))}
                 disabled={currentQuestionIdx === 0}
-                className={`px-4 md:px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors ${
+                className={`flex-1 lg:flex-none px-4 md:px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors ${
                   currentQuestionIdx === 0 ? 'opacity-30 cursor-not-allowed' : 'bg-white/10 hover:bg-white/20'
                 }`}
               >
                 Prev
               </button>
 
+              {/* Mobile Question Jumper Button */}
+              <div className="lg:hidden flex-1 overflow-x-auto no-scrollbar mx-2">
+                 {/* Replaced by top HUD but can keep simple indicator */}
+              </div>
+
               <button 
                 onClick={() => setCurrentQuestionIdx(prev => Math.min(questions.length - 1, prev + 1))}
                 disabled={currentQuestionIdx === questions.length - 1}
-                className={`px-6 md:px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors flex items-center gap-2 ${
+                className={`flex-1 lg:flex-none px-6 md:px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors flex items-center justify-center gap-2 ${
                   currentQuestionIdx === questions.length - 1 
                     ? 'opacity-30 cursor-not-allowed bg-white/5' 
                     : 'bg-white text-black hover:bg-gray-200 shadow-lg'

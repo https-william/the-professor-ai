@@ -4,19 +4,22 @@ import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
 import { QuizView } from './components/QuizView';
 import { ProfessorView } from './components/ProfessorView';
+import { ChatView } from './components/ChatView';
 import { HistorySidebar } from './components/HistorySidebar';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { UserProfileModal } from './components/UserProfileModal';
 import { AboutModal } from './components/AboutModal';
+import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
 import { TooltipOverlay } from './components/Onboarding/TooltipOverlay';
 import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/LandingPage';
+import { AdminDashboard } from './components/AdminDashboard';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile } from './types';
-import { logout } from './services/firebase';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, SubscriptionTier } from './types';
+import { logout, updateUserUsage } from './services/firebase';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
@@ -33,6 +36,7 @@ const App: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile>(getDefaultProfile());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME' | 'TOOLTIPS'>('COMPLETE');
 
   // Saving State
@@ -53,9 +57,38 @@ const App: React.FC = () => {
     sections: []
   });
 
+  // Chat State
+  const [chatFileContext, setChatFileContext] = useState('');
+  const [chatFileName, setChatFileName] = useState('');
+
   // History Drawer State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  // Navigation Guard - Push State
+  useEffect(() => {
+    if (!user) return;
+
+    if (status === AppStatus.IDLE) {
+      // Push entry to history so Back button goes to Landing/Auth instead of closing
+      window.history.pushState({ page: 'dashboard' }, '', window.location.href);
+    }
+      
+    const handlePopState = (event: PopStateEvent) => {
+      // If we are deep in the app (Ready state), go back to Idle
+      if (status === AppStatus.READY) {
+        setStatus(AppStatus.IDLE);
+        // window.history.pushState({ page: 'dashboard' }, '', window.location.href); // Optional: Maintain history state
+      } else {
+        // If we are at dashboard, let it go back (to landing/auth)
+        // or handle logic to show landing page
+        setShowAuth(false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [user, status]);
 
   // Initialize
   useEffect(() => {
@@ -65,15 +98,37 @@ const App: React.FC = () => {
     const savedProfile = loadUserProfile();
     if (savedProfile) {
       const updated = updateStreak(savedProfile);
+      
+      // Sync plan from Firestore if available
+      if (user.plan) {
+        updated.subscriptionTier = user.plan;
+      }
+      
+      // Sync usage if user object has it (assuming we added it to extended user, but auth context update might lag. 
+      // For now, relies on local storage or fresh sync. 
+      // Ideally AuthContext should fetch dailyQuizzesGenerated too. 
+      // Let's assume we implement that in AuthContext later if needed, but for now local is primary source for quick check)
+
       setUserProfile(updated);
       saveUserProfile(updated);
       
-      // Check onboarding
+      // Strict Onboarding Check
       if (!savedProfile.hasCompletedOnboarding) {
-        setOnboardingStep('WELCOME');
+        // If they already have an alias, skip to tooltips to avoid asking identity again
+        if (savedProfile.alias && savedProfile.alias.trim().length > 0) {
+           setOnboardingStep('TOOLTIPS');
+        } else {
+           setOnboardingStep('WELCOME');
+        }
+      } else {
+        setOnboardingStep('COMPLETE');
       }
     } else {
       // New User
+      const newProfile = getDefaultProfile();
+      if (user.plan) newProfile.subscriptionTier = user.plan;
+      setUserProfile(newProfile);
+      saveUserProfile(newProfile);
       setOnboardingStep('WELCOME');
     }
 
@@ -86,12 +141,21 @@ const App: React.FC = () => {
       setAppMode(savedSession.mode);
       if (savedSession.mode === 'EXAM') {
         setQuizState(savedSession.data as QuizState);
-      } else {
+      } else if (savedSession.mode === 'PROFESSOR') {
         setProfessorState(savedSession.data as ProfessorState);
       }
       setStatus(AppStatus.READY);
     }
   }, [user]);
+
+  // Sync plan if it changes in AuthContext (e.g. updated by Admin)
+  useEffect(() => {
+    if (user && user.plan && userProfile.subscriptionTier !== user.plan) {
+      const updated = { ...userProfile, subscriptionTier: user.plan };
+      setUserProfile(updated);
+      saveUserProfile(updated);
+    }
+  }, [user, userProfile]);
 
   const finishOnboarding = () => {
     const updated = { ...userProfile, hasCompletedOnboarding: true };
@@ -105,6 +169,13 @@ const App: React.FC = () => {
     setUserProfile(updated);
     saveUserProfile(updated);
     setOnboardingStep('TOOLTIPS');
+  };
+
+  const handleUpgrade = (tier: SubscriptionTier) => {
+    const updated = { ...userProfile, subscriptionTier: tier };
+    setUserProfile(updated);
+    saveUserProfile(updated);
+    setIsSubscriptionOpen(false);
   };
 
   // Generic Save Function
@@ -132,7 +203,7 @@ const App: React.FC = () => {
   // Auto-Save Effect (Every 2 minutes if active)
   useEffect(() => {
     const autoSaveInterval = setInterval(() => {
-      if (status === AppStatus.READY) {
+      if (status === AppStatus.READY && appMode !== 'CHAT') {
         handleSaveSession(false);
       }
     }, 120000); // 2 minutes
@@ -175,6 +246,14 @@ const App: React.FC = () => {
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
+      if (mode === 'CHAT') {
+        setChatFileContext(file.content);
+        setChatFileName(file.type === 'TEXT' ? 'Text Note' : 'Uploaded File'); 
+        setAppMode('CHAT');
+        setStatus(AppStatus.READY);
+        return;
+      }
+
       setStatus(AppStatus.GENERATING_CONTENT);
       setErrorMsg(null);
       const timeRemaining = getSecondsFromDuration(config.timerDuration);
@@ -225,6 +304,20 @@ const App: React.FC = () => {
         setHistory(loadHistory());
       }
 
+      // Usage Tracking + XP Gain
+      const xpGain = 50; 
+      const updatedProfile = { 
+          ...incrementDailyUsage(userProfile),
+          xp: (userProfile.xp || 0) + xpGain
+      };
+      setUserProfile(updatedProfile);
+      saveUserProfile(updatedProfile);
+      
+      // Sync usage to Firebase
+      if (user) {
+         updateUserUsage(user.uid, updatedProfile.dailyQuizzesGenerated);
+      }
+
       setStatus(AppStatus.READY);
     } catch (err: any) {
       console.error(err);
@@ -247,7 +340,15 @@ const App: React.FC = () => {
       let score = 0;
       quizState.questions.forEach(q => { if (quizState.userAnswers[q.id] === q.correct_answer) score++; });
       setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
-      const newProfile = { ...userProfile, questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, correctAnswers: userProfile.correctAnswers + score };
+      
+      // Update XP & Stats
+      const xpGain = score * 10;
+      const newProfile = { 
+          ...userProfile, 
+          questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, 
+          correctAnswers: userProfile.correctAnswers + score,
+          xp: (userProfile.xp || 0) + xpGain
+      };
       setUserProfile(newProfile);
       saveUserProfile(newProfile);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -256,6 +357,7 @@ const App: React.FC = () => {
       setStatus(AppStatus.IDLE);
       setQuizState({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null });
       setProfessorState({ sections: [] });
+      setChatFileContext('');
     }
   };
 
@@ -272,6 +374,10 @@ const App: React.FC = () => {
 
   // --- DASHBOARD (LOGGED IN) ---
 
+  // Admin Access Control - GOD MODE ONLY
+  const SUPER_ADMINS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'];
+  const isAdmin = user?.email && SUPER_ADMINS.includes(user.email);
+  
   // Theme Logic
   const theme = userProfile.theme;
   const isOLED = theme === 'OLED';
@@ -312,7 +418,8 @@ const App: React.FC = () => {
       {/* Onboarding Overlays */}
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleAliasSet} />}
       {onboardingStep === 'TOOLTIPS' && <TooltipOverlay onComplete={finishOnboarding} />}
-      
+      <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={handleUpgrade} />
+
       {/* Auto-Save Toast */}
       <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-500 ${saveStatus === 'SAVED' ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         <div className={`${isLight ? 'bg-white border-gray-200' : 'bg-black/80 border-white/10'} backdrop-blur-md border px-4 py-2 rounded-full flex items-center gap-2 shadow-xl`}>
@@ -335,23 +442,32 @@ const App: React.FC = () => {
       <nav className={`border-b backdrop-blur-md sticky top-0 z-40 transition-colors duration-500 ${appMode === 'PROFESSOR' ? 'bg-black/40 border-amber-900/20' : (isLight ? 'bg-white/70 border-gray-200' : 'bg-black/50 border-white/5')}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => handleQuizAction('RESET')}>
-               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg transition-all duration-500 ${
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
+               <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold shadow-lg transition-all duration-500 ${
                  appMode === 'PROFESSOR' 
                    ? 'bg-gradient-to-br from-amber-600 to-orange-700 shadow-amber-600/20' 
                    : 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-blue-500/20'
                } text-white`}>
                  {appMode === 'PROFESSOR' ? (
-                   <span className="text-xl">👨‍🏫</span>
+                   <span className="text-lg sm:text-xl">👨‍🏫</span>
                  ) : (
-                   <span className="text-xl">⚡</span>
+                   <span className="text-lg sm:text-xl">⚡</span>
                  )}
                </div>
-               <span className={`font-bold text-xl tracking-tight transition-colors ${appMode === 'PROFESSOR' ? 'text-amber-100' : (isLight ? 'text-gray-800' : 'text-gray-200')} group-hover:opacity-80`}>The Professor</span>
+               <span className={`font-bold text-lg sm:text-xl tracking-tight transition-colors ${appMode === 'PROFESSOR' ? 'text-amber-100' : (isLight ? 'text-gray-800' : 'text-gray-200')} group-hover:opacity-80 hidden sm:block`}>The Professor</span>
             </div>
             
-            <div className="flex items-center gap-4">
-               {status === AppStatus.READY && (
+            <div className="flex items-center gap-2 sm:gap-4">
+               {isAdmin && (
+                 <button
+                    onClick={() => setAppMode(appMode === 'ADMIN' ? 'EXAM' : 'ADMIN')}
+                    className="hidden md:flex px-3 py-1 bg-red-900/20 border border-red-500/30 text-red-400 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-900/40 transition-colors"
+                 >
+                   {appMode === 'ADMIN' ? 'Exit Admin' : 'Admin'}
+                 </button>
+               )}
+
+               {status === AppStatus.READY && appMode !== 'ADMIN' && appMode !== 'CHAT' && (
                  <button 
                    onClick={() => handleSaveSession(true)}
                    disabled={saveStatus === 'SAVING'}
@@ -370,11 +486,20 @@ const App: React.FC = () => {
                  </button>
                )}
 
-               <button onClick={() => setIsAboutOpen(true)} className="hidden md:block text-sm font-medium opacity-60 hover:opacity-100 transition-opacity">About</button>
+               <button onClick={() => setIsSubscriptionOpen(true)} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white hover:scale-105 transition-transform flex items-center gap-1">
+                 {userProfile.subscriptionTier === 'Excellentia Supreme' ? (
+                   <>
+                     <span className="text-amber-300">👑</span>
+                     Supreme
+                   </>
+                 ) : (
+                   'Upgrade'
+                 )}
+               </button>
+
                <button onClick={() => setIsProfileOpen(true)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors border ${isLight ? 'bg-white border-gray-300 hover:bg-gray-50' : 'bg-white/5 hover:bg-white/10 border-white/5'}`}>
                  <span className="text-xl">{userProfile.avatarEmoji}</span>
-                 <span className="text-sm font-medium hidden sm:block">{userProfile.alias}</span>
-                 {userProfile.streak > 0 && <span className="text-xs text-orange-500 font-bold">🔥 {userProfile.streak}</span>}
+                 {userProfile.streak > 0 && <span className="text-xs text-orange-500 font-bold hidden sm:inline">🔥 {userProfile.streak}</span>}
                </button>
                <button onClick={() => setIsHistoryOpen(true)} className="p-2 opacity-60 hover:opacity-100 transition-opacity">
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -390,7 +515,7 @@ const App: React.FC = () => {
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 min-h-[calc(100vh-64px)] relative z-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 min-h-[calc(100vh-64px)] relative z-10">
         
         {errorMsg && (
           <div className="mb-8 p-4 bg-red-900/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-500 animate-fade-in">
@@ -400,49 +525,69 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {status === AppStatus.IDLE || status === AppStatus.ERROR ? (
-          <div className="animate-fade-in space-y-12 pb-20">
-            {appMode === 'PROFESSOR' ? (
-               <div className="text-center py-12 px-4 animate-slide-up-fade">
-                 <h1 className={`text-4xl sm:text-6xl font-serif font-bold tracking-tight mb-4 drop-shadow-lg ${isLight ? 'text-gray-900' : 'text-white'}`}>
-                   What shall we <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">master</span> today?
-                 </h1>
-                 <p className="max-w-2xl mx-auto text-xl opacity-60 italic">
-                   "If you can't explain it simply, you don't understand it well enough."
-                 </p>
+        {/* --- ADMIN DASHBOARD VIEW --- */}
+        {appMode === 'ADMIN' && isAdmin ? (
+          <AdminDashboard />
+        ) : (
+          <>
+            {status === AppStatus.IDLE || status === AppStatus.ERROR ? (
+              <div className="animate-fade-in space-y-8 sm:space-y-12 pb-20">
+                {appMode === 'PROFESSOR' ? (
+                  <div className="text-center py-8 sm:py-12 px-4 animate-slide-up-fade">
+                    <h1 className={`text-4xl sm:text-6xl font-serif font-bold tracking-tight mb-4 drop-shadow-lg ${isLight ? 'text-gray-900' : 'text-white'}`}>
+                      What shall we <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">master</span> today?
+                    </h1>
+                    {userProfile.alias && <p className="text-lg text-amber-500 font-bold mb-2">Welcome back, {userProfile.alias}.</p>}
+                    <p className="max-w-2xl mx-auto text-lg sm:text-xl opacity-60 italic">
+                      "If you can't explain it simply, you don't understand it well enough."
+                    </p>
+                  </div>
+                ) : (
+                  <Hero />
+                )}
+                <InputSection 
+                  onProcess={handleProcess}
+                  isLoading={false}
+                  appMode={appMode}
+                  setAppMode={setAppMode}
+                  defaultConfig={{ difficulty: userProfile.defaultDifficulty }}
+                  userProfile={userProfile}
+                  onShowSubscription={() => setIsSubscriptionOpen(true)}
+                />
               </div>
-            ) : (
-               <Hero />
+            ) : null}
+
+            {(status === AppStatus.PROCESSING_FILE || status === AppStatus.GENERATING_CONTENT) && (
+              <LoadingOverlay status={statusText} type={appMode === 'ADMIN' ? 'EXAM' : (appMode === 'CHAT' ? 'PROFESSOR' : appMode)} />
             )}
-            <InputSection 
-              onProcess={handleProcess}
-              isLoading={false}
-              appMode={appMode}
-              setAppMode={setAppMode}
-              defaultConfig={{ difficulty: userProfile.defaultDifficulty }}
-            />
-          </div>
-        ) : null}
 
-        {(status === AppStatus.PROCESSING_FILE || status === AppStatus.GENERATING_CONTENT) && (
-           <LoadingOverlay status={statusText} type={appMode} />
-        )}
+            {status === AppStatus.READY && (
+              <div className="animate-slide-in h-full">
+                {appMode === 'PROFESSOR' && (
+                  <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />
+                )}
+                
+                {appMode === 'EXAM' && (
+                  <QuizView 
+                      quizState={quizState}
+                      onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })}
+                      onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)}
+                      onSubmit={() => handleQuizAction('SUBMIT')}
+                      onReset={() => handleQuizAction('RESET')}
+                      onTimeExpired={() => handleQuizAction('SUBMIT')}
+                  />
+                )}
 
-        {status === AppStatus.READY && (
-          <div className="animate-slide-in h-full">
-             {appMode === 'PROFESSOR' ? (
-               <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />
-             ) : (
-               <QuizView 
-                  quizState={quizState}
-                  onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })}
-                  onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)}
-                  onSubmit={() => handleQuizAction('SUBMIT')}
-                  onReset={() => handleQuizAction('RESET')}
-                  onTimeExpired={() => handleQuizAction('SUBMIT')}
-               />
-             )}
-          </div>
+                {appMode === 'CHAT' && (
+                    <ChatView 
+                        fileContext={chatFileContext} 
+                        onExit={() => handleQuizAction('RESET')}
+                        fileName={chatFileName}
+                    />
+                )}
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

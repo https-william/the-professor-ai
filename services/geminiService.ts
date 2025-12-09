@@ -1,16 +1,19 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile } from "../types";
+import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile, ChatMessage } from "../types";
 
 // Helper to safely get the AI instance
 const getAI = () => {
-  // Check standard process.env.API_KEY or React specific REACT_APP_GEMINI_API_KEY
-  const apiKey = (typeof process !== 'undefined' && process.env)
-    ? (process.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY)
-    : undefined;
+  const getEnv = (key: string): string => {
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) return (import.meta as any).env[key];
+    if (typeof process !== 'undefined' && process.env && process.env[key]) return process.env[key];
+    return "";
+  };
+
+  const apiKey = getEnv("VITE_GEMINI_API_KEY") || getEnv("REACT_APP_GEMINI_API_KEY") || (process.env && process.env.API_KEY);
 
   if (!apiKey) {
-    throw new Error("API Key is missing. Please check your environment variables (.env).");
+    throw new Error("API Key is missing. Please add VITE_GEMINI_API_KEY to your environment variables.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -26,7 +29,7 @@ const handleGeminiError = (error: any): never => {
   if (msg.includes('API_KEY') || status === 400 || status === 401 || status === 403) {
     throw new Error("Access Denied: The API Key is invalid or expired. Please check your configuration.");
   }
-
+  
   // Rate Limiting (The most common issue)
   if (status === 429 || msg.includes('429') || msg.includes('quota')) {
     throw new Error("Neural Overload: The Professor is handling too many students right now (Rate Limit). Please wait 30 seconds and try again.");
@@ -58,9 +61,9 @@ const handleGeminiError = (error: any): never => {
 export const generateQuizFromText = async (text: string, config: QuizConfig, userProfile?: UserProfile): Promise<QuizQuestion[]> => {
   try {
     const ai = getAI();
-    const model = "gemini-2.5-flash";
+    const model = "gemini-2.5-flash"; 
 
-    const { difficulty, questionType, questionCount } = config;
+    const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer } = config;
 
     // Type Instruction
     let typeInstruction = "";
@@ -84,15 +87,24 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
       difficultyPrompt = "WARNING: You are in NIGHTMARE mode. Generate exceptionally challenging questions that require deep synthesis of multiple concepts, multi-part logical reasoning, or knowledge of obscure historical/theoretical contexts. Focus strictly on edge cases, counter-intuitive examples, and exceptions to general rules. The distractors (wrong options) must be highly plausible, addressing common misconceptions or partial truths. Do not be merciful.";
     }
 
-    // Weakness focus
+    // Weakness focus (Excellentia Supreme Feature)
     let weaknessPrompt = "";
-    if (userProfile && userProfile.weaknessFocus.trim()) {
-      weaknessPrompt = `The user specifically struggles with: "${userProfile.weaknessFocus}". Prioritize generating questions related to these topics if they appear in the text.`;
+    if (useWeaknessDestroyer && userProfile && userProfile.weaknessFocus.trim()) {
+      weaknessPrompt = `WEAKNESS DESTROYER PROTOCOL ACTIVE. The user specifically struggles with: "${userProfile.weaknessFocus}". Prioritize generating questions related to these topics if they appear in the text to force mastery through repetition.`;
+    } else if (userProfile && userProfile.weaknessFocus.trim()) {
+       // Standard weakness focus
+       weaknessPrompt = `The user specifically struggles with: "${userProfile.weaknessFocus}". Prioritize generating questions related to these topics.`;
+    }
+
+    // Oracle (Excellentia Supreme Feature)
+    let oraclePrompt = "";
+    if (useOracle) {
+        oraclePrompt = "ORACLE PROTOCOL ACTIVE. Do not just ask about what is explicitly in the text. Infer potential exam questions that WOULD be asked based on this material in a high-level university final. Predict lateral concepts that link this text to broader field knowledge.";
     }
 
     const prompt = `
       You are a strict university professor. 
-    Analyze the text provided and generate EXACTLY ${questionCount} questions based on the key concepts.
+      Analyze the text provided and generate EXACTLY ${questionCount} questions based on the key concepts.
       
       Configuration:
       - Difficulty: ${difficulty}
@@ -103,8 +115,9 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
       ${typeInstruction}
       ${difficultyPrompt}
       ${weaknessPrompt}
+      ${oraclePrompt}
       - Ensure the 'correct_answer' is exactly one of the strings in 'options'.
-      - The 'explanation' should be detailed but brief. ${userProfile?.feedbackDetail === 'Deep Dive' ? 'Provide historical context or derivation where possible.' : 'Keep it concise and direct.'}
+      - The 'explanation' should be detailed. ${userProfile?.feedbackDetail === 'Deep Dive' ? 'Provide historical context or derivation where possible.' : 'Keep it concise and direct.'}
       - Return ONLY the JSON object.
       
       Text Content:
@@ -235,3 +248,46 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
     return [];
   }
 };
+
+export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string): Promise<string> => {
+    try {
+        const ai = getAI();
+        const model = "gemini-2.5-flash";
+
+        // Construct history context
+        // We only take the last 10 messages to avoid context limits and reduce latency
+        const recentHistory = history.slice(-10).map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }]
+        }));
+
+        // Add the file context as a system instruction or initial context
+        const systemInstruction = `
+            You are The Professor, an intelligent academic assistant.
+            The user has uploaded a document with the following content:
+            
+            --- START OF DOCUMENT ---
+            ${fileContext.substring(0, 30000)}
+            --- END OF DOCUMENT ---
+
+            Your goal is to answer the user's questions specifically based on this document.
+            If the answer is not in the document, use your general knowledge but mention that it wasn't found in the text.
+            Be concise, helpful, and academic in tone.
+        `;
+
+        const chat = ai.chats.create({
+            model: model,
+            config: {
+                systemInstruction: systemInstruction,
+            },
+            history: recentHistory
+        });
+
+        const response = await chat.sendMessage({ message: newMessage });
+        return response.text;
+
+    } catch (error) {
+        handleGeminiError(error);
+        return "The Professor is currently deep in thought and cannot answer.";
+    }
+}

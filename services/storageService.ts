@@ -1,3 +1,4 @@
+
 import { HistoryItem, QuizState, ProfessorState, AppMode, QuizConfig, UserProfile } from '../types';
 
 const CURRENT_SESSION_KEY = 'exam_prep_current_session';
@@ -50,7 +51,7 @@ export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorS
 
 export const saveToHistory = (item: HistoryItem) => {
   const history = loadHistory();
-  const updated = [item, ...history].slice(0, 20);
+  const updated = [item, ...history].slice(20); // Keep last 20
   localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
 };
 
@@ -82,28 +83,61 @@ export const getDefaultProfile = (): UserProfile => ({
   defaultDifficulty: 'Medium',
   weaknessFocus: '',
   feedbackDetail: 'Concise',
+  learningStyle: 'Textual',
+  defaultPersonality: 'Academic',
   streak: 0,
   questionsAnswered: 0,
   correctAnswers: 0,
+  xp: 0,
   lastStudyDate: Date.now(),
   theme: 'System',
   reducedMotion: false,
+  subscriptionTier: 'Fresher',
+  role: 'student',
+  dailyQuizzesGenerated: 0,
+  lastGenerationDate: Date.now()
 });
 
 export const updateStreak = (profile: UserProfile): UserProfile => {
   const now = new Date();
   const last = new Date(profile.lastStudyDate);
+  const lastGen = new Date(profile.lastGenerationDate);
   
+  let updated = { ...profile };
+
+  // Reset daily limit if new day
+  if (now.getDate() !== lastGen.getDate() || now.getMonth() !== lastGen.getMonth()) {
+    updated.dailyQuizzesGenerated = 0;
+    updated.lastGenerationDate = Date.now();
+  }
+
+  // Streak Logic
   if (now.toDateString() === last.toDateString()) {
-    return profile;
+    return updated;
   }
   
   const diffTime = Math.abs(now.getTime() - last.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
   if (diffDays <= 2) { 
-    return { ...profile, streak: profile.streak + 1, lastStudyDate: Date.now() };
+    updated.streak = profile.streak + 1;
   } else {
-    return { ...profile, streak: 1, lastStudyDate: Date.now() };
+    updated.streak = 1;
   }
+  
+  updated.lastStudyDate = Date.now();
+  return updated;
 };
+
+export const incrementDailyUsage = (profile: UserProfile): UserProfile => {
+  const updated = {
+    ...profile,
+    dailyQuizzesGenerated: (profile.dailyQuizzesGenerated || 0) + 1
+  };
+  saveUserProfile(updated);
+  return updated;
+};
+
+// XP Calculation: 100 XP per level
+export const calculateLevel = (xp: number) => Math.floor(xp / 100) + 1;
+export const calculateProgress = (xp: number) => xp % 100;

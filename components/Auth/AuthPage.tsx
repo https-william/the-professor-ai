@@ -8,6 +8,7 @@ export const AuthPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [domainError, setDomainError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -26,6 +27,7 @@ export const AuthPage: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
+    setDomainError(null);
 
     try {
       if (mode === 'LOGIN') {
@@ -47,6 +49,7 @@ export const AuthPage: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
+    setDomainError(null);
     try {
       await signInWithGoogle();
     } catch (err: any) {
@@ -56,15 +59,30 @@ export const AuthPage: React.FC = () => {
   };
 
   const handleAuthError = (err: any) => {
+    console.error("Auth Error:", err);
     const code = err.code || '';
-    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
-      setError("Invalid credentials.");
+    const msg = err.message || '';
+
+    if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+      if (mode === 'LOGIN') {
+        setError("Invalid credentials. If you are new, please switch to 'Enroll'.");
+      } else {
+        setError("Invalid credentials.");
+      }
     } else if (code === 'auth/email-already-in-use') {
-      setError("Identity already registered.");
+      setError("This email is already enrolled. Please switch to 'Log In'.");
     } else if (code === 'auth/weak-password') {
-      setError("Password too weak.");
+      setError("Password is too weak. It must be at least 6 characters.");
+    } else if (code === 'auth/unauthorized-domain') {
+      const currentDomain = window.location.hostname;
+      setError("Access Denied: Domain Unauthorized.");
+      setDomainError(currentDomain);
+    } else if (code === 'auth/popup-closed-by-user') {
+      setError("Sign-in cancelled.");
+    } else if (msg.includes('api-key-not-valid')) {
+      setError("API Key Invalid. Please check your .env file or Firebase Console.");
     } else {
-      setError("Authentication failed. Please try again.");
+      setError(`Authentication failed (${code}). Please try again.`);
     }
   };
 
@@ -103,14 +121,14 @@ export const AuthPage: React.FC = () => {
           {/* Mode Tabs */}
           <div className="flex border-b border-white/5 mb-8">
             <button 
-              onClick={() => setMode('LOGIN')}
+              onClick={() => { setMode('LOGIN'); setError(null); setDomainError(null); }}
               className={`flex-1 pb-3 text-xs font-bold uppercase tracking-widest transition-all relative ${mode === 'LOGIN' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}
             >
               Log In
               {mode === 'LOGIN' && <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white shadow-[0_0_10px_white]"></div>}
             </button>
             <button 
-              onClick={() => setMode('REGISTER')}
+              onClick={() => { setMode('REGISTER'); setError(null); setDomainError(null); }}
               className={`flex-1 pb-3 text-xs font-bold uppercase tracking-widest transition-all relative ${mode === 'REGISTER' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}
             >
               Enroll
@@ -142,9 +160,27 @@ export const AuthPage: React.FC = () => {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg flex items-start gap-2 animate-fade-in">
-                <div className="w-1 h-1 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
-                <p className="text-xs text-red-300 leading-relaxed">{error}</p>
+              <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg flex flex-col gap-2 animate-fade-in break-words">
+                <div className="flex items-start gap-2">
+                  <div className="w-1 h-1 rounded-full bg-red-500 mt-2 flex-shrink-0"></div>
+                  <p className="text-xs text-red-300 leading-relaxed max-w-full">{error}</p>
+                </div>
+                
+                {domainError && (
+                  <div className="mt-2 bg-black/40 p-2 rounded border border-white/10">
+                    <p className="text-[10px] text-gray-500 mb-1">Add this to Firebase Authorized Domains:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-blue-300 font-mono break-all">{domainError}</code>
+                      <button 
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(domainError)}
+                        className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-white"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

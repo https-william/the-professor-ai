@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>The Professor</title>
     
+    <!-- Custom SVG Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#000000" />
@@ -13,6 +16,9 @@
     <meta name="description" content="AI-powered study companion and professor" />
     
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Paystack Inline -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     
     <!-- Polyfill for process (Required for some SDKs) -->
     <script>
@@ -144,8 +150,18 @@
         background: rgba(20, 20, 20, 0.4);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
+        /* Premium crisp border */
         border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        will-change: backdrop-filter;
+      }
+      
+      /* Mobile Performance Optimization */
+      @media (max-width: 768px) {
+        .glass-panel {
+          backdrop-filter: blur(12px); /* Reduced blur for mobile */
+          -webkit-backdrop-filter: blur(12px);
+        }
       }
       
       .glass-panel-light {
@@ -166,8 +182,8 @@
 
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 4px; /* Thinner for mobile aesthetics */
+        height: 4px;
       }
       ::-webkit-scrollbar-track {
         background: transparent; 
@@ -186,6 +202,16 @@
       .hover-lift:hover {
         transform: translateY(-4px) scale(1.01);
         box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+      }
+      
+      .micro-interact {
+        transition: transform 0.2s ease-out, background-color 0.2s ease;
+      }
+      .micro-interact:hover {
+        transform: scale(1.02);
+      }
+      .micro-interact:active {
+        transform: scale(0.98);
       }
     </style>
   <script type="importmap">
