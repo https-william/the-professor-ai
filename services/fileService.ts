@@ -20,19 +20,19 @@ export const processFile = async (file: File, onProgress?: (percent: number) => 
   // Handle PDF
   if (fileType === 'application/pdf') {
     const text = await extractTextFromPdf(file, reportProgress);
-    return { type: 'TEXT', content: text };
+    return { type: 'TEXT', content: text, name: file.name };
   }
   
   // Handle DOCX
   else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileName.endsWith('.docx')) {
     const text = await extractTextFromDocx(file, reportProgress);
-    return { type: 'TEXT', content: text };
+    return { type: 'TEXT', content: text, name: file.name };
   }
   
   // Handle PPTX
   else if (fileType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || fileName.endsWith('.pptx')) {
     const text = await extractTextFromPptx(file, reportProgress);
-    return { type: 'TEXT', content: text };
+    return { type: 'TEXT', content: text, name: file.name };
   }
   
   // Handle Legacy DOC (Binary)
@@ -43,7 +43,7 @@ export const processFile = async (file: File, onProgress?: (percent: number) => 
   // Handle Images
   else if (fileType.startsWith('image/')) {
     const base64 = await fileToBase64(file, reportProgress);
-    return { type: 'IMAGE', content: base64, mimeType: fileType };
+    return { type: 'IMAGE', content: base64, mimeType: fileType, name: file.name };
   }
   
   // Handle Plain Text
@@ -51,7 +51,7 @@ export const processFile = async (file: File, onProgress?: (percent: number) => 
     reportProgress(50);
     const text = await file.text();
     reportProgress(100);
-    return { type: 'TEXT', content: text };
+    return { type: 'TEXT', content: text, name: file.name };
   }
 
   throw new Error(`Unsupported file type: ${file.name}. Please upload PDF, DOCX, PPTX, TXT, or Image files.`);

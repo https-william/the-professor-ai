@@ -13,6 +13,7 @@ export interface ProfessorSection {
   content: string;
   analogy: string; // Feynman technique analogy
   key_takeaway: string;
+  diagram_markdown?: string; // Optional MermaidJS diagram
 }
 
 export interface QuizState {
@@ -23,6 +24,7 @@ export interface QuizState {
   score: number;
   startTime: number | null; // Timestamp
   timeRemaining: number | null; // Seconds (null if limitless)
+  focusStrikes?: number; // Number of times focus was lost
 }
 
 export interface ProfessorState {
@@ -54,6 +56,7 @@ export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '60m';
 export type AIPersonality = 'Buddy' | 'Academic' | 'Drill Sergeant' | 'ELI5';
 export type AnalogyDomain = 'General' | 'Sports' | 'Gaming' | 'Cooking' | 'Pop Culture' | 'Engineering';
 export type LearningStyle = 'Visual' | 'Auditory' | 'Textual';
+export type AmbientTheme = 'None' | 'Rainy Library' | 'Cyberpunk Lab' | 'Cabin' | 'Deep Space';
 
 export interface QuizConfig {
   difficulty: Difficulty;
@@ -88,6 +91,7 @@ export interface UserProfile {
   lastStudyDate: number; 
   theme: 'System' | 'Light' | 'Dark' | 'OLED';
   reducedMotion: boolean;
+  ambientTheme?: AmbientTheme;
   
   // Subscription & Usage
   subscriptionTier: SubscriptionTier;
@@ -110,6 +114,7 @@ export interface ProcessedFile {
   type: 'TEXT' | 'IMAGE';
   content: string; // Text content or Base64 string for image
   mimeType?: string; // For images
+  name: string;
 }
 
 export interface SystemLog {

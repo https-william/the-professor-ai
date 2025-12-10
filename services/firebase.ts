@@ -12,28 +12,27 @@ import {
 import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { SubscriptionTier } from "../types";
 
-// --- ENVIRONMENT CONFIGURATION ---
-// Helper to support both Vite (import.meta.env) and standard (process.env)
+// --- SECURE CONFIGURATION LOADER ---
+// Strictly uses environment variables. No hardcoded fallbacks.
 const getEnv = (key: string): string => {
-  // Vite Support
   if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) {
     return (import.meta as any).env[key];
   }
-  // Standard/Legacy Support
   if (typeof process !== 'undefined' && process.env && process.env[key]) {
     return process.env[key];
   }
+  // Return empty string if missing - let validation handle it
   return "";
 };
 
 const firebaseConfig = {
-  apiKey: getEnv("VITE_FIREBASE_API_KEY") || getEnv("REACT_APP_FIREBASE_API_KEY"),
-  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN") || getEnv("REACT_APP_FIREBASE_AUTH_DOMAIN"),
-  projectId: getEnv("VITE_FIREBASE_PROJECT_ID") || getEnv("REACT_APP_FIREBASE_PROJECT_ID"),
-  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET") || getEnv("REACT_APP_FIREBASE_STORAGE_BUCKET"),
-  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID") || getEnv("REACT_APP_FIREBASE_MESSAGING_SENDER_ID"),
-  appId: getEnv("VITE_FIREBASE_APP_ID") || getEnv("REACT_APP_FIREBASE_APP_ID"),
-  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID") || getEnv("REACT_APP_FIREBASE_MEASUREMENT_ID")
+  apiKey: getEnv("VITE_FIREBASE_API_KEY"),
+  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN"),
+  projectId: getEnv("VITE_FIREBASE_PROJECT_ID"),
+  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET"),
+  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID"),
+  appId: getEnv("VITE_FIREBASE_APP_ID"),
+  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID")
 };
 
 // Initialize Firebase
@@ -44,9 +43,8 @@ let db: any;
 
 try {
   if (!firebaseConfig.apiKey) {
-    console.warn("Firebase Configuration Missing: Check your .env file or Vercel Environment Variables.");
+    console.warn("Firebase Configuration Missing. Please check your .env file.");
   } else {
-    // Check if firebase is already initialized to avoid re-initialization error
     if (!getApps().length) {
       app = initializeApp(firebaseConfig);
     } else {
@@ -118,9 +116,8 @@ export const logSystemAction = async (action: string, details: string, targetUse
        timestamp: serverTimestamp()
     });
   } catch (e: any) {
-    // Suppress permission-denied errors in console to avoid noise if user is not admin
     if (e.code !== 'permission-denied') {
-      console.error("Failed to log action", e);
+      console.warn("Failed to log action:", e.message);
     }
   }
 };
@@ -175,6 +172,6 @@ export const updateUserUsage = async (userId: string, usage: number) => {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { dailyQuizzesGenerated: usage });
   } catch(e) {
-      // Ignore permission errors for silent updates
+      // Ignore permission errors
   }
 };

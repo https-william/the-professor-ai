@@ -113,11 +113,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ fileContext, onExit, fileNam
              </div>
            ))}
            {isTyping && (
-             <div className="flex justify-start">
-               <div className="bg-white/5 rounded-2xl p-4 rounded-tl-none flex gap-1 items-center">
-                 <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                 <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                 <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+             <div className="flex justify-start animate-fade-in">
+               <div className="bg-white/5 rounded-2xl p-5 rounded-tl-none flex gap-1.5 items-center border border-white/5">
+                 <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-[bounce_1s_infinite]"></div>
+                 <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-[bounce_1s_infinite_0.2s]"></div>
+                 <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-[bounce_1s_infinite_0.4s]"></div>
                </div>
              </div>
            )}

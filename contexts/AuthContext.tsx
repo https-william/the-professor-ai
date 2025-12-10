@@ -44,7 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const extendedUser: ExtendedUser = {
           ...currentUser,
-          plan: userData.plan || 'Fresher',
+          // FIRST MONTH OVERRIDE: Granting all users Supreme access until Jan 10.
+          plan: 'Excellentia Supreme', 
           role: userData.role || 'student',
           isBanned: userData.isBanned || false
         };
@@ -64,7 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const extendedUser: ExtendedUser = {
           ...currentUser,
-          plan: 'Fresher',
+          // FIRST MONTH OVERRIDE
+          plan: 'Excellentia Supreme', 
           role: 'student',
           isBanned: false
         };
@@ -72,8 +74,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
-      // Fallback to basic user if DB fails, but be careful in production
-      setUser(currentUser);
+      // Fallback with Override
+      const fallbackUser: ExtendedUser = {
+          ...currentUser,
+          plan: 'Excellentia Supreme',
+          role: 'student'
+      };
+      setUser(fallbackUser);
     }
   };
 

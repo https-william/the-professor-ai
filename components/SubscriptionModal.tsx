@@ -22,40 +22,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   const handlePaystack = (tierId: SubscriptionTier, price: number) => {
-    if (!auth.currentUser) return;
+    // FREE MONTH BYPASS
+    // Granting tier immediately.
     
     setLoading(true);
-
-    const handler = window.PaystackPop.setup({
-      key: process.env.REACT_APP_PAYSTACK_KEY || 'pk_test_0000000000000000000000000000000000000000', // Replace with your public key
-      email: auth.currentUser.email,
-      amount: price * 100, // Paystack is in kobo
-      currency: 'NGN',
-      ref: ''+Math.floor((Math.random() * 1000000000) + 1), 
-      metadata: {
-         custom_fields: [
-            { display_name: "Tier", variable_name: "tier", value: tierId }
-         ]
-      },
-      callback: async function(response: any) {
-         setLoading(false);
-         if (response.status === 'success') {
-            // Log Payment in Firestore
-            await logPayment(auth.currentUser!.uid, tierId, price, response.reference);
-            // Update Plan in Firestore (Admin function accessible here for simplicity or via backend webhook in prod)
-            // For this frontend-only demo, we trust the success callback to update locally/firestore
-            await updateUserPlan(auth.currentUser!.uid, tierId);
-            onUpgrade(tierId);
-         } else {
-            alert('Payment processing failed.');
-         }
-      },
-      onClose: function() {
-         setLoading(false);
-         // alert('Transaction cancelled.');
-      }
-    });
-    handler.openIframe();
+    
+    // Simulate processing
+    setTimeout(async () => {
+        onUpgrade(tierId);
+        setLoading(false);
+        onClose();
+        alert(`Welcome to ${tierId}. First Month Free Access Granted.`);
+    }, 1000);
   };
 
   const tiers = [
@@ -76,7 +54,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Scholar' as SubscriptionTier,
       name: 'The Scholar',
-      priceDisplay: '₦2,000 / mo',
+      priceDisplay: 'FREE', // OVERRIDE
+      originalPrice: '₦2,000',
       amount: 2000,
       desc: "For the 5.0 GPA chaser.",
       features: [
@@ -92,7 +71,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Excellentia Supreme' as SubscriptionTier,
       name: 'Excellentia Supreme',
-      priceDisplay: '₦5,000 / mo',
+      priceDisplay: 'FREE', // OVERRIDE
+      originalPrice: '₦5,000',
       amount: 5000,
       desc: "Academic Immortality.",
       features: [
@@ -112,6 +92,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       
       <div className="relative bg-[#0a0a0a] w-full max-w-5xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade">
+        {/* Banner */}
+        <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center py-2 text-xs font-bold uppercase tracking-widest animate-pulse">
+            First Month Free: All Features Unlocked until Jan 10
+        </div>
+
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
            <div className="flex items-center gap-3">
              <span className="text-2xl">🎓</span>
@@ -148,7 +133,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                      {tier.name}
                      {tier.badge && <span className="text-amber-500">👑</span>}
                    </h4>
-                   <div className="text-2xl font-mono font-bold mb-1">{tier.priceDisplay}</div>
+                   <div className="flex items-baseline gap-2 mb-1">
+                       <span className="text-2xl font-mono font-bold">{tier.priceDisplay}</span>
+                       {tier.originalPrice && (
+                           <span className="text-sm text-gray-500 line-through decoration-red-500">{tier.originalPrice}</span>
+                       )}
+                   </div>
+                   
                    <p className="text-xs text-gray-400 mb-6 italic">"{tier.desc}"</p>
 
                    <ul className="space-y-3 mb-8 flex-1">
@@ -161,22 +152,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                    </ul>
 
                    <button 
-                     onClick={() => {
-                        if (tier.id === 'Fresher') {
-                            onUpgrade('Fresher');
-                            onClose();
-                        } else {
-                            handlePaystack(tier.id, tier.amount);
-                        }
-                     }}
-                     disabled={currentTier === tier.id || loading}
+                     onClick={() => handlePaystack(tier.id, tier.amount)}
+                     disabled={loading}
                      className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
                        currentTier === tier.id 
                          ? 'bg-white/10 text-gray-500 cursor-default' 
                          : 'bg-white text-black hover:bg-gray-200 shadow-lg'
                      }`}
                    >
-                     {loading && currentTier !== tier.id ? 'Processing...' : (currentTier === tier.id ? 'Current Plan' : 'Select Plan')}
+                     {loading ? 'Processing...' : (currentTier === tier.id ? 'Current Plan' : 'Claim Free Access')}
                    </button>
                 </div>
               ))}

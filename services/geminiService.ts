@@ -10,10 +10,10 @@ const getAI = () => {
     return "";
   };
 
-  const apiKey = getEnv("VITE_GEMINI_API_KEY") || getEnv("REACT_APP_GEMINI_API_KEY") || (process.env && process.env.API_KEY);
+  const apiKey = getEnv("VITE_GEMINI_API_KEY");
 
   if (!apiKey) {
-    throw new Error("API Key is missing. Please add VITE_GEMINI_API_KEY to your environment variables.");
+    throw new Error("Missing API Key. Please configure VITE_GEMINI_API_KEY in your .env file.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -25,103 +25,93 @@ const handleGeminiError = (error: any): never => {
   const msg = error.message || '';
   const status = error.status || 0;
 
-  // Authentication Issues
   if (msg.includes('API_KEY') || status === 400 || status === 401 || status === 403) {
-    throw new Error("Access Denied: The API Key is invalid or expired. Please check your configuration.");
+    throw new Error("Access Denied: The API Key is invalid or expired.");
   }
-  
-  // Rate Limiting (The most common issue)
   if (status === 429 || msg.includes('429') || msg.includes('quota')) {
-    throw new Error("Neural Overload: The Professor is handling too many students right now (Rate Limit). Please wait 30 seconds and try again.");
+    throw new Error("Neural Overload: Rate Limit Reached. Please wait 30 seconds.");
   }
-
-  // Server Errors
   if (status === 500 || status === 502 || status === 503) {
-    throw new Error("Campus Maintenance: Google's AI servers are temporarily down. Please try again in a minute.");
+    throw new Error("Campus Maintenance: AI Servers are temporarily down.");
   }
-
-  // Safety Filters
-  if (msg.includes('SAFETY') || msg.includes('BLOCKED') || (error.response && error.response.promptFeedback?.blockReason)) {
-    throw new Error("Content Restricted: The study material triggered safety filters. Please verify the content does not violate safety guidelines.");
+  if (msg.includes('SAFETY') || msg.includes('BLOCKED')) {
+    throw new Error("Content Restricted: Safety filters triggered.");
   }
-
-  // Model Overload / Length
-  if (msg.includes('candidate') && msg.includes('finishReason')) {
-    throw new Error("Generation Incomplete: The material was too complex for a single pass. Try breaking the content into smaller chunks.");
-  }
-
-  // JSON Parsing Errors (often happens if model hallucinates format)
   if (msg.includes('JSON')) {
-    throw new Error("Curriculum Error: The Professor returned a malformed lesson plan. Please try generating again.");
+    throw new Error("Curriculum Error: Malformed lesson plan. Try again.");
   }
 
   throw new Error(`System Error: ${msg || "An unexpected error occurred."}`);
 };
 
+// Safety Middleware to prevent Jailbreaks / Non-Academic use
+const checkSafety = async (text: string) => {
+    const forbiddenPatterns = [
+        "ignore previous instructions",
+        "write a poem",
+        "how to build a bomb",
+        "generate nsfw"
+    ];
+    const lower = text.toLowerCase();
+    if (forbiddenPatterns.some(p => lower.includes(p))) {
+        throw new Error("The Professor refuses to engage with non-academic or unsafe prompts.");
+    }
+};
+
 export const generateQuizFromText = async (text: string, config: QuizConfig, userProfile?: UserProfile): Promise<QuizQuestion[]> => {
   try {
+    await checkSafety(text);
     const ai = getAI();
     const model = "gemini-2.5-flash"; 
 
     const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer } = config;
 
-    // Type Instruction
     let typeInstruction = "";
     if (questionType === 'True/False') {
-      typeInstruction = "Generate True/False questions. The 'options' array MUST contain exactly two strings: 'True' and 'False'.";
+      typeInstruction = "Generate True/False questions. 'options' MUST be ['True', 'False'].";
     } else if (questionType === 'Fill in the Gap') {
-      typeInstruction = "Generate 'Fill in the gap' style questions. The 'question' text must contain a blank represented by underscores (e.g., '_______'). The 'options' should be potential words or phrases to fill that gap.";
+      typeInstruction = "Generate 'Fill in the gap' questions. Use underscores for blanks.";
     } else if (questionType === 'Scenario-based') {
-      typeInstruction = "Generate scenario-based questions. Each question should start with a short descriptive scenario or case study, followed by a question about it.";
+      typeInstruction = "Generate scenario-based questions starting with a short case study.";
     } else if (questionType === 'Matching') {
-      typeInstruction = "Generate questions where the user must identify the correct pair or association. Format as a multiple choice question where the question asks for the match, and options are pairs or single items that complete the match.";
+      typeInstruction = "Generate matching pair questions structured as multiple choice.";
     } else if (questionType === 'Random') {
-      typeInstruction = "Generate a mix of question types including Multiple Choice, True/False, Fill in the Gap, and Scenario-based. Randomly distribute them.";
+      typeInstruction = "Generate a mix of question types.";
     } else {
       typeInstruction = "Generate standard multiple-choice questions.";
     }
 
-    // Difficulty Instruction
-    let difficultyPrompt = `The questions should test deep understanding appropriate for the ${difficulty} level.`;
+    let difficultyPrompt = `Level: ${difficulty}.`;
     if (difficulty === 'Nightmare') {
-      difficultyPrompt = "WARNING: You are in NIGHTMARE mode. Generate exceptionally challenging questions that require deep synthesis of multiple concepts, multi-part logical reasoning, or knowledge of obscure historical/theoretical contexts. Focus strictly on edge cases, counter-intuitive examples, and exceptions to general rules. The distractors (wrong options) must be highly plausible, addressing common misconceptions or partial truths. Do not be merciful.";
+      difficultyPrompt = "WARNING: NIGHTMARE MODE. Generate exceptionally challenging questions requiring synthesis and edge-case knowledge. Distractors must be highly plausible.";
     }
 
-    // Weakness focus (Excellentia Supreme Feature)
     let weaknessPrompt = "";
-    if (useWeaknessDestroyer && userProfile && userProfile.weaknessFocus.trim()) {
-      weaknessPrompt = `WEAKNESS DESTROYER PROTOCOL ACTIVE. The user specifically struggles with: "${userProfile.weaknessFocus}". Prioritize generating questions related to these topics if they appear in the text to force mastery through repetition.`;
-    } else if (userProfile && userProfile.weaknessFocus.trim()) {
-       // Standard weakness focus
-       weaknessPrompt = `The user specifically struggles with: "${userProfile.weaknessFocus}". Prioritize generating questions related to these topics.`;
+    if (useWeaknessDestroyer && userProfile?.weaknessFocus.trim()) {
+      weaknessPrompt = `WEAKNESS DESTROYER: User struggles with "${userProfile.weaknessFocus}". Prioritize these topics.`;
     }
 
-    // Oracle (Excellentia Supreme Feature)
     let oraclePrompt = "";
     if (useOracle) {
-        oraclePrompt = "ORACLE PROTOCOL ACTIVE. Do not just ask about what is explicitly in the text. Infer potential exam questions that WOULD be asked based on this material in a high-level university final. Predict lateral concepts that link this text to broader field knowledge.";
+        oraclePrompt = "ORACLE PROTOCOL: Infer potential exam questions based on high-level academic predictions, not just explicit text.";
     }
 
     const prompt = `
-      You are a strict university professor. 
-      Analyze the text provided and generate EXACTLY ${questionCount} questions based on the key concepts.
+      Act as a strict university professor. Generate ${questionCount} questions.
       
-      Configuration:
+      Config:
       - Difficulty: ${difficulty}
-      - Question Type: ${questionType}
-      - Number of Questions: ${questionCount}
+      - Type: ${questionType}
       
       Instructions:
       ${typeInstruction}
       ${difficultyPrompt}
       ${weaknessPrompt}
       ${oraclePrompt}
-      - Ensure the 'correct_answer' is exactly one of the strings in 'options'.
-      - The 'explanation' should be detailed. ${userProfile?.feedbackDetail === 'Deep Dive' ? 'Provide historical context or derivation where possible.' : 'Keep it concise and direct.'}
-      - Return ONLY the JSON object.
+      - Return ONLY JSON.
       
-      Text Content:
-      ${text.substring(0, 40000)} 
+      Context:
+      ${text.substring(0, 50000)} 
     `;
 
     const response = await ai.models.generateContent({
@@ -135,23 +125,10 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
           items: {
             type: Type.OBJECT,
             properties: {
-              question: {
-                type: Type.STRING,
-                description: "The text of the question"
-              },
-              options: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "A list of possible answers (usually 4, or 2 for True/False)"
-              },
-              correct_answer: {
-                type: Type.STRING,
-                description: "The correct answer (must match one of the options exactly)"
-              },
-              explanation: {
-                type: Type.STRING,
-                description: "A detailed explanation of why the answer is correct and why others are wrong."
-              }
+              question: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              correct_answer: { type: Type.STRING },
+              explanation: { type: Type.STRING }
             },
             required: ["question", "options", "correct_answer", "explanation"]
           }
@@ -168,50 +145,36 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
   } catch (error) {
     handleGeminiError(error);
-    return []; // Unreachable due to handleGeminiError throwing, but keeps TS happy
+    return [];
   }
 };
 
 export const generateProfessorContent = async (text: string, config: QuizConfig): Promise<ProfessorSection[]> => {
   try {
+    await checkSafety(text);
     const ai = getAI();
     const model = "gemini-2.5-flash";
     const { personality, analogyDomain } = config;
 
-    let personaInstruction = "";
-    switch (personality) {
-      case 'Buddy':
-        personaInstruction = "You are a casual, encouraging study buddy. Use slang (moderately), be super supportive, and keep the vibe chill. Don't be too formal.";
-        break;
-      case 'Drill Sergeant':
-        personaInstruction = "You are a Drill Sergeant. Be direct, short, and focus on eliminating mistakes. No fluff. Use imperative commands.";
-        break;
-      case 'ELI5':
-        personaInstruction = "Explain Like I'm 5. Use extreme simplification, simple words, and childlike wonder. Assume zero prior knowledge.";
-        break;
-      case 'Academic':
-      default:
-        personaInstruction = "You are a formal academic professor. Be precise, definitions-first, and structured.";
-        break;
-    }
+    let personaInstruction = "You are a formal academic professor.";
+    if (personality === 'Buddy') personaInstruction = "You are a casual study buddy.";
+    if (personality === 'Drill Sergeant') personaInstruction = "You are a strict Drill Sergeant.";
+    if (personality === 'ELI5') personaInstruction = "Explain Like I'm 5.";
 
     const prompt = `
-      You are a world-class educator who masters the Feynman Technique. 
-      Your goal is to teach the user the contents of the provided text.
+      Teach the provided text content.
       
       Persona: ${personaInstruction}
-      Analogy Domain: Make analogies related to ${analogyDomain}.
+      Analogy Domain: ${analogyDomain}
       
       Instructions:
-      1. Analyze the text thoroughly.
-      2. Break it down into logical sequential learning sections (Minimum 4, Maximum 8 sections).
-      3. For each section, explain the concept simply (Feynman technique).
-      4. Use a creative real-world analogy from the domain: "${analogyDomain}" to make it stick.
-      5. Include occasional slight humor appropriate for exam prep (stress relief).
-      6. Provide a key takeaway for each section.
+      1. Break into 4-8 logical sections.
+      2. Explain simply (Feynman Technique).
+      3. Use creative analogies.
+      4. IF a concept involves a process, hierarchy, or timeline, provide a valid Mermaid.js markdown string in 'diagram_markdown'. Otherwise leave it empty string.
       
-      Text Content:
-      ${text.substring(0, 40000)}
+      Context:
+      ${text.substring(0, 50000)}
     `;
 
     const response = await ai.models.generateContent({
@@ -225,10 +188,11 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
           items: {
             type: Type.OBJECT,
             properties: {
-              title: { type: Type.STRING, description: "Title of this lesson section" },
-              content: { type: Type.STRING, description: "The core explanation" },
-              analogy: { type: Type.STRING, description: `A creative analogy related to ${analogyDomain}` },
-              key_takeaway: { type: Type.STRING, description: "One sentence summary" }
+              title: { type: Type.STRING },
+              content: { type: Type.STRING },
+              analogy: { type: Type.STRING },
+              key_takeaway: { type: Type.STRING },
+              diagram_markdown: { type: Type.STRING, description: "Optional Mermaid.js markdown code (e.g. graph TD; A-->B;)" }
             },
             required: ["title", "content", "analogy", "key_takeaway"]
           }
@@ -251,35 +215,26 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
 
 export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string): Promise<string> => {
     try {
+        await checkSafety(newMessage);
         const ai = getAI();
         const model = "gemini-2.5-flash";
 
-        // Construct history context
-        // We only take the last 10 messages to avoid context limits and reduce latency
         const recentHistory = history.slice(-10).map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.content }]
         }));
 
-        // Add the file context as a system instruction or initial context
         const systemInstruction = `
-            You are The Professor, an intelligent academic assistant.
-            The user has uploaded a document with the following content:
-            
-            --- START OF DOCUMENT ---
+            You are The Professor.
+            Context:
             ${fileContext.substring(0, 30000)}
-            --- END OF DOCUMENT ---
-
-            Your goal is to answer the user's questions specifically based on this document.
-            If the answer is not in the document, use your general knowledge but mention that it wasn't found in the text.
-            Be concise, helpful, and academic in tone.
+            
+            Answer specifically based on this context. Be concise and academic.
         `;
 
         const chat = ai.chats.create({
             model: model,
-            config: {
-                systemInstruction: systemInstruction,
-            },
+            config: { systemInstruction },
             history: recentHistory
         });
 
@@ -288,6 +243,6 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
 
     } catch (error) {
         handleGeminiError(error);
-        return "The Professor is currently deep in thought and cannot answer.";
+        return "The Professor cannot answer right now.";
     }
 }
