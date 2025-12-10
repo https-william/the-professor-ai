@@ -1,31 +1,29 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage } from '../types';
+import { ChatMessage, ChatState } from '../types';
 import { generateChatResponse } from '../services/geminiService';
 
 interface ChatViewProps {
-  fileContext: string;
+  chatState: ChatState;
+  onUpdate: (state: ChatState) => void;
   onExit: () => void;
-  fileName?: string;
 }
 
-export const ChatView: React.FC<ChatViewProps> = ({ fileContext, onExit, fileName }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit }) => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initial Greeting
+  // Initial Greeting if empty
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
+    if (chatState.messages.length === 0) {
+      const initMsg: ChatMessage = {
           id: 'init',
           role: 'model',
-          content: `I have analyzed ${fileName || 'your document'}. I am ready to answer any questions, verify your understanding, or debate the concepts within. What is on your mind?`,
+          content: `I have analyzed ${chatState.fileName || 'your document'}. I am ready to answer any questions, verify your understanding, or debate the concepts within. What is on your mind?`,
           timestamp: Date.now()
-        }
-      ]);
+      };
+      onUpdate({ ...chatState, messages: [initMsg] });
     }
   }, []);
 
@@ -35,7 +33,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ fileContext, onExit, fileNam
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [chatState.messages, isTyping]);
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
@@ -47,19 +45,21 @@ export const ChatView: React.FC<ChatViewProps> = ({ fileContext, onExit, fileNam
       timestamp: Date.now()
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    const newMessages = [...chatState.messages, userMsg];
+    onUpdate({ ...chatState, messages: newMessages });
+    
     setInput('');
     setIsTyping(true);
 
     try {
-      const responseText = await generateChatResponse(messages, fileContext, userMsg.content);
+      const responseText = await generateChatResponse(newMessages, chatState.fileContext, userMsg.content);
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
         content: responseText,
         timestamp: Date.now()
       };
-      setMessages(prev => [...prev, botMsg]);
+      onUpdate({ ...chatState, messages: [...newMessages, botMsg] });
     } catch (error) {
       console.error("Chat Error", error);
       const errorMsg: ChatMessage = {
@@ -68,7 +68,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ fileContext, onExit, fileNam
         content: "My connection to the archives was interrupted. Please try again.",
         timestamp: Date.now()
       };
-      setMessages(prev => [...prev, errorMsg]);
+      onUpdate({ ...chatState, messages: [...newMessages, errorMsg] });
     } finally {
       setIsTyping(false);
     }
@@ -86,7 +86,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ fileContext, onExit, fileNam
           <div>
             <h2 className="text-white font-serif font-bold">Socratic Dialogue</h2>
             <p className="text-xs text-amber-500/80 font-mono uppercase tracking-wider">
-               Context: {fileName || 'Uploaded Notes'}
+               Context: {chatState.fileName || 'Uploaded Notes'}
             </p>
           </div>
         </div>
@@ -101,7 +101,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ fileContext, onExit, fileNam
       {/* Chat Area */}
       <div className="flex-1 glass-panel rounded-3xl mb-4 overflow-hidden flex flex-col relative border-amber-500/10">
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-           {messages.map((msg) => (
+           {chatState.messages.map((msg) => (
              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] rounded-2xl p-4 shadow-lg leading-relaxed ${
                   msg.role === 'user' 

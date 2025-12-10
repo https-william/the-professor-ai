@@ -11,6 +11,7 @@ interface InputSectionProps {
   defaultConfig: { difficulty: Difficulty };
   userProfile: UserProfile;
   onShowSubscription: () => void;
+  onOpenProfile: () => void;
 }
 
 export const InputSection: React.FC<InputSectionProps> = ({ 
@@ -20,15 +21,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
   setAppMode, 
   defaultConfig, 
   userProfile,
-  onShowSubscription
+  onShowSubscription,
+  onOpenProfile
 }) => {
   const [activeTab, setActiveTab] = useState<'FILE' | 'TEXT'>('FILE');
   const [textInput, setTextInput] = useState('');
   const [chatInput, setChatInput] = useState('');
   
-  // Multi-File State
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  
   const [dragActive, setDragActive] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -76,7 +76,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
     
     // Tier Limit Check
     if (selectedFiles.length + validFiles.length > fileLimit) {
-        onShowSubscription(); // Trigger upgrade modal for limit breach
+        onShowSubscription();
         return;
     }
 
@@ -101,6 +101,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
     }
   };
 
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const getFullConfig = (): QuizConfig => ({ 
       difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle, useWeaknessDestroyer
   });
@@ -122,24 +126,51 @@ export const InputSection: React.FC<InputSectionProps> = ({
     try {
       let fullContent = "";
       
-      if (finalMode === 'PROFESSOR' && chatInput.trim()) {
-         fullContent = chatInput;
-      } else if (activeTab === 'FILE' && selectedFiles.length > 0) {
-         setUploadProgress(5);
-         // Process all files
+      // Process files first (Unified logic for both modes)
+      if (selectedFiles.length > 0) {
+         // Simulate fast start
+         setUploadProgress(15);
+         
          for (let i = 0; i < selectedFiles.length; i++) {
-            const processed = await processFile(selectedFiles[i]);
+            const processed = await processFile(selectedFiles[i], (p) => setUploadProgress(15 + (p * 0.85))); // Scale progress
             fullContent += `\n\n--- FILE: ${selectedFiles[i].name} ---\n${processed.content}`;
-            setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
          }
-      } else if (activeTab === 'TEXT' && textInput.trim()) {
-         fullContent = textInput;
-      } else {
-         return; 
       }
 
-      onProcess({ type: 'TEXT', content: fullContent, name: selectedFiles.length > 1 ? 'Multiple Files' : selectedFiles[0]?.name || 'Text Input' }, getFullConfig(), finalMode);
-      setChatInput(''); 
+      // Append text input based on mode
+      if (finalMode === 'PROFESSOR') {
+         if (chatInput.trim()) {
+             fullContent += `\n\nUser Context/Question: ${chatInput}`;
+         }
+         // Validation for Professor mode
+         if (!fullContent.trim()) {
+             setFileError("Please ask a question or upload a file to begin the lesson.");
+             return;
+         }
+      } else {
+         // Exam Mode
+         if (activeTab === 'TEXT' && textInput.trim()) {
+             // If we are in text tab, we might want to prioritize text input or combine?
+             // Logic: If user put text in Text Tab, append it.
+             fullContent += `\n\n${textInput}`;
+         }
+         
+         if (!fullContent.trim()) {
+             setFileError("Please upload a file or paste text content to generate an exam.");
+             return;
+         }
+      }
+
+      onProcess({ 
+          type: 'TEXT', 
+          content: fullContent, 
+          name: selectedFiles.length > 0 ? (selectedFiles.length === 1 ? selectedFiles[0].name : 'Multi-File Session') : 'Text Input' 
+      }, getFullConfig(), finalMode);
+      
+      setChatInput('');
+      if (finalMode === 'PROFESSOR') {
+          setSelectedFiles([]); // Clean up after sending in chat mode
+      }
       
     } catch (err: any) {
       setFileError(err.message);
@@ -147,221 +178,233 @@ export const InputSection: React.FC<InputSectionProps> = ({
     }
   };
 
-  const LockedOverlay = ({ label }: { label?: string }) => (
-    <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center rounded-xl cursor-pointer hover:bg-black/90 transition-colors border border-amber-500/20 group" onClick={onShowSubscription}>
-       <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">🔒</span>
-       <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500 border border-amber-500/30 px-3 py-1 rounded-full">{label || "Upgrade"}</span>
-    </div>
-  );
-
   return (
-    <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0">
+    <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 h-[calc(100vh-180px)] min-h-[500px] flex flex-col">
       
       {/* Mode Switcher */}
-      <div id="mode-switch-target" className="flex justify-center mb-6 sm:mb-10 transition-transform duration-300">
-        <div className="relative bg-[#0a0a0a]/80 backdrop-blur-xl p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-white/10 flex w-full max-w-[320px] sm:max-w-2xl shadow-2xl micro-interact">
+      <div className="flex justify-center items-center mb-6 shrink-0">
+        <div className="relative bg-[#0a0a0a] backdrop-blur-xl p-2 rounded-2xl border border-white/10 flex w-full max-w-md shadow-2xl">
           <div 
-              className={`absolute top-1.5 bottom-1.5 sm:top-2 sm:bottom-2 w-[calc(50%-6px)] sm:w-[calc(50%-8px)] rounded-[10px] sm:rounded-xl transition-all duration-500 cubic-bezier(0.23, 1, 0.32, 1) shadow-lg border border-white/10 ${
-                appMode === 'EXAM' ? 'left-1.5 sm:left-2 bg-gray-900' : 'left-[calc(50%+3px)] sm:left-[calc(50%+4px)] bg-[#1c1917]'
+              className={`absolute top-2 bottom-2 w-[calc(50%-8px)] rounded-xl transition-all duration-500 shadow-lg border border-white/10 ${
+                appMode === 'EXAM' 
+                ? 'left-2 bg-gradient-to-br from-blue-900 to-blue-800' 
+                : 'left-[calc(50%+4px)] bg-gradient-to-br from-amber-900 to-amber-800'
               }`}
-          >
-              <div className={`absolute inset-0 rounded-[10px] sm:rounded-xl opacity-20 ${
-                appMode === 'EXAM' ? 'bg-gradient-to-b from-blue-500 to-transparent' : 'bg-gradient-to-b from-amber-500 to-transparent'
-              }`} />
-          </div>
-          <button onClick={() => setAppMode('EXAM')} className={`relative z-10 flex-1 py-3 sm:py-4 text-[10px] sm:text-sm font-bold uppercase tracking-widest transition-all ${appMode === 'EXAM' ? 'text-white' : 'text-gray-500'}`}>Exam</button>
-          <button onClick={() => setAppMode('PROFESSOR')} className={`relative z-10 flex-1 py-3 sm:py-4 text-[10px] sm:text-sm font-bold uppercase tracking-widest transition-all ${appMode === 'PROFESSOR' ? 'text-amber-100' : 'text-gray-500'}`}>Professor</button>
+          ></div>
+          <button onClick={() => setAppMode('EXAM')} className={`relative z-10 flex-1 py-3 text-sm font-bold uppercase tracking-widest transition-all ${appMode === 'EXAM' ? 'text-white' : 'text-gray-500'}`}>Exam</button>
+          <button onClick={() => setAppMode('PROFESSOR')} className={`relative z-10 flex-1 py-3 text-sm font-bold uppercase tracking-widest transition-all ${appMode === 'PROFESSOR' ? 'text-amber-100' : 'text-gray-500'}`}>Professor</button>
         </div>
       </div>
 
-      <div className={`glass-panel rounded-3xl sm:rounded-[2.5rem] relative overflow-hidden transition-all duration-700 min-h-[500px] flex flex-col ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
+      <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
         
         {/* EXAM VIEW */}
         <div className={`absolute inset-0 flex flex-col transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12 pointer-events-none'}`}>
-            <div id="exam-config-target" className="border-b border-white/5 bg-black/20 z-20 flex flex-col">
-              
-              {/* Responsive Config Layout */}
-              <div className="p-4 md:p-8">
-                {/* Mobile: Vertical Stack with Cards, Desktop: Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    
-                    {/* Card 1: Difficulty */}
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 sm:bg-transparent sm:border-none sm:p-0">
-                        <label className="text-[9px] font-bold text-gray-500 uppercase px-1">Difficulty</label>
-                        <div className="relative group">
-                          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full bg-[#151518] border border-white/10 rounded-xl px-4 py-3 text-sm text-white appearance-none outline-none focus:border-blue-500 transition-colors hover:bg-white/5 min-h-[44px]">
+            {/* Scrollable Configuration */}
+            <div className="border-b border-white/5 bg-black/20 z-20 flex-shrink-0">
+              <div className="p-4 overflow-x-auto custom-scrollbar">
+                <div className="flex sm:grid sm:grid-cols-4 gap-4 min-w-[600px] sm:min-w-0">
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Difficulty</label>
+                        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
                               <option value="Easy">Easy</option>
                               <option value="Medium">Medium</option>
                               <option value="Hard">Hard</option>
                               <option value="Nightmare">Nightmare 💀</option>
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">▼</div>
-                          {!isSupreme && difficulty === 'Nightmare' && <LockedOverlay />}
-                        </div>
+                        </select>
                     </div>
-
-                    {/* Card 2: Format */}
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 sm:bg-transparent sm:border-none sm:p-0">
-                        <label className="text-[9px] font-bold text-gray-500 uppercase px-1">Format</label>
-                        <div className="relative">
-                          <select value={questionType} onChange={(e) => setQuestionType(e.target.value as QuestionType)} className="w-full bg-[#151518] border border-white/10 rounded-xl px-4 py-3 text-sm text-white appearance-none outline-none focus:border-blue-500 transition-colors hover:bg-white/5 min-h-[44px]">
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Format</label>
+                        <select value={questionType} onChange={(e) => setQuestionType(e.target.value as QuestionType)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
                               <option value="Multiple Choice">Multiple Choice</option>
                               <option value="True/False">True / False</option>
                               <option value="Fill in the Gap">Fill in the Gap</option>
                               <option value="Scenario-based">Scenario Based</option>
+                              <option value="Mixed">Mixed (All Types)</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase">Timer</label>
+                          <select value={timerDuration} onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
+                                <option value="Limitless">No Limit</option>
+                                <option value="5m">5 Mins</option>
+                                <option value="10m">10 Mins</option>
+                                <option value="30m">30 Mins</option>
+                                <option value="45m">45 Mins</option>
+                                <option value="1h">1 Hour</option>
+                                <option value="1h 30m">1h 30m</option>
+                                <option value="2h">2 Hours</option>
                           </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">▼</div>
-                        </div>
                     </div>
-
-                    {/* Card 3: Timer */}
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 sm:bg-transparent sm:border-none sm:p-0">
-                          <label className="text-[9px] font-bold text-gray-500 uppercase px-1">Timer</label>
-                          <div className="relative">
-                            <select value={timerDuration} onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} className="w-full bg-[#151518] border border-white/10 rounded-xl px-4 py-3 text-sm text-white appearance-none outline-none focus:border-blue-500 transition-colors hover:bg-white/5 min-h-[44px]">
-                                  <option value="Limitless">No Limit</option>
-                                  <option value="5m">5 Mins</option>
-                                  <option value="10m">10 Mins</option>
-                                  <option value="30m">30 Mins</option>
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">▼</div>
-                          </div>
-                    </div>
-
-                    {/* Card 4: Questions */}
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 sm:bg-transparent sm:border-none sm:p-0">
-                          <label className="text-[9px] font-bold text-gray-500 uppercase px-1">Questions: {questionCount}</label>
-                          <div className="bg-[#151518] border border-white/10 rounded-xl px-4 py-3 flex items-center min-h-[44px]">
-                              <input type="range" min="5" max="50" step="5" value={questionCount} onChange={(e) => setQuestionCount(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
-                          </div>
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase">Count: {questionCount}</label>
+                          <input type="range" min="5" max="50" step="5" value={questionCount} onChange={(e) => setQuestionCount(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg accent-blue-500 mt-3 cursor-pointer" />
                     </div>
                 </div>
-              </div>
-
-              {/* Advanced Protocols */}
-              <div className="px-4 md:px-8 pb-4 pt-2 border-t border-white/5 bg-black/10">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div onClick={() => !isSupreme ? onShowSubscription() : setUseOracle(!useOracle)} className={`flex items-center gap-3 cursor-pointer px-4 py-3 rounded-lg border transition-all ${useOracle ? 'bg-amber-900/20 border-amber-500/50' : 'bg-black/20 border-white/10'}`}>
-                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center ${useOracle ? 'bg-amber-500 border-amber-500' : 'border-gray-600'}`}>
-                            {useOracle && <svg className="w-3 h-3 text-black" viewBox="0 0 20 20" fill="currentColor"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>}
-                        </div>
-                        <div className="flex flex-col">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${useOracle ? 'text-amber-400' : 'text-gray-400'}`}>The Oracle</span>
-                            <span className="text-[9px] text-gray-600">Predictive AI Questions</span>
-                        </div>
-                        {!isSupreme && <span className="ml-auto text-[8px] bg-gray-800 px-1.5 py-0.5 rounded text-gray-400">LOCKED</span>}
-                    </div>
-
-                    <div onClick={() => !isSupreme ? onShowSubscription() : setUseWeaknessDestroyer(!useWeaknessDestroyer)} className={`flex items-center gap-3 cursor-pointer px-4 py-3 rounded-lg border transition-all ${useWeaknessDestroyer ? 'bg-red-900/20 border-red-500/50' : 'bg-black/20 border-white/10'}`}>
-                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center ${useWeaknessDestroyer ? 'bg-red-500 border-red-500' : 'border-gray-600'}`}>
-                             {useWeaknessDestroyer && <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>}
-                        </div>
-                        <div className="flex flex-col">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${useWeaknessDestroyer ? 'text-red-400' : 'text-gray-400'}`}>Weakness Destroyer</span>
-                            <span className="text-[9px] text-gray-600">Target Low Score Topics</span>
-                        </div>
-                        {!isSupreme && <span className="ml-auto text-[8px] bg-gray-800 px-1.5 py-0.5 rounded text-gray-400">LOCKED</span>}
-                    </div>
-                  </div>
               </div>
             </div>
 
-            {/* Input Area */}
-            <div id="upload-zone-target" className="flex-1 p-4 sm:p-6 md:p-12 flex flex-col justify-center relative bg-gradient-to-b from-black/0 to-black/20">
-               <div className="flex justify-center mb-6">
-                <div className="bg-black/30 p-1 rounded-xl flex gap-1 border border-white/10 shadow-inner">
-                    <button onClick={() => setActiveTab('FILE')} className={`px-4 sm:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'FILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Files</button>
-                    <button onClick={() => setActiveTab('TEXT')} className={`px-4 sm:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'TEXT' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Text</button>
+            {/* Premium Protocol Cards */}
+            <div className="px-4 py-2 grid grid-cols-2 gap-4 shrink-0">
+               <button 
+                 onClick={() => setUseOracle(!useOracle)} 
+                 className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
+                   useOracle 
+                   ? 'bg-gradient-to-r from-amber-950 to-orange-900 border-amber-500 text-amber-200 shadow-[0_0_20px_rgba(245,158,11,0.3)] ring-1 ring-amber-500/50' 
+                   : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'
+                 }`}
+               >
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(251,191,36,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                 <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
+                    <div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse shadow-[0_0_8px_orange]' : 'bg-gray-600'}`}></div>
+                    The Oracle
+                 </div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10">Predictive Questioning Protocol</div>
+                 {useOracle && <div className="absolute top-2 right-2 text-[8px] font-bold text-black bg-amber-500 rounded px-1.5 py-0.5 shadow-lg shadow-amber-500/20">ACTIVE</div>}
+               </button>
+
+               <button 
+                 onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} 
+                 className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
+                   useWeaknessDestroyer 
+                   ? 'bg-gradient-to-r from-red-950 to-rose-900 border-red-600 text-red-200 shadow-[0_0_20px_rgba(225,29,72,0.3)] ring-1 ring-red-600/50' 
+                   : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'
+                 }`}
+               >
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(244,63,94,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                 <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
+                    <div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-[ping_2s_infinite] shadow-[0_0_8px_red]' : 'bg-gray-600'}`}></div>
+                    Weakness Destroyer
+                 </div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10">Target Low Score Topics</div>
+                 {useWeaknessDestroyer && <div className="absolute top-2 right-2 text-[8px] font-bold text-black bg-red-500 rounded px-1.5 py-0.5 shadow-lg shadow-red-500/20">ACTIVE</div>}
+               </button>
+            </div>
+
+            {/* Main Upload Area */}
+            <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar">
+               <div className="flex justify-center mb-6 shrink-0">
+                <div className="bg-black/40 p-1.5 rounded-2xl flex gap-1 border border-white/10 shadow-lg">
+                    <button onClick={() => setActiveTab('FILE')} className={`px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'FILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Files</button>
+                    <button onClick={() => setActiveTab('TEXT')} className={`px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'TEXT' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Text</button>
                 </div>
               </div>
 
-              <div className="min-h-[250px] relative">
+              <div className="flex-1 flex flex-col min-h-0">
                 {activeTab === 'FILE' ? (
                   <div 
-                    className={`h-56 sm:h-64 border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
+                    className={`flex-grow border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[200px] ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
                     onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                      {/* Upload Progress Bar (Engaging Gradient) */}
                       {uploadProgress > 0 && uploadProgress < 100 && (
                         <div className="absolute inset-0 bg-black/90 z-20 flex flex-col items-center justify-center p-8 backdrop-blur-md">
-                           <div className="w-full max-w-md h-3 bg-gray-900 rounded-full overflow-hidden mb-4 border border-white/10 shadow-inner relative">
-                             {/* Neon Flux Gradient */}
-                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 animate-[shimmer_2s_linear_infinite] bg-[length:200%_100%]" style={{ width: `${uploadProgress}%`, transition: 'width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}></div>
+                           <div className="w-full max-w-md h-2 bg-gray-900 rounded-full overflow-hidden mb-2 relative">
+                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 animate-progress" style={{ width: `${uploadProgress}%` }}></div>
                            </div>
-                           <div className="flex flex-col items-center gap-1">
-                             <span className="text-white font-mono text-xl font-bold">{Math.round(uploadProgress)}%</span>
-                             <p className="text-blue-400 font-mono text-[10px] uppercase tracking-widest animate-pulse">Encoding Neural Matrix...</p>
-                           </div>
+                           <span className="text-white font-mono text-sm font-bold">{Math.round(uploadProgress)}%</span>
                         </div>
                       )}
                       
                       {selectedFiles.length > 0 ? (
-                        <div className="z-10 w-full px-4 overflow-y-auto max-h-48 custom-scrollbar">
+                        <div className="w-full h-full p-4 overflow-y-auto custom-scrollbar">
                            <div className="grid grid-cols-1 gap-2">
                              {selectedFiles.map((f, i) => (
-                               <div key={i} className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 hover:bg-white/10 transition-colors group/file">
+                               <div key={i} className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                                  <div className="flex items-center gap-3 overflow-hidden">
-                                    <span className="text-lg group-hover/file:scale-110 transition-transform">📄</span>
-                                    <span className="text-sm text-gray-200 truncate max-w-[200px]">{f.name}</span>
+                                    <span className="text-2xl">📄</span>
+                                    <span className="text-sm text-gray-200 truncate font-medium">{f.name}</span>
                                  </div>
-                                 <button onClick={(e) => { e.stopPropagation(); setSelectedFiles(prev => prev.filter((_, idx) => idx !== i)); }} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-colors">✕</button>
+                                 <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-gray-500 hover:text-red-400 p-2">✕</button>
                                </div>
                              ))}
                            </div>
-                           <p className="text-xs text-center text-gray-500 mt-4 font-mono">{selectedFiles.length} / {fileLimit} Files Loaded</p>
-                           {isFresher && selectedFiles.length === 1 && (
-                               <p className="text-[10px] text-center text-amber-500 mt-2">Fresher Limit Reached</p>
-                           )}
+                           <p className="text-xs text-center text-gray-500 mt-4">{selectedFiles.length} / {fileLimit} Files</p>
                         </div>
                       ) : (
-                        <div className="z-10 text-center px-4">
-                          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-600 transition-colors shadow-lg group-hover:scale-110 duration-300">
-                            <span className="text-2xl">📂</span>
+                        <div className="text-center p-6">
+                          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 group-hover:scale-110 transition-transform duration-300 shadow-xl">
+                             <span className="text-3xl">📁</span>
                           </div>
-                          <p className="text-gray-300 font-medium text-sm">Drop lecture notes here</p>
-                          <p className="text-xs text-gray-500 mt-2">PDF, DOCX, PPTX (Max {fileLimit})</p>
+                          <p className="text-gray-300 font-bold text-sm">Drop lecture notes here</p>
+                          <p className="text-gray-500 text-xs mt-2">PDF, DOCX, PPTX, TXT</p>
                         </div>
                       )}
                   </div>
                 ) : (
-                  <textarea className="w-full h-56 sm:h-64 bg-black/20 text-gray-200 rounded-3xl p-4 sm:p-6 border border-white/10 focus:border-blue-500/50 outline-none resize-none text-xs sm:text-sm font-mono leading-relaxed" placeholder="Paste raw text, notes, or case studies..." value={textInput} onChange={(e) => setTextInput(e.target.value)} />
+                  <textarea className="w-full flex-grow bg-black/20 text-gray-200 rounded-3xl p-6 border border-white/10 focus:border-blue-500/50 outline-none resize-none text-sm font-mono leading-relaxed placeholder-gray-600" placeholder="Paste raw text notes..." value={textInput} onChange={(e) => setTextInput(e.target.value)} />
                 )}
               </div>
+            </div>
 
-              <div className="mt-8 flex flex-col md:flex-row justify-center gap-4">
-                <button onClick={() => handleGenerate()} disabled={isLoading} className="px-8 py-4 rounded-full bg-white text-black font-bold text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-                    {isLoading ? 'Processing...' : 'Generate Exam →'}
-                </button>
-                <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="px-6 py-4 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/50 font-bold text-sm uppercase tracking-widest hover:bg-amber-500/20 transition-colors">
-                    {canChat ? 'Chat with Notes 💬' : 'Chat Locked 🔒'}
-                </button>
-              </div>
+            {/* Sticky Actions Footer */}
+            <div className="p-6 border-t border-white/10 bg-[#0a0a0a] flex flex-col sm:flex-row gap-4 items-center justify-end shrink-0">
+               <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                  Chat with Notes
+               </button>
+               <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full sm:w-auto px-10 py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Processing...
+                      </>
+                  ) : (
+                      <>
+                        Generate Exam
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                      </>
+                  )}
+               </button>
             </div>
         </div>
 
         {/* PROFESSOR VIEW */}
-        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 ${appMode === 'PROFESSOR' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-             <h3 className="text-2xl font-serif text-amber-100 mb-4">Class is in session.</h3>
-             <div className="w-full max-w-xl relative">
+        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
+             <h3 className="text-3xl font-serif font-bold text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
+             <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
+                  {/* Selected Files Display */}
+                  {selectedFiles.length > 0 && (
+                    <div className="absolute bottom-full left-0 mb-3 flex gap-2 flex-wrap w-full">
+                        {selectedFiles.map((f, i) => (
+                            <div key={i} className="bg-[#1a1a1a] border border-amber-500/20 rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs text-amber-100 shadow-lg animate-fade-in ring-1 ring-amber-500/10">
+                                <span className="text-lg">📄</span>
+                                <span className="truncate max-w-[150px] font-mono">{f.name}</span>
+                                <button onClick={() => removeFile(i)} className="text-amber-500 hover:text-red-400 ml-1 transition-colors">✕</button>
+                            </div>
+                        ))}
+                    </div>
+                  )}
+
                   <input 
                     type="text" 
                     value={chatInput} 
                     onChange={(e) => setChatInput(e.target.value)} 
                     onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                    className="w-full bg-black/40 border border-amber-500/30 rounded-2xl px-6 py-4 text-white outline-none focus:border-amber-500" 
+                    className="w-full bg-black/60 border border-amber-500/30 rounded-2xl pl-6 pr-24 py-6 text-white outline-none focus:border-amber-500 placeholder-gray-600 text-lg shadow-2xl transition-all focus:bg-black/80" 
                     placeholder="Ask a question or upload files..." 
                   />
-                  <div className="absolute right-2 top-2 bottom-2 flex items-center gap-2">
-                     <button onClick={() => fileInputRef.current?.click()} className="p-2 text-gray-400 hover:text-white">📎</button>
-                     <button onClick={() => handleGenerate()} className="p-2 bg-amber-600 rounded-xl text-white">➜</button>
+                  <div className="absolute right-3 top-3 bottom-3 flex items-center gap-2">
+                     <button onClick={() => fileInputRef.current?.click()} className="h-full px-3 text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                     </button>
+                     <button onClick={() => handleGenerate()} className="h-full px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
+                        {isLoading ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                        )}
+                     </button>
                   </div>
              </div>
+             <p className="mt-6 text-xs text-gray-500 font-mono uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                The Professor is listening.
+             </p>
         </div>
-
       </div>
       
-      {fileError && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-200 text-sm text-center rounded-xl font-mono">{fileError}</div>}
+      {fileError && <div className="mt-4 p-4 bg-red-900/20 border border-red-500/20 text-red-400 text-sm text-center rounded-2xl font-bold animate-slide-up-fade">{fileError}</div>}
       <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.doc,.pptx,.txt,.png,.jpg,.jpeg,.webp" onChange={handleFileChange} />
     </div>
   );

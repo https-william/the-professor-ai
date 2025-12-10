@@ -9,11 +9,10 @@ import {
   signOut,
   Auth
 } from "firebase/auth";
-import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { SubscriptionTier } from "../types";
+import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
+import { SubscriptionTier, UserProfile } from "../types";
 
-// --- SECURE CONFIGURATION LOADER ---
-// Strictly uses environment variables. No hardcoded fallbacks.
+// --- SECURE CONFIGURATION ---
 const getEnv = (key: string): string => {
   if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) {
     return (import.meta as any).env[key];
@@ -21,7 +20,6 @@ const getEnv = (key: string): string => {
   if (typeof process !== 'undefined' && process.env && process.env[key]) {
     return process.env[key];
   }
-  // Return empty string if missing - let validation handle it
   return "";
 };
 
@@ -42,17 +40,18 @@ let googleProvider: GoogleAuthProvider;
 let db: any;
 
 try {
-  if (!firebaseConfig.apiKey) {
-    console.warn("Firebase Configuration Missing. Please check your .env file.");
-  } else {
-    if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApp();
+  if (!getApps().length) {
+    if (firebaseConfig.apiKey) {
+        app = initializeApp(firebaseConfig);
     }
-    auth = getAuth(app);
-    db = getFirestore(app);
-    googleProvider = new GoogleAuthProvider();
+  } else {
+    app = getApp();
+  }
+  
+  if (app) {
+      auth = getAuth(app);
+      db = getFirestore(app);
+      googleProvider = new GoogleAuthProvider();
   }
 } catch (error) {
   console.error("Firebase Initialization Error:", error);
@@ -65,7 +64,7 @@ export const isConfigured = () => {
 };
 
 export const signInWithGoogle = async () => {
-  if (!auth) throw new Error("System not initialized. Missing configuration.");
+  if (!auth) throw new Error("System not initialized. Check .env configuration.");
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
@@ -75,7 +74,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const registerWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("System not initialized. Missing configuration.");
+  if (!auth) throw new Error("System not initialized. Check .env configuration.");
   try {
     return await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -85,7 +84,7 @@ export const registerWithEmail = async (email: string, password: string) => {
 };
 
 export const loginWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("System not initialized. Missing configuration.");
+  if (!auth) throw new Error("System not initialized. Check .env configuration.");
   try {
     return await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -103,6 +102,18 @@ export const logout = async () => {
   }
 };
 
+// --- USER DATA SYNC ---
+export const saveUserToFirestore = async (userId: string, data: Partial<UserProfile>) => {
+    if (!db) return;
+    try {
+        const userRef = doc(db, "users", userId);
+        // Use setDoc with merge: true to create if not exists, or update if exists
+        await setDoc(userRef, data, { merge: true });
+    } catch (e) {
+        console.error("Failed to sync user profile", e);
+    }
+}
+
 // --- SYSTEM & ADMIN ACTIONS ---
 
 export const logSystemAction = async (action: string, details: string, targetUserId?: string) => {
@@ -116,9 +127,7 @@ export const logSystemAction = async (action: string, details: string, targetUse
        timestamp: serverTimestamp()
     });
   } catch (e: any) {
-    if (e.code !== 'permission-denied') {
-      console.warn("Failed to log action:", e.message);
-    }
+    // Ignore permission errors in console
   }
 };
 

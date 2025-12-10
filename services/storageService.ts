@@ -1,5 +1,5 @@
 
-import { HistoryItem, QuizState, ProfessorState, AppMode, QuizConfig, UserProfile } from '../types';
+import { HistoryItem, QuizState, ProfessorState, AppMode, QuizConfig, UserProfile, ChatState } from '../types';
 
 const CURRENT_SESSION_KEY = 'exam_prep_current_session';
 const HISTORY_KEY = 'exam_prep_history';
@@ -7,12 +7,12 @@ const USER_PROFILE_KEY = 'exam_prep_user_profile';
 
 interface CurrentSession {
   mode: AppMode;
-  data: QuizState | ProfessorState;
+  data: QuizState | ProfessorState | ChatState;
   config?: QuizConfig;
   title: string;
 }
 
-export const saveCurrentSession = (mode: AppMode, data: QuizState | ProfessorState, title: string, config?: QuizConfig) => {
+export const saveCurrentSession = (mode: AppMode, data: QuizState | ProfessorState | ChatState, title: string, config?: QuizConfig) => {
   const session: CurrentSession = { mode, data, title, config };
   localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(session));
 };
@@ -29,7 +29,7 @@ export const clearCurrentSession = () => {
 /**
  * Generates a smart, descriptive title for the history item.
  */
-export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorState): string => {
+export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorState | ChatState): string => {
   if (mode === 'EXAM') {
     const quizData = data as QuizState;
     if (quizData.questions.length > 0) {
@@ -38,7 +38,7 @@ export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorS
       return cleanQ.length > 45 ? `${cleanQ.substring(0, 45)}...` : cleanQ;
     }
     return 'Untitled Exam';
-  } else {
+  } else if (mode === 'PROFESSOR') {
     const profData = data as ProfessorState;
     if (profData.sections.length > 0) {
       const title = profData.sections[0].title;
@@ -46,12 +46,24 @@ export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorS
       return `Class: ${cleanTitle}`;
     }
     return 'Untitled Class';
+  } else if (mode === 'CHAT') {
+      const chatData = data as ChatState;
+      return `Chat: ${chatData.fileName || 'General Session'}`;
   }
+  return 'Untitled Session';
 };
 
 export const saveToHistory = (item: HistoryItem) => {
   const history = loadHistory();
-  const updated = [item, ...history].slice(20); // Keep last 20
+  // Check if item with same ID exists, update it instead of adding new
+  const existingIndex = history.findIndex(h => h.id === item.id);
+  let updated;
+  if (existingIndex >= 0) {
+      updated = [...history];
+      updated[existingIndex] = item;
+  } else {
+      updated = [item, ...history].slice(20); // Keep last 20
+  }
   localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
 };
 

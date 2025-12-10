@@ -44,14 +44,9 @@ const handleGeminiError = (error: any): never => {
   throw new Error(`System Error: ${msg || "An unexpected error occurred."}`);
 };
 
-// Safety Middleware to prevent Jailbreaks / Non-Academic use
+// Safety Middleware
 const checkSafety = async (text: string) => {
-    const forbiddenPatterns = [
-        "ignore previous instructions",
-        "write a poem",
-        "how to build a bomb",
-        "generate nsfw"
-    ];
+    const forbiddenPatterns = ["ignore previous instructions", "write a poem", "generate nsfw"];
     const lower = text.toLowerCase();
     if (forbiddenPatterns.some(p => lower.includes(p))) {
         throw new Error("The Professor refuses to engage with non-academic or unsafe prompts.");
@@ -66,59 +61,28 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
     const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer } = config;
 
-    let typeInstruction = "";
-    if (questionType === 'True/False') {
-      typeInstruction = "Generate True/False questions. 'options' MUST be ['True', 'False'].";
-    } else if (questionType === 'Fill in the Gap') {
-      typeInstruction = "Generate 'Fill in the gap' questions. Use underscores for blanks.";
-    } else if (questionType === 'Scenario-based') {
-      typeInstruction = "Generate scenario-based questions starting with a short case study.";
-    } else if (questionType === 'Matching') {
-      typeInstruction = "Generate matching pair questions structured as multiple choice.";
-    } else if (questionType === 'Random') {
-      typeInstruction = "Generate a mix of question types.";
-    } else {
-      typeInstruction = "Generate standard multiple-choice questions.";
+    // Optimized prompt for speed
+    let typeInstruction: string = questionType;
+    if (questionType === 'Mixed') {
+      typeInstruction = "a mix of Multiple Choice, True/False, and Fill in the Gap";
     }
 
-    let difficultyPrompt = `Level: ${difficulty}.`;
-    if (difficulty === 'Nightmare') {
-      difficultyPrompt = "WARNING: NIGHTMARE MODE. Generate exceptionally challenging questions requiring synthesis and edge-case knowledge. Distractors must be highly plausible.";
-    }
-
-    let weaknessPrompt = "";
-    if (useWeaknessDestroyer && userProfile?.weaknessFocus.trim()) {
-      weaknessPrompt = `WEAKNESS DESTROYER: User struggles with "${userProfile.weaknessFocus}". Prioritize these topics.`;
-    }
-
-    let oraclePrompt = "";
-    if (useOracle) {
-        oraclePrompt = "ORACLE PROTOCOL: Infer potential exam questions based on high-level academic predictions, not just explicit text.";
-    }
+    let instructions = `Generate ${questionCount} ${difficulty} questions. Type: ${typeInstruction}. Strict JSON. No fluff.`;
+    
+    if (useOracle) instructions += " Predict probable exam questions.";
+    if (useWeaknessDestroyer && userProfile?.weaknessFocus) instructions += ` Focus heavily on ${userProfile.weaknessFocus}.`;
 
     const prompt = `
-      Act as a strict university professor. Generate ${questionCount} questions.
-      
-      Config:
-      - Difficulty: ${difficulty}
-      - Type: ${questionType}
-      
-      Instructions:
-      ${typeInstruction}
-      ${difficultyPrompt}
-      ${weaknessPrompt}
-      ${oraclePrompt}
-      - Return ONLY JSON.
-      
-      Context:
-      ${text.substring(0, 50000)} 
+      ${instructions}
+      Return JSON array of objects with keys: question, options (array), correct_answer, explanation.
+      Context: ${text.substring(0, 30000)} 
     `;
 
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
       config: {
-        systemInstruction: "You are an expert educational content generator.",
+        systemInstruction: "You are an automated exam generator. Output raw JSON only. No markdown. No chatter.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -156,32 +120,18 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
     const model = "gemini-2.5-flash";
     const { personality, analogyDomain } = config;
 
-    let personaInstruction = "You are a formal academic professor.";
-    if (personality === 'Buddy') personaInstruction = "You are a casual study buddy.";
-    if (personality === 'Drill Sergeant') personaInstruction = "You are a strict Drill Sergeant.";
-    if (personality === 'ELI5') personaInstruction = "Explain Like I'm 5.";
-
     const prompt = `
-      Teach the provided text content.
-      
-      Persona: ${personaInstruction}
-      Analogy Domain: ${analogyDomain}
-      
-      Instructions:
-      1. Break into 4-8 logical sections.
-      2. Explain simply (Feynman Technique).
-      3. Use creative analogies.
-      4. IF a concept involves a process, hierarchy, or timeline, provide a valid Mermaid.js markdown string in 'diagram_markdown'. Otherwise leave it empty string.
-      
-      Context:
-      ${text.substring(0, 50000)}
+      Teach this content. Break into logical sections. Brief content analysis.
+      Persona: ${personality}. Analogy: ${analogyDomain}.
+      Include a Mermaid.js diagram code in 'diagram_markdown' if complex.
+      Context: ${text.substring(0, 30000)}
     `;
 
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
       config: {
-        systemInstruction: `You are an award-winning educator. ${personaInstruction}`,
+        systemInstruction: `You are an expert educator. Output raw JSON only. Be concise and fast.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -192,7 +142,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
               content: { type: Type.STRING },
               analogy: { type: Type.STRING },
               key_takeaway: { type: Type.STRING },
-              diagram_markdown: { type: Type.STRING, description: "Optional Mermaid.js markdown code (e.g. graph TD; A-->B;)" }
+              diagram_markdown: { type: Type.STRING }
             },
             required: ["title", "content", "analogy", "key_takeaway"]
           }
@@ -219,18 +169,12 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
         const ai = getAI();
         const model = "gemini-2.5-flash";
 
-        const recentHistory = history.slice(-10).map(msg => ({
+        const recentHistory = history.slice(-6).map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.content }]
         }));
 
-        const systemInstruction = `
-            You are The Professor.
-            Context:
-            ${fileContext.substring(0, 30000)}
-            
-            Answer specifically based on this context. Be concise and academic.
-        `;
+        const systemInstruction = `You are The Professor. Context: ${fileContext.substring(0, 15000)}. Be concise.`;
 
         const chat = ai.chats.create({
             model: model,
@@ -243,6 +187,6 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
 
     } catch (error) {
         handleGeminiError(error);
-        return "The Professor cannot answer right now.";
+        return "Connection interrupted.";
     }
 }

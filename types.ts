@@ -31,6 +31,12 @@ export interface ProfessorState {
   sections: ProfessorSection[];
 }
 
+export interface ChatState {
+  messages: ChatMessage[];
+  fileContext: string;
+  fileName: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
@@ -49,14 +55,13 @@ export enum AppStatus {
 export type InputMode = 'FILE' | 'TEXT';
 export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT';
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Nightmare';
-export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Random';
-export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '60m';
+export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Mixed';
+export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '45m' | '1h' | '1h 30m' | '2h';
 
 // Professor Mode Specifics
 export type AIPersonality = 'Buddy' | 'Academic' | 'Drill Sergeant' | 'ELI5';
 export type AnalogyDomain = 'General' | 'Sports' | 'Gaming' | 'Cooking' | 'Pop Culture' | 'Engineering';
 export type LearningStyle = 'Visual' | 'Auditory' | 'Textual';
-export type AmbientTheme = 'None' | 'Rainy Library' | 'Cyberpunk Lab' | 'Cabin' | 'Deep Space';
 
 export interface QuizConfig {
   difficulty: Difficulty;
@@ -73,25 +78,44 @@ export interface QuizConfig {
 
 export type SubscriptionTier = 'Fresher' | 'Scholar' | 'Excellentia Supreme';
 export type UserRole = 'student' | 'admin';
+export type AmbientTheme = 'Deep Space';
 
 export interface UserProfile {
+  // Identity
   alias: string;
+  fullName?: string; 
+  age?: string; 
+  school?: string; 
+  academicLevel?: string; 
+  country?: string; 
+  socials?: {
+    whatsapp?: string;
+    telegram?: string;
+    instagram?: string;
+    snapchat?: string;
+  }; 
   hasCompletedOnboarding: boolean;
   avatarGradient: string;
   avatarEmoji: string;
+  
+  // Preferences
   defaultDifficulty: Difficulty;
   weaknessFocus: string;
   feedbackDetail: 'Concise' | 'Deep Dive';
   learningStyle: LearningStyle;
   defaultPersonality: AIPersonality;
+  theme: 'System' | 'Light' | 'Dark' | 'OLED';
+  reducedMotion: boolean;
+  studyReminders?: boolean; 
+  reminderTime?: string; // HH:MM format
+  ambientTheme?: AmbientTheme;
+  
+  // Gamification & Stats
   streak: number; 
   questionsAnswered: number;
   correctAnswers: number;
   xp: number; // New XP system for levels
   lastStudyDate: number; 
-  theme: 'System' | 'Light' | 'Dark' | 'OLED';
-  reducedMotion: boolean;
-  ambientTheme?: AmbientTheme;
   
   // Subscription & Usage
   subscriptionTier: SubscriptionTier;
@@ -106,7 +130,7 @@ export interface HistoryItem {
   timestamp: number;
   mode: AppMode;
   title: string;
-  data: QuizState | ProfessorState;
+  data: QuizState | ProfessorState | ChatState;
   config?: QuizConfig;
 }
 

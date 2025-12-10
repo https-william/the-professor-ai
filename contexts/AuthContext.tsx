@@ -3,12 +3,14 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from '../services/firebase';
-import { SubscriptionTier, UserRole } from '../types';
+import { SubscriptionTier, UserRole, UserProfile } from '../types';
 
 interface ExtendedUser extends User {
   plan?: SubscriptionTier;
   role?: UserRole;
   isBanned?: boolean;
+  hasCompletedOnboarding?: boolean; // Added this
+  profile?: Partial<UserProfile>; // store fetched profile snippet
 }
 
 interface AuthContextType {
@@ -31,10 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userSnap = await getDoc(userDocRef);
 
       if (userSnap.exists()) {
-        // Existing User
         const userData = userSnap.data();
         
-        // SECURITY CHECK: BAN
         if (userData.isBanned) {
             await signOut(auth);
             setUser(null);
@@ -44,14 +44,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const extendedUser: ExtendedUser = {
           ...currentUser,
-          // FIRST MONTH OVERRIDE: Granting all users Supreme access until Jan 10.
-          plan: 'Excellentia Supreme', 
+          plan: 'Excellentia Supreme', // Launch Week Override
           role: userData.role || 'student',
-          isBanned: userData.isBanned || false
+          isBanned: userData.isBanned || false,
+          hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
+          profile: {
+             alias: userData.alias,
+             school: userData.school,
+             academicLevel: userData.academicLevel,
+             country: userData.country,
+             ambientTheme: userData.ambientTheme
+          }
         };
         setUser(extendedUser);
       } else {
-        // New User - Create Record
+        // Create minimal record if doesn't exist
         const newUser = {
           uid: currentUser.uid,
           email: currentUser.email,
@@ -59,22 +66,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           plan: 'Fresher',
           role: 'student',
           createdAt: serverTimestamp(),
-          isBanned: false
+          isBanned: false,
+          hasCompletedOnboarding: false // Explicitly false for new users
         };
         await setDoc(userDocRef, newUser);
         
         const extendedUser: ExtendedUser = {
           ...currentUser,
-          // FIRST MONTH OVERRIDE
-          plan: 'Excellentia Supreme', 
+          plan: 'Excellentia Supreme',
           role: 'student',
-          isBanned: false
+          isBanned: false,
+          hasCompletedOnboarding: false
         };
         setUser(extendedUser);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
-      // Fallback with Override
+      // Fallback
       const fallbackUser: ExtendedUser = {
           ...currentUser,
           plan: 'Excellentia Supreme',
