@@ -21,7 +21,8 @@ import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, SubscriptionTier, ChatState } from './types';
-import { logout, updateUserUsage, saveUserToFirestore } from './services/firebase';
+import { logout, updateUserUsage, saveUserToFirestore, createDuel } from './services/firebase';
+import { processFile } from './services/fileService';
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
@@ -54,6 +55,28 @@ const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [user, status]);
 
+  // Notification Polling Logic
+  useEffect(() => {
+    const checkReminder = () => {
+      if (!userProfile.studyReminders || !userProfile.reminderTime) return;
+      
+      const now = new Date();
+      const [targetHours, targetMinutes] = userProfile.reminderTime.split(':').map(Number);
+      
+      if (now.getHours() === targetHours && now.getMinutes() === targetMinutes && now.getSeconds() < 10) {
+         if (Notification.permission === 'granted') {
+             new Notification("The Professor", {
+                 body: "Class is in session. Do not be late.",
+                 icon: "/favicon.ico"
+             });
+         }
+      }
+    };
+
+    const interval = setInterval(checkReminder, 10000); 
+    return () => clearInterval(interval);
+  }, [userProfile]);
+
   useEffect(() => {
     if (!user) return;
     const savedProfile = loadUserProfile();
@@ -65,7 +88,6 @@ const App: React.FC = () => {
     if (user.plan) currentProfile.subscriptionTier = user.plan;
     currentProfile = updateStreak(currentProfile);
     
-    // Check for reminder permission
     if (currentProfile.studyReminders && Notification.permission === 'default') {
         Notification.requestPermission();
     }
@@ -96,7 +118,7 @@ const App: React.FC = () => {
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
-      setActiveHistoryId(Date.now().toString()); // Generate ID upfront
+      setActiveHistoryId(Date.now().toString()); 
       if (mode === 'CHAT') {
         const newState: ChatState = {
             messages: [],
@@ -149,7 +171,6 @@ const App: React.FC = () => {
       quizState.questions.forEach(q => { if (quizState.userAnswers[q.id] === q.correct_answer) score++; });
       setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
       
-      // XP Calculation (Max 10k)
       const xpGained = score * 50;
       let newXP = (userProfile.xp || 0) + xpGained;
       if (newXP > 10000) newXP = 10000;
@@ -172,6 +193,7 @@ const App: React.FC = () => {
       setQuizState({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null });
       setProfessorState({ sections: [] });
       setChatState({ messages: [], fileContext: '', fileName: '' });
+      setAppMode('EXAM'); 
       setActiveHistoryId(null);
     }
   };
@@ -192,7 +214,6 @@ const App: React.FC = () => {
   };
 
   const handleOpenFloatingChat = () => {
-      // Create a generic session if none exists
       if (status !== AppStatus.READY || appMode !== 'CHAT') {
           const newState: ChatState = {
               messages: [{
@@ -208,6 +229,51 @@ const App: React.FC = () => {
           setAppMode('CHAT');
           setStatus(AppStatus.READY);
           setActiveHistoryId(Date.now().toString());
+      }
+  };
+
+  const handleDuelStart = async (data: { wager: number, file: File }) => {
+      if (!user) return;
+      setStatus(AppStatus.PROCESSING_FILE);
+      try {
+          const processed = await processFile(data.file);
+          setStatusText("Initializing Arena...");
+          
+          const config: QuizConfig = {
+              difficulty: 'Hard',
+              questionType: 'Mixed',
+              questionCount: 10,
+              timerDuration: 'Limitless',
+              personality: 'Academic',
+              analogyDomain: 'General',
+              useOracle: true,
+              useWeaknessDestroyer: false
+          };
+
+          const questions = await generateQuizFromText(processed.content, config, userProfile);
+          
+          const duelId = await createDuel(user.uid, userProfile.alias, data.wager, processed.content, config, questions);
+          
+          alert(`Duel Created! Share this ID with your opponent: ${duelId}`);
+          
+          // Auto-start for host
+          const newState: QuizState = { 
+              questions, 
+              userAnswers: {}, 
+              flaggedQuestions: [], 
+              isSubmitted: false, 
+              score: 0, 
+              startTime: Date.now(), 
+              timeRemaining: null, 
+              focusStrikes: 0 
+          };
+          setQuizState(newState);
+          setAppMode('EXAM');
+          setStatus(AppStatus.READY);
+
+      } catch (e: any) {
+          setErrorMsg("Failed to create Duel: " + e.message);
+          setStatus(AppStatus.IDLE);
       }
   };
 
@@ -286,6 +352,7 @@ const App: React.FC = () => {
                     userProfile={userProfile} 
                     onShowSubscription={() => setIsSubscriptionOpen(true)}
                     onOpenProfile={() => setIsProfileOpen(true)}
+                    onDuelStart={handleDuelStart}
                 />
               </div>
             ) : null}

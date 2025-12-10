@@ -10,7 +10,7 @@ import {
   Auth
 } from "firebase/auth";
 import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
-import { SubscriptionTier, UserProfile } from "../types";
+import { SubscriptionTier, UserProfile, DuelState, QuizQuestion, QuizConfig } from "../types";
 
 // --- SECURE CONFIGURATION ---
 const getEnv = (key: string): string => {
@@ -107,7 +107,6 @@ export const saveUserToFirestore = async (userId: string, data: Partial<UserProf
     if (!db) return;
     try {
         const userRef = doc(db, "users", userId);
-        // Use setDoc with merge: true to create if not exists, or update if exists
         await setDoc(userRef, data, { merge: true });
     } catch (e) {
         console.error("Failed to sync user profile", e);
@@ -183,4 +182,68 @@ export const updateUserUsage = async (userId: string, usage: number) => {
   } catch(e) {
       // Ignore permission errors
   }
+};
+
+// --- DUEL SYSTEM ---
+
+export const createDuel = async (hostId: string, hostName: string, wager: number, content: string, quizConfig: QuizConfig, quizQuestions: QuizQuestion[]) => {
+    if (!db) throw new Error("Database not connected");
+    const duelData: Omit<DuelState, 'id'> = {
+        hostId,
+        hostName,
+        wager,
+        content,
+        quizConfig,
+        quizQuestions,
+        status: 'WAITING'
+    };
+    const docRef = await addDoc(collection(db, "duels"), duelData);
+    return docRef.id;
+};
+
+export const getDuel = async (duelId: string): Promise<DuelState | null> => {
+    if (!db) return null;
+    const docRef = doc(db, "duels", duelId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+        return { id: snap.id, ...snap.data() } as DuelState;
+    }
+    return null;
+};
+
+export const joinDuel = async (duelId: string, challengerId: string, challengerName: string) => {
+    if (!db) return;
+    const docRef = doc(db, "duels", duelId);
+    await updateDoc(docRef, {
+        challengerId,
+        challengerName,
+        status: 'ACTIVE'
+    });
+};
+
+export const submitDuelScore = async (duelId: string, userId: string, score: number, role: 'host' | 'challenger') => {
+    if (!db) return;
+    const docRef = doc(db, "duels", duelId);
+    const update = role === 'host' ? { hostScore: score } : { challengerScore: score };
+    await updateDoc(docRef, update);
+    
+    // Check if both scores are in to declare winner
+    const snap = await getDoc(docRef);
+    const data = snap.data();
+    if (data && data.hostScore !== undefined && data.challengerScore !== undefined) {
+        let winnerId = null;
+        if (data.hostScore > data.challengerScore) winnerId = data.hostId;
+        else if (data.challengerScore > data.hostScore) winnerId = data.challengerId;
+        else winnerId = 'DRAW';
+        
+        await updateDoc(docRef, { status: 'COMPLETED', winnerId });
+        
+        // Transfer XP logic (simplified)
+        if (winnerId && winnerId !== 'DRAW') {
+            // Winner gets 2x wager (their own back + opponent's)
+            // Implementation of actual XP transfer depends on a cloud function or trusted backend usually,
+            // but for MVP we can just log it or update strictly if admin.
+            // Here we assume the client updates their own XP upon seeing the win screen.
+        }
+    }
 };

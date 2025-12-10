@@ -7,32 +7,38 @@ export const CountdownTimer: React.FC = () => {
 
   useEffect(() => {
     // TARGET: January 10, 2025 at 00:00:00 UTC
-    // Timestamp: 1736467200000
-    const targetDate = 1736467200000;
+    // Fixed Timestamp ensures consistency regardless of timezone
+    const targetDate = new Date('2025-01-10T00:00:00Z').getTime();
 
-    const interval = setInterval(() => {
+    const calculateTime = () => {
       const now = new Date().getTime();
       const distance = targetDate - now;
 
       if (distance < 0) {
-        clearInterval(interval);
         setIsLive(false);
-      } else {
-        setIsLive(true);
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000)
-        });
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       }
+
+      setIsLive(true);
+      return {
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000)
+      };
+    };
+
+    // Initial cal
+    setTimeLeft(calculateTime());
+
+    const interval = setInterval(() => {
+      setTimeLeft(calculateTime());
     }, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
-  // Ensure it renders even if calculation takes a ms, or show 00
-  if (!isLive && timeLeft.days === 0) return null;
+  if (!isLive && timeLeft.days === 0 && timeLeft.seconds === 0) return null;
 
   return (
     <div className="w-full bg-[#0f172a] border-b border-amber-500/20 relative overflow-hidden group shadow-lg z-[60]">

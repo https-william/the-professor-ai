@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ProfessorState } from '../types';
 import { MermaidDiagram } from './MermaidDiagram';
+import { KnowledgeGraph } from './KnowledgeGraph';
 
 interface ProfessorViewProps {
   state: ProfessorState;
@@ -35,12 +36,13 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
     }
   };
 
-  // Cleanup speech on unmount or section change
   React.useEffect(() => {
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     return () => window.speechSynthesis.cancel();
   }, [currentSectionIdx]);
+
+  const topics = state.sections.map(s => ({ id: s.id, title: s.title }));
 
   return (
     <div className="max-w-4xl mx-auto pb-24 px-4 sm:px-6">
@@ -68,25 +70,36 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
           </div>
        </div>
 
-       {/* Progress Bar */}
-       <div className="h-1 w-full bg-white/10 rounded-full mb-8">
-          <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${((currentSectionIdx + 1) / state.sections.length) * 100}%` }}></div>
-       </div>
+       {/* Knowledge Graph Nav */}
+       <KnowledgeGraph 
+          topics={topics} 
+          currentId={section.id} 
+          onSelect={(id) => {
+             const idx = state.sections.findIndex(s => s.id === id);
+             if (idx >= 0) setCurrentSectionIdx(idx);
+          }} 
+       />
 
-       <div className="glass-panel rounded-3xl p-6 md:p-12 animate-slide-up-fade">
-          <h1 className="text-2xl md:text-5xl font-serif font-bold text-white mb-8 leading-tight">{section.title}</h1>
+       <div className="glass-panel rounded-3xl p-6 md:p-12 animate-slide-up-fade relative overflow-hidden">
+          {/* Section Indicator */}
+          <div className="absolute top-4 right-6 text-[10px] font-bold font-mono text-gray-600 uppercase tracking-widest">
+             Section {currentSectionIdx + 1} / {state.sections.length}
+          </div>
+
+          <h1 className="text-2xl md:text-4xl font-serif font-bold text-white mb-8 leading-tight">{section.title}</h1>
           <div className="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed mb-8 text-sm md:text-base">{section.content}</div>
 
           {section.diagram_markdown && (
-             <div className="mb-8">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2">Visual Concept</h4>
+             <div className="mb-8 bg-black/20 p-4 rounded-xl border border-white/5">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-2 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Visual Architecture</h4>
                 <MermaidDiagram chart={section.diagram_markdown} />
              </div>
           )}
 
-          <div className="bg-amber-900/20 p-6 rounded-2xl border border-amber-500/20 mb-6">
-             <h4 className="text-amber-500 text-xs font-bold uppercase tracking-widest mb-2">Analogy</h4>
-             <p className="text-amber-100 italic text-base md:text-lg">"{section.analogy}"</p>
+          <div className="bg-amber-900/10 p-6 rounded-2xl border border-amber-500/20 mb-6 relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+             <h4 className="text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-2">Feynman Analogy</h4>
+             <p className="text-amber-100 italic text-base md:text-lg font-serif">"{section.analogy}"</p>
           </div>
        </div>
 
@@ -94,7 +107,7 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
        <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 md:static md:bg-transparent md:border-none md:p-0 md:mt-8 z-30">
           <div className="flex gap-4 max-w-4xl mx-auto">
              <button onClick={() => setCurrentSectionIdx(Math.max(0, currentSectionIdx - 1))} disabled={currentSectionIdx === 0} className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-bold uppercase text-xs hover:bg-white/10 disabled:opacity-30">← Previous</button>
-             <button onClick={() => { if (currentSectionIdx < state.sections.length - 1) setCurrentSectionIdx(currentSectionIdx + 1); else onExit(); }} className="flex-[2] py-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold uppercase text-xs shadow-lg">{currentSectionIdx === state.sections.length - 1 ? 'Complete' : 'Next →'}</button>
+             <button onClick={() => { if (currentSectionIdx < state.sections.length - 1) setCurrentSectionIdx(currentSectionIdx + 1); else onExit(); }} className="flex-[2] py-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold uppercase text-xs shadow-lg">{currentSectionIdx === state.sections.length - 1 ? 'Complete Class' : 'Next Concept →'}</button>
           </div>
        </div>
     </div>

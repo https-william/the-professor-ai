@@ -42,6 +42,23 @@ export interface ChatMessage {
   role: 'user' | 'model';
   content: string;
   timestamp: number;
+  image?: string; // Base64 image
+}
+
+export interface DuelState {
+  id: string;
+  hostId: string;
+  challengerId?: string;
+  wager: number;
+  content: string; // Text content used to generate
+  quizConfig: QuizConfig;
+  quizQuestions: QuizQuestion[];
+  hostScore?: number;
+  challengerScore?: number;
+  hostName: string;
+  challengerName?: string;
+  status: 'WAITING' | 'ACTIVE' | 'COMPLETED';
+  winnerId?: string;
 }
 
 export enum AppStatus {
@@ -52,8 +69,8 @@ export enum AppStatus {
   ERROR = 'ERROR'
 }
 
-export type InputMode = 'FILE' | 'TEXT';
-export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT';
+export type InputMode = 'FILE' | 'TEXT' | 'CAMERA';
+export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT' | 'DUEL';
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Nightmare';
 export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Mixed';
 export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '45m' | '1h' | '1h 30m' | '2h';

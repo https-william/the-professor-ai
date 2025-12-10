@@ -61,7 +61,6 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
     const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer } = config;
 
-    // Optimized prompt for speed
     let typeInstruction: string = questionType;
     if (questionType === 'Mixed') {
       typeInstruction = "a mix of Multiple Choice, True/False, and Fill in the Gap";
@@ -72,15 +71,29 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
     if (useOracle) instructions += " Predict probable exam questions.";
     if (useWeaknessDestroyer && userProfile?.weaknessFocus) instructions += ` Focus heavily on ${userProfile.weaknessFocus}.`;
 
-    const prompt = `
+    const promptText = `
       ${instructions}
       Return JSON array of objects with keys: question, options (array), correct_answer, explanation.
       Context: ${text.substring(0, 30000)} 
     `;
 
+    // Handle Image Content Placeholder
+    let contentParts: any[] = [{ text: promptText }];
+    
+    if (text.includes("[IMAGE_DATA:")) {
+        // Extract base64 image data
+        const matches = text.match(/\[IMAGE_DATA:(.*?)\]/);
+        if (matches && matches[1]) {
+            contentParts = [
+                { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
+                { text: instructions + " Analyze this image content for the exam." }
+            ];
+        }
+    }
+
     const response = await ai.models.generateContent({
       model: model,
-      contents: prompt,
+      contents: { role: 'user', parts: contentParts },
       config: {
         systemInstruction: "You are an automated exam generator. Output raw JSON only. No markdown. No chatter.",
         responseMimeType: "application/json",
@@ -120,16 +133,28 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
     const model = "gemini-2.5-flash";
     const { personality, analogyDomain } = config;
 
-    const prompt = `
+    const promptText = `
       Teach this content. Break into logical sections. Brief content analysis.
       Persona: ${personality}. Analogy: ${analogyDomain}.
       Include a Mermaid.js diagram code in 'diagram_markdown' if complex.
       Context: ${text.substring(0, 30000)}
     `;
 
+    let contentParts: any[] = [{ text: promptText }];
+    
+    if (text.includes("[IMAGE_DATA:")) {
+        const matches = text.match(/\[IMAGE_DATA:(.*?)\]/);
+        if (matches && matches[1]) {
+            contentParts = [
+                { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
+                { text: promptText + " Analyze this image visually." }
+            ];
+        }
+    }
+
     const response = await ai.models.generateContent({
       model: model,
-      contents: prompt,
+      contents: { role: 'user', parts: contentParts },
       config: {
         systemInstruction: `You are an expert educator. Output raw JSON only. Be concise and fast.`,
         responseMimeType: "application/json",

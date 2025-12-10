@@ -21,8 +21,25 @@ export const QuizView: React.FC<QuizViewProps> = ({
   onReset,
   onTimeExpired
 }) => {
-  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining } = quizState;
+  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime } = quizState;
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+  const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
+
+  // Active Timer Logic
+  useEffect(() => {
+    if (isSubmitted || timeLeft === null) return;
+
+    if (timeLeft <= 0) {
+      onTimeExpired();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, isSubmitted, onTimeExpired]);
 
   // Focus Mode Logic
   useEffect(() => {
@@ -176,9 +193,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
                  </span>
              </div>
              
-             {/* Timer */}
+             {/* Active Timer */}
              <div className="font-mono text-sm sm:text-xl font-bold text-white tracking-widest bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 min-w-[70px] text-center">
-                {timeRemaining ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2,'0')}` : '∞'}
+                {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2,'0')}` : '∞'}
              </div>
           </div>
           

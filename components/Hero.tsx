@@ -60,15 +60,16 @@ export const Hero: React.FC = () => {
          ></div>
       </div>
 
-      {/* The Hook */}
-      <div className="mb-8 animate-slide-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
-        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 transition-all cursor-default group hover:border-blue-500/30">
+      {/* The Hook: System Breach */}
+      <div className="mb-10 animate-slide-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
+        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-red-950/30 border border-red-500/30 backdrop-blur-md cursor-default group shadow-[0_0_20px_rgba(220,38,38,0.2)]">
            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
            </span>
-           <span className="text-xs font-mono text-blue-300 uppercase tracking-widest group-hover:text-blue-200 transition-colors">
-              <DecryptedText text="NEURAL LINK :: ESTABLISHED" />
+           <span className="text-xs font-mono text-red-400 uppercase tracking-widest group-hover:text-red-300 transition-colors flex items-center gap-2">
+              <span className="animate-pulse">⚠</span>
+              <DecryptedText text="SYSTEM COMPROMISED: INTELLIGENCE LEVEL CRITICAL" />
            </span>
         </div>
       </div>
