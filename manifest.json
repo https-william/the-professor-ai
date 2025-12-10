@@ -1,6 +1,6 @@
 {
-  "short_name": "The Professor",
-  "name": "The Professor",
+  "short_name": "The Professor AI",
+  "name": "The Professor AI",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3062/3062634.png",
@@ -16,5 +16,6 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#050505"
+  "background_color": "#050505",
+  "orientation": "portrait"
 }

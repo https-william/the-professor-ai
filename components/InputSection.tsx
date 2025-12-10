@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, AppMode, AIPersonality, AnalogyDomain, UserProfile } from '../types';
 import { processFile } from '../services/fileService';
@@ -377,9 +376,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
             {/* Sticky Actions Footer */}
             <div className="p-6 border-t border-white/10 bg-[#0a0a0a] flex flex-col sm:flex-row gap-4 items-center justify-end shrink-0">
-               <button onClick={() => setShowDuelModal(true)} disabled={isLoading} className="w-full sm:w-auto px-6 py-4 rounded-xl bg-purple-900/20 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                  Duel Challenge
+               <button onClick={() => setShowDuelModal(true)} disabled={isLoading} className="w-full sm:w-auto px-6 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 relative overflow-hidden group">
+                  <span className="relative z-10 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    Duel Challenge
+                  </span>
+                  <div className="absolute top-0 right-0 p-1">
+                     <span className="text-[8px] bg-purple-500 text-black font-bold px-1.5 rounded">SCHOLAR</span>
+                  </div>
                </button>
                <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>

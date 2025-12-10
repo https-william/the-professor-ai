@@ -1,28 +1,29 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
-import { QuizView } from './components/QuizView';
-import { ProfessorView } from './components/ProfessorView';
-import { ChatView } from './components/ChatView';
-import { HistorySidebar } from './components/HistorySidebar';
 import { LoadingOverlay } from './components/LoadingOverlay';
+import { HistorySidebar } from './components/HistorySidebar';
 import { UserProfileModal } from './components/UserProfileModal';
 import { AboutModal } from './components/AboutModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
 import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/LandingPage';
-import { AdminDashboard } from './components/AdminDashboard';
 import { CountdownTimer } from './components/CountdownTimer';
 import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, SubscriptionTier, ChatState } from './types';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState } from './types';
 import { logout, updateUserUsage, saveUserToFirestore, createDuel } from './services/firebase';
 import { processFile } from './services/fileService';
+
+// Lazy Load Heavy Components
+const QuizView = React.lazy(() => import('./components/QuizView').then(module => ({ default: module.QuizView })));
+const ProfessorView = React.lazy(() => import('./components/ProfessorView').then(module => ({ default: module.ProfessorView })));
+const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView })));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 
 const App: React.FC = () => {
   const { user, loading } = useAuth();
@@ -116,6 +117,25 @@ const App: React.FC = () => {
     setOnboardingStep('COMPLETE');
   };
 
+  const parseDuration = (duration: string): number | null => {
+      if (duration === 'Limitless') return null;
+      
+      // Parse "1h 30m" format
+      let totalSeconds = 0;
+      
+      const hourMatch = duration.match(/(\d+)h/);
+      if (hourMatch) {
+          totalSeconds += parseInt(hourMatch[1]) * 3600;
+      }
+      
+      const minMatch = duration.match(/(\d+)m/);
+      if (minMatch) {
+          totalSeconds += parseInt(minMatch[1]) * 60;
+      }
+      
+      return totalSeconds > 0 ? totalSeconds : null;
+  };
+
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
       setActiveHistoryId(Date.now().toString()); 
@@ -132,7 +152,7 @@ const App: React.FC = () => {
       }
       setStatus(AppStatus.GENERATING_CONTENT);
       setErrorMsg(null);
-      const timeRemaining = config.timerDuration === 'Limitless' ? null : parseInt(config.timerDuration) * 60;
+      const timeRemaining = parseDuration(config.timerDuration);
 
       if (mode === 'EXAM') {
         setStatusText("Constructing Exam...");
@@ -336,38 +356,44 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 pt-4 md:pt-8 min-h-[calc(100vh-64px)] relative z-10">
         {errorMsg && <div className="mb-8 p-4 bg-red-900/10 border border-red-500/30 rounded-xl text-red-500 text-sm font-bold">{errorMsg} <button onClick={() => setErrorMsg(null)} className="float-right">✕</button></div>}
         
-        {appMode === 'ADMIN' && isAdmin ? <AdminDashboard /> : (
-          <>
-            {status === AppStatus.IDLE || status === AppStatus.ERROR ? (
-              <div className="space-y-6 md:space-y-12 pb-20">
-                {appMode === 'EXAM' && <Hero />}
-                {appMode === 'PROFESSOR' && <div className="text-center py-12"><h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">What shall we master?</h1><p className="text-xl opacity-60">"If you can't explain it simply, you don't understand it."</p></div>}
-                
-                <InputSection 
-                    onProcess={handleProcess} 
-                    isLoading={false} 
-                    appMode={appMode} 
-                    setAppMode={setAppMode} 
-                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
-                    userProfile={userProfile} 
-                    onShowSubscription={() => setIsSubscriptionOpen(true)}
-                    onOpenProfile={() => setIsProfileOpen(true)}
-                    onDuelStart={handleDuelStart}
-                />
-              </div>
-            ) : null}
+        <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+        }>
+            {appMode === 'ADMIN' && isAdmin ? <AdminDashboard /> : (
+              <>
+                {status === AppStatus.IDLE || status === AppStatus.ERROR ? (
+                  <div className="space-y-6 md:space-y-12 pb-20">
+                    {appMode === 'EXAM' && <Hero />}
+                    {appMode === 'PROFESSOR' && <div className="text-center py-12"><h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">What shall we master?</h1><p className="text-xl opacity-60">"If you can't explain it simply, you don't understand it."</p></div>}
+                    
+                    <InputSection 
+                        onProcess={handleProcess} 
+                        isLoading={false} 
+                        appMode={appMode} 
+                        setAppMode={setAppMode} 
+                        defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
+                        userProfile={userProfile} 
+                        onShowSubscription={() => setIsSubscriptionOpen(true)}
+                        onOpenProfile={() => setIsProfileOpen(true)}
+                        onDuelStart={handleDuelStart}
+                    />
+                  </div>
+                ) : null}
 
-            {(status === AppStatus.PROCESSING_FILE || status === AppStatus.GENERATING_CONTENT) && <LoadingOverlay status={statusText} type={appMode === 'ADMIN' ? 'EXAM' : (appMode === 'CHAT' ? 'PROFESSOR' : appMode)} />}
-            
-            {status === AppStatus.READY && (
-              <div className="h-full">
-                {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
-                {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} />}
-                {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
-              </div>
+                {(status === AppStatus.PROCESSING_FILE || status === AppStatus.GENERATING_CONTENT) && <LoadingOverlay status={statusText} type={(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'PROFESSOR' : 'EXAM'} />}
+                
+                {status === AppStatus.READY && (
+                  <div className="h-full">
+                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
+                    {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} />}
+                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
+        </Suspense>
       </main>
 
       {/* Floating Chat Button */}

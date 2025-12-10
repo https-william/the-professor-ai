@@ -1,11 +1,14 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from '../services/firebase';
 import { SubscriptionTier, UserRole, UserProfile } from '../types';
 
-interface ExtendedUser extends User {
+export interface ExtendedUser extends User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
   plan?: SubscriptionTier;
   role?: UserRole;
   isBanned?: boolean;
@@ -44,6 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const extendedUser: ExtendedUser = {
           ...currentUser,
+          // Explicitly map base User properties to satisfy TS if needed, though spread usually works
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
           plan: 'Excellentia Supreme', // Launch Week Override
           role: userData.role || 'student',
           isBanned: userData.isBanned || false,
@@ -73,6 +81,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const extendedUser: ExtendedUser = {
           ...currentUser,
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
           plan: 'Excellentia Supreme',
           role: 'student',
           isBanned: false,
@@ -85,6 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fallback
       const fallbackUser: ExtendedUser = {
           ...currentUser,
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
           plan: 'Excellentia Supreme',
           role: 'student'
       };

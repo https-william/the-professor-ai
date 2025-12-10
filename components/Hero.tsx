@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 
 // Decrypted Text Component
@@ -55,21 +54,21 @@ export const Hero: React.FC = () => {
            style={{ transform: `translateY(${scrollY * 0.2}px)` }}
          ></div>
          <div 
-           className="absolute bottom-[20%] right-[10%] w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] will-change-transform opacity-60"
+           className="absolute bottom-[20%] right-[10%] w-80 h-80 bg-cyan-500/10 rounded-full blur-[100px] will-change-transform opacity-60"
            style={{ transform: `translateY(-${scrollY * 0.1}px)` }}
          ></div>
       </div>
 
-      {/* The Hook: System Breach */}
+      {/* The Hook: System Status */}
       <div className="mb-10 animate-slide-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
-        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-red-950/30 border border-red-500/30 backdrop-blur-md cursor-default group shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-cyan-950/30 border border-cyan-500/30 backdrop-blur-md cursor-default group shadow-[0_0_20px_rgba(6,182,212,0.2)]">
            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
            </span>
-           <span className="text-xs font-mono text-red-400 uppercase tracking-widest group-hover:text-red-300 transition-colors flex items-center gap-2">
-              <span className="animate-pulse">⚠</span>
-              <DecryptedText text="SYSTEM COMPROMISED: INTELLIGENCE LEVEL CRITICAL" />
+           <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest group-hover:text-cyan-300 transition-colors flex items-center gap-2">
+              <span className="animate-pulse">⚡</span>
+              <DecryptedText text="SYSTEM ONLINE: INTELLIGENCE OPTIMIZED" />
            </span>
         </div>
       </div>
