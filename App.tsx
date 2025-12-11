@@ -276,6 +276,7 @@ const App: React.FC = () => {
   const handleDuelStart = async (data: { wager: number, file: File }) => {
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
+      setErrorMsg(null);
       try {
           const processed = await processFile(data.file);
           setStatusText("Initializing Arena...");
@@ -313,7 +314,8 @@ const App: React.FC = () => {
           setStatus(AppStatus.READY);
 
       } catch (e: any) {
-          setErrorMsg("Failed to create Duel: " + e.message);
+          console.error(e);
+          setErrorMsg(e.message || "Failed to start duel.");
           setStatus(AppStatus.IDLE);
       }
   };
@@ -394,7 +396,20 @@ const App: React.FC = () => {
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 pt-4 md:pt-8 min-h-[calc(100vh-64px)] relative z-10">
-        {errorMsg && <div className="mb-8 p-4 bg-red-900/10 border border-red-500/30 rounded-xl text-red-500 text-sm font-bold">{errorMsg} <button onClick={() => setErrorMsg(null)} className="float-right">✕</button></div>}
+        
+        {/* Error Banner with Business Styling */}
+        {errorMsg && (
+            <div className="mb-8 p-4 bg-[#1a0f0f] border-l-4 border-red-500 rounded-r-xl shadow-lg flex items-start gap-3 animate-slide-in">
+                <div className="text-red-500 mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                </div>
+                <div className="flex-1">
+                    <h4 className="text-sm font-bold text-red-400 uppercase tracking-wide">System Alert</h4>
+                    <p className="text-sm text-gray-400 mt-1">{errorMsg}</p>
+                </div>
+                <button onClick={() => setErrorMsg(null)} className="text-gray-500 hover:text-white transition-colors">✕</button>
+            </div>
+        )}
         
         <Suspense fallback={
             <div className="flex items-center justify-center h-64">

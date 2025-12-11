@@ -18,30 +18,67 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+// --- STRATEGIC FIX: HYDRAULIC RETRY PROTOCOL ---
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Increased retries to 8 and base delay to 1.5s to weather API spikes
+const withRetry = async <T>(operation: () => Promise<T>, retries = 8, delay = 1500): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error: any) {
+    const msg = (error.message || '').toLowerCase();
+    const status = error.status || error.response?.status;
+    
+    // Check for common transient errors, status codes, or error strings
+    const isTransient = 
+        status === 500 || 
+        status === 502 || 
+        status === 503 || 
+        status === 429 || 
+        msg.includes('overloaded') || 
+        msg.includes('fetch failed') ||
+        msg.includes('network') ||
+        msg.includes('service unavailable') ||
+        msg.includes('internal error');
+
+    if (retries > 0 && isTransient) {
+      // Add significant randomness (jitter) to prevent thundering herd problem with 10k users
+      const jitter = Math.random() * 2000;
+      const nextDelay = delay * 1.5 + jitter;
+      console.warn(`AI Network Traffic (${status || 'Load'}). Queuing request... (${retries} attempts left)`);
+      
+      await wait(nextDelay);
+      return withRetry(operation, retries - 1, nextDelay); 
+    }
+    throw error;
+  }
+};
+
 // Robust Error Handler
 const handleGeminiError = (error: any): never => {
   console.error("Gemini API Error Detail:", error);
 
-  const msg = error.message || '';
+  const msg = (error.message || '').toLowerCase();
   const status = error.status || 0;
 
-  if (msg.includes('API_KEY') || status === 400 || status === 401 || status === 403) {
+  if (msg.includes('api_key') || status === 400 || status === 401 || status === 403) {
     throw new Error("Access Denied: The API Key is invalid or expired.");
   }
   if (status === 429 || msg.includes('429') || msg.includes('quota')) {
-    throw new Error("Neural Overload: Rate Limit Reached. Please wait 30 seconds.");
+    throw new Error("Neural Overload: System is busy. Please wait 30s and try again.");
   }
-  if (status === 500 || status === 502 || status === 503) {
-    throw new Error("Campus Maintenance: AI Servers are temporarily down.");
+  if (status === 500 || status === 502 || status === 503 || msg.includes('overloaded')) {
+    // If we reach here, retries failed.
+    throw new Error("Campus Maintenance: High traffic volume. Please try again in 2 minutes.");
   }
-  if (msg.includes('SAFETY') || msg.includes('BLOCKED')) {
-    throw new Error("Content Restricted: Safety filters triggered.");
+  if (msg.includes('safety') || msg.includes('blocked')) {
+    throw new Error("Content Restricted: Safety filters triggered. Try rewording your notes.");
   }
-  if (msg.includes('JSON')) {
-    throw new Error("Curriculum Error: Malformed lesson plan. Try again.");
+  if (msg.includes('json')) {
+    throw new Error("Curriculum Error: The AI failed to format the lesson plan. Try again.");
   }
 
-  throw new Error(`System Error: ${msg || "An unexpected error occurred."}`);
+  throw new Error(`System Error: ${error.message || "An unexpected error occurred."}`);
 };
 
 // Safety Middleware
@@ -72,10 +109,11 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
     if (useWeaknessDestroyer && userProfile?.weaknessFocus) instructions += ` Focus heavily on ${userProfile.weaknessFocus}.`;
     if (isCramMode) instructions += " Questions must be short, rapid-fire style for speed reading.";
 
+    // Context limit to 100k for better document coverage
     const promptText = `
       ${instructions}
       Return JSON array of objects with keys: question, options (array), correct_answer, explanation.
-      Context: ${text.substring(0, 30000)} 
+      Context: ${text.substring(0, 100000)} 
     `;
 
     // Handle Image Content Placeholder
@@ -92,27 +130,30 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
         }
     }
 
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: { role: 'user', parts: contentParts },
-      config: {
-        systemInstruction: "You are an automated exam generator. Output raw JSON only. No markdown. No chatter.",
-        temperature: 0.7, // Optimized for creativity vs speed
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              question: { type: Type.STRING },
-              options: { type: Type.ARRAY, items: { type: Type.STRING } },
-              correct_answer: { type: Type.STRING },
-              explanation: { type: Type.STRING }
-            },
-            required: ["question", "options", "correct_answer", "explanation"]
+    // Wrap in Retry Logic
+    const response = await withRetry(async () => {
+        return await ai.models.generateContent({
+          model: model,
+          contents: { role: 'user', parts: contentParts },
+          config: {
+            systemInstruction: "You are an automated exam generator. Output raw JSON only. No markdown. No chatter.",
+            temperature: 0.7, 
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  correct_answer: { type: Type.STRING },
+                  explanation: { type: Type.STRING }
+                },
+                required: ["question", "options", "correct_answer", "explanation"]
+              }
+            }
           }
-        }
-      }
+        });
     });
 
     if (response.text) {
@@ -139,7 +180,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
       Teach this content. Break into logical sections. Brief content analysis.
       Persona: ${personality}. Analogy: ${analogyDomain}.
       Include a Mermaid.js diagram code in 'diagram_markdown' if complex.
-      Context: ${text.substring(0, 30000)}
+      Context: ${text.substring(0, 100000)}
     `;
 
     let contentParts: any[] = [{ text: promptText }];
@@ -154,28 +195,31 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
         }
     }
 
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: { role: 'user', parts: contentParts },
-      config: {
-        systemInstruction: `You are an expert educator. Output raw JSON only. Be concise and fast.`,
-        temperature: 0.7,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              content: { type: Type.STRING },
-              analogy: { type: Type.STRING },
-              key_takeaway: { type: Type.STRING },
-              diagram_markdown: { type: Type.STRING }
-            },
-            required: ["title", "content", "analogy", "key_takeaway"]
+    // Wrap in Retry Logic
+    const response = await withRetry(async () => {
+        return await ai.models.generateContent({
+          model: model,
+          contents: { role: 'user', parts: contentParts },
+          config: {
+            systemInstruction: `You are an expert educator. Output raw JSON only. Be concise and fast.`,
+            temperature: 0.7,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  content: { type: Type.STRING },
+                  analogy: { type: Type.STRING },
+                  key_takeaway: { type: Type.STRING },
+                  diagram_markdown: { type: Type.STRING }
+                },
+                required: ["title", "content", "analogy", "key_takeaway"]
+              }
+            }
           }
-        }
-      }
+        });
     });
 
     if (response.text) {
@@ -213,7 +257,7 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
         });
 
         // Add file context to system instruction if text, or prepend to first message
-        const systemInstruction = `You are The Professor. Be precise, concise, and academic. Context: ${fileContext.substring(0, 5000)}.`;
+        const systemInstruction = `You are The Professor. Be precise, concise, and academic. Context: ${fileContext.substring(0, 10000)}.`;
 
         const chat = ai.chats.create({
             model: model,
@@ -225,7 +269,11 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
             history: recentHistory
         });
 
-        const response = await chat.sendMessage({ message: newMessage });
+        // Wrap in Retry Logic
+        const response = await withRetry(async () => {
+            return await chat.sendMessage({ message: newMessage });
+        });
+        
         return response.text || "I cannot answer that right now.";
 
     } catch (error) {
@@ -242,13 +290,15 @@ export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'E
         let prompt = `Rewrite this explanation to be extremely simple, as if explaining to a 5-year-old. Explanation: "${explanation}"`;
         if (type === 'ELA') prompt = `Rewrite this explanation in the style of ${context}. Explanation: "${explanation}"`;
 
-        const response = await ai.models.generateContent({
-            model: model,
-            contents: prompt,
-            config: {
-                maxOutputTokens: 150,
-                temperature: 0.8
-            }
+        const response = await withRetry(async () => {
+            return await ai.models.generateContent({
+                model: model,
+                contents: prompt,
+                config: {
+                    maxOutputTokens: 150,
+                    temperature: 0.8
+                }
+            });
         });
         
         return response.text || explanation;

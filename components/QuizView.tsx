@@ -33,7 +33,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
 
   // Cram Mode: 10s per question logic
-  // If isCramMode is true, timeLeft acts as the per-question timer
   useEffect(() => {
       if (isCramMode && !isSubmitted) {
           setTimeLeft(10); // Reset to 10s on question change in Cram Mode
@@ -46,7 +45,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
     if (timeLeft <= 0) {
       if (isCramMode) {
-          // In Cram Mode, timeout means skip to next or submit
           if (currentQuestionIdx < questions.length - 1) {
               setCurrentQuestionIdx(prev => prev + 1);
           } else {
@@ -88,21 +86,71 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const currentQ = questions[currentQuestionIdx];
   const total = questions.length;
   
-  // Difficulty Aura Logic (Enhanced)
   const getAuraClass = () => {
       if (isCramMode) return 'shadow-[0_0_150px_rgba(6,182,212,0.35)] border-cyan-500/50 bg-[#001015]';
       if (difficulty === 'Nightmare') return 'shadow-[0_0_150px_rgba(126,34,206,0.35)] border-purple-600/50 bg-[#0f001a]';
       if (difficulty === 'Hard') return 'shadow-[0_0_80px_rgba(239,68,68,0.25)] border-red-500/40 bg-[#1a0505]';
       if (difficulty === 'Easy') return 'border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.1)]';
-      return 'border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.1)]'; // Medium
+      return 'border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.1)]'; 
   };
 
   const getFeedback = (score: number, total: number) => {
       const percentage = (score / total) * 100;
-      if (percentage < 50) return "Abysmal. My grandmother reads faster than you think. See me immediately.";
-      if (percentage < 70) return "Mediocre. You have memorized, but you have not understood. Do it again.";
-      if (percentage < 90) return "Acceptable. You are beginning to grasp the basics. Do not get comfortable.";
-      return "Excellentia. You may actually survive the final. Keep this pace.";
+      
+      const abysmal = [
+          "My grandmother reads faster than you think. See me immediately.",
+          "Academic probation is calling. Pick up.",
+          "I have seen better performance from a random number generator.",
+          "You are cooking, but the kitchen is on fire.",
+          "Abysmal. Absolute chaos.",
+          "This is not a result. This is a cry for help.",
+          "I calculated the probability of this score. It was zero.",
+          "Did you perhaps read the textbook upside down?",
+          "Your neural network appears to be offline.",
+          "We do not speak of this day."
+      ];
+      
+      const mediocre = [
+          "Mediocre. You have memorized, but you have not understood.",
+          "C's get degrees, but they don't get respect.",
+          "You are operating at 40% capacity. Wake up.",
+          "Not terrible. Not good. Just... existing.",
+          "Warm body, cold mind. Try harder.",
+          "You guessed half of these, didn't you?",
+          "A solid effort. For a freshman.",
+          "You survived. But at what cost?",
+          "The bare minimum. My favorite disappointment."
+      ];
+      
+      const good = [
+          "Acceptable. You are beginning to grasp the basics.",
+          "Solid work. Now do it again, faster.",
+          "You might actually survive the final.",
+          "Competence detected. Proceeding to next level.",
+          "Good. But 'Good' is the enemy of 'Great'.",
+          "Your synapses are firing correctly. Finally.",
+          "We are making progress. Do not get complacent.",
+          "Not bad. Not bad at all."
+      ];
+      
+      const excellent = [
+          "Excellentia. You are an Academic Weapon.",
+          "The Dean sends his regards.",
+          "Absolute mastery. Go touch grass.",
+          "You are the one who knocks.",
+          "God Mode Activated. The simulation is breaking.",
+          "Flawless victory. Now teach the class.",
+          "I am... surprisingly proud.",
+          "Your intellect is terrifying. Keep going.",
+          "Einstein would like a word."
+      ];
+
+      const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
+      if (percentage < 40) return pick(abysmal);
+      if (percentage < 70) return pick(mediocre);
+      if (percentage < 90) return pick(good);
+      return pick(excellent);
   };
 
   const getXPFeedback = (score: number) => {

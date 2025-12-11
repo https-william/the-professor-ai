@@ -196,26 +196,51 @@ export const updateUserUsage = async (userId: string, usage: number) => {
 // --- DUEL SYSTEM ---
 
 export const createDuel = async (hostId: string, hostName: string, wager: number, content: string, quizConfig: QuizConfig, quizQuestions: QuizQuestion[]) => {
-    if (!db) throw new Error("Database not connected");
-    const duelData: Omit<DuelState, 'id'> = {
-        hostId,
-        hostName,
-        wager,
-        content,
-        quizConfig,
-        quizQuestions,
-        status: 'WAITING'
-    };
-    const docRef = await addDoc(collection(db, "duels"), duelData);
-    return docRef.id;
+    if (!db) throw new Error("Database not connected. Check your internet or configuration.");
+    
+    try {
+        const duelData: Omit<DuelState, 'id'> = {
+            hostId,
+            hostName,
+            wager,
+            content,
+            quizConfig,
+            quizQuestions,
+            status: 'WAITING'
+        };
+        const docRef = await addDoc(collection(db, "duels"), duelData);
+        return docRef.id;
+    } catch (error: any) {
+        // --- ERROR SANITIZATION ---
+        // Catch the raw Firebase permission error and show a "Business Safe" message to the user
+        // while logging the critical fix to the developer.
+        
+        const msg = (error.message || '').toLowerCase();
+        const code = error.code || '';
+        
+        if (code === 'permission-denied' || msg.includes("permission") || msg.includes("sufficient")) {
+            console.error("🔥 CRITICAL ADMIN ERROR: Firestore Security Rules are blocking writes.");
+            console.error("FIX: Go to Firebase Console > Build > Firestore > Rules.");
+            console.error("ADD: match /duels/{duelId} { allow read, write: if request.auth != null; }");
+            
+            throw new Error("The Duel Arena is temporarily locked by the Dean for maintenance. Please try again later.");
+        }
+        
+        console.error("Duel Creation Failed:", error);
+        throw new Error("Failed to initialize Duel. Connection to the Arena was interrupted.");
+    }
 };
 
 export const getDuel = async (duelId: string): Promise<DuelState | null> => {
     if (!db) return null;
-    const docRef = doc(db, "duels", duelId);
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-        return { id: snap.id, ...snap.data() } as DuelState;
+    try {
+        const docRef = doc(db, "duels", duelId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            return { id: snap.id, ...snap.data() } as DuelState;
+        }
+    } catch (error) {
+        console.error("Get Duel Error:", error);
     }
     return null;
 };

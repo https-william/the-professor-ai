@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface LoadingOverlayProps {
@@ -13,20 +14,45 @@ const TIPS = [
   "Spaced repetition is the key to long-term memory.",
   "Multitasking is a myth. Focus on one concept at a time.",
   "Sleep consolidates memory. Don't pull an all-nighter.",
-  "Teaching someone else is the highest form of learning."
+  "Teaching someone else is the highest form of learning.",
+  "Mistakes are proof that you are trying.",
+  "Discipline weighs ounces, regret weighs tons."
+];
+
+const WAIT_MESSAGES = [
+  "Consulting the archives...",
+  "Synthesizing neural pathways...",
+  "Calibrating difficulty vectors...",
+  "Traffic is high. Queuing your request...",
+  "Rerouting power to the core...",
+  "Constructing your academic arsenal...",
+  "Almost there. Stay focused."
 ];
 
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type }) => {
   const isProfessor = type === 'PROFESSOR';
   const [tipIndex, setTipIndex] = useState(0);
+  const [waitIndex, setWaitIndex] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const tipInterval = setInterval(() => {
       setTipIndex((prev) => (prev + 1) % TIPS.length);
     }, 4000);
-    return () => clearInterval(interval);
+    
+    // Cycle status messages every 5 seconds to reassure user during retries
+    const waitInterval = setInterval(() => {
+       setWaitIndex((prev) => (prev + 1) % WAIT_MESSAGES.length);
+    }, 5000);
+
+    return () => {
+        clearInterval(tipInterval);
+        clearInterval(waitInterval);
+    };
   }, []);
   
+  // Use the prop status initially, but if it takes too long (implied by this component being mounted), cycle through wait messages
+  const displayStatus = waitIndex === 0 ? status : WAIT_MESSAGES[waitIndex];
+
   return (
     <div className="flex flex-col items-center justify-center p-12 animate-fade-in py-32 relative z-50">
       
@@ -58,7 +84,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type }) 
           </h2>
           <div className="flex items-center justify-center gap-2 text-gray-400 font-mono text-xs uppercase tracking-widest opacity-60">
              <span className="w-2 h-2 rounded-full bg-current animate-bounce"></span>
-             <span>{status}</span>
+             <span>{displayStatus}</span>
              <span className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '0.2s' }}></span>
           </div>
         </div>
