@@ -4,6 +4,7 @@ import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, App
 import { processFile } from '../services/fileService';
 import { CameraScanner } from './CameraScanner';
 import { DuelCreateModal } from './DuelCreateModal';
+import { StudyRoomModal } from './StudyRoomModal';
 
 interface InputSectionProps {
   onProcess: (processedFile: ProcessedFile, config: QuizConfig, mode: AppMode) => void;
@@ -39,6 +40,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   
   const [showCamera, setShowCamera] = useState(false);
   const [showDuelModal, setShowDuelModal] = useState(false);
+  const [showStudyRoomModal, setShowStudyRoomModal] = useState(false);
 
   // Config State
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultConfig.difficulty);
@@ -50,6 +52,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   
   const [useOracle, setUseOracle] = useState(false);
   const [useWeaknessDestroyer, setUseWeaknessDestroyer] = useState(false);
+  const [isCramMode, setIsCramMode] = useState(false);
 
   useEffect(() => {
     setDifficulty(defaultConfig.difficulty);
@@ -126,7 +129,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   const getFullConfig = (): QuizConfig => ({ 
-      difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle, useWeaknessDestroyer
+      difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle, useWeaknessDestroyer, isCramMode
   });
 
   const handleGenerate = async (targetMode?: AppMode) => {
@@ -209,6 +212,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
     <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
       {showDuelModal && <DuelCreateModal onClose={() => setShowDuelModal(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
+      {showStudyRoomModal && <StudyRoomModal onClose={() => setShowStudyRoomModal(false)} user={userProfile} />}
 
       {/* Mode Switcher */}
       <div className="flex justify-center items-center mb-6 shrink-0">
@@ -254,7 +258,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     </div>
                     <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
                           <label className="text-[10px] font-bold text-gray-500 uppercase">Timer</label>
-                          <select value={timerDuration} onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
+                          <select value={timerDuration} onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} disabled={isCramMode} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors disabled:opacity-50">
                                 <option value="Limitless">No Limit</option>
                                 <option value="5m">5 Mins</option>
                                 <option value="10m">10 Mins</option>
@@ -274,7 +278,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
 
             {/* Premium Protocol Cards - Stack on very small screens */}
-            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-2 gap-4 shrink-0">
+            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-4 shrink-0">
                <button 
                  onClick={() => setUseOracle(!useOracle)} 
                  className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
@@ -283,14 +287,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
                    : 'bg-[#151515] border-white/20 text-gray-300 hover:border-amber-500/50 hover:bg-[#1a1a1a] shadow-lg'
                  }`}
                >
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(251,191,36,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                  <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
-                    <div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse shadow-[0_0_8px_orange]' : 'bg-gray-500'}`}></div>
+                    <div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse' : 'bg-gray-500'}`}></div>
                     The Oracle
                  </div>
-                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Predictive Questioning Protocol</div>
-                 {useOracle && <div className="absolute top-2 right-2 text-[8px] font-bold text-black bg-amber-500 rounded px-1.5 py-0.5 shadow-lg shadow-amber-500/20">ACTIVE</div>}
-                 {!useOracle && <div className="absolute top-2 right-2 text-[8px] font-bold text-gray-500 border border-gray-600 rounded px-1.5 py-0.5">STANDBY</div>}
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Predictive Protocol</div>
                </button>
 
                <button 
@@ -301,14 +302,27 @@ export const InputSection: React.FC<InputSectionProps> = ({
                    : 'bg-[#151515] border-white/20 text-gray-300 hover:border-red-500/50 hover:bg-[#1a1a1a] shadow-lg'
                  }`}
                >
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(244,63,94,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                  <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
-                    <div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-[ping_2s_infinite] shadow-[0_0_8px_red]' : 'bg-gray-500'}`}></div>
+                    <div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
                     Weakness Destroyer
                  </div>
-                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Target Low Score Topics</div>
-                 {useWeaknessDestroyer && <div className="absolute top-2 right-2 text-[8px] font-bold text-black bg-red-500 rounded px-1.5 py-0.5 shadow-lg shadow-red-500/20">ACTIVE</div>}
-                 {!useWeaknessDestroyer && <div className="absolute top-2 right-2 text-[8px] font-bold text-gray-500 border border-gray-600 rounded px-1.5 py-0.5">STANDBY</div>}
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Target Low Scores</div>
+               </button>
+
+               {/* CRAM MODE */}
+               <button 
+                 onClick={() => setIsCramMode(!isCramMode)} 
+                 className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
+                   isCramMode 
+                   ? 'bg-gradient-to-r from-cyan-950 to-blue-900 border-cyan-500 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.3)] ring-1 ring-cyan-500/50' 
+                   : 'bg-[#151515] border-white/20 text-gray-300 hover:border-cyan-500/50 hover:bg-[#1a1a1a] shadow-lg'
+                 }`}
+               >
+                 <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
+                    <div className={`w-2 h-2 rounded-full ${isCramMode ? 'bg-cyan-400 animate-pulse' : 'bg-gray-500'}`}></div>
+                    Cram Mode
+                 </div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">10s Timer / 2x XP</div>
                </button>
             </div>
 
@@ -380,19 +394,20 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
             {/* Sticky Actions Footer */}
             <div className="p-4 sm:p-6 border-t border-white/10 bg-[#0a0a0a] flex flex-col sm:flex-row gap-3 items-center justify-end shrink-0">
-               <div className="flex gap-3 w-full sm:w-auto">
-                   <button onClick={() => setShowDuelModal(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 relative overflow-hidden group">
+               <div className="flex gap-3 w-full sm:w-auto overflow-x-auto sm:overflow-visible pb-2 sm:pb-0">
+                   <button onClick={() => setShowDuelModal(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                       <span className="relative z-10 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         Duel
                       </span>
-                      {isScholar && (
-                          <div className="absolute top-0 right-0 p-0.5">
-                             <span className="text-[6px] bg-purple-500 text-black font-bold px-1 rounded">SCHOLAR</span>
-                          </div>
-                      )}
                    </button>
-                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                   {isScholar && (
+                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-green-900/10 text-green-400 border border-green-500/30 font-bold text-xs uppercase tracking-widest hover:bg-green-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                          The Syndicate
+                       </button>
+                   )}
+                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                       Chat
                    </button>

@@ -107,15 +107,27 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
 
       const recognition = new (window as any).webkitSpeechRecognition();
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true; // Enabled for real-time feedback
       recognition.lang = 'en-US';
 
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
+      recognition.onerror = (event: any) => {
+          console.error("Speech Recognition Error", event.error);
+          setIsListening(false);
+      };
+      
       recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
+          const transcript = Array.from(event.results)
+                .map((result: any) => result[0])
+                .map((result) => result.transcript)
+                .join('');
+          
           setInput(transcript);
-          // Optional: Auto-send could go here, but let user confirm text first
+          
+          if (event.results[0].isFinal) {
+              // Optional: You could auto-send here if desired, currently it just types
+          }
       };
 
       recognitionRef.current = recognition;
@@ -129,7 +141,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
   };
 
   return (
-    // Removed z-index and fixed height issues, prevent background overlay
     <div className="w-full h-full flex flex-col relative z-10 animate-fade-in bg-[#0a0a0a] sm:bg-transparent">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode="SOLVE" />}
       

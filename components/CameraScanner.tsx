@@ -10,8 +10,8 @@ interface CameraScannerProps {
 export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onClose, mode }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null); // Use ref to persist stream for cleanup
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     const startCamera = async () => {
@@ -19,7 +19,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onClose
         const mediaStream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: 'environment' } // Prefer back camera
         });
-        setStream(mediaStream);
+        streamRef.current = mediaStream; // Store in ref
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
         }
@@ -33,8 +33,13 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onClose
     startCamera();
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      // Robust cleanup using ref
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+            track.stop();
+            track.enabled = false;
+        });
+        streamRef.current = null;
       }
     };
   }, []);

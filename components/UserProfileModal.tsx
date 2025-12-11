@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { UserProfile } from '../types';
-import { calculateLevel, calculateProgress } from '../services/storageService';
+import { calculateLevel, calculateProgress, buyItem } from '../services/storageService';
 import { VisualDorm } from './VisualDorm';
 
 interface UserProfileModalProps {
@@ -15,7 +15,7 @@ interface UserProfileModalProps {
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout }) => {
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
-  const [activeTab, setActiveTab] = useState<'IDENTITY' | 'DORM'>('IDENTITY');
+  const [activeTab, setActiveTab] = useState<'IDENTITY' | 'DORM' | 'BURSARY'>('IDENTITY');
 
   if (!isOpen) return null;
   const level = calculateLevel(editedProfile.xp || 0);
@@ -23,14 +23,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const maxXP = 10000;
   const totalProgress = Math.min((editedProfile.xp || 0) / maxXP * 100, 100);
 
+  const handlePurchase = (cost: number, type: 'FREEZE' | 'THEME') => {
+      try {
+          const updated = buyItem(editedProfile, cost, type);
+          setEditedProfile(updated);
+          onSave(updated); // Auto-save on purchase
+          alert("Purchase Successful");
+      } catch (e: any) {
+          alert(e.message);
+      }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-[#18181b] w-full max-w-2xl rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-black/20">
           <div className="flex bg-black/40 rounded-lg p-1 border border-white/5">
-             <button onClick={() => setActiveTab('IDENTITY')} className={`px-6 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'IDENTITY' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Identity</button>
-             <button onClick={() => setActiveTab('DORM')} className={`px-6 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'DORM' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Dormitory</button>
+             <button onClick={() => setActiveTab('IDENTITY')} className={`px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'IDENTITY' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Identity</button>
+             <button onClick={() => setActiveTab('DORM')} className={`px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'DORM' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Dormitory</button>
+             <button onClick={() => setActiveTab('BURSARY')} className={`px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'BURSARY' ? 'bg-amber-500 text-black' : 'text-amber-500 hover:text-amber-300'}`}>Bursary</button>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">✕</button>
         </div>
@@ -118,6 +130,51 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                     )}
                 </div>
              </div>
+          )}
+
+          {activeTab === 'BURSARY' && (
+              <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-amber-900/30 to-black p-6 rounded-2xl border border-amber-500/20 flex justify-between items-center">
+                      <div>
+                          <h4 className="text-xl font-bold text-amber-500 font-mono">{editedProfile.xp || 0} XP</h4>
+                          <p className="text-[10px] text-amber-200 uppercase tracking-widest">Available Credits</p>
+                      </div>
+                      <div className="text-4xl">🪙</div>
+                  </div>
+
+                  <div className="space-y-3">
+                      <div className="p-4 bg-white/5 rounded-xl border border-white/5 flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center text-xl border border-cyan-500/20">🧊</div>
+                              <div>
+                                  <h5 className="font-bold text-white text-sm">Time Dilation (Streak Freeze)</h5>
+                                  <p className="text-xs text-gray-500">Protect your streak for one day.</p>
+                              </div>
+                          </div>
+                          <button 
+                            disabled={editedProfile.hasStreakFreeze || (editedProfile.xp || 0) < 500}
+                            onClick={() => handlePurchase(500, 'FREEZE')}
+                            className="px-4 py-2 bg-white text-black text-xs font-bold uppercase rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                              {editedProfile.hasStreakFreeze ? 'OWNED' : '500 XP'}
+                          </button>
+                      </div>
+                      
+                      {/* Placeholder for future items */}
+                      <div className="p-4 bg-black/40 rounded-xl border border-white/5 flex justify-between items-center opacity-60">
+                          <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center text-xl border border-purple-500/20">🌌</div>
+                              <div>
+                                  <h5 className="font-bold text-white text-sm">Void Theme</h5>
+                                  <p className="text-xs text-gray-500">Coming Soon.</p>
+                              </div>
+                          </div>
+                          <button disabled className="px-4 py-2 bg-white/10 text-white text-xs font-bold uppercase rounded cursor-not-allowed">
+                              LOCKED
+                          </button>
+                      </div>
+                  </div>
+              </div>
           )}
         </div>
         <div className="p-6 border-t border-gray-800 bg-black/20 flex justify-end gap-4">

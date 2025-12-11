@@ -104,6 +104,7 @@ export const getDefaultProfile = (): UserProfile => ({
   learningStyle: 'Textual',
   defaultPersonality: 'Academic',
   streak: 0,
+  hasStreakFreeze: false,
   questionsAnswered: 0,
   correctAnswers: 0,
   xp: 500, // SIGNING BONUS: Grant 500XP so they can duel immediately
@@ -140,7 +141,16 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   if (diffDays <= 2) { 
     updated.streak = profile.streak + 1;
   } else {
-    updated.streak = 1;
+    // Check for Freeze
+    if (updated.hasStreakFreeze) {
+        updated.hasStreakFreeze = false; // Consume freeze
+        // Streak maintained, but not incremented until next activity
+        // Actually, to freeze it, we just update the date but don't reset to 1
+        // But if they missed days, we need to bridge the gap.
+        // Simplification: If they have freeze, we don't reset to 1, we keep current streak.
+    } else {
+        updated.streak = 1;
+    }
   }
   
   updated.lastStudyDate = Date.now();
@@ -155,6 +165,17 @@ export const incrementDailyUsage = (profile: UserProfile): UserProfile => {
   saveUserProfile(updated);
   return updated;
 };
+
+export const buyItem = (profile: UserProfile, itemCost: number, itemType: 'FREEZE' | 'THEME'): UserProfile => {
+    if (profile.xp < itemCost) throw new Error("Insufficient XP");
+    const updated = { ...profile, xp: profile.xp - itemCost };
+    
+    if (itemType === 'FREEZE') {
+        updated.hasStreakFreeze = true;
+    }
+    
+    return updated;
+}
 
 // XP Calculation: 100 XP per level
 export const calculateLevel = (xp: number) => Math.floor(xp / 100) + 1;

@@ -59,7 +59,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
     const ai = getAI();
     const model = "gemini-2.5-flash"; 
 
-    const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer } = config;
+    const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer, isCramMode } = config;
 
     let typeInstruction: string = questionType;
     if (questionType === 'Mixed') {
@@ -70,6 +70,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
     
     if (useOracle) instructions += " Predict probable exam questions.";
     if (useWeaknessDestroyer && userProfile?.weaknessFocus) instructions += ` Focus heavily on ${userProfile.weaknessFocus}.`;
+    if (isCramMode) instructions += " Questions must be short, rapid-fire style for speed reading.";
 
     const promptText = `
       ${instructions}
@@ -86,7 +87,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
         if (matches && matches[1]) {
             contentParts = [
                 { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
-                { text: instructions + " Analyze this image content for the exam." }
+                { text: instructions + " Analyze this image content for the exam. If it's a math problem, solve it in the explanation." }
             ];
         }
     }
@@ -148,7 +149,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
         if (matches && matches[1]) {
             contentParts = [
                 { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
-                { text: promptText + " Analyze this image visually." }
+                { text: promptText + " Analyze this image visually. If Math, show steps." }
             ];
         }
     }
@@ -230,5 +231,28 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
     } catch (error) {
         console.error(error);
         return "Connection interrupted.";
+    }
+}
+
+export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'ELA', context?: string): Promise<string> => {
+    try {
+        const ai = getAI();
+        const model = "gemini-2.5-flash";
+        
+        let prompt = `Rewrite this explanation to be extremely simple, as if explaining to a 5-year-old. Explanation: "${explanation}"`;
+        if (type === 'ELA') prompt = `Rewrite this explanation in the style of ${context}. Explanation: "${explanation}"`;
+
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: prompt,
+            config: {
+                maxOutputTokens: 150,
+                temperature: 0.8
+            }
+        });
+        
+        return response.text || explanation;
+    } catch (e) {
+        return explanation;
     }
 }

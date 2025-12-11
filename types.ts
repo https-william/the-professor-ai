@@ -25,6 +25,7 @@ export interface QuizState {
   startTime: number | null; // Timestamp
   timeRemaining: number | null; // Seconds (null if limitless)
   focusStrikes?: number; // Number of times focus was lost
+  isCramMode?: boolean; // New Adrenaline Protocol
 }
 
 export interface ProfessorState {
@@ -91,6 +92,7 @@ export interface QuizConfig {
   // Excellentia Supreme Features
   useOracle?: boolean; // Predictive questioning
   useWeaknessDestroyer?: boolean; // Focus on past mistakes
+  isCramMode?: boolean; // 10s per question
 }
 
 export type SubscriptionTier = 'Fresher' | 'Scholar' | 'Excellentia Supreme';
@@ -129,6 +131,7 @@ export interface UserProfile {
   
   // Gamification & Stats
   streak: number; 
+  hasStreakFreeze?: boolean; // New Inventory Item
   questionsAnswered: number;
   correctAnswers: number;
   xp: number; // New XP system for levels

@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { QuizState, QuizQuestion, Difficulty } from '../types';
+import { FlashcardDeck } from './FlashcardDeck';
+import { simplifyExplanation } from '../services/geminiService';
 
 interface QuizViewProps {
   quizState: QuizState;
@@ -21,16 +23,38 @@ export const QuizView: React.FC<QuizViewProps> = ({
   onReset,
   onTimeExpired
 }) => {
-  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime } = quizState;
+  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime, isCramMode } = quizState;
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
+  const [viewMode, setViewMode] = useState<'EXAM' | 'FLASHCARDS'>('EXAM');
+  
+  // State to store simplified explanations per question ID
+  const [simplifiedExplanations, setSimplifiedExplanations] = useState<Record<number, string>>({});
+  const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
+
+  // Cram Mode: 10s per question logic
+  // If isCramMode is true, timeLeft acts as the per-question timer
+  useEffect(() => {
+      if (isCramMode && !isSubmitted) {
+          setTimeLeft(10); // Reset to 10s on question change in Cram Mode
+      }
+  }, [currentQuestionIdx, isCramMode, isSubmitted]);
 
   // Active Timer Logic
   useEffect(() => {
     if (isSubmitted || timeLeft === null) return;
 
     if (timeLeft <= 0) {
-      onTimeExpired();
+      if (isCramMode) {
+          // In Cram Mode, timeout means skip to next or submit
+          if (currentQuestionIdx < questions.length - 1) {
+              setCurrentQuestionIdx(prev => prev + 1);
+          } else {
+              onSubmit();
+          }
+      } else {
+          onTimeExpired();
+      }
       return;
     }
 
@@ -39,7 +63,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, isSubmitted, onTimeExpired]);
+  }, [timeLeft, isSubmitted, onTimeExpired, isCramMode, currentQuestionIdx, onSubmit]);
 
   // Focus Mode Logic
   useEffect(() => {
@@ -66,6 +90,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   
   // Difficulty Aura Logic (Enhanced)
   const getAuraClass = () => {
+      if (isCramMode) return 'shadow-[0_0_150px_rgba(6,182,212,0.35)] border-cyan-500/50 bg-[#001015]';
       if (difficulty === 'Nightmare') return 'shadow-[0_0_150px_rgba(126,34,206,0.35)] border-purple-600/50 bg-[#0f001a]';
       if (difficulty === 'Hard') return 'shadow-[0_0_80px_rgba(239,68,68,0.25)] border-red-500/40 bg-[#1a0505]';
       if (difficulty === 'Easy') return 'border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.1)]';
@@ -81,9 +106,39 @@ export const QuizView: React.FC<QuizViewProps> = ({
   };
 
   const getXPFeedback = (score: number) => {
-      const xp = Math.min(score * 50, 500); 
-      return `+${xp} XP Gained`;
+      const xp = Math.min(score * 50, 500) * (isCramMode ? 2 : 1); 
+      return `+${xp} XP Gained ${isCramMode ? '(2x Adrenaline)' : ''}`;
   };
+
+  const handleELI5 = async (q: QuizQuestion) => {
+      if (simplifiedExplanations[q.id]) return;
+      setLoadingExplanation(q.id);
+      try {
+          const simplified = await simplifyExplanation(q.explanation, 'ELI5');
+          setSimplifiedExplanations(prev => ({ ...prev, [q.id]: simplified }));
+      } catch (e) {
+          // ignore error
+      } finally {
+          setLoadingExplanation(null);
+      }
+  };
+
+  const showComingSoon = () => {
+      alert("Feature Loading: Identity Engine v2.0 Coming Soon.");
+  };
+
+  // --- FLASHCARD MODE ---
+  if (viewMode === 'FLASHCARDS' && !isSubmitted) {
+      return (
+          <div className="max-w-4xl mx-auto h-full flex flex-col items-center justify-center">
+              <div className="w-full flex justify-between mb-4">
+                  <button onClick={() => setViewMode('EXAM')} className="text-gray-400 hover:text-white font-bold uppercase text-xs">← Back to Exam</button>
+                  <span className="text-amber-500 font-mono text-xs">MEMORY SHARDS</span>
+              </div>
+              <FlashcardDeck questions={questions} />
+          </div>
+      )
+  }
 
   // --- REPORT CARD ---
   if (isSubmitted) {
@@ -128,6 +183,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
              const userAnswer = userAnswers[q.id];
              const isCorrect = userAnswer === q.correct_answer;
              const isSkipped = !userAnswer;
+             const simpleExpl = simplifiedExplanations[q.id];
 
              return (
                <div key={q.id} className={`glass-panel rounded-2xl p-6 border-l-4 ${isCorrect ? 'border-l-green-500 bg-green-900/5' : isSkipped ? 'border-l-gray-500' : 'border-l-red-500 bg-red-900/5'}`}>
@@ -161,13 +217,32 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         );
                      })}
                   </div>
-                  <div className="text-sm text-gray-300 bg-black/30 p-4 rounded-xl border border-white/5 flex gap-3">
-                      <div className="shrink-0 mt-0.5 text-blue-400">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  <div className="text-sm text-gray-300 bg-black/30 p-4 rounded-xl border border-white/5 flex flex-col gap-3">
+                      <div className="flex gap-3">
+                          <div className="shrink-0 mt-0.5 text-blue-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                          </div>
+                          <div className="flex-1">
+                              <strong className="block text-blue-400 uppercase tracking-wider text-[10px] mb-1">Explanation</strong>
+                              {simpleExpl ? (
+                                  <div className="animate-fade-in bg-amber-900/10 p-2 rounded border border-amber-500/20 text-amber-100">
+                                      <strong className="text-amber-500 text-[9px] uppercase block mb-1">Simplified (ELI5):</strong>
+                                      {simpleExpl}
+                                  </div>
+                              ) : (
+                                  q.explanation
+                              )}
+                          </div>
                       </div>
-                      <div>
-                          <strong className="block text-blue-400 uppercase tracking-wider text-[10px] mb-1">Explanation</strong>
-                          {q.explanation}
+                      <div className="flex gap-2 justify-end mt-2">
+                          <button 
+                            onClick={() => handleELI5(q)} 
+                            disabled={!!simpleExpl || loadingExplanation === q.id}
+                            className="text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors text-gray-400 hover:text-white disabled:opacity-50"
+                          >
+                            {loadingExplanation === q.id ? 'Translating...' : 'ELI ...'}
+                          </button>
+                          <button onClick={showComingSoon} className="text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors text-gray-400 hover:text-white">ELA ...</button>
                       </div>
                   </div>
                </div>
@@ -187,15 +262,22 @@ export const QuizView: React.FC<QuizViewProps> = ({
           {/* Top Bar: Difficulty & Timer */}
           <div className="flex justify-between items-center px-1 sm:px-2">
              <div className="flex items-center gap-2 sm:gap-3">
-                 <div className={`w-2 h-2 rounded-full animate-pulse ${difficulty === 'Nightmare' ? 'bg-purple-500 shadow-[0_0_10px_purple]' : difficulty === 'Hard' ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-blue-500'}`}></div>
-                 <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-none ${difficulty === 'Nightmare' ? 'text-purple-300 animate-pulse' : 'text-white'}`}>
-                    {difficulty === 'Nightmare' ? 'NIGHTMARE' : difficulty === 'Hard' ? 'HARDCORE' : 'LIVE EXAM'}
+                 <div className={`w-2 h-2 rounded-full animate-pulse ${isCramMode ? 'bg-cyan-500 shadow-[0_0_10px_cyan]' : difficulty === 'Nightmare' ? 'bg-purple-500 shadow-[0_0_10px_purple]' : difficulty === 'Hard' ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-blue-500'}`}></div>
+                 <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-none ${isCramMode ? 'text-cyan-300' : difficulty === 'Nightmare' ? 'text-purple-300 animate-pulse' : 'text-white'}`}>
+                    {isCramMode ? 'ADRENALINE PROTOCOL' : difficulty === 'Nightmare' ? 'NIGHTMARE' : difficulty === 'Hard' ? 'HARDCORE' : 'LIVE EXAM'}
                  </span>
              </div>
              
-             {/* Active Timer */}
-             <div className="font-mono text-sm sm:text-xl font-bold text-white tracking-widest bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 min-w-[70px] text-center">
-                {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2,'0')}` : '∞'}
+             <div className="flex items-center gap-3">
+                 {!isCramMode && (
+                     <button onClick={() => setViewMode('FLASHCARDS')} className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest hidden sm:block">
+                         Review as Cards
+                     </button>
+                 )}
+                 {/* Active Timer */}
+                 <div className={`font-mono text-sm sm:text-xl font-bold tracking-widest bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 min-w-[70px] text-center ${isCramMode ? 'text-cyan-400 border-cyan-500/50' : 'text-white'}`}>
+                    {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2,'0')}` : '∞'}
+                 </div>
              </div>
           </div>
           
@@ -206,7 +288,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                  const isFlagged = flaggedQuestions.includes(q.id);
                  
                  if (currentQuestionIdx === idx) {
-                     statusColor = "bg-blue-600 text-white border-blue-500 ring-2 ring-blue-500/30 shadow-lg z-10";
+                     statusColor = isCramMode ? "bg-cyan-600 text-black border-cyan-500 ring-2 ring-cyan-500/30" : "bg-blue-600 text-white border-blue-500 ring-2 ring-blue-500/30 shadow-lg z-10";
                  } else if (userAnswers[q.id]) {
                      statusColor = "bg-blue-900/20 text-blue-400 border-blue-500/30";
                  } else if (isFlagged) {
@@ -228,9 +310,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
        </div>
 
        {/* Question Card */}
-       <div className="glass-panel rounded-3xl p-5 md:p-10 flex-1 relative flex flex-col shadow-2xl border-white/10">
+       <div className={`glass-panel rounded-3xl p-5 md:p-10 flex-1 relative flex flex-col shadow-2xl border-white/10 ${isCramMode ? 'border-cyan-500/20' : ''}`}>
           <div className="flex justify-between items-start mb-6 sm:mb-8">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-900/10 px-3 py-1.5 rounded-lg border border-blue-500/20">Question {currentQuestionIdx + 1} / {total}</span>
+              <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border ${isCramMode ? 'text-cyan-400 bg-cyan-900/10 border-cyan-500/20' : 'text-blue-400 bg-blue-900/10 border-blue-500/20'}`}>Question {currentQuestionIdx + 1} / {total}</span>
               <button onClick={() => onFlagQuestion(currentQ.id)} className={`flex items-center gap-2 text-xs uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg transition-all ${flaggedQuestions.includes(currentQ.id) ? 'bg-amber-900/20 text-amber-500 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill={flaggedQuestions.includes(currentQ.id) ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-8a2 2 0 01-2-1.85V19a2 2 0 00-2 2h2zM5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H9c-1.105 0-2 .895-2 2v12z" /></svg>
                  {flaggedQuestions.includes(currentQ.id) ? 'Flagged' : 'Flag'}
@@ -246,7 +328,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                  onClick={() => onAnswerSelect(currentQ.id, opt)}
                  className={`w-full text-left p-4 sm:p-5 rounded-2xl border transition-all relative group ${
                     userAnswers[currentQ.id] === opt 
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-xl shadow-blue-900/20 scale-[1.01]' 
+                    ? isCramMode ? 'bg-cyan-600 text-black border-cyan-500 shadow-xl shadow-cyan-900/20 scale-[1.01]' : 'bg-blue-600 text-white border-blue-500 shadow-xl shadow-blue-900/20 scale-[1.01]' 
                     : 'bg-white/5 border-transparent text-gray-300 hover:bg-white/10 hover:border-white/10'
                  }`}
                >
@@ -267,7 +349,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
              {currentQuestionIdx === questions.length - 1 ? (
                 <button onClick={onSubmit} className="px-10 py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-white/10">Submit Exam</button>
              ) : (
-                <button onClick={() => setCurrentQuestionIdx(currentQuestionIdx + 1)} className="px-8 py-3 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20">Next</button>
+                <button onClick={() => setCurrentQuestionIdx(currentQuestionIdx + 1)} className={`px-8 py-3 rounded-xl text-white font-bold text-xs uppercase transition-all shadow-lg ${isCramMode ? 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-900/20 text-black' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/20'}`}>Next</button>
              )}
           </div>
        </div>
