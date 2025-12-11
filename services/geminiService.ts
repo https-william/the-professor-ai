@@ -18,37 +18,36 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-// --- STRATEGIC FIX: HYDRAULIC RETRY PROTOCOL ---
+// --- SMART GOVERNOR RETRY PROTOCOL ---
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Increased retries to 8 and base delay to 1.5s to weather API spikes
-const withRetry = async <T>(operation: () => Promise<T>, retries = 8, delay = 1500): Promise<T> => {
+const withRetry = async <T>(operation: () => Promise<T>, retries = 5, initialDelay = 2000): Promise<T> => {
   try {
     return await operation();
   } catch (error: any) {
     const msg = (error.message || '').toLowerCase();
     const status = error.status || error.response?.status;
     
-    // Check for common transient errors, status codes, or error strings
-    const isTransient = 
-        status === 500 || 
-        status === 502 || 
-        status === 503 || 
-        status === 429 || 
-        msg.includes('overloaded') || 
-        msg.includes('fetch failed') ||
-        msg.includes('network') ||
-        msg.includes('service unavailable') ||
-        msg.includes('internal error');
+    // Status 429 = Quota Limit. 
+    // FIX: Wait 10-12 seconds. The free tier allows ~1 request every 4 seconds. 
+    // Bursting causes 429s. We must cool down significantly.
+    
+    if (retries > 0) {
+        let delay = initialDelay;
+        
+        if (status === 429 || msg.includes('429') || msg.includes('quota')) {
+            console.warn(`⚠️ API Quota Hit (429). Deep Freeze for 10s... (${retries} left)`);
+            delay = 10000 + (Math.random() * 3000); // 10-13s delay
+        } else if (status === 503 || msg.includes('overloaded')) {
+            console.warn(`⚠️ Server Busy (503). Retrying in ${delay/1000}s...`);
+            delay = delay * 2; // Exponential backoff
+        } else {
+            // Non-transient error? Rethrow immediately unless it looks like a network blip
+            if (!msg.includes('fetch') && !msg.includes('network')) throw error;
+        }
 
-    if (retries > 0 && isTransient) {
-      // Add significant randomness (jitter) to prevent thundering herd problem with 10k users
-      const jitter = Math.random() * 2000;
-      const nextDelay = delay * 1.5 + jitter;
-      console.warn(`AI Network Traffic (${status || 'Load'}). Queuing request... (${retries} attempts left)`);
-      
-      await wait(nextDelay);
-      return withRetry(operation, retries - 1, nextDelay); 
+        await wait(delay);
+        return withRetry(operation, retries - 1, delay);
     }
     throw error;
   }
@@ -65,11 +64,10 @@ const handleGeminiError = (error: any): never => {
     throw new Error("Access Denied: The API Key is invalid or expired.");
   }
   if (status === 429 || msg.includes('429') || msg.includes('quota')) {
-    throw new Error("Neural Overload: System is busy. Please wait 30s and try again.");
+    throw new Error("Neural Overload: Traffic is extremely high. Please wait 30 seconds before trying again.");
   }
   if (status === 500 || status === 502 || status === 503 || msg.includes('overloaded')) {
-    // If we reach here, retries failed.
-    throw new Error("Campus Maintenance: High traffic volume. Please try again in 2 minutes.");
+    throw new Error("Campus Maintenance: The AI professors are grading papers. Try again shortly.");
   }
   if (msg.includes('safety') || msg.includes('blocked')) {
     throw new Error("Content Restricted: Safety filters triggered. Try rewording your notes.");
@@ -130,7 +128,6 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
         }
     }
 
-    // Wrap in Retry Logic
     const response = await withRetry(async () => {
         return await ai.models.generateContent({
           model: model,
@@ -154,7 +151,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
             }
           }
         });
-    });
+    }, 6, 4000); // 6 Retries, 4s initial delay
 
     if (response.text) {
       const data = JSON.parse(response.text);
@@ -195,7 +192,6 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
         }
     }
 
-    // Wrap in Retry Logic
     const response = await withRetry(async () => {
         return await ai.models.generateContent({
           model: model,
@@ -220,7 +216,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
             }
           }
         });
-    });
+    }, 6, 4000);
 
     if (response.text) {
       const data = JSON.parse(response.text);
@@ -256,29 +252,27 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
             };
         });
 
-        // Add file context to system instruction if text, or prepend to first message
         const systemInstruction = `You are The Professor. Be precise, concise, and academic. Context: ${fileContext.substring(0, 10000)}.`;
 
         const chat = ai.chats.create({
             model: model,
             config: { 
                 systemInstruction,
-                maxOutputTokens: 256, // LOWER TOKEN LIMIT FOR SPEED
+                maxOutputTokens: 256,
                 temperature: 0.7
             },
             history: recentHistory
         });
 
-        // Wrap in Retry Logic
         const response = await withRetry(async () => {
             return await chat.sendMessage({ message: newMessage });
-        });
+        }, 3, 3000); 
         
         return response.text || "I cannot answer that right now.";
 
     } catch (error) {
         console.error(error);
-        return "Connection interrupted.";
+        return "Connection interrupted. The library is closed.";
     }
 }
 
@@ -299,7 +293,7 @@ export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'E
                     temperature: 0.8
                 }
             });
-        });
+        }, 2, 2000);
         
         return response.text || explanation;
     } catch (e) {

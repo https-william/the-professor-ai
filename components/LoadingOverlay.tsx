@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 interface LoadingOverlayProps {
   status: string;
   type: 'EXAM' | 'PROFESSOR';
+  onCancel?: () => void;
 }
 
 const TIPS = [
@@ -29,32 +30,38 @@ const WAIT_MESSAGES = [
   "Almost there. Stay focused."
 ];
 
-export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type }) => {
+export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type, onCancel }) => {
   const isProfessor = type === 'PROFESSOR';
   const [tipIndex, setTipIndex] = useState(0);
   const [waitIndex, setWaitIndex] = useState(0);
+  const [showCancel, setShowCancel] = useState(false);
 
   useEffect(() => {
     const tipInterval = setInterval(() => {
       setTipIndex((prev) => (prev + 1) % TIPS.length);
     }, 4000);
     
-    // Cycle status messages every 5 seconds to reassure user during retries
     const waitInterval = setInterval(() => {
        setWaitIndex((prev) => (prev + 1) % WAIT_MESSAGES.length);
     }, 5000);
 
+    // If loading takes > 8 seconds, show the cancel button
+    const cancelTimer = setTimeout(() => {
+        setShowCancel(true);
+    }, 8000);
+
     return () => {
         clearInterval(tipInterval);
         clearInterval(waitInterval);
+        clearTimeout(cancelTimer);
     };
   }, []);
   
-  // Use the prop status initially, but if it takes too long (implied by this component being mounted), cycle through wait messages
+  // Use the prop status initially, but if it takes too long, cycle through wait messages
   const displayStatus = waitIndex === 0 ? status : WAIT_MESSAGES[waitIndex];
 
   return (
-    <div className="flex flex-col items-center justify-center p-12 animate-fade-in py-32 relative z-50">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]/95 backdrop-blur-xl animate-fade-in p-6">
       
       {/* Neural Core Visualization */}
       <div className="relative w-48 h-48 mb-16 flex items-center justify-center">
@@ -77,7 +84,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type }) 
          </div>
       </div>
 
-      <div className="text-center space-y-4 max-w-lg">
+      <div className="text-center space-y-4 max-w-lg w-full">
         <div>
           <h2 className="text-3xl font-serif font-bold text-white tracking-tight mb-2 animate-pulse">
             {isProfessor ? "Designing Lesson Plan" : "Constructing Exam"}
@@ -93,11 +100,23 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type }) 
         <div className="w-16 h-1 bg-white/10 rounded-full mx-auto my-6"></div>
 
         {/* Tips Section */}
-        <div className="h-24 flex items-center justify-center">
+        <div className="h-24 flex items-center justify-center px-4">
            <p key={tipIndex} className="text-lg md:text-xl text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-white to-gray-300 font-medium italic animate-slide-up-fade leading-relaxed">
              "{TIPS[tipIndex]}"
            </p>
         </div>
+
+        {/* Escape Hatch */}
+        {showCancel && onCancel && (
+            <div className="animate-fade-in pt-8">
+                <button 
+                    onClick={onCancel}
+                    className="px-6 py-2 rounded-full border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-widest hover:bg-red-900/20 hover:border-red-500 transition-all"
+                >
+                    Taking too long? Cancel
+                </button>
+            </div>
+        )}
       </div>
     </div>
   );

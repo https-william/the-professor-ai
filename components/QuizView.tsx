@@ -28,14 +28,13 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
   const [viewMode, setViewMode] = useState<'EXAM' | 'FLASHCARDS'>('EXAM');
   
-  // State to store simplified explanations per question ID
   const [simplifiedExplanations, setSimplifiedExplanations] = useState<Record<number, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
 
   // Cram Mode: 10s per question logic
   useEffect(() => {
       if (isCramMode && !isSubmitted) {
-          setTimeLeft(10); // Reset to 10s on question change in Cram Mode
+          setTimeLeft(10);
       }
   }, [currentQuestionIdx, isCramMode, isSubmitted]);
 
@@ -63,23 +62,13 @@ export const QuizView: React.FC<QuizViewProps> = ({
     return () => clearInterval(timer);
   }, [timeLeft, isSubmitted, onTimeExpired, isCramMode, currentQuestionIdx, onSubmit]);
 
-  // Focus Mode Logic
+  // Focus Mode
   useEffect(() => {
     if (!isSubmitted) {
         const enterFullscreen = async () => {
             try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (e) {}
         };
         enterFullscreen();
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                // Optional: Alert on focus loss
-            }
-        };
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-        };
     }
   }, [isSubmitted]);
 
@@ -97,7 +86,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const getFeedback = (score: number, total: number) => {
       const percentage = (score / total) * 100;
       
-      const abysmal = [
+      const F_TIER = [
           "My grandmother reads faster than you think. See me immediately.",
           "Academic probation is calling. Pick up.",
           "I have seen better performance from a random number generator.",
@@ -107,10 +96,16 @@ export const QuizView: React.FC<QuizViewProps> = ({
           "I calculated the probability of this score. It was zero.",
           "Did you perhaps read the textbook upside down?",
           "Your neural network appears to be offline.",
-          "We do not speak of this day."
+          "We do not speak of this day.",
+          "Emotional Damage.",
+          "Refund your tuition.",
+          "Error 404: Intelligence Not Found.",
+          "I'm not mad, just disappointed.",
+          "Have you considered a career in lawn maintenance?",
+          "Even the AI is embarrassed for you."
       ];
       
-      const mediocre = [
+      const C_TIER = [
           "Mediocre. You have memorized, but you have not understood.",
           "C's get degrees, but they don't get respect.",
           "You are operating at 40% capacity. Wake up.",
@@ -119,10 +114,14 @@ export const QuizView: React.FC<QuizViewProps> = ({
           "You guessed half of these, didn't you?",
           "A solid effort. For a freshman.",
           "You survived. But at what cost?",
-          "The bare minimum. My favorite disappointment."
+          "The bare minimum. My favorite disappointment.",
+          "Mid. Extremely mid.",
+          "You are perfectly average. How boring.",
+          "I've seen better, I've seen worse.",
+          "Room for improvement. A lot of room."
       ];
       
-      const good = [
+      const B_TIER = [
           "Acceptable. You are beginning to grasp the basics.",
           "Solid work. Now do it again, faster.",
           "You might actually survive the final.",
@@ -130,10 +129,14 @@ export const QuizView: React.FC<QuizViewProps> = ({
           "Good. But 'Good' is the enemy of 'Great'.",
           "Your synapses are firing correctly. Finally.",
           "We are making progress. Do not get complacent.",
-          "Not bad. Not bad at all."
+          "Not bad. Not bad at all.",
+          "You are waking up. Keep going.",
+          "Respectable. I nod in your general direction.",
+          "You actually read the material. Shocking.",
+          "Above average. Don't let it go to your head."
       ];
       
-      const excellent = [
+      const A_TIER = [
           "Excellentia. You are an Academic Weapon.",
           "The Dean sends his regards.",
           "Absolute mastery. Go touch grass.",
@@ -142,15 +145,21 @@ export const QuizView: React.FC<QuizViewProps> = ({
           "Flawless victory. Now teach the class.",
           "I am... surprisingly proud.",
           "Your intellect is terrifying. Keep going.",
-          "Einstein would like a word."
+          "Einstein would like a word.",
+          "Main Character Energy.",
+          "Certified Genius. No notes.",
+          "The archives are complete.",
+          "Your brain is massive. Gigantic.",
+          "Limitless potential detected.",
+          "You have ascended."
       ];
 
       const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
-      if (percentage < 40) return pick(abysmal);
-      if (percentage < 70) return pick(mediocre);
-      if (percentage < 90) return pick(good);
-      return pick(excellent);
+      if (percentage < 40) return pick(F_TIER);
+      if (percentage < 70) return pick(C_TIER);
+      if (percentage < 90) return pick(B_TIER);
+      return pick(A_TIER);
   };
 
   const getXPFeedback = (score: number) => {
@@ -169,10 +178,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
       } finally {
           setLoadingExplanation(null);
       }
-  };
-
-  const showComingSoon = () => {
-      alert("Feature Loading: Identity Engine v2.0 Coming Soon.");
   };
 
   // --- FLASHCARD MODE ---
@@ -254,8 +259,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
                             btnClass = "border-green-500 bg-green-500/10 text-green-200 opacity-100 font-bold";
                         } else if (opt === userAnswer && !isCorrect) {
                             btnClass = "border-red-500 bg-red-500/10 text-red-200 opacity-100 line-through";
-                        } else if (opt === userAnswer && isCorrect) {
-                            // Already handled by correct_answer check above
                         }
                         
                         return (
@@ -288,9 +291,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
                             disabled={!!simpleExpl || loadingExplanation === q.id}
                             className="text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors text-gray-400 hover:text-white disabled:opacity-50"
                           >
-                            {loadingExplanation === q.id ? 'Translating...' : 'ELI ...'}
+                            {loadingExplanation === q.id ? 'Translating...' : 'ELI 5'}
                           </button>
-                          <button onClick={showComingSoon} className="text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors text-gray-400 hover:text-white">ELA ... (Coming Soon)</button>
                       </div>
                   </div>
                </div>
@@ -304,10 +306,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
   // --- EXAM MODE ---
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col">
-       {/* HUD & Navigation */}
+       {/* HUD */}
        <div className={`glass-panel p-3 sm:p-4 rounded-2xl mb-4 sticky top-4 z-30 flex flex-col gap-2 backdrop-blur-xl transition-all duration-700 ${getAuraClass()}`}>
-          
-          {/* Top Bar: Difficulty & Timer */}
           <div className="flex justify-between items-center px-1 sm:px-2">
              <div className="flex items-center gap-2 sm:gap-3">
                  <div className={`w-2 h-2 rounded-full animate-pulse ${isCramMode ? 'bg-cyan-500 shadow-[0_0_10px_cyan]' : difficulty === 'Nightmare' ? 'bg-purple-500 shadow-[0_0_10px_purple]' : difficulty === 'Hard' ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-blue-500'}`}></div>
@@ -322,14 +322,13 @@ export const QuizView: React.FC<QuizViewProps> = ({
                          Review as Cards
                      </button>
                  )}
-                 {/* Active Timer */}
                  <div className={`font-mono text-sm sm:text-xl font-bold tracking-widest bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 min-w-[70px] text-center ${isCramMode ? 'text-cyan-400 border-cyan-500/50' : 'text-white'}`}>
                     {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2,'0')}` : '∞'}
                  </div>
              </div>
           </div>
           
-          {/* Question Palette Row */}
+          {/* Question Palette */}
           <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1 pt-2 px-1 border-t border-white/5">
              {questions.map((q, idx) => {
                  let statusColor = "bg-white/5 text-gray-500 border-white/5 hover:bg-white/10";

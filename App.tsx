@@ -34,6 +34,9 @@ const App: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
   
+  // Ad-Blocker State
+  const [isAdBlockActive, setIsAdBlockActive] = useState(false);
+  
   const [userProfile, setUserProfile] = useState<UserProfile>(getDefaultProfile());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -48,6 +51,22 @@ const App: React.FC = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Detect AdBlocker via Firebase failure
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
+            setIsAdBlockActive(true);
+        }
+        originalConsoleError(...args);
+    };
+    
+    // Also check on window error events
+    window.addEventListener('error', (e) => {
+        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
+    }, true);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -82,25 +101,20 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
-    // PRIORITY: Load from Firestore (via AuthContext) first, then fallback to local
-    // This solves the sync issue where local storage overwrites cloud data
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
     
     let mergedProfile: UserProfile = { ...localProfile };
 
     if (firestoreProfile) {
-        // Overlay Firestore data on top of local default structure
         mergedProfile = {
             ...mergedProfile,
             ...firestoreProfile,
-            // Ensure deep objects are merged if existing
             socials: firestoreProfile.socials || mergedProfile.socials,
             xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp
         };
     }
 
-    // Onboarding Check
     if (user.hasCompletedOnboarding === false) {
         setOnboardingStep('WELCOME');
     } else {
@@ -112,7 +126,7 @@ const App: React.FC = () => {
     mergedProfile = updateStreak(mergedProfile);
     
     setUserProfile(mergedProfile);
-    saveUserProfile(mergedProfile); // Update local cache with fresh cloud data
+    saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
     const savedSession = loadCurrentSession();
@@ -126,10 +140,9 @@ const App: React.FC = () => {
   }, [user]);
 
   const handleOnboardingComplete = async (data: Partial<UserProfile>) => {
-    // Save to Firestore IMMEDIATELY
     if (user) {
         await saveUserToFirestore(user.uid, { ...data, hasCompletedOnboarding: true });
-        await refreshUser(); // Force context update
+        await refreshUser(); 
     }
     
     const updated = { ...userProfile, ...data, hasCompletedOnboarding: true };
@@ -199,6 +212,11 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCancelGeneration = () => {
+      setStatus(AppStatus.IDLE);
+      setErrorMsg(null);
+  };
+
   const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET', payload?: any) => {
     if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
     if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
@@ -221,7 +239,6 @@ const App: React.FC = () => {
       setUserProfile(newProfile);
       saveUserProfile(newProfile);
       
-      // SYNC XP TO FIRESTORE IMMEDIATELY
       if (user) {
           await saveUserToFirestore(user.uid, { xp: newXP });
       }
@@ -236,6 +253,7 @@ const App: React.FC = () => {
       setChatState({ messages: [], fileContext: '', fileName: '' });
       setAppMode('EXAM'); 
       setActiveHistoryId(null);
+      setErrorMsg(null); // Clear any lingering errors
     }
   };
 
@@ -298,7 +316,6 @@ const App: React.FC = () => {
           
           alert(`Duel Created! Share this ID with your opponent: ${duelId}`);
           
-          // Auto-start for host
           const newState: QuizState = { 
               questions, 
               userAnswers: {}, 
@@ -325,9 +342,7 @@ const App: React.FC = () => {
   if (!user && showAuth) return <AuthPage />;
   const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
 
-  // Determine modal overlay state to prevent FAB click
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME';
-  // Hide FAB if in an active session to prevent overlay collision
   const isActiveSession = status === AppStatus.READY;
 
   return (
@@ -338,7 +353,14 @@ const App: React.FC = () => {
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
       
-      <nav className="border-b backdrop-blur-md sticky top-0 z-40 bg-black/40 border-white/5">
+      {/* AD BLOCKER WARNING BANNER */}
+      {isAdBlockActive && (
+          <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">
+              ⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database
+          </div>
+      )}
+
+      <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
@@ -379,7 +401,6 @@ const App: React.FC = () => {
         onDelete={(id) => { deleteHistoryItem(id); setHistory(loadHistory()); }} 
       />
       
-      {/* Ensure Profile Modal receives latest user data */}
       <UserProfileModal 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
@@ -397,61 +418,83 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 pt-4 md:pt-8 min-h-[calc(100vh-64px)] relative z-10">
         
-        {/* Error Banner with Business Styling */}
-        {errorMsg && (
-            <div className="mb-8 p-4 bg-[#1a0f0f] border-l-4 border-red-500 rounded-r-xl shadow-lg flex items-start gap-3 animate-slide-in">
-                <div className="text-red-500 mt-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+        {/* Full Screen Error View if Status is ERROR */}
+        {status === AppStatus.ERROR ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in space-y-6">
+                <div className="relative">
+                    <div className="w-24 h-24 rounded-full bg-red-900/20 flex items-center justify-center border border-red-500/30 shadow-[0_0_50px_rgba(220,38,38,0.2)] animate-pulse-slow">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <h4 className="text-sm font-bold text-red-400 uppercase tracking-wide">System Alert</h4>
-                    <p className="text-sm text-gray-400 mt-1">{errorMsg}</p>
-                </div>
-                <button onClick={() => setErrorMsg(null)} className="text-gray-500 hover:text-white transition-colors">✕</button>
-            </div>
-        )}
-        
-        <Suspense fallback={
-            <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-blue-500 rounded-full animate-spin"></div>
-            </div>
-        }>
-            {appMode === 'ADMIN' && isAdmin ? <AdminDashboard /> : (
-              <>
-                {status === AppStatus.IDLE || status === AppStatus.ERROR ? (
-                  <div className="space-y-6 md:space-y-12 pb-20">
-                    {appMode === 'EXAM' && <Hero />}
-                    {appMode === 'PROFESSOR' && <div className="text-center py-12"><h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">What shall we master?</h1><p className="text-xl opacity-60">"If you can't explain it simply, you don't understand it."</p></div>}
-                    
-                    <InputSection 
-                        onProcess={handleProcess} 
-                        isLoading={false} 
-                        appMode={appMode} 
-                        setAppMode={setAppMode} 
-                        defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
-                        userProfile={userProfile} 
-                        onShowSubscription={() => setIsSubscriptionOpen(true)}
-                        onOpenProfile={() => setIsProfileOpen(true)}
-                        onDuelStart={handleDuelStart}
-                    />
-                  </div>
-                ) : null}
-
-                {(status === AppStatus.PROCESSING_FILE || status === AppStatus.GENERATING_CONTENT) && <LoadingOverlay status={statusText} type={(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'PROFESSOR' : 'EXAM'} />}
                 
-                {status === AppStatus.READY && (
-                  <div className="h-full">
-                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
-                    {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} />}
-                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
-                  </div>
+                <div className="max-w-md space-y-2">
+                    <h2 className="text-3xl font-serif font-bold text-white tracking-tight">System Overload</h2>
+                    <p className="text-gray-400 leading-relaxed text-sm">
+                        {errorMsg || "The Professor is currently at maximum capacity processing other students. Please wait a moment before trying again."}
+                    </p>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                    <button 
+                        onClick={() => handleQuizAction('RESET')} 
+                        className="px-8 py-3 bg-white text-black rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-200 transition-transform hover:scale-105 shadow-lg"
+                    >
+                        Return to Dashboard
+                    </button>
+                </div>
+                
+                <p className="text-[10px] text-gray-600 font-mono uppercase tracking-widest pt-8">
+                    Error Code: 503 / 429 :: Neural Capacity Exceeded
+                </p>
+            </div>
+        ) : (
+            <Suspense fallback={
+                <div className="flex items-center justify-center h-64">
+                    <div className="w-8 h-8 border-2 border-white/20 border-t-blue-500 rounded-full animate-spin"></div>
+                </div>
+            }>
+                {appMode === 'ADMIN' && isAdmin ? <AdminDashboard /> : (
+                  <>
+                    {status === AppStatus.IDLE ? (
+                      <div className="space-y-6 md:space-y-12 pb-20">
+                        {appMode === 'EXAM' && <Hero />}
+                        {appMode === 'PROFESSOR' && <div className="text-center py-12"><h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">What shall we master?</h1><p className="text-xl opacity-60">"If you can't explain it simply, you don't understand it."</p></div>}
+                        
+                        <InputSection 
+                            onProcess={handleProcess} 
+                            isLoading={false} 
+                            appMode={appMode} 
+                            setAppMode={setAppMode} 
+                            defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
+                            userProfile={userProfile} 
+                            onShowSubscription={() => setIsSubscriptionOpen(true)}
+                            onOpenProfile={() => setIsProfileOpen(true)}
+                            onDuelStart={handleDuelStart}
+                        />
+                      </div>
+                    ) : null}
+
+                    {(status === AppStatus.PROCESSING_FILE || status === AppStatus.GENERATING_CONTENT) && (
+                        <LoadingOverlay 
+                            status={statusText} 
+                            type={(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'PROFESSOR' : 'EXAM'} 
+                            onCancel={handleCancelGeneration}
+                        />
+                    )}
+                    
+                    {status === AppStatus.READY && (
+                      <div className="h-full">
+                        {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
+                        {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} />}
+                        {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-        </Suspense>
+            </Suspense>
+        )}
       </main>
 
-      {/* Floating Chat Button (Omni-FAB) - Hidden when active session, modal open, or admin */}
       {!isModalOpen && !isActiveSession && appMode !== 'ADMIN' && status === AppStatus.IDLE && (
           <button 
             onClick={handleOpenFloatingChat}

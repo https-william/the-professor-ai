@@ -53,8 +53,12 @@ try {
       db = getFirestore(app);
       googleProvider = new GoogleAuthProvider();
   }
-} catch (error) {
+} catch (error: any) {
   console.error("Firebase Initialization Error:", error);
+  // Specific check for ad-blockers which often block firestore.googleapis.com
+  if (error.message && error.message.includes("ERR_BLOCKED_BY_CLIENT")) {
+      console.warn("🚨 AD-BLOCKER DETECTED: Firebase requests are being blocked. Please disable your ad-blocker for this site.");
+  }
 }
 
 export { auth, db, googleProvider };
@@ -64,7 +68,7 @@ export const isConfigured = () => {
 };
 
 export const signInWithGoogle = async () => {
-  if (!auth) throw new Error("System not initialized. Check .env configuration.");
+  if (!auth) throw new Error("System not initialized. Check .env configuration or disable AdBlocker.");
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
@@ -74,7 +78,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const registerWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("System not initialized. Check .env configuration.");
+  if (!auth) throw new Error("System not initialized. Check .env configuration or disable AdBlocker.");
   try {
     return await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -84,7 +88,7 @@ export const registerWithEmail = async (email: string, password: string) => {
 };
 
 export const loginWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("System not initialized. Check .env configuration.");
+  if (!auth) throw new Error("System not initialized. Check .env configuration or disable AdBlocker.");
   try {
     return await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -109,8 +113,12 @@ export const saveUserToFirestore = async (userId: string, data: Partial<UserProf
         const userRef = doc(db, "users", userId);
         // Use setDoc with merge: true to allow creating or updating without overwriting missing fields
         await setDoc(userRef, data, { merge: true });
-    } catch (e) {
-        console.error("Failed to sync user profile", e);
+    } catch (e: any) {
+        if (e.message && e.message.includes('offline')) {
+            console.warn("Firestore is offline. Changes saved locally.");
+        } else {
+            console.error("Failed to sync user profile. Check AdBlocker.", e);
+        }
     }
 }
 
