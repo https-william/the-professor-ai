@@ -2,138 +2,239 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile, ChatMessage } from "../types";
 
-// Helper to safely get the AI instance
-const getAI = () => {
-  const getEnv = (key: string): string => {
-    if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) return (import.meta as any).env[key];
-    if (typeof process !== 'undefined' && process.env && process.env[key]) return process.env[key];
-    return "";
-  };
+// --- MEMORY BANK (SMART CACHE) ---
+const CACHE_PREFIX = 'gemini_stealth_cache_';
+const CACHE_EXPIRY = 1000 * 60 * 60 * 24; // 24 Hours
 
-  const apiKey = getEnv("VITE_GEMINI_API_KEY");
-
-  if (!apiKey) {
-    throw new Error("Missing API Key. Please configure VITE_GEMINI_API_KEY in your .env file.");
+const generateCacheKey = (text: string, config: any, mode: string): string => {
+  // Create a unique fingerprint for the request
+  const contentSignature = text.substring(0, 50) + text.length + text.slice(-50);
+  const configSignature = JSON.stringify(config);
+  let hash = 0;
+  const str = `${mode}_${contentSignature}_${configSignature}`;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
   }
-  return new GoogleGenAI({ apiKey });
+  return `${CACHE_PREFIX}${hash}`;
 };
 
-// --- SMART GOVERNOR RETRY PROTOCOL ---
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const withRetry = async <T>(operation: () => Promise<T>, retries = 5, initialDelay = 2000): Promise<T> => {
+const getFromCache = <T>(key: string): T | null => {
   try {
-    return await operation();
-  } catch (error: any) {
-    const msg = (error.message || '').toLowerCase();
-    const status = error.status || error.response?.status;
+    const cached = localStorage.getItem(key);
+    if (!cached) return null;
+    const entry = JSON.parse(cached);
+    if (Date.now() - entry.timestamp > CACHE_EXPIRY) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    // Stealth Log: Cache hit means 0 API risk
+    console.debug("⚡ Memory Bank Access: Undetected");
+    return entry.data as T;
+  } catch (e) {
+    return null;
+  }
+};
+
+const saveToCache = (key: string, data: any) => {
+  try {
+    // Garbage collection: Keep storage clean to avoid quota errors
+    if (localStorage.length > 150) {
+        const items = [];
+        for (let i=0; i<localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(CACHE_PREFIX)) items.push(k);
+        }
+        items.slice(0, 50).forEach(k => localStorage.removeItem(k));
+    }
+    const entry = { timestamp: Date.now(), data };
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch (e) {
+    // Silent fail on storage error
+  }
+};
+
+// --- HYDRA PROTOCOL V2: MULTI-KEY ROTATION WITH BANISHING ---
+interface KeyNode {
+    key: string;
+    index: number;
+    cooldownUntil: number;
+}
+
+let keyPool: KeyNode[] = [];
+let currentKeyIndex = 0;
+
+const initKeyPool = () => {
+    if (keyPool.length > 0) return; // Already initialized
+
+    const getEnv = (key: string): string => {
+        if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) return (import.meta as any).env[key];
+        if (typeof process !== 'undefined' && process.env && process.env[key]) return process.env[key];
+        return "";
+    };
+
+    const keys: string[] = [];
+    const mainKey = getEnv("VITE_GEMINI_API_KEY");
+    if (mainKey) keys.push(mainKey);
+
+    // Scan for auxiliary keys (Explicitly checking for 2, 3, 4 as requested, and up to 10)
+    for (let i = 2; i <= 10; i++) {
+        const k = getEnv(`VITE_GEMINI_API_KEY_${i}`);
+        if (k) keys.push(k);
+    }
+
+    if (keys.length === 0) {
+        throw new Error("Protocol Failure: No Neural Keys Detected. Please check your .env configuration.");
+    }
     
-    // Status 429 = Quota Limit. 
-    // FIX: Wait 10-12 seconds. The free tier allows ~1 request every 4 seconds. 
-    // Bursting causes 429s. We must cool down significantly.
+    // Initialize nodes
+    keyPool = keys.map((k, i) => ({ key: k, index: i + 1, cooldownUntil: 0 }));
     
-    if (retries > 0) {
-        let delay = initialDelay;
+    // Randomized Start to distribute load
+    currentKeyIndex = Math.floor(Math.random() * keys.length);
+    console.log(`🔌 Hydra System Online: ${keyPool.length} Neural Nodes Connected. Initializing on Node #${keyPool[currentKeyIndex].index}.`);
+};
+
+const getActiveAI = (): GoogleGenAI => {
+    if (keyPool.length === 0) initKeyPool();
+    
+    // Find a valid key (not in cooldown)
+    let attempts = 0;
+    while (attempts < keyPool.length) {
+        const node = keyPool[currentKeyIndex];
+        if (Date.now() > node.cooldownUntil) {
+            return new GoogleGenAI({ apiKey: node.key });
+        }
+        // If current is in cooldown, move to next
+        currentKeyIndex = (currentKeyIndex + 1) % keyPool.length;
+        attempts++;
+    }
+
+    // If all are in cooldown, pick the one with shortest wait (or just the current one and hope)
+    console.warn("⚠️ All Neural Nodes are cooling down. Forcing execution on current node.");
+    return new GoogleGenAI({ apiKey: keyPool[currentKeyIndex].key });
+};
+
+const banishCurrentKey = async () => {
+    if (keyPool.length <= 1) return false;
+    
+    // Mark current key as "cooling down" for 60 seconds
+    keyPool[currentKeyIndex].cooldownUntil = Date.now() + 60000;
+    console.warn(`🚫 Node #${keyPool[currentKeyIndex].index} Banished for 60s (Rate Limit).`);
+
+    // Rotate to next
+    currentKeyIndex = (currentKeyIndex + 1) % keyPool.length;
+    
+    // Add jitter
+    const jitter = 500 + Math.random() * 1000;
+    await new Promise(r => setTimeout(r, jitter));
+    
+    console.log(`🔄 Rerouting to Node #${keyPool[currentKeyIndex].index}...`);
+    return true;
+};
+
+// --- EXECUTION ENGINE ---
+
+const executeWithHydra = async <T>(
+    operation: (ai: GoogleGenAI) => Promise<T>, 
+    retries = 3
+): Promise<T> => {
+    try {
+        const ai = getActiveAI();
+        return await operation(ai);
+    } catch (error: any) {
+        const msg = (error.message || '').toLowerCase();
+        const status = error.status || error.response?.status;
+
+        // INTERCEPT: Rate Limits (429) & Quota Exhaustion
+        if (status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('exhausted')) {
+            // Attempt Rotation
+            const rotated = await banishCurrentKey();
+            
+            if (rotated) {
+                // Retry with new key
+                return executeWithHydra(operation, retries); 
+            }
+            
+            // If we run out of keys or rotation fails, perform standard backoff
+            if (retries > 0) {
+                // Exponential Backoff with Jitter
+                const delay = 2000 + (Math.random() * 1000);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return executeWithHydra(operation, retries - 1);
+            }
+            throw new Error("System Capacity Reached. All 4 Neural Nodes are overloaded. Please wait 1 minute.");
+        }
         
-        if (status === 429 || msg.includes('429') || msg.includes('quota')) {
-            console.warn(`⚠️ API Quota Hit (429). Deep Freeze for 10s... (${retries} left)`);
-            delay = 10000 + (Math.random() * 3000); // 10-13s delay
-        } else if (status === 503 || msg.includes('overloaded')) {
-            console.warn(`⚠️ Server Busy (503). Retrying in ${delay/1000}s...`);
-            delay = delay * 2; // Exponential backoff
-        } else {
-            // Non-transient error? Rethrow immediately unless it looks like a network blip
-            if (!msg.includes('fetch') && !msg.includes('network')) throw error;
+        // INTERCEPT: Server Overload (503)
+        if (status === 503 || msg.includes('overloaded')) {
+             if (retries > 0) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                return executeWithHydra(operation, retries - 1);
+             }
         }
 
-        await wait(delay);
-        return withRetry(operation, retries - 1, delay);
+        throw error;
     }
-    throw error;
-  }
 };
 
-// Robust Error Handler
-const handleGeminiError = (error: any): never => {
-  console.error("Gemini API Error Detail:", error);
-
-  const msg = (error.message || '').toLowerCase();
-  const status = error.status || 0;
-
-  if (msg.includes('api_key') || status === 400 || status === 401 || status === 403) {
-    throw new Error("Access Denied: The API Key is invalid or expired.");
-  }
-  if (status === 429 || msg.includes('429') || msg.includes('quota')) {
-    throw new Error("Neural Overload: Traffic is extremely high. Please wait 30 seconds before trying again.");
-  }
-  if (status === 500 || status === 502 || status === 503 || msg.includes('overloaded')) {
-    throw new Error("Campus Maintenance: The AI professors are grading papers. Try again shortly.");
-  }
-  if (msg.includes('safety') || msg.includes('blocked')) {
-    throw new Error("Content Restricted: Safety filters triggered. Try rewording your notes.");
-  }
-  if (msg.includes('json')) {
-    throw new Error("Curriculum Error: The AI failed to format the lesson plan. Try again.");
-  }
-
-  throw new Error(`System Error: ${error.message || "An unexpected error occurred."}`);
-};
-
-// Safety Middleware
+// Safety & Privacy Middleware
 const checkSafety = async (text: string) => {
-    const forbiddenPatterns = ["ignore previous instructions", "write a poem", "generate nsfw"];
+    const forbiddenPatterns = ["ignore previous instructions", "generate nsfw"];
     const lower = text.toLowerCase();
     if (forbiddenPatterns.some(p => lower.includes(p))) {
-        throw new Error("The Professor refuses to engage with non-academic or unsafe prompts.");
+        throw new Error("Content Policy Violation.");
     }
 };
 
+// --- PUBLIC INTERFACE ---
+
 export const generateQuizFromText = async (text: string, config: QuizConfig, userProfile?: UserProfile): Promise<QuizQuestion[]> => {
+  const cacheKey = generateCacheKey(text, config, 'QUIZ');
+  const cached = getFromCache<QuizQuestion[]>(cacheKey);
+  if (cached) return cached;
+
+  await checkSafety(text);
+  const model = "gemini-2.5-flash"; 
+
+  const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer, isCramMode } = config;
+
+  let typeInstruction: string = questionType;
+  if (questionType === 'Mixed') {
+    typeInstruction = "a mix of Multiple Choice, True/False, and Fill in the Gap";
+  }
+
+  let instructions = `Generate ${questionCount} ${difficulty} questions. Type: ${typeInstruction}. Strict JSON.`;
+  if (useOracle) instructions += " Predict probable exam questions.";
+  if (useWeaknessDestroyer && userProfile?.weaknessFocus) instructions += ` Focus on ${userProfile.weaknessFocus}.`;
+  if (isCramMode) instructions += " Short, rapid-fire questions.";
+
+  const limitedText = text.substring(0, 30000);
+
+  const promptText = `
+    ${instructions}
+    Return JSON array: [{ "question": "...", "options": ["..."], "correct_answer": "...", "explanation": "..." }]
+    Context: ${limitedText} 
+  `;
+
+  let contentParts: any[] = [{ text: promptText }];
+  if (text.includes("[IMAGE_DATA:")) {
+      const matches = text.match(/\[IMAGE_DATA:(.*?)\]/);
+      if (matches && matches[1]) {
+          contentParts = [
+              { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
+              { text: instructions + " Analyze this image. Solve if math/science." }
+          ];
+      }
+  }
+
   try {
-    await checkSafety(text);
-    const ai = getAI();
-    const model = "gemini-2.5-flash"; 
-
-    const { difficulty, questionType, questionCount, useOracle, useWeaknessDestroyer, isCramMode } = config;
-
-    let typeInstruction: string = questionType;
-    if (questionType === 'Mixed') {
-      typeInstruction = "a mix of Multiple Choice, True/False, and Fill in the Gap";
-    }
-
-    let instructions = `Generate ${questionCount} ${difficulty} questions. Type: ${typeInstruction}. Strict JSON. No fluff.`;
-    
-    if (useOracle) instructions += " Predict probable exam questions.";
-    if (useWeaknessDestroyer && userProfile?.weaknessFocus) instructions += ` Focus heavily on ${userProfile.weaknessFocus}.`;
-    if (isCramMode) instructions += " Questions must be short, rapid-fire style for speed reading.";
-
-    // Context limit to 100k for better document coverage
-    const promptText = `
-      ${instructions}
-      Return JSON array of objects with keys: question, options (array), correct_answer, explanation.
-      Context: ${text.substring(0, 100000)} 
-    `;
-
-    // Handle Image Content Placeholder
-    let contentParts: any[] = [{ text: promptText }];
-    
-    if (text.includes("[IMAGE_DATA:")) {
-        // Extract base64 image data
-        const matches = text.match(/\[IMAGE_DATA:(.*?)\]/);
-        if (matches && matches[1]) {
-            contentParts = [
-                { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
-                { text: instructions + " Analyze this image content for the exam. If it's a math problem, solve it in the explanation." }
-            ];
-        }
-    }
-
-    const response = await withRetry(async () => {
+      const response = await executeWithHydra(async (ai) => {
         return await ai.models.generateContent({
           model: model,
           contents: { role: 'user', parts: contentParts },
           config: {
-            systemInstruction: "You are an automated exam generator. Output raw JSON only. No markdown. No chatter.",
+            systemInstruction: "You are an exam generator. Output raw JSON only. No markdown.",
             temperature: 0.7, 
             responseMimeType: "application/json",
             responseSchema: {
@@ -151,53 +252,58 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
             }
           }
         });
-    }, 6, 4000); // 6 Retries, 4s initial delay
+      });
 
-    if (response.text) {
-      const data = JSON.parse(response.text);
-      return data.map((q: any, index: number) => ({ ...q, id: index + 1 }));
-    } else {
-      throw new Error("Empty response from Gemini");
-    }
-
-  } catch (error) {
-    handleGeminiError(error);
-    return [];
+      if (response.text) {
+        const data = JSON.parse(response.text);
+        const result = data.map((q: any, index: number) => ({ ...q, id: index + 1 }));
+        saveToCache(cacheKey, result);
+        return result;
+      } else {
+        throw new Error("Empty response");
+      }
+  } catch (error: any) {
+      console.error(error);
+      if (error.message.includes("Capacity")) throw error;
+      return [];
   }
 };
 
 export const generateProfessorContent = async (text: string, config: QuizConfig): Promise<ProfessorSection[]> => {
+  const cacheKey = generateCacheKey(text, config, 'PROFESSOR');
+  const cached = getFromCache<ProfessorSection[]>(cacheKey);
+  if (cached) return cached;
+
+  await checkSafety(text);
+  const model = "gemini-2.5-flash";
+  const { personality, analogyDomain } = config;
+  const limitedText = text.substring(0, 30000);
+
+  const promptText = `
+    Teach this. Logical sections. Brief.
+    Persona: ${personality}. Analogy: ${analogyDomain}.
+    Complex topics? Include Mermaid.js in 'diagram_markdown'.
+    Context: ${limitedText}
+  `;
+
+  let contentParts: any[] = [{ text: promptText }];
+  if (text.includes("[IMAGE_DATA:")) {
+      const matches = text.match(/\[IMAGE_DATA:(.*?)\]/);
+      if (matches && matches[1]) {
+          contentParts = [
+              { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
+              { text: promptText + " Analyze this image visually." }
+          ];
+      }
+  }
+
   try {
-    await checkSafety(text);
-    const ai = getAI();
-    const model = "gemini-2.5-flash";
-    const { personality, analogyDomain } = config;
-
-    const promptText = `
-      Teach this content. Break into logical sections. Brief content analysis.
-      Persona: ${personality}. Analogy: ${analogyDomain}.
-      Include a Mermaid.js diagram code in 'diagram_markdown' if complex.
-      Context: ${text.substring(0, 100000)}
-    `;
-
-    let contentParts: any[] = [{ text: promptText }];
-    
-    if (text.includes("[IMAGE_DATA:")) {
-        const matches = text.match(/\[IMAGE_DATA:(.*?)\]/);
-        if (matches && matches[1]) {
-            contentParts = [
-                { inlineData: { mimeType: "image/jpeg", data: matches[1] } },
-                { text: promptText + " Analyze this image visually. If Math, show steps." }
-            ];
-        }
-    }
-
-    const response = await withRetry(async () => {
+      const response = await executeWithHydra(async (ai) => {
         return await ai.models.generateContent({
           model: model,
           contents: { role: 'user', parts: contentParts },
           config: {
-            systemInstruction: `You are an expert educator. Output raw JSON only. Be concise and fast.`,
+            systemInstruction: `You are an expert educator. Output raw JSON only. Concise.`,
             temperature: 0.7,
             responseMimeType: "application/json",
             responseSchema: {
@@ -216,33 +322,33 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
             }
           }
         });
-    }, 6, 4000);
+      });
 
-    if (response.text) {
-      const data = JSON.parse(response.text);
-      return data.map((s: any, index: number) => ({ ...s, id: index + 1 }));
-    } else {
-      throw new Error("Empty response from Gemini");
-    }
-
-  } catch (error) {
-    handleGeminiError(error);
-    return [];
+      if (response.text) {
+        const data = JSON.parse(response.text);
+        const result = data.map((s: any, index: number) => ({ ...s, id: index + 1 }));
+        saveToCache(cacheKey, result);
+        return result;
+      } else {
+        throw new Error("Empty response");
+      }
+  } catch (error: any) {
+      console.error(error);
+      if (error.message.includes("Capacity")) throw error;
+      return [];
   }
 };
 
 export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string): Promise<string> => {
     try {
-        const ai = getAI();
         const model = "gemini-2.5-flash";
-
         const recentHistory = history.slice(-6).map(msg => {
             if (msg.image) {
                 return {
                     role: msg.role === 'user' ? 'user' : 'model',
                     parts: [
                         { inlineData: { mimeType: 'image/jpeg', data: msg.image } },
-                        { text: msg.content || "Analyze this image." }
+                        { text: msg.content || "Analyze." }
                     ]
                 };
             }
@@ -252,39 +358,40 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
             };
         });
 
-        const systemInstruction = `You are The Professor. Be precise, concise, and academic. Context: ${fileContext.substring(0, 10000)}.`;
+        const limitedContext = fileContext.substring(0, 5000);
+        const systemInstruction = `You are The Professor. Precise. Academic. Context: ${limitedContext}.`;
 
-        const chat = ai.chats.create({
-            model: model,
-            config: { 
-                systemInstruction,
-                maxOutputTokens: 256,
-                temperature: 0.7
-            },
-            history: recentHistory
-        });
-
-        const response = await withRetry(async () => {
+        const response = await executeWithHydra(async (ai) => {
+            const chat = ai.chats.create({
+                model: model,
+                config: { 
+                    systemInstruction,
+                    maxOutputTokens: 256,
+                    temperature: 0.7
+                },
+                history: recentHistory
+            });
             return await chat.sendMessage({ message: newMessage });
-        }, 3, 3000); 
+        }, 1); // Reduced retries for chat
         
         return response.text || "I cannot answer that right now.";
 
     } catch (error) {
-        console.error(error);
         return "Connection interrupted. The library is closed.";
     }
 }
 
 export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'ELA', context?: string): Promise<string> => {
-    try {
-        const ai = getAI();
-        const model = "gemini-2.5-flash";
-        
-        let prompt = `Rewrite this explanation to be extremely simple, as if explaining to a 5-year-old. Explanation: "${explanation}"`;
-        if (type === 'ELA') prompt = `Rewrite this explanation in the style of ${context}. Explanation: "${explanation}"`;
+    const cacheKey = generateCacheKey(explanation, { type, context }, 'EXPLAIN');
+    const cached = getFromCache<string>(cacheKey);
+    if (cached) return cached;
 
-        const response = await withRetry(async () => {
+    try {
+        const model = "gemini-2.5-flash";
+        let prompt = `Rewrite simply (ELI5): "${explanation}"`;
+        if (type === 'ELA') prompt = `Rewrite as ${context}: "${explanation}"`;
+
+        const response = await executeWithHydra(async (ai) => {
             return await ai.models.generateContent({
                 model: model,
                 contents: prompt,
@@ -293,9 +400,11 @@ export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'E
                     temperature: 0.8
                 }
             });
-        }, 2, 2000);
+        }, 2);
         
-        return response.text || explanation;
+        const result = response.text || explanation;
+        saveToCache(cacheKey, result);
+        return result;
     } catch (e) {
         return explanation;
     }

@@ -55,9 +55,8 @@ try {
   }
 } catch (error: any) {
   console.error("Firebase Initialization Error:", error);
-  // Specific check for ad-blockers which often block firestore.googleapis.com
   if (error.message && error.message.includes("ERR_BLOCKED_BY_CLIENT")) {
-      console.warn("🚨 AD-BLOCKER DETECTED: Firebase requests are being blocked. Please disable your ad-blocker for this site.");
+      console.warn("🚨 AD-BLOCKER DETECTED: Firebase requests are being blocked. App running in offline/local mode.");
   }
 }
 
@@ -65,6 +64,23 @@ export { auth, db, googleProvider };
 
 export const isConfigured = () => {
   return !!firebaseConfig.apiKey;
+};
+
+// Helper to safely execute Firestore ops even if blocked
+const safeFirestoreOp = async (operation: () => Promise<any>, fallbackMessage: string) => {
+    try {
+        if (!db) return; // DB Init failed previously
+        await operation();
+    } catch (error: any) {
+        const msg = error.message || '';
+        // If it's an ad-blocker error, just log a warning and let the app continue
+        if (msg.includes("ERR_BLOCKED_BY_CLIENT") || msg.includes("Failed to fetch")) {
+            console.warn(`🔥 AdBlocker Prevented: ${fallbackMessage}. Proceeding locally.`);
+        } else {
+            // Real errors should be logged
+            console.error(error);
+        }
+    }
 };
 
 export const signInWithGoogle = async () => {
@@ -108,40 +124,29 @@ export const logout = async () => {
 
 // --- USER DATA SYNC ---
 export const saveUserToFirestore = async (userId: string, data: Partial<UserProfile>) => {
-    if (!db) return;
-    try {
+    await safeFirestoreOp(async () => {
         const userRef = doc(db, "users", userId);
-        // Use setDoc with merge: true to allow creating or updating without overwriting missing fields
         await setDoc(userRef, data, { merge: true });
-    } catch (e: any) {
-        if (e.message && e.message.includes('offline')) {
-            console.warn("Firestore is offline. Changes saved locally.");
-        } else {
-            console.error("Failed to sync user profile. Check AdBlocker.", e);
-        }
-    }
+    }, "Sync User Profile");
 }
 
 // --- SYSTEM & ADMIN ACTIONS ---
 
 export const logSystemAction = async (action: string, details: string, targetUserId?: string) => {
-  if (!auth?.currentUser || !db) return;
-  try {
+  if (!auth?.currentUser) return;
+  await safeFirestoreOp(async () => {
     await addDoc(collection(db, "system_logs"), {
        action,
        details,
        targetUserId: targetUserId || null,
-       adminEmail: auth.currentUser.email,
+       adminEmail: auth.currentUser!.email,
        timestamp: serverTimestamp()
     });
-  } catch (e: any) {
-    // Ignore permission errors in console
-  }
+  }, "Log System Action");
 };
 
 export const logPayment = async (userId: string, tier: string, amount: number, ref: string) => {
-  if (!db) return;
-  try {
+  await safeFirestoreOp(async () => {
     await addDoc(collection(db, "payments"), {
       userId,
       tier,
@@ -149,62 +154,62 @@ export const logPayment = async (userId: string, tier: string, amount: number, r
       reference: ref,
       timestamp: serverTimestamp()
     });
-  } catch (e) {
-    console.error("Failed to log payment", e);
-  }
+  }, "Log Payment");
 };
 
 // Admin: Update any field for a user
 export const adminUpdateUser = async (userId: string, data: Partial<UserProfile>) => {
-    if (!db) return;
-    const userRef = doc(db, "users", userId);
-    await setDoc(userRef, data, { merge: true });
-    await logSystemAction("ADMIN_UPDATE", `Updated user fields: ${Object.keys(data).join(', ')}`, userId);
+    await safeFirestoreOp(async () => {
+        const userRef = doc(db, "users", userId);
+        await setDoc(userRef, data, { merge: true });
+        await logSystemAction("ADMIN_UPDATE", `Updated user fields: ${Object.keys(data).join(', ')}`, userId);
+    }, "Admin Update User");
 };
 
 export const updateUserPlan = async (userId: string, newPlan: SubscriptionTier) => {
-    if (!db) return;
-    const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, { plan: newPlan });
-    await logSystemAction("UPDATE_PLAN", `Updated plan to ${newPlan}`, userId);
+    await safeFirestoreOp(async () => {
+        const userRef = doc(db, "users", userId);
+        await updateDoc(userRef, { plan: newPlan });
+        await logSystemAction("UPDATE_PLAN", `Updated plan to ${newPlan}`, userId);
+    }, "Update User Plan");
 };
 
 export const toggleBanUser = async (userId: string, currentBanStatus: boolean) => {
-    if (!db) return;
-    const userRef = doc(db, "users", userId);
-    const newStatus = !currentBanStatus;
-    await updateDoc(userRef, { isBanned: newStatus });
-    await logSystemAction(newStatus ? "BAN_USER" : "UNBAN_USER", `User ban status set to ${newStatus}`, userId);
+    await safeFirestoreOp(async () => {
+        const userRef = doc(db, "users", userId);
+        const newStatus = !currentBanStatus;
+        await updateDoc(userRef, { isBanned: newStatus });
+        await logSystemAction(newStatus ? "BAN_USER" : "UNBAN_USER", `User ban status set to ${newStatus}`, userId);
+    }, "Ban/Unban User");
 };
 
 export const deleteUserAccount = async (userId: string) => {
-    if (!db) return;
-    const userRef = doc(db, "users", userId);
-    await deleteDoc(userRef);
-    await logSystemAction("DELETE_USER", "Deleted user account", userId);
+    await safeFirestoreOp(async () => {
+        const userRef = doc(db, "users", userId);
+        await deleteDoc(userRef);
+        await logSystemAction("DELETE_USER", "Deleted user account", userId);
+    }, "Delete User");
 };
 
 export const resetUserLimits = async (userId: string) => {
-    if (!db) return;
-    const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, { dailyQuizzesGenerated: 0 });
-    await logSystemAction("RESET_LIMITS", "Reset daily generation limits", userId);
+    await safeFirestoreOp(async () => {
+        const userRef = doc(db, "users", userId);
+        await updateDoc(userRef, { dailyQuizzesGenerated: 0 });
+        await logSystemAction("RESET_LIMITS", "Reset daily generation limits", userId);
+    }, "Reset User Limits");
 };
 
 export const updateUserUsage = async (userId: string, usage: number) => {
-  if (!db) return;
-  try {
+  await safeFirestoreOp(async () => {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { dailyQuizzesGenerated: usage });
-  } catch(e) {
-      // Ignore permission errors
-  }
+  }, "Update Usage");
 };
 
 // --- DUEL SYSTEM ---
 
 export const createDuel = async (hostId: string, hostName: string, wager: number, content: string, quizConfig: QuizConfig, quizQuestions: QuizQuestion[]) => {
-    if (!db) throw new Error("Database not connected. Check your internet or configuration.");
+    if (!db) throw new Error("Database connection required for Duels. Please disable AdBlocker.");
     
     try {
         const duelData: Omit<DuelState, 'id'> = {
@@ -220,18 +225,12 @@ export const createDuel = async (hostId: string, hostName: string, wager: number
         return docRef.id;
     } catch (error: any) {
         // --- ERROR SANITIZATION ---
-        // Catch the raw Firebase permission error and show a "Business Safe" message to the user
-        // while logging the critical fix to the developer.
-        
         const msg = (error.message || '').toLowerCase();
         const code = error.code || '';
         
         if (code === 'permission-denied' || msg.includes("permission") || msg.includes("sufficient")) {
             console.error("🔥 CRITICAL ADMIN ERROR: Firestore Security Rules are blocking writes.");
-            console.error("FIX: Go to Firebase Console > Build > Firestore > Rules.");
-            console.error("ADD: match /duels/{duelId} { allow read, write: if request.auth != null; }");
-            
-            throw new Error("The Duel Arena is temporarily locked by the Dean for maintenance. Please try again later.");
+            throw new Error("The Duel Arena is temporarily locked. Please try again later.");
         }
         
         console.error("Duel Creation Failed:", error);
@@ -254,30 +253,32 @@ export const getDuel = async (duelId: string): Promise<DuelState | null> => {
 };
 
 export const joinDuel = async (duelId: string, challengerId: string, challengerName: string) => {
-    if (!db) return;
-    const docRef = doc(db, "duels", duelId);
-    await updateDoc(docRef, {
-        challengerId,
-        challengerName,
-        status: 'ACTIVE'
-    });
+    await safeFirestoreOp(async () => {
+        const docRef = doc(db, "duels", duelId);
+        await updateDoc(docRef, {
+            challengerId,
+            challengerName,
+            status: 'ACTIVE'
+        });
+    }, "Join Duel");
 };
 
 export const submitDuelScore = async (duelId: string, userId: string, score: number, role: 'host' | 'challenger') => {
-    if (!db) return;
-    const docRef = doc(db, "duels", duelId);
-    const update = role === 'host' ? { hostScore: score } : { challengerScore: score };
-    await updateDoc(docRef, update);
-    
-    // Check if both scores are in to declare winner
-    const snap = await getDoc(docRef);
-    const data = snap.data();
-    if (data && data.hostScore !== undefined && data.challengerScore !== undefined) {
-        let winnerId = null;
-        if (data.hostScore > data.challengerScore) winnerId = data.hostId;
-        else if (data.challengerScore > data.hostScore) winnerId = data.challengerId;
-        else winnerId = 'DRAW';
+    await safeFirestoreOp(async () => {
+        const docRef = doc(db, "duels", duelId);
+        const update = role === 'host' ? { hostScore: score } : { challengerScore: score };
+        await updateDoc(docRef, update);
         
-        await updateDoc(docRef, { status: 'COMPLETED', winnerId });
-    }
+        // Check if both scores are in to declare winner
+        const snap = await getDoc(docRef);
+        const data = snap.data();
+        if (data && data.hostScore !== undefined && data.challengerScore !== undefined) {
+            let winnerId = null;
+            if (data.hostScore > data.challengerScore) winnerId = data.hostId;
+            else if (data.challengerScore > data.hostScore) winnerId = data.challengerId;
+            else winnerId = 'DRAW';
+            
+            await updateDoc(docRef, { status: 'COMPLETED', winnerId });
+        }
+    }, "Submit Duel Score");
 };
