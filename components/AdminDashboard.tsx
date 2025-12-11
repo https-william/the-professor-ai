@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
-import { db, toggleBanUser, deleteUserAccount, updateUserPlan, resetUserLimits } from '../services/firebase';
-import { SubscriptionTier, SystemLog } from '../types';
+import { db, toggleBanUser, deleteUserAccount, updateUserPlan, resetUserLimits, adminUpdateUser } from '../services/firebase';
+import { SubscriptionTier, SystemLog, UserProfile } from '../types';
 
 interface UserData {
   id: string;
@@ -12,6 +12,7 @@ interface UserData {
   createdAt: any;
   isBanned?: boolean;
   dailyQuizzesGenerated?: number;
+  profile?: UserProfile; // Full profile data
 }
 
 export const AdminDashboard: React.FC = () => {
@@ -20,7 +21,10 @@ export const AdminDashboard: React.FC = () => {
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [permissionError, setPermissionError] = useState(false);
+  
+  // Student Dossier Modal State
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [editForm, setEditForm] = useState<Partial<UserProfile> & { socials?: any }>({});
 
   useEffect(() => {
     fetchUsers();
@@ -40,16 +44,22 @@ export const AdminDashboard: React.FC = () => {
           role: data.role || 'student',
           createdAt: data.createdAt,
           isBanned: data.isBanned || false,
-          dailyQuizzesGenerated: data.dailyQuizzesGenerated || 0
+          dailyQuizzesGenerated: data.dailyQuizzesGenerated || 0,
+          profile: {
+              alias: data.alias || '',
+              fullName: data.fullName || '',
+              country: data.country || '',
+              school: data.school || '',
+              academicLevel: data.academicLevel || '',
+              socials: data.socials || {},
+              xp: data.xp || 0,
+              // Map other fields as needed
+          } as UserProfile
         });
       });
       setUsers(userList);
-      setPermissionError(false);
     } catch (error: any) {
       console.error("Error fetching users:", error);
-      if (error.code === 'permission-denied') {
-        setPermissionError(true);
-      }
     } finally {
       setLoading(false);
     }
@@ -72,64 +82,53 @@ export const AdminDashboard: React.FC = () => {
               });
           });
           setLogs(logList);
-      } catch (error: any) {
-          // Silent fail for logs if permissions missing to avoid console spam, unless users failed too
-          if (error.code === 'permission-denied') {
-             // Already handled by fetchUsers usually, but good to know
-          } else {
-             console.error("Error fetching logs", error);
-          }
+      } catch (error) {
+          console.error("Error fetching logs", error);
       }
   };
 
-  const handleUpdatePlan = async (userId: string, newPlan: SubscriptionTier) => {
-      setProcessingId(userId);
-      try {
-          await updateUserPlan(userId, newPlan);
-          setUsers(prev => prev.map(u => u.id === userId ? { ...u, plan: newPlan } : u));
-          fetchLogs(); // Refresh logs
-      } catch (error) {
-          alert("Failed to update plan");
-      } finally {
-          setProcessingId(null);
-      }
+  const handleOpenDossier = (user: UserData) => {
+      setSelectedUser(user);
+      setEditForm({
+          alias: user.profile?.alias,
+          fullName: user.profile?.fullName,
+          school: user.profile?.school,
+          country: user.profile?.country,
+          academicLevel: user.profile?.academicLevel,
+          xp: user.profile?.xp,
+          socials: { ...(user.profile?.socials || {}) }
+      });
   };
 
-  const handleBan = async (userId: string, currentBanStatus: boolean) => {
-      if (!confirm(currentBanStatus ? "Lift ban for this user?" : "Ban this user from accessing the platform?")) return;
-      setProcessingId(userId);
+  const handleSaveDossier = async () => {
+      if (!selectedUser) return;
+      setProcessingId(selectedUser.id);
       try {
-          await toggleBanUser(userId, currentBanStatus);
-          setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBanned: !currentBanStatus } : u));
-          fetchLogs();
-      } catch (error) {
-          alert("Failed to ban/unban user");
-      } finally {
-          setProcessingId(null);
-      }
-  };
-
-  const handleResetLimits = async (userId: string) => {
-      if (!confirm("Reset daily quiz generation limits for this user?")) return;
-      setProcessingId(userId);
-      try {
-          await resetUserLimits(userId);
-          setUsers(prev => prev.map(u => u.id === userId ? { ...u, dailyQuizzesGenerated: 0 } : u));
-          fetchLogs();
-      } catch (error) {
-          alert("Failed to reset limits");
+          // Merge edits into firestore
+          await adminUpdateUser(selectedUser.id, editForm);
+          
+          // Update local state
+          setUsers(prev => prev.map(u => u.id === selectedUser.id ? { 
+              ...u, 
+              profile: { ...u.profile, ...editForm } as UserProfile 
+          } : u));
+          
+          setSelectedUser(null);
+          alert("Dossier Updated Successfully");
+      } catch (e) {
+          alert("Failed to update dossier");
       } finally {
           setProcessingId(null);
       }
   };
 
   const handleDelete = async (userId: string) => {
-      if (!confirm("Are you sure you want to DELETE this user? This action cannot be undone.")) return;
+      if (!confirm("CONFIRM EXPULSION: This will permanently delete the student record.")) return;
       setProcessingId(userId);
       try {
           await deleteUserAccount(userId);
           setUsers(prev => prev.filter(u => u.id !== userId));
-          fetchLogs();
+          setSelectedUser(null); // Close modal if open
       } catch (error) {
           alert("Failed to delete user");
       } finally {
@@ -137,217 +136,240 @@ export const AdminDashboard: React.FC = () => {
       }
   };
 
-  const downloadCSV = () => {
-      const headers = ["User ID", "Email", "Plan", "Role", "Join Date", "Banned", "Usage"];
-      const rows = users.map(u => [
-          u.id,
-          u.email,
-          u.plan,
-          u.role,
-          u.createdAt?.seconds ? new Date(u.createdAt.seconds * 1000).toLocaleDateString() : 'N/A',
-          u.isBanned ? "YES" : "NO",
-          u.dailyQuizzesGenerated || 0
-      ]);
-
-      const csvContent = "data:text/csv;charset=utf-8," 
-          + headers.join(",") + "\n" 
-          + rows.map(e => e.join(",")).join("\n");
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `student_registry_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  };
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-96"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div></div>;
-  }
+  if (loading) return <div className="flex items-center justify-center h-screen bg-[#050505]"><div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in pb-24">
+    <div className="min-h-screen bg-[#050505] text-white font-sans p-4 md:p-8 animate-fade-in relative">
       
-      {permissionError && (
-        <div className="mb-8 bg-red-900/20 border border-red-500/50 p-6 rounded-2xl flex flex-col gap-4">
-           <div className="flex items-center gap-3 text-red-400 font-bold text-lg">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-             <h3>Security Alert: Database Locked</h3>
-           </div>
-           <p className="text-red-200 text-sm">
-             The Dean's Office cannot access student records because Firestore Rules are blocking the connection.
-             <br/><br/>
-             <strong>Action Required:</strong> Go to Firebase Console &gt; Firestore &gt; Rules and paste the "God Mode" ruleset provided by your developer.
-           </p>
-        </div>
-      )}
-
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-gradient-to-br from-amber-600 to-amber-800 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/30 border border-amber-500/20">
-             <span className="text-3xl">🏛️</span>
-          </div>
-          <div>
-             <h1 className="text-4xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-200">Dean's Office</h1>
-             <p className="text-amber-500/60 font-mono text-sm uppercase tracking-widest mt-1">Excellentia Supreme Command</p>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-             <div className="flex bg-black/40 rounded-xl p-1 border border-amber-500/20">
-                <button 
-                  onClick={() => setActiveTab('REGISTRY')}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'REGISTRY' ? 'bg-amber-500/20 text-amber-200 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                  Registry
-                </button>
-                <button 
-                  onClick={() => setActiveTab('LOGS')}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'LOGS' ? 'bg-amber-500/20 text-amber-200 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                  Audit Logs
-                </button>
-             </div>
-
-            <button 
-                onClick={downloadCSV}
-                className="px-6 py-3 bg-black/40 border border-amber-500/30 text-amber-500 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-900/20 transition-all flex items-center gap-2"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0l-4 4m4-4v12" /></svg>
-                Export
-            </button>
-        </div>
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-900/10 blur-[120px] rounded-full"></div>
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-900/10 blur-[120px] rounded-full"></div>
       </div>
 
-      <div className="glass-panel rounded-3xl overflow-hidden border border-amber-500/10 shadow-2xl min-h-[500px]">
-        {activeTab === 'REGISTRY' ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-amber-950/20 border-b border-amber-500/10">
-                <tr>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Student</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Enrolled</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Tuition Plan</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Usage</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {users.map((user) => (
-                  <tr key={user.id} className={`hover:bg-white/5 transition-colors ${user.isBanned ? 'bg-red-900/10' : ''}`}>
-                    <td className="px-6 py-4">
-                        <div className="font-mono text-sm text-gray-300">{user.email}</div>
-                        <div className="text-[10px] text-gray-600 font-mono mt-1">{user.id}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 font-mono">
-                      {user.createdAt?.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <select 
-                          value={user.plan}
-                          onChange={(e) => handleUpdatePlan(user.id, e.target.value as SubscriptionTier)}
-                          disabled={processingId === user.id}
-                          className={`bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold uppercase tracking-wide outline-none focus:border-amber-500 ${
-                              user.plan === 'Excellentia Supreme' ? 'text-amber-400 border-amber-500/30' : 
-                              user.plan === 'Scholar' ? 'text-blue-400 border-blue-500/30' : 
-                              'text-gray-400'
-                          }`}
+      <div className="max-w-7xl mx-auto relative z-10">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-amber-500/20 pb-6">
+              <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 bg-[#0f0f10] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                      <span className="text-4xl">🏛️</span>
+                  </div>
+                  <div>
+                      <h1 className="text-4xl md:text-5xl font-serif font-black text-amber-500 tracking-tight">DEAN'S OFFICE</h1>
+                      <div className="flex items-center gap-3 mt-2">
+                          <span className="px-2 py-0.5 bg-amber-900/30 border border-amber-500/30 rounded text-[10px] font-bold uppercase tracking-widest text-amber-200">Superintendent Access</span>
+                          <span className="text-xs text-gray-500 font-mono">:: SECURE CONNECTION ESTABLISHED</span>
+                      </div>
+                  </div>
+              </div>
+              
+              <div className="flex gap-2 mt-4 md:mt-0">
+                  <button onClick={() => setActiveTab('REGISTRY')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'REGISTRY' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Student Registry</button>
+                  <button onClick={() => setActiveTab('LOGS')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'LOGS' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Audit Logs</button>
+              </div>
+          </div>
+
+          {activeTab === 'REGISTRY' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {users.map(user => (
+                      <div key={user.id} className="bg-[#0f0f10] border border-white/5 hover:border-amber-500/30 rounded-2xl p-6 transition-all group hover:bg-[#151515] relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          
+                          <div className="flex justify-between items-start mb-4">
+                              <div>
+                                  <h3 className="font-bold text-lg text-white group-hover:text-amber-400 transition-colors">{user.profile?.alias || 'Unknown Student'}</h3>
+                                  <p className="text-xs text-gray-500 font-mono">{user.email}</p>
+                              </div>
+                              <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${user.plan === 'Excellentia Supreme' ? 'bg-amber-900/20 text-amber-500 border border-amber-500/20' : 'bg-blue-900/20 text-blue-500 border border-blue-500/20'}`}>
+                                  {user.plan}
+                              </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 mb-6">
+                              <div className="bg-black/40 p-3 rounded-lg border border-white/5">
+                                  <div className="text-[10px] text-gray-500 uppercase">XP</div>
+                                  <div className="text-xl font-mono text-white">{user.profile?.xp || 0}</div>
+                              </div>
+                              <div className="bg-black/40 p-3 rounded-lg border border-white/5">
+                                  <div className="text-[10px] text-gray-500 uppercase">Usage</div>
+                                  <div className="text-xl font-mono text-white">{user.dailyQuizzesGenerated || 0}</div>
+                              </div>
+                          </div>
+
+                          <button 
+                            onClick={() => handleOpenDossier(user)}
+                            className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-300 transition-all flex items-center justify-center gap-2"
+                          >
+                             <span>📂</span> Open Dossier
+                          </button>
+                      </div>
+                  ))}
+              </div>
+          ) : (
+              <div className="bg-[#0f0f10] border border-white/5 rounded-2xl overflow-hidden">
+                  <table className="w-full text-left">
+                      <thead className="bg-black/40 border-b border-white/5">
+                          <tr>
+                              <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Time</th>
+                              <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Action</th>
+                              <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Details</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                          {logs.map(log => (
+                              <tr key={log.id} className="hover:bg-white/5">
+                                  <td className="px-6 py-4 text-xs font-mono text-gray-500">{new Date(log.timestamp?.seconds * 1000).toLocaleString()}</td>
+                                  <td className="px-6 py-4"><span className="px-2 py-1 bg-white/5 rounded text-[10px] font-bold uppercase">{log.action}</span></td>
+                                  <td className="px-6 py-4 text-sm text-gray-400">{log.details}</td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          )}
+      </div>
+
+      {/* STUDENT DOSSIER MODAL */}
+      {selectedUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
+              <div className="w-full max-w-4xl bg-[#0f0f10] border border-amber-500/20 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  
+                  {/* Modal Header */}
+                  <div className="p-6 border-b border-white/5 bg-black/40 flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-amber-900/20 rounded-xl border border-amber-500/20 flex items-center justify-center text-2xl">
+                              📁
+                          </div>
+                          <div>
+                              <h2 className="text-xl font-bold text-white uppercase tracking-wider">Restricted Dossier</h2>
+                              <p className="text-xs text-gray-500 font-mono">{selectedUser.id}</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">✕</button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          
+                          {/* Identity Section */}
+                          <div className="space-y-6">
+                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Identity Matrix</h3>
+                              
+                              <div className="space-y-4">
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Alias (Codename)</label>
+                                      <input 
+                                          type="text" 
+                                          value={editForm.alias || ''} 
+                                          onChange={(e) => setEditForm({...editForm, alias: e.target.value})}
+                                          className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Full Name</label>
+                                      <input 
+                                          type="text" 
+                                          value={editForm.fullName || ''} 
+                                          onChange={(e) => setEditForm({...editForm, fullName: e.target.value})}
+                                          className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
+                                      />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                          <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Country</label>
+                                          <input 
+                                              type="text" 
+                                              value={editForm.country || ''} 
+                                              onChange={(e) => setEditForm({...editForm, country: e.target.value})}
+                                              className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
+                                          />
+                                      </div>
+                                      <div>
+                                          <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Academic Level</label>
+                                          <input 
+                                              type="text" 
+                                              value={editForm.academicLevel || ''} 
+                                              onChange={(e) => setEditForm({...editForm, academicLevel: e.target.value})}
+                                              className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
+                                          />
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Institution</label>
+                                      <input 
+                                          type="text" 
+                                          value={editForm.school || ''} 
+                                          onChange={(e) => setEditForm({...editForm, school: e.target.value})}
+                                          className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
+                                      />
+                                  </div>
+                              </div>
+                          </div>
+
+                          {/* Metrics & Socials */}
+                          <div className="space-y-6">
+                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Academic & Network</h3>
+                              
+                              <div className="bg-amber-900/10 p-4 rounded-xl border border-amber-500/20">
+                                  <label className="text-[10px] font-bold text-amber-500 uppercase block mb-2">Override Experience Points (XP)</label>
+                                  <div className="flex items-center gap-4">
+                                      <input 
+                                          type="range" min="0" max="10000" step="100" 
+                                          value={editForm.xp || 0} 
+                                          onChange={(e) => setEditForm({...editForm, xp: parseInt(e.target.value)})}
+                                          className="flex-1 h-2 bg-black rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                      />
+                                      <input 
+                                          type="number" 
+                                          value={editForm.xp || 0} 
+                                          onChange={(e) => setEditForm({...editForm, xp: parseInt(e.target.value)})}
+                                          className="w-24 bg-black/40 border border-amber-500/30 rounded px-2 py-1 text-right font-mono text-amber-400"
+                                      />
+                                  </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                  <label className="text-[10px] font-bold text-gray-500 uppercase block">Social Handles</label>
+                                  {['whatsapp', 'telegram', 'instagram', 'snapchat'].map(platform => (
+                                      <div key={platform} className="flex items-center gap-2">
+                                          <span className="w-24 text-xs text-gray-400 capitalize">{platform}:</span>
+                                          <input 
+                                              type="text" 
+                                              value={editForm.socials?.[platform] || ''}
+                                              onChange={(e) => setEditForm({
+                                                  ...editForm, 
+                                                  socials: { ...editForm.socials, [platform]: e.target.value }
+                                              })}
+                                              className="flex-1 bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-amber-500 outline-none"
+                                              placeholder="Not linked"
+                                          />
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="p-6 border-t border-white/5 bg-black/40 flex justify-between items-center">
+                      <button 
+                        onClick={() => handleDelete(selectedUser.id)} 
+                        className="px-6 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-500/20 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
                       >
-                          <option value="Fresher">Fresher</option>
-                          <option value="Scholar">Scholar</option>
-                          <option value="Excellentia Supreme">Supreme</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                         <span className={`font-mono text-sm ${user.dailyQuizzesGenerated && user.dailyQuizzesGenerated >= 3 && user.plan === 'Fresher' ? 'text-red-400' : 'text-gray-400'}`}>
-                           {user.dailyQuizzesGenerated || 0}
-                         </span>
-                         {user.dailyQuizzesGenerated && user.dailyQuizzesGenerated > 0 && (
-                           <button 
-                             onClick={() => handleResetLimits(user.id)}
-                             disabled={processingId === user.id}
-                             title="Reset Limits"
-                             className="text-[10px] bg-white/5 hover:bg-white/10 px-1.5 py-0.5 rounded text-gray-500"
-                           >
-                             ↺
-                           </button>
-                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.isBanned ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-red-900/30 text-red-500 border border-red-500/30">
-                              Expelled
-                          </span>
-                      ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-green-900/20 text-green-500 border border-green-500/20">
-                              Active
-                          </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                          <button
-                              onClick={() => handleBan(user.id, user.isBanned || false)}
-                              disabled={processingId === user.id}
-                              className={`p-2 rounded-lg border transition-all ${
-                                  user.isBanned 
-                                      ? 'bg-green-900/20 border-green-500/30 text-green-400 hover:bg-green-900/40' 
-                                      : 'bg-red-900/20 border-red-500/30 text-red-400 hover:bg-red-900/40'
-                              }`}
-                              title={user.isBanned ? "Unban User" : "Ban User"}
+                          Expel Student
+                      </button>
+                      <div className="flex gap-4">
+                          <button onClick={() => setSelectedUser(null)} className="px-6 py-3 text-gray-500 hover:text-white font-bold uppercase text-xs">Cancel</button>
+                          <button 
+                             onClick={handleSaveDossier}
+                             className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 transition-all"
                           >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-                          </button>
-                          <button
-                              onClick={() => handleDelete(user.id)}
-                              disabled={processingId === user.id}
-                              className="p-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:bg-red-900/80 hover:text-white hover:border-red-500 transition-all"
-                              title="Delete User"
-                          >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                             Update Records
                           </button>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </div>
+              </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-             <table className="w-full text-left">
-              <thead className="bg-amber-950/20 border-b border-amber-500/10">
-                <tr>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Time</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Admin</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Action</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Details</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-amber-500/50 uppercase tracking-widest">Target</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {logs.map((log) => (
-                   <tr key={log.id} className="hover:bg-white/5">
-                      <td className="px-6 py-4 text-xs font-mono text-gray-500">
-                         {log.timestamp?.seconds ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}
-                      </td>
-                      <td className="px-6 py-4 text-xs font-mono text-amber-400">{log.adminEmail}</td>
-                      <td className="px-6 py-4">
-                         <span className="text-[10px] font-bold uppercase bg-white/5 px-2 py-1 rounded border border-white/10">{log.action}</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{log.details}</td>
-                      <td className="px-6 py-4 text-xs font-mono text-gray-500">{log.targetUserId || '-'}</td>
-                   </tr>
-                ))}
-              </tbody>
-             </table>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

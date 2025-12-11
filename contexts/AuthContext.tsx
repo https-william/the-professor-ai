@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -12,8 +13,8 @@ export interface ExtendedUser extends User {
   plan?: SubscriptionTier;
   role?: UserRole;
   isBanned?: boolean;
-  hasCompletedOnboarding?: boolean; // Added this
-  profile?: Partial<UserProfile>; // store fetched profile snippet
+  hasCompletedOnboarding?: boolean; 
+  profile?: Partial<UserProfile>; // This must contain EVERYTHING from firestore
 }
 
 interface AuthContextType {
@@ -47,20 +48,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const extendedUser: ExtendedUser = {
           ...currentUser,
-          // Explicitly map base User properties to satisfy TS if needed, though spread usually works
           uid: currentUser.uid,
           email: currentUser.email,
           displayName: currentUser.displayName,
           photoURL: currentUser.photoURL,
-          plan: 'Excellentia Supreme', // Launch Week Override
+          plan: userData.plan || 'Fresher',
           role: userData.role || 'student',
           isBanned: userData.isBanned || false,
           hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
+          // CRITICAL: Map all fields directly from Firestore to the profile object
           profile: {
              alias: userData.alias,
+             fullName: userData.fullName,
              school: userData.school,
              academicLevel: userData.academicLevel,
              country: userData.country,
+             age: userData.age,
+             socials: userData.socials || {},
+             xp: userData.xp || 0,
+             avatarGradient: userData.avatarGradient,
+             studyReminders: userData.studyReminders,
+             reminderTime: userData.reminderTime,
              ambientTheme: userData.ambientTheme
           }
         };
@@ -75,9 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: 'student',
           createdAt: serverTimestamp(),
           isBanned: false,
-          hasCompletedOnboarding: false // Explicitly false for new users
+          hasCompletedOnboarding: false,
+          xp: 500 // Signing Bonus
         };
-        await setDoc(userDocRef, newUser);
+        await setDoc(userDocRef, newUser, { merge: true });
         
         const extendedUser: ExtendedUser = {
           ...currentUser,
@@ -85,26 +94,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: currentUser.email,
           displayName: currentUser.displayName,
           photoURL: currentUser.photoURL,
-          plan: 'Excellentia Supreme',
+          plan: 'Fresher',
           role: 'student',
           isBanned: false,
-          hasCompletedOnboarding: false
+          hasCompletedOnboarding: false,
+          profile: { xp: 500 }
         };
         setUser(extendedUser);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
       // Fallback
-      const fallbackUser: ExtendedUser = {
-          ...currentUser,
-          uid: currentUser.uid,
-          email: currentUser.email,
-          displayName: currentUser.displayName,
-          photoURL: currentUser.photoURL,
-          plan: 'Excellentia Supreme',
-          role: 'student'
-      };
-      setUser(fallbackUser);
+      setUser({ ...currentUser } as ExtendedUser);
     }
   };
 

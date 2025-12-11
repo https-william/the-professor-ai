@@ -27,7 +27,7 @@ const ChatView = React.lazy(() => import('./components/ChatView').then(module =>
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 
 const App: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
@@ -81,22 +81,40 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    const savedProfile = loadUserProfile();
-    let currentProfile = savedProfile || getDefaultProfile();
-    const extendedUser = user as any;
-    if (extendedUser.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
-    else setOnboardingStep('COMPLETE');
-    if (extendedUser.profile?.alias) currentProfile.alias = extendedUser.profile.alias;
-    if (user.plan) currentProfile.subscriptionTier = user.plan;
-    currentProfile = updateStreak(currentProfile);
     
-    if (currentProfile.studyReminders && Notification.permission === 'default') {
-        Notification.requestPermission();
+    // PRIORITY: Load from Firestore (via AuthContext) first, then fallback to local
+    // This solves the sync issue where local storage overwrites cloud data
+    const firestoreProfile = user.profile;
+    const localProfile = loadUserProfile() || getDefaultProfile();
+    
+    let mergedProfile: UserProfile = { ...localProfile };
+
+    if (firestoreProfile) {
+        // Overlay Firestore data on top of local default structure
+        mergedProfile = {
+            ...mergedProfile,
+            ...firestoreProfile,
+            // Ensure deep objects are merged if existing
+            socials: firestoreProfile.socials || mergedProfile.socials,
+            xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp
+        };
     }
 
-    setUserProfile(currentProfile);
-    saveUserProfile(currentProfile);
+    // Onboarding Check
+    if (user.hasCompletedOnboarding === false) {
+        setOnboardingStep('WELCOME');
+    } else {
+        setOnboardingStep('COMPLETE');
+    }
+    
+    if (user.plan) mergedProfile.subscriptionTier = user.plan;
+    
+    mergedProfile = updateStreak(mergedProfile);
+    
+    setUserProfile(mergedProfile);
+    saveUserProfile(mergedProfile); // Update local cache with fresh cloud data
     setHistory(loadHistory());
+    
     const savedSession = loadCurrentSession();
     if (savedSession) {
       setAppMode(savedSession.mode);
@@ -108,32 +126,29 @@ const App: React.FC = () => {
   }, [user]);
 
   const handleOnboardingComplete = async (data: Partial<UserProfile>) => {
+    // Save to Firestore IMMEDIATELY
+    if (user) {
+        await saveUserToFirestore(user.uid, { ...data, hasCompletedOnboarding: true });
+        await refreshUser(); // Force context update
+    }
+    
     const updated = { ...userProfile, ...data, hasCompletedOnboarding: true };
     setUserProfile(updated);
     saveUserProfile(updated);
+    
     if (updated.studyReminders) {
         Notification.requestPermission();
     }
-    if (user) await saveUserToFirestore(user.uid, { alias: updated.alias, hasCompletedOnboarding: true });
     setOnboardingStep('COMPLETE');
   };
 
   const parseDuration = (duration: string): number | null => {
       if (duration === 'Limitless') return null;
-      
-      // Parse "1h 30m" format
       let totalSeconds = 0;
-      
       const hourMatch = duration.match(/(\d+)h/);
-      if (hourMatch) {
-          totalSeconds += parseInt(hourMatch[1]) * 3600;
-      }
-      
+      if (hourMatch) totalSeconds += parseInt(hourMatch[1]) * 3600;
       const minMatch = duration.match(/(\d+)m/);
-      if (minMatch) {
-          totalSeconds += parseInt(minMatch[1]) * 60;
-      }
-      
+      if (minMatch) totalSeconds += parseInt(minMatch[1]) * 60;
       return totalSeconds > 0 ? totalSeconds : null;
   };
 
@@ -184,7 +199,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleQuizAction = (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET', payload?: any) => {
+  const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET', payload?: any) => {
     if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
     if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
     if (action === 'SUBMIT') {
@@ -205,7 +220,12 @@ const App: React.FC = () => {
       
       setUserProfile(newProfile);
       saveUserProfile(newProfile);
-      if (user) saveUserToFirestore(user.uid, { xp: newProfile.xp });
+      
+      // SYNC XP TO FIRESTORE IMMEDIATELY
+      if (user) {
+          await saveUserToFirestore(user.uid, { xp: newXP });
+      }
+      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (action === 'RESET') {
@@ -235,9 +255,6 @@ const App: React.FC = () => {
   };
 
   const handleOpenFloatingChat = () => {
-      // If modal is open (like profile), close it? Or just overlap.
-      // If we are already in a view, floating chat acts as a "quick assistant"
-      // For this implementation, it switches to CHAT mode.
       if (appMode !== 'CHAT') {
           const newState: ChatState = {
               messages: [{
@@ -308,6 +325,8 @@ const App: React.FC = () => {
 
   // Determine modal overlay state to prevent FAB click
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME';
+  // Hide FAB if in an active session to prevent overlay collision
+  const isActiveSession = status === AppStatus.READY;
 
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505]`}>
@@ -324,7 +343,7 @@ const App: React.FC = () => {
                <span className="font-bold hidden sm:block">The Professor</span>
             </div>
             <div className="flex gap-3 md:gap-4 items-center">
-               {isAdmin && <button onClick={() => setAppMode(appMode === 'ADMIN' ? 'EXAM' : 'ADMIN')} className="text-red-400 text-[10px] font-bold uppercase">Admin</button>}
+               {isAdmin && <button onClick={() => setAppMode(appMode === 'ADMIN' ? 'EXAM' : 'ADMIN')} className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${appMode === 'ADMIN' ? 'bg-amber-900/50 text-amber-500 border-amber-500' : 'text-red-400 border-transparent hover:border-red-500'}`}>{appMode === 'ADMIN' ? 'Exit Dean' : 'Dean\'s Office'}</button>}
                <button onClick={() => setIsSubscriptionOpen(true)} className="px-3 py-1 bg-blue-600 rounded text-[10px] font-bold uppercase">{userProfile.subscriptionTier === 'Excellentia Supreme' ? '👑 Supreme' : 'Upgrade'}</button>
                <div className="hidden md:flex items-center gap-2">
                    <div className="text-right">
@@ -357,7 +376,21 @@ const App: React.FC = () => {
         }} 
         onDelete={(id) => { deleteHistoryItem(id); setHistory(loadHistory()); }} 
       />
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(p) => { setUserProfile(p); saveUserProfile(p); }} onClearHistory={() => { localStorage.clear(); window.location.reload(); }} onLogout={logout} />
+      
+      {/* Ensure Profile Modal receives latest user data */}
+      <UserProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        profile={userProfile} 
+        onSave={async (p) => { 
+            setUserProfile(p); 
+            saveUserProfile(p);
+            if (user) await saveUserToFirestore(user.uid, p);
+        }} 
+        onClearHistory={() => { localStorage.clear(); window.location.reload(); }} 
+        onLogout={logout} 
+      />
+      
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 pt-4 md:pt-8 min-h-[calc(100vh-64px)] relative z-10">
@@ -403,8 +436,8 @@ const App: React.FC = () => {
         </Suspense>
       </main>
 
-      {/* Floating Chat Button (Omni-FAB) - Hidden when modals are open */}
-      {!isModalOpen && status === AppStatus.IDLE && (
+      {/* Floating Chat Button (Omni-FAB) - Hidden when active session, modal open, or admin */}
+      {!isModalOpen && !isActiveSession && appMode !== 'ADMIN' && status === AppStatus.IDLE && (
           <button 
             onClick={handleOpenFloatingChat}
             className="fixed bottom-6 right-6 z-[100] w-14 h-14 bg-amber-600 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.5)] flex items-center justify-center text-white hover:scale-110 transition-transform group border border-amber-500/50 animate-pulse-slow"

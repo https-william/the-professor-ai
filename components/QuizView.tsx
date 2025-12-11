@@ -226,7 +226,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                               <strong className="block text-blue-400 uppercase tracking-wider text-[10px] mb-1">Explanation</strong>
                               {simpleExpl ? (
                                   <div className="animate-fade-in bg-amber-900/10 p-2 rounded border border-amber-500/20 text-amber-100">
-                                      <strong className="text-amber-500 text-[9px] uppercase block mb-1">Simplified (ELI5):</strong>
+                                      <strong className="text-amber-500 text-[9px] uppercase block mb-1">Simplified (ELI ...):</strong>
                                       {simpleExpl}
                                   </div>
                               ) : (
@@ -242,7 +242,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                           >
                             {loadingExplanation === q.id ? 'Translating...' : 'ELI ...'}
                           </button>
-                          <button onClick={showComingSoon} className="text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors text-gray-400 hover:text-white">ELA ...</button>
+                          <button onClick={showComingSoon} className="text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors text-gray-400 hover:text-white">ELA ... (Coming Soon)</button>
                       </div>
                   </div>
                </div>

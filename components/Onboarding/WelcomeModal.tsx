@@ -17,7 +17,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
     country: '',
     studyReminders: false,
     reminderTime: '20:00',
-    ambientTheme: 'Deep Space', // Forced Default
+    ambientTheme: 'Deep Space', 
     socials: {
       whatsapp: '',
       telegram: '',

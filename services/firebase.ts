@@ -107,6 +107,7 @@ export const saveUserToFirestore = async (userId: string, data: Partial<UserProf
     if (!db) return;
     try {
         const userRef = doc(db, "users", userId);
+        // Use setDoc with merge: true to allow creating or updating without overwriting missing fields
         await setDoc(userRef, data, { merge: true });
     } catch (e) {
         console.error("Failed to sync user profile", e);
@@ -143,6 +144,14 @@ export const logPayment = async (userId: string, tier: string, amount: number, r
   } catch (e) {
     console.error("Failed to log payment", e);
   }
+};
+
+// Admin: Update any field for a user
+export const adminUpdateUser = async (userId: string, data: Partial<UserProfile>) => {
+    if (!db) return;
+    const userRef = doc(db, "users", userId);
+    await setDoc(userRef, data, { merge: true });
+    await logSystemAction("ADMIN_UPDATE", `Updated user fields: ${Object.keys(data).join(', ')}`, userId);
 };
 
 export const updateUserPlan = async (userId: string, newPlan: SubscriptionTier) => {
@@ -237,13 +246,5 @@ export const submitDuelScore = async (duelId: string, userId: string, score: num
         else winnerId = 'DRAW';
         
         await updateDoc(docRef, { status: 'COMPLETED', winnerId });
-        
-        // Transfer XP logic (simplified)
-        if (winnerId && winnerId !== 'DRAW') {
-            // Winner gets 2x wager (their own back + opponent's)
-            // Implementation of actual XP transfer depends on a cloud function or trusted backend usually,
-            // but for MVP we can just log it or update strictly if admin.
-            // Here we assume the client updates their own XP upon seeing the win screen.
-        }
     }
 };

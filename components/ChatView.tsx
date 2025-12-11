@@ -124,10 +124,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                 .join('');
           
           setInput(transcript);
-          
-          if (event.results[0].isFinal) {
-              // Optional: You could auto-send here if desired, currently it just types
-          }
       };
 
       recognitionRef.current = recognition;
@@ -141,11 +137,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
   };
 
   return (
-    <div className="w-full h-full flex flex-col relative z-10 animate-fade-in bg-[#0a0a0a] sm:bg-transparent">
+    // Fixed: Ensure relative positioning and proper z-index context so it doesn't leak overlays
+    <div className="w-full h-[calc(100vh-80px)] flex flex-col relative z-10 animate-fade-in bg-[#0a0a0a] sm:bg-transparent rounded-3xl overflow-hidden border border-white/5">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode="SOLVE" />}
       
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 shadow-lg shrink-0">
+      <div className="flex justify-between items-center bg-black/80 backdrop-blur-md p-4 border-b border-amber-500/20 shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center shadow-lg shadow-amber-900/20">
              <span className="text-xl">🎓</span>
@@ -166,14 +163,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 glass-panel rounded-3xl mb-4 overflow-hidden flex flex-col relative border-amber-500/10 min-h-0">
+      <div className="flex-1 overflow-hidden flex flex-col relative bg-black/20">
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
            {chatState.messages.map((msg) => (
              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl p-4 shadow-lg leading-relaxed group relative ${
                   msg.role === 'user' 
                     ? 'bg-blue-600 text-white rounded-tr-none' 
-                    : 'bg-white/10 text-gray-200 rounded-tl-none border border-white/5'
+                    : 'bg-[#1a1a1a] text-gray-200 rounded-tl-none border border-white/5'
                 }`}>
                   {msg.image && (
                       <div className="mb-3 rounded-lg overflow-hidden border border-white/20">
@@ -208,7 +205,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       </div>
 
       {/* Input Area */}
-      <div className="glass-panel p-2 rounded-2xl flex items-center gap-2 border-amber-500/20 shrink-0">
+      <div className="bg-black/60 backdrop-blur-md p-4 flex items-center gap-2 border-t border-white/5 shrink-0">
         <button onClick={() => setShowCamera(true)} className="p-3 text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/5 rounded-xl">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         </button>
@@ -218,7 +215,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder="Type or use voice..."
-          className="flex-1 bg-transparent border-none outline-none text-white px-2 py-3 placeholder-gray-500"
+          className="flex-1 bg-white/5 rounded-xl border border-white/5 outline-none text-white px-4 py-3 placeholder-gray-500 focus:border-amber-500/50 transition-colors"
           autoFocus
         />
         <button 
@@ -230,7 +227,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
         <button 
           onClick={() => handleSend()}
           disabled={!input.trim() || isTyping}
-          className="p-3 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl text-white hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+          className="p-3 bg-amber-600 rounded-xl text-white hover:bg-amber-500 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 shadow-lg shadow-amber-900/20"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
         </button>
