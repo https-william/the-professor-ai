@@ -13,17 +13,20 @@ interface CurrentSession {
 }
 
 export const saveCurrentSession = (mode: AppMode, data: QuizState | ProfessorState | ChatState, title: string, config?: QuizConfig) => {
+  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
   const session: CurrentSession = { mode, data, title, config };
-  localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(session));
+  localStorage.setItem(`${userId}_${CURRENT_SESSION_KEY}`, JSON.stringify(session));
 };
 
 export const loadCurrentSession = (): CurrentSession | null => {
-  const stored = localStorage.getItem(CURRENT_SESSION_KEY);
+  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
+  const stored = localStorage.getItem(`${userId}_${CURRENT_SESSION_KEY}`);
   return stored ? JSON.parse(stored) : null;
 };
 
 export const clearCurrentSession = () => {
-  localStorage.removeItem(CURRENT_SESSION_KEY);
+  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
+  localStorage.removeItem(`${userId}_${CURRENT_SESSION_KEY}`);
 };
 
 /**
@@ -64,18 +67,21 @@ export const saveToHistory = (item: HistoryItem) => {
   } else {
       updated = [item, ...history].slice(20); // Keep last 20
   }
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
+  localStorage.setItem(`${userId}_${HISTORY_KEY}`, JSON.stringify(updated));
 };
 
 export const loadHistory = (): HistoryItem[] => {
-  const stored = localStorage.getItem(HISTORY_KEY);
+  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
+  const stored = localStorage.getItem(`${userId}_${HISTORY_KEY}`);
   return stored ? JSON.parse(stored) : [];
 };
 
 export const deleteHistoryItem = (id: string) => {
   const history = loadHistory();
   const updated = history.filter(h => h.id !== id);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
+  localStorage.setItem(`${userId}_${HISTORY_KEY}`, JSON.stringify(updated));
 };
 
 export const saveUserProfile = (profile: UserProfile) => {

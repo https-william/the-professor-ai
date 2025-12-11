@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
@@ -234,7 +235,10 @@ const App: React.FC = () => {
   };
 
   const handleOpenFloatingChat = () => {
-      if (status !== AppStatus.READY || appMode !== 'CHAT') {
+      // If modal is open (like profile), close it? Or just overlap.
+      // If we are already in a view, floating chat acts as a "quick assistant"
+      // For this implementation, it switches to CHAT mode.
+      if (appMode !== 'CHAT') {
           const newState: ChatState = {
               messages: [{
                   id: 'init-float',
@@ -301,6 +305,9 @@ const App: React.FC = () => {
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
   const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
+
+  // Determine modal overlay state to prevent FAB click
+  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME';
 
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505]`}>
@@ -396,8 +403,8 @@ const App: React.FC = () => {
         </Suspense>
       </main>
 
-      {/* Floating Chat Button (Omni-FAB) */}
-      {status === AppStatus.IDLE && (
+      {/* Floating Chat Button (Omni-FAB) - Hidden when modals are open */}
+      {!isModalOpen && status === AppStatus.IDLE && (
           <button 
             onClick={handleOpenFloatingChat}
             className="fixed bottom-6 right-6 z-[100] w-14 h-14 bg-amber-600 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.5)] flex items-center justify-center text-white hover:scale-110 transition-transform group border border-amber-500/50 animate-pulse-slow"

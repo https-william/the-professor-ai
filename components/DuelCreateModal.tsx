@@ -15,7 +15,9 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Participant limits per tier
   const participantLimit = tier === 'Fresher' ? 2 : tier === 'Scholar' ? 5 : 10;
+  
   const maxWager = Math.min(userXP, 1000);
 
   const handleSubmit = () => {
@@ -42,7 +44,7 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
         
         <div className="text-center mb-8 relative">
            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-purple-900/30 text-purple-300 text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-b-lg border-x border-b border-purple-500/30">
-              Battle Limit: {participantLimit} Scholars
+              Max Participants: {participantLimit}
            </div>
            <h2 className="text-4xl font-black text-white font-serif mb-2 tracking-tighter italic mix-blend-overlay opacity-90">THE ARENA</h2>
            <p className="text-purple-400 text-xs uppercase tracking-widest font-mono">Peer-to-Peer Academic Combat</p>

@@ -225,10 +225,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
         </div>
       </div>
 
-      <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl min-h-[600px] ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
+      <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
         
         {/* EXAM VIEW */}
-        <div className={`absolute inset-0 flex flex-col transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12 pointer-events-none'}`}>
+        <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
             {/* Optimized Configuration Layout - Grid on Mobile */}
             <div className="border-b border-white/5 bg-black/20 z-20 flex-shrink-0">
               <div className="p-4">
@@ -280,7 +280,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                  className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
                    useOracle 
                    ? 'bg-gradient-to-r from-amber-950 to-orange-900 border-amber-500 text-amber-200 shadow-[0_0_20px_rgba(245,158,11,0.3)] ring-1 ring-amber-500/50' 
-                   : 'bg-[#151515] border-white/10 text-gray-300 hover:border-white/30 hover:bg-[#1a1a1a]'
+                   : 'bg-[#151515] border-white/20 text-gray-300 hover:border-amber-500/50 hover:bg-[#1a1a1a] shadow-lg'
                  }`}
                >
                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(251,191,36,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
@@ -288,8 +288,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     <div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse shadow-[0_0_8px_orange]' : 'bg-gray-500'}`}></div>
                     The Oracle
                  </div>
-                 <div className="text-[9px] opacity-70 font-mono relative z-10">Predictive Questioning Protocol</div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Predictive Questioning Protocol</div>
                  {useOracle && <div className="absolute top-2 right-2 text-[8px] font-bold text-black bg-amber-500 rounded px-1.5 py-0.5 shadow-lg shadow-amber-500/20">ACTIVE</div>}
+                 {!useOracle && <div className="absolute top-2 right-2 text-[8px] font-bold text-gray-500 border border-gray-600 rounded px-1.5 py-0.5">STANDBY</div>}
                </button>
 
                <button 
@@ -297,7 +298,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                  className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
                    useWeaknessDestroyer 
                    ? 'bg-gradient-to-r from-red-950 to-rose-900 border-red-600 text-red-200 shadow-[0_0_20px_rgba(225,29,72,0.3)] ring-1 ring-red-600/50' 
-                   : 'bg-[#151515] border-white/10 text-gray-300 hover:border-white/30 hover:bg-[#1a1a1a]'
+                   : 'bg-[#151515] border-white/20 text-gray-300 hover:border-red-500/50 hover:bg-[#1a1a1a] shadow-lg'
                  }`}
                >
                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(244,63,94,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
@@ -305,13 +306,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     <div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-[ping_2s_infinite] shadow-[0_0_8px_red]' : 'bg-gray-500'}`}></div>
                     Weakness Destroyer
                  </div>
-                 <div className="text-[9px] opacity-70 font-mono relative z-10">Target Low Score Topics</div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Target Low Score Topics</div>
                  {useWeaknessDestroyer && <div className="absolute top-2 right-2 text-[8px] font-bold text-black bg-red-500 rounded px-1.5 py-0.5 shadow-lg shadow-red-500/20">ACTIVE</div>}
+                 {!useWeaknessDestroyer && <div className="absolute top-2 right-2 text-[8px] font-bold text-gray-500 border border-gray-600 rounded px-1.5 py-0.5">STANDBY</div>}
                </button>
             </div>
 
             {/* Main Upload Area - Flexible Growth */}
-            <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar">
+            <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar min-h-[300px]">
                <div className="flex justify-center mb-6 shrink-0">
                 <div className="bg-black/40 p-1.5 rounded-2xl flex gap-1 border border-white/10 shadow-lg w-full sm:w-auto">
                     <button onClick={() => setActiveTab('FILE')} className={`flex-1 sm:flex-none px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'FILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Files</button>

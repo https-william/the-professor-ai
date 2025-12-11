@@ -218,8 +218,8 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
             model: model,
             config: { 
                 systemInstruction,
-                maxOutputTokens: 500, // Limit output for speed and precision
-                temperature: 0.6
+                maxOutputTokens: 256, // LOWER TOKEN LIMIT FOR SPEED
+                temperature: 0.7
             },
             history: recentHistory
         });

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, ChatState } from '../types';
 import { generateChatResponse } from '../services/geminiService';
@@ -114,8 +115,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       recognition.onresult = (event: any) => {
           const transcript = event.results[0][0].transcript;
           setInput(transcript);
-          // Optional: Auto-send
-          // handleSend(transcript); 
+          // Optional: Auto-send could go here, but let user confirm text first
       };
 
       recognitionRef.current = recognition;
@@ -129,11 +129,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
   };
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-100px)] flex flex-col p-4 relative z-10 animate-fade-in">
+    // Removed z-index and fixed height issues, prevent background overlay
+    <div className="w-full h-full flex flex-col relative z-10 animate-fade-in bg-[#0a0a0a] sm:bg-transparent">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode="SOLVE" />}
       
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 shadow-lg">
+      <div className="flex justify-between items-center mb-4 bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20 shadow-lg shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center shadow-lg shadow-amber-900/20">
              <span className="text-xl">🎓</span>
@@ -154,7 +155,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 glass-panel rounded-3xl mb-4 overflow-hidden flex flex-col relative border-amber-500/10">
+      <div className="flex-1 glass-panel rounded-3xl mb-4 overflow-hidden flex flex-col relative border-amber-500/10 min-h-0">
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
            {chatState.messages.map((msg) => (
              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -196,7 +197,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       </div>
 
       {/* Input Area */}
-      <div className="glass-panel p-2 rounded-2xl flex items-center gap-2 border-amber-500/20">
+      <div className="glass-panel p-2 rounded-2xl flex items-center gap-2 border-amber-500/20 shrink-0">
         <button onClick={() => setShowCamera(true)} className="p-3 text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/5 rounded-xl">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         </button>
