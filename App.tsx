@@ -13,6 +13,7 @@ import { LandingPage } from './components/LandingPage';
 import { CountdownTimer } from './components/CountdownTimer';
 import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
+import { DuelReadyModal } from './components/DuelReadyModal';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
@@ -51,6 +52,9 @@ const App: React.FC = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+
+  // New State for Duel Modal
+  const [duelReadyData, setDuelReadyData] = useState<{ id: string, quizState: QuizState } | null>(null);
 
   useEffect(() => {
     // Detect AdBlocker via Firebase failure
@@ -186,6 +190,12 @@ const App: React.FC = () => {
       if (mode === 'EXAM') {
         setStatusText("Constructing Exam...");
         const questions = await generateQuizFromText(file.content, config, userProfile);
+        
+        // --- BLANK PAGE PROTECTION ---
+        if (!questions || questions.length === 0) {
+            throw new Error("Neural Failure: No questions generated. Content might be insufficient or blocked.");
+        }
+
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0 };
         setQuizState(newState);
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: generateHistoryTitle('EXAM', newState), data: newState, config };
@@ -253,7 +263,8 @@ const App: React.FC = () => {
       setChatState({ messages: [], fileContext: '', fileName: '' });
       setAppMode('EXAM'); 
       setActiveHistoryId(null);
-      setErrorMsg(null); // Clear any lingering errors
+      setErrorMsg(null); 
+      setDuelReadyData(null); // Clear duel state
     }
   };
 
@@ -312,9 +323,12 @@ const App: React.FC = () => {
 
           const questions = await generateQuizFromText(processed.content, config, userProfile);
           
-          const duelId = await createDuel(user.uid, userProfile.alias, data.wager, processed.content, config, questions);
+          // --- BLANK PAGE PROTECTION ---
+          if (!questions || questions.length === 0) {
+              throw new Error("Arena Initialization Failed: Could not generate quiz content from this file.");
+          }
           
-          alert(`Duel Created! Share this ID with your opponent: ${duelId}`);
+          const duelId = await createDuel(user.uid, userProfile.alias, data.wager, processed.content, config, questions);
           
           const newState: QuizState = { 
               questions, 
@@ -326,14 +340,24 @@ const App: React.FC = () => {
               timeRemaining: null, 
               focusStrikes: 0 
           };
-          setQuizState(newState);
-          setAppMode('EXAM');
-          setStatus(AppStatus.READY);
+
+          // Store for modal, don't start yet
+          setDuelReadyData({ id: duelId, quizState: newState });
+          setStatus(AppStatus.IDLE); // Go back to idle to show modal overlay on dashboard
 
       } catch (e: any) {
           console.error(e);
           setErrorMsg(e.message || "Failed to start duel.");
-          setStatus(AppStatus.IDLE);
+          setStatus(AppStatus.ERROR);
+      }
+  };
+
+  const handleEnterDuel = () => {
+      if (duelReadyData) {
+          setQuizState(duelReadyData.quizState);
+          setAppMode('EXAM');
+          setStatus(AppStatus.READY);
+          setDuelReadyData(null);
       }
   };
 
@@ -342,7 +366,7 @@ const App: React.FC = () => {
   if (!user && showAuth) return <AuthPage />;
   const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
 
-  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME';
+  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData;
   const isActiveSession = status === AppStatus.READY;
 
   return (
@@ -352,6 +376,14 @@ const App: React.FC = () => {
       <PWAPrompt />
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
+      
+      {/* DUEL READY MODAL */}
+      {duelReadyData && (
+          <DuelReadyModal 
+            duelId={duelReadyData.id} 
+            onEnter={handleEnterDuel} 
+          />
+      )}
       
       {/* AD BLOCKER WARNING BANNER */}
       {isAdBlockActive && (

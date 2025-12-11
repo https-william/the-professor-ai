@@ -12,6 +12,7 @@ export const StudyRoomModal: React.FC<StudyRoomModalProps> = ({ onClose, user })
   const [mode, setMode] = useState<'JOIN' | 'CREATE'>('CREATE');
   const [participants, setParticipants] = useState<string[]>([user.alias || 'You']);
   const [isWaiting, setIsWaiting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Mock Logic for MVP (No real backend websocket yet)
   const handleCreate = () => {
@@ -28,6 +29,12 @@ export const StudyRoomModal: React.FC<StudyRoomModalProps> = ({ onClose, user })
       setIsWaiting(true);
       // Simulate join
       setTimeout(() => setParticipants(['Host_User', user.alias || 'You']), 1000);
+  };
+
+  const handleCopyId = () => {
+      navigator.clipboard.writeText(roomId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -70,9 +77,18 @@ export const StudyRoomModal: React.FC<StudyRoomModalProps> = ({ onClose, user })
          ) : (
              <div className="text-center space-y-6">
                  {mode === 'CREATE' && (
-                     <div className="bg-green-900/10 border border-green-500/20 p-4 rounded-xl">
-                         <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Room ID</p>
+                     <div 
+                        className="bg-green-900/10 border border-green-500/20 p-4 rounded-xl cursor-pointer group hover:bg-green-900/20 transition-colors relative"
+                        onClick={handleCopyId}
+                     >
+                         <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Room ID (Tap to Copy)</p>
                          <p className="text-2xl font-mono font-bold text-green-400 tracking-[0.2em]">{roomId}</p>
+                         
+                         {copied && (
+                             <div className="absolute inset-0 flex items-center justify-center bg-green-900/90 rounded-xl backdrop-blur-sm animate-fade-in">
+                                 <span className="text-green-400 font-bold text-xs uppercase tracking-widest">Copied!</span>
+                             </div>
+                         )}
                      </div>
                  )}
                  
