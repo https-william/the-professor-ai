@@ -96,6 +96,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
       contents: { role: 'user', parts: contentParts },
       config: {
         systemInstruction: "You are an automated exam generator. Output raw JSON only. No markdown. No chatter.",
+        temperature: 0.7, // Optimized for creativity vs speed
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -157,6 +158,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
       contents: { role: 'user', parts: contentParts },
       config: {
         systemInstruction: `You are an expert educator. Output raw JSON only. Be concise and fast.`,
+        temperature: 0.7,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -190,28 +192,43 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
 
 export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string): Promise<string> => {
     try {
-        await checkSafety(newMessage);
         const ai = getAI();
         const model = "gemini-2.5-flash";
 
-        const recentHistory = history.slice(-6).map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }]
-        }));
+        const recentHistory = history.slice(-6).map(msg => {
+            if (msg.image) {
+                return {
+                    role: msg.role === 'user' ? 'user' : 'model',
+                    parts: [
+                        { inlineData: { mimeType: 'image/jpeg', data: msg.image } },
+                        { text: msg.content || "Analyze this image." }
+                    ]
+                };
+            }
+            return {
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            };
+        });
 
-        const systemInstruction = `You are The Professor. Context: ${fileContext.substring(0, 15000)}. Be concise.`;
+        // Add file context to system instruction if text, or prepend to first message
+        const systemInstruction = `You are The Professor. Be precise, concise, and academic. Context: ${fileContext.substring(0, 5000)}.`;
 
         const chat = ai.chats.create({
             model: model,
-            config: { systemInstruction },
+            config: { 
+                systemInstruction,
+                maxOutputTokens: 500, // Limit output for speed and precision
+                temperature: 0.6
+            },
             history: recentHistory
         });
 
         const response = await chat.sendMessage({ message: newMessage });
-        return response.text;
+        return response.text || "I cannot answer that right now.";
 
     } catch (error) {
-        handleGeminiError(error);
+        console.error(error);
         return "Connection interrupted.";
     }
 }

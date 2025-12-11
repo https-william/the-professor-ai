@@ -1,27 +1,28 @@
+
 import React, { useState, useRef } from 'react';
+import { SubscriptionTier } from '../types';
 
 interface DuelCreateModalProps {
   onClose: () => void;
   onSubmit: (wager: number, file: File) => void;
   userXP: number;
+  tier?: SubscriptionTier;
 }
 
-export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSubmit, userXP }) => {
-  const [wager, setWager] = useState(500);
+export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSubmit, userXP, tier = 'Fresher' }) => {
+  const [wager, setWager] = useState(50);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const participantLimit = tier === 'Fresher' ? 2 : tier === 'Scholar' ? 5 : 10;
+  const maxWager = Math.min(userXP, 1000);
+
   const handleSubmit = () => {
     if (file && wager <= userXP) {
       setIsLoading(true);
-      // Simulate slight delay for effect before passing up
       setTimeout(() => {
           onSubmit(wager, file);
-          // Don't close here, App.tsx will handle transition or we close after submit
-          // Actually, App.tsx handles the processing status, so we can just close
-          // But to show "Initializing", we might want to wait. 
-          // For now, let's trigger it.
           onClose();
       }, 500);
     }
@@ -41,36 +42,43 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
         
         <div className="text-center mb-8 relative">
            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-purple-900/30 text-purple-300 text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-b-lg border-x border-b border-purple-500/30">
-              Scholar Clearance Only
+              Battle Limit: {participantLimit} Scholars
            </div>
            <h2 className="text-4xl font-black text-white font-serif mb-2 tracking-tighter italic mix-blend-overlay opacity-90">THE ARENA</h2>
            <p className="text-purple-400 text-xs uppercase tracking-widest font-mono">Peer-to-Peer Academic Combat</p>
         </div>
 
         <div className="space-y-6">
-           {/* Wager Selection */}
+           {/* Wager Selection Slider */}
            <div className="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-colors">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4 block flex justify-between">
-                  <span>Stake Your XP</span>
-                  <span className="text-purple-400">Balance: {userXP}</span>
-              </label>
-              <div className="flex gap-3 justify-center">
-                 {[100, 500, 1000].map(amt => (
-                    <button 
-                      key={amt}
-                      onClick={() => setWager(amt)}
-                      disabled={userXP < amt || isLoading}
-                      className={`flex-1 py-4 rounded-xl font-bold text-sm transition-all border relative overflow-hidden group ${
-                        wager === amt 
-                        ? 'bg-purple-600 border-purple-500 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' 
-                        : userXP < amt ? 'opacity-30 cursor-not-allowed border-transparent bg-white/5' : 'bg-black/40 border-white/10 text-gray-400 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      <span className="relative z-10">{amt}</span>
-                      {wager === amt && <div className="absolute inset-0 bg-gradient-to-t from-purple-800 to-transparent opacity-50"></div>}
-                    </button>
-                 ))}
+              <div className="flex justify-between items-center mb-4">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Stake Your XP</label>
+                  <span className="text-purple-400 font-mono text-xs">Balance: {userXP} XP</span>
               </div>
+              
+              <div className="relative mb-2">
+                  <input 
+                    type="range" 
+                    min="50" 
+                    max="1000" 
+                    step="50" 
+                    value={wager} 
+                    onChange={(e) => setWager(Math.min(parseInt(e.target.value), userXP))}
+                    className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-600 font-mono">50 XP</span>
+                  <div className="text-2xl font-black text-white text-center font-mono text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
+                      {wager} XP
+                  </div>
+                  <span className="text-xs text-gray-600 font-mono">1000 XP</span>
+              </div>
+              
+              {userXP < 50 && (
+                  <p className="text-[10px] text-red-400 text-center mt-2">Insufficient XP to duel. Study more to earn wager credits.</p>
+              )}
            </div>
 
            {/* File Upload */}
@@ -103,7 +111,7 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
            <button onClick={onClose} disabled={isLoading} className="flex-1 py-4 text-gray-500 hover:text-white font-bold uppercase text-xs transition-colors">Retreat</button>
            <button 
              onClick={handleSubmit}
-             disabled={!file || isLoading}
+             disabled={!file || isLoading || wager > userXP}
              className="flex-[2] py-4 bg-white text-black hover:bg-purple-50 rounded-xl font-black uppercase text-xs tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(168,85,247,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all relative overflow-hidden"
            >
              {isLoading ? (

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, AppMode, AIPersonality, AnalogyDomain, UserProfile } from '../types';
 import { processFile } from '../services/fileService';
@@ -203,10 +204,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
       }
   };
 
+  // Remove fixed height on mobile to allow scrolling (min-h instead of h)
   return (
-    <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 h-[calc(100vh-180px)] min-h-[500px] flex flex-col">
+    <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
-      {showDuelModal && <DuelCreateModal onClose={() => setShowDuelModal(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} />}
+      {showDuelModal && <DuelCreateModal onClose={() => setShowDuelModal(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
 
       {/* Mode Switcher */}
       <div className="flex justify-center items-center mb-6 shrink-0">
@@ -223,15 +225,15 @@ export const InputSection: React.FC<InputSectionProps> = ({
         </div>
       </div>
 
-      <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
+      <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl min-h-[600px] ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
         
         {/* EXAM VIEW */}
         <div className={`absolute inset-0 flex flex-col transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12 pointer-events-none'}`}>
-            {/* Scrollable Configuration */}
+            {/* Optimized Configuration Layout - Grid on Mobile */}
             <div className="border-b border-white/5 bg-black/20 z-20 flex-shrink-0">
-              <div className="p-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-                <div className="flex sm:grid sm:grid-cols-4 gap-4 min-w-[max-content] sm:min-w-0">
-                    <div className="snap-center flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+              <div className="p-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
                         <label className="text-[10px] font-bold text-gray-500 uppercase">Difficulty</label>
                         <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
                               <option value="Easy">Easy</option>
@@ -240,17 +242,17 @@ export const InputSection: React.FC<InputSectionProps> = ({
                               <option value="Nightmare">Nightmare 💀</option>
                         </select>
                     </div>
-                    <div className="snap-center flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
                         <label className="text-[10px] font-bold text-gray-500 uppercase">Format</label>
                         <select value={questionType} onChange={(e) => setQuestionType(e.target.value as QuestionType)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
                               <option value="Multiple Choice">Multiple Choice</option>
                               <option value="True/False">True / False</option>
                               <option value="Fill in the Gap">Fill in the Gap</option>
                               <option value="Scenario-based">Scenario Based</option>
-                              <option value="Mixed">Mixed (All Types)</option>
+                              <option value="Mixed">Mixed</option>
                         </select>
                     </div>
-                    <div className="snap-center flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
                           <label className="text-[10px] font-bold text-gray-500 uppercase">Timer</label>
                           <select value={timerDuration} onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
                                 <option value="Limitless">No Limit</option>
@@ -263,7 +265,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                                 <option value="2h">2 Hours</option>
                           </select>
                     </div>
-                    <div className="snap-center flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5 min-w-[140px]">
+                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
                           <label className="text-[10px] font-bold text-gray-500 uppercase">Count: {questionCount}</label>
                           <input type="range" min="5" max="50" step="5" value={questionCount} onChange={(e) => setQuestionCount(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg accent-blue-500 mt-3 cursor-pointer" />
                     </div>
@@ -271,19 +273,19 @@ export const InputSection: React.FC<InputSectionProps> = ({
               </div>
             </div>
 
-            {/* Premium Protocol Cards */}
-            <div className="px-4 py-2 grid grid-cols-2 gap-4 shrink-0">
+            {/* Premium Protocol Cards - Stack on very small screens */}
+            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-2 gap-4 shrink-0">
                <button 
                  onClick={() => setUseOracle(!useOracle)} 
                  className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
                    useOracle 
                    ? 'bg-gradient-to-r from-amber-950 to-orange-900 border-amber-500 text-amber-200 shadow-[0_0_20px_rgba(245,158,11,0.3)] ring-1 ring-amber-500/50' 
-                   : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'
+                   : 'bg-[#151515] border-white/10 text-gray-300 hover:border-white/30 hover:bg-[#1a1a1a]'
                  }`}
                >
                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(251,191,36,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                  <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
-                    <div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse shadow-[0_0_8px_orange]' : 'bg-gray-600'}`}></div>
+                    <div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse shadow-[0_0_8px_orange]' : 'bg-gray-500'}`}></div>
                     The Oracle
                  </div>
                  <div className="text-[9px] opacity-70 font-mono relative z-10">Predictive Questioning Protocol</div>
@@ -295,12 +297,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
                  className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
                    useWeaknessDestroyer 
                    ? 'bg-gradient-to-r from-red-950 to-rose-900 border-red-600 text-red-200 shadow-[0_0_20px_rgba(225,29,72,0.3)] ring-1 ring-red-600/50' 
-                   : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'
+                   : 'bg-[#151515] border-white/10 text-gray-300 hover:border-white/30 hover:bg-[#1a1a1a]'
                  }`}
                >
                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(244,63,94,0.15),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                  <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
-                    <div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-[ping_2s_infinite] shadow-[0_0_8px_red]' : 'bg-gray-600'}`}></div>
+                    <div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-[ping_2s_infinite] shadow-[0_0_8px_red]' : 'bg-gray-500'}`}></div>
                     Weakness Destroyer
                  </div>
                  <div className="text-[9px] opacity-70 font-mono relative z-10">Target Low Score Topics</div>
@@ -308,12 +310,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
                </button>
             </div>
 
-            {/* Main Upload Area */}
+            {/* Main Upload Area - Flexible Growth */}
             <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar">
                <div className="flex justify-center mb-6 shrink-0">
-                <div className="bg-black/40 p-1.5 rounded-2xl flex gap-1 border border-white/10 shadow-lg">
-                    <button onClick={() => setActiveTab('FILE')} className={`px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'FILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Files</button>
-                    <button onClick={() => setActiveTab('TEXT')} className={`px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'TEXT' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Text</button>
+                <div className="bg-black/40 p-1.5 rounded-2xl flex gap-1 border border-white/10 shadow-lg w-full sm:w-auto">
+                    <button onClick={() => setActiveTab('FILE')} className={`flex-1 sm:flex-none px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'FILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Files</button>
+                    <button onClick={() => setActiveTab('TEXT')} className={`flex-1 sm:flex-none px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'TEXT' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Text</button>
                 </div>
               </div>
 
@@ -369,26 +371,30 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       </div>
                   </div>
                 ) : (
-                  <textarea className="w-full flex-grow bg-black/20 text-gray-200 rounded-3xl p-6 border border-white/10 focus:border-blue-500/50 outline-none resize-none text-sm font-mono leading-relaxed placeholder-gray-600" placeholder="Paste raw text notes..." value={textInput} onChange={(e) => setTextInput(e.target.value)} />
+                  <textarea className="w-full flex-grow bg-black/20 text-gray-200 rounded-3xl p-6 border border-white/10 focus:border-blue-500/50 outline-none resize-none text-sm font-mono leading-relaxed placeholder-gray-600 min-h-[200px]" placeholder="Paste raw text notes..." value={textInput} onChange={(e) => setTextInput(e.target.value)} />
                 )}
               </div>
             </div>
 
             {/* Sticky Actions Footer */}
-            <div className="p-6 border-t border-white/10 bg-[#0a0a0a] flex flex-col sm:flex-row gap-4 items-center justify-end shrink-0">
-               <button onClick={() => setShowDuelModal(true)} disabled={isLoading} className="w-full sm:w-auto px-6 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 relative overflow-hidden group">
-                  <span className="relative z-10 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                    Duel Challenge
-                  </span>
-                  <div className="absolute top-0 right-0 p-1">
-                     <span className="text-[8px] bg-purple-500 text-black font-bold px-1.5 rounded">SCHOLAR</span>
-                  </div>
-               </button>
-               <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                  Chat with Notes
-               </button>
+            <div className="p-4 sm:p-6 border-t border-white/10 bg-[#0a0a0a] flex flex-col sm:flex-row gap-3 items-center justify-end shrink-0">
+               <div className="flex gap-3 w-full sm:w-auto">
+                   <button onClick={() => setShowDuelModal(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 relative overflow-hidden group">
+                      <span className="relative z-10 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        Duel
+                      </span>
+                      {isScholar && (
+                          <div className="absolute top-0 right-0 p-0.5">
+                             <span className="text-[6px] bg-purple-500 text-black font-bold px-1 rounded">SCHOLAR</span>
+                          </div>
+                      )}
+                   </button>
+                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                      Chat
+                   </button>
+               </div>
                <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full sm:w-auto px-10 py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
                   {isLoading ? (
                       <>
@@ -405,7 +411,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
         </div>
 
-        {/* PROFESSOR VIEW */}
+        {/* PROFESSOR VIEW INPUT */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-serif font-bold text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>

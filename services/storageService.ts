@@ -100,7 +100,7 @@ export const getDefaultProfile = (): UserProfile => ({
   streak: 0,
   questionsAnswered: 0,
   correctAnswers: 0,
-  xp: 0,
+  xp: 500, // SIGNING BONUS: Grant 500XP so they can duel immediately
   lastStudyDate: Date.now(),
   theme: 'System',
   reducedMotion: false,
