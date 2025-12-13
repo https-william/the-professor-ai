@@ -424,6 +424,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                       Chat
                    </button>
+                   {/* NEW: Flashcards Button */}
+                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-bold text-xs uppercase tracking-widest hover:bg-indigo-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                      <span className="text-lg">🎴</span>
+                      Flashcards
+                   </button>
                </div>
                <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full sm:w-auto px-10 py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
                   {isLoading ? (

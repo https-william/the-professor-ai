@@ -26,6 +26,7 @@ import { processFile } from './services/fileService';
 const QuizView = React.lazy(() => import('./components/QuizView').then(module => ({ default: module.QuizView })));
 const ProfessorView = React.lazy(() => import('./components/ProfessorView').then(module => ({ default: module.ProfessorView })));
 const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView })));
+const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView }))); // Added Lazy Load
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 
 const App: React.FC = () => {
@@ -142,7 +143,7 @@ const App: React.FC = () => {
     const savedSession = loadCurrentSession();
     if (savedSession) {
       setAppMode(savedSession.mode);
-      if (savedSession.mode === 'EXAM') setQuizState(savedSession.data as QuizState);
+      if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
       else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
       else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
       setStatus(AppStatus.READY);
@@ -154,7 +155,8 @@ const App: React.FC = () => {
       if (status === AppStatus.READY && (
           (appMode === 'EXAM' && !quizState.isSubmitted) || 
           (appMode === 'PROFESSOR') ||
-          (appMode === 'CHAT')
+          (appMode === 'CHAT') ||
+          (appMode === 'FLASHCARDS')
       )) {
           setPendingAction(() => action);
           setShowExitConfirmation(true);
@@ -213,8 +215,8 @@ const App: React.FC = () => {
       setErrorMsg(null);
       const timeRemaining = parseDuration(config.timerDuration);
 
-      if (mode === 'EXAM') {
-        setStatusText("Constructing Exam...");
+      if (mode === 'EXAM' || mode === 'FLASHCARDS') {
+        setStatusText("Constructing Materials...");
         const questions = await generateQuizFromText(file.content, config, userProfile);
         
         // --- BLANK PAGE PROTECTION ---
@@ -224,8 +226,17 @@ const App: React.FC = () => {
 
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0 };
         setQuizState(newState);
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: generateHistoryTitle('EXAM', newState), data: newState, config };
+        // Use mode explicitly for history title generation
+        const historyItem: HistoryItem = { 
+            id: Date.now().toString(), 
+            timestamp: Date.now(), 
+            mode: mode, 
+            title: generateHistoryTitle(mode, newState), 
+            data: newState, 
+            config 
+        };
         saveToHistory(historyItem);
+        setAppMode(mode); // Ensure state mode is set correctly
       } else {
         setStatusText("Designing Lesson Plan...");
         const sections = await generateProfessorContent(file.content, config);
@@ -516,6 +527,7 @@ const App: React.FC = () => {
                 setActiveHistoryId(item.id);
                 if (item.mode === 'PROFESSOR') { setProfessorState(item.data as ProfessorState); setAppMode('PROFESSOR'); } 
                 else if (item.mode === 'CHAT') { setChatState(item.data as ChatState); setAppMode('CHAT'); }
+                else if (item.mode === 'FLASHCARDS') { setQuizState(item.data as QuizState); setAppMode('FLASHCARDS'); }
                 else { setQuizState(item.data as QuizState); setAppMode('EXAM'); } 
                 setStatus(AppStatus.READY); 
                 setIsHistoryOpen(false); 
@@ -610,6 +622,7 @@ const App: React.FC = () => {
                       <div className="h-full">
                         {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
                         {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} />}
+                        {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={() => handleQuizAction('RESET')} />}
                         {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                       </div>
                     )}

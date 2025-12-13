@@ -41,7 +41,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime, isCramMode, focusStrikes } = quizState;
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
-  const [viewMode, setViewMode] = useState<'EXAM' | 'FLASHCARDS'>('EXAM');
   const [strikes, setStrikes] = useState(focusStrikes || 0);
   
   // Duel State
@@ -200,19 +199,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
       setMultiSelectAnswers(newSelection);
       onAnswerSelect(currentQ.id, JSON.stringify(newSelection));
   };
-
-  // --- FLASHCARD MODE ---
-  if (viewMode === 'FLASHCARDS' && !isSubmitted) {
-      return (
-          <div className="max-w-4xl mx-auto h-full flex flex-col items-center justify-center">
-              <div className="w-full flex justify-between mb-4">
-                  <button onClick={() => setViewMode('EXAM')} className="text-gray-400 hover:text-white font-bold uppercase text-xs">← Back to Exam</button>
-                  <span className="text-amber-500 font-mono text-xs">MEMORY SHARDS</span>
-              </div>
-              <FlashcardDeck questions={questions} />
-          </div>
-      )
-  }
 
   // --- REPORT CARD ---
   if (isSubmitted) {
@@ -448,11 +434,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
              </div>
              
              <div className="flex items-center gap-3">
-                 {!isCramMode && (
-                     <button onClick={() => setViewMode('FLASHCARDS')} className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest hidden sm:block">
-                         Review as Cards
-                     </button>
-                 )}
                  <div className={`font-mono text-sm sm:text-xl font-bold tracking-widest bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 min-w-[70px] text-center ${isCramMode ? 'text-cyan-400 border-cyan-500/50' : 'text-white'}`}>
                     {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2,'0')}` : '∞'}
                  </div>
