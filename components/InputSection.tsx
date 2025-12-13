@@ -241,7 +241,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
         
         {/* EXAM VIEW */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
-            {/* Horizontal Config Toolbar - Compact & Aesthetic (Restored) */}
+            {/* Horizontal Config Toolbar - Compact & Aesthetic */}
             <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md">
               <div className="w-full overflow-x-auto scrollbar-hide py-3 px-4 flex gap-2 sm:gap-3 items-center">
                   {/* Difficulty Pill */}
@@ -427,32 +427,38 @@ export const InputSection: React.FC<InputSectionProps> = ({
               </div>
             </div>
 
-            {/* Sticky Actions Footer - Grid Layout No Scroll */}
+            {/* Sticky Actions Footer - REDESIGNED */}
             <div className="p-4 border-t border-white/10 bg-[#0a0a0a] shrink-0">
-               {/* Actions Grid - Compact Pill Icons */}
-               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
-                   <button onClick={() => setShowDuelCreate(true)} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 group">
-                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">⚔️</span>
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-purple-400">Create</span>
-                   </button>
-                   <button onClick={() => setShowDuelJoin(true)} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 group">
-                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">🛡️</span>
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-purple-400">Join</span>
-                   </button>
-                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all gap-1 group">
-                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">💬</span>
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-amber-500">Chat</span>
-                   </button>
-                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className={`flex flex-col items-center justify-center py-3 rounded-2xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all gap-1 group ${!isScholar ? 'col-span-3 sm:col-span-1' : ''}`}>
-                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">🎴</span>
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-indigo-400">Cards</span>
-                   </button>
-                   {isScholar && (
-                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all gap-1 group col-span-2 sm:col-span-1">
-                          <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">🤝</span>
-                          <span className="text-[9px] font-bold uppercase tracking-wide text-green-400">Syndicate</span>
+               {/* 
+                  Responsive Action Buttons:
+                  Mobile: 4-Column Compact Grid (Pill Block)
+                  Desktop: Flex Row with Full Capsules (No scattered emojis)
+               */}
+               <div className="w-full max-w-full overflow-hidden">
+                   <div className="grid grid-cols-4 sm:flex sm:flex-wrap sm:justify-center gap-2 mb-3 w-full">
+                       <button onClick={() => setShowDuelCreate(true)} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 sm:gap-3 group">
+                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">⚔️</span>
+                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-purple-400">Create Duel</span>
                        </button>
-                   )}
+                       <button onClick={() => setShowDuelJoin(true)} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 sm:gap-3 group">
+                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">🛡️</span>
+                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-purple-400">Join Duel</span>
+                       </button>
+                       <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all gap-1 sm:gap-3 group">
+                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">💬</span>
+                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-amber-500">AI Chat</span>
+                       </button>
+                       <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all gap-1 sm:gap-3 group">
+                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">🎴</span>
+                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-indigo-400">Flashcards</span>
+                       </button>
+                       {isScholar && (
+                           <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="col-span-4 sm:col-span-1 flex flex-col sm:flex-row items-center justify-center py-2 sm:px-5 sm:py-3 rounded-2xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all gap-2 group mt-1 sm:mt-0">
+                              <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">🤝</span>
+                              <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-green-400">Syndicate</span>
+                           </button>
+                       )}
+                   </div>
                </div>
 
                <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
