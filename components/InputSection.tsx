@@ -215,7 +215,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
       if (onDuelJoin) onDuelJoin(code);
   }
 
-  // Remove fixed height on mobile to allow scrolling (min-h instead of h)
   return (
     <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
@@ -242,48 +241,74 @@ export const InputSection: React.FC<InputSectionProps> = ({
         
         {/* EXAM VIEW */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
-            {/* Optimized Configuration Layout - Grid on Mobile */}
-            <div className="border-b border-white/5 bg-black/20 z-20 flex-shrink-0">
-              <div className="p-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Difficulty</label>
-                        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
-                              <option value="Easy">Easy</option>
-                              <option value="Medium">Medium</option>
-                              <option value="Hard">Hard</option>
-                              <option value="Nightmare">Nightmare 💀</option>
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase">Format</label>
-                        <select value={questionType} onChange={(e) => setQuestionType(e.target.value as QuestionType)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
-                              <option value="Multiple Choice">Multiple Choice</option>
-                              <option value="True/False">True / False</option>
-                              <option value="Fill in the Gap">Fill in the Gap</option>
-                              <option value="Select All That Apply">Select All That Apply</option>
-                              <option value="Scenario-based">Scenario Based</option>
-                              <option value="Mixed">Mixed</option>
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase">Timer</label>
-                          <select value={timerDuration} onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} disabled={isCramMode} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none cursor-pointer hover:border-blue-500/50 transition-colors disabled:opacity-50">
-                                <option value="Limitless">No Limit</option>
-                                <option value="5m">5 Mins</option>
-                                <option value="10m">10 Mins</option>
-                                <option value="30m">30 Mins</option>
-                                <option value="45m">45 Mins</option>
-                                <option value="1h">1 Hour</option>
-                                <option value="1h 30m">1h 30m</option>
-                                <option value="2h">2 Hours</option>
-                          </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase">Count: {questionCount}</label>
-                          <input type="range" min="5" max="50" step="5" value={questionCount} onChange={(e) => setQuestionCount(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg accent-blue-500 mt-3 cursor-pointer" />
-                    </div>
-                </div>
+            {/* Horizontal Config Toolbar - Compact & aesthetic */}
+            <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md">
+              <div className="w-full overflow-x-auto scrollbar-hide py-3 px-4 flex gap-2 sm:gap-3 items-center">
+                  {/* Difficulty Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={difficulty} 
+                        onChange={(e) => setDifficulty(e.target.value as Difficulty)} 
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all min-w-[100px]"
+                      >
+                          <option value="Easy">Easy</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Hard">Hard</option>
+                          <option value="Nightmare">Nightmare 💀</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
+
+                  {/* Format Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={questionType} 
+                        onChange={(e) => setQuestionType(e.target.value as QuestionType)} 
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all max-w-[140px] truncate"
+                      >
+                          <option value="Multiple Choice">Multiple Choice</option>
+                          <option value="True/False">True / False</option>
+                          <option value="Fill in the Gap">Fill in the Gap</option>
+                          <option value="Select All That Apply">Multi-Select</option>
+                          <option value="Scenario-based">Scenario</option>
+                          <option value="Mixed">Mixed</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
+
+                  {/* Timer Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={timerDuration} 
+                        onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} 
+                        disabled={isCramMode}
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all disabled:opacity-50"
+                      >
+                          <option value="Limitless">No Timer</option>
+                          <option value="5m">5 Mins</option>
+                          <option value="10m">10 Mins</option>
+                          <option value="30m">30 Mins</option>
+                          <option value="1h">1 Hour</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
+
+                  {/* Count Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={questionCount} 
+                        onChange={(e) => setQuestionCount(parseInt(e.target.value))} 
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all"
+                      >
+                          <option value="5">5 Qs</option>
+                          <option value="10">10 Qs</option>
+                          <option value="15">15 Qs</option>
+                          <option value="20">20 Qs</option>
+                          <option value="30">30 Qs</option>
+                          <option value="50">50 Qs</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
               </div>
             </div>
 

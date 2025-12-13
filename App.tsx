@@ -314,7 +314,8 @@ const App: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (action === 'RESET') {
-      attemptAction(() => {
+      const force = payload?.force === true;
+      const resetLogic = () => {
           clearCurrentSession();
           setStatus(AppStatus.IDLE);
           setQuizState({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null });
@@ -325,7 +326,13 @@ const App: React.FC = () => {
           setErrorMsg(null); 
           setDuelReadyData(null); // Clear duel state
           setActiveDuelId(null); // Clear active duel
-      });
+      };
+
+      if (force) {
+          resetLogic();
+      } else {
+          attemptAction(resetLogic);
+      }
     }
   };
 
@@ -622,7 +629,7 @@ const App: React.FC = () => {
                       <div className="h-full">
                         {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
                         {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} />}
-                        {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={() => handleQuizAction('RESET')} />}
+                        {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
                         {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                       </div>
                     )}

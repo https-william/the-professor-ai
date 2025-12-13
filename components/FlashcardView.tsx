@@ -4,7 +4,7 @@ import { QuizState, QuizQuestion } from '../types';
 
 interface FlashcardViewProps {
   quizState: QuizState;
-  onExit: () => void;
+  onExit: (force?: boolean) => void;
 }
 
 export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit }) => {
@@ -65,7 +65,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
                   <button onClick={handleRestart} className="w-full py-4 bg-white text-black rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-200 shadow-lg">
                       {reviewIds.length > 0 ? 'Review Weaknesses' : 'Restart All'}
                   </button>
-                  <button onClick={onExit} className="w-full py-4 bg-white/5 text-gray-400 hover:text-white border border-white/10 rounded-xl font-bold uppercase text-xs tracking-widest">
+                  <button onClick={() => onExit(true)} className="w-full py-4 bg-white/5 text-gray-400 hover:text-white border border-white/10 rounded-xl font-bold uppercase text-xs tracking-widest">
                       Exit
                   </button>
               </div>
@@ -76,7 +76,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
   return (
     <div className="max-w-lg mx-auto h-[80vh] flex flex-col relative">
         <div className="flex justify-between items-center py-4 px-4">
-            <button onClick={onExit} className="text-gray-500 hover:text-white font-bold text-xs uppercase tracking-widest">
+            <button onClick={() => onExit(false)} className="text-gray-500 hover:text-white font-bold text-xs uppercase tracking-widest">
                 Exit
             </button>
             <div className="text-xs font-mono text-gray-500">
