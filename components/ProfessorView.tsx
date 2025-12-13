@@ -10,6 +10,12 @@ interface ProfessorViewProps {
   timeRemaining: number | null;
 }
 
+declare global {
+  interface Window {
+    marked: any;
+  }
+}
+
 export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) => {
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -43,6 +49,13 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
   }, [currentSectionIdx]);
 
   const topics = state.sections.map(s => ({ id: s.id, title: s.title }));
+
+  const renderContent = (content: string) => {
+      if (window.marked) {
+          return { __html: window.marked.parse(content) };
+      }
+      return { __html: content };
+  };
 
   return (
     <div className="max-w-4xl mx-auto pb-24 px-4 sm:px-6">
@@ -101,7 +114,10 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
           </div>
 
           <h1 className="text-2xl md:text-4xl font-serif font-bold text-white mb-8 leading-tight">{section.title}</h1>
-          <div className="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed mb-8 text-sm md:text-base">{section.content}</div>
+          <div 
+            className="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed mb-8 text-sm md:text-base"
+            dangerouslySetInnerHTML={renderContent(section.content)}
+          />
 
           {section.diagram_markdown && (
              <div className="mb-8 bg-black/20 p-4 rounded-xl border border-white/5">

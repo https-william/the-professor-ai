@@ -45,9 +45,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [showDuelCreate, setShowDuelCreate] = useState(false);
   const [showDuelJoin, setShowDuelJoin] = useState(false);
   const [showStudyRoomModal, setShowStudyRoomModal] = useState(false);
-  
-  // Configuration UI Toggle
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   // Config State
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultConfig.difficulty);
@@ -244,7 +241,126 @@ export const InputSection: React.FC<InputSectionProps> = ({
         
         {/* EXAM VIEW */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
-            
+            {/* Horizontal Config Toolbar - Compact & Aesthetic (Restored) */}
+            <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md">
+              <div className="w-full overflow-x-auto scrollbar-hide py-3 px-4 flex gap-2 sm:gap-3 items-center">
+                  {/* Difficulty Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={difficulty} 
+                        onChange={(e) => setDifficulty(e.target.value as Difficulty)} 
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all min-w-[100px]"
+                      >
+                          <option value="Easy">Easy</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Hard">Hard</option>
+                          <option value="Nightmare">Nightmare 💀</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
+
+                  {/* Format Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={questionType} 
+                        onChange={(e) => setQuestionType(e.target.value as QuestionType)} 
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all max-w-[140px] truncate"
+                      >
+                          <option value="Multiple Choice">Multiple Choice</option>
+                          <option value="True/False">True / False</option>
+                          <option value="Fill in the Gap">Fill in the Gap</option>
+                          <option value="Select All That Apply">Multi-Select</option>
+                          <option value="Scenario-based">Scenario</option>
+                          <option value="Mixed">Mixed</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
+
+                  {/* Timer Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={timerDuration} 
+                        onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} 
+                        disabled={isCramMode}
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all disabled:opacity-50"
+                      >
+                          <option value="Limitless">No Timer</option>
+                          <option value="5m">5 Mins</option>
+                          <option value="10m">10 Mins</option>
+                          <option value="30m">30 Mins</option>
+                          <option value="1h">1 Hour</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
+
+                  {/* Count Pill */}
+                  <div className="relative group shrink-0">
+                      <select 
+                        value={questionCount} 
+                        onChange={(e) => setQuestionCount(parseInt(e.target.value))} 
+                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all"
+                      >
+                          <option value="5">5 Qs</option>
+                          <option value="10">10 Qs</option>
+                          <option value="15">15 Qs</option>
+                          <option value="20">20 Qs</option>
+                          <option value="30">30 Qs</option>
+                          <option value="50">50 Qs</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                  </div>
+              </div>
+            </div>
+
+            {/* Premium Protocol Cards - Stack on very small screens */}
+            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-4 shrink-0">
+               <button 
+                 onClick={() => setUseOracle(!useOracle)} 
+                 className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
+                   useOracle 
+                   ? 'bg-gradient-to-r from-amber-950 to-orange-900 border-amber-500 text-amber-200 shadow-[0_0_20px_rgba(245,158,11,0.3)] ring-1 ring-amber-500/50' 
+                   : 'bg-[#151515] border-white/20 text-gray-300 hover:border-amber-500/50 hover:bg-[#1a1a1a] shadow-lg'
+                 }`}
+               >
+                 <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
+                    <div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse' : 'bg-gray-500'}`}></div>
+                    The Oracle
+                 </div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Predictive Protocol</div>
+               </button>
+
+               <button 
+                 onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} 
+                 className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
+                   useWeaknessDestroyer 
+                   ? 'bg-gradient-to-r from-red-950 to-rose-900 border-red-600 text-red-200 shadow-[0_0_20px_rgba(225,29,72,0.3)] ring-1 ring-red-600/50' 
+                   : 'bg-[#151515] border-white/20 text-gray-300 hover:border-red-500/50 hover:bg-[#1a1a1a] shadow-lg'
+                 }`}
+               >
+                 <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
+                    <div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                    Weakness Destroyer
+                 </div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">Target Low Scores</div>
+               </button>
+
+               {/* CRAM MODE */}
+               <button 
+                 onClick={() => setIsCramMode(!isCramMode)} 
+                 className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
+                   isCramMode 
+                   ? 'bg-gradient-to-r from-cyan-950 to-blue-900 border-cyan-500 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.3)] ring-1 ring-cyan-500/50' 
+                   : 'bg-[#151515] border-white/20 text-gray-300 hover:border-cyan-500/50 hover:bg-[#1a1a1a] shadow-lg'
+                 }`}
+               >
+                 <div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10">
+                    <div className={`w-2 h-2 rounded-full ${isCramMode ? 'bg-cyan-400 animate-pulse' : 'bg-gray-500'}`}></div>
+                    Cram Mode
+                 </div>
+                 <div className="text-[9px] opacity-70 font-mono relative z-10 text-left">10s Timer / 2x XP</div>
+               </button>
+            </div>
+
             {/* Main Upload Area - Flexible Growth */}
             <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar min-h-[300px]">
                <div className="flex justify-center mb-6 shrink-0">
@@ -311,91 +427,35 @@ export const InputSection: React.FC<InputSectionProps> = ({
               </div>
             </div>
 
-            {/* Collapsible Configuration Panel - No Scroll */}
-            <div className="border-t border-white/5 bg-black/40 backdrop-blur-md transition-all duration-300 ease-in-out overflow-hidden" style={{ maxHeight: isConfigOpen ? '500px' : '0' }}>
-               <div className="p-4 grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-[9px] font-bold text-gray-500 uppercase">Difficulty</label>
-                        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none">
-                              <option value="Easy">Easy</option>
-                              <option value="Medium">Medium</option>
-                              <option value="Hard">Hard</option>
-                              <option value="Nightmare">Nightmare 💀</option>
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-[9px] font-bold text-gray-500 uppercase">Format</label>
-                        <select value={questionType} onChange={(e) => setQuestionType(e.target.value as QuestionType)} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none">
-                              <option value="Multiple Choice">Multiple Choice</option>
-                              <option value="True/False">True / False</option>
-                              <option value="Fill in the Gap">Fill in the Gap</option>
-                              <option value="Select All That Apply">Multi-Select</option>
-                              <option value="Scenario-based">Scenario</option>
-                              <option value="Mixed">Mixed</option>
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                          <label className="text-[9px] font-bold text-gray-500 uppercase">Timer</label>
-                          <select value={timerDuration} onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} disabled={isCramMode} className="w-full bg-[#151518] border border-white/10 rounded-lg px-2 py-2 text-xs text-white outline-none disabled:opacity-50">
-                                <option value="Limitless">No Limit</option>
-                                <option value="5m">5 Mins</option>
-                                <option value="10m">10 Mins</option>
-                                <option value="30m">30 Mins</option>
-                                <option value="1h">1 Hour</option>
-                          </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                          <label className="text-[9px] font-bold text-gray-500 uppercase">Count: {questionCount}</label>
-                          <input type="range" min="5" max="50" step="5" value={questionCount} onChange={(e) => setQuestionCount(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg accent-blue-500 mt-3" />
-                    </div>
-                    
-                    {/* Advanced Toggles in Config Panel */}
-                    <div className="col-span-2 flex justify-between gap-2 mt-2 pt-2 border-t border-white/5">
-                        <button onClick={() => setUseOracle(!useOracle)} className={`flex-1 py-2 text-[10px] uppercase font-bold rounded border ${useOracle ? 'bg-amber-900/20 text-amber-500 border-amber-500/50' : 'bg-white/5 text-gray-500 border-transparent'}`}>Oracle AI</button>
-                        <button onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} className={`flex-1 py-2 text-[10px] uppercase font-bold rounded border ${useWeaknessDestroyer ? 'bg-red-900/20 text-red-500 border-red-500/50' : 'bg-white/5 text-gray-500 border-transparent'}`}>Weakness Destroyer</button>
-                        <button onClick={() => setIsCramMode(!isCramMode)} className={`flex-1 py-2 text-[10px] uppercase font-bold rounded border ${isCramMode ? 'bg-cyan-900/20 text-cyan-500 border-cyan-500/50' : 'bg-white/5 text-gray-500 border-transparent'}`}>Cram Mode</button>
-                    </div>
-               </div>
-            </div>
-
-            {/* Toggle Button */}
-            <button 
-                onClick={() => setIsConfigOpen(!isConfigOpen)} 
-                className="w-full py-2 bg-[#0f0f10] border-t border-b border-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
-            >
-                <span>{isConfigOpen ? 'Hide Parameters' : 'Configure Parameters'}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${isConfigOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </button>
-
-            {/* Sticky Actions Footer */}
-            <div className="p-4 sm:p-6 border-t border-white/10 bg-[#0a0a0a] flex flex-col sm:flex-row gap-3 items-center justify-end shrink-0">
-               <div className="flex gap-3 w-full sm:w-auto overflow-x-auto sm:overflow-visible pb-2 sm:pb-0">
-                   <button onClick={() => setShowDuelCreate(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                      <span className="relative z-10 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        Create Arena
-                      </span>
+            {/* Sticky Actions Footer - Grid Layout No Scroll */}
+            <div className="p-4 border-t border-white/10 bg-[#0a0a0a] shrink-0">
+               {/* Actions Grid - Compact Pill Icons */}
+               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                   <button onClick={() => setShowDuelCreate(true)} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 group">
+                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">⚔️</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-purple-400">Create</span>
                    </button>
-                   <button onClick={() => setShowDuelJoin(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                        Join Arena
+                   <button onClick={() => setShowDuelJoin(true)} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 group">
+                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">🛡️</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-purple-400">Join</span>
+                   </button>
+                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all gap-1 group">
+                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">💬</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-amber-500">Chat</span>
+                   </button>
+                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className={`flex flex-col items-center justify-center py-3 rounded-2xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all gap-1 group ${!isScholar ? 'col-span-3 sm:col-span-1' : ''}`}>
+                      <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">🎴</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-indigo-400">Cards</span>
                    </button>
                    {isScholar && (
-                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-green-900/10 text-green-400 border border-green-500/30 font-bold text-xs uppercase tracking-widest hover:bg-green-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                          The Syndicate
+                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="flex flex-col items-center justify-center py-3 rounded-2xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all gap-1 group col-span-2 sm:col-span-1">
+                          <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all">🤝</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wide text-green-400">Syndicate</span>
                        </button>
                    )}
-                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                      Chat
-                   </button>
-                   {/* NEW: Flashcards Button */}
-                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-bold text-xs uppercase tracking-widest hover:bg-indigo-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                      <span className="text-lg">🎴</span>
-                      Flashcards
-                   </button>
                </div>
-               <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full sm:w-auto px-10 py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
+
+               <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
                   {isLoading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

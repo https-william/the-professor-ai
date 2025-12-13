@@ -10,6 +10,12 @@ interface ChatViewProps {
   onExit: () => void;
 }
 
+declare global {
+  interface Window {
+    marked: any;
+  }
+}
+
 export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit }) => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -132,12 +138,21 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
 
   const speakText = (text: string) => {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+      // Remove markdown chars for speech
+      const cleanText = text.replace(/[*#_]/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       window.speechSynthesis.speak(utterance);
   };
 
   const formatTime = (ts: number) => {
       return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const renderContent = (content: string) => {
+      if (window.marked) {
+          return { __html: window.marked.parse(content) };
+      }
+      return { __html: content }; // Fallback to raw text if marked fails loading
   };
 
   return (
@@ -181,7 +196,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                           <img src={`data:image/jpeg;base64,${msg.image}`} alt="User Upload" className="max-h-48 object-cover" />
                       </div>
                   )}
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                  
+                  {/* Content Rendering with Markdown */}
+                  <div 
+                    className="prose prose-invert prose-sm max-w-none break-words"
+                    dangerouslySetInnerHTML={renderContent(msg.content)}
+                  />
                   
                   <div className={`text-[9px] mt-2 opacity-50 flex items-center gap-2 ${msg.role === 'user' ? 'text-blue-100 justify-end' : 'text-gray-500 justify-start'}`}>
                       {formatTime(msg.timestamp)}

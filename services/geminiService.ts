@@ -426,14 +426,14 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
         });
 
         const limitedContext = fileContext.substring(0, 5000);
-        const systemInstruction = `You are The Professor. Precise. Academic. Context: ${limitedContext}.`;
+        const systemInstruction = `You are The Professor. Precise. Academic. You are capable of formatting your responses with Markdown. Use **bold** for emphasis, lists for steps, and clear structure. Context: ${limitedContext}.`;
 
         const response = await executeSecurely(async (ai) => {
             const chat = ai.chats.create({
                 model: model,
                 config: { 
                     systemInstruction,
-                    maxOutputTokens: 256,
+                    maxOutputTokens: 4000, // INCREASED TO PREVENT CUTOFF
                     temperature: 0.7
                 },
                 history: recentHistory
@@ -463,7 +463,7 @@ export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'E
                 model: model,
                 contents: prompt,
                 config: {
-                    maxOutputTokens: 150,
+                    maxOutputTokens: 500, // Slight increase
                     temperature: 0.8
                 }
             });
