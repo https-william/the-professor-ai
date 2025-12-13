@@ -406,6 +406,50 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
   }
 };
 
+export const generateSummary = async (text: string): Promise<string> => {
+    const cacheKey = generateCacheKey(text, {}, 'SUMMARY');
+    const cached = getFromCache<string>(cacheKey);
+    if (cached) return cached;
+
+    try {
+        await checkSafety(text);
+        const model = "gemini-2.5-flash";
+        const limitedText = text.substring(0, 30000); // Token limit protection
+
+        const promptText = `
+            Provide a High-Yield Executive Briefing (TL;DR) of the following content.
+            Structure:
+            1. **Core Concept**: One sentence summary.
+            2. **Key Pillars**: 3-5 Bullet points of the most critical info.
+            3. **Academic Verdict**: A short conclusion.
+            
+            Use bolding for emphasis. Keep it concise.
+            Context: ${limitedText}
+        `;
+
+        const response = await executeSecurely(async (ai) => {
+            return await ai.models.generateContent({
+                model: model,
+                contents: promptText,
+                config: {
+                    maxOutputTokens: 1000,
+                    temperature: 0.6
+                }
+            });
+        });
+
+        if (response.text) {
+            saveToCache(cacheKey, response.text);
+            return response.text;
+        } else {
+            throw new Error("Summary generation failed.");
+        }
+    } catch (e) {
+        console.error("Summary failed", e);
+        return "Unable to generate briefing at this time.";
+    }
+};
+
 export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string): Promise<string> => {
     try {
         const model = "gemini-2.5-flash";

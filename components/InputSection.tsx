@@ -241,30 +241,31 @@ export const InputSection: React.FC<InputSectionProps> = ({
         
         {/* EXAM VIEW */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
-            {/* Horizontal Config Toolbar - Compact & Aesthetic */}
-            <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md">
-              <div className="w-full overflow-x-auto scrollbar-hide py-3 px-4 flex gap-2 sm:gap-3 items-center">
-                  {/* Difficulty Pill */}
-                  <div className="relative group shrink-0">
+            
+            {/* GRID LAYOUT FOR CONFIG (NO SCROLL) */}
+            <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md p-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full">
+                  {/* Difficulty */}
+                  <div className="relative group w-full">
                       <select 
                         value={difficulty} 
                         onChange={(e) => setDifficulty(e.target.value as Difficulty)} 
-                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all min-w-[100px]"
+                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all text-center"
                       >
                           <option value="Easy">Easy</option>
                           <option value="Medium">Medium</option>
                           <option value="Hard">Hard</option>
                           <option value="Nightmare">Nightmare 💀</option>
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
                   </div>
 
-                  {/* Format Pill */}
-                  <div className="relative group shrink-0">
+                  {/* Format */}
+                  <div className="relative group w-full">
                       <select 
                         value={questionType} 
                         onChange={(e) => setQuestionType(e.target.value as QuestionType)} 
-                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all max-w-[140px] truncate"
+                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all text-center truncate"
                       >
                           <option value="Multiple Choice">Multiple Choice</option>
                           <option value="True/False">True / False</option>
@@ -273,16 +274,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
                           <option value="Scenario-based">Scenario</option>
                           <option value="Mixed">Mixed</option>
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
                   </div>
 
-                  {/* Timer Pill */}
-                  <div className="relative group shrink-0">
+                  {/* Timer */}
+                  <div className="relative group w-full">
                       <select 
                         value={timerDuration} 
                         onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} 
                         disabled={isCramMode}
-                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all disabled:opacity-50"
+                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all disabled:opacity-50 text-center"
                       >
                           <option value="Limitless">No Timer</option>
                           <option value="5m">5 Mins</option>
@@ -290,30 +291,30 @@ export const InputSection: React.FC<InputSectionProps> = ({
                           <option value="30m">30 Mins</option>
                           <option value="1h">1 Hour</option>
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
                   </div>
 
-                  {/* Count Pill */}
-                  <div className="relative group shrink-0">
+                  {/* Count */}
+                  <div className="relative group w-full">
                       <select 
                         value={questionCount} 
                         onChange={(e) => setQuestionCount(parseInt(e.target.value))} 
-                        className="appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full pl-3 pr-8 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all"
+                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all text-center"
                       >
-                          <option value="5">5 Qs</option>
-                          <option value="10">10 Qs</option>
-                          <option value="15">15 Qs</option>
-                          <option value="20">20 Qs</option>
-                          <option value="30">30 Qs</option>
-                          <option value="50">50 Qs</option>
+                          <option value="5">5 Questions</option>
+                          <option value="10">10 Questions</option>
+                          <option value="15">15 Questions</option>
+                          <option value="20">20 Questions</option>
+                          <option value="30">30 Questions</option>
+                          <option value="50">50 Questions</option>
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400 text-[8px]">▼</div>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
                   </div>
               </div>
             </div>
 
             {/* Premium Protocol Cards - Stack on very small screens */}
-            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-4 shrink-0">
+            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-4 shrink-0 mt-2">
                <button 
                  onClick={() => setUseOracle(!useOracle)} 
                  className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${
