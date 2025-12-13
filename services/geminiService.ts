@@ -28,8 +28,6 @@ const getFromCache = <T>(key: string): T | null => {
       localStorage.removeItem(key);
       return null;
     }
-    // Stealth Log: Cache hit means 0 API risk
-    console.debug("⚡ Memory Bank Access: Undetected");
     return entry.data as T;
   } catch (e) {
     return null;
@@ -38,7 +36,7 @@ const getFromCache = <T>(key: string): T | null => {
 
 const saveToCache = (key: string, data: any) => {
   try {
-    // Garbage collection: Keep storage clean to avoid quota errors
+    // Garbage collection: Keep storage clean
     if (localStorage.length > 150) {
         const items = [];
         for (let i=0; i<localStorage.length; i++) {
@@ -54,18 +52,18 @@ const saveToCache = (key: string, data: any) => {
   }
 };
 
-// --- HYDRA PROTOCOL V2: MULTI-KEY ROTATION WITH BANISHING ---
-interface KeyNode {
-    key: string;
-    index: number;
-    cooldownUntil: number;
+// --- STEALTH CONNECTION CONTROLLER ---
+interface ConnectionNode {
+    k: string;
+    id: number;
+    cd: number; // Cooldown timestamp
 }
 
-let keyPool: KeyNode[] = [];
-let currentKeyIndex = 0;
+let _pool: ConnectionNode[] = [];
+let _ptr = 0;
 
-const initKeyPool = () => {
-    if (keyPool.length > 0) return; // Already initialized
+const initNetwork = () => {
+    if (_pool.length > 0) return;
 
     const getEnv = (key: string): string => {
         if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) return (import.meta as any).env[key];
@@ -77,100 +75,100 @@ const initKeyPool = () => {
     const mainKey = getEnv("VITE_GEMINI_API_KEY");
     if (mainKey) keys.push(mainKey);
 
-    // Scan for auxiliary keys (Explicitly checking for 2, 3, 4 as requested, and up to 10)
+    // Silently scan for auxiliary keys
     for (let i = 2; i <= 10; i++) {
         const k = getEnv(`VITE_GEMINI_API_KEY_${i}`);
         if (k) keys.push(k);
     }
 
     if (keys.length === 0) {
-        throw new Error("Protocol Failure: No Neural Keys Detected. Please check your .env configuration.");
+        throw new Error("Connection Error: Neural Link Configuration Missing.");
     }
     
-    // Initialize nodes
-    keyPool = keys.map((k, i) => ({ key: k, index: i + 1, cooldownUntil: 0 }));
+    // Initialize nodes silently
+    _pool = keys.map((k, i) => ({ k: k, id: i + 1, cd: 0 }));
     
-    // Randomized Start to distribute load
-    currentKeyIndex = Math.floor(Math.random() * keys.length);
-    console.log(`🔌 Hydra System Online: ${keyPool.length} Neural Nodes Connected. Initializing on Node #${keyPool[currentKeyIndex].index}.`);
+    // Randomized Start to distribute fingerprint
+    _ptr = Math.floor(Math.random() * keys.length);
 };
 
-const getActiveAI = (): GoogleGenAI => {
-    if (keyPool.length === 0) initKeyPool();
+const getActiveLink = (): GoogleGenAI => {
+    if (_pool.length === 0) initNetwork();
     
-    // Find a valid key (not in cooldown)
     let attempts = 0;
-    while (attempts < keyPool.length) {
-        const node = keyPool[currentKeyIndex];
-        if (Date.now() > node.cooldownUntil) {
-            return new GoogleGenAI({ apiKey: node.key });
+    while (attempts < _pool.length) {
+        const node = _pool[_ptr];
+        if (Date.now() > node.cd) {
+            return new GoogleGenAI({ apiKey: node.k });
         }
-        // If current is in cooldown, move to next
-        currentKeyIndex = (currentKeyIndex + 1) % keyPool.length;
+        _ptr = (_ptr + 1) % _pool.length;
         attempts++;
     }
 
-    // If all are in cooldown, pick the one with shortest wait (or just the current one and hope)
-    console.warn("⚠️ All Neural Nodes are cooling down. Forcing execution on current node.");
-    return new GoogleGenAI({ apiKey: keyPool[currentKeyIndex].key });
+    // Force current if all busy (Fail-open)
+    return new GoogleGenAI({ apiKey: _pool[_ptr].k });
 };
 
-const banishCurrentKey = async () => {
-    if (keyPool.length <= 1) return false;
+const rotateConnection = async () => {
+    if (_pool.length <= 1) return false;
     
-    // Mark current key as "cooling down" for 60 seconds
-    keyPool[currentKeyIndex].cooldownUntil = Date.now() + 60000;
-    console.warn(`🚫 Node #${keyPool[currentKeyIndex].index} Banished for 60s (Rate Limit).`);
+    // Randomized Cooldown (45s to 90s) to appear organic
+    const organicCooldown = 45000 + Math.random() * 45000;
+    _pool[_ptr].cd = Date.now() + organicCooldown;
 
-    // Rotate to next
-    currentKeyIndex = (currentKeyIndex + 1) % keyPool.length;
+    // Move pointer
+    _ptr = (_ptr + 1) % _pool.length;
     
-    // Add jitter
-    const jitter = 500 + Math.random() * 1000;
+    // Organic Jitter (Simulate network rerouting latency)
+    const jitter = 500 + Math.random() * 1500;
     await new Promise(r => setTimeout(r, jitter));
     
-    console.log(`🔄 Rerouting to Node #${keyPool[currentKeyIndex].index}...`);
     return true;
+};
+
+// Artificial Latency Injection
+const organicLatency = async () => {
+    // 200ms - 800ms random delay
+    const delay = 200 + Math.random() * 600;
+    await new Promise(r => setTimeout(r, delay));
 };
 
 // --- EXECUTION ENGINE ---
 
-const executeWithHydra = async <T>(
+const executeSecurely = async <T>(
     operation: (ai: GoogleGenAI) => Promise<T>, 
     retries = 3
 ): Promise<T> => {
     try {
-        const ai = getActiveAI();
+        await organicLatency(); // Inject jitter
+        const ai = getActiveLink();
         return await operation(ai);
     } catch (error: any) {
         const msg = (error.message || '').toLowerCase();
         const status = error.status || error.response?.status;
 
-        // INTERCEPT: Rate Limits (429) & Quota Exhaustion
+        // Silent Interception: Rate Limits (429) & Quota
         if (status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('exhausted')) {
-            // Attempt Rotation
-            const rotated = await banishCurrentKey();
+            const rotated = await rotateConnection();
             
             if (rotated) {
-                // Retry with new key
-                return executeWithHydra(operation, retries); 
+                return executeSecurely(operation, retries); 
             }
             
-            // If we run out of keys or rotation fails, perform standard backoff
             if (retries > 0) {
-                // Exponential Backoff with Jitter
+                // Exponential Backoff
                 const delay = 2000 + (Math.random() * 1000);
                 await new Promise(resolve => setTimeout(resolve, delay));
-                return executeWithHydra(operation, retries - 1);
+                return executeSecurely(operation, retries - 1);
             }
-            throw new Error("System Capacity Reached. All 4 Neural Nodes are overloaded. Please wait 1 minute.");
+            throw new Error("System Capacity Reached. Please wait a moment.");
         }
         
-        // INTERCEPT: Server Overload (503)
+        // Silent Interception: Server Overload (503)
         if (status === 503 || msg.includes('overloaded')) {
              if (retries > 0) {
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                return executeWithHydra(operation, retries - 1);
+                return executeSecurely(operation, retries - 1);
              }
         }
 
@@ -231,7 +229,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
   }
 
   try {
-      const response = await executeWithHydra(async (ai) => {
+      const response = await executeSecurely(async (ai) => {
         return await ai.models.generateContent({
           model: model,
           contents: { role: 'user', parts: contentParts },
@@ -281,7 +279,6 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 };
 
 export const generateSuddenDeathQuestion = async (text: string): Promise<QuizQuestion> => {
-    // No cache for Sudden Death to ensure unpredictability or just use a unique key
     await checkSafety(text);
     const model = "gemini-2.5-flash"; 
     
@@ -297,13 +294,13 @@ export const generateSuddenDeathQuestion = async (text: string): Promise<QuizQue
     `;
 
     try {
-        const response = await executeWithHydra(async (ai) => {
+        const response = await executeSecurely(async (ai) => {
             return await ai.models.generateContent({
                 model: model,
                 contents: { role: 'user', parts: [{ text: promptText }] },
                 config: {
                     systemInstruction: "You are the Final Boss Exam Proctor. Output raw JSON object (not array).",
-                    temperature: 0.9, // Higher temp for creative difficulty
+                    temperature: 0.9, 
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
@@ -368,7 +365,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
   }
 
   try {
-      const response = await executeWithHydra(async (ai) => {
+      const response = await executeSecurely(async (ai) => {
         return await ai.models.generateContent({
           model: model,
           contents: { role: 'user', parts: contentParts },
@@ -431,7 +428,7 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
         const limitedContext = fileContext.substring(0, 5000);
         const systemInstruction = `You are The Professor. Precise. Academic. Context: ${limitedContext}.`;
 
-        const response = await executeWithHydra(async (ai) => {
+        const response = await executeSecurely(async (ai) => {
             const chat = ai.chats.create({
                 model: model,
                 config: { 
@@ -442,7 +439,7 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
                 history: recentHistory
             });
             return await chat.sendMessage({ message: newMessage });
-        }, 1); // Reduced retries for chat
+        }, 1); 
         
         return response.text || "I cannot answer that right now.";
 
@@ -461,7 +458,7 @@ export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'E
         let prompt = `Rewrite simply (ELI5): "${explanation}"`;
         if (type === 'ELA') prompt = `Rewrite as ${context}: "${explanation}"`;
 
-        const response = await executeWithHydra(async (ai) => {
+        const response = await executeSecurely(async (ai) => {
             return await ai.models.generateContent({
                 model: model,
                 contents: prompt,
