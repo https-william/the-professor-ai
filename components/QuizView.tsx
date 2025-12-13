@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { QuizState, QuizQuestion, Difficulty } from '../types';
+import { QuizState, QuizQuestion, Difficulty, DuelState } from '../types';
 import { FlashcardDeck } from './FlashcardDeck';
-import { simplifyExplanation } from '../services/geminiService';
+import { simplifyExplanation, generateSuddenDeathQuestion } from '../services/geminiService';
+import { subscribeToDuel, activateSuddenDeath, submitSuddenDeathAnswer } from '../services/firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface QuizViewProps {
   quizState: QuizState;
@@ -12,7 +14,18 @@ interface QuizViewProps {
   onSubmit: () => void;
   onReset: () => void;
   onTimeExpired: () => void;
+  duelId?: string | null; // New Prop to track active duel
 }
+
+// Helper to prevent crashes on bad JSON
+const safeParseJSON = (str: string | undefined | null, fallback: any = []) => {
+    if (!str) return fallback;
+    try {
+        return JSON.parse(str);
+    } catch (e) {
+        return fallback;
+    }
+};
 
 export const QuizView: React.FC<QuizViewProps> = ({ 
   quizState, 
@@ -21,15 +34,22 @@ export const QuizView: React.FC<QuizViewProps> = ({
   onFlagQuestion,
   onSubmit, 
   onReset,
-  onTimeExpired
+  onTimeExpired,
+  duelId
 }) => {
+  const { user } = useAuth();
   const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime, isCramMode, focusStrikes } = quizState;
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
   const [viewMode, setViewMode] = useState<'EXAM' | 'FLASHCARDS'>('EXAM');
   const [strikes, setStrikes] = useState(focusStrikes || 0);
   
-  // Specific inputs state for current question types
+  // Duel State
+  const [duelData, setDuelData] = useState<DuelState | null>(null);
+  const [suddenDeathSubmitted, setSuddenDeathSubmitted] = useState(false);
+  const [isGeneratingSD, setIsGeneratingSD] = useState(false);
+  
+  // Specific inputs state
   const [textAnswer, setTextAnswer] = useState('');
   const [multiSelectAnswers, setMultiSelectAnswers] = useState<string[]>([]);
   
@@ -44,82 +64,79 @@ export const QuizView: React.FC<QuizViewProps> = ({
       if (q.type === 'Fill in the Gap') {
           setTextAnswer(savedAnswer || '');
       } else if (q.type === 'Select All That Apply') {
-          try {
-              setMultiSelectAnswers(savedAnswer ? JSON.parse(savedAnswer) : []);
-          } catch {
-              setMultiSelectAnswers([]);
-          }
+          setMultiSelectAnswers(safeParseJSON(savedAnswer, []));
       }
   }, [currentQuestionIdx, userAnswers]);
+
+  // DUEL: Subscribe to updates if submitted
+  useEffect(() => {
+      if (isSubmitted && duelId) {
+          const unsub = subscribeToDuel(duelId, (data) => {
+              setDuelData(data);
+              
+              // Host Logic to Trigger Sudden Death Generation
+              if (data.status === 'SUDDEN_DEATH_PENDING' && data.hostId === user?.uid && !isGeneratingSD) {
+                  setIsGeneratingSD(true);
+                  // Generate using the original content context
+                  generateSuddenDeathQuestion(data.content || "General Knowledge").then((q) => {
+                      activateSuddenDeath(duelId, q);
+                  });
+              }
+          });
+          return () => unsub();
+      }
+  }, [isSubmitted, duelId, user, isGeneratingSD]);
 
   // FOCUS TRACKING PROTOCOL
   useEffect(() => {
       if (isSubmitted) return;
 
       const handleVisibilityChange = () => {
-          if (document.hidden) {
-              handleFocusLost();
-          }
+          if (document.hidden) handleFocusLost();
       };
-
-      const handleBlur = () => {
-          handleFocusLost();
-      };
+      const handleBlur = () => handleFocusLost();
 
       const handleFocusLost = () => {
           setStrikes(prev => {
               const newStrikes = prev + 1;
-              
-              // Warning Toast
               const toast = document.createElement('div');
               toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest z-[100] animate-bounce shadow-[0_0_20px_red]';
               toast.innerText = `⚠️ FOCUS LOST. STRIKE ${newStrikes}/3`;
               document.body.appendChild(toast);
               setTimeout(() => toast.remove(), 3000);
 
-              // Nightmare Protocol
               if (difficulty === 'Nightmare' && newStrikes >= 3) {
                   alert("ACADEMIC INTEGRITY VIOLATED. EXAM TERMINATED.");
                   onSubmit();
               }
-              
               return newStrikes;
           });
       };
 
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('blur', handleBlur);
-
       return () => {
           document.removeEventListener('visibilitychange', handleVisibilityChange);
           window.removeEventListener('blur', handleBlur);
       };
   }, [isSubmitted, difficulty, onSubmit]);
 
-  // Cram Mode: 10s per question logic
+  // Cram Mode Logic
   useEffect(() => {
-      if (isCramMode && !isSubmitted) {
-          setTimeLeft(10);
-      }
+      if (isCramMode && !isSubmitted) setTimeLeft(10);
   }, [currentQuestionIdx, isCramMode, isSubmitted]);
 
-  // Active Timer Logic
+  // Timer Logic
   useEffect(() => {
     if (isSubmitted || timeLeft === null) return;
-
     if (timeLeft <= 0) {
-      if (isCramMode) {
-          handleNextQuestion(); // Move to next or submit
-      } else {
-          onTimeExpired();
-      }
+      if (isCramMode) handleNextQuestion();
+      else onTimeExpired();
       return;
     }
-
     const timer = setInterval(() => {
       setTimeLeft(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
     }, 1000);
-
     return () => clearInterval(timer);
   }, [timeLeft, isSubmitted, onTimeExpired, isCramMode]);
 
@@ -131,15 +148,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
       }
   };
 
-  // Focus Mode (Fullscreen)
-  useEffect(() => {
-    if (!isSubmitted) {
-        const enterFullscreen = async () => {
-            try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (e) {}
-        };
-        enterFullscreen();
-    }
-  }, [isSubmitted]);
+  const handleSuddenDeathAnswer = (opt: string) => {
+      if (!duelData?.suddenDeathQuestion || !duelId || !user) return;
+      const isCorrect = opt === duelData.suddenDeathQuestion.correct_answer;
+      submitSuddenDeathAnswer(duelId, user.uid, isCorrect);
+      setSuddenDeathSubmitted(true);
+  };
 
   const currentQ = questions[currentQuestionIdx];
   const total = questions.length;
@@ -184,7 +198,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
           newSelection = [...multiSelectAnswers, opt].sort();
       }
       setMultiSelectAnswers(newSelection);
-      // Save as JSON string
       onAnswerSelect(currentQ.id, JSON.stringify(newSelection));
   };
 
@@ -203,6 +216,44 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
   // --- REPORT CARD ---
   if (isSubmitted) {
+    // Check for Sudden Death Overlay
+    if (duelData?.status === 'SUDDEN_DEATH_ACTIVE' && !suddenDeathSubmitted && duelData.suddenDeathQuestion) {
+        const sdQ = duelData.suddenDeathQuestion;
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-950/90 backdrop-blur-xl animate-fade-in">
+                <div className="max-w-2xl w-full bg-black border-2 border-red-600 rounded-3xl p-8 shadow-[0_0_100px_rgba(220,38,38,0.5)] relative overflow-hidden animate-pulse-slow">
+                    {/* Hazard Stripes */}
+                    <div className="absolute top-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#dc2626,#dc2626_10px,#000_10px,#000_20px)]"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#dc2626,#dc2626_10px,#000_10px,#000_20px)]"></div>
+                    
+                    <div className="text-center mb-8">
+                        <h1 className="text-4xl font-black text-red-500 italic tracking-tighter mb-2">SUDDEN DEATH</h1>
+                        <p className="text-red-200 font-mono text-xs uppercase tracking-widest">Tie Detected. Winner Takes All.</p>
+                    </div>
+
+                    <div className="mb-8">
+                        <h2 className="text-xl font-bold text-white mb-6 leading-relaxed">{sdQ.question}</h2>
+                        <div className="grid grid-cols-1 gap-3">
+                            {sdQ.options.map(opt => (
+                                <button 
+                                    key={opt}
+                                    onClick={() => handleSuddenDeathAnswer(opt)}
+                                    className="p-4 rounded-xl border border-red-900/50 bg-red-900/10 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all text-left text-gray-300 font-medium"
+                                >
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="text-center text-[10px] text-red-500 font-bold uppercase animate-pulse">
+                        ONE CHANCE. NO RETRIES.
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
       <div className="max-w-5xl mx-auto pb-20 px-4 animate-fade-in">
         <div className="flex justify-between items-center mb-8">
@@ -225,16 +276,50 @@ export const QuizView: React.FC<QuizViewProps> = ({
                 <p className="text-gray-400 font-mono text-xs uppercase tracking-widest mt-2">Final Score</p>
             </div>
             
-            {/* Feedback Card */}
-            <div className="glass-panel rounded-3xl p-10 flex flex-col justify-center items-center relative overflow-hidden min-h-[300px] border-l-4 border-l-amber-500">
-                <div className="absolute inset-0 bg-amber-900/5"></div>
-                <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 text-2xl border border-amber-500/30">👨‍🏫</div>
-                <p className="text-xl md:text-2xl text-amber-100 font-serif italic text-center leading-relaxed">
-                    "Review your mistakes. The only real failure is stopping."
-                </p>
-                <div className="mt-8 text-[10px] font-bold uppercase tracking-widest text-amber-500/60">
-                    The Professor
-                </div>
+            {/* Feedback / Duel Leaderboard */}
+            <div className="glass-panel rounded-3xl p-8 flex flex-col relative overflow-hidden min-h-[300px] border-l-4 border-l-amber-500">
+                {duelId ? (
+                    <div className="flex flex-col h-full">
+                        <div className="flex items-center gap-3 mb-6">
+                            <span className="text-2xl">🏆</span>
+                            <h3 className="text-lg font-bold text-white uppercase tracking-wider">Arena Standings</h3>
+                        </div>
+                        
+                        {duelData?.status === 'SUDDEN_DEATH_PENDING' && (
+                            <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-xl mb-4 animate-pulse">
+                                <p className="text-red-400 font-bold text-xs uppercase text-center">⚠ TIE DETECTED. GENERATING NIGHTMARE...</p>
+                            </div>
+                        )}
+
+                        <div className="flex-1 overflow-y-auto space-y-2">
+                            {duelData?.participants
+                                .sort((a, b) => (b.score || 0) - (a.score || 0))
+                                .map((p, i) => (
+                                <div key={p.id} className={`flex items-center justify-between p-3 rounded-xl border ${p.score !== undefined ? 'bg-amber-900/10 border-amber-500/20' : 'bg-white/5 border-white/5'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="font-mono text-amber-500 font-bold w-6">#{i + 1}</div>
+                                        <div className="text-sm font-bold text-gray-200">{p.name} {i === 0 && duelData.status === 'COMPLETED' && '👑'}</div>
+                                    </div>
+                                    <div className="text-xs font-mono font-bold text-white">
+                                        {p.status === 'COMPLETED' || p.suddenDeathStatus === 'COMPLETED' ? `${p.score}/${total}` : '...'}
+                                    </div>
+                                </div>
+                            ))}
+                            {(!duelData || duelData.participants.length === 0) && <p className="text-gray-500 text-xs">Waiting for feed...</p>}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col justify-center items-center h-full">
+                        <div className="absolute inset-0 bg-amber-900/5"></div>
+                        <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 text-2xl border border-amber-500/30">👨‍🏫</div>
+                        <p className="text-xl md:text-2xl text-amber-100 font-serif italic text-center leading-relaxed">
+                            "Review your mistakes. The only real failure is stopping."
+                        </p>
+                        <div className="mt-8 text-[10px] font-bold uppercase tracking-widest text-amber-500/60">
+                            The Professor
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
 
@@ -245,12 +330,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
              const userAnswer = userAnswers[q.id];
              let isCorrect = false;
              
-             // Loose comparison for text input
              if (q.type === 'Fill in the Gap') {
-                 isCorrect = userAnswer?.toLowerCase().trim() === q.correct_answer.toLowerCase().trim();
+                 isCorrect = userAnswer?.toLowerCase().trim() === q.correct_answer?.toLowerCase().trim();
              } else if (q.type === 'Select All That Apply') {
-                 // Compare JSON strings implies sorting
-                 isCorrect = userAnswer === JSON.stringify(JSON.parse(q.correct_answer || '[]').sort());
+                 // Safe Parse fix for JSON crash
+                 const parsedCorrect = safeParseJSON(q.correct_answer);
+                 isCorrect = userAnswer === JSON.stringify(parsedCorrect.sort());
              } else {
                  isCorrect = userAnswer === q.correct_answer;
              }
@@ -287,14 +372,15 @@ export const QuizView: React.FC<QuizViewProps> = ({
                      ) : (
                          q.options.map(opt => {
                             let btnClass = "border-transparent bg-black/20 opacity-60"; 
-                            
-                            // Highlight logic
+                            const parsedCorrect = safeParseJSON(q.correct_answer, []);
+                            const parsedUser = safeParseJSON(userAnswer, []);
+
                             const isSelected = q.type === 'Select All That Apply' 
-                                ? (userAnswer ? JSON.parse(userAnswer).includes(opt) : false)
+                                ? parsedUser.includes(opt)
                                 : userAnswer === opt;
                             
                             const isActuallyCorrect = q.type === 'Select All That Apply'
-                                ? (JSON.parse(q.correct_answer || '[]').includes(opt))
+                                ? parsedCorrect.includes(opt)
                                 : q.correct_answer === opt;
 
                             if (isActuallyCorrect) {
@@ -357,7 +443,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
              <div className="flex items-center gap-2 sm:gap-3">
                  <div className={`w-2 h-2 rounded-full animate-pulse ${isCramMode ? 'bg-cyan-500 shadow-[0_0_10px_cyan]' : difficulty === 'Nightmare' ? 'bg-purple-500 shadow-[0_0_10px_purple]' : difficulty === 'Hard' ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-blue-500'}`}></div>
                  <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-none ${isCramMode ? 'text-cyan-300' : difficulty === 'Nightmare' ? 'text-purple-300 animate-pulse' : 'text-white'}`}>
-                    {isCramMode ? 'ADRENALINE PROTOCOL' : difficulty === 'Nightmare' ? 'NIGHTMARE' : difficulty === 'Hard' ? 'HARDCORE' : 'LIVE EXAM'}
+                    {duelId ? 'DUEL IN PROGRESS' : (isCramMode ? 'ADRENALINE PROTOCOL' : difficulty === 'Nightmare' ? 'NIGHTMARE' : difficulty === 'Hard' ? 'HARDCORE' : 'LIVE EXAM')}
                  </span>
              </div>
              

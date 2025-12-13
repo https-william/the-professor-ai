@@ -280,6 +280,65 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
   }
 };
 
+export const generateSuddenDeathQuestion = async (text: string): Promise<QuizQuestion> => {
+    // No cache for Sudden Death to ensure unpredictability or just use a unique key
+    await checkSafety(text);
+    const model = "gemini-2.5-flash"; 
+    
+    // Truncate context to save tokens, we just need general topic
+    const limitedText = text.substring(0, 15000); 
+
+    const promptText = `
+      GENERATE 1 NIGHTMARE DIFFICULTY QUESTION.
+      The score is tied. This question determines the winner.
+      Make it incredibly hard but fair.
+      Format: Multiple Choice.
+      Context: ${limitedText}
+    `;
+
+    try {
+        const response = await executeWithHydra(async (ai) => {
+            return await ai.models.generateContent({
+                model: model,
+                contents: { role: 'user', parts: [{ text: promptText }] },
+                config: {
+                    systemInstruction: "You are the Final Boss Exam Proctor. Output raw JSON object (not array).",
+                    temperature: 0.9, // Higher temp for creative difficulty
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            question: { type: Type.STRING },
+                            options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                            correct_answer: { type: Type.STRING },
+                            explanation: { type: Type.STRING }
+                        },
+                        required: ["question", "options", "correct_answer", "explanation"]
+                    }
+                }
+            });
+        });
+
+        if (response.text) {
+            const q = JSON.parse(response.text);
+            return { ...q, id: 999, type: 'Multiple Choice' };
+        } else {
+            throw new Error("No question generated");
+        }
+    } catch (e) {
+        console.error("Sudden Death Gen Failed", e);
+        // Fallback hard question
+        return {
+            id: 999,
+            question: "Sudden Death Protocol Error. Who wins?",
+            options: ["The Fast One", "The Smart One", "The Lucky One", "Me"],
+            correct_answer: "The Smart One",
+            explanation: "Ideally, intelligence prevails.",
+            type: 'Multiple Choice'
+        };
+    }
+};
+
 export const generateProfessorContent = async (text: string, config: QuizConfig): Promise<ProfessorSection[]> => {
   const cacheKey = generateCacheKey(text, config, 'PROFESSOR');
   const cached = getFromCache<ProfessorSection[]>(cacheKey);

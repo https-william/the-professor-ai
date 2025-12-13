@@ -324,10 +324,6 @@ export const submitDuelScore = async (duelId: string, userId: string, score: num
     
     const duelRef = doc(db, "duels", duelId);
     
-    // We need to read first to update array safely (or use arrayUnion if structure allowed, but we modify objects)
-    // Transaction is safer for multiplayer scoring
-    // Simplified for client-side MVP: Get, Modify, Set
-    
     try {
         const snap = await getDoc(duelRef);
         if (!snap.exists()) return;
@@ -342,15 +338,69 @@ export const submitDuelScore = async (duelId: string, userId: string, score: num
         let updateData: any = { participants: updatedParticipants };
         
         if (allDone) {
-            updateData.status = 'COMPLETED';
-            // Determine winner
+            // Determine winner or TIE
             const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
-            updateData.winnerId = sorted[0].id;
+            
+            // TIE BREAKER CHECK
+            // If at least 2 players have the same high score
+            if (sorted.length > 1 && sorted[0].score === sorted[1].score) {
+                updateData.status = 'SUDDEN_DEATH_PENDING';
+            } else {
+                updateData.status = 'COMPLETED';
+                updateData.winnerId = sorted[0].id;
+            }
         }
         
         await updateDoc(duelRef, updateData as any);
         
     } catch (e) {
         console.error("Score Submit Error", e);
+    }
+};
+
+export const activateSuddenDeath = async (duelId: string, question: QuizQuestion) => {
+    await safeFirestoreOp(async () => {
+        const docRef = doc(db, "duels", duelId);
+        await updateDoc(docRef, {
+            status: 'SUDDEN_DEATH_ACTIVE',
+            suddenDeathQuestion: question
+        });
+    }, "Activate Sudden Death");
+};
+
+export const submitSuddenDeathAnswer = async (duelId: string, userId: string, isCorrect: boolean) => {
+    if (!db) return;
+    const duelRef = doc(db, "duels", duelId);
+    
+    try {
+        const snap = await getDoc(duelRef);
+        if (!snap.exists()) return;
+        
+        const data = snap.data() as DuelState;
+        
+        const updatedParticipants = data.participants.map(p => 
+            p.id === userId 
+            ? { 
+                ...p, 
+                score: isCorrect ? (p.score || 0) + 1 : (p.score || 0), // Add bonus point
+                suddenDeathStatus: 'COMPLETED' 
+              } 
+            : p
+        );
+        
+        // Check if all active sudden death participants completed
+        // (Assuming all participants from main round participate in SD, or we just wait for everyone)
+        const allSDDone = updatedParticipants.every(p => p.suddenDeathStatus === 'COMPLETED');
+        let updateData: any = { participants: updatedParticipants };
+        
+        if (allSDDone) {
+            updateData.status = 'COMPLETED';
+            const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
+            updateData.winnerId = sorted[0].id;
+        }
+        
+        await updateDoc(duelRef, updateData as any);
+    } catch (e) {
+        console.error("SD Submit Error", e);
     }
 };

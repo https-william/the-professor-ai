@@ -52,6 +52,7 @@ export interface DuelParticipant {
   name: string;
   score?: number;
   status: 'JOINED' | 'READY' | 'COMPLETED';
+  suddenDeathStatus?: 'PENDING' | 'COMPLETED';
 }
 
 export interface DuelState {
@@ -63,9 +64,10 @@ export interface DuelState {
   content: string; // Text content used to generate
   quizConfig: QuizConfig;
   quizQuestions?: QuizQuestion[]; // Optional initially for speed
-  status: 'INITIALIZING' | 'WAITING' | 'ACTIVE' | 'COMPLETED';
+  status: 'INITIALIZING' | 'WAITING' | 'ACTIVE' | 'COMPLETED' | 'SUDDEN_DEATH_PENDING' | 'SUDDEN_DEATH_ACTIVE';
   winnerId?: string;
   createdAt: number;
+  suddenDeathQuestion?: QuizQuestion;
 }
 
 export enum AppStatus {

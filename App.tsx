@@ -19,7 +19,7 @@ import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from './types';
-import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel } from './services/firebase';
+import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from './services/firebase';
 import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
@@ -54,8 +54,9 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
 
-  // New State for Duel Modal
+  // Duel State
   const [duelReadyData, setDuelReadyData] = useState<{ id: string, code: string, isHost: boolean } | null>(null);
+  const [activeDuelId, setActiveDuelId] = useState<string | null>(null);
   
   // Confirmation Modal State
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
@@ -263,7 +264,11 @@ const App: React.FC = () => {
               const userAnswer = quizState.userAnswers[q.id];
               const correctAnswer = q.correct_answer;
               try {
-                  if (userAnswer === JSON.stringify(JSON.parse(correctAnswer || '[]').sort())) score++;
+                  // Safe Parse inside submission loop as well
+                  const parsedUser = JSON.parse(userAnswer || '[]');
+                  const parsedCorrect = JSON.parse(correctAnswer || '[]').sort();
+                  // Simple array comparison after sort
+                  if (JSON.stringify(parsedUser.sort()) === JSON.stringify(parsedCorrect)) score++;
               } catch(e) {}
           } else if (q.type === 'Fill in the Gap') {
               if (quizState.userAnswers[q.id]?.toLowerCase().trim() === q.correct_answer?.toLowerCase().trim()) score++;
@@ -289,6 +294,10 @@ const App: React.FC = () => {
       
       if (user) {
           await saveUserToFirestore(user.uid, { xp: newXP });
+          // CRITICAL: Submit Duel Score if active
+          if (activeDuelId) {
+              await submitDuelScore(activeDuelId, user.uid, score);
+          }
       }
       
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -304,6 +313,7 @@ const App: React.FC = () => {
           setActiveHistoryId(null);
           setErrorMsg(null); 
           setDuelReadyData(null); // Clear duel state
+          setActiveDuelId(null); // Clear active duel
       });
     }
   };
@@ -417,6 +427,7 @@ const App: React.FC = () => {
               setQuizState(newState);
               setAppMode('EXAM');
               setStatus(AppStatus.READY);
+              setActiveDuelId(duelReadyData.id); // Set Active Duel ID to track state
               setDuelReadyData(null);
               
               // Force Save to History so they can resume or review later
@@ -598,7 +609,7 @@ const App: React.FC = () => {
                     {status === AppStatus.READY && (
                       <div className="h-full">
                         {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
-                        {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} />}
+                        {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} />}
                         {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                       </div>
                     )}
