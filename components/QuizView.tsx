@@ -206,34 +206,36 @@ export const QuizView: React.FC<QuizViewProps> = ({
     if (duelData?.status === 'SUDDEN_DEATH_ACTIVE' && !suddenDeathSubmitted && duelData.suddenDeathQuestion) {
         const sdQ = duelData.suddenDeathQuestion;
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-950/90 backdrop-blur-xl animate-fade-in">
-                <div className="max-w-2xl w-full bg-black border-2 border-red-600 rounded-3xl p-8 shadow-[0_0_100px_rgba(220,38,38,0.5)] relative overflow-hidden animate-pulse-slow">
-                    {/* Hazard Stripes */}
-                    <div className="absolute top-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#dc2626,#dc2626_10px,#000_10px,#000_20px)]"></div>
-                    <div className="absolute bottom-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#dc2626,#dc2626_10px,#000_10px,#000_20px)]"></div>
-                    
-                    <div className="text-center mb-8">
-                        <h1 className="text-4xl font-black text-red-500 italic tracking-tighter mb-2">SUDDEN DEATH</h1>
-                        <p className="text-red-200 font-mono text-xs uppercase tracking-widest">Tie Detected. Winner Takes All.</p>
-                    </div>
-
-                    <div className="mb-8">
-                        <h2 className="text-xl font-bold text-white mb-6 leading-relaxed">{sdQ.question}</h2>
-                        <div className="grid grid-cols-1 gap-3">
-                            {sdQ.options.map(opt => (
-                                <button 
-                                    key={opt}
-                                    onClick={() => handleSuddenDeathAnswer(opt)}
-                                    className="p-4 rounded-xl border border-red-900/50 bg-red-900/10 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all text-left text-gray-300 font-medium"
-                                >
-                                    {opt}
-                                </button>
-                            ))}
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-red-950/90 backdrop-blur-xl animate-fade-in">
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="max-w-2xl w-full bg-black border-2 border-red-600 rounded-3xl p-8 shadow-[0_0_100px_rgba(220,38,38,0.5)] relative overflow-hidden animate-pulse-slow">
+                        {/* Hazard Stripes */}
+                        <div className="absolute top-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#dc2626,#dc2626_10px,#000_10px,#000_20px)]"></div>
+                        <div className="absolute bottom-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#dc2626,#dc2626_10px,#000_10px,#000_20px)]"></div>
+                        
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-black text-red-500 italic tracking-tighter mb-2">SUDDEN DEATH</h1>
+                            <p className="text-red-200 font-mono text-xs uppercase tracking-widest">Tie Detected. Winner Takes All.</p>
                         </div>
-                    </div>
-                    
-                    <div className="text-center text-[10px] text-red-500 font-bold uppercase animate-pulse">
-                        ONE CHANCE. NO RETRIES.
+
+                        <div className="mb-8">
+                            <h2 className="text-xl font-bold text-white mb-6 leading-relaxed">{sdQ.question}</h2>
+                            <div className="grid grid-cols-1 gap-3">
+                                {sdQ.options.map(opt => (
+                                    <button 
+                                        key={opt}
+                                        onClick={() => handleSuddenDeathAnswer(opt)}
+                                        className="p-4 rounded-xl border border-red-900/50 bg-red-900/10 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all text-left text-gray-300 font-medium"
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="text-center text-[10px] text-red-500 font-bold uppercase animate-pulse">
+                            ONE CHANCE. NO RETRIES.
+                        </div>
                     </div>
                 </div>
             </div>

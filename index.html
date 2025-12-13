@@ -10,6 +10,30 @@
     <meta name="keywords" content="AI study tool, exam prep, quiz generator, feynman technique, student AI, academic accelerator" />
     <meta name="author" content="The Professor" />
     
+    <!-- Global Error Handler for Mobile Debugging -->
+    <script>
+      window.onerror = function(msg, url, lineNo, columnNo, error) {
+        const root = document.getElementById('root');
+        // Only show if root is empty (app failed to mount)
+        if (root && root.innerHTML.trim() === "") {
+           // Keep preloader but show error
+           const preloader = document.getElementById('preloader-core');
+           if(preloader) preloader.style.display = 'none';
+           
+           const errDiv = document.createElement('div');
+           errDiv.style.color = '#ef4444';
+           errDiv.style.padding = '20px';
+           errDiv.style.textAlign = 'center';
+           errDiv.style.fontFamily = 'monospace';
+           errDiv.style.background = '#000';
+           errDiv.style.height = '100vh';
+           errDiv.innerHTML = '<h3>System Initialization Failed</h3><p>' + msg + '</p>';
+           document.body.appendChild(errDiv);
+        }
+        return false;
+      };
+    </script>
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://theprofessorai.vercel.app/" />
@@ -44,6 +68,9 @@
       if (typeof process === 'undefined') {
         window.process = { env: {} };
       }
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
     </script>
     
     <!-- PDF.js -->
@@ -62,9 +89,20 @@
          // Remove preloader when fully loaded
          const preloader = document.getElementById('preloader-core');
          if(preloader) {
-            preloader.style.opacity = '0';
-            preloader.style.pointerEvents = 'none';
-            setTimeout(() => preloader.remove(), 500);
+            // Check if React mounted (root has children), if not, wait a bit
+            const root = document.getElementById('root');
+            if (root && root.childElementCount > 0) {
+               preloader.style.opacity = '0';
+               preloader.style.pointerEvents = 'none';
+               setTimeout(() => preloader.remove(), 500);
+            } else {
+               // Fallback cleanup after 2 seconds if React is slow but working
+               setTimeout(() => {
+                   preloader.style.opacity = '0';
+                   preloader.style.pointerEvents = 'none';
+                   setTimeout(() => preloader.remove(), 500);
+               }, 2000);
+            }
          }
 
          if (typeof pdfjsLib !== 'undefined') {
