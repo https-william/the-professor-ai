@@ -51,9 +51,43 @@ export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorS
     return 'Untitled Class';
   } else if (mode === 'CHAT') {
       const chatData = data as ChatState;
-      return `Chat: ${chatData.fileName || 'General Session'}`;
+      if (chatData.fileName && chatData.fileName !== 'General Session') return `Chat: ${chatData.fileName}`;
+      
+      // Dynamic title based on first user message if filename is generic
+      if (chatData.messages && chatData.messages.length > 0) {
+          const firstUserMsg = chatData.messages.find(m => m.role === 'user');
+          if (firstUserMsg) {
+              const content = firstUserMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, '[Image]').trim();
+              return content.length > 30 ? content.substring(0, 30) + '...' : content;
+          }
+      }
+      return 'New Conversation';
   }
   return 'Untitled Session';
+};
+
+/**
+ * Generates a short snippet preview of the session state.
+ */
+export const getHistorySnippet = (item: HistoryItem): string => {
+    if (item.mode === 'CHAT') {
+        const data = item.data as ChatState;
+        if (!data.messages || data.messages.length === 0) return 'No messages yet';
+        const lastMsg = data.messages[data.messages.length - 1];
+        const sender = lastMsg.role === 'user' ? 'You' : 'Prof';
+        const content = lastMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, '📷 Image');
+        return `${sender}: ${content.substring(0, 40)}${content.length > 40 ? '...' : ''}`;
+    }
+    if (item.mode === 'EXAM') {
+        const data = item.data as QuizState;
+        const status = data.isSubmitted ? 'Completed' : 'In Progress';
+        return `${data.score}/${data.questions.length} • ${status}`;
+    }
+    if (item.mode === 'PROFESSOR') {
+        const data = item.data as ProfessorState;
+        return `${data.sections.length} Sections • Lecture`;
+    }
+    return '';
 };
 
 export const saveToHistory = (item: HistoryItem) => {

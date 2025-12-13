@@ -45,10 +45,10 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type, on
        setWaitIndex((prev) => (prev + 1) % WAIT_MESSAGES.length);
     }, 5000);
 
-    // If loading takes > 8 seconds, show the cancel button
+    // Increased to 45 seconds as requested
     const cancelTimer = setTimeout(() => {
         setShowCancel(true);
-    }, 8000);
+    }, 45000);
 
     return () => {
         clearInterval(tipInterval);

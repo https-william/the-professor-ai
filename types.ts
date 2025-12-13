@@ -5,6 +5,7 @@ export interface QuizQuestion {
   options: string[];
   correct_answer: string;
   explanation: string;
+  type?: QuestionType; // Optional override per question
 }
 
 export interface ProfessorSection {
@@ -18,7 +19,7 @@ export interface ProfessorSection {
 
 export interface QuizState {
   questions: QuizQuestion[];
-  userAnswers: Record<number, string>; // questionId -> selectedOption
+  userAnswers: Record<number, string>; // questionId -> selectedOption (or JSON string for multi)
   flaggedQuestions: number[]; // Array of question IDs
   isSubmitted: boolean;
   score: number;
@@ -46,20 +47,25 @@ export interface ChatMessage {
   image?: string; // Base64 image
 }
 
-export interface DuelState {
+export interface DuelParticipant {
   id: string;
+  name: string;
+  score?: number;
+  status: 'JOINED' | 'READY' | 'COMPLETED';
+}
+
+export interface DuelState {
+  id: string; // Firestore ID
+  code: string; // Readable Code (e.g., NEON-TIGER)
   hostId: string;
-  challengerId?: string;
+  participants: DuelParticipant[]; // Replaces single challenger
   wager: number;
   content: string; // Text content used to generate
   quizConfig: QuizConfig;
-  quizQuestions: QuizQuestion[];
-  hostScore?: number;
-  challengerScore?: number;
-  hostName: string;
-  challengerName?: string;
-  status: 'WAITING' | 'ACTIVE' | 'COMPLETED';
+  quizQuestions?: QuizQuestion[]; // Optional initially for speed
+  status: 'INITIALIZING' | 'WAITING' | 'ACTIVE' | 'COMPLETED';
   winnerId?: string;
+  createdAt: number;
 }
 
 export enum AppStatus {
@@ -73,7 +79,7 @@ export enum AppStatus {
 export type InputMode = 'FILE' | 'TEXT' | 'CAMERA';
 export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT' | 'DUEL';
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Nightmare';
-export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Mixed';
+export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Mixed' | 'Select All That Apply';
 export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '45m' | '1h' | '1h 30m' | '2h';
 
 // Professor Mode Specifics

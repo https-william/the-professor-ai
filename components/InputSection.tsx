@@ -4,6 +4,7 @@ import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, App
 import { processFile } from '../services/fileService';
 import { CameraScanner } from './CameraScanner';
 import { DuelCreateModal } from './DuelCreateModal';
+import { DuelJoinModal } from './DuelJoinModal';
 import { StudyRoomModal } from './StudyRoomModal';
 
 interface InputSectionProps {
@@ -16,6 +17,7 @@ interface InputSectionProps {
   onShowSubscription: () => void;
   onOpenProfile: () => void;
   onDuelStart?: (config: any) => void;
+  onDuelJoin?: (code: string) => void;
 }
 
 export const InputSection: React.FC<InputSectionProps> = ({ 
@@ -27,7 +29,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   userProfile,
   onShowSubscription,
   onOpenProfile,
-  onDuelStart
+  onDuelStart,
+  onDuelJoin
 }) => {
   const [activeTab, setActiveTab] = useState<'FILE' | 'TEXT'>('FILE');
   const [textInput, setTextInput] = useState('');
@@ -39,7 +42,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   
   const [showCamera, setShowCamera] = useState(false);
-  const [showDuelModal, setShowDuelModal] = useState(false);
+  const [showDuelCreate, setShowDuelCreate] = useState(false);
+  const [showDuelJoin, setShowDuelJoin] = useState(false);
   const [showStudyRoomModal, setShowStudyRoomModal] = useState(false);
 
   // Config State
@@ -203,15 +207,20 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const handleDuelSubmit = (wager: number, file: File) => {
       if (onDuelStart) {
           addFiles([file]);
-          onDuelStart({ wager, file }); // Pass up to App
+          onDuelStart({ wager, file }); 
       }
   };
+
+  const handleDuelJoinSubmit = (code: string) => {
+      if (onDuelJoin) onDuelJoin(code);
+  }
 
   // Remove fixed height on mobile to allow scrolling (min-h instead of h)
   return (
     <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
-      {showDuelModal && <DuelCreateModal onClose={() => setShowDuelModal(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
+      {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
+      {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
       {showStudyRoomModal && <StudyRoomModal onClose={() => setShowStudyRoomModal(false)} user={userProfile} />}
 
       {/* Mode Switcher */}
@@ -252,6 +261,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                               <option value="Multiple Choice">Multiple Choice</option>
                               <option value="True/False">True / False</option>
                               <option value="Fill in the Gap">Fill in the Gap</option>
+                              <option value="Select All That Apply">Select All That Apply</option>
                               <option value="Scenario-based">Scenario Based</option>
                               <option value="Mixed">Mixed</option>
                         </select>
@@ -395,11 +405,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
             {/* Sticky Actions Footer */}
             <div className="p-4 sm:p-6 border-t border-white/10 bg-[#0a0a0a] flex flex-col sm:flex-row gap-3 items-center justify-end shrink-0">
                <div className="flex gap-3 w-full sm:w-auto overflow-x-auto sm:overflow-visible pb-2 sm:pb-0">
-                   <button onClick={() => setShowDuelModal(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                   <button onClick={() => setShowDuelCreate(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                       <span className="relative z-10 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        Duel
+                        Create Arena
                       </span>
+                   </button>
+                   <button onClick={() => setShowDuelJoin(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-purple-900/10 text-purple-400 border border-purple-500/30 font-bold text-xs uppercase tracking-widest hover:bg-purple-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                        Join Arena
                    </button>
                    {isScholar && (
                        <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="flex-1 sm:w-auto px-4 py-4 rounded-xl bg-green-900/10 text-green-400 border border-green-500/30 font-bold text-xs uppercase tracking-widest hover:bg-green-900/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap">

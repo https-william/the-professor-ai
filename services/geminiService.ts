@@ -201,13 +201,15 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
   let typeInstruction: string = questionType;
   if (questionType === 'Mixed') {
-    typeInstruction = "a mix of Multiple Choice, True/False, and Fill in the Gap";
+    typeInstruction = "a mix of Multiple Choice, True/False, Fill in the Gap, and Select All That Apply";
   }
 
   let instructions = `Generate ${questionCount} ${difficulty} questions. Type: ${typeInstruction}. Strict JSON.`;
   if (useOracle) instructions += " Predict probable exam questions.";
   if (useWeaknessDestroyer && userProfile?.weaknessFocus) instructions += ` Focus on ${userProfile.weaknessFocus}.`;
   if (isCramMode) instructions += " Short, rapid-fire questions.";
+  if (questionType === 'Select All That Apply' || questionType === 'Mixed') instructions += " For 'Select All That Apply' or multi-select questions, the 'correct_answer' field MUST be a stringified JSON array (e.g., '[\"Option A\", \"Option C\"]') or a comma-separated string.";
+  if (questionType === 'Fill in the Gap' || questionType === 'Mixed') instructions += " For 'Fill in the Gap', provide the sentence with a blank as the question, and the missing word(s) as the correct_answer. The 'options' array can be empty or contain distractors.";
 
   const limitedText = text.substring(0, 30000);
 
@@ -256,7 +258,16 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
       if (response.text) {
         const data = JSON.parse(response.text);
-        const result = data.map((q: any, index: number) => ({ ...q, id: index + 1 }));
+        const result = data.map((q: any, index: number) => {
+            // Infer type if Mixed based on content
+            let inferredType = questionType;
+            if (questionType === 'Mixed') {
+               if (q.options.length === 0 || q.question.includes('___')) inferredType = 'Fill in the Gap';
+               else if (q.correct_answer.includes('[') || q.correct_answer.includes(',')) inferredType = 'Select All That Apply';
+               else inferredType = 'Multiple Choice';
+            }
+            return { ...q, id: index + 1, type: inferredType };
+        });
         saveToCache(cacheKey, result);
         return result;
       } else {

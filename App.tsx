@@ -14,11 +14,12 @@ import { CountdownTimer } from './components/CountdownTimer';
 import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
 import { DuelReadyModal } from './components/DuelReadyModal';
+import { ConfirmationModal } from './components/ConfirmationModal';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState } from './types';
-import { logout, updateUserUsage, saveUserToFirestore, createDuel } from './services/firebase';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from './types';
+import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel } from './services/firebase';
 import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
@@ -54,7 +55,11 @@ const App: React.FC = () => {
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
 
   // New State for Duel Modal
-  const [duelReadyData, setDuelReadyData] = useState<{ id: string, quizState: QuizState } | null>(null);
+  const [duelReadyData, setDuelReadyData] = useState<{ id: string, code: string, isHost: boolean } | null>(null);
+  
+  // Confirmation Modal State
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     // Detect AdBlocker via Firebase failure
@@ -142,6 +147,26 @@ const App: React.FC = () => {
       setStatus(AppStatus.READY);
     }
   }, [user]);
+
+  // Safe Exit Wrapper
+  const attemptAction = (action: () => void) => {
+      if (status === AppStatus.READY && (
+          (appMode === 'EXAM' && !quizState.isSubmitted) || 
+          (appMode === 'PROFESSOR') ||
+          (appMode === 'CHAT')
+      )) {
+          setPendingAction(() => action);
+          setShowExitConfirmation(true);
+      } else {
+          action();
+      }
+  };
+
+  const confirmExit = () => {
+      if (pendingAction) pendingAction();
+      setShowExitConfirmation(false);
+      setPendingAction(null);
+  };
 
   const handleOnboardingComplete = async (data: Partial<UserProfile>) => {
     if (user) {
@@ -232,7 +257,20 @@ const App: React.FC = () => {
     if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
     if (action === 'SUBMIT') {
       let score = 0;
-      quizState.questions.forEach(q => { if (quizState.userAnswers[q.id] === q.correct_answer) score++; });
+      quizState.questions.forEach(q => { 
+          // Flexible scoring for multi-select
+          if (q.type === 'Select All That Apply') {
+              const userAnswer = quizState.userAnswers[q.id];
+              const correctAnswer = q.correct_answer;
+              try {
+                  if (userAnswer === JSON.stringify(JSON.parse(correctAnswer || '[]').sort())) score++;
+              } catch(e) {}
+          } else if (q.type === 'Fill in the Gap') {
+              if (quizState.userAnswers[q.id]?.toLowerCase().trim() === q.correct_answer?.toLowerCase().trim()) score++;
+          } else {
+              if (quizState.userAnswers[q.id] === q.correct_answer) score++; 
+          }
+      });
       setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
       
       const xpGained = score * 50;
@@ -256,15 +294,17 @@ const App: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (action === 'RESET') {
-      clearCurrentSession();
-      setStatus(AppStatus.IDLE);
-      setQuizState({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null });
-      setProfessorState({ sections: [] });
-      setChatState({ messages: [], fileContext: '', fileName: '' });
-      setAppMode('EXAM'); 
-      setActiveHistoryId(null);
-      setErrorMsg(null); 
-      setDuelReadyData(null); // Clear duel state
+      attemptAction(() => {
+          clearCurrentSession();
+          setStatus(AppStatus.IDLE);
+          setQuizState({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null });
+          setProfessorState({ sections: [] });
+          setChatState({ messages: [], fileContext: '', fileName: '' });
+          setAppMode('EXAM'); 
+          setActiveHistoryId(null);
+          setErrorMsg(null); 
+          setDuelReadyData(null); // Clear duel state
+      });
     }
   };
 
@@ -302,13 +342,16 @@ const App: React.FC = () => {
       }
   };
 
+  // --- DUEL LOGIC ---
+
   const handleDuelStart = async (data: { wager: number, file: File }) => {
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
       setErrorMsg(null);
+      
       try {
+          // 1. Process File
           const processed = await processFile(data.file);
-          setStatusText("Initializing Arena...");
           
           const config: QuizConfig = {
               difficulty: 'Hard',
@@ -321,29 +364,24 @@ const App: React.FC = () => {
               useWeaknessDestroyer: false
           };
 
-          const questions = await generateQuizFromText(processed.content, config, userProfile);
+          // 2. IMMEDIATE: Create Lobby (Fast Feedback)
+          setStatusText("Initializing Arena...");
+          const { duelId, code } = await initDuelLobby(user.uid, userProfile.alias || 'Host', data.wager, processed.content, config);
           
-          // --- BLANK PAGE PROTECTION ---
-          if (!questions || questions.length === 0) {
-              throw new Error("Arena Initialization Failed: Could not generate quiz content from this file.");
-          }
-          
-          const duelId = await createDuel(user.uid, userProfile.alias, data.wager, processed.content, config, questions);
-          
-          const newState: QuizState = { 
-              questions, 
-              userAnswers: {}, 
-              flaggedQuestions: [], 
-              isSubmitted: false, 
-              score: 0, 
-              startTime: Date.now(), 
-              timeRemaining: null, 
-              focusStrikes: 0 
-          };
+          // 3. Show Lobby UI Immediately
+          setDuelReadyData({ id: duelId, code, isHost: true });
+          setStatus(AppStatus.IDLE);
 
-          // Store for modal, don't start yet
-          setDuelReadyData({ id: duelId, quizState: newState });
-          setStatus(AppStatus.IDLE); // Go back to idle to show modal overlay on dashboard
+          // 4. BACKGROUND: Generate Questions
+          // This happens while the user is staring at the Lobby screen
+          generateQuizFromText(processed.content, config, userProfile).then(async (questions) => {
+              if (questions && questions.length > 0) {
+                   await updateDuelWithQuestions(duelId, questions);
+                   // The DuelReadyModal subscription will pick up the status change
+              } else {
+                   // Handle error silently or update status to ERROR in db
+              }
+          }).catch(err => console.error("Background Gen Error", err));
 
       } catch (e: any) {
           console.error(e);
@@ -352,12 +390,49 @@ const App: React.FC = () => {
       }
   };
 
-  const handleEnterDuel = () => {
+  const handleDuelJoin = async (code: string) => {
+      if (!user) return;
+      try {
+          const duelId = await joinDuelByCode(code, user.uid, userProfile.alias || 'Challenger');
+          setDuelReadyData({ id: duelId, code, isHost: false });
+      } catch (e: any) {
+          alert(e.message || "Could not join arena.");
+      }
+  };
+
+  const handleEnterDuel = async () => {
       if (duelReadyData) {
-          setQuizState(duelReadyData.quizState);
-          setAppMode('EXAM');
-          setStatus(AppStatus.READY);
-          setDuelReadyData(null);
+          const duelState = await getDuel(duelReadyData.id);
+          if (duelState && duelState.quizQuestions) {
+              const newState: QuizState = { 
+                  questions: duelState.quizQuestions, 
+                  userAnswers: {}, 
+                  flaggedQuestions: [], 
+                  isSubmitted: false, 
+                  score: 0, 
+                  startTime: Date.now(), 
+                  timeRemaining: null, 
+                  focusStrikes: 0 
+              };
+              setQuizState(newState);
+              setAppMode('EXAM');
+              setStatus(AppStatus.READY);
+              setDuelReadyData(null);
+              
+              // Force Save to History so they can resume or review later
+              const historyItem: HistoryItem = { 
+                  id: Date.now().toString(), 
+                  timestamp: Date.now(), 
+                  mode: 'EXAM', 
+                  title: `Duel: ${duelState.code}`, 
+                  data: newState,
+                  config: duelState.quizConfig
+              };
+              saveToHistory(historyItem);
+              setHistory(loadHistory());
+          } else {
+              alert("Host is still preparing materials...");
+          }
       }
   };
 
@@ -366,7 +441,7 @@ const App: React.FC = () => {
   if (!user && showAuth) return <AuthPage />;
   const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
 
-  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData;
+  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const isActiveSession = status === AppStatus.READY;
 
   return (
@@ -376,11 +451,14 @@ const App: React.FC = () => {
       <PWAPrompt />
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
+      <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       
       {/* DUEL READY MODAL */}
       {duelReadyData && (
           <DuelReadyModal 
             duelId={duelReadyData.id} 
+            initialCode={duelReadyData.code}
+            isHost={duelReadyData.isHost}
             onEnter={handleEnterDuel} 
           />
       )}
@@ -423,12 +501,14 @@ const App: React.FC = () => {
         onClose={() => setIsHistoryOpen(false)} 
         history={history} 
         onSelect={(item) => { 
-            setActiveHistoryId(item.id);
-            if (item.mode === 'PROFESSOR') { setProfessorState(item.data as ProfessorState); setAppMode('PROFESSOR'); } 
-            else if (item.mode === 'CHAT') { setChatState(item.data as ChatState); setAppMode('CHAT'); }
-            else { setQuizState(item.data as QuizState); setAppMode('EXAM'); } 
-            setStatus(AppStatus.READY); 
-            setIsHistoryOpen(false); 
+            attemptAction(() => {
+                setActiveHistoryId(item.id);
+                if (item.mode === 'PROFESSOR') { setProfessorState(item.data as ProfessorState); setAppMode('PROFESSOR'); } 
+                else if (item.mode === 'CHAT') { setChatState(item.data as ChatState); setAppMode('CHAT'); }
+                else { setQuizState(item.data as QuizState); setAppMode('EXAM'); } 
+                setStatus(AppStatus.READY); 
+                setIsHistoryOpen(false); 
+            });
         }} 
         onDelete={(id) => { deleteHistoryItem(id); setHistory(loadHistory()); }} 
       />
@@ -496,12 +576,13 @@ const App: React.FC = () => {
                             onProcess={handleProcess} 
                             isLoading={false} 
                             appMode={appMode} 
-                            setAppMode={setAppMode} 
+                            setAppMode={(m) => attemptAction(() => setAppMode(m))} 
                             defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
                             userProfile={userProfile} 
                             onShowSubscription={() => setIsSubscriptionOpen(true)}
                             onOpenProfile={() => setIsProfileOpen(true)}
                             onDuelStart={handleDuelStart}
+                            onDuelJoin={handleDuelJoin}
                         />
                       </div>
                     ) : null}

@@ -23,13 +23,78 @@ export const QuizView: React.FC<QuizViewProps> = ({
   onReset,
   onTimeExpired
 }) => {
-  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime, isCramMode } = quizState;
+  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime, isCramMode, focusStrikes } = quizState;
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
   const [viewMode, setViewMode] = useState<'EXAM' | 'FLASHCARDS'>('EXAM');
+  const [strikes, setStrikes] = useState(focusStrikes || 0);
+  
+  // Specific inputs state for current question types
+  const [textAnswer, setTextAnswer] = useState('');
+  const [multiSelectAnswers, setMultiSelectAnswers] = useState<string[]>([]);
   
   const [simplifiedExplanations, setSimplifiedExplanations] = useState<Record<number, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
+
+  // Sync internal input state when question changes
+  useEffect(() => {
+      const q = questions[currentQuestionIdx];
+      const savedAnswer = userAnswers[q.id];
+      
+      if (q.type === 'Fill in the Gap') {
+          setTextAnswer(savedAnswer || '');
+      } else if (q.type === 'Select All That Apply') {
+          try {
+              setMultiSelectAnswers(savedAnswer ? JSON.parse(savedAnswer) : []);
+          } catch {
+              setMultiSelectAnswers([]);
+          }
+      }
+  }, [currentQuestionIdx, userAnswers]);
+
+  // FOCUS TRACKING PROTOCOL
+  useEffect(() => {
+      if (isSubmitted) return;
+
+      const handleVisibilityChange = () => {
+          if (document.hidden) {
+              handleFocusLost();
+          }
+      };
+
+      const handleBlur = () => {
+          handleFocusLost();
+      };
+
+      const handleFocusLost = () => {
+          setStrikes(prev => {
+              const newStrikes = prev + 1;
+              
+              // Warning Toast
+              const toast = document.createElement('div');
+              toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest z-[100] animate-bounce shadow-[0_0_20px_red]';
+              toast.innerText = `⚠️ FOCUS LOST. STRIKE ${newStrikes}/3`;
+              document.body.appendChild(toast);
+              setTimeout(() => toast.remove(), 3000);
+
+              // Nightmare Protocol
+              if (difficulty === 'Nightmare' && newStrikes >= 3) {
+                  alert("ACADEMIC INTEGRITY VIOLATED. EXAM TERMINATED.");
+                  onSubmit();
+              }
+              
+              return newStrikes;
+          });
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('blur', handleBlur);
+
+      return () => {
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+          window.removeEventListener('blur', handleBlur);
+      };
+  }, [isSubmitted, difficulty, onSubmit]);
 
   // Cram Mode: 10s per question logic
   useEffect(() => {
@@ -44,11 +109,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
     if (timeLeft <= 0) {
       if (isCramMode) {
-          if (currentQuestionIdx < questions.length - 1) {
-              setCurrentQuestionIdx(prev => prev + 1);
-          } else {
-              onSubmit();
-          }
+          handleNextQuestion(); // Move to next or submit
       } else {
           onTimeExpired();
       }
@@ -60,9 +121,17 @@ export const QuizView: React.FC<QuizViewProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, isSubmitted, onTimeExpired, isCramMode, currentQuestionIdx, onSubmit]);
+  }, [timeLeft, isSubmitted, onTimeExpired, isCramMode]);
 
-  // Focus Mode
+  const handleNextQuestion = () => {
+      if (currentQuestionIdx < questions.length - 1) {
+          setCurrentQuestionIdx(prev => prev + 1);
+      } else {
+          onSubmit();
+      }
+  };
+
+  // Focus Mode (Fullscreen)
   useEffect(() => {
     if (!isSubmitted) {
         const enterFullscreen = async () => {
@@ -83,85 +152,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
       return 'border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.1)]'; 
   };
 
-  const getFeedback = (score: number, total: number) => {
-      const percentage = (score / total) * 100;
-      
-      const F_TIER = [
-          "My grandmother reads faster than you think. See me immediately.",
-          "Academic probation is calling. Pick up.",
-          "I have seen better performance from a random number generator.",
-          "You are cooking, but the kitchen is on fire.",
-          "Abysmal. Absolute chaos.",
-          "This is not a result. This is a cry for help.",
-          "I calculated the probability of this score. It was zero.",
-          "Did you perhaps read the textbook upside down?",
-          "Your neural network appears to be offline.",
-          "We do not speak of this day.",
-          "Emotional Damage.",
-          "Refund your tuition.",
-          "Error 404: Intelligence Not Found.",
-          "I'm not mad, just disappointed.",
-          "Have you considered a career in lawn maintenance?",
-          "Even the AI is embarrassed for you."
-      ];
-      
-      const C_TIER = [
-          "Mediocre. You have memorized, but you have not understood.",
-          "C's get degrees, but they don't get respect.",
-          "You are operating at 40% capacity. Wake up.",
-          "Not terrible. Not good. Just... existing.",
-          "Warm body, cold mind. Try harder.",
-          "You guessed half of these, didn't you?",
-          "A solid effort. For a freshman.",
-          "You survived. But at what cost?",
-          "The bare minimum. My favorite disappointment.",
-          "Mid. Extremely mid.",
-          "You are perfectly average. How boring.",
-          "I've seen better, I've seen worse.",
-          "Room for improvement. A lot of room."
-      ];
-      
-      const B_TIER = [
-          "Acceptable. You are beginning to grasp the basics.",
-          "Solid work. Now do it again, faster.",
-          "You might actually survive the final.",
-          "Competence detected. Proceeding to next level.",
-          "Good. But 'Good' is the enemy of 'Great'.",
-          "Your synapses are firing correctly. Finally.",
-          "We are making progress. Do not get complacent.",
-          "Not bad. Not bad at all.",
-          "You are waking up. Keep going.",
-          "Respectable. I nod in your general direction.",
-          "You actually read the material. Shocking.",
-          "Above average. Don't let it go to your head."
-      ];
-      
-      const A_TIER = [
-          "Excellentia. You are an Academic Weapon.",
-          "The Dean sends his regards.",
-          "Absolute mastery. Go touch grass.",
-          "You are the one who knocks.",
-          "God Mode Activated. The simulation is breaking.",
-          "Flawless victory. Now teach the class.",
-          "I am... surprisingly proud.",
-          "Your intellect is terrifying. Keep going.",
-          "Einstein would like a word.",
-          "Main Character Energy.",
-          "Certified Genius. No notes.",
-          "The archives are complete.",
-          "Your brain is massive. Gigantic.",
-          "Limitless potential detected.",
-          "You have ascended."
-      ];
-
-      const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-
-      if (percentage < 40) return pick(F_TIER);
-      if (percentage < 70) return pick(C_TIER);
-      if (percentage < 90) return pick(B_TIER);
-      return pick(A_TIER);
-  };
-
   const getXPFeedback = (score: number) => {
       const xp = Math.min(score * 50, 500) * (isCramMode ? 2 : 1); 
       return `+${xp} XP Gained ${isCramMode ? '(2x Adrenaline)' : ''}`;
@@ -178,6 +168,24 @@ export const QuizView: React.FC<QuizViewProps> = ({
       } finally {
           setLoadingExplanation(null);
       }
+  };
+
+  const saveTextInput = () => {
+      if (textAnswer.trim()) {
+          onAnswerSelect(currentQ.id, textAnswer.trim());
+      }
+  };
+
+  const toggleMultiSelect = (opt: string) => {
+      let newSelection;
+      if (multiSelectAnswers.includes(opt)) {
+          newSelection = multiSelectAnswers.filter(o => o !== opt);
+      } else {
+          newSelection = [...multiSelectAnswers, opt].sort();
+      }
+      setMultiSelectAnswers(newSelection);
+      // Save as JSON string
+      onAnswerSelect(currentQ.id, JSON.stringify(newSelection));
   };
 
   // --- FLASHCARD MODE ---
@@ -213,7 +221,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
                 <div className="bg-white/10 px-4 py-2 rounded-full text-xs font-mono text-blue-300 font-bold uppercase tracking-widest mb-6 border border-white/10">
                     {getXPFeedback(score)}
                 </div>
-                <p className="text-gray-400 font-mono text-xs uppercase tracking-widest">Final Score</p>
+                {strikes > 0 && <div className="text-[10px] text-red-400 font-mono uppercase tracking-widest">⚠️ {strikes} Focus Strikes Detected</div>}
+                <p className="text-gray-400 font-mono text-xs uppercase tracking-widest mt-2">Final Score</p>
             </div>
             
             {/* Feedback Card */}
@@ -221,7 +230,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                 <div className="absolute inset-0 bg-amber-900/5"></div>
                 <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 text-2xl border border-amber-500/30">👨‍🏫</div>
                 <p className="text-xl md:text-2xl text-amber-100 font-serif italic text-center leading-relaxed">
-                    "{getFeedback(score, total)}"
+                    "Review your mistakes. The only real failure is stopping."
                 </p>
                 <div className="mt-8 text-[10px] font-bold uppercase tracking-widest text-amber-500/60">
                     The Professor
@@ -234,7 +243,18 @@ export const QuizView: React.FC<QuizViewProps> = ({
           <h3 className="text-lg font-bold text-white uppercase tracking-widest mb-4 border-b border-white/10 pb-2">Detailed Analysis</h3>
           {questions.map((q, idx) => {
              const userAnswer = userAnswers[q.id];
-             const isCorrect = userAnswer === q.correct_answer;
+             let isCorrect = false;
+             
+             // Loose comparison for text input
+             if (q.type === 'Fill in the Gap') {
+                 isCorrect = userAnswer?.toLowerCase().trim() === q.correct_answer.toLowerCase().trim();
+             } else if (q.type === 'Select All That Apply') {
+                 // Compare JSON strings implies sorting
+                 isCorrect = userAnswer === JSON.stringify(JSON.parse(q.correct_answer || '[]').sort());
+             } else {
+                 isCorrect = userAnswer === q.correct_answer;
+             }
+
              const isSkipped = !userAnswer;
              const simpleExpl = simplifiedExplanations[q.id];
 
@@ -251,23 +271,48 @@ export const QuizView: React.FC<QuizViewProps> = ({
                      </span>
                   </div>
                   
+                  {/* Review Options Rendering */}
                   <div className="space-y-2 mb-6">
-                     {q.options.map(opt => {
-                        let btnClass = "border-transparent bg-black/20 opacity-60"; 
-                        
-                        if (opt === q.correct_answer) {
-                            btnClass = "border-green-500 bg-green-500/10 text-green-200 opacity-100 font-bold";
-                        } else if (opt === userAnswer && !isCorrect) {
-                            btnClass = "border-red-500 bg-red-500/10 text-red-200 opacity-100 line-through";
-                        }
-                        
-                        return (
-                           <div key={opt} className={`p-4 rounded-xl border text-sm transition-all ${btnClass}`}>
-                              {opt}
-                           </div>
-                        );
-                     })}
+                     {q.type === 'Fill in the Gap' ? (
+                         <div className="p-4 bg-black/20 rounded-xl border border-white/5">
+                             <div className="text-xs text-gray-500 uppercase">Your Answer:</div>
+                             <div className={`font-mono text-lg ${isCorrect ? 'text-green-400' : 'text-red-400 line-through'}`}>{userAnswer || '(Blank)'}</div>
+                             {!isCorrect && (
+                                 <div className="mt-2">
+                                     <div className="text-xs text-gray-500 uppercase">Correct Answer:</div>
+                                     <div className="font-mono text-lg text-green-400">{q.correct_answer}</div>
+                                 </div>
+                             )}
+                         </div>
+                     ) : (
+                         q.options.map(opt => {
+                            let btnClass = "border-transparent bg-black/20 opacity-60"; 
+                            
+                            // Highlight logic
+                            const isSelected = q.type === 'Select All That Apply' 
+                                ? (userAnswer ? JSON.parse(userAnswer).includes(opt) : false)
+                                : userAnswer === opt;
+                            
+                            const isActuallyCorrect = q.type === 'Select All That Apply'
+                                ? (JSON.parse(q.correct_answer || '[]').includes(opt))
+                                : q.correct_answer === opt;
+
+                            if (isActuallyCorrect) {
+                                btnClass = "border-green-500 bg-green-500/10 text-green-200 opacity-100 font-bold";
+                            } else if (isSelected && !isActuallyCorrect) {
+                                btnClass = "border-red-500 bg-red-500/10 text-red-200 opacity-100 line-through";
+                            }
+                            
+                            return (
+                               <div key={opt} className={`p-4 rounded-xl border text-sm transition-all ${btnClass}`}>
+                                  {opt}
+                               </div>
+                            );
+                         })
+                     )}
                   </div>
+
+                  {/* Explanation */}
                   <div className="text-sm text-gray-300 bg-black/30 p-4 rounded-xl border border-white/5 flex flex-col gap-3">
                       <div className="flex gap-3">
                           <div className="shrink-0 mt-0.5 text-blue-400">
@@ -369,34 +414,91 @@ export const QuizView: React.FC<QuizViewProps> = ({
           <h2 className="text-lg md:text-2xl font-medium mb-8 leading-relaxed text-white">{currentQ.question}</h2>
           
           <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
-             {currentQ.options.map((opt) => (
-               <button 
-                 key={opt} 
-                 onClick={() => onAnswerSelect(currentQ.id, opt)}
-                 className={`w-full text-left p-4 sm:p-5 rounded-2xl border transition-all relative group ${
-                    userAnswers[currentQ.id] === opt 
-                    ? isCramMode ? 'bg-cyan-600 text-black border-cyan-500 shadow-xl shadow-cyan-900/20 scale-[1.01]' : 'bg-blue-600 text-white border-blue-500 shadow-xl shadow-blue-900/20 scale-[1.01]' 
-                    : 'bg-white/5 border-transparent text-gray-300 hover:bg-white/10 hover:border-white/10'
-                 }`}
-               >
-                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl transition-all ${userAnswers[currentQ.id] === opt ? 'bg-white/30' : 'bg-transparent'}`}></div>
-                 <span className="relative z-10 text-sm sm:text-base">{opt}</span>
-               </button>
-             ))}
+             {/* Dynamic Question Body based on Type */}
+             {currentQ.type === 'Fill in the Gap' ? (
+                 <div className="space-y-4">
+                     <p className="text-sm text-gray-400 uppercase tracking-widest mb-2">Type your answer below:</p>
+                     <input 
+                        type="text" 
+                        value={textAnswer}
+                        onChange={(e) => setTextAnswer(e.target.value)}
+                        onBlur={saveTextInput}
+                        className="w-full bg-transparent border-b-2 border-white/20 text-2xl py-2 px-1 text-white outline-none focus:border-blue-500 transition-colors font-mono"
+                        placeholder="Answer..."
+                     />
+                 </div>
+             ) : currentQ.type === 'Select All That Apply' ? (
+                 <div className="grid grid-cols-1 gap-3">
+                     <p className="text-xs text-gray-500 uppercase mb-2">Select all options that apply:</p>
+                     {currentQ.options.map((opt) => {
+                         const isSelected = multiSelectAnswers.includes(opt);
+                         return (
+                             <button
+                                key={opt}
+                                onClick={() => toggleMultiSelect(opt)}
+                                className={`w-full text-left p-4 rounded-xl border flex items-center justify-between transition-all group ${
+                                    isSelected
+                                    ? 'bg-blue-600/20 border-blue-500 text-white'
+                                    : 'bg-white/5 border-transparent text-gray-300 hover:bg-white/10'
+                                }`}
+                             >
+                                 <span>{opt}</span>
+                                 <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-500'}`}>
+                                     {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                 </div>
+                             </button>
+                         )
+                     })}
+                 </div>
+             ) : (
+                 currentQ.options.map((opt) => (
+                   <button 
+                     key={opt} 
+                     onClick={() => onAnswerSelect(currentQ.id, opt)}
+                     className={`w-full text-left p-4 sm:p-5 rounded-2xl border transition-all relative group ${
+                        userAnswers[currentQ.id] === opt 
+                        ? isCramMode ? 'bg-cyan-600 text-black border-cyan-500 shadow-xl shadow-cyan-900/20 scale-[1.01]' : 'bg-blue-600 text-white border-blue-500 shadow-xl shadow-blue-900/20 scale-[1.01]' 
+                        : 'bg-white/5 border-transparent text-gray-300 hover:bg-white/10 hover:border-white/10'
+                     }`}
+                   >
+                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl transition-all ${userAnswers[currentQ.id] === opt ? 'bg-white/30' : 'bg-transparent'}`}></div>
+                     <span className="relative z-10 text-sm sm:text-base">{opt}</span>
+                   </button>
+                 ))
+             )}
           </div>
 
           <div className="flex justify-between mt-8 pt-6 border-t border-white/5">
              <button 
-               onClick={() => setCurrentQuestionIdx(Math.max(0, currentQuestionIdx - 1))} 
+               onClick={() => {
+                   if (currentQ.type === 'Fill in the Gap') saveTextInput(); // Ensure save on nav
+                   setCurrentQuestionIdx(Math.max(0, currentQuestionIdx - 1));
+               }} 
                disabled={currentQuestionIdx === 0} 
                className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 font-bold text-xs uppercase hover:bg-white/10 disabled:opacity-30 transition-all"
              >
                Prev
              </button>
              {currentQuestionIdx === questions.length - 1 ? (
-                <button onClick={onSubmit} className="px-10 py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-white/10">Submit Exam</button>
+                <button 
+                    onClick={() => {
+                        if (currentQ.type === 'Fill in the Gap') saveTextInput();
+                        onSubmit();
+                    }} 
+                    className="px-10 py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-white/10"
+                >
+                    Submit Exam
+                </button>
              ) : (
-                <button onClick={() => setCurrentQuestionIdx(currentQuestionIdx + 1)} className={`px-8 py-3 rounded-xl text-white font-bold text-xs uppercase transition-all shadow-lg ${isCramMode ? 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-900/20 text-black' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/20'}`}>Next</button>
+                <button 
+                    onClick={() => {
+                        if (currentQ.type === 'Fill in the Gap') saveTextInput();
+                        handleNextQuestion();
+                    }} 
+                    className={`px-8 py-3 rounded-xl text-white font-bold text-xs uppercase transition-all shadow-lg ${isCramMode ? 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-900/20 text-black' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/20'}`}
+                >
+                    Next
+                </button>
              )}
           </div>
        </div>

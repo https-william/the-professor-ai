@@ -136,6 +136,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       window.speechSynthesis.speak(utterance);
   };
 
+  const formatTime = (ts: number) => {
+      return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     // Fixed: Ensure relative positioning and proper z-index context so it doesn't leak overlays
     <div className="w-full h-[calc(100vh-80px)] flex flex-col relative z-10 animate-fade-in bg-[#0a0a0a] sm:bg-transparent rounded-3xl overflow-hidden border border-white/5">
@@ -167,7 +171,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
            {chatState.messages.map((msg) => (
              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl p-4 shadow-lg leading-relaxed group relative ${
+                <div className={`max-w-[85%] rounded-2xl p-4 shadow-lg leading-relaxed group relative flex flex-col ${
                   msg.role === 'user' 
                     ? 'bg-blue-600 text-white rounded-tr-none' 
                     : 'bg-[#1a1a1a] text-gray-200 rounded-tl-none border border-white/5'
@@ -177,8 +181,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                           <img src={`data:image/jpeg;base64,${msg.image}`} alt="User Upload" className="max-h-48 object-cover" />
                       </div>
                   )}
-                  {msg.content}
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
                   
+                  <div className={`text-[9px] mt-2 opacity-50 flex items-center gap-2 ${msg.role === 'user' ? 'text-blue-100 justify-end' : 'text-gray-500 justify-start'}`}>
+                      {formatTime(msg.timestamp)}
+                  </div>
+
                   {msg.role === 'model' && (
                       <button 
                         onClick={() => speakText(msg.content)}

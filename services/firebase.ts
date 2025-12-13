@@ -9,8 +9,8 @@ import {
   signOut,
   Auth
 } from "firebase/auth";
-import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
-import { SubscriptionTier, UserProfile, DuelState, QuizQuestion, QuizConfig } from "../types";
+import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp, setDoc, getDoc, query, where, getDocs, onSnapshot } from "firebase/firestore";
+import { SubscriptionTier, UserProfile, DuelState, QuizQuestion, QuizConfig, DuelParticipant } from "../types";
 
 // --- SECURE CONFIGURATION ---
 const getEnv = (key: string): string => {
@@ -206,36 +206,102 @@ export const updateUserUsage = async (userId: string, usage: number) => {
   }, "Update Usage");
 };
 
-// --- DUEL SYSTEM ---
+// --- DUEL SYSTEM (THE ARENA) ---
 
-export const createDuel = async (hostId: string, hostName: string, wager: number, content: string, quizConfig: QuizConfig, quizQuestions: QuizQuestion[]) => {
+// Creative Word Generator for Codes
+const generateDuelCode = (): string => {
+    const ADJ = ["IRON", "NEON", "CYBER", "VOID", "AZURE", "SOLAR", "LUNAR", "HYPER", "DARK", "SILENT", "ATOMIC", "PRIME", "OMEGA", "NOVA"];
+    const NOUN = ["TIGER", "WOLF", "EAGLE", "STORM", "VORTEX", "CORE", "FLAME", "SHARD", "TITAN", "GHOST", "PULSE", "VIPER", "DRIFT", "ECHO"];
+    const adj = ADJ[Math.floor(Math.random() * ADJ.length)];
+    const noun = NOUN[Math.floor(Math.random() * NOUN.length)];
+    return `${adj}-${noun}`;
+};
+
+export const initDuelLobby = async (hostId: string, hostName: string, wager: number, content: string, quizConfig: QuizConfig): Promise<{ duelId: string, code: string }> => {
     if (!db) throw new Error("Database connection required for Duels. Please disable AdBlocker.");
     
     try {
+        const code = generateDuelCode();
+        
+        // Host is the first participant
+        const participants: DuelParticipant[] = [{
+            id: hostId,
+            name: hostName,
+            status: 'JOINED'
+        }];
+
         const duelData: Omit<DuelState, 'id'> = {
+            code,
             hostId,
-            hostName,
+            participants,
             wager,
-            content,
+            content, // Raw content saved first
             quizConfig,
-            quizQuestions,
-            status: 'WAITING'
+            status: 'INITIALIZING', // Important: Logic handles this state
+            createdAt: Date.now()
         };
+        
         const docRef = await addDoc(collection(db, "duels"), duelData);
-        return docRef.id;
+        return { duelId: docRef.id, code };
     } catch (error: any) {
-        // --- ERROR SANITIZATION ---
-        const msg = (error.message || '').toLowerCase();
-        const code = error.code || '';
-        
-        if (code === 'permission-denied' || msg.includes("permission") || msg.includes("sufficient")) {
-            console.error("🔥 CRITICAL ADMIN ERROR: Firestore Security Rules are blocking writes.");
-            throw new Error("The Duel Arena is temporarily locked. Please try again later.");
-        }
-        
-        console.error("Duel Creation Failed:", error);
-        throw new Error("Failed to initialize Duel. Connection to the Arena was interrupted.");
+        console.error("Duel Init Failed:", error);
+        throw new Error("Failed to initialize Arena.");
     }
+};
+
+export const updateDuelWithQuestions = async (duelId: string, questions: QuizQuestion[]) => {
+    await safeFirestoreOp(async () => {
+        const docRef = doc(db, "duels", duelId);
+        await updateDoc(docRef, {
+            quizQuestions: questions,
+            status: 'WAITING'
+        });
+    }, "Update Duel Content");
+};
+
+export const joinDuelByCode = async (code: string, userId: string, userName: string): Promise<string> => {
+    if (!db) throw new Error("Offline.");
+    
+    const q = query(collection(db, "duels"), where("code", "==", code.toUpperCase()), where("status", "in", ["INITIALIZING", "WAITING"]));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) throw new Error("Arena not found or active.");
+    
+    const duelDoc = snapshot.docs[0];
+    const duelData = duelDoc.data() as DuelState;
+    
+    // Check if user already joined
+    if (duelData.participants.some(p => p.id === userId)) return duelDoc.id;
+    
+    const newParticipant: DuelParticipant = {
+        id: userId,
+        name: userName,
+        status: 'JOINED'
+    };
+    
+    await updateDoc(doc(db, "duels", duelDoc.id), {
+        participants: [...duelData.participants, newParticipant]
+    });
+    
+    return duelDoc.id;
+};
+
+// Real-time Listener for Lobby
+export const subscribeToDuel = (duelId: string, onUpdate: (data: DuelState) => void) => {
+    if (!db) return () => {};
+    const unsub = onSnapshot(doc(db, "duels", duelId), (doc) => {
+        if (doc.exists()) {
+            onUpdate({ id: doc.id, ...doc.data() } as DuelState);
+        }
+    });
+    return unsub;
+};
+
+export const startDuel = async (duelId: string) => {
+    await safeFirestoreOp(async () => {
+        const docRef = doc(db, "duels", duelId);
+        await updateDoc(docRef, { status: 'ACTIVE' });
+    }, "Start Duel");
 };
 
 export const getDuel = async (duelId: string): Promise<DuelState | null> => {
@@ -246,39 +312,45 @@ export const getDuel = async (duelId: string): Promise<DuelState | null> => {
         if (snap.exists()) {
             return { id: snap.id, ...snap.data() } as DuelState;
         }
-    } catch (error) {
-        console.error("Get Duel Error:", error);
+        return null;
+    } catch (e) {
+        console.error("Error fetching duel:", e);
+        return null;
     }
-    return null;
 };
 
-export const joinDuel = async (duelId: string, challengerId: string, challengerName: string) => {
-    await safeFirestoreOp(async () => {
-        const docRef = doc(db, "duels", duelId);
-        await updateDoc(docRef, {
-            challengerId,
-            challengerName,
-            status: 'ACTIVE'
-        });
-    }, "Join Duel");
-};
-
-export const submitDuelScore = async (duelId: string, userId: string, score: number, role: 'host' | 'challenger') => {
-    await safeFirestoreOp(async () => {
-        const docRef = doc(db, "duels", duelId);
-        const update = role === 'host' ? { hostScore: score } : { challengerScore: score };
-        await updateDoc(docRef, update);
+export const submitDuelScore = async (duelId: string, userId: string, score: number) => {
+    if (!db) return;
+    
+    const duelRef = doc(db, "duels", duelId);
+    
+    // We need to read first to update array safely (or use arrayUnion if structure allowed, but we modify objects)
+    // Transaction is safer for multiplayer scoring
+    // Simplified for client-side MVP: Get, Modify, Set
+    
+    try {
+        const snap = await getDoc(duelRef);
+        if (!snap.exists()) return;
         
-        // Check if both scores are in to declare winner
-        const snap = await getDoc(docRef);
-        const data = snap.data();
-        if (data && data.hostScore !== undefined && data.challengerScore !== undefined) {
-            let winnerId = null;
-            if (data.hostScore > data.challengerScore) winnerId = data.hostId;
-            else if (data.challengerScore > data.hostScore) winnerId = data.challengerId;
-            else winnerId = 'DRAW';
-            
-            await updateDoc(docRef, { status: 'COMPLETED', winnerId });
+        const data = snap.data() as DuelState;
+        const updatedParticipants = data.participants.map(p => 
+            p.id === userId ? { ...p, score, status: 'COMPLETED' } : p
+        );
+        
+        // Check if all completed
+        const allDone = updatedParticipants.every(p => p.status === 'COMPLETED');
+        let updateData: any = { participants: updatedParticipants };
+        
+        if (allDone) {
+            updateData.status = 'COMPLETED';
+            // Determine winner
+            const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
+            updateData.winnerId = sorted[0].id;
         }
-    }, "Submit Duel Score");
+        
+        await updateDoc(duelRef, updateData as any);
+        
+    } catch (e) {
+        console.error("Score Submit Error", e);
+    }
 };
