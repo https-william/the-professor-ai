@@ -26,7 +26,7 @@ import { processFile } from './services/fileService';
 const QuizView = React.lazy(() => import('./components/QuizView').then(module => ({ default: module.QuizView })));
 const ProfessorView = React.lazy(() => import('./components/ProfessorView').then(module => ({ default: module.ProfessorView })));
 const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView })));
-const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView }))); // Added Lazy Load
+const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView })));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 
 const App: React.FC = () => {
@@ -151,8 +151,9 @@ const App: React.FC = () => {
   }, [user]);
 
   // Safe Exit Wrapper
-  const attemptAction = (action: () => void) => {
-      if (status === AppStatus.READY && (
+  // Fixed: Allow force exit logic
+  const attemptAction = (action: () => void, force: boolean = false) => {
+      if (!force && status === AppStatus.READY && (
           (appMode === 'EXAM' && !quizState.isSubmitted) || 
           (appMode === 'PROFESSOR') ||
           (appMode === 'CHAT') ||
@@ -209,6 +210,17 @@ const App: React.FC = () => {
         setChatState(newState);
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
+        // Important: Create initial history item for empty chat so it exists in library
+        const historyItem: HistoryItem = { 
+            id: Date.now().toString(), 
+            timestamp: Date.now(), 
+            mode: 'CHAT', 
+            title: `Chat: ${file.name}`, 
+            data: newState 
+        };
+        saveToHistory(historyItem);
+        setHistory(loadHistory());
+        setActiveHistoryId(historyItem.id);
         return;
       }
       setStatus(AppStatus.GENERATING_CONTENT);
@@ -219,7 +231,6 @@ const App: React.FC = () => {
         setStatusText("Constructing Materials...");
         const questions = await generateQuizFromText(file.content, config, userProfile);
         
-        // --- BLANK PAGE PROTECTION ---
         if (!questions || questions.length === 0) {
             throw new Error("Neural Failure: No questions generated. Content might be insufficient or blocked.");
         }
@@ -236,7 +247,7 @@ const App: React.FC = () => {
             config 
         };
         saveToHistory(historyItem);
-        setAppMode(mode); // Ensure state mode is set correctly
+        setAppMode(mode); 
       } else {
         setStatusText("Designing Lesson Plan...");
         const sections = await generateProfessorContent(file.content, config);
@@ -270,15 +281,12 @@ const App: React.FC = () => {
     if (action === 'SUBMIT') {
       let score = 0;
       quizState.questions.forEach(q => { 
-          // Flexible scoring for multi-select
           if (q.type === 'Select All That Apply') {
               const userAnswer = quizState.userAnswers[q.id];
               const correctAnswer = q.correct_answer;
               try {
-                  // Safe Parse inside submission loop as well
                   const parsedUser = JSON.parse(userAnswer || '[]');
                   const parsedCorrect = JSON.parse(correctAnswer || '[]').sort();
-                  // Simple array comparison after sort
                   if (JSON.stringify(parsedUser.sort()) === JSON.stringify(parsedCorrect)) score++;
               } catch(e) {}
           } else if (q.type === 'Fill in the Gap') {
@@ -305,7 +313,6 @@ const App: React.FC = () => {
       
       if (user) {
           await saveUserToFirestore(user.uid, { xp: newXP });
-          // CRITICAL: Submit Duel Score if active
           if (activeDuelId) {
               await submitDuelScore(activeDuelId, user.uid, score);
           }
@@ -324,8 +331,8 @@ const App: React.FC = () => {
           setAppMode('EXAM'); 
           setActiveHistoryId(null);
           setErrorMsg(null); 
-          setDuelReadyData(null); // Clear duel state
-          setActiveDuelId(null); // Clear active duel
+          setDuelReadyData(null); 
+          setActiveDuelId(null); 
       };
 
       if (force) {
@@ -338,17 +345,21 @@ const App: React.FC = () => {
 
   const handleChatUpdate = (updatedState: ChatState) => {
       setChatState(updatedState);
-      if (activeHistoryId) {
-          const item: HistoryItem = {
-              id: activeHistoryId,
-              timestamp: Date.now(),
-              mode: 'CHAT',
-              title: generateHistoryTitle('CHAT', updatedState),
-              data: updatedState
-          };
-          saveToHistory(item);
-          setHistory(loadHistory());
-      }
+      saveCurrentSession('CHAT', updatedState, updatedState.fileName || 'Chat');
+
+      // Always ensure history is in sync
+      const historyId = activeHistoryId || Date.now().toString();
+      if (!activeHistoryId) setActiveHistoryId(historyId);
+
+      const item: HistoryItem = {
+          id: historyId,
+          timestamp: Date.now(),
+          mode: 'CHAT',
+          title: generateHistoryTitle('CHAT', updatedState),
+          data: updatedState
+      };
+      saveToHistory(item);
+      setHistory(loadHistory()); // Updates sidebar
   };
 
   const handleOpenFloatingChat = () => {
@@ -366,7 +377,18 @@ const App: React.FC = () => {
           setChatState(newState);
           setAppMode('CHAT');
           setStatus(AppStatus.READY);
-          setActiveHistoryId(Date.now().toString());
+          
+          const newId = Date.now().toString();
+          setActiveHistoryId(newId);
+          // Initial Save to ensure history exists immediately
+          saveToHistory({
+              id: newId,
+              timestamp: Date.now(),
+              mode: 'CHAT',
+              title: 'General Inquiry',
+              data: newState
+          });
+          setHistory(loadHistory());
       }
   };
 
@@ -378,7 +400,6 @@ const App: React.FC = () => {
       setErrorMsg(null);
       
       try {
-          // 1. Process File
           const processed = await processFile(data.file);
           
           const config: QuizConfig = {
@@ -392,22 +413,15 @@ const App: React.FC = () => {
               useWeaknessDestroyer: false
           };
 
-          // 2. IMMEDIATE: Create Lobby (Fast Feedback)
           setStatusText("Initializing Arena...");
           const { duelId, code } = await initDuelLobby(user.uid, userProfile.alias || 'Host', data.wager, processed.content, config);
           
-          // 3. Show Lobby UI Immediately
           setDuelReadyData({ id: duelId, code, isHost: true });
           setStatus(AppStatus.IDLE);
 
-          // 4. BACKGROUND: Generate Questions
-          // This happens while the user is staring at the Lobby screen
           generateQuizFromText(processed.content, config, userProfile).then(async (questions) => {
               if (questions && questions.length > 0) {
                    await updateDuelWithQuestions(duelId, questions);
-                   // The DuelReadyModal subscription will pick up the status change
-              } else {
-                   // Handle error silently or update status to ERROR in db
               }
           }).catch(err => console.error("Background Gen Error", err));
 
@@ -445,10 +459,9 @@ const App: React.FC = () => {
               setQuizState(newState);
               setAppMode('EXAM');
               setStatus(AppStatus.READY);
-              setActiveDuelId(duelReadyData.id); // Set Active Duel ID to track state
+              setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
               
-              // Force Save to History so they can resume or review later
               const historyItem: HistoryItem = { 
                   id: Date.now().toString(), 
                   timestamp: Date.now(), 
@@ -482,7 +495,6 @@ const App: React.FC = () => {
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       
-      {/* DUEL READY MODAL */}
       {duelReadyData && (
           <DuelReadyModal 
             duelId={duelReadyData.id} 
@@ -492,7 +504,6 @@ const App: React.FC = () => {
           />
       )}
       
-      {/* AD BLOCKER WARNING BANNER */}
       {isAdBlockActive && (
           <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">
               ⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database
@@ -560,7 +571,6 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 pt-4 md:pt-8 min-h-[calc(100vh-64px)] relative z-10">
         
-        {/* Full Screen Error View if Status is ERROR */}
         {status === AppStatus.ERROR ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in space-y-6">
                 <div className="relative">
@@ -578,7 +588,7 @@ const App: React.FC = () => {
 
                 <div className="flex gap-4 pt-4">
                     <button 
-                        onClick={() => handleQuizAction('RESET')} 
+                        onClick={() => handleQuizAction('RESET', { force: true })} 
                         className="px-8 py-3 bg-white text-black rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-200 transition-transform hover:scale-105 shadow-lg"
                     >
                         Return to Dashboard
@@ -627,7 +637,7 @@ const App: React.FC = () => {
                     
                     {status === AppStatus.READY && (
                       <div className="h-full">
-                        {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={() => handleQuizAction('RESET')} timeRemaining={quizState.timeRemaining} />}
+                        {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={quizState.timeRemaining} />}
                         {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} />}
                         {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
                         {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}

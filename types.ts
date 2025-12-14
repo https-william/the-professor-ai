@@ -45,6 +45,7 @@ export interface ChatMessage {
   content: string;
   timestamp: number;
   image?: string; // Base64 image
+  isSaved?: boolean; // Snapchat-style persistence
 }
 
 export interface DuelParticipant {

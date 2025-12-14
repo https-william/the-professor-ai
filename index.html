@@ -83,6 +83,10 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
     <!-- Marked.js for Markdown Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyUOFOicO2+t/I1H6584r8aQQYtStJKAlb8v8qWpTCQprvrc6ne3WlYhY/pZ6r" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
 
     <script>
       const PDF_WORKER_SRC = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
@@ -189,6 +193,14 @@
       .prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
       .prose strong { font-weight: 700; color: inherit; }
       .prose h1, .prose h2, .prose h3 { font-weight: 700; margin-top: 1em; margin-bottom: 0.5em; line-height: 1.2; }
+      
+      /* Print Styling for PDF Export */
+      @media print {
+        body * { visibility: hidden; }
+        #printable-content, #printable-content * { visibility: visible; }
+        #printable-content { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; }
+        .no-print { display: none !important; }
+      }
     </style>
   <!-- Polyfill for Import Maps on older browsers (iOS 15 / Safari < 16.4) -->
   <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>

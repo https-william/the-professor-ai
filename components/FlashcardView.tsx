@@ -14,7 +14,6 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
   const [flipped, setFlipped] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'LEFT' | 'RIGHT' | null>(null);
   
-  // Only handle one card at a time (the first in the array)
   const currentQ = questions[0];
   const nextQ = questions[1];
 
@@ -25,22 +24,25 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
 
     setTimeout(() => {
         if (direction === 'RIGHT') {
+            // SRS: Mastered = High confidence. Pushing to next "session" (logic handled by parent ideally, but simulated here)
             setMasteredIds(prev => [...prev, currentQ.id]);
         } else {
+            // SRS: Review = Low confidence. Should reappear sooner.
             setReviewIds(prev => [...prev, currentQ.id]);
         }
         
-        // Remove current card
         setQuestions(prev => prev.slice(1));
         setSwipeDirection(null);
-    }, 300); // Wait for animation
+    }, 300);
   };
 
   const handleRestart = () => {
-      // Create a new session with review items if any, else restart all
+      // SRS Implementation: If reviewing weaknesses, we just reload those questions.
+      // In a full DB app, this would update a 'nextReviewDate' field.
       if (reviewIds.length > 0) {
           const reviewQuestions = quizState.questions.filter(q => reviewIds.includes(q.id));
-          setQuestions(reviewQuestions);
+          // Shuffle review questions
+          setQuestions(reviewQuestions.sort(() => Math.random() - 0.5));
       } else {
           setQuestions(quizState.questions);
       }

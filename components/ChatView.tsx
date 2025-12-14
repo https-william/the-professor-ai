@@ -94,6 +94,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
     }
   };
 
+  const handleToggleSave = (msgId: string) => {
+      const newMessages = chatState.messages.map(msg => 
+          msg.id === msgId ? { ...msg, isSaved: !msg.isSaved } : msg
+      );
+      onUpdate({ ...chatState, messages: newMessages });
+  };
+
   const handleCameraCapture = (base64: string) => {
       setShowCamera(false);
       handleSend("Analyze this visual data.", base64);
@@ -186,11 +193,16 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
            {chatState.messages.map((msg) => (
              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl p-4 shadow-lg leading-relaxed group relative flex flex-col ${
-                  msg.role === 'user' 
-                    ? 'bg-blue-600 text-white rounded-tr-none' 
-                    : 'bg-[#1a1a1a] text-gray-200 rounded-tl-none border border-white/5'
-                }`}>
+                <div 
+                    onClick={() => handleToggleSave(msg.id)}
+                    className={`max-w-[85%] rounded-2xl p-4 shadow-lg leading-relaxed group relative flex flex-col cursor-pointer transition-all ${
+                        msg.isSaved 
+                        ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-l-4 border-l-amber-500 text-white'
+                        : msg.role === 'user' 
+                            ? 'bg-blue-600 text-white rounded-tr-none hover:bg-blue-700' 
+                            : 'bg-[#1a1a1a] text-gray-200 rounded-tl-none border border-white/5 hover:bg-[#202020]'
+                    }`}
+                >
                   {msg.image && (
                       <div className="mb-3 rounded-lg overflow-hidden border border-white/20">
                           <img src={`data:image/jpeg;base64,${msg.image}`} alt="User Upload" className="max-h-48 object-cover" />
@@ -199,17 +211,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                   
                   {/* Content Rendering with Markdown */}
                   <div 
-                    className="prose prose-invert prose-sm max-w-none break-words"
+                    className="prose prose-invert prose-sm max-w-none break-words select-text"
                     dangerouslySetInnerHTML={renderContent(msg.content)}
                   />
                   
                   <div className={`text-[9px] mt-2 opacity-50 flex items-center gap-2 ${msg.role === 'user' ? 'text-blue-100 justify-end' : 'text-gray-500 justify-start'}`}>
+                      {msg.isSaved && <span className="text-amber-500 font-bold uppercase tracking-widest mr-2">Saved</span>}
                       {formatTime(msg.timestamp)}
                   </div>
 
                   {msg.role === 'model' && (
                       <button 
-                        onClick={() => speakText(msg.content)}
+                        onClick={(e) => { e.stopPropagation(); speakText(msg.content); }}
                         className="absolute -right-8 top-2 p-1 text-gray-500 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Read Aloud"
                       >

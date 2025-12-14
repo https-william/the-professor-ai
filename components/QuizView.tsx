@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { QuizState, QuizQuestion, Difficulty, DuelState } from '../types';
 import { FlashcardDeck } from './FlashcardDeck';
 import { simplifyExplanation, generateSuddenDeathQuestion } from '../services/geminiService';
@@ -55,6 +55,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [simplifiedExplanations, setSimplifiedExplanations] = useState<Record<number, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
 
+  // Focus Tracking Refs
+  const lastStrikeTime = useRef<number>(0);
+
   // Sync internal input state when question changes
   useEffect(() => {
       const q = questions[currentQuestionIdx];
@@ -90,35 +93,65 @@ export const QuizView: React.FC<QuizViewProps> = ({
   useEffect(() => {
       if (isSubmitted) return;
 
-      const handleVisibilityChange = () => {
-          if (document.hidden) handleFocusLost();
-      };
-      const handleBlur = () => handleFocusLost();
-
       const handleFocusLost = () => {
+          const now = Date.now();
+          // 1.5s Cooldown to prevent duplicate triggers (e.g., blur + visibilityChange firing together)
+          if (now - lastStrikeTime.current < 1500) return; 
+          lastStrikeTime.current = now;
+
+          // If Nightmare mode and limit reached, ignore further strikes to prevent overflow (e.g. 12/3)
+          if (difficulty === 'Nightmare' && strikes >= 3) return;
+
           setStrikes(prev => {
               const newStrikes = prev + 1;
+              
               const toast = document.createElement('div');
-              toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest z-[100] animate-bounce shadow-[0_0_20px_red]';
-              toast.innerText = `⚠️ FOCUS LOST. STRIKE ${newStrikes}/3`;
+              toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest z-[100] animate-bounce shadow-[0_0_20px_red] pointer-events-none transition-opacity duration-500';
+              toast.innerText = `⚠️ FOCUS LOST. STRIKE ${newStrikes}${difficulty === 'Nightmare' ? '/3' : ''}`;
               document.body.appendChild(toast);
-              setTimeout(() => toast.remove(), 3000);
+              setTimeout(() => {
+                  toast.style.opacity = '0';
+                  setTimeout(() => toast.remove(), 500);
+              }, 2500);
 
               if (difficulty === 'Nightmare' && newStrikes >= 3) {
-                  alert("ACADEMIC INTEGRITY VIOLATED. EXAM TERMINATED.");
-                  onSubmit();
+                  // Wait a brief moment so user sees the 3rd strike message
+                  setTimeout(() => {
+                      alert("ACADEMIC INTEGRITY VIOLATED. EXAM TERMINATED.");
+                      onSubmit();
+                  }, 500);
               }
               return newStrikes;
           });
       };
 
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      window.addEventListener('blur', handleBlur);
-      return () => {
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-          window.removeEventListener('blur', handleBlur);
+      const onVisibilityChange = () => {
+          // Works reliably on both Mobile (Home screen/App Switch) and Desktop (Tab switch)
+          if (document.hidden) {
+              handleFocusLost();
+          }
       };
-  }, [isSubmitted, difficulty, onSubmit]);
+
+      const onWindowBlur = () => {
+          // Mobile Check: navigator.userAgent
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          
+          // On Mobile, 'blur' fires on notification shade, control center, or even accidental edge touches.
+          // We disable strict blur check on mobile to prevent false positives.
+          // On Desktop, blur is valid (leaving the window area).
+          if (!isMobile) {
+              handleFocusLost();
+          }
+      };
+
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      window.addEventListener('blur', onWindowBlur);
+      
+      return () => {
+          document.removeEventListener('visibilitychange', onVisibilityChange);
+          window.removeEventListener('blur', onWindowBlur);
+      };
+  }, [isSubmitted, difficulty, onSubmit, strikes]); // Added strikes to dependency to check limit
 
   // Cram Mode Logic
   useEffect(() => {
