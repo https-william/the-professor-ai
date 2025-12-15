@@ -170,6 +170,13 @@ export interface ProcessedFile {
   name: string;
 }
 
+export interface DriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: string;
+}
+
 export interface SystemLog {
   id: string;
   action: string;
