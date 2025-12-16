@@ -1,8 +1,9 @@
 
 import { DriveFile } from "../types";
 
-// Scopes required for the feature
-export const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly";
+// Scope: drive.file only grants access to files opened by the user in Picker
+// This is non-sensitive and usually bypasses strict verification checks.
+export const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 
 const getEnv = (key: string): string => {
   if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) {
@@ -14,60 +15,77 @@ const getEnv = (key: string): string => {
   return "";
 };
 
-// Helper to extract Folder ID from various link formats
-export const extractFolderId = (link: string): string | null => {
-    try {
-        const url = new URL(link);
-        // Format 1: https://drive.google.com/drive/folders/12345...
-        if (url.pathname.includes('/folders/')) {
-            const parts = url.pathname.split('/');
-            return parts[parts.indexOf('folders') + 1];
-        }
-        // Format 2: https://drive.google.com/open?id=12345...
-        if (url.searchParams.has('id')) {
-            return url.searchParams.get('id');
-        }
-    } catch (e) {
-        // Fallback: Check if user pasted just the ID
-        if (link.length > 20 && !link.includes('/')) return link;
-    }
-    return null;
+declare global {
+  interface Window {
+    gapi: any;
+    google: any;
+  }
+}
+
+// Check if scripts are loaded
+const loadGapi = async () => {
+    return new Promise((resolve) => {
+        if (window.gapi) resolve(window.gapi);
+        else window.addEventListener('load', () => resolve(window.gapi));
+    });
 };
 
-// List files in a specific folder
-export const listDriveFiles = async (folderId: string, accessToken: string): Promise<DriveFile[]> => {
-    const query = `'${folderId}' in parents and trashed = false`;
-    const fields = "files(id, name, mimeType, size)";
-    // Increase page size to grab "hundreds" as requested
-    const apiKey = getEnv('VITE_FIREBASE_API_KEY');
-    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}&pageSize=200&key=${apiKey}`;
-
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
+export const openDrivePicker = async (accessToken: string): Promise<DriveFile[]> => {
+    await loadGapi();
+    
+    return new Promise((resolve, reject) => {
+        if (!window.google || !window.google.picker) {
+            // Need to load the picker API
+            window.gapi.load('picker', {
+                callback: () => {
+                    createPicker(accessToken, resolve, reject);
+                }
+            });
+        } else {
+            createPicker(accessToken, resolve, reject);
         }
     });
+};
 
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || "Failed to access Drive folder");
+const createPicker = (accessToken: string, resolve: (files: DriveFile[]) => void, reject: (err: any) => void) => {
+    try {
+        const apiKey = getEnv('VITE_FIREBASE_API_KEY'); 
+        
+        const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS);
+        view.setMimeTypes("application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.google-apps.document,application/vnd.google-apps.presentation");
+        view.setIncludeFolders(true); // Allow navigating folders
+        view.setSelectFolderEnabled(false); // We want file selection (can be multiple files inside a folder)
+
+        const picker = new window.google.picker.PickerBuilder()
+            .addView(view)
+            .setOAuthToken(accessToken)
+            .setDeveloperKey(apiKey)
+            .setCallback((data: any) => {
+                if (data.action === window.google.picker.Action.PICKED) {
+                    const files = data.docs.map((doc: any) => ({
+                        id: doc.id,
+                        name: doc.name,
+                        mimeType: doc.mimeType,
+                        size: doc.sizeBytes
+                    }));
+                    resolve(files);
+                } else if (data.action === window.google.picker.Action.CANCEL) {
+                    reject(new Error("Selection Cancelled"));
+                }
+            })
+            // Feature: Enable Multi-Select
+            .enableFeature(window.google.picker.Feature.MULTISELECT_ENABLED)
+            .build();
+            
+        picker.setVisible(true);
+    } catch (e) {
+        reject(e);
     }
-
-    const data = await response.json();
-    
-    // Filter for supported types
-    const supportedMimes = [
-        'application/pdf', 
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
-        'text/plain',
-        'application/vnd.google-apps.document', // Google Doc (needs export)
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation' // pptx
-    ];
-
-    return (data.files || []).filter((f: any) => supportedMimes.includes(f.mimeType) || f.name.endsWith('.txt') || f.name.endsWith('.md'));
 };
 
 // Download a specific file
+// Note: Since we used drive.file scope and the user selected these files in Picker,
+// we now have permission to download them.
 export const downloadDriveFile = async (fileId: string, mimeType: string, accessToken: string): Promise<Blob> => {
     let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
     
@@ -90,3 +108,7 @@ export const downloadDriveFile = async (fileId: string, mimeType: string, access
 
     return await response.blob();
 };
+
+// Helper dummies to satisfy types if needed elsewhere, though unused now
+export const extractFolderId = (link: string) => null;
+export const listDriveFiles = async () => [];

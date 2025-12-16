@@ -1,3 +1,4 @@
+
 import { ProcessedFile } from '../types';
 
 declare global {
@@ -8,6 +9,18 @@ declare global {
   }
 }
 
+// Helper to determine mime type from extension if the blob is generic
+const getMimeFromExtension = (name: string): string => {
+    const ext = name.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return 'application/pdf';
+    if (ext === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (ext === 'pptx') return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    if (ext === 'txt') return 'text/plain';
+    if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+    if (ext === 'png') return 'image/png';
+    return '';
+};
+
 export const processFile = async (file: File, onProgress?: (percent: number) => void): Promise<ProcessedFile> => {
   const fileType = file.type;
   const fileName = file.name.toLowerCase();
@@ -17,8 +30,14 @@ export const processFile = async (file: File, onProgress?: (percent: number) => 
     if (onProgress) onProgress(p);
   };
 
+  // Handle ZIP Archives (Recursive Batch Processing)
+  if (fileType === 'application/zip' || fileName.endsWith('.zip')) {
+      const text = await extractTextFromZip(file, reportProgress);
+      return { type: 'TEXT', content: text, name: file.name };
+  }
+
   // Handle PDF
-  if (fileType === 'application/pdf') {
+  if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
     const text = await extractTextFromPdf(file, reportProgress);
     return { type: 'TEXT', content: text, name: file.name };
   }
@@ -41,7 +60,7 @@ export const processFile = async (file: File, onProgress?: (percent: number) => 
   }
 
   // Handle Images
-  else if (fileType.startsWith('image/')) {
+  else if (fileType.startsWith('image/') || fileName.match(/\.(jpg|jpeg|png|webp)$/)) {
     const base64 = await fileToBase64(file, reportProgress);
     return { type: 'IMAGE', content: base64, mimeType: fileType, name: file.name };
   }
@@ -54,7 +73,72 @@ export const processFile = async (file: File, onProgress?: (percent: number) => 
     return { type: 'TEXT', content: text, name: file.name };
   }
 
-  throw new Error(`Unsupported file type: ${file.name}. Please upload PDF, DOCX, PPTX, TXT, or Image files.`);
+  throw new Error(`Unsupported file type: ${file.name}. Please upload PDF, DOCX, PPTX, TXT, ZIP or Image files.`);
+};
+
+// --- EXTRACTORS ---
+
+const extractTextFromZip = async (file: File, onProgress: (p: number) => void): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+        if (!window.JSZip) {
+            reject(new Error("ZIP Library failed to load."));
+            return;
+        }
+
+        try {
+            const zip = new window.JSZip();
+            const content = await zip.loadAsync(file);
+            let fullTranscript = `--- ARCHIVE: ${file.name} ---\n\n`;
+            
+            const filesToProcess: { name: string, obj: any }[] = [];
+            
+            // 1. Identify valid files
+            content.forEach((relativePath: string, zipEntry: any) => {
+                const name = zipEntry.name.toLowerCase();
+                if (!zipEntry.dir && !name.startsWith('__macosx') && !name.includes('.ds_store')) {
+                    if (name.endsWith('.pdf') || name.endsWith('.docx') || name.endsWith('.pptx') || name.endsWith('.txt')) {
+                        filesToProcess.push({ name: zipEntry.name, obj: zipEntry });
+                    }
+                }
+            });
+
+            if (filesToProcess.length === 0) {
+                reject(new Error("No supported files (PDF, DOCX, PPTX, TXT) found in ZIP archive."));
+                return;
+            }
+
+            // 2. Process sequentially to report progress
+            for (let i = 0; i < filesToProcess.length; i++) {
+                const entry = filesToProcess[i];
+                const blob = await entry.obj.async('blob');
+                
+                // Create a pseudo-File object to reuse existing extractors
+                const mime = getMimeFromExtension(entry.name);
+                const pseudoFile = new File([blob], entry.name, { type: mime });
+
+                try {
+                    // We reuse processFile but ignore its internal progress (we manage global progress here)
+                    const processed = await processFile(pseudoFile, () => {});
+                    fullTranscript += `\n\n=== FILE: ${entry.name} ===\n${processed.content}`;
+                } catch (e) {
+                    console.warn(`Failed to process ${entry.name} inside zip`, e);
+                    fullTranscript += `\n\n=== FILE: ${entry.name} [SKIPPED - ERROR] ===\n`;
+                }
+
+                // Update Progress
+                const percent = Math.round(((i + 1) / filesToProcess.length) * 100);
+                onProgress(percent);
+                
+                // Yield to UI
+                await new Promise(r => setTimeout(r, 10));
+            }
+
+            resolve(fullTranscript);
+
+        } catch (e) {
+            reject(e);
+        }
+    });
 };
 
 const extractTextFromPdf = async (file: File, onProgress: (p: number) => void): Promise<string> => {

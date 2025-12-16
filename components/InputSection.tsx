@@ -8,7 +8,7 @@ import { DuelJoinModal } from './DuelJoinModal';
 import { StudyRoomModal } from './StudyRoomModal';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../services/firebase';
-import { DRIVE_SCOPE, extractFolderId, listDriveFiles, downloadDriveFile } from '../services/driveService';
+import { DRIVE_SCOPE, openDrivePicker, downloadDriveFile } from '../services/driveService';
 
 interface InputSectionProps {
   onProcess: (processedFile: ProcessedFile, config: QuizConfig, mode: AppMode) => void;
@@ -43,19 +43,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [ingestionStatus, setIngestionStatus] = useState('');
   
   const [showCamera, setShowCamera] = useState(false);
   const [showDuelCreate, setShowDuelCreate] = useState(false);
   const [showDuelJoin, setShowDuelJoin] = useState(false);
   const [showStudyRoomModal, setShowStudyRoomModal] = useState(false);
-
-  // Drive State
-  const [driveLink, setDriveLink] = useState('');
-  const [driveToken, setDriveToken] = useState<string | null>(null);
-  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
-  const [selectedDriveFileIds, setSelectedDriveFileIds] = useState<Set<string>>(new Set());
-  const [isDriveScanning, setIsDriveScanning] = useState(false);
-  const [ingestionStatus, setIngestionStatus] = useState('');
 
   // Config State
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultConfig.difficulty);
@@ -81,66 +74,57 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const isFresher = userProfile.subscriptionTier === 'Fresher';
   const isScholar = userProfile.subscriptionTier === 'Scholar';
   
-  // Strict Tier Limits per prompt (Fresher: 5, Scholar: 10, Supreme: Unlimited)
   const fileLimit = isFresher ? 5 : isScholar ? 10 : 999;
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-  const canChat = !isFresher; // Only scholar+ can chat
+  const canChat = !isFresher;
 
-  // --- DRIVE LOGIC ---
-  const handleConnectDrive = async () => {
+  // --- DRIVE PICKER HANDLER ---
+  const handleDrivePicker = async () => {
       try {
+          // 1. Get Access Token via Firebase Auth (Incremental Scope)
           const provider = new GoogleAuthProvider();
-          provider.addScope(DRIVE_SCOPE);
-          // Force re-select account to ensure consent prompt appears
-          provider.setCustomParameters({ prompt: 'select_account consent' });
+          provider.addScope(DRIVE_SCOPE); 
+          // prompt='select_account' forces the account chooser, ensuring we get a fresh token with scopes
+          provider.setCustomParameters({ prompt: 'select_account' });
           
           const result = await signInWithPopup(auth, provider);
           const credential = GoogleAuthProvider.credentialFromResult(result);
           
-          if (credential?.accessToken) {
-              setDriveToken(credential.accessToken);
-          } else {
-              setFileError("Could not retrieve Drive Access Token.");
+          if (!credential?.accessToken) {
+              throw new Error("Failed to get Google Access Token.");
           }
-      } catch (error: any) {
-          console.error("Drive Auth Error:", error);
-          setFileError(error.message);
-      }
-  };
 
-  const handleScanDrive = async () => {
-      if (!driveToken || !driveLink) return;
-      
-      const folderId = extractFolderId(driveLink);
-      if (!folderId) {
-          setFileError("Invalid Drive Link. Please paste a Folder Link.");
-          return;
-      }
-
-      setIsDriveScanning(true);
-      setFileError(null);
-      try {
-          const files = await listDriveFiles(folderId, driveToken);
-          setDriveFiles(files);
-          // Auto-select all by default (up to 50 to be safe for UI rendering)
-          const ids = new Set(files.slice(0, 50).map(f => f.id));
-          setSelectedDriveFileIds(ids);
+          // 2. Open Google Picker
+          const driveFiles = await openDrivePicker(credential.accessToken);
           
-          if (files.length === 0) setFileError("No compatible files found in this folder.");
-      } catch (e: any) {
-          setFileError("Failed to scan folder. Ensure you have access.");
-          console.error(e);
-      } finally {
-          setIsDriveScanning(false);
-      }
-  };
+          if (driveFiles.length === 0) return;
 
-  const toggleDriveFile = (id: string) => {
-      const newSet = new Set(selectedDriveFileIds);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-      setSelectedDriveFileIds(newSet);
+          // 3. Download Files
+          setIngestionStatus(`Importing ${driveFiles.length} files from Drive...`);
+          setUploadProgress(10);
+
+          const processedBlobs: File[] = [];
+          for (let i = 0; i < driveFiles.length; i++) {
+              const df = driveFiles[i];
+              setIngestionStatus(`Downloading ${df.name} (${i + 1}/${driveFiles.length})...`);
+              const blob = await downloadDriveFile(df.id, df.mimeType, credential.accessToken);
+              const file = new File([blob], df.name, { type: df.mimeType });
+              processedBlobs.push(file);
+              setUploadProgress(10 + ((i + 1) / driveFiles.length) * 40); // Drive download is 10-50%
+          }
+
+          addFiles(processedBlobs);
+          setIngestionStatus('');
+          setUploadProgress(0);
+          setActiveTab('FILE'); // Switch to file view to show them
+
+      } catch (error: any) {
+          console.error("Drive Error:", error);
+          if (error.message && error.message.includes('popup')) return; // Ignore popup closed
+          setFileError("Drive Connection Failed: " + (error.message || "Unknown Error"));
+          setIngestionStatus('');
+      }
   };
 
   // --- MAIN HANDLERS ---
@@ -152,7 +136,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   const addFiles = (files: File[]) => {
-    const validExtensions = ['.pdf', '.docx', '.doc', '.pptx', '.txt', '.png', '.jpg', '.jpeg', '.webp'];
+    const validExtensions = ['.pdf', '.docx', '.doc', '.pptx', '.txt', '.png', '.jpg', '.jpeg', '.webp', '.zip'];
     const validFiles: File[] = [];
     let errorMsg = null;
 
@@ -162,7 +146,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             continue;
         }
         if (f.size > MAX_FILE_SIZE) {
-            errorMsg = "Skipped files larger than 5MB.";
+            errorMsg = "Skipped files larger than 50MB.";
             continue;
         }
         validFiles.push(f);
@@ -170,7 +154,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
     if (errorMsg) setFileError(errorMsg);
     
-    // Tier Limit Check
     if (selectedFiles.length + validFiles.length > fileLimit) {
         onShowSubscription();
         return;
@@ -221,35 +204,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
     try {
       let fullContent = "";
-      let driveFilesProcessed = 0;
-      const totalDrive = selectedDriveFileIds.size;
-
-      // DRIVE INGESTION LOGIC (Batch Processing)
-      if (activeTab === 'DRIVE' && totalDrive > 0 && driveToken) {
-          if (!isScholar && totalDrive > 5) {
-              onShowSubscription(); // Gate bulk drive
-              return;
-          }
-
-          const filesToProcess = driveFiles.filter(f => selectedDriveFileIds.has(f.id));
-          
-          for (const dFile of filesToProcess) {
-              setIngestionStatus(`Downloading ${dFile.name}... (${driveFilesProcessed + 1}/${totalDrive})`);
-              
-              // Download Blob
-              const blob = await downloadDriveFile(dFile.id, dFile.mimeType, driveToken);
-              const file = new File([blob], dFile.name, { type: dFile.mimeType });
-              
-              // Process Text
-              const processed = await processFile(file);
-              fullContent += `\n\n--- DRIVE FILE: ${dFile.name} ---\n${processed.content}`;
-              
-              driveFilesProcessed++;
-              // Yield to UI to prevent freeze
-              await new Promise(r => setTimeout(r, 10)); 
-          }
-          setIngestionStatus('');
-      }
       
       // Standard File Processing
       if (selectedFiles.length > 0) {
@@ -276,7 +230,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
       onProcess({ 
           type: 'TEXT', 
           content: fullContent, 
-          name: activeTab === 'DRIVE' ? 'Drive Folder Import' : selectedFiles.length > 0 ? (selectedFiles.length === 1 ? selectedFiles[0].name : 'Multi-File Session') : 'Text Input' 
+          name: selectedFiles.length > 0 ? (selectedFiles.length === 1 ? selectedFiles[0].name : 'Multi-File Session') : 'Text Input' 
       }, getFullConfig(), finalMode);
       
       setChatInput('');
@@ -285,7 +239,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
     } catch (err: any) {
       setFileError(err.message);
       setUploadProgress(0);
-      setIngestionStatus('');
     }
   };
 
@@ -424,87 +377,27 @@ export const InputSection: React.FC<InputSectionProps> = ({
                <div className="flex justify-center mb-6 shrink-0">
                 <div className="bg-black/40 p-1.5 rounded-2xl flex gap-1 border border-white/10 shadow-lg w-full sm:w-auto overflow-hidden">
                     <button onClick={() => setActiveTab('FILE')} className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'FILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Files</button>
-                    <button onClick={() => setActiveTab('DRIVE')} className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'DRIVE' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>G-Drive</button>
+                    <button onClick={() => setActiveTab('DRIVE')} className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'DRIVE' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Drive</button>
                     <button onClick={() => setActiveTab('TEXT')} className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'TEXT' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Text</button>
                 </div>
               </div>
 
               <div className="flex-1 flex flex-col min-h-0">
                 {activeTab === 'DRIVE' ? (
-                    <div className="flex flex-col gap-4 h-full animate-fade-in">
-                        {!driveToken ? (
-                            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-green-500/20 bg-green-900/5 rounded-3xl p-8 text-center">
-                                <div className="w-16 h-16 bg-green-900/20 rounded-2xl flex items-center justify-center mb-4 border border-green-500/20">
-                                    <svg className="w-8 h-8 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12.01 1.485c2.082 0 3.754.02 4.959.084 1.38.074 2.47.334 3.376 1.24.906.906 1.166 1.996 1.24 3.376.064 1.205.084 2.877.084 4.959v1.652c0 2.082-.02 3.754-.084 4.959-.074 1.38-.334 2.47-1.24 3.376-.906.906-1.996 1.166-3.376 1.24-1.205.064-2.877.084-4.959.084s-3.754-.02-4.959-.084c-1.38-.074-2.47-.334-3.376-1.24-.906-.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959v-1.652c0-2.082.02-3.754.084-4.959.074-1.38.334-2.47 1.24-3.376.906-.906 1.996-1.166 3.376-1.24 1.205-.064 2.877-.084 4.959-.084Zm-2.735 9.17-2.313 4.008h4.626l2.314-4.008H9.275Zm-3.47 6.012h9.252l-2.313-4.008H7.036l-1.23 2.13L4.65 12.63l-1.231 2.13 2.386 1.908ZM17.14 7.333H7.888l2.313 4.008h9.252l-2.313-4.008Z"/></svg>
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Connect Google Drive</h3>
-                                <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Authorize access to scan your departmental folders. Read-only permission required.</p>
-                                <button onClick={handleConnectDrive} className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg transition-all flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.01 1.485c2.082 0 3.754.02 4.959.084 1.38.074 2.47.334 3.376 1.24.906.906 1.166 1.996 1.24 3.376.064 1.205.084 2.877.084 4.959v1.652c0 2.082-.02 3.754-.084 4.959-.074 1.38-.334 2.47-1.24 3.376-.906.906-1.996 1.166-3.376 1.24-1.205.064-2.877.084-4.959.084s-3.754-.02-4.959-.084c-1.38-.074-2.47-.334-3.376-1.24-.906-.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959v-1.652c0-2.082.02-3.754.084-4.959.074-1.38.334-2.47 1.24-3.376.906-.906 1.996-1.166 3.376-1.24 1.205-.064 2.877-.084 4.959-.084Zm-2.735 9.17-2.313 4.008h4.626l2.314-4.008H9.275Zm-3.47 6.012h9.252l-2.313-4.008H7.036l-1.23 2.13L4.65 12.63l-1.231 2.13 2.386 1.908ZM17.14 7.333H7.888l2.313 4.008h9.252l-2.313-4.008Z"/></svg>
-                                    Authenticate
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col h-full gap-4">
-                                <div className="flex gap-2">
-                                    <input 
-                                        type="text" 
-                                        value={driveLink}
-                                        onChange={(e) => setDriveLink(e.target.value)}
-                                        placeholder="Paste Folder Link (https://drive.google.com/...)" 
-                                        className="flex-1 bg-black/40 border border-green-500/30 rounded-xl px-4 py-3 text-white outline-none focus:bg-white/5 transition-all text-sm font-mono text-green-100 placeholder-green-900/50" 
-                                    />
-                                    <button 
-                                        onClick={handleScanDrive} 
-                                        disabled={isDriveScanning || !driveLink}
-                                        className="px-6 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold uppercase text-xs tracking-widest disabled:opacity-50"
-                                    >
-                                        {isDriveScanning ? 'Scanning...' : 'Scan'}
-                                    </button>
-                                </div>
-
-                                {/* File List */}
-                                <div className="flex-1 bg-black/40 border border-white/10 rounded-xl overflow-hidden flex flex-col">
-                                    <div className="p-3 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                                        <span className="text-xs font-bold text-gray-400 uppercase">Found Files ({driveFiles.length})</span>
-                                        <button 
-                                            onClick={() => setSelectedDriveFileIds(new Set(selectedDriveFileIds.size === driveFiles.length ? [] : driveFiles.map(f => f.id)))}
-                                            className="text-[10px] text-green-400 hover:text-white uppercase font-bold"
-                                        >
-                                            {selectedDriveFileIds.size === driveFiles.length ? 'Deselect All' : 'Select All'}
-                                        </button>
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-                                        {driveFiles.length === 0 ? (
-                                            <div className="h-full flex items-center justify-center text-gray-600 text-xs">
-                                                No files scanned yet. Paste a link above.
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {driveFiles.map(f => (
-                                                    <div 
-                                                        key={f.id} 
-                                                        onClick={() => toggleDriveFile(f.id)}
-                                                        className={`p-3 rounded-lg border flex items-center justify-between cursor-pointer transition-all ${selectedDriveFileIds.has(f.id) ? 'bg-green-900/20 border-green-500/50' : 'bg-white/5 border-transparent hover:bg-white/10'}`}
-                                                    >
-                                                        <div className="flex items-center gap-3 overflow-hidden">
-                                                            <div className={`w-4 h-4 rounded-sm border ${selectedDriveFileIds.has(f.id) ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
-                                                                {selectedDriveFileIds.has(f.id) && <svg className="w-full h-full text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg>}
-                                                            </div>
-                                                            <span className="text-xs font-mono truncate text-gray-300">{f.name}</span>
-                                                        </div>
-                                                        <span className="text-[10px] text-gray-600 uppercase">{f.mimeType.split('/').pop()}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="p-3 bg-green-900/10 border-t border-green-500/20 text-center">
-                                        <p className="text-[10px] text-green-400 uppercase font-bold tracking-widest">{selectedDriveFileIds.size} Files Selected for Ingestion</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-fade-in">
+                        <div className="w-16 h-16 bg-green-900/20 rounded-2xl flex items-center justify-center border border-green-500/20 mb-2">
+                            <svg className="w-8 h-8 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12.01 1.485c2.082 0 3.754.02 4.959.084 1.38.074 2.47.334 3.376 1.24.906.906 1.166 1.996 1.24 3.376.064 1.205.084 2.877.084 4.959v1.652c0 2.082-.02 3.754-.084 4.959-.074 1.38-.334 2.47-1.24 3.376-.906.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959.084s-3.754-.02-4.959-.084c-1.38-.074-2.47-.334-3.376-1.24-.906-.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959v-1.652c0-2.082.02-3.754.084-4.959.074-1.38.334-2.47 1.24-3.376.906-.906 1.996-1.166 3.376-1.24 1.205-.064 2.877-.084 4.959-.084Zm-2.735 9.17-2.313 4.008h4.626l2.314-4.008H9.275Zm-3.47 6.012h9.252l-2.313-4.008H7.036l-1.23 2.13L4.65 12.63l-1.231 2.13 2.386 1.908ZM17.14 7.333H7.888l2.313 4.008h9.252l-2.313-4.008Z"/></svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Select from Google Drive</h3>
+                        <p className="text-sm text-gray-400 max-w-xs">
+                            Select multiple files (Hold Shift/Cmd) to import entire lectures at once.
+                        </p>
+                        <button 
+                            onClick={handleDrivePicker}
+                            className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg transition-all flex items-center gap-2 mt-2"
+                        >
+                            Open File Picker
+                        </button>
                     </div>
                 ) : activeTab === 'FILE' ? (
                   <div className="flex flex-col gap-4 h-full">
@@ -550,10 +443,21 @@ export const InputSection: React.FC<InputSectionProps> = ({
                               <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 group-hover:scale-110 transition-transform duration-300 shadow-xl">
                                 <span className="text-3xl">📁</span>
                               </div>
-                              <p className="text-gray-300 font-bold text-sm">Drop lecture notes here</p>
-                              <p className="text-gray-500 text-xs mt-2">PDF, DOCX, PPTX, TXT (Max 5MB)</p>
+                              <p className="text-gray-300 font-bold text-sm">Drop notes or <span className="text-blue-400">ZIP archive</span></p>
+                              <p className="text-gray-500 text-xs mt-2">PDF, DOCX, ZIP (Max 50MB)</p>
                             </div>
                           )}
+                      </div>
+                      
+                      {/* Bulk Import Tip */}
+                      <div className="bg-blue-900/10 border border-blue-500/20 p-3 rounded-xl flex items-start gap-3">
+                          <span className="text-blue-400 text-lg">💡</span>
+                          <div>
+                              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Bulk Import Trick</p>
+                              <p className="text-xs text-gray-400 leading-relaxed">
+                                  Use the <strong>Drive</strong> tab to select multiple files at once, or drop a <strong>.zip</strong> here.
+                              </p>
+                          </div>
                       </div>
                   </div>
                 ) : (
@@ -662,7 +566,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
       
       {fileError && <div className="mt-4 p-4 bg-red-900/20 border border-red-500/20 text-red-400 text-sm text-center rounded-2xl font-bold animate-slide-up-fade">{fileError}</div>}
-      <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.doc,.pptx,.txt,.png,.jpg,.jpeg,.webp" onChange={handleFileChange} />
+      <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.doc,.pptx,.txt,.png,.jpg,.jpeg,.webp,.zip" onChange={handleFileChange} />
     </div>
   );
 };
