@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -16,7 +16,7 @@ import { PWAPrompt } from './components/PWAPrompt';
 import { DuelReadyModal } from './components/DuelReadyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { useAuth } from './contexts/AuthContext';
-import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
+import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from './types';
 import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from './services/firebase';
@@ -63,6 +63,8 @@ const App: React.FC = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
+  const saveTimeoutRef = useRef<any>(null);
+
   useEffect(() => {
     // Detect AdBlocker via Firebase failure
     const originalConsoleError = console.error;
@@ -86,6 +88,48 @@ const App: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [user, status]);
+
+  // Real-time History Sync
+  useEffect(() => {
+      if (status !== AppStatus.READY || !activeHistoryId) return;
+
+      const syncHistory = () => {
+          let dataToSave: any = null;
+          let title = '';
+          
+          if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
+              dataToSave = quizState;
+              title = history.find(h => h.id === activeHistoryId)?.title || 'Exam';
+          } else if (appMode === 'PROFESSOR') {
+              dataToSave = professorState;
+              title = history.find(h => h.id === activeHistoryId)?.title || 'Class';
+          } else if (appMode === 'CHAT') {
+              dataToSave = chatState;
+              title = chatState.fileName || 'Chat';
+          }
+
+          if (dataToSave) {
+              const item: HistoryItem = {
+                  id: activeHistoryId,
+                  timestamp: Date.now(),
+                  mode: appMode,
+                  title: title,
+                  data: dataToSave,
+                  summary: history.find(h => h.id === activeHistoryId)?.summary // Preserve summary
+              };
+              saveToHistory(item);
+              setHistory(loadHistory()); // Update UI
+          }
+      };
+
+      // Debounce saving to avoid disk thrashing
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(syncHistory, 2000);
+
+      return () => {
+          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      };
+  }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
 
   // Notification Polling Logic
   useEffect(() => {
@@ -151,7 +195,6 @@ const App: React.FC = () => {
   }, [user]);
 
   // Safe Exit Wrapper
-  // Fixed: Allow force exit logic
   const attemptAction = (action: () => void, force: boolean = false) => {
       if (!force && status === AppStatus.READY && (
           (appMode === 'EXAM' && !quizState.isSubmitted) || 
@@ -198,10 +241,23 @@ const App: React.FC = () => {
       return totalSeconds > 0 ? totalSeconds : null;
   };
 
+  // Helper to get 5-word summary
+  const getDocumentSummary = async (text: string): Promise<string> => {
+      try {
+          const summary = await simplifyExplanation(text.substring(0, 5000), 'ELA', "5 word abstract/tagline");
+          return summary.replace(/"/g, '').trim();
+      } catch (e) {
+          return "Uploaded Document";
+      }
+  };
+
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
       setActiveHistoryId(Date.now().toString()); 
+      const summaryPromise = getDocumentSummary(file.content);
+
       if (mode === 'CHAT') {
+        const summary = await summaryPromise;
         const newState: ChatState = {
             messages: [],
             fileContext: file.content,
@@ -210,13 +266,14 @@ const App: React.FC = () => {
         setChatState(newState);
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
-        // Important: Create initial history item for empty chat so it exists in library
+        
         const historyItem: HistoryItem = { 
             id: Date.now().toString(), 
             timestamp: Date.now(), 
             mode: 'CHAT', 
-            title: `Chat: ${file.name}`, 
-            data: newState 
+            title: file.name, 
+            data: newState,
+            summary: summary 
         };
         saveToHistory(historyItem);
         setHistory(loadHistory());
@@ -235,16 +292,18 @@ const App: React.FC = () => {
             throw new Error("Neural Failure: No questions generated. Content might be insufficient or blocked.");
         }
 
+        const summary = await summaryPromise;
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0 };
         setQuizState(newState);
-        // Use mode explicitly for history title generation
+        
         const historyItem: HistoryItem = { 
             id: Date.now().toString(), 
             timestamp: Date.now(), 
             mode: mode, 
-            title: generateHistoryTitle(mode, newState), 
+            title: file.name, 
             data: newState, 
-            config 
+            config,
+            summary: summary
         };
         saveToHistory(historyItem);
         setAppMode(mode); 
@@ -254,7 +313,16 @@ const App: React.FC = () => {
         const newState: ProfessorState = { sections };
         setProfessorState(newState);
         setQuizState(prev => ({ ...prev, timeRemaining }));
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: generateHistoryTitle('PROFESSOR', newState), data: newState };
+        
+        const summary = await summaryPromise;
+        const historyItem: HistoryItem = { 
+            id: Date.now().toString(), 
+            timestamp: Date.now(), 
+            mode: 'PROFESSOR', 
+            title: file.name, 
+            data: newState,
+            summary: summary 
+        };
         saveToHistory(historyItem);
       }
       setHistory(loadHistory());
@@ -345,21 +413,7 @@ const App: React.FC = () => {
 
   const handleChatUpdate = (updatedState: ChatState) => {
       setChatState(updatedState);
-      saveCurrentSession('CHAT', updatedState, updatedState.fileName || 'Chat');
-
-      // Always ensure history is in sync
-      const historyId = activeHistoryId || Date.now().toString();
-      if (!activeHistoryId) setActiveHistoryId(historyId);
-
-      const item: HistoryItem = {
-          id: historyId,
-          timestamp: Date.now(),
-          mode: 'CHAT',
-          title: generateHistoryTitle('CHAT', updatedState),
-          data: updatedState
-      };
-      saveToHistory(item);
-      setHistory(loadHistory()); // Updates sidebar
+      // History sync handled by useEffect now
   };
 
   const handleOpenFloatingChat = () => {
@@ -380,7 +434,6 @@ const App: React.FC = () => {
           
           const newId = Date.now().toString();
           setActiveHistoryId(newId);
-          // Initial Save to ensure history exists immediately
           saveToHistory({
               id: newId,
               timestamp: Date.now(),
@@ -513,24 +566,40 @@ const App: React.FC = () => {
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
-               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-               <span className="font-bold hidden sm:block">The Professor</span>
-            </div>
-            <div className="flex gap-3 md:gap-4 items-center">
-               {isAdmin && <button onClick={() => setAppMode(appMode === 'ADMIN' ? 'EXAM' : 'ADMIN')} className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${appMode === 'ADMIN' ? 'bg-amber-900/50 text-amber-500 border-amber-500' : 'text-red-400 border-transparent hover:border-red-500'}`}>{appMode === 'ADMIN' ? 'Exit Dean' : 'Dean\'s Office'}</button>}
-               <button onClick={() => setIsSubscriptionOpen(true)} className="px-3 py-1 bg-blue-600 rounded text-[10px] font-bold uppercase">{userProfile.subscriptionTier === 'Excellentia Supreme' ? '👑 Supreme' : 'Upgrade'}</button>
-               <div className="hidden md:flex items-center gap-2">
-                   <div className="text-right">
-                       <div className="text-[10px] font-bold text-gray-400 uppercase">{userProfile.alias || 'Student'}</div>
-                       <div className="text-[10px] font-mono text-blue-400">{userProfile.xp || 0} XP</div>
-                   </div>
-                   <button onClick={() => setIsProfileOpen(true)} className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                   </button>
+               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
-               <button onClick={() => setIsProfileOpen(true)} className="md:hidden w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></button>
-               <button onClick={() => setIsHistoryOpen(true)} className="opacity-60 hover:opacity-100 transition-opacity">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+               <span className="font-serif font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-4">
+               {isActiveSession && (
+                   <button 
+                     onClick={() => setIsHistoryOpen(true)}
+                     className="p-2 text-gray-400 hover:text-white transition-colors relative"
+                     title="My Library"
+                   >
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
+                   </button>
+               )}
+               
+               {userProfile.subscriptionTier === 'Fresher' && (
+                   <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
+                       <span>Upgrade</span>
+                       <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
+                   </button>
+               )}
+
+               <div className="h-6 w-px bg-white/10 mx-2"></div>
+
+               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
+                   <div className="text-right hidden sm:block">
+                       <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">{userProfile.alias}</p>
+                       <p className="text-[9px] font-mono text-gray-500 uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
+                   </div>
+                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-blue-500 transition-all shadow-lg`}>
+                       <span className="text-sm">{userProfile.avatarEmoji}</span>
+                   </div>
                </button>
             </div>
         </div>
@@ -539,122 +608,106 @@ const App: React.FC = () => {
       <HistorySidebar 
         isOpen={isHistoryOpen} 
         onClose={() => setIsHistoryOpen(false)} 
-        history={history} 
-        onSelect={(item) => { 
-            attemptAction(() => {
-                setActiveHistoryId(item.id);
-                if (item.mode === 'PROFESSOR') { setProfessorState(item.data as ProfessorState); setAppMode('PROFESSOR'); } 
-                else if (item.mode === 'CHAT') { setChatState(item.data as ChatState); setAppMode('CHAT'); }
-                else if (item.mode === 'FLASHCARDS') { setQuizState(item.data as QuizState); setAppMode('FLASHCARDS'); }
-                else { setQuizState(item.data as QuizState); setAppMode('EXAM'); } 
-                setStatus(AppStatus.READY); 
-                setIsHistoryOpen(false); 
-            });
-        }} 
-        onDelete={(id) => { deleteHistoryItem(id); setHistory(loadHistory()); }} 
+        history={history}
+        onSelect={(item) => {
+            if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
+                setQuizState(item.data as QuizState);
+                if (item.config) {
+                    // Restore config
+                }
+            } else if (item.mode === 'PROFESSOR') {
+                setProfessorState(item.data as ProfessorState);
+            } else if (item.mode === 'CHAT') {
+                setChatState(item.data as ChatState);
+            }
+            setAppMode(item.mode);
+            setStatus(AppStatus.READY);
+            setActiveHistoryId(item.id);
+            setIsHistoryOpen(false);
+        }}
+        onDelete={(id) => {
+            deleteHistoryItem(id);
+            setHistory(loadHistory());
+            if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
+        }}
       />
-      
+
       <UserProfileModal 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
         profile={userProfile} 
-        onSave={async (p) => { 
-            setUserProfile(p); 
-            saveUserProfile(p);
-            if (user) await saveUserToFirestore(user.uid, p);
-        }} 
-        onClearHistory={() => { localStorage.clear(); window.location.reload(); }} 
-        onLogout={logout} 
+        onSave={(updated) => {
+            setUserProfile(updated);
+            saveUserProfile(updated);
+            if (user) saveUserToFirestore(user.uid, updated);
+        }}
+        onClearHistory={() => {}}
+        onLogout={async () => {
+            await logout();
+            window.location.reload();
+        }}
       />
-      
+
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
-      <main className="max-w-7xl mx-auto px-4 pt-4 md:pt-8 min-h-[calc(100vh-64px)] relative z-10">
-        
-        {status === AppStatus.ERROR ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in space-y-6">
-                <div className="relative">
-                    <div className="w-24 h-24 rounded-full bg-red-900/20 flex items-center justify-center border border-red-500/30 shadow-[0_0_50px_rgba(220,38,38,0.2)] animate-pulse-slow">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    </div>
-                </div>
-                
-                <div className="max-w-md space-y-2">
-                    <h2 className="text-3xl font-serif font-bold text-white tracking-tight">System Overload</h2>
-                    <p className="text-gray-400 leading-relaxed text-sm">
-                        {errorMsg || "The Professor is currently at maximum capacity processing other students. Please wait a moment before trying again."}
-                    </p>
-                </div>
+      <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
+         {status === AppStatus.IDLE && (
+             <>
+                <Hero />
+                <InputSection 
+                    onProcess={handleProcess} 
+                    isLoading={false} 
+                    appMode={appMode}
+                    setAppMode={setAppMode}
+                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }}
+                    userProfile={userProfile}
+                    onShowSubscription={() => setIsSubscriptionOpen(true)}
+                    onOpenProfile={() => setIsProfileOpen(true)}
+                    onDuelStart={handleDuelStart}
+                    onDuelJoin={handleDuelJoin}
+                />
+             </>
+         )}
 
-                <div className="flex gap-4 pt-4">
-                    <button 
-                        onClick={() => handleQuizAction('RESET', { force: true })} 
-                        className="px-8 py-3 bg-white text-black rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-200 transition-transform hover:scale-105 shadow-lg"
-                    >
-                        Return to Dashboard
-                    </button>
-                </div>
-                
-                <p className="text-[10px] text-gray-600 font-mono uppercase tracking-widest pt-8">
-                    Error Code: 503 / 429 :: Neural Capacity Exceeded
-                </p>
-            </div>
-        ) : (
-            <Suspense fallback={
-                <div className="flex items-center justify-center h-64">
-                    <div className="w-8 h-8 border-2 border-white/20 border-t-blue-500 rounded-full animate-spin"></div>
-                </div>
-            }>
-                {appMode === 'ADMIN' && isAdmin ? <AdminDashboard /> : (
-                  <>
-                    {status === AppStatus.IDLE ? (
-                      <div className="space-y-6 md:space-y-12 pb-20">
-                        {appMode === 'EXAM' && <Hero />}
-                        {appMode === 'PROFESSOR' && <div className="text-center py-12"><h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">What shall we master?</h1><p className="text-xl opacity-60">"If you can't explain it simply, you don't understand it."</p></div>}
-                        
-                        <InputSection 
-                            onProcess={handleProcess} 
-                            isLoading={false} 
-                            appMode={appMode} 
-                            setAppMode={(m) => attemptAction(() => setAppMode(m))} 
-                            defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
-                            userProfile={userProfile} 
-                            onShowSubscription={() => setIsSubscriptionOpen(true)}
-                            onOpenProfile={() => setIsProfileOpen(true)}
-                            onDuelStart={handleDuelStart}
-                            onDuelJoin={handleDuelJoin}
-                        />
-                      </div>
-                    ) : null}
+         {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
+         {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
+         
+         {status === AppStatus.READY && (
+             <div className="animate-slide-up-fade">
+                 <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-white rounded-full animate-spin"></div></div>}>
+                    {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} />}
+                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
+                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
+                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
+                    {appMode === 'ADMIN' && <AdminDashboard />}
+                 </Suspense>
+             </div>
+         )}
 
-                    {(status === AppStatus.PROCESSING_FILE || status === AppStatus.GENERATING_CONTENT) && (
-                        <LoadingOverlay 
-                            status={statusText} 
-                            type={(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'PROFESSOR' : 'EXAM'} 
-                            onCancel={handleCancelGeneration}
-                        />
-                    )}
-                    
-                    {status === AppStatus.READY && (
-                      <div className="h-full">
-                        {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={quizState.timeRemaining} />}
-                        {appMode === 'EXAM' && <QuizView quizState={quizState} difficulty={quizState.questions.length > 0 ? 'Medium' : undefined} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} />}
-                        {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
-                        {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
-                      </div>
-                    )}
-                  </>
-                )}
-            </Suspense>
-        )}
+         {status === AppStatus.ERROR && (
+             <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center animate-bounce-subtle">
+                 <div className="text-4xl mb-4">⚠️</div>
+                 <h3 className="text-xl font-bold text-red-500 mb-2">System Failure</h3>
+                 <p className="text-gray-400 mb-6">{errorMsg || "An unknown error occurred."}</p>
+                 <button onClick={() => setStatus(AppStatus.IDLE)} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold uppercase text-xs hover:bg-red-500 transition-colors">Reboot System</button>
+             </div>
+         )}
       </main>
 
-      {!isModalOpen && !isActiveSession && appMode !== 'ADMIN' && status === AppStatus.IDLE && (
+      {/* Admin Secret Entry */}
+      {isAdmin && (
+          <div className="fixed bottom-2 right-2 opacity-20 hover:opacity-100 transition-opacity z-50">
+              <button onClick={() => setAppMode('ADMIN')} className="text-[10px] uppercase font-mono text-gray-500">Admin</button>
+          </div>
+      )}
+      
+      {/* Floating Chat Trigger (Visible in non-chat modes) */}
+      {status === AppStatus.READY && appMode !== 'CHAT' && !isModalOpen && (
           <button 
             onClick={handleOpenFloatingChat}
-            className="fixed bottom-6 right-6 z-[100] w-14 h-14 bg-amber-600 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.5)] flex items-center justify-center text-white hover:scale-110 transition-transform group border border-amber-500/50 animate-pulse-slow"
+            className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group"
           >
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+              <span className="text-2xl group-hover:animate-wiggle">💬</span>
           </button>
       )}
     </div>

@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { SubscriptionTier } from '../types';
-import { auth, logPayment, updateUserPlan } from '../services/firebase';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -10,30 +9,25 @@ interface SubscriptionModalProps {
   onUpgrade: (tier: SubscriptionTier) => void;
 }
 
-declare global {
-  interface Window {
-    PaystackPop: any;
-  }
-}
-
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, currentTier, onUpgrade }) => {
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handlePaystack = (tierId: SubscriptionTier, price: number) => {
-    // FREE MONTH BYPASS
-    // Granting tier immediately.
-    
+  const handleStripeCheckout = (tierId: SubscriptionTier, price: number) => {
     setLoading(true);
     
-    // Simulate processing
-    setTimeout(async () => {
-        onUpgrade(tierId);
+    // Simulate Stripe Checkout Redirect
+    // In a real app, this would call a backend to create a Stripe Session
+    setTimeout(() => {
+        const confirm = window.confirm("Redirecting to Stripe Secure Checkout...\n\n(Simulation: Click OK to complete payment)");
+        if (confirm) {
+            onUpgrade(tierId);
+            alert("Payment Successful! Welcome to The Professor " + tierId + ".");
+            onClose();
+        }
         setLoading(false);
-        onClose();
-        alert(`Welcome to ${tierId}. First Month Free Access Granted.`);
-    }, 1000);
+    }, 1500);
   };
 
   const tiers = [
@@ -54,8 +48,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Scholar' as SubscriptionTier,
       name: 'The Scholar',
-      priceDisplay: 'FREE', // OVERRIDE
-      originalPrice: '₦2,000',
+      priceDisplay: '₦2,000',
       amount: 2000,
       desc: "For the 5.0 GPA chaser.",
       features: [
@@ -71,8 +64,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Excellentia Supreme' as SubscriptionTier,
       name: 'Excellentia Supreme',
-      priceDisplay: 'FREE', // OVERRIDE
-      originalPrice: '₦5,000',
+      priceDisplay: '₦5,000',
       amount: 5000,
       desc: "Academic Immortality.",
       features: [
@@ -92,11 +84,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       
       <div className="relative bg-[#0a0a0a] w-full max-w-5xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade">
-        {/* Banner */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center py-2 text-xs font-bold uppercase tracking-widest animate-pulse">
-            First Month Free: All Features Unlocked until Jan 10
-        </div>
-
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
            <div className="flex items-center gap-3">
              <span className="text-2xl">🎓</span>
@@ -135,9 +122,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                    </h4>
                    <div className="flex items-baseline gap-2 mb-1">
                        <span className="text-2xl font-mono font-bold">{tier.priceDisplay}</span>
-                       {tier.originalPrice && (
-                           <span className="text-sm text-gray-500 line-through decoration-red-500">{tier.originalPrice}</span>
-                       )}
+                       {tier.amount > 0 && <span className="text-xs text-gray-500">/mo</span>}
                    </div>
                    
                    <p className="text-xs text-gray-400 mb-6 italic">"{tier.desc}"</p>
@@ -152,15 +137,20 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                    </ul>
 
                    <button 
-                     onClick={() => handlePaystack(tier.id, tier.amount)}
+                     onClick={() => handleStripeCheckout(tier.id, tier.amount)}
                      disabled={loading}
-                     className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
+                     className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                        currentTier === tier.id 
                          ? 'bg-white/10 text-gray-500 cursor-default' 
-                         : 'bg-white text-black hover:bg-gray-200 shadow-lg'
+                         : 'bg-[#635BFF] text-white hover:bg-[#5349e0] shadow-lg'
                      }`}
                    >
-                     {loading ? 'Processing...' : (currentTier === tier.id ? 'Current Plan' : 'Claim Free Access')}
+                     {loading ? 'Redirecting...' : (currentTier === tier.id ? 'Current Plan' : (
+                         <>
+                            <span>Pay with</span>
+                            <span className="font-black italic">Stripe</span>
+                         </>
+                     ))}
                    </button>
                 </div>
               ))}

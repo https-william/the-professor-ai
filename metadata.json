@@ -1,5 +1,5 @@
 {
   "name": "The Professor",
   "description": "Your AI-powered academic accelerator. Transform materials into mastery.",
-  "requestFramePermissions": []
+  "requestFramePermissions": ["camera"]
 }

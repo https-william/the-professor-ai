@@ -1,26 +1,22 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>The Professor | AI Academic Accelerator</title>
+    <title>The Professor | My Library</title>
     
     <!-- SEO & Metatags -->
     <meta name="description" content="Transform static lecture notes into interactive mastery. The Professor is an AI-powered study companion offering exams, Socratic tutoring, and predictive questioning." />
     <meta name="keywords" content="AI study tool, exam prep, quiz generator, feynman technique, student AI, academic accelerator" />
     <meta name="author" content="The Professor" />
     
-    <!-- Global Error Handler for Mobile Debugging -->
+    <!-- Global Error Handler -->
     <script>
       window.onerror = function(msg, url, lineNo, columnNo, error) {
         const root = document.getElementById('root');
-        // Only show if root is empty (app failed to mount)
         if (root && root.innerHTML.trim() === "") {
-           // Keep preloader but show error
            const preloader = document.getElementById('preloader-core');
            if(preloader) preloader.style.display = 'none';
-           
            const errDiv = document.createElement('div');
            errDiv.style.color = '#ef4444';
            errDiv.style.padding = '20px';
@@ -35,79 +31,54 @@
       };
     </script>
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://theprofessorai.vercel.app/" />
     <meta property="og:title" content="The Professor | Academic Weapon" />
     <meta property="og:description" content="Stop reading. Start accelerating. Upload your notes and let the AI build your curriculum." />
     <meta property="og:image" content="https://theprofessorai.vercel.app/og-image.png" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://theprofessorai.vercel.app/" />
-    <meta property="twitter:title" content="The Professor | Academic Weapon" />
-    <meta property="twitter:description" content="Stop reading. Start accelerating. Upload your notes and let the AI build your curriculum." />
-    <meta property="twitter:image" content="https://theprofessorai.vercel.app/og-image.png" />
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233b82f6;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%238b5cf6;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='%230f172a'/%3E%3Cpath d='M15 45 L50 25 L85 45 L50 65 Z' fill='url(%23grad)' stroke='%23ffffff' stroke-width='2'/%3E%3Cpath d='M85 45 V70' stroke='%23f59e0b' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='85' cy='75' r='5' fill='%23f59e0b'/%3E%3Cpath d='M30 55 V75 C30 85 70 85 70 75 V55' fill='none' stroke='white' stroke-width='2'/%3E%3Ccircle cx='50' cy='45' r='5' fill='%23fff'/%3E%3C/svg%3E">
     
-    <!-- Custom SVG Favicon - Mortarboard Theme -->
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3062/3062634.png?v=final_release_3">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3062/3062634.png?v=final_release_3">
-    
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/manifest.json?v=final_release_3" />
+    <link rel="manifest" href="/manifest.json?v=final_release_4" />
     <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     
-    <!-- Paystack Inline -->
-    <script src="https://js.paystack.co/v1/inline.js"></script>
-    
-    <!-- Polyfill for process -->
     <script>
-      if (typeof process === 'undefined') {
-        window.process = { env: {} };
-      }
-      if (typeof global === 'undefined') {
-        window.global = window;
-      }
+      if (typeof process === 'undefined') { window.process = { env: {} }; }
+      if (typeof global === 'undefined') { window.global = window; }
     </script>
     
-    <!-- Google API Scripts for Picker -->
     <script async defer src="https://apis.google.com/js/api.js"></script>
     <script async defer src="https://accounts.google.com/gsi/client.js"></script>
 
-    <!-- PDF.js -->
+    <!-- Libs -->
     <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js" crossorigin="anonymous"></script>
-    <!-- Mammoth.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <!-- JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- Mermaid.js -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
-    <!-- Marked.js for Markdown Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- KaTeX for Math Rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyUOFOicO2+t/I1H6584r8aQQYtStJKAlb8v8qWpTCQprvrc6ne3WlYhY/pZ6r" crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
     <script>
       const PDF_WORKER_SRC = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
       window.addEventListener('load', function() {
-         // Remove preloader when fully loaded
          const preloader = document.getElementById('preloader-core');
          if(preloader) {
-            // Check if React mounted (root has children), if not, wait a bit
             const root = document.getElementById('root');
             if (root && root.childElementCount > 0) {
                preloader.style.opacity = '0';
                preloader.style.pointerEvents = 'none';
                setTimeout(() => preloader.remove(), 500);
             } else {
-               // Fallback cleanup after 2 seconds if React is slow but working
                setTimeout(() => {
                    preloader.style.opacity = '0';
                    preloader.style.pointerEvents = 'none';
@@ -115,35 +86,30 @@
                }, 2000);
             }
          }
-
-         if (typeof pdfjsLib !== 'undefined') {
-           pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
-         }
-         if (typeof mermaid !== 'undefined') {
-           mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-         }
+         if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
+         if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'dark' });
       });
 
+      // --- THEME ENGINE ---
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
+            colors: {
+              // Semantic Colors mapped to CSS variables
+              'core': 'var(--bg-core)',
+              'panel': 'var(--bg-panel)',
+              'border-main': 'var(--border-main)',
+              'text-pri': 'var(--text-primary)',
+              'text-sec': 'var(--text-secondary)',
+              'accent': 'var(--accent-main)',
+              'accent-dim': 'var(--accent-dim)',
+            },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
               serif: ['Merriweather', 'serif'],
               mono: ['JetBrains Mono', 'monospace'],
             },
-            typography: (theme) => ({
-              DEFAULT: {
-                css: {
-                  color: theme('colors.gray.300'),
-                  strong: { color: theme('colors.white') },
-                  a: { color: theme('colors.blue.400'), '&:hover': { color: theme('colors.blue.300') } },
-                  code: { color: theme('colors.pink.400') },
-                  'ul > li::marker': { color: theme('colors.gray.500') },
-                },
-              },
-            }),
             animation: {
               'fade-in': 'fadeIn 0.6s ease-out',
               'slide-in': 'slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -168,46 +134,80 @@
               breathe: { '0%, 100%': { transform: 'scale(1)', opacity: '0.8' }, '50%': { transform: 'scale(1.1)', opacity: '0.4' } },
             }
           },
-        },
-        plugins: [
-          // Basic typo emulation via classes if plugin not loaded, though tailwind cdn handles a lot
-        ]
+        }
       }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-      body { background-color: #000000; color: #e8eaed; font-family: 'Inter', sans-serif; overscroll-behavior-y: none; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-      .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
-      .glass-panel { background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05); will-change: backdrop-filter; }
-      @media (max-width: 768px) { .glass-panel { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); } }
-      .text-shimmer { background: linear-gradient(to right, #9ca3af 20%, #ffffff 50%, #9ca3af 80%); background-size: 200% auto; color: transparent; background-clip: text; -webkit-background-clip: text; animation: shimmer 4s linear infinite; }
+      /* --- SEMANTIC THEME VARIABLES --- */
+      :root {
+        /* Default: Deep Space (OLED) */
+        --bg-core: #050505;
+        --bg-panel: rgba(20, 20, 20, 0.4);
+        --border-main: rgba(255, 255, 255, 0.08);
+        --text-primary: #e8eaed;
+        --text-secondary: #9ca3af;
+        --accent-main: #f59e0b; /* Amber */
+        --accent-dim: rgba(245, 158, 11, 0.2);
+        --noise-opacity: 0.04;
+      }
+
+      /* Theme: Ivy League (Light) */
+      [data-theme='ivy'] {
+        --bg-core: #f8f9fa;
+        --bg-panel: rgba(255, 255, 255, 0.8);
+        --border-main: rgba(0, 0, 0, 0.08);
+        --text-primary: #1a1a1a;
+        --text-secondary: #4b5563;
+        --accent-main: #2563eb; /* Royal Blue */
+        --accent-dim: rgba(37, 99, 235, 0.1);
+        --noise-opacity: 0.02;
+      }
+
+      /* Theme: Matrix (Hacker) */
+      [data-theme='matrix'] {
+        --bg-core: #000000;
+        --bg-panel: rgba(0, 20, 0, 0.9);
+        --border-main: #00ff00;
+        --text-primary: #00ff00;
+        --text-secondary: #008f00;
+        --accent-main: #00ff00;
+        --accent-dim: rgba(0, 255, 0, 0.1);
+        --noise-opacity: 0.1;
+      }
+
+      body { background-color: var(--bg-core); color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; transition: background-color 0.5s ease, color 0.5s ease; }
+      
+      .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: var(--noise-opacity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+      
+      .glass-panel { background: var(--bg-panel); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border-main); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); will-change: backdrop-filter; transition: background 0.5s ease, border 0.5s ease; }
+      
+      .text-shimmer { background: linear-gradient(to right, var(--text-secondary) 20%, var(--text-primary) 50%, var(--text-secondary) 80%); background-size: 200% auto; color: transparent; background-clip: text; -webkit-background-clip: text; animation: shimmer 4s linear infinite; }
+      
       ::-webkit-scrollbar { width: 4px; height: 4px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+      ::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--accent-main); }
+      
       .scrollbar-hide::-webkit-scrollbar { display: none; }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      .hover-lift { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-      .hover-lift:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4); }
+      
       #preloader-core { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
       .loader-spinner { width: 50px; height: 50px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      /* Markdown Styles */
-      .prose p { margin-bottom: 0.75em; }
-      .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
-      .prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
-      .prose strong { font-weight: 700; color: inherit; }
-      .prose h1, .prose h2, .prose h3 { font-weight: 700; margin-top: 1em; margin-bottom: 0.5em; line-height: 1.2; }
       
-      /* Print Styling for PDF Export */
+      .prose p { margin-bottom: 0.75em; color: var(--text-primary); }
+      .prose strong { font-weight: 700; color: var(--accent-main); }
+      .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; color: var(--text-secondary); }
+      
       @media print {
         body * { visibility: hidden; }
         #printable-content, #printable-content * { visibility: visible; }
-        #printable-content { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; }
+        #printable-content { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; font-family: serif; }
         .no-print { display: none !important; }
+        @page { size: auto; margin: 20mm; }
       }
     </style>
-  <!-- Polyfill for Import Maps on older browsers (iOS 15 / Safari < 16.4) -->
   <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
   <script type="importmap">
 {
@@ -216,7 +216,8 @@
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "react": "https://aistudiocdn.com/react@^19.2.1",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
+    "dompurify": "https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.es.min.js"
   }
 }
 </script>

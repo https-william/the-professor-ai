@@ -161,6 +161,7 @@ export interface HistoryItem {
   title: string;
   data: QuizState | ProfessorState | ChatState;
   config?: QuizConfig;
+  summary?: string; // Short 5-word summary of the source content
 }
 
 export interface ProcessedFile {
@@ -184,4 +185,19 @@ export interface SystemLog {
   adminEmail: string;
   targetUserId?: string;
   timestamp: any;
+}
+
+// Lock-In Mode Types
+export type LockInTechnique = 'SQ3R' | 'RETRIEVAL' | 'STANDARD';
+
+export interface LockInConfig {
+  technique: LockInTechnique;
+  usePomodoro: boolean;
+}
+
+export interface StudyProtocol {
+  survey?: string;
+  questions?: string[]; // SQ3R or Retrieval questions
+  step: 'SURVEY' | 'QUESTION' | 'READ' | 'RECITE' | 'REVIEW';
+  userNotes?: string;
 }
