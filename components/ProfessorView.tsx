@@ -221,7 +221,10 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
                     onClick={() => setShowLockInModal(true)}
                     className="px-4 py-2 bg-amber-500 text-black font-black uppercase text-xs tracking-wider rounded-xl hover:bg-amber-400 transition-transform hover:scale-105 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse-slow flex items-center gap-2"
                  >
-                    <span>🔒</span> Lock In
+                    <span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    </span> 
+                    Lock In
                  </button>
               </div>
 

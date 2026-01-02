@@ -36,28 +36,28 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           name: "Fresh Meat", 
           desc: "Complete your first exam.", 
           unlocked: (editedProfile.questionsAnswered || 0) > 0, 
-          icon: "🥩" 
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
       },
       { 
           id: 'academic_weapon', 
           name: "Academic Weapon", 
           desc: "Reach 1,000 XP.", 
           unlocked: (editedProfile.xp || 0) >= 1000, 
-          icon: "⚔️" 
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
       },
       { 
           id: 'no_life', 
           name: "No Life", 
           desc: "14 Day Streak.", 
           unlocked: (editedProfile.streak || 0) >= 14, 
-          icon: "🧟" 
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>
       },
       { 
           id: 'tenure', 
           name: "Tenure Track", 
           desc: "10,000 XP.", 
           unlocked: (editedProfile.xp || 0) >= 10000, 
-          icon: "🏛️" 
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
       }
   ];
 
@@ -123,7 +123,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                       {getCalendarDays().map((d, i) => (
                           <div key={i} className={`aspect-square rounded-lg flex flex-col items-center justify-center border transition-all ${d.active ? 'bg-amber-500 border-amber-400 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 border-white/5 text-gray-500'}`}>
                               <span className="text-[10px] font-bold">{d.date.getDate()}</span>
-                              {d.active && <span className="text-xs animate-bounce">🔥</span>}
+                              {d.active && (
+                                <span className="text-xs animate-bounce">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.45-.412-1.725a1 1 0 00-1.846-.487c-.135.51-.27 1.132-.375 1.837-.105.704-.183 1.48-.183 2.278 0 3.327 2.695 6.023 6.023 6.023 3.328 0 6.023-2.696 6.023-6.023 0-1.433-.46-2.756-1.242-3.822a1 1 0 00-1.764.775 2.023 2.023 0 01.378 1.047c0 .552-.224 1.054-.586 1.416a1 1 0 01-1.416-.002l-.002-.002a2.64 2.64 0 01-.397-.577 31.367 31.367 0 00-1.002-3.084 1 1 0 00-.395-1.5z" clipRule="evenodd" /></svg>
+                                </span>
+                              )}
                           </div>
                       ))}
                   </div>
@@ -134,7 +138,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {achievements.map(ach => (
                       <div key={ach.id} className={`p-4 rounded-xl border flex items-center gap-4 transition-all duration-300 ${ach.unlocked ? 'bg-gradient-to-r from-gray-900 to-black border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'bg-black/40 border-white/5 opacity-50 grayscale'}`}>
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${ach.unlocked ? 'bg-amber-500/20' : 'bg-gray-800'}`}>
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${ach.unlocked ? 'bg-amber-500/20 text-amber-500' : 'bg-gray-800 text-gray-500'}`}>
                               {ach.icon}
                           </div>
                           <div className="flex-1 min-w-0">

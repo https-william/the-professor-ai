@@ -34,7 +34,9 @@ export const PWAPrompt: React.FC = () => {
       <div className="bg-[#18181b] border border-amber-500/20 p-5 rounded-2xl shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
         <div className="flex items-start gap-4">
-           <div className="text-3xl">📱</div>
+           <div className="text-3xl text-amber-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+           </div>
            <div>
              <h4 className="font-serif font-bold text-amber-100 text-lg">Secure Connection?</h4>
              <p className="text-gray-400 text-xs mt-1 leading-relaxed">

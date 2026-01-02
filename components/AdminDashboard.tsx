@@ -151,8 +151,8 @@ export const AdminDashboard: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-amber-500/20 pb-6">
               <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-[#0f0f10] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.1)]">
-                      <span className="text-4xl">🏛️</span>
+                  <div className="w-20 h-20 bg-[#0f0f10] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.1)] text-amber-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" /></svg>
                   </div>
                   <div>
                       <h1 className="text-4xl md:text-5xl font-serif font-black text-amber-500 tracking-tight">DEAN'S OFFICE</h1>
@@ -200,7 +200,10 @@ export const AdminDashboard: React.FC = () => {
                             onClick={() => handleOpenDossier(user)}
                             className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-300 transition-all flex items-center justify-center gap-2"
                           >
-                             <span>📂</span> Open Dossier
+                             <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" /></svg>
+                             </span>
+                             Open Dossier
                           </button>
                       </div>
                   ))}
@@ -237,8 +240,8 @@ export const AdminDashboard: React.FC = () => {
                   {/* Modal Header */}
                   <div className="p-6 border-b border-white/5 bg-black/40 flex justify-between items-center">
                       <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-amber-900/20 rounded-xl border border-amber-500/20 flex items-center justify-center text-2xl">
-                              📁
+                          <div className="w-12 h-12 bg-amber-900/20 rounded-xl border border-amber-500/20 flex items-center justify-center text-2xl text-amber-500">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" /></svg>
                           </div>
                           <div>
                               <h2 className="text-xl font-bold text-white uppercase tracking-wider">Restricted Dossier</h2>

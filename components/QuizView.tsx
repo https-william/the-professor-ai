@@ -302,7 +302,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
                 {duelId ? (
                     <div className="flex flex-col h-full">
                         <div className="flex items-center gap-3 mb-6">
-                            <span className="text-2xl">🏆</span>
+                            <span className="text-2xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            </span>
                             <h3 className="text-lg font-bold text-white uppercase tracking-wider">Arena Standings</h3>
                         </div>
                         
@@ -319,7 +321,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
                                 <div key={p.id} className={`flex items-center justify-between p-3 rounded-xl border ${p.score !== undefined ? 'bg-amber-900/10 border-amber-500/20' : 'bg-white/5 border-white/5'}`}>
                                     <div className="flex items-center gap-3">
                                         <div className="font-mono text-amber-500 font-bold w-6">#{i + 1}</div>
-                                        <div className="text-sm font-bold text-gray-200">{p.name} {i === 0 && duelData.status === 'COMPLETED' && '👑'}</div>
+                                        <div className="text-sm font-bold text-gray-200 flex items-center gap-1">
+                                            {p.name} 
+                                            {i === 0 && duelData.status === 'COMPLETED' && (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.333A3.989 3.989 0 019.667 15 3.989 3.989 0 017 13.667 3.989 3.989 0 014.333 15A3.989 3.989 0 012 13.92a1 1 0 01-.285-1.05l1.738-5.42-1.233-.616a1 1 0 01.894-1.79l1.599.8L8.711 4.264V3a1 1 0 011-1zm-6 12a2 2 0 112-2 2 2 0 01-2 2zm6 0a2 2 0 112-2 2 2 0 01-2 2zm6 0a2 2 0 112-2 2 2 0 01-2 2z" clipRule="evenodd" /></svg>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="text-xs font-mono font-bold text-white">
                                         {p.status === 'COMPLETED' || p.suddenDeathStatus === 'COMPLETED' ? `${p.score}/${total}` : '...'}
@@ -332,7 +339,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
                 ) : (
                     <div className="flex flex-col justify-center items-center h-full text-center">
                         <div className="absolute inset-0 bg-amber-900/5"></div>
-                        <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 text-2xl border border-amber-500/30">👨‍🏫</div>
+                        <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 border border-amber-500/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>
+                        </div>
                         <p className="text-xl md:text-2xl text-amber-100 font-serif italic leading-relaxed px-4">
                             "Review your mistakes. The only real failure is stopping."
                         </p>

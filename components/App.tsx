@@ -610,7 +610,9 @@ const App: React.FC = () => {
                {userProfile.subscriptionTier === 'Fresher' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
                        <span>Upgrade</span>
-                       <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
+                       <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] text-orange-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+                       </span>
                    </button>
                )}
 
@@ -710,7 +712,9 @@ const App: React.FC = () => {
 
          {status === AppStatus.ERROR && (
              <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center animate-bounce-subtle">
-                 <div className="text-4xl mb-4">⚠️</div>
+                 <div className="text-4xl mb-4 text-red-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                 </div>
                  <h3 className="text-xl font-bold text-red-500 mb-2">System Failure</h3>
                  <p className="text-gray-400 mb-6">{errorMsg || "An unknown error occurred."}</p>
                  <button onClick={() => setStatus(AppStatus.IDLE)} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold uppercase text-xs hover:bg-red-500 transition-colors">Reboot System</button>
@@ -731,7 +735,9 @@ const App: React.FC = () => {
             onClick={handleOpenFloatingChat}
             className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group"
           >
-              <span className="text-2xl group-hover:animate-wiggle">💬</span>
+              <span className="group-hover:animate-wiggle text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+              </span>
           </button>
       )}
     </div>

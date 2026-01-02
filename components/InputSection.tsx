@@ -272,17 +272,23 @@ export const InputSection: React.FC<InputSectionProps> = ({
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowDuelSelector(false)}>
               <div className="bg-[#18181b] border border-purple-500/30 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
                   <div className="text-center mb-6">
-                      <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 border border-purple-500/20">⚔️</div>
+                      <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 border border-purple-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      </div>
                       <h3 className="text-white font-bold text-lg">Enter The Arena</h3>
                       <p className="text-gray-400 text-xs">Choose your path, gladiator.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                       <button onClick={() => { setShowDuelSelector(false); setShowDuelCreate(true); }} className="p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition-all flex flex-col items-center gap-2">
-                          <span className="text-2xl">🔥</span>
+                          <span className="text-purple-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>
+                          </span>
                           <span className="text-xs font-bold uppercase tracking-wider text-white">Create Duel</span>
                       </button>
                       <button onClick={() => { setShowDuelSelector(false); setShowDuelJoin(true); }} className="p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition-all flex flex-col items-center gap-2">
-                          <span className="text-2xl">🛡️</span>
+                          <span className="text-purple-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                          </span>
                           <span className="text-xs font-bold uppercase tracking-wider text-white">Join Code</span>
                       </button>
                   </div>
@@ -337,9 +343,24 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
             {/* Premium Protocol Cards */}
             <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 mt-2">
-               <button onClick={() => setUseOracle(!useOracle)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useOracle ? 'bg-amber-900/30 border-amber-500/50 text-amber-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}><span className="text-lg">🔮</span><span className="text-[10px] font-bold uppercase tracking-widest">The Oracle</span></button>
-               <button onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useWeaknessDestroyer ? 'bg-red-900/30 border-red-500/50 text-red-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}><span className="text-lg">🎯</span><span className="text-[10px] font-bold uppercase tracking-widest">Weakness Destroyer</span></button>
-               <button onClick={() => setIsCramMode(!isCramMode)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${isCramMode ? 'bg-cyan-900/30 border-cyan-500/50 text-cyan-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}><span className="text-lg">⚡</span><span className="text-[10px] font-bold uppercase tracking-widest">Cram Mode</span></button>
+               <button onClick={() => setUseOracle(!useOracle)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useOracle ? 'bg-amber-900/30 border-amber-500/50 text-amber-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}>
+                 <span className="text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>
+                 </span>
+                 <span className="text-[10px] font-bold uppercase tracking-widest">The Oracle</span>
+               </button>
+               <button onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useWeaknessDestroyer ? 'bg-red-900/30 border-red-500/50 text-red-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}>
+                 <span className="text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                 </span>
+                 <span className="text-[10px] font-bold uppercase tracking-widest">Weakness Destroyer</span>
+               </button>
+               <button onClick={() => setIsCramMode(!isCramMode)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${isCramMode ? 'bg-cyan-900/30 border-cyan-500/50 text-cyan-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}>
+                 <span className="text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
+                 </span>
+                 <span className="text-[10px] font-bold uppercase tracking-widest">Cram Mode</span>
+               </button>
             </div>
 
             {/* Main Upload Area */}
@@ -399,7 +420,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
                                 {selectedFiles.map((f, i) => (
                                   <div key={i} className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
                                     <div className="flex items-center gap-3 overflow-hidden">
-                                        <span className="text-xl">📄</span>
+                                        <span className="text-xl">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" /></svg>
+                                        </span>
                                         <div className="min-w-0">
                                             <div className="text-xs text-gray-200 truncate font-medium">{f.name}</div>
                                             <div className="text-[9px] text-gray-500 uppercase">{(f.size / 1024 / 1024).toFixed(1)} MB</div>
@@ -414,7 +437,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                           ) : (
                             <div className="text-center p-6">
                               <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 group-hover:scale-110 transition-transform duration-300 shadow-xl text-white">
-                                📁
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                               </div>
                               <p className="text-gray-300 font-bold text-sm">Drop lecture materials here</p>
                               <div className="flex gap-2 justify-center mt-3">
@@ -422,7 +445,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                                     onClick={(e) => { e.stopPropagation(); setShowCamera(true); }}
                                     className="px-3 py-1.5 bg-white/10 rounded-lg text-[10px] uppercase font-bold text-blue-300 hover:bg-white/20 transition-colors flex items-center gap-1"
                                   >
-                                    📸 Scan Page
+                                    <span>📸</span> Scan Page
                                   </button>
                               </div>
                             </div>
@@ -439,20 +462,28 @@ export const InputSection: React.FC<InputSectionProps> = ({
             <div className="p-4 border-t border-white/10 bg-[#0a0a0a] shrink-0">
                <div className="grid grid-cols-4 gap-2 mb-3">
                    <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 group">
-                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">⚔️</span>
+                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      </span>
                       <span className="text-[8px] font-bold uppercase tracking-wide text-purple-400">Duel</span>
                    </button>
                    <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all gap-1 group">
-                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">💬</span>
+                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                      </span>
                       <span className="text-[8px] font-bold uppercase tracking-wide text-amber-500">Chat</span>
                    </button>
                    <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all gap-1 group">
-                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">🎴</span>
+                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                      </span>
                       <span className="text-[8px] font-bold uppercase tracking-wide text-indigo-400">Cards</span>
                    </button>
                    {isScholar && (
                        <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all gap-1 group">
-                          <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">🤝</span>
+                          <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                          </span>
                           <span className="text-[8px] font-bold uppercase tracking-wide text-green-400">Group</span>
                        </button>
                    )}
@@ -483,7 +514,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     <div className="absolute bottom-full left-0 mb-3 flex gap-2 flex-wrap w-full">
                         {selectedFiles.map((f, i) => (
                             <div key={i} className="bg-[#1a1a1a] border border-amber-500/20 rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs text-amber-100 shadow-lg animate-fade-in ring-1 ring-amber-500/10">
-                                <span className="text-lg">📄</span>
+                                <span className="text-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                </span>
                                 <span className="truncate max-w-[150px] font-mono">{f.name}</span>
                                 <button onClick={() => removeFile(i)} className="text-amber-500 hover:text-red-400 ml-1 transition-colors">✕</button>
                             </div>
