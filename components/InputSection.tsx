@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, AppMode, AIPersonality, AnalogyDomain, UserProfile, DriveFile } from '../types';
+import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, AppMode, AIPersonality, AnalogyDomain, UserProfile } from '../types';
 import { processFile } from '../services/fileService';
 import { CameraScanner } from './CameraScanner';
 import { DuelCreateModal } from './DuelCreateModal';
@@ -31,7 +31,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
   defaultConfig, 
   userProfile,
   onShowSubscription,
-  onOpenProfile,
   onDuelStart,
   onDuelJoin
 }) => {
@@ -48,6 +47,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [showCamera, setShowCamera] = useState(false);
   const [showDuelCreate, setShowDuelCreate] = useState(false);
   const [showDuelJoin, setShowDuelJoin] = useState(false);
+  const [showDuelSelector, setShowDuelSelector] = useState(false); // New consolidated modal
   const [showStudyRoomModal, setShowStudyRoomModal] = useState(false);
 
   // Config State
@@ -82,10 +82,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   // --- DRIVE PICKER HANDLER ---
   const handleDrivePicker = async () => {
       try {
-          // 1. Get Access Token via Firebase Auth (Incremental Scope)
           const provider = new GoogleAuthProvider();
           provider.addScope(DRIVE_SCOPE); 
-          // prompt='select_account' forces the account chooser, ensuring we get a fresh token with scopes
           provider.setCustomParameters({ prompt: 'select_account' });
           
           const result = await signInWithPopup(auth, provider);
@@ -95,12 +93,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
               throw new Error("Failed to get Google Access Token.");
           }
 
-          // 2. Open Google Picker
           const driveFiles = await openDrivePicker(credential.accessToken);
           
           if (driveFiles.length === 0) return;
 
-          // 3. Download Files
           setIngestionStatus(`Importing ${driveFiles.length} files from Drive...`);
           setUploadProgress(10);
 
@@ -111,17 +107,17 @@ export const InputSection: React.FC<InputSectionProps> = ({
               const blob = await downloadDriveFile(df.id, df.mimeType, credential.accessToken);
               const file = new File([blob], df.name, { type: df.mimeType });
               processedBlobs.push(file);
-              setUploadProgress(10 + ((i + 1) / driveFiles.length) * 40); // Drive download is 10-50%
+              setUploadProgress(10 + ((i + 1) / driveFiles.length) * 40);
           }
 
           addFiles(processedBlobs);
           setIngestionStatus('');
           setUploadProgress(0);
-          setActiveTab('FILE'); // Switch to file view to show them
+          setActiveTab('FILE'); 
 
       } catch (error: any) {
           console.error("Drive Error:", error);
-          if (error.message && error.message.includes('popup')) return; // Ignore popup closed
+          if (error.message && error.message.includes('popup')) return;
           setFileError("Drive Connection Failed: " + (error.message || "Unknown Error"));
           setIngestionStatus('');
       }
@@ -205,7 +201,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
     try {
       let fullContent = "";
       
-      // Standard File Processing
       if (selectedFiles.length > 0) {
          setUploadProgress(15);
          for (let i = 0; i < selectedFiles.length; i++) {
@@ -218,7 +213,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
          }
       }
 
-      // Append text input based on mode
       if (finalMode === 'PROFESSOR') {
          if (chatInput.trim()) fullContent += `\n\nUser Context/Question: ${chatInput}`;
          if (!fullContent.trim()) { setFileError("Please ask a question or upload a file."); return; }
@@ -244,7 +238,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   const handleCameraCapture = (base64: string) => {
       setShowCamera(false);
-      // Create a dummy file from base64
       const byteCharacters = atob(base64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -274,6 +267,29 @@ export const InputSection: React.FC<InputSectionProps> = ({
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
       {showStudyRoomModal && <StudyRoomModal onClose={() => setShowStudyRoomModal(false)} user={userProfile} />}
 
+      {/* Consolidated Duel Selector Modal */}
+      {showDuelSelector && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowDuelSelector(false)}>
+              <div className="bg-[#18181b] border border-purple-500/30 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                  <div className="text-center mb-6">
+                      <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 border border-purple-500/20">⚔️</div>
+                      <h3 className="text-white font-bold text-lg">Enter The Arena</h3>
+                      <p className="text-gray-400 text-xs">Choose your path, gladiator.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                      <button onClick={() => { setShowDuelSelector(false); setShowDuelCreate(true); }} className="p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition-all flex flex-col items-center gap-2">
+                          <span className="text-2xl">🔥</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-white">Create Duel</span>
+                      </button>
+                      <button onClick={() => { setShowDuelSelector(false); setShowDuelJoin(true); }} className="p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition-all flex flex-col items-center gap-2">
+                          <span className="text-2xl">🛡️</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-white">Join Code</span>
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* Mode Switcher */}
       <div className="flex justify-center items-center mb-6 shrink-0">
         <div className="relative bg-[#0a0a0a] backdrop-blur-xl p-2 rounded-2xl border border-white/10 flex w-full max-w-md shadow-2xl">
@@ -294,123 +310,77 @@ export const InputSection: React.FC<InputSectionProps> = ({
         {/* EXAM VIEW */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
             
-            {/* GRID LAYOUT FOR CONFIG */}
-            <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md p-3">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full">
-                  {/* Difficulty */}
-                  <div className="relative group w-full">
-                      <select 
-                        value={difficulty} 
-                        onChange={(e) => setDifficulty(e.target.value as Difficulty)} 
-                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all text-center"
-                      >
-                          <option value="Easy">Easy</option>
-                          <option value="Medium">Medium</option>
-                          <option value="Hard">Hard</option>
-                          <option value="Nightmare">Nightmare 💀</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
-                  </div>
-
-                  {/* Format */}
-                  <div className="relative group w-full">
-                      <select 
-                        value={questionType} 
-                        onChange={(e) => setQuestionType(e.target.value as QuestionType)} 
-                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all text-center truncate"
-                      >
-                          <option value="Multiple Choice">Multiple Choice</option>
-                          <option value="True/False">True / False</option>
-                          <option value="Fill in the Gap">Fill in the Gap</option>
-                          <option value="Select All That Apply">Multi-Select</option>
-                          <option value="Scenario-based">Scenario</option>
-                          <option value="Mixed">Mixed</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
-                  </div>
-
-                  {/* Timer */}
-                  <div className="relative group w-full">
-                      <select 
-                        value={timerDuration} 
-                        onChange={(e) => setTimerDuration(e.target.value as TimerDuration)} 
-                        disabled={isCramMode}
-                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all disabled:opacity-50 text-center"
-                      >
-                          <option value="Limitless">No Timer</option>
-                          <option value="5m">5 Mins</option>
-                          <option value="10m">10 Mins</option>
-                          <option value="30m">30 Mins</option>
-                          <option value="1h">1 Hour</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
-                  </div>
-
-                  {/* Count */}
-                  <div className="relative group w-full">
-                      <select 
-                        value={questionCount} 
-                        onChange={(e) => setQuestionCount(parseInt(e.target.value))} 
-                        className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all text-center"
-                      >
-                          <option value="5">5 Questions</option>
-                          <option value="10">10 Questions</option>
-                          <option value="15">15 Questions</option>
-                          <option value="20">20 Questions</option>
-                          <option value="30">30 Questions</option>
-                          <option value="50">50 Questions</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-[8px]">▼</div>
-                  </div>
+            {/* CLEANER CONFIG GRID */}
+            <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md p-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+                  {[
+                      { label: "Difficulty", value: difficulty, setter: setDifficulty, options: ["Easy", "Medium", "Hard", "Nightmare"] },
+                      { label: "Format", value: questionType, setter: setQuestionType, options: ["Multiple Choice", "True/False", "Fill in the Gap", "Select All That Apply", "Mixed"] },
+                      { label: "Timer", value: timerDuration, setter: setTimerDuration, options: ["Limitless", "5m", "10m", "30m", "1h"], disabled: isCramMode },
+                      { label: "Count", value: questionCount, setter: (v: string) => setQuestionCount(parseInt(v)), options: ["5", "10", "15", "20", "30", "50"] }
+                  ].map((field, idx) => (
+                      <div key={idx} className="relative group w-full">
+                          <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1 block pl-1">{field.label}</label>
+                          <select 
+                            value={field.value} 
+                            onChange={(e) => field.setter(e.target.value as any)} 
+                            disabled={field.disabled}
+                            className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-3 py-2.5 text-xs font-bold text-white outline-none cursor-pointer transition-all disabled:opacity-50"
+                          >
+                              {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                          </select>
+                          <div className="pointer-events-none absolute bottom-3 right-3 flex items-center text-gray-500 text-[8px]">▼</div>
+                      </div>
+                  ))}
               </div>
             </div>
 
             {/* Premium Protocol Cards */}
-            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-4 shrink-0 mt-2">
-               <button onClick={() => setUseOracle(!useOracle)} className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${useOracle ? 'bg-gradient-to-r from-amber-950 to-orange-900 border-amber-500 text-amber-200' : 'bg-[#151515] border-white/20 text-gray-300'}`}><div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10"><div className={`w-2 h-2 rounded-full ${useOracle ? 'bg-amber-400 animate-pulse' : 'bg-gray-500'}`}></div>The Oracle</div></button>
-               <button onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${useWeaknessDestroyer ? 'bg-gradient-to-r from-red-950 to-rose-900 border-red-600 text-red-200' : 'bg-[#151515] border-white/20 text-gray-300'}`}><div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10"><div className={`w-2 h-2 rounded-full ${useWeaknessDestroyer ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>Weakness Destroyer</div></button>
-               <button onClick={() => setIsCramMode(!isCramMode)} className={`p-4 rounded-xl border flex flex-col items-start gap-1 transition-all relative overflow-hidden group ${isCramMode ? 'bg-gradient-to-r from-cyan-950 to-blue-900 border-cyan-500 text-cyan-200' : 'bg-[#151515] border-white/20 text-gray-300'}`}><div className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 relative z-10"><div className={`w-2 h-2 rounded-full ${isCramMode ? 'bg-cyan-400 animate-pulse' : 'bg-gray-500'}`}></div>Cram Mode</div></button>
+            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 mt-2">
+               <button onClick={() => setUseOracle(!useOracle)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useOracle ? 'bg-amber-900/30 border-amber-500/50 text-amber-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}><span className="text-lg">🔮</span><span className="text-[10px] font-bold uppercase tracking-widest">The Oracle</span></button>
+               <button onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useWeaknessDestroyer ? 'bg-red-900/30 border-red-500/50 text-red-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}><span className="text-lg">🎯</span><span className="text-[10px] font-bold uppercase tracking-widest">Weakness Destroyer</span></button>
+               <button onClick={() => setIsCramMode(!isCramMode)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${isCramMode ? 'bg-cyan-900/30 border-cyan-500/50 text-cyan-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}><span className="text-lg">⚡</span><span className="text-[10px] font-bold uppercase tracking-widest">Cram Mode</span></button>
             </div>
 
             {/* Main Upload Area */}
-            <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar min-h-[300px]">
+            <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar min-h-[250px]">
+               
+               {/* New Segmented Control Tabs */}
                <div className="flex justify-center mb-6 shrink-0">
-                <div className="bg-black/40 p-1.5 rounded-2xl flex gap-1 border border-white/10 shadow-lg w-full sm:w-auto overflow-hidden">
-                    <button onClick={() => setActiveTab('FILE')} className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'FILE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Files</button>
-                    <button onClick={() => setActiveTab('DRIVE')} className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'DRIVE' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Drive</button>
-                    <button onClick={() => setActiveTab('TEXT')} className={`flex-1 sm:flex-none px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'TEXT' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Text</button>
+                <div className="bg-[#1a1a1a] p-1 rounded-xl flex border border-white/10 shadow-lg w-full max-w-sm">
+                    {['FILE', 'DRIVE', 'TEXT'].map((tab) => (
+                        <button 
+                            key={tab}
+                            onClick={() => setActiveTab(tab as any)} 
+                            className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${activeTab === tab ? 'bg-white text-black shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
                 </div>
               </div>
 
               <div className="flex-1 flex flex-col min-h-0">
                 {activeTab === 'DRIVE' ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-fade-in">
-                        <div className="w-16 h-16 bg-green-900/20 rounded-2xl flex items-center justify-center border border-green-500/20 mb-2">
-                            <svg className="w-8 h-8 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12.01 1.485c2.082 0 3.754.02 4.959.084 1.38.074 2.47.334 3.376 1.24.906.906 1.166 1.996 1.24 3.376.064 1.205.084 2.877.084 4.959v1.652c0 2.082-.02 3.754-.084 4.959-.074 1.38-.334 2.47-1.24 3.376-.906.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959.084s-3.754-.02-4.959-.084c-1.38-.074-2.47-.334-3.376-1.24-.906-.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959v-1.652c0-2.082.02-3.754.084-4.959.074-1.38.334-2.47 1.24-3.376.906-.906 1.996-1.166 3.376-1.24 1.205-.064 2.877-.084 4.959-.084Zm-2.735 9.17-2.313 4.008h4.626l2.314-4.008H9.275Zm-3.47 6.012h9.252l-2.313-4.008H7.036l-1.23 2.13L4.65 12.63l-1.231 2.13 2.386 1.908ZM17.14 7.333H7.888l2.313 4.008h9.252l-2.313-4.008Z"/></svg>
+                    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-fade-in py-8 border-2 border-dashed border-white/5 rounded-3xl bg-black/20">
+                        <div className="w-14 h-14 bg-green-900/20 rounded-2xl flex items-center justify-center border border-green-500/20 mb-2">
+                            <svg className="w-7 h-7 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12.01 1.485c2.082 0 3.754.02 4.959.084 1.38.074 2.47.334 3.376 1.24.906.906 1.166 1.996 1.24 3.376.064 1.205.084 2.877.084 4.959v1.652c0 2.082-.02 3.754-.084 4.959-.074 1.38-.334 2.47-1.24 3.376-.906.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959.084s-3.754-.02-4.959-.084c-1.38-.074-2.47-.334-3.376-1.24-.906-.906-1.166-1.996-1.24-3.376-.064-1.205-.084-2.877-.084-4.959v-1.652c0-2.082.02-3.754.084-4.959.074-1.38.334-2.47 1.24-3.376.906-.906 1.996-1.166 3.376-1.24 1.205-.064 2.877-.084 4.959-.084Zm-2.735 9.17-2.313 4.008h4.626l2.314-4.008H9.275Zm-3.47 6.012h9.252l-2.313-4.008H7.036l-1.23 2.13L4.65 12.63l-1.231 2.13 2.386 1.908ZM17.14 7.333H7.888l2.313 4.008h9.252l-2.313-4.008Z"/></svg>
                         </div>
-                        <h3 className="text-xl font-bold text-white">Select from Google Drive</h3>
-                        <p className="text-sm text-gray-400 max-w-xs">
-                            Select multiple files (Hold Shift/Cmd) to import entire lectures at once.
+                        <h3 className="text-lg font-bold text-white">Google Drive Import</h3>
+                        <p className="text-xs text-gray-400 max-w-xs leading-relaxed">
+                            Connect your drive to select multiple lectures or folders.
                         </p>
                         <button 
                             onClick={handleDrivePicker}
-                            className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg transition-all flex items-center gap-2 mt-2"
+                            className="px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold uppercase text-[10px] tracking-widest shadow-lg transition-all flex items-center gap-2 mt-2"
                         >
-                            Open File Picker
+                            Connect Drive
                         </button>
                     </div>
                 ) : activeTab === 'FILE' ? (
                   <div className="flex flex-col gap-4 h-full">
-                      <button 
-                        onClick={() => setShowCamera(true)}
-                        className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center justify-center gap-2 text-blue-400"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        Scan Textbook Page
-                      </button>
-
                       <div 
-                        className={`flex-grow border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[150px] ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
+                        className={`flex-grow border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[180px] ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
                         onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
                       >
@@ -427,75 +397,65 @@ export const InputSection: React.FC<InputSectionProps> = ({
                             <div className="w-full h-full p-4 overflow-y-auto custom-scrollbar">
                               <div className="grid grid-cols-1 gap-2">
                                 {selectedFiles.map((f, i) => (
-                                  <div key={i} className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                  <div key={i} className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
                                     <div className="flex items-center gap-3 overflow-hidden">
-                                        <span className="text-2xl">📄</span>
-                                        <span className="text-sm text-gray-200 truncate font-medium">{f.name}</span>
+                                        <span className="text-xl">📄</span>
+                                        <div className="min-w-0">
+                                            <div className="text-xs text-gray-200 truncate font-medium">{f.name}</div>
+                                            <div className="text-[9px] text-gray-500 uppercase">{(f.size / 1024 / 1024).toFixed(1)} MB</div>
+                                        </div>
                                     </div>
                                     <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-gray-500 hover:text-red-400 p-2">✕</button>
                                   </div>
                                 ))}
                               </div>
-                              <p className="text-xs text-center text-gray-500 mt-4">{selectedFiles.length} / {fileLimit} Files</p>
+                              <p className="text-[10px] text-center text-gray-500 mt-4">{selectedFiles.length} / {fileLimit} Files Attached</p>
                             </div>
                           ) : (
                             <div className="text-center p-6">
-                              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 group-hover:scale-110 transition-transform duration-300 shadow-xl">
-                                <span className="text-3xl">📁</span>
+                              <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 group-hover:scale-110 transition-transform duration-300 shadow-xl text-white">
+                                📁
                               </div>
-                              <p className="text-gray-300 font-bold text-sm">Drop notes or <span className="text-blue-400">ZIP archive</span></p>
-                              <p className="text-gray-500 text-xs mt-2">PDF, DOCX, ZIP (Max 50MB)</p>
+                              <p className="text-gray-300 font-bold text-sm">Drop lecture materials here</p>
+                              <div className="flex gap-2 justify-center mt-3">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setShowCamera(true); }}
+                                    className="px-3 py-1.5 bg-white/10 rounded-lg text-[10px] uppercase font-bold text-blue-300 hover:bg-white/20 transition-colors flex items-center gap-1"
+                                  >
+                                    📸 Scan Page
+                                  </button>
+                              </div>
                             </div>
                           )}
                       </div>
-                      
-                      {/* Bulk Import Tip */}
-                      <div className="bg-blue-900/10 border border-blue-500/20 p-3 rounded-xl flex items-start gap-3">
-                          <span className="text-blue-400 text-lg">💡</span>
-                          <div>
-                              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Bulk Import Trick</p>
-                              <p className="text-xs text-gray-400 leading-relaxed">
-                                  Use the <strong>Drive</strong> tab to select multiple files at once, or drop a <strong>.zip</strong> here.
-                              </p>
-                          </div>
-                      </div>
                   </div>
                 ) : (
-                  <textarea className="w-full flex-grow bg-black/20 text-gray-200 rounded-3xl p-6 border border-white/10 focus:border-blue-500/50 outline-none resize-none text-sm font-mono leading-relaxed placeholder-gray-600 min-h-[200px]" placeholder="Paste raw text notes..." value={textInput} onChange={(e) => setTextInput(e.target.value)} />
+                  <textarea className="w-full flex-grow bg-black/20 text-gray-200 rounded-3xl p-6 border border-white/10 focus:border-blue-500/50 outline-none resize-none text-sm font-mono leading-relaxed placeholder-gray-600 min-h-[200px]" placeholder="Paste raw notes, syllabus, or essay text here..." value={textInput} onChange={(e) => setTextInput(e.target.value)} />
                 )}
               </div>
             </div>
 
             {/* Sticky Actions Footer */}
             <div className="p-4 border-t border-white/10 bg-[#0a0a0a] shrink-0">
-               {/* 
-                  Responsive Action Buttons
-               */}
-               <div className="w-full max-w-full overflow-hidden">
-                   <div className="grid grid-cols-4 sm:flex sm:flex-wrap sm:justify-center gap-2 mb-3 w-full">
-                       <button onClick={() => setShowDuelCreate(true)} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 sm:gap-3 group">
-                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">⚔️</span>
-                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-purple-400">Create Duel</span>
+               <div className="grid grid-cols-4 gap-2 mb-3">
+                   <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 group">
+                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">⚔️</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wide text-purple-400">Duel</span>
+                   </button>
+                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all gap-1 group">
+                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">💬</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wide text-amber-500">Chat</span>
+                   </button>
+                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all gap-1 group">
+                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">🎴</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wide text-indigo-400">Cards</span>
+                   </button>
+                   {isScholar && (
+                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all gap-1 group">
+                          <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">🤝</span>
+                          <span className="text-[8px] font-bold uppercase tracking-wide text-green-400">Group</span>
                        </button>
-                       <button onClick={() => setShowDuelJoin(true)} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 sm:gap-3 group">
-                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">🛡️</span>
-                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-purple-400">Join Duel</span>
-                       </button>
-                       <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all gap-1 sm:gap-3 group">
-                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">💬</span>
-                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-amber-500">AI Chat</span>
-                       </button>
-                       <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="flex flex-col sm:flex-row items-center justify-center py-3 sm:px-5 sm:py-3 rounded-2xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all gap-1 sm:gap-3 group">
-                          <span className="text-xl sm:text-lg filter grayscale group-hover:grayscale-0 transition-all">🎴</span>
-                          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-indigo-400">Flashcards</span>
-                       </button>
-                       {isScholar && (
-                           <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="col-span-4 sm:col-span-1 flex flex-col sm:flex-row items-center justify-center py-2 sm:px-5 sm:py-3 rounded-2xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all gap-2 group mt-1 sm:mt-0">
-                              <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">🤝</span>
-                              <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wide text-green-400">Syndicate</span>
-                           </button>
-                       )}
-                   </div>
+                   )}
                </div>
 
                <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
@@ -531,7 +491,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     </div>
                   )}
 
-                  {/* Fix: Added padding-right (pr-48) to prevent text from going under the buttons on mobile */}
                   <input 
                     type="text" 
                     value={chatInput} 
@@ -557,7 +516,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
              </div>
              
-             {/* Fix: Added margin top and z-index to ensure text is below input visually */}
              <div className="mt-6 flex items-center gap-2 relative z-0">
                 <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
                 <p className="text-xs text-gray-500 font-mono uppercase tracking-widest">The Professor is listening.</p>

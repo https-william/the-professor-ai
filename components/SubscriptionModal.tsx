@@ -11,16 +11,15 @@ interface SubscriptionModalProps {
 
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, currentTier, onUpgrade }) => {
   const [loading, setLoading] = useState(false);
+  const [currency, setCurrency] = useState<'NGN' | 'USD'>('NGN');
 
   if (!isOpen) return null;
 
-  const handleStripeCheckout = (tierId: SubscriptionTier, price: number) => {
+  const handleCheckout = (tierId: SubscriptionTier, price: number) => {
     setLoading(true);
     
-    // Simulate Stripe Checkout Redirect
-    // In a real app, this would call a backend to create a Stripe Session
     setTimeout(() => {
-        const confirm = window.confirm("Redirecting to Stripe Secure Checkout...\n\n(Simulation: Click OK to complete payment)");
+        const confirm = window.confirm("Redirecting to Secure Checkout...\n\n(Simulation: Click OK to complete payment)");
         if (confirm) {
             onUpgrade(tierId);
             alert("Payment Successful! Welcome to The Professor " + tierId + ".");
@@ -48,8 +47,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Scholar' as SubscriptionTier,
       name: 'The Scholar',
-      priceDisplay: '₦2,000',
-      amount: 2000,
+      priceDisplay: currency === 'NGN' ? '₦2,000' : '$5',
+      amount: currency === 'NGN' ? 2000 : 5,
       desc: "For the 5.0 GPA chaser.",
       features: [
         'Unlimited Quizzes',
@@ -64,8 +63,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Excellentia Supreme' as SubscriptionTier,
       name: 'Excellentia Supreme',
-      priceDisplay: '₦5,000',
-      amount: 5000,
+      priceDisplay: currency === 'NGN' ? '₦5,000' : '$12',
+      amount: currency === 'NGN' ? 5000 : 12,
       desc: "Academic Immortality.",
       features: [
         'Nightmare Difficulty Unlocked',
@@ -89,7 +88,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
              <span className="text-2xl">🎓</span>
              <h2 className="text-xl font-bold text-white">Tuition Plans</h2>
            </div>
-           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">✕</button>
+           
+           <div className="flex bg-white/10 rounded-lg p-1">
+               <button onClick={() => setCurrency('NGN')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${currency === 'NGN' ? 'bg-white text-black' : 'text-gray-400'}`}>NGN</button>
+               <button onClick={() => setCurrency('USD')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-white text-black' : 'text-gray-400'}`}>USD</button>
+           </div>
+
+           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-4">✕</button>
         </div>
 
         <div className="overflow-y-auto p-4 md:p-8 custom-scrollbar">
@@ -137,7 +142,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                    </ul>
 
                    <button 
-                     onClick={() => handleStripeCheckout(tier.id, tier.amount)}
+                     onClick={() => handleCheckout(tier.id, tier.amount)}
                      disabled={loading}
                      className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                        currentTier === tier.id 
@@ -145,12 +150,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                          : 'bg-[#635BFF] text-white hover:bg-[#5349e0] shadow-lg'
                      }`}
                    >
-                     {loading ? 'Redirecting...' : (currentTier === tier.id ? 'Current Plan' : (
-                         <>
-                            <span>Pay with</span>
-                            <span className="font-black italic">Stripe</span>
-                         </>
-                     ))}
+                     {loading ? 'Redirecting...' : (currentTier === tier.id ? 'Current Plan' : 'Secure Checkout')}
                    </button>
                 </div>
               ))}

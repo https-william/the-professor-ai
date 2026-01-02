@@ -330,10 +330,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col justify-center items-center h-full">
+                    <div className="flex flex-col justify-center items-center h-full text-center">
                         <div className="absolute inset-0 bg-amber-900/5"></div>
                         <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 text-2xl border border-amber-500/30">👨‍🏫</div>
-                        <p className="text-xl md:text-2xl text-amber-100 font-serif italic text-center leading-relaxed">
+                        <p className="text-xl md:text-2xl text-amber-100 font-serif italic leading-relaxed px-4">
                             "Review your mistakes. The only real failure is stopping."
                         </p>
                         <div className="mt-8 text-[10px] font-bold uppercase tracking-widest text-amber-500/60">
@@ -428,8 +428,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
                           <div className="flex-1">
                               <strong className="block text-blue-400 uppercase tracking-wider text-[10px] mb-1">Explanation</strong>
                               {simpleExpl ? (
-                                  <div className="animate-fade-in bg-amber-900/10 p-2 rounded border border-amber-500/20 text-amber-100">
-                                      <strong className="text-amber-500 text-[9px] uppercase block mb-1">Simplified (ELI ...):</strong>
+                                  <div className="animate-fade-in bg-amber-900/20 p-3 rounded-lg border border-amber-500/30 text-amber-100 leading-relaxed shadow-lg">
+                                      <strong className="text-amber-500 text-[9px] uppercase block mb-1">Simplification (ELI5)</strong>
                                       {simpleExpl}
                                   </div>
                               ) : (
@@ -443,7 +443,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                             disabled={!!simpleExpl || loadingExplanation === q.id}
                             className="text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors text-gray-400 hover:text-white disabled:opacity-50"
                           >
-                            {loadingExplanation === q.id ? 'Translating...' : 'ELI 5'}
+                            {loadingExplanation === q.id ? 'Translating...' : 'Explain Like I\'m 5'}
                           </button>
                       </div>
                   </div>

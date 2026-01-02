@@ -414,9 +414,10 @@ export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'E
     const cached = getFromCache<string>(cacheKey);
     if (cached) return cached;
 
-    const systemPrompt = "You are a helpful tutor.";
+    const systemPrompt = "You are a helpful tutor. Be extremely concise.";
+    // STRICT LENGTH CONSTRAINT ADDED
     const userPrompt = type === 'ELI5' 
-        ? `Explain this simply (ELI5): "${explanation}"`
+        ? `Explain this in strictly 2 short sentences using simple analogies (ELI5): "${explanation}"`
         : `Rewrite this as ${context}: "${explanation}"`;
 
     try {

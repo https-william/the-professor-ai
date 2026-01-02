@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { HistoryItem } from '../types';
-import { getHistorySnippet } from '../services/storageService';
+import { getHistorySnippet, clearCurrentSession } from '../services/storageService';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -56,6 +56,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
       case 'DUEL': return '⚔️';
       default: return '📄';
     }
+  };
+
+  const handleClearAll = () => {
+      if (confirm("WARNING: This will incinerate your entire library. Confirm?")) {
+          // In a real app, we'd lift this state up, but for now we iterate deletes
+          history.forEach(h => onDelete(h.id));
+      }
   };
 
   return (
@@ -152,7 +159,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
                                 
                                 {item.summary && (
                                     <div className="bg-black/30 rounded px-2 py-1 mb-1 border border-white/5 inline-block">
-                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide truncate max-w-[150px]">
                                             {item.summary}
                                         </p>
                                     </div>
@@ -180,6 +187,18 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
              ))
            )}
         </div>
+
+        {/* Footer */}
+        {history.length > 0 && (
+            <div className="p-4 border-t border-white/10 bg-[#121214]">
+                <button 
+                    onClick={handleClearAll}
+                    className="w-full py-3 bg-red-900/10 border border-red-500/20 text-red-500 hover:bg-red-900/20 rounded-xl font-bold uppercase text-xs tracking-widest transition-all"
+                >
+                    Incinerate All Data
+                </button>
+            </div>
+        )}
       </div>
     </div>
   );
