@@ -1,0 +1,19 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="1" />
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="1" />
+    </linearGradient>
+  </defs>
+  <!-- Graduation Cap Top (Diamond) -->
+  <path d="M15 45 L50 25 L85 45 L50 65 Z" fill="url(#grad)" stroke="#ffffff" stroke-width="2"/>
+  <!-- Tassel String -->
+  <path d="M85 45 V70" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+  <!-- Tassel Ball -->
+  <circle cx="85" cy="75" r="5" fill="#f59e0b"/>
+  <!-- Cap Base -->
+  <path d="M30 55 V75 C30 85 70 85 70 75 V55" fill="none" stroke="white" stroke-width="2"/>
+  <!-- Center Button -->
+  <circle cx="50" cy="45" r="5" fill="#fff"/>
+</svg>

@@ -146,14 +146,19 @@ export const getDefaultProfile = (): UserProfile => ({
   hasStreakFreeze: false,
   questionsAnswered: 0,
   correctAnswers: 0,
-  xp: 500, // SIGNING BONUS: Grant 500XP so they can duel immediately
+  xp: 500, 
   lastStudyDate: Date.now(),
-  theme: 'System',
+  theme: 'Dark', // Enforced Dark
   reducedMotion: false,
   subscriptionTier: 'Fresher',
   role: 'student',
+  // Tracking
+  lastGenerationDate: Date.now(),
   dailyQuizzesGenerated: 0,
-  lastGenerationDate: Date.now()
+  dailyFilesUploaded: 0,
+  dailyImagesUploaded: 0,
+  dailyDuelsJoined: 0,
+  dailyLockIns: 0
 });
 
 export const updateStreak = (profile: UserProfile): UserProfile => {
@@ -163,9 +168,13 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   
   let updated = { ...profile };
 
-  // Reset daily limit if new day
-  if (now.getDate() !== lastGen.getDate() || now.getMonth() !== lastGen.getMonth()) {
+  // Reset daily limits if new day (Check simple date string match)
+  if (now.toDateString() !== lastGen.toDateString()) {
     updated.dailyQuizzesGenerated = 0;
+    updated.dailyFilesUploaded = 0;
+    updated.dailyImagesUploaded = 0;
+    updated.dailyDuelsJoined = 0;
+    updated.dailyLockIns = 0;
     updated.lastGenerationDate = Date.now();
   }
 
@@ -183,10 +192,6 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
     // Check for Freeze
     if (updated.hasStreakFreeze) {
         updated.hasStreakFreeze = false; // Consume freeze
-        // Streak maintained, but not incremented until next activity
-        // Actually, to freeze it, we just update the date but don't reset to 1
-        // But if they missed days, we need to bridge the gap.
-        // Simplification: If they have freeze, we don't reset to 1, we keep current streak.
     } else {
         updated.streak = 1;
     }
@@ -196,11 +201,15 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   return updated;
 };
 
-export const incrementDailyUsage = (profile: UserProfile): UserProfile => {
-  const updated = {
-    ...profile,
-    dailyQuizzesGenerated: (profile.dailyQuizzesGenerated || 0) + 1
-  };
+export const incrementDailyUsage = (profile: UserProfile, type: 'QUIZ' | 'FILE' | 'IMAGE' | 'DUEL' | 'LOCKIN' = 'QUIZ'): UserProfile => {
+  const updated = { ...profile };
+  
+  if (type === 'QUIZ') updated.dailyQuizzesGenerated = (profile.dailyQuizzesGenerated || 0) + 1;
+  if (type === 'FILE') updated.dailyFilesUploaded = (profile.dailyFilesUploaded || 0) + 1;
+  if (type === 'IMAGE') updated.dailyImagesUploaded = (profile.dailyImagesUploaded || 0) + 1;
+  if (type === 'DUEL') updated.dailyDuelsJoined = (profile.dailyDuelsJoined || 0) + 1;
+  if (type === 'LOCKIN') updated.dailyLockIns = (profile.dailyLockIns || 0) + 1;
+
   saveUserProfile(updated);
   return updated;
 };
@@ -216,6 +225,5 @@ export const buyItem = (profile: UserProfile, itemCost: number, itemType: 'FREEZ
     return updated;
 }
 
-// XP Calculation: 100 XP per level
 export const calculateLevel = (xp: number) => Math.floor(xp / 100) + 1;
 export const calculateProgress = (xp: number) => xp % 100;

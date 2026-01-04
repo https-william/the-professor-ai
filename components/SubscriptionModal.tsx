@@ -38,9 +38,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
       desc: "Just enough to pass.",
       features: [
         '3 Quizzes / Day',
-        'Text Paste Only',
-        'Basic Scoring',
-        'Standard Speed'
+        '2 Duels / Day',
+        '1 PDF, 2 Images / Day',
+        'Standard Speed (Queue)',
+        '1 Lock-In Session / Day'
       ],
       style: 'bg-[#18181b] border-white/10 text-gray-400'
     },
@@ -51,28 +52,28 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
       amount: currency === 'NGN' ? 2000 : 5,
       desc: "For the 5.0 GPA chaser.",
       features: [
-        'Unlimited Quizzes',
-        'PDF & Image Uploads',
-        'War Room (CBT Mode)',
-        'Feynman Explanations',
-        'Chat with Notes'
+        '10 Exams / Day',
+        '10 Files Upload / Day',
+        'Unlimited Duels',
+        'War Room (Premium Lock-In)',
+        'Feynman Explanations'
       ],
       style: 'bg-blue-900/10 border-blue-500/50 relative overflow-hidden',
       tag: 'Popular',
       tagColor: 'bg-blue-600'
     },
     {
-      id: 'Excellentia Supreme' as SubscriptionTier,
-      name: 'Supreme',
+      id: 'Excellentia' as SubscriptionTier, // Renamed ID logic should handle legacy 'Excellentia Supreme' mapping if needed in backend
+      name: 'Excellentia',
       priceDisplay: currency === 'NGN' ? '₦5,000' : '$12',
       amount: currency === 'NGN' ? 5000 : 12,
       desc: "Academic Immortality.",
       features: [
+        'Unlimited Everything',
         'Nightmare Difficulty',
         'The Oracle (Predictive AI)',
-        'Weakness Destroyer',
-        'Voice Mode',
-        'Thesis Defense Protocol'
+        'Priority Access (No Queue)',
+        'Weakness Destroyer'
       ],
       // VIP LOOK: Radial Gradient Black/Gold, distinct border
       style: 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#2a2a2a] via-[#0f0f0f] to-black border-[#D4AF37]/60 shadow-[0_0_25px_rgba(212,175,55,0.15)]',
@@ -118,12 +119,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                      </div>
                    )}
                    
-                   <h4 className={`text-2xl font-bold mb-2 flex items-center gap-2 ${tier.id === 'Excellentia Supreme' ? 'text-[#D4AF37] font-serif' : 'text-white'}`}>
+                   <h4 className={`text-2xl font-bold mb-2 flex items-center gap-2 ${tier.id === 'Excellentia' ? 'text-[#D4AF37] font-serif' : 'text-white'}`}>
                      {tier.name}
                    </h4>
                    
                    <div className="flex items-baseline gap-1 mb-1">
-                       <span className={`text-4xl font-mono font-bold ${tier.id === 'Excellentia Supreme' ? 'text-white' : 'text-white'}`}>{tier.priceDisplay}</span>
+                       <span className={`text-4xl font-mono font-bold ${tier.id === 'Excellentia' ? 'text-white' : 'text-white'}`}>{tier.priceDisplay}</span>
                        {tier.amount > 0 && <span className="text-xs text-gray-500">/mo</span>}
                    </div>
                    
@@ -132,10 +133,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                    <ul className="space-y-4 mb-10 flex-1">
                      {tier.features.map(f => (
                        <li key={f} className="flex items-start gap-3 text-sm">
-                         <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${tier.id === 'Excellentia Supreme' ? 'bg-[#D4AF37] text-black' : 'bg-white/10 text-white'}`}>
+                         <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${tier.id === 'Excellentia' ? 'bg-[#D4AF37] text-black' : 'bg-white/10 text-white'}`}>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                          </div>
-                         <span className={tier.id === 'Excellentia Supreme' ? 'text-gray-200' : 'text-gray-300'}>{f}</span>
+                         <span className={tier.id === 'Excellentia' ? 'text-gray-200' : 'text-gray-300'}>{f}</span>
                        </li>
                      ))}
                    </ul>
@@ -146,7 +147,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                      className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
                        currentTier === tier.id 
                          ? 'bg-white/5 text-gray-500 cursor-default border border-white/5' 
-                         : tier.id === 'Excellentia Supreme'
+                         : tier.id === 'Excellentia'
                             ? 'bg-gradient-to-r from-[#D4AF37] to-[#8C7323] text-black shadow-lg shadow-[#D4AF37]/20'
                             : tier.id === 'Scholar'
                                 ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'

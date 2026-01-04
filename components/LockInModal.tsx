@@ -12,79 +12,80 @@ export const LockInModal: React.FC<LockInModalProps> = ({ onClose, onConfirm }) 
   const [usePomodoro, setUsePomodoro] = useState(true);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-fade-in">
-      <div className="absolute inset-0 bg-amber-900/5 pointer-events-none"></div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/98 backdrop-blur-xl animate-fade-in">
+      {/* HUD Overlay Effects */}
+      <div className="absolute inset-0 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+      <div className="absolute top-0 left-0 w-full h-1 bg-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.5)]"></div>
       
-      <div className="relative w-full max-w-lg bg-[#0a0a0a] border border-amber-500/20 rounded-3xl p-8 shadow-2xl overflow-hidden">
-        <div className="text-center mb-8">
-           <div className="w-16 h-16 bg-amber-900/20 rounded-2xl border border-amber-500/20 flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg">
-              🔒
-           </div>
-           <h2 className="text-2xl font-black text-amber-500 uppercase tracking-tighter">Study Room Protocol</h2>
-           <p className="text-gray-400 text-xs mt-2 font-mono uppercase tracking-widest">
-              Initiate Deep Focus Sequence
+      <div className="relative w-full max-w-2xl bg-[#0a0a0a] border border-amber-500/20 rounded-none p-10 shadow-2xl overflow-hidden flex flex-col">
+        {/* Corner Decals */}
+        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-500"></div>
+        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-amber-500"></div>
+        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-amber-500"></div>
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-500"></div>
+
+        <div className="text-center mb-10">
+           <h2 className="text-4xl font-black text-white uppercase tracking-[0.2em] font-mono glitch-effect" style={{ textShadow: "0 0 10px rgba(245,158,11,0.5)" }}>
+               WAR ROOM
+           </h2>
+           <p className="text-amber-500 text-xs mt-3 font-mono uppercase tracking-widest border-t border-b border-amber-500/20 inline-block py-1 px-4">
+              Authorized Personnel Only
            </p>
         </div>
 
-        <div className="space-y-6">
-           <div className="space-y-3">
-               <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Select Methodology</label>
-               
-               <button 
-                 onClick={() => setTechnique('STANDARD')}
-                 className={`w-full p-4 rounded-xl border text-left transition-all ${technique === 'STANDARD' ? 'bg-amber-900/20 border-amber-500 text-amber-100' : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}`}
-               >
-                   <div className="flex justify-between items-center mb-1">
-                       <span className="font-bold text-sm">Standard Lecture</span>
-                       {technique === 'STANDARD' && <span className="text-amber-500">✓</span>}
-                   </div>
-                   <p className="text-[10px] opacity-70">Read, Listen, and Review normally.</p>
-               </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+           <button 
+             onClick={() => setTechnique('STANDARD')}
+             className={`p-6 border transition-all relative group overflow-hidden ${technique === 'STANDARD' ? 'bg-amber-900/20 border-amber-500 text-amber-100' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
+           >
+               {technique === 'STANDARD' && <div className="absolute inset-0 bg-amber-500/5 animate-pulse"></div>}
+               <div className="text-2xl mb-3 group-hover:scale-110 transition-transform">📄</div>
+               <span className="font-bold text-xs uppercase tracking-widest block mb-1">Standard</span>
+               <span className="text-[9px] opacity-60">Linear Consumption</span>
+           </button>
 
-               <button 
-                 onClick={() => setTechnique('SQ3R')}
-                 className={`w-full p-4 rounded-xl border text-left transition-all ${technique === 'SQ3R' ? 'bg-amber-900/20 border-amber-500 text-amber-100' : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}`}
-               >
-                   <div className="flex justify-between items-center mb-1">
-                       <span className="font-bold text-sm">The Architect (SQ3R)</span>
-                       {technique === 'SQ3R' && <span className="text-amber-500">✓</span>}
-                   </div>
-                   <p className="text-[10px] opacity-70">Survey & Question before Reading. Proven to boost comprehension.</p>
-               </button>
+           <button 
+             onClick={() => setTechnique('SQ3R')}
+             className={`p-6 border transition-all relative group overflow-hidden ${technique === 'SQ3R' ? 'bg-amber-900/20 border-amber-500 text-amber-100' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
+           >
+               {technique === 'SQ3R' && <div className="absolute inset-0 bg-amber-500/5 animate-pulse"></div>}
+               <div className="text-2xl mb-3 group-hover:scale-110 transition-transform">📐</div>
+               <span className="font-bold text-xs uppercase tracking-widest block mb-1">Architect</span>
+               <span className="text-[9px] opacity-60">Survey. Question. Read.</span>
+           </button>
 
-               <button 
-                 onClick={() => setTechnique('RETRIEVAL')}
-                 className={`w-full p-4 rounded-xl border text-left transition-all ${technique === 'RETRIEVAL' ? 'bg-amber-900/20 border-amber-500 text-amber-100' : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}`}
-               >
-                   <div className="flex justify-between items-center mb-1">
-                       <span className="font-bold text-sm">Active Recall (Retrieval)</span>
-                       {technique === 'RETRIEVAL' && <span className="text-amber-500">✓</span>}
-                   </div>
-                   <p className="text-[10px] opacity-70">Test yourself before you read. Identifies knowledge gaps instantly.</p>
-               </button>
+           <button 
+             onClick={() => setTechnique('RETRIEVAL')}
+             className={`p-6 border transition-all relative group overflow-hidden ${technique === 'RETRIEVAL' ? 'bg-amber-900/20 border-amber-500 text-amber-100' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
+           >
+               {technique === 'RETRIEVAL' && <div className="absolute inset-0 bg-amber-500/5 animate-pulse"></div>}
+               <div className="text-2xl mb-3 group-hover:scale-110 transition-transform">🧠</div>
+               <span className="font-bold text-xs uppercase tracking-widest block mb-1">Recall</span>
+               <span className="text-[9px] opacity-60">Active Testing Protocol</span>
+           </button>
+        </div>
+
+        <div className="flex items-center justify-between p-4 bg-white/5 border border-white/5 mb-8">
+           <div>
+               <span className="font-bold text-sm text-gray-200 block uppercase tracking-wide">Focus Timer</span>
+               <span className="text-[10px] text-gray-500 uppercase tracking-widest">25m Work / 5m Rest Cycle</span>
            </div>
-
-           <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
-               <div>
-                   <span className="font-bold text-sm text-gray-200 block">Pomodoro Timer</span>
-                   <span className="text-[10px] text-gray-500 uppercase tracking-widest">25m Focus / 5m Break</span>
-               </div>
-               <div 
-                 onClick={() => setUsePomodoro(!usePomodoro)}
-                 className={`w-12 h-6 rounded-full cursor-pointer transition-colors p-1 flex ${usePomodoro ? 'bg-amber-600 justify-end' : 'bg-gray-700 justify-start'}`}
-               >
-                   <div className="w-4 h-4 bg-white rounded-full shadow-md"></div>
-               </div>
+           <div 
+             onClick={() => setUsePomodoro(!usePomodoro)}
+             className={`w-12 h-6 cursor-pointer transition-colors p-1 flex border ${usePomodoro ? 'bg-amber-900/40 border-amber-500 justify-end' : 'bg-black border-gray-700 justify-start'}`}
+           >
+               <div className={`w-3.5 h-3.5 bg-white shadow-md transition-all ${usePomodoro ? 'bg-amber-500' : 'bg-gray-500'}`}></div>
            </div>
         </div>
 
-        <div className="flex gap-4 mt-8 pt-6 border-t border-white/5">
-           <button onClick={onClose} className="flex-1 py-4 text-gray-500 hover:text-white font-bold uppercase text-xs transition-colors">Cancel</button>
+        <div className="flex gap-4">
+           <button onClick={onClose} className="flex-1 py-4 text-gray-500 hover:text-white font-bold uppercase text-xs transition-colors border border-transparent hover:border-white/10 bg-black">Abort</button>
            <button 
              onClick={() => onConfirm({ technique, usePomodoro })}
-             className="flex-[2] py-4 bg-amber-500 text-black font-black uppercase text-xs tracking-[0.2em] rounded-xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20"
+             className="flex-[2] py-4 bg-amber-600 text-black font-black uppercase text-xs tracking-[0.2em] hover:bg-amber-500 transition-all shadow-[0_0_30px_rgba(245,158,11,0.3)] relative overflow-hidden group"
            >
-             Lock In
+             <span className="relative z-10 group-hover:scale-105 inline-block transition-transform">Initiate Protocol</span>
+             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
            </button>
         </div>
       </div>

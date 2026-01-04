@@ -118,7 +118,7 @@ export interface QuizConfig {
   isCramMode?: boolean; // 10s per question
 }
 
-export type SubscriptionTier = 'Fresher' | 'Scholar' | 'Excellentia Supreme';
+export type SubscriptionTier = 'Fresher' | 'Scholar' | 'Excellentia';
 export type UserRole = 'student' | 'admin';
 export type AmbientTheme = 'Deep Space';
 
@@ -160,12 +160,18 @@ export interface UserProfile {
   xp: number; // New XP system for levels
   lastStudyDate: number; 
   
-  // Subscription & Usage
+  // Subscription & Usage Limits
   subscriptionTier: SubscriptionTier;
   role: UserRole;
   isBanned?: boolean; // Security flag
-  dailyQuizzesGenerated: number;
+  
+  // Daily Counters
   lastGenerationDate: number; // Timestamp to reset daily count
+  dailyQuizzesGenerated: number;
+  dailyFilesUploaded: number;
+  dailyImagesUploaded: number;
+  dailyDuelsJoined: number;
+  dailyLockIns: number;
 }
 
 export interface HistoryItem {

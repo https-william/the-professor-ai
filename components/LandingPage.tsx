@@ -73,8 +73,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           </div>
 
           <h1 className="text-6xl sm:text-7xl md:text-9xl font-serif font-bold tracking-tighter leading-[0.9] text-white mix-blend-difference mb-8">
-             ACADEMIC<br />
-             <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500"><DecryptedText text="WEAPON." delay={800} /></span>
+             Learning is<br />
+             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mt-2">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">Simple as</span>
+                
+                <div className="relative inline-flex items-center group">
+                    {/* The Crossed Out ABC */}
+                    <div className="relative mr-4 sm:mr-6 transform rotate-[-6deg] opacity-40 group-hover:opacity-60 transition-opacity">
+                        <span className="text-4xl sm:text-6xl font-mono text-gray-500 line-through decoration-red-600 decoration-[4px]">ABC</span>
+                    </div>
+
+                    {/* The Hero XYZ */}
+                    <span className="text-blue-500 relative inline-block transform group-hover:scale-110 transition-transform duration-500">
+                        XYZ.
+                        {/* Glowing Underline */}
+                        <div className="absolute -bottom-1 sm:-bottom-4 left-0 w-full h-1 sm:h-2 bg-amber-500 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.8)]"></div>
+                    </span>
+                </div>
+             </div>
           </h1>
           
           <div className="mb-10 animate-fade-in opacity-0 max-w-2xl mx-auto" style={{ animationFillMode: 'forwards', animationDelay: '1.2s' }}>
@@ -129,56 +145,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-32 relative z-10 border-t border-white/5">
-          <div className="max-w-7xl mx-auto px-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-                  <div>
-                      <h2 className="text-4xl md:text-5xl font-bold font-serif mb-8 leading-tight">From Notes to <span className="text-blue-500">Knowledge</span>.</h2>
-                      <div className="space-y-8">
-                          <div className="flex gap-4">
-                              <div className="w-10 h-10 rounded-full bg-blue-900/20 border border-blue-500/20 flex items-center justify-center font-mono font-bold text-blue-400">1</div>
-                              <div>
-                                  <h4 className="text-lg font-bold text-white mb-2">Upload Files</h4>
-                                  <p className="text-gray-400 text-sm">Drag and drop your PDFs, slides, or simple text notes. We handle the reading.</p>
-                              </div>
-                          </div>
-                          <div className="flex gap-4">
-                              <div className="w-10 h-10 rounded-full bg-amber-900/20 border border-amber-500/20 flex items-center justify-center font-mono font-bold text-amber-400">2</div>
-                              <div>
-                                  <h4 className="text-lg font-bold text-white mb-2">Pick Your Mode</h4>
-                                  <p className="text-gray-400 text-sm">Need speed? Choose "Cram Mode". Need to understand deeply? Choose "Professor Mode".</p>
-                              </div>
-                          </div>
-                          <div className="flex gap-4">
-                              <div className="w-10 h-10 rounded-full bg-green-900/20 border border-green-500/20 flex items-center justify-center font-mono font-bold text-green-400">3</div>
-                              <div>
-                                  <h4 className="text-lg font-bold text-white mb-2">Start Learning</h4>
-                                  <p className="text-gray-400 text-sm">Take quizzes, chat with your notes, and track your progress.</p>
-                              </div>
-                          </div>
-                      </div>
+      {/* Philosophy / About Section */}
+      <section className="py-32 relative z-10 border-t border-white/5 bg-black overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+          <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+              <h2 className="text-4xl md:text-5xl font-bold font-serif mb-8 text-white">The Unfair Advantage.</h2>
+              <div className="prose prose-invert prose-lg mx-auto text-gray-400 leading-relaxed space-y-6">
+                  <p>
+                      Your textbooks are static. Your exams are dynamic. <span className="text-white font-bold">The Professor</span> bridges the gap.
+                  </p>
+                  <p>
+                      We don't just highlight text; we transform it into a relentless training ground. 
+                      By simulating the pressure of a real exam environment, we force your brain to engage in <span className="text-blue-400">Active Recall</span> rather than passive reading.
+                  </p>
+                  <p>
+                      Identify weak points. Strengthen neural pathways. Walk into the exam hall knowing you've already won.
+                  </p>
+              </div>
+              
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-blue-500/30 transition-colors">
+                      <div className="text-xl font-mono font-bold text-white mb-1">Active Recall</div>
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500">Core Protocol</div>
                   </div>
-                  <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 blur-[100px] opacity-20"></div>
-                      <div className="bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl p-8 relative">
-                          <div className="flex items-center gap-2 mb-6 border-b border-white/5 pb-4">
-                              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                          </div>
-                          <div className="space-y-4 font-mono text-sm">
-                              <div className="text-gray-500">{'>'} Reading document...</div>
-                              <div className="text-blue-400">{'>'} analysis_complete: 100%</div>
-                              <div className="text-gray-300">
-                                  <span className="text-purple-400">Student:</span> Explain Quantum Entanglement simply.
-                              </div>
-                              <div className="text-gray-300">
-                                  <span className="text-amber-400">Professor:</span> Imagine two magic dice. No matter how far apart they are—even across the galaxy—if you roll a 6 on one, the other INSTANTLY shows a 6. They are connected invisibly.
-                              </div>
-                              <div className="h-4 w-2 bg-blue-500 animate-pulse"></div>
-                          </div>
-                      </div>
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-blue-500/30 transition-colors">
+                      <div className="text-xl font-mono font-bold text-blue-400 mb-1">Detected</div>
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500">Knowledge Gaps</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-amber-500/30 transition-colors">
+                      <div className="text-xl font-mono font-bold text-amber-500 mb-1">Maximized</div>
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500">Retention Rate</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-colors">
+                      <div className="text-xl font-mono font-bold text-purple-400 mb-1">Operational</div>
+                      <div className="text-[10px] uppercase tracking-widest text-gray-500">System Status</div>
                   </div>
               </div>
           </div>
@@ -190,44 +190,47 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               <h2 className="text-4xl md:text-5xl font-bold font-serif mb-16">Simple Pricing</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-                  {/* Free Tier */}
+                  {/* Fresher Tier */}
                   <div className="p-8 rounded-3xl bg-white/5 border border-white/5 flex flex-col hover:border-gray-500/50 transition-colors">
-                      <h3 className="text-lg font-bold text-gray-400 uppercase tracking-widest mb-4">Starter</h3>
+                      <h3 className="text-lg font-bold text-gray-400 uppercase tracking-widest mb-4">Fresher</h3>
                       <div className="text-4xl font-bold text-white mb-6">Free</div>
-                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[200px] flex-1">
-                          <li>• 3 Quizzes per Day</li>
-                          <li>• Standard Speed</li>
-                          <li>• Text Paste Only</li>
+                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[220px] flex-1">
+                          <li>• 3 Quizzes / Day</li>
+                          <li>• 2 Duels / Day</li>
+                          <li>• 1 PDF, 2 Images / Day</li>
+                          <li>• Standard Speed (Queue)</li>
+                          <li>• 1 Lock-In Session</li>
                       </ul>
                       <button onClick={onEnter} className="w-full py-3 rounded-xl border border-white/20 text-white font-bold text-xs uppercase hover:bg-white/10 transition-all">Start Free</button>
                   </div>
 
-                  {/* Pro Tier - Highlighted */}
+                  {/* Scholar Tier */}
                   <div className="p-10 rounded-3xl bg-blue-900/10 border border-blue-500/50 relative transform md:scale-105 shadow-[0_0_30px_rgba(37,99,235,0.2)] flex flex-col z-10">
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">Best Value</div>
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">Popular</div>
                       <h3 className="text-lg font-bold text-blue-400 uppercase tracking-widest mb-4">Scholar</h3>
                       <div className="text-5xl font-bold text-white mb-2">₦2,000</div>
                       <div className="text-xs text-gray-500 mb-6">/ month</div>
-                      <ul className="text-sm text-gray-300 space-y-3 mb-8 text-left mx-auto max-w-[200px] flex-1">
-                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Unlimited Everything</li>
-                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Upload PDFs & Images</li>
-                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Exam War Room</li>
-                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Fast Processing</li>
+                      <ul className="text-sm text-gray-300 space-y-3 mb-8 text-left mx-auto max-w-[220px] flex-1">
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> 10 Exams / Day</li>
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> 10 Files Upload / Day</li>
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> War Room (Lock-In)</li>
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Unlimited Duels</li>
                       </ul>
                       <button onClick={onEnter} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase hover:bg-blue-500 transition-all shadow-lg">Select Plan</button>
                   </div>
 
-                  {/* Elite Tier */}
-                  <div className="p-8 rounded-3xl bg-white/5 border border-amber-500/30 flex flex-col hover:border-amber-500 transition-colors">
-                      <h3 className="text-lg font-bold text-amber-500 uppercase tracking-widest mb-4">Supreme</h3>
+                  {/* Excellentia Tier - Rebranded from Supreme */}
+                  <div className="p-8 rounded-3xl bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#2a2a2a] via-[#0f0f0f] to-black border border-[#D4AF37]/50 flex flex-col hover:border-[#D4AF37] transition-all duration-500 shadow-[0_0_20px_rgba(212,175,55,0.1)] group">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#D4AF37] to-[#B59410] text-black text-[10px] font-bold uppercase px-4 py-1 rounded-full shadow-lg">VIP Access</div>
+                      <h3 className="text-2xl font-black text-[#D4AF37] uppercase tracking-widest mb-4 font-serif">Excellentia</h3>
                       <div className="text-4xl font-bold text-white mb-6">₦5,000</div>
-                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[200px] flex-1">
-                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Hardest Difficulty</li>
-                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Predictive AI</li>
-                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Voice Chat</li>
-                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Priority Support</li>
+                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[220px] flex-1">
+                          <li className="flex items-center gap-2"><span className="text-[#D4AF37]">★</span> Unlimited Everything</li>
+                          <li className="flex items-center gap-2"><span className="text-[#D4AF37]">★</span> Nightmare Difficulty</li>
+                          <li className="flex items-center gap-2"><span className="text-[#D4AF37]">★</span> The Oracle (Predictive)</li>
+                          <li className="flex items-center gap-2"><span className="text-[#D4AF37]">★</span> Priority Access (No Queue)</li>
                       </ul>
-                      <button onClick={onEnter} className="w-full py-3 rounded-xl border border-amber-500/30 text-amber-500 font-bold text-xs uppercase hover:bg-amber-900/20 transition-all">Go Supreme</button>
+                      <button onClick={onEnter} className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#8C7323] text-black font-bold text-xs uppercase hover:scale-[1.02] transition-all shadow-lg shadow-[#D4AF37]/20">Go Supreme</button>
                   </div>
               </div>
           </div>
@@ -235,16 +238,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
 
       {/* Footer */}
       <footer className="py-12 border-t border-white/5 bg-black text-center text-gray-600 text-xs">
-         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
-             <div className="flex items-center gap-2 mb-4 md:mb-0">
+         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+             <div className="flex items-center gap-2">
                  <div className="w-6 h-6 grayscale opacity-50">
                     <BrandLogo />
                  </div>
                  <span className="font-bold text-gray-500">The Professor AI</span>
              </div>
-             <div className="flex flex-col items-center md:items-end">
+             
+             <div className="flex flex-col items-center md:items-end gap-1">
                  <p className="font-mono uppercase tracking-widest text-amber-500/50">Copyright The Professor AI</p>
-                 <p className="mt-1 opacity-30">A sub system of Vexis Automations.</p>
+                 <p className="opacity-30">A sub system of Vexis Automations.</p>
+                 <div className="flex gap-4 mt-2">
+                     <a href="mailto:vexis.automations@gmail.com" className="hover:text-white transition-colors">Support Email</a>
+                     <span className="text-gray-800">|</span>
+                     <span className="hover:text-white transition-colors cursor-default">+234 707 170 3030 (Telegram)</span>
+                 </div>
              </div>
          </div>
       </footer>
