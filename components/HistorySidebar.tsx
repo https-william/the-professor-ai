@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { HistoryItem } from '../types';
-import { getHistorySnippet, clearCurrentSession } from '../services/storageService';
+import { getHistorySnippet } from '../services/storageService';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface HistorySidebarProps {
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose, history, onSelect, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'ALL' | 'EXAM' | 'PROFESSOR' | 'CHAT'>('ALL');
+  const [activeTab, setActiveTab] = useState<'ALL' | 'EXAM' | 'PROFESSOR' | 'CHAT' | 'DUEL'>('ALL');
 
   // Filter and Sort Logic
   const filteredHistory = useMemo(() => {
@@ -27,21 +27,23 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
       .sort((a, b) => b.timestamp - a.timestamp);
   }, [history, searchTerm, activeTab]);
 
-  // Group by Date
+  // Group by Date with Relative Time Logic
   const groupedHistory = useMemo(() => {
     const groups: { [key: string]: HistoryItem[] } = {
-      'Recent Uploads': [],
-      'Earlier this Week': [],
+      'Recent Actions': [],
+      'This Week': [],
       'The Archives': []
     };
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const lastWeek = today - 86400000 * 7;
+    const now = Date.now();
+    const oneHour = 1000 * 60 * 60;
+    const oneDay = oneHour * 24;
+    const oneWeek = oneDay * 7;
 
     filteredHistory.forEach(item => {
-      if (item.timestamp >= today) groups['Recent Uploads'].push(item);
-      else if (item.timestamp >= lastWeek) groups['Earlier this Week'].push(item);
+      const age = now - item.timestamp;
+      if (age < oneDay) groups['Recent Actions'].push(item);
+      else if (age < oneWeek) groups['This Week'].push(item);
       else groups['The Archives'].push(item);
     });
 
@@ -54,13 +56,25 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
       case 'PROFESSOR': return '👨‍🏫';
       case 'CHAT': return '💬';
       case 'DUEL': return '⚔️';
+      case 'FLASHCARDS': return '🗂️';
       default: return '📄';
     }
   };
 
+  const getRelativeTime = (timestamp: number) => {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return 'Just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days}d ago`;
+      return new Date(timestamp).toLocaleDateString();
+  };
+
   const handleClearAll = () => {
       if (confirm("WARNING: This will incinerate your entire library. Confirm?")) {
-          // In a real app, we'd lift this state up, but for now we iterate deletes
           history.forEach(h => onDelete(h.id));
       }
   };
@@ -98,7 +112,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
 
            {/* Tabs */}
            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-               {['ALL', 'EXAM', 'PROFESSOR', 'CHAT'].map((tab) => (
+               {['ALL', 'EXAM', 'PROFESSOR', 'CHAT', 'DUEL'].map((tab) => (
                    <button 
                      key={tab}
                      onClick={() => setActiveTab(tab as any)}
@@ -136,6 +150,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
                          className={`group p-3 rounded-xl border transition-all cursor-pointer relative hover:bg-white/5 ${
                            item.mode === 'PROFESSOR' ? 'border-amber-900/30 bg-amber-900/5' 
                            : item.mode === 'CHAT' ? 'border-purple-900/30 bg-purple-900/5'
+                           : item.mode === 'DUEL' ? 'border-red-900/30 bg-red-900/5'
                            : 'border-blue-900/30 bg-blue-900/5'
                          }`}
                          onClick={() => onSelect(item)}
@@ -144,6 +159,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
                             <div className={`mt-1 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg border shadow-lg ${
                                 item.mode === 'PROFESSOR' ? 'bg-amber-900/20 border-amber-500/20 text-amber-500' 
                                 : item.mode === 'CHAT' ? 'bg-purple-900/20 border-purple-500/20 text-purple-500'
+                                : item.mode === 'DUEL' ? 'bg-red-900/20 border-red-500/20 text-red-500'
                                 : 'bg-blue-900/20 border-blue-500/20 text-blue-500'
                             }`}>
                                 {getIcon(item.mode)}
@@ -153,7 +169,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ isOpen, onClose,
                                 <div className="flex justify-between items-start mb-1">
                                     <h4 className="text-sm font-bold text-gray-100 truncate pr-4">{item.title}</h4>
                                     <span className="text-[9px] text-gray-500 font-mono whitespace-nowrap">
-                                        {new Date(item.timestamp).toLocaleDateString([], {month: 'short', day:'numeric'})}
+                                        {getRelativeTime(item.timestamp)}
                                     </span>
                                 </div>
                                 

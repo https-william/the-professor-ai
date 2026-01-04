@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 
 interface TooltipOverlayProps {
@@ -12,7 +13,7 @@ export const TooltipOverlay: React.FC<TooltipOverlayProps> = ({ onComplete }) =>
     {
       targetId: 'mode-switch-target',
       title: 'Split Personality',
-      text: "Choose your pain. 'Exam Mode' drills you until you cry. 'Professor Mode' explains things nicely until you understand.",
+      text: "Choose your pain. 'Exam Mode' drills you until you cry. 'Study Room' explains things nicely until you understand.",
       placement: 'bottom'
     },
     {

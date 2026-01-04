@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CountdownTimer } from './CountdownTimer';
+import { BrandLogo } from './BrandLogo';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -24,23 +25,6 @@ const DecryptedText = ({ text, className = "", delay = 0 }: { text: string, clas
     }, [text, delay]);
     return <span className={`font-mono ${className}`}>{displayText}</span>;
 };
-
-// The Brand Logo Component
-const BrandLogo = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-    <defs>
-      <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
-        <stop offset='0%' style={{stopColor:'#3b82f6', stopOpacity:1}} />
-        <stop offset='100%' style={{stopColor:'#8b5cf6', stopOpacity:1}} />
-      </linearGradient>
-    </defs>
-    <path d='M15 45 L50 25 L85 45 L50 65 Z' fill='url(#grad)' stroke='#ffffff' strokeWidth='2'/>
-    <path d='M85 45 V70' stroke='#f59e0b' strokeWidth='3' strokeLinecap='round'/>
-    <circle cx='85' cy='75' r='5' fill='#f59e0b'/>
-    <path d='M30 55 V75 C30 85 70 85 70 75 V55' fill='none' stroke='white' strokeWidth='2'/>
-    <circle cx='50' cy='45' r='5' fill='#fff'/>
-  </svg>
-);
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
   const [scrolled, setScrolled] = useState(0);
@@ -205,12 +189,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           <div className="max-w-7xl mx-auto px-6 text-center">
               <h2 className="text-4xl md:text-5xl font-bold font-serif mb-16">Simple Pricing</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
                   {/* Free Tier */}
-                  <div className="p-8 rounded-3xl bg-white/5 border border-white/5">
+                  <div className="p-8 rounded-3xl bg-white/5 border border-white/5 flex flex-col hover:border-gray-500/50 transition-colors">
                       <h3 className="text-lg font-bold text-gray-400 uppercase tracking-widest mb-4">Starter</h3>
                       <div className="text-4xl font-bold text-white mb-6">Free</div>
-                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[200px]">
+                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[200px] flex-1">
                           <li>• 3 Quizzes per Day</li>
                           <li>• Standard Speed</li>
                           <li>• Text Paste Only</li>
@@ -219,31 +203,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                   </div>
 
                   {/* Pro Tier - Highlighted */}
-                  <div className="p-10 rounded-3xl bg-blue-900/10 border border-blue-500/50 relative transform md:scale-110 shadow-2xl">
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Best Value</div>
+                  <div className="p-10 rounded-3xl bg-blue-900/10 border border-blue-500/50 relative transform md:scale-105 shadow-[0_0_30px_rgba(37,99,235,0.2)] flex flex-col z-10">
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">Best Value</div>
                       <h3 className="text-lg font-bold text-blue-400 uppercase tracking-widest mb-4">Scholar</h3>
                       <div className="text-5xl font-bold text-white mb-2">₦2,000</div>
                       <div className="text-xs text-gray-500 mb-6">/ month</div>
-                      <ul className="text-sm text-gray-300 space-y-3 mb-8 text-left mx-auto max-w-[200px]">
-                          <li>• Unlimited Everything</li>
-                          <li>• Upload PDFs & Images</li>
-                          <li>• Exam War Room</li>
-                          <li>• Fast Processing</li>
+                      <ul className="text-sm text-gray-300 space-y-3 mb-8 text-left mx-auto max-w-[200px] flex-1">
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Unlimited Everything</li>
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Upload PDFs & Images</li>
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Exam War Room</li>
+                          <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Fast Processing</li>
                       </ul>
-                      <button onClick={onEnter} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase hover:bg-blue-500 transition-all shadow-lg">Upgrade Now</button>
+                      <button onClick={onEnter} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase hover:bg-blue-500 transition-all shadow-lg">Select Plan</button>
                   </div>
 
                   {/* Elite Tier */}
-                  <div className="p-8 rounded-3xl bg-white/5 border border-white/5">
+                  <div className="p-8 rounded-3xl bg-white/5 border border-amber-500/30 flex flex-col hover:border-amber-500 transition-colors">
                       <h3 className="text-lg font-bold text-amber-500 uppercase tracking-widest mb-4">Supreme</h3>
                       <div className="text-4xl font-bold text-white mb-6">₦5,000</div>
-                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[200px]">
-                          <li>• Hardest Difficulty</li>
-                          <li>• Predictive AI</li>
-                          <li>• Voice Chat</li>
-                          <li>• Priority Support</li>
+                      <ul className="text-sm text-gray-400 space-y-3 mb-8 text-left mx-auto max-w-[200px] flex-1">
+                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Hardest Difficulty</li>
+                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Predictive AI</li>
+                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Voice Chat</li>
+                          <li className="flex items-center gap-2"><span className="text-amber-500">★</span> Priority Support</li>
                       </ul>
-                      <button onClick={onEnter} className="w-full py-3 rounded-xl border border-white/20 text-white font-bold text-xs uppercase hover:bg-white/10 transition-all">Go Supreme</button>
+                      <button onClick={onEnter} className="w-full py-3 rounded-xl border border-amber-500/30 text-amber-500 font-bold text-xs uppercase hover:bg-amber-900/20 transition-all">Go Supreme</button>
                   </div>
               </div>
           </div>

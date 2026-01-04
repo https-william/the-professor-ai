@@ -83,6 +83,11 @@ export const getHistorySnippet = (item: HistoryItem): string => {
         const status = data.isSubmitted ? 'Completed' : 'In Progress';
         return `${data.score}/${data.questions.length} • ${status}`;
     }
+    if (item.mode === 'DUEL') {
+        const data = item.data as QuizState;
+        const status = data.isSubmitted ? 'Completed' : 'Arena Active';
+        return `Combat • ${status}`;
+    }
     if (item.mode === 'PROFESSOR') {
         const data = item.data as ProfessorState;
         return `${data.sections.length} Sections • Lecture`;
@@ -99,7 +104,7 @@ export const saveToHistory = (item: HistoryItem) => {
       updated = [...history];
       updated[existingIndex] = item;
   } else {
-      updated = [item, ...history].slice(20); // Keep last 20
+      updated = [item, ...history].slice(0, 50); // Keep last 50 items
   }
   const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
   localStorage.setItem(`${userId}_${HISTORY_KEY}`, JSON.stringify(updated));

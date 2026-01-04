@@ -47,7 +47,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [showCamera, setShowCamera] = useState(false);
   const [showDuelCreate, setShowDuelCreate] = useState(false);
   const [showDuelJoin, setShowDuelJoin] = useState(false);
-  const [showDuelSelector, setShowDuelSelector] = useState(false); // New consolidated modal
+  const [showDuelSelector, setShowDuelSelector] = useState(false); 
   const [showStudyRoomModal, setShowStudyRoomModal] = useState(false);
 
   // Config State
@@ -260,14 +260,44 @@ export const InputSection: React.FC<InputSectionProps> = ({
       if (onDuelJoin) onDuelJoin(code);
   }
 
+  // --- PILL COMPONENTS ---
+  const ConfigPill = ({ label, value, setter, options, disabled }: any) => (
+      <div className="relative group shrink-0">
+          <select 
+            value={value} 
+            onChange={(e) => setter(e.target.value)} 
+            disabled={disabled}
+            className={`appearance-none pl-3 pr-8 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide outline-none cursor-pointer transition-all border ${disabled ? 'opacity-50 cursor-not-allowed border-white/5 bg-white/5 text-gray-500' : 'bg-white/10 border-white/10 hover:bg-white/20 text-white'}`}
+          >
+              {options.map((opt: string) => <option key={opt} value={opt} className="bg-black text-white">{opt}</option>)}
+          </select>
+          <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">▼</div>
+      </div>
+  );
+
+  const TogglePill = ({ label, active, onClick, icon }: any) => (
+      <button 
+        onClick={onClick}
+        className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-all ${
+            active 
+            ? 'bg-amber-900/40 border-amber-500 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
+            : 'bg-white/5 border-white/10 text-gray-500 hover:text-gray-300 hover:bg-white/10'
+        }`}
+      >
+          <span>{icon}</span>
+          <span>{label}</span>
+      </button>
+  );
+
   return (
     <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
+      {/* Configuration Modals */}
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
       {showStudyRoomModal && <StudyRoomModal onClose={() => setShowStudyRoomModal(false)} user={userProfile} />}
 
-      {/* Consolidated Duel Selector Modal */}
+      {/* Duel Selector */}
       {showDuelSelector && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowDuelSelector(false)}>
               <div className="bg-[#18181b] border border-purple-500/30 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
@@ -297,76 +327,49 @@ export const InputSection: React.FC<InputSectionProps> = ({
       )}
 
       {/* Mode Switcher */}
-      <div className="flex justify-center items-center mb-6 shrink-0">
-        <div className="relative bg-[#0a0a0a] backdrop-blur-xl p-2 rounded-2xl border border-white/10 flex w-full max-w-md shadow-2xl">
+      <div id="mode-switch-target" className="flex justify-center items-center mb-4 shrink-0">
+        <div className="relative bg-[#0a0a0a] backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 flex w-full max-w-md shadow-2xl">
           <div 
-              className={`absolute top-2 bottom-2 w-[calc(50%-8px)] rounded-xl transition-all duration-500 shadow-lg border border-white/10 ${
+              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-xl transition-all duration-500 shadow-lg border border-white/10 ${
                 appMode === 'EXAM' 
-                ? 'left-2 bg-gradient-to-br from-blue-900 to-blue-800' 
-                : 'left-[calc(50%+4px)] bg-gradient-to-br from-amber-900 to-amber-800'
+                ? 'left-1.5 bg-gradient-to-br from-blue-900 to-blue-800' 
+                : 'left-[calc(50%+3px)] bg-gradient-to-br from-amber-900 to-amber-800'
               }`}
           ></div>
-          <button onClick={() => setAppMode('EXAM')} className={`relative z-10 flex-1 py-3 text-sm font-bold uppercase tracking-widest transition-all ${appMode === 'EXAM' ? 'text-white' : 'text-gray-500'}`}>Exam</button>
-          <button onClick={() => setAppMode('PROFESSOR')} className={`relative z-10 flex-1 py-3 text-sm font-bold uppercase tracking-widest transition-all ${appMode === 'PROFESSOR' ? 'text-amber-100' : 'text-gray-500'}`}>Professor</button>
+          <button onClick={() => setAppMode('EXAM')} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all ${appMode === 'EXAM' ? 'text-white' : 'text-gray-500'}`}>Exam</button>
+          <button onClick={() => setAppMode('PROFESSOR')} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all ${appMode === 'PROFESSOR' ? 'text-amber-100' : 'text-gray-500'}`}>Study Room</button>
         </div>
       </div>
 
       <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
         
-        {/* EXAM VIEW */}
+        {/* EXAM VIEW - COMPACT CONTROL DECK */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
             
-            {/* CLEANER CONFIG GRID */}
-            <div className="border-b border-white/5 bg-black/30 z-20 flex-shrink-0 backdrop-blur-md p-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-                  {[
-                      { label: "Difficulty", value: difficulty, setter: setDifficulty, options: ["Easy", "Medium", "Hard", "Nightmare"] },
-                      { label: "Format", value: questionType, setter: setQuestionType, options: ["Multiple Choice", "True/False", "Fill in the Gap", "Select All That Apply", "Mixed"] },
-                      { label: "Timer", value: timerDuration, setter: setTimerDuration, options: ["Limitless", "5m", "10m", "30m", "1h"], disabled: isCramMode },
-                      { label: "Count", value: questionCount, setter: (v: string) => setQuestionCount(parseInt(v)), options: ["5", "10", "15", "20", "30", "50"] }
-                  ].map((field, idx) => (
-                      <div key={idx} className="relative group w-full">
-                          <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1 block pl-1">{field.label}</label>
-                          <select 
-                            value={field.value} 
-                            onChange={(e) => field.setter(e.target.value as any)} 
-                            disabled={field.disabled}
-                            className="w-full appearance-none bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl px-3 py-2.5 text-xs font-bold text-white outline-none cursor-pointer transition-all disabled:opacity-50"
-                          >
-                              {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                          </select>
-                          <div className="pointer-events-none absolute bottom-3 right-3 flex items-center text-gray-500 text-[8px]">▼</div>
-                      </div>
-                  ))}
+            {/* CONTROL DECK: Pills Layout */}
+            <div id="exam-config-target" className="border-b border-white/5 bg-black/40 z-20 flex-shrink-0 backdrop-blur-md p-3">
+              <div className="flex flex-col gap-2">
+                  {/* Row 1: Core Settings */}
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                      <ConfigPill value={difficulty} setter={setDifficulty} options={["Easy", "Medium", "Hard", "Nightmare"]} />
+                      <ConfigPill value={questionType} setter={setQuestionType} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
+                      <ConfigPill value={timerDuration} setter={setTimerDuration} options={["Limitless", "5m", "10m", "30m", "1h"]} disabled={isCramMode} />
+                      <ConfigPill value={questionCount} setter={(v: string) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
+                  </div>
+
+                  {/* Row 2: Protocols */}
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                      <TogglePill label="Oracle" active={useOracle} onClick={() => setUseOracle(!useOracle)} icon="🔮" />
+                      <TogglePill label="Weakness" active={useWeaknessDestroyer} onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} icon="🎯" />
+                      <TogglePill label="Cram" active={isCramMode} onClick={() => setIsCramMode(!isCramMode)} icon="⚡" />
+                  </div>
               </div>
             </div>
 
-            {/* Premium Protocol Cards */}
-            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 mt-2">
-               <button onClick={() => setUseOracle(!useOracle)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useOracle ? 'bg-amber-900/30 border-amber-500/50 text-amber-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}>
-                 <span className="text-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>
-                 </span>
-                 <span className="text-[10px] font-bold uppercase tracking-widest">The Oracle</span>
-               </button>
-               <button onClick={() => setUseWeaknessDestroyer(!useWeaknessDestroyer)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${useWeaknessDestroyer ? 'bg-red-900/30 border-red-500/50 text-red-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}>
-                 <span className="text-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                 </span>
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Weakness Destroyer</span>
-               </button>
-               <button onClick={() => setIsCramMode(!isCramMode)} className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${isCramMode ? 'bg-cyan-900/30 border-cyan-500/50 text-cyan-200' : 'bg-[#151515] border-white/10 text-gray-400'}`}>
-                 <span className="text-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
-                 </span>
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Cram Mode</span>
-               </button>
-            </div>
-
-            {/* Main Upload Area */}
-            <div className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar min-h-[250px]">
+            {/* Main Upload Area - Added pb-24 for mobile scrolling clearance */}
+            <div id="upload-zone-target" className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar min-h-[250px] pb-24">
                
-               {/* New Segmented Control Tabs */}
+               {/* Segmented Control Tabs */}
                <div className="flex justify-center mb-6 shrink-0">
                 <div className="bg-[#1a1a1a] p-1 rounded-xl flex border border-white/10 shadow-lg w-full max-w-sm">
                     {['FILE', 'DRIVE', 'TEXT'].map((tab) => (
@@ -401,7 +404,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                 ) : activeTab === 'FILE' ? (
                   <div className="flex flex-col gap-4 h-full">
                       <div 
-                        className={`flex-grow border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[180px] ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
+                        className={`flex-grow border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[150px] ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
                         onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
                       >
@@ -458,33 +461,25 @@ export const InputSection: React.FC<InputSectionProps> = ({
               </div>
             </div>
 
-            {/* Sticky Actions Footer */}
-            <div className="p-4 border-t border-white/10 bg-[#0a0a0a] shrink-0">
+            {/* Sticky Actions Footer - PILL GRID */}
+            <div className="p-3 border-t border-white/10 bg-[#0a0a0a] shrink-0">
                <div className="grid grid-cols-4 gap-2 mb-3">
-                   <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all gap-1 group">
-                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                      </span>
-                      <span className="text-[8px] font-bold uppercase tracking-wide text-purple-400">Duel</span>
+                   <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="col-span-1 py-2.5 rounded-xl bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 transition-all flex flex-col items-center justify-center gap-0.5 group">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      <span className="text-[8px] font-bold uppercase text-purple-400">Duel</span>
                    </button>
-                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all gap-1 group">
-                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                      </span>
-                      <span className="text-[8px] font-bold uppercase tracking-wide text-amber-500">Chat</span>
+                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="col-span-1 py-2.5 rounded-xl bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 hover:border-amber-500/40 transition-all flex flex-col items-center justify-center gap-0.5 group">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                      <span className="text-[8px] font-bold uppercase text-amber-500">Chat</span>
                    </button>
-                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all gap-1 group">
-                      <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                      </span>
-                      <span className="text-[8px] font-bold uppercase tracking-wide text-indigo-400">Cards</span>
+                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="col-span-1 py-2.5 rounded-xl bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 hover:border-indigo-500/40 transition-all flex flex-col items-center justify-center gap-0.5 group">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                      <span className="text-[8px] font-bold uppercase text-indigo-400">Cards</span>
                    </button>
                    {isScholar && (
-                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="col-span-1 flex flex-col items-center justify-center py-2 rounded-xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all gap-1 group">
-                          <span className="text-lg filter grayscale group-hover:grayscale-0 transition-all">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                          </span>
-                          <span className="text-[8px] font-bold uppercase tracking-wide text-green-400">Group</span>
+                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="col-span-1 py-2.5 rounded-xl bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 hover:border-green-500/40 transition-all flex flex-col items-center justify-center gap-0.5 group">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                          <span className="text-[8px] font-bold uppercase text-green-400">Group</span>
                        </button>
                    )}
                </div>
@@ -505,13 +500,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
         </div>
 
-        {/* PROFESSOR VIEW INPUT */}
+        {/* STUDY ROOM INPUT */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-serif font-bold text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
-                  {/* Selected Files Display */}
+                  
+                  {/* Selected Files Display - MOVED OUTSIDE INPUT TO FIX OVERLAP */}
                   {selectedFiles.length > 0 && (
-                    <div className="absolute bottom-full left-0 mb-3 flex gap-2 flex-wrap w-full">
+                    <div className="flex gap-2 flex-wrap w-full mb-3 justify-center">
                         {selectedFiles.map((f, i) => (
                             <div key={i} className="bg-[#1a1a1a] border border-amber-500/20 rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs text-amber-100 shadow-lg animate-fade-in ring-1 ring-amber-500/10">
                                 <span className="text-lg">
@@ -524,28 +520,30 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     </div>
                   )}
 
-                  <input 
-                    type="text" 
-                    value={chatInput} 
-                    onChange={(e) => setChatInput(e.target.value)} 
-                    onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                    className="w-full bg-black/60 border border-amber-500/30 rounded-2xl pl-6 pr-48 py-6 text-white outline-none focus:border-amber-500 placeholder-gray-600 text-lg shadow-2xl transition-all focus:bg-black/80 z-20 relative" 
-                    placeholder="Ask a question or upload files..." 
-                  />
-                  <div className="absolute right-3 top-3 bottom-3 flex items-center gap-2 z-30">
-                     <button onClick={() => setShowCamera(true)} className="h-full px-3 text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10" title="Snap & Solve">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                     </button>
-                     <button onClick={() => fileInputRef.current?.click()} className="h-full px-3 text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                     </button>
-                     <button onClick={() => handleGenerate()} className="h-full px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
-                        {isLoading ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                        )}
-                     </button>
+                  <div className="relative">
+                      <input 
+                        type="text" 
+                        value={chatInput} 
+                        onChange={(e) => setChatInput(e.target.value)} 
+                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                        className="w-full bg-black/60 border border-amber-500/30 rounded-2xl pl-6 pr-48 py-6 text-white outline-none focus:border-amber-500 placeholder-gray-600 text-lg shadow-2xl transition-all focus:bg-black/80 z-20 relative" 
+                        placeholder="Ask a question or upload files..." 
+                      />
+                      <div className="absolute right-3 top-3 bottom-3 flex items-center gap-2 z-30">
+                        <button onClick={() => setShowCamera(true)} className="h-full px-3 text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10" title="Snap & Solve">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </button>
+                        <button onClick={() => fileInputRef.current?.click()} className="h-full px-3 text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                        </button>
+                        <button onClick={() => handleGenerate()} className="h-full px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
+                            {isLoading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            )}
+                        </button>
+                      </div>
                   </div>
              </div>
              

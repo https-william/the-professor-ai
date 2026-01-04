@@ -17,6 +17,15 @@ export interface ProfessorSection {
   diagram_markdown?: string; // Optional MermaidJS diagram
 }
 
+export interface EssayAnalysis {
+  letterGrade: string; // A, B+, C-, etc.
+  score: number; // 0-100
+  critique: string; // General feedback
+  improvements: string[]; // 3 bullet points
+  weakest_paragraph_rewrite: string; // Show, don't just tell
+  thesis_strength: 'Weak' | 'Average' | 'Strong';
+}
+
 export interface QuizState {
   questions: QuizQuestion[];
   userAnswers: Record<number, string>; // questionId -> selectedOption (or JSON string for multi)
@@ -37,6 +46,11 @@ export interface ChatState {
   messages: ChatMessage[];
   fileContext: string;
   fileName: string;
+}
+
+export interface EssayState {
+  originalText: string;
+  analysis: EssayAnalysis | null;
 }
 
 export interface ChatMessage {
@@ -80,7 +94,7 @@ export enum AppStatus {
 }
 
 export type InputMode = 'FILE' | 'TEXT' | 'CAMERA';
-export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT' | 'DUEL' | 'FLASHCARDS';
+export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT' | 'DUEL' | 'FLASHCARDS' | 'ESSAY';
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Nightmare';
 export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Mixed' | 'Select All That Apply';
 export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '45m' | '1h' | '1h 30m' | '2h';
@@ -159,7 +173,7 @@ export interface HistoryItem {
   timestamp: number;
   mode: AppMode;
   title: string;
-  data: QuizState | ProfessorState | ChatState;
+  data: QuizState | ProfessorState | ChatState | EssayState;
   config?: QuizConfig;
   summary?: string; // Short 5-word summary of the source content
 }

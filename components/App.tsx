@@ -8,6 +8,7 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { AboutModal } from './components/AboutModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
+import { TooltipOverlay } from './components/Onboarding/TooltipOverlay';
 import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/LandingPage';
 import { CountdownTimer } from './components/CountdownTimer';
@@ -15,6 +16,7 @@ import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
 import { DuelReadyModal } from './components/DuelReadyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
+import { BrandLogo } from './components/BrandLogo';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
@@ -28,23 +30,6 @@ const ProfessorView = React.lazy(() => import('./components/ProfessorView').then
 const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView })));
 const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView })));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-
-const BrandLogo = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-full h-full">
-    <defs>
-      <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
-        <stop offset='0%' style={{stopColor:'#3b82f6', stopOpacity:1}} />
-        <stop offset='100%' style={{stopColor:'#8b5cf6', stopOpacity:1}} />
-      </linearGradient>
-    </defs>
-    <rect width='100' height='100' rx='20' fill='#0f172a'/>
-    <path d='M15 45 L50 25 L85 45 L50 65 Z' fill='url(#grad)' stroke='#ffffff' strokeWidth='2'/>
-    <path d='M85 45 V70' stroke='#f59e0b' strokeWidth='3' strokeLinecap='round'/>
-    <circle cx='85' cy='75' r='5' fill='#f59e0b'/>
-    <path d='M30 55 V75 C30 85 70 85 70 75 V55' fill='none' stroke='white' strokeWidth='2'/>
-    <circle cx='50' cy='45' r='5' fill='#fff'/>
-  </svg>
-);
 
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
@@ -62,7 +47,7 @@ const App: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   
-  const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
+  const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME' | 'TOOLTIPS'>('COMPLETE');
 
   const [quizState, setQuizState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null });
   const [professorState, setProfessorState] = useState<ProfessorState>({ sections: [] });
@@ -106,6 +91,20 @@ const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [user, status]);
 
+  // Apply Theme
+  useEffect(() => {
+      const theme = userProfile.ambientTheme === 'Deep Space' ? 'dark' : 
+                    userProfile.theme === 'Light' ? 'ivy' : 
+                    userProfile.theme === 'OLED' ? 'dark' : 'dark'; 
+      
+      document.documentElement.setAttribute('data-theme', theme);
+      if (userProfile.theme === 'OLED') {
+          document.documentElement.style.setProperty('--bg-core', '#000000');
+      } else {
+          document.documentElement.style.removeProperty('--bg-core');
+      }
+  }, [userProfile.theme, userProfile.ambientTheme]);
+
   // Real-time History Sync
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
@@ -113,26 +112,36 @@ const App: React.FC = () => {
       const syncHistory = () => {
           let dataToSave: any = null;
           let title = '';
+          let summary = history.find(h => h.id === activeHistoryId)?.summary || 'Session';
+          let currentMode = appMode;
           
           if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
               dataToSave = quizState;
               title = history.find(h => h.id === activeHistoryId)?.title || 'Exam';
+              // If Active Duel, mark as Duel mode in history
+              if (activeDuelId) currentMode = 'DUEL';
           } else if (appMode === 'PROFESSOR') {
               dataToSave = professorState;
               title = history.find(h => h.id === activeHistoryId)?.title || 'Class';
           } else if (appMode === 'CHAT') {
               dataToSave = chatState;
               title = chatState.fileName || 'Chat';
+              // Dynamic summary update for chat
+              if (chatState.messages.length > 0) {
+                  const lastMsg = chatState.messages[chatState.messages.length - 1];
+                  const snippet = lastMsg.content.substring(0, 30) + (lastMsg.content.length > 30 ? '...' : '');
+                  summary = snippet; 
+              }
           }
 
           if (dataToSave) {
               const item: HistoryItem = {
                   id: activeHistoryId,
                   timestamp: Date.now(),
-                  mode: appMode,
+                  mode: currentMode,
                   title: title,
                   data: dataToSave,
-                  summary: history.find(h => h.id === activeHistoryId)?.summary // Preserve summary
+                  summary: summary 
               };
               saveToHistory(item);
               setHistory(loadHistory()); // Update UI
@@ -146,7 +155,7 @@ const App: React.FC = () => {
       return () => {
           if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       };
-  }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
+  }, [quizState, professorState, chatState, activeHistoryId, status, appMode, activeDuelId]);
 
   // Notification Polling Logic
   useEffect(() => {
@@ -191,6 +200,8 @@ const App: React.FC = () => {
         setOnboardingStep('WELCOME');
     } else {
         setOnboardingStep('COMPLETE');
+        const hasSeenTour = localStorage.getItem('hasSeenTour');
+        if (!hasSeenTour) setOnboardingStep('TOOLTIPS');
     }
     
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
@@ -211,14 +222,32 @@ const App: React.FC = () => {
     }
   }, [user]);
 
-  // Safe Exit Wrapper
+  // Safe Exit Wrapper - REFINED LOGIC
   const attemptAction = (action: () => void, force: boolean = false) => {
-      if (!force && status === AppStatus.READY && (
-          (appMode === 'EXAM' && !quizState.isSubmitted) || 
-          (appMode === 'PROFESSOR') ||
-          (appMode === 'CHAT') ||
-          (appMode === 'FLASHCARDS')
-      )) {
+      // Logic to determine if user has "progress" worth saving
+      let hasUnsavedProgress = false;
+
+      if (status === AppStatus.READY) {
+          if (appMode === 'EXAM' && !quizState.isSubmitted) {
+              // Only warn if they have actually answered something OR if it's a long exam
+              // But strictly, if they generated it, they "paid" for it. 
+              // User request: Don't show it in situations where we shouldn't.
+              // We'll warn if exam is active and not submitted.
+              hasUnsavedProgress = true; 
+          }
+          if (appMode === 'CHAT') {
+              // Only warn if they have sent messages beyond the greeting
+              if (chatState.messages.length > 1) hasUnsavedProgress = true;
+          }
+          if (appMode === 'PROFESSOR') {
+              // Lecture mode doesn't really have "unsaved inputs", but it has "read position"
+              // Usually safe to exit without scary warning unless they are deep in it.
+              // Let's relax this one.
+              hasUnsavedProgress = false; 
+          }
+      }
+
+      if (!force && hasUnsavedProgress) {
           setPendingAction(() => action);
           setShowExitConfirmation(true);
       } else {
@@ -245,7 +274,12 @@ const App: React.FC = () => {
     if (updated.studyReminders) {
         Notification.requestPermission();
     }
-    setOnboardingStep('COMPLETE');
+    setOnboardingStep('TOOLTIPS');
+  };
+
+  const handleTooltipsComplete = () => {
+      localStorage.setItem('hasSeenTour', 'true');
+      setOnboardingStep('COMPLETE');
   };
 
   const parseDuration = (duration: string): number | null => {
@@ -537,10 +571,13 @@ const App: React.FC = () => {
               setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
               
+              const historyId = Date.now().toString();
+              setActiveHistoryId(historyId); 
+
               const historyItem: HistoryItem = { 
-                  id: Date.now().toString(), 
+                  id: historyId, 
                   timestamp: Date.now(), 
-                  mode: 'EXAM', 
+                  mode: 'DUEL', 
                   title: `Duel: ${duelState.code}`, 
                   data: newState,
                   config: duelState.quizConfig
@@ -561,16 +598,13 @@ const App: React.FC = () => {
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const isActiveSession = status === AppStatus.READY;
 
-  // Should we show the chat FAB?
-  // Only if NOT in active exam or duel, and NOT in chat mode already
-  const showChatFab = isActiveSession && appMode !== 'CHAT' && appMode !== 'DUEL' && (appMode !== 'EXAM' || quizState.isSubmitted);
-
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505]`}>
       <AmbientBackground theme='Deep Space' />
       <CountdownTimer />
       <PWAPrompt />
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
+      {onboardingStep === 'TOOLTIPS' && <TooltipOverlay onComplete={handleTooltipsComplete} />}
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       
@@ -599,13 +633,21 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-               <button 
-                 onClick={() => setIsHistoryOpen(true)}
-                 className="p-2 text-gray-400 hover:text-white transition-colors relative"
-                 title="My Library"
-               >
-                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
-               </button>
+               {/* LIBRARY BUTTON: Only visible when IDLE */}
+               {status === AppStatus.IDLE && (
+                   <button 
+                     onClick={() => {
+                         // Force refresh of history logic just in case
+                         setHistory(loadHistory());
+                         setIsHistoryOpen(true);
+                     }}
+                     className="p-2 text-gray-400 hover:text-white transition-colors relative"
+                     title="My Library"
+                   >
+                       {/* Book Icon */}
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                   </button>
+               )}
                
                {userProfile.subscriptionTier === 'Fresher' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
@@ -636,17 +678,20 @@ const App: React.FC = () => {
         onClose={() => setIsHistoryOpen(false)} 
         history={history}
         onSelect={(item) => {
-            if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
+            if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS' || item.mode === 'DUEL') {
                 setQuizState(item.data as QuizState);
-                if (item.config) {
-                    // Restore config
-                }
             } else if (item.mode === 'PROFESSOR') {
                 setProfessorState(item.data as ProfessorState);
             } else if (item.mode === 'CHAT') {
                 setChatState(item.data as ChatState);
             }
-            setAppMode(item.mode);
+            if (item.mode === 'DUEL') {
+                setAppMode('EXAM');
+                setActiveDuelId('archive');
+            } else {
+                setAppMode(item.mode);
+            }
+            
             setStatus(AppStatus.READY);
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
@@ -676,7 +721,7 @@ const App: React.FC = () => {
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
-      <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
+      <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)] pb-32">
          {status === AppStatus.IDLE && (
              <>
                 <Hero />
@@ -729,13 +774,13 @@ const App: React.FC = () => {
           </div>
       )}
       
-      {/* Floating Chat Trigger - Hide during exams */}
-      {showChatFab && !isModalOpen && (
+      {/* Floating Chat Trigger (Visible in non-chat modes) */}
+      {status === AppStatus.READY && appMode !== 'CHAT' && !isModalOpen && (
           <button 
             onClick={handleOpenFloatingChat}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group"
+            className="fixed bottom-8 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group pb-safe"
           >
-              <span className="group-hover:animate-wiggle text-white">
+              <span className="text-2xl group-hover:animate-wiggle text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
               </span>
           </button>

@@ -38,6 +38,40 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
 
   const section = state.sections[currentSectionIdx];
 
+  // Sync content for printing whenever sections update
+  useEffect(() => {
+      const printContainer = document.getElementById('printable-content');
+      if (printContainer) {
+          let html = `
+            <div style="margin-bottom: 40px; border-bottom: 2px solid black; padding-bottom: 20px;">
+                <h1 style="font-size: 32pt; font-weight: bold;">The Professor: Study Notes</h1>
+                <p style="font-size: 12pt; color: #666;">Generated on ${new Date().toLocaleDateString()}</p>
+            </div>
+          `;
+          
+          state.sections.forEach((s, i) => {
+              // Sanitize content for safety
+              const cleanContent = DOMPurify.sanitize(s.content);
+              // Parse markdown if marked is available
+              const parsedContent = window.marked ? window.marked.parse(cleanContent) : cleanContent;
+              
+              html += `
+               <div style="margin-bottom: 40px; page-break-inside: avoid;">
+                   <h2 style="font-size: 20pt; font-weight: bold; border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">${i+1}. ${s.title}</h2>
+                   <div style="font-size: 12pt; line-height: 1.6;">${parsedContent}</div>
+                   <div style="margin-top: 20px; padding: 15px; border-left: 4px solid #000; background: #f5f5f5; font-style: italic;">
+                       <strong>Analogy:</strong> ${s.analogy}
+                   </div>
+                   <div style="margin-top: 10px; font-size: 10pt; font-weight: bold;">
+                       KEY TAKEAWAY: ${s.key_takeaway}
+                   </div>
+               </div>
+              `;
+          });
+          printContainer.innerHTML = html;
+      }
+  }, [state]);
+
   useEffect(() => {
       if (contentRef.current && window.renderMathInElement) {
           window.renderMathInElement(contentRef.current, {
@@ -183,25 +217,6 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
            <LockInModal onClose={() => setShowLockInModal(false)} onConfirm={handleLockIn} />
        )}
        
-       <div id="printable-content" className="hidden">
-           <div style={{marginBottom: '40px', borderBottom: '2px solid black', paddingBottom: '20px'}}>
-               <h1 style={{fontSize: '32pt', fontWeight: 'bold'}}>The Professor: Study Notes</h1>
-               <p style={{fontSize: '12pt', color: '#666'}}>Generated on {new Date().toLocaleDateString()}</p>
-           </div>
-           {state.sections.map((s, i) => (
-               <div key={i} style={{marginBottom: '40px', pageBreakInside: 'avoid'}}>
-                   <h2 style={{fontSize: '20pt', fontWeight: 'bold', borderBottom:'1px solid #ccc', paddingBottom:'5px', marginBottom:'15px'}}>{i+1}. {s.title}</h2>
-                   <div style={{fontSize: '12pt', lineHeight: '1.6'}} dangerouslySetInnerHTML={renderContent(s.content)}></div>
-                   <div style={{marginTop: '20px', padding: '15px', borderLeft: '4px solid #000', background: '#f5f5f5', fontStyle: 'italic'}}>
-                       <strong>Analogy:</strong> {s.analogy}
-                   </div>
-                   <div style={{marginTop: '10px', fontSize: '10pt', fontWeight: 'bold'}}>
-                       KEY TAKEAWAY: {s.key_takeaway}
-                   </div>
-               </div>
-           ))}
-       </div>
-
        <div className="no-print">
            <div className="flex flex-col gap-4 mb-6 border-b border-border-main pb-4">
               <div className="flex items-center gap-3">

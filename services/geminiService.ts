@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile, ChatMessage, LockInTechnique, StudyProtocol } from "../types";
+import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile, ChatMessage, LockInTechnique, StudyProtocol, EssayAnalysis } from "../types";
 
 // --- ENV HELPER ---
 const getEnv = (key: string): string => {
@@ -237,6 +237,56 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
   }
 };
 
+// --- ESSAY GRADER ("THE RED PEN") ---
+export const gradeEssay = async (text: string): Promise<EssayAnalysis> => {
+    checkRateLimit();
+    const ai = initGemini();
+    const model = "gemini-2.5-flash";
+
+    const instructions = `
+        You are a harsh but fair Ivy League professor. 
+        Your job is to audit this student's essay/writing.
+        Grade it based on Thesis, Evidence, Clarity, and Grammar.
+        Be critical. We need to improve this student.
+    `;
+
+    const promptText = `
+        ${instructions}
+        Analyze the following student submission.
+        ${wrapUserContent(text)}
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: { role: 'user', parts: [{ text: promptText }] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        letterGrade: { type: Type.STRING, description: "A+, A, A-, B+, etc" },
+                        score: { type: Type.NUMBER, description: "0-100" },
+                        critique: { type: Type.STRING, description: "Short summary of the paper's quality" },
+                        improvements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        weakest_paragraph_rewrite: { type: Type.STRING, description: "Rewrite the weakest part to show them how it's done." },
+                        thesis_strength: { type: Type.STRING, enum: ["Weak", "Average", "Strong"] }
+                    },
+                    required: ["letterGrade", "score", "critique", "improvements", "weakest_paragraph_rewrite", "thesis_strength"]
+                }
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as EssayAnalysis;
+        }
+        throw new Error("Grading failed");
+    } catch (e) {
+        console.error("Grading error", e);
+        throw e;
+    }
+};
+
 export const generateSuddenDeathQuestion = async (text: string): Promise<QuizQuestion> => {
     // ROUTE: GROQ (Fast, Creative)
     // Fallback to Gemini if Groq key missing
@@ -282,10 +332,20 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
   const model = "gemini-2.5-flash";
   const { personality, analogyDomain } = config;
 
+  // Enhanced Prompt for Depth & Nuance
   const promptText = `
-    Teach this. Logical sections. Brief.
-    Persona: ${personality}. Analogy: ${analogyDomain}.
-    Complex topics? Include Mermaid.js in 'diagram_markdown'.
+    You are an elite academic professor and polymath with a ${personality} personality.
+    Your task is to transform the provided raw material into a masterclass lecture.
+    
+    Guidelines:
+    1. Break down complex concepts into logical, digestible sections. Do not be superficial; explain the 'Why' and 'How'.
+    2. Use the Feynman Technique: For every complex concept, provide a concrete, relatable analogy from the domain of '${analogyDomain}' (e.g., if Sports, explain Quantum Physics using Football strategies).
+    3. Anticipate student confusion. Clarify ambiguities and edge cases.
+    4. If the content implies a process or workflow, detail the steps clearly.
+    5. 'key_takeaway' must be a powerful, memorable summary of the section.
+    6. If a section describes a system, process, or hierarchy, generate a valid Mermaid.js diagram definition in 'diagram_markdown'.
+    
+    Structure the response into logical sections as a strict JSON array.
   `;
 
   let contentParts: any[] = [];
@@ -359,17 +419,27 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
     
     const hasImage = history.some(h => h.image) || fileContext.includes("[IMAGE_DATA:");
     
+    // Enhanced System Persona for Chat
+    const systemInstruction = `
+        You are 'The Professor', a highly intelligent, nuance-aware academic AI assistant.
+        Context: ${fileContext.substring(0, 15000)}.
+        
+        Guidelines:
+        1. Provide deep, context-aware answers. Don't just skim; analyze.
+        2. If the user asks a complex multi-step question, break your answer down into numbered steps.
+        3. Be precise. Avoid fluff. Use academic rigor but maintain accessibility.
+        4. If the user challenges a concept, provide a balanced, evidence-based rebuttal or clarification.
+        5. Always maintain the persona of a stern but helpful mentor.
+    `;
+    
     if (!hasImage && GROQ_API_KEY) {
         try {
             // Groq Path
-            const systemPrompt = `You are The Professor. Precise. Academic. Context: ${fileContext.substring(0, 10000)}.`;
-            
             // Convert history to Groq format
-            // We only send last 6 messages to save context
             const lastMsgs = history.slice(-6).map(m => `${m.role}: ${m.content}`).join('\n');
             const prompt = `${lastMsgs}\nuser: ${newMessage}`;
             
-            return await callGroq(systemPrompt, prompt);
+            return await callGroq(systemInstruction, prompt);
         } catch (e) {
             console.log("Groq chat failed, falling back to Gemini");
         }
@@ -398,7 +468,7 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
 
     const chat = ai.chats.create({
         model: model,
-        config: { systemInstruction: "You are The Professor." },
+        config: { systemInstruction: systemInstruction },
         history: recentHistory
     });
     
@@ -447,37 +517,28 @@ export const generateStudyProtocol = async (content: string, technique: LockInTe
 
     const systemPrompt = `
         You are an expert study guide.
-        Task: Analyze the provided text and generate study aids based on the requested technique.
-        Technique: ${technique}
-        Output: Strictly valid JSON.
-        
-        If Technique is 'SQ3R':
-        Return { "survey": "2-3 sentence high-level summary of the main points.", "questions": ["Question 1 looking for X", "Question 2 looking for Y"] }
-        
-        If Technique is 'RETRIEVAL':
-        Return { "questions": ["Question to test memory", "Question to connect concepts", "Question to apply knowledge"] }
+        Task: Analyze the content and generate a study protocol based on the '${technique}' method.
+        Output: Strict JSON object with keys:
+        - survey (string): A brief high-level overview (for SQ3R) or context (for Retrieval).
+        - questions (string[]): 3-5 key questions to ask before reading.
+        - step: '${technique === 'SQ3R' ? 'SURVEY' : 'QUESTION'}'
     `;
     
-    const userPrompt = wrapUserContent(content.substring(0, 10000));
+    const userPrompt = wrapUserContent(content.substring(0, 15000));
 
     try {
         const jsonStr = await callGroq(systemPrompt, userPrompt, true);
-        const data = JSON.parse(jsonStr);
-        
-        const protocol: StudyProtocol = {
-            step: technique === 'SQ3R' ? 'SURVEY' : 'QUESTION', // Retrieval starts with Question
-            survey: data.survey,
-            questions: data.questions || data.recall_questions
-        };
-        
-        saveToCache(cacheKey, protocol);
-        return protocol;
+        const result = JSON.parse(jsonStr);
+        // Ensure step matches strict types
+        result.step = technique === 'SQ3R' ? 'SURVEY' : 'QUESTION';
+        saveToCache(cacheKey, result);
+        return result;
     } catch (e) {
-        console.error("Protocol gen failed", e);
-        // Fallback
+        console.error("Protocol Gen Error", e);
         return {
-            step: 'READ', // Skip to reading if gen fails
-            questions: ["What is the main idea?"]
+            step: technique === 'SQ3R' ? 'SURVEY' : 'QUESTION',
+            survey: "Protocol generation failed. Proceed with standard study.",
+            questions: ["What are the key concepts?"]
         };
     }
 };

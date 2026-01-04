@@ -14,7 +14,7 @@ interface UserProfileModalProps {
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout }) => {
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
-  const [activeTab, setActiveTab] = useState<'IDENTITY' | 'ACHIEVEMENTS' | 'CALENDAR'>('IDENTITY');
+  const [activeTab, setActiveTab] = useState<'IDENTITY' | 'ACHIEVEMENTS' | 'SETTINGS' | 'CALENDAR'>('IDENTITY');
 
   if (!isOpen) return null;
 
@@ -72,6 +72,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
              <button onClick={() => setActiveTab('IDENTITY')} className={`px-3 py-1.5 rounded text-[9px] font-bold uppercase tracking-widest transition-all ${activeTab === 'IDENTITY' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Identity</button>
              <button onClick={() => setActiveTab('CALENDAR')} className={`px-3 py-1.5 rounded text-[9px] font-bold uppercase tracking-widest transition-all ${activeTab === 'CALENDAR' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Streak</button>
              <button onClick={() => setActiveTab('ACHIEVEMENTS')} className={`px-3 py-1.5 rounded text-[9px] font-bold uppercase tracking-widest transition-all ${activeTab === 'ACHIEVEMENTS' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Badges</button>
+             <button onClick={() => setActiveTab('SETTINGS')} className={`px-3 py-1.5 rounded text-[9px] font-bold uppercase tracking-widest transition-all ${activeTab === 'SETTINGS' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}>Settings</button>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">✕</button>
         </div>
@@ -148,6 +149,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                           {ach.unlocked && <div className="ml-auto text-amber-500 text-xs font-bold">✓</div>}
                       </div>
                   ))}
+              </div>
+          )}
+
+          {activeTab === 'SETTINGS' && (
+              <div className="space-y-6">
+                  <div>
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Interface Theme</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                          {['Deep Space', 'Light', 'OLED'].map(theme => (
+                              <button
+                                key={theme}
+                                onClick={() => setEditedProfile({ ...editedProfile, ambientTheme: theme === 'Deep Space' ? 'Deep Space' : undefined, theme: theme === 'Light' ? 'Light' : theme === 'OLED' ? 'OLED' : 'System' })}
+                                className={`p-4 rounded-xl border text-sm font-bold transition-all ${
+                                    (theme === 'Deep Space' && editedProfile.ambientTheme === 'Deep Space') || 
+                                    (theme !== 'Deep Space' && editedProfile.theme === theme)
+                                    ? 'bg-white text-black border-white' 
+                                    : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                                }`}
+                              >
+                                  {theme}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
               </div>
           )}
         </div>

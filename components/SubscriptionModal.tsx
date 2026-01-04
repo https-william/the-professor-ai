@@ -42,7 +42,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         'Basic Scoring',
         'Standard Speed'
       ],
-      color: 'border-gray-700 bg-gray-800/50'
+      style: 'bg-[#18181b] border-white/10 text-gray-400'
     },
     {
       id: 'Scholar' as SubscriptionTier,
@@ -57,86 +57,85 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         'Feynman Explanations',
         'Chat with Notes'
       ],
-      color: 'border-blue-500 bg-blue-900/20 shadow-blue-500/20 shadow-2xl scale-105 z-10',
-      highlight: true
+      style: 'bg-blue-900/10 border-blue-500/50 relative overflow-hidden',
+      tag: 'Popular',
+      tagColor: 'bg-blue-600'
     },
     {
       id: 'Excellentia Supreme' as SubscriptionTier,
-      name: 'Excellentia Supreme',
+      name: 'Supreme',
       priceDisplay: currency === 'NGN' ? '₦5,000' : '$12',
       amount: currency === 'NGN' ? 5000 : 12,
       desc: "Academic Immortality.",
       features: [
-        'Nightmare Difficulty Unlocked',
+        'Nightmare Difficulty',
         'The Oracle (Predictive AI)',
         'Weakness Destroyer',
         'Voice Mode',
         'Thesis Defense Protocol'
       ],
-      color: 'border-amber-500 bg-amber-900/20 shadow-amber-500/20 shadow-2xl',
-      badge: true
+      // VIP LOOK: Radial Gradient Black/Gold, distinct border
+      style: 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#2a2a2a] via-[#0f0f0f] to-black border-[#D4AF37]/60 shadow-[0_0_25px_rgba(212,175,55,0.15)]',
+      tag: 'VIP ACCESS',
+      tagColor: 'bg-gradient-to-r from-[#D4AF37] to-[#B59410] text-black font-black tracking-widest'
     }
   ];
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={onClose} />
       
-      <div className="relative bg-[#0a0a0a] w-full max-w-5xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade">
-        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+      <div className="relative w-full max-w-5xl bg-[#050505] rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade">
+        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
            <div className="flex items-center gap-3">
              <span className="text-2xl">🎓</span>
-             <h2 className="text-xl font-bold text-white">Tuition Plans</h2>
+             <h2 className="text-xl font-bold text-white font-serif">Tuition Plans</h2>
            </div>
            
-           <div className="flex bg-white/10 rounded-lg p-1">
-               <button onClick={() => setCurrency('NGN')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${currency === 'NGN' ? 'bg-white text-black' : 'text-gray-400'}`}>NGN</button>
-               <button onClick={() => setCurrency('USD')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-white text-black' : 'text-gray-400'}`}>USD</button>
+           <div className="flex bg-black rounded-lg p-1 border border-white/10">
+               <button onClick={() => setCurrency('NGN')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${currency === 'NGN' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}>NGN</button>
+               <button onClick={() => setCurrency('USD')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}>USD</button>
            </div>
 
-           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-4">✕</button>
+           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-4 p-2 bg-white/5 rounded-full">✕</button>
         </div>
 
-        <div className="overflow-y-auto p-4 md:p-8 custom-scrollbar">
-           <div className="text-center mb-10">
-             <h3 className="text-3xl md:text-4xl font-serif font-bold mb-4">Invest in your mind.</h3>
-             <p className="text-gray-400">Choose the level of academic rigor you can handle.</p>
+        <div className="overflow-y-auto p-4 md:p-8 custom-scrollbar bg-[#050505]">
+           <div className="text-center mb-12">
+             <h3 className="text-3xl md:text-5xl font-serif font-bold mb-4 text-white">Invest in your mind.</h3>
+             <p className="text-gray-400 max-w-md mx-auto">The cost of ignorance is higher than the price of education.</p>
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
               {tiers.map((tier) => (
                 <div 
                   key={tier.id} 
-                  className={`relative p-6 rounded-2xl border flex flex-col h-full transition-all ${tier.color} ${currentTier === tier.id ? 'ring-2 ring-white' : ''}`}
+                  className={`relative p-8 rounded-3xl border flex flex-col h-full transition-all duration-300 group ${tier.style} ${currentTier === tier.id ? 'ring-2 ring-white/50' : ''}`}
                 >
-                   {tier.highlight && (
-                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-                       Recommended
+                   {tier.tag && (
+                     <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${tier.tagColor} text-white text-[10px] font-bold uppercase px-4 py-1.5 rounded-full shadow-lg`}>
+                       {tier.tag}
                      </div>
                    )}
                    
-                   {tier.badge && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse">
-                        GOD MODE
-                      </div>
-                   )}
-                   
-                   <h4 className="text-xl font-bold mb-2 flex items-center gap-2">
+                   <h4 className={`text-2xl font-bold mb-2 flex items-center gap-2 ${tier.id === 'Excellentia Supreme' ? 'text-[#D4AF37] font-serif' : 'text-white'}`}>
                      {tier.name}
-                     {tier.badge && <span className="text-amber-500">👑</span>}
                    </h4>
-                   <div className="flex items-baseline gap-2 mb-1">
-                       <span className="text-2xl font-mono font-bold">{tier.priceDisplay}</span>
+                   
+                   <div className="flex items-baseline gap-1 mb-1">
+                       <span className={`text-4xl font-mono font-bold ${tier.id === 'Excellentia Supreme' ? 'text-white' : 'text-white'}`}>{tier.priceDisplay}</span>
                        {tier.amount > 0 && <span className="text-xs text-gray-500">/mo</span>}
                    </div>
                    
-                   <p className="text-xs text-gray-400 mb-6 italic">"{tier.desc}"</p>
+                   <p className="text-xs text-gray-500 mb-8 italic min-h-[32px]">"{tier.desc}"</p>
 
-                   <ul className="space-y-3 mb-8 flex-1">
+                   <ul className="space-y-4 mb-10 flex-1">
                      {tier.features.map(f => (
-                       <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                         {f}
+                       <li key={f} className="flex items-start gap-3 text-sm">
+                         <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${tier.id === 'Excellentia Supreme' ? 'bg-[#D4AF37] text-black' : 'bg-white/10 text-white'}`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                         </div>
+                         <span className={tier.id === 'Excellentia Supreme' ? 'text-gray-200' : 'text-gray-300'}>{f}</span>
                        </li>
                      ))}
                    </ul>
@@ -144,13 +143,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                    <button 
                      onClick={() => handleCheckout(tier.id, tier.amount)}
                      disabled={loading}
-                     className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                     className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
                        currentTier === tier.id 
-                         ? 'bg-white/10 text-gray-500 cursor-default' 
-                         : 'bg-[#635BFF] text-white hover:bg-[#5349e0] shadow-lg'
+                         ? 'bg-white/5 text-gray-500 cursor-default border border-white/5' 
+                         : tier.id === 'Excellentia Supreme'
+                            ? 'bg-gradient-to-r from-[#D4AF37] to-[#8C7323] text-black shadow-lg shadow-[#D4AF37]/20'
+                            : tier.id === 'Scholar'
+                                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'
+                                : 'bg-white text-black hover:bg-gray-200'
                      }`}
                    >
-                     {loading ? 'Redirecting...' : (currentTier === tier.id ? 'Current Plan' : 'Secure Checkout')}
+                     {loading ? 'Processing...' : (currentTier === tier.id ? 'Current Plan' : tier.amount === 0 ? 'Downgrade' : 'Select Plan')}
                    </button>
                 </div>
               ))}

@@ -185,10 +185,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                       
                       <div className="prose prose-invert prose-sm max-w-none leading-relaxed" dangerouslySetInnerHTML={renderMarkdown(msg.content)} />
                       
-                      <div className="mt-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-[9px] text-gray-500 font-mono uppercase tracking-widest">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      {/* Timestamp Footer */}
+                      <div className="mt-2 flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <span className="text-[9px] text-gray-400 font-mono uppercase tracking-widest">
+                              {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
                           {msg.role === 'model' && (
-                              <button onClick={() => handleToggleSave(msg.id)} className={`ml-2 ${msg.isSaved ? 'text-amber-500' : 'text-gray-600 hover:text-gray-400'}`}>
+                              <button onClick={() => handleToggleSave(msg.id)} className={`ml-2 ${msg.isSaved ? 'text-amber-500' : 'text-gray-500 hover:text-white'}`}>
                                   {msg.isSaved ? (
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
                                   ) : (
