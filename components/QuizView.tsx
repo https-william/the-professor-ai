@@ -1,20 +1,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { QuizState, QuizQuestion, Difficulty, DuelState } from '../types';
-import { FlashcardDeck } from './FlashcardDeck';
 import { simplifyExplanation, generateSuddenDeathQuestion } from '../services/geminiService';
 import { subscribeToDuel, activateSuddenDeath, submitSuddenDeathAnswer } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 
 interface QuizViewProps {
   quizState: QuizState;
-  difficulty?: Difficulty;
   onAnswerSelect: (questionId: number, answer: string) => void;
   onFlagQuestion: (questionId: number) => void;
   onSubmit: () => void;
   onReset: () => void;
   onTimeExpired: () => void;
-  duelId?: string | null; // New Prop to track active duel
+  duelId?: string | null;
+  onIndexChange: (index: number) => void; // Sync index up
 }
 
 // Helper to prevent crashes on bad JSON
@@ -59,17 +58,18 @@ const getWittyFeedback = (score: number, total: number) => {
 
 export const QuizView: React.FC<QuizViewProps> = ({ 
   quizState, 
-  difficulty = 'Medium',
   onAnswerSelect, 
   onFlagQuestion,
   onSubmit, 
   onReset,
   onTimeExpired,
-  duelId
+  duelId,
+  onIndexChange
 }) => {
   const { user } = useAuth();
-  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime, isCramMode, focusStrikes } = quizState;
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+  const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialTime, focusStrikes, currentQuestionIndex } = quizState;
+  // Initialize internal index from persisted state
+  const [internalIndex, setInternalIndex] = useState(currentQuestionIndex || 0);
   const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
   const [strikes, setStrikes] = useState(focusStrikes || 0);
   
@@ -85,12 +85,17 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [simplifiedExplanations, setSimplifiedExplanations] = useState<Record<number, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
 
-  // Focus Tracking Refs
   const lastStrikeTime = useRef<number>(0);
+
+  // Sync state when parent updates
+  useEffect(() => {
+      setInternalIndex(currentQuestionIndex);
+  }, [currentQuestionIndex]);
 
   // Sync internal input state when question changes
   useEffect(() => {
-      const q = questions[currentQuestionIdx];
+      const q = questions[internalIndex];
+      if (!q) return;
       const savedAnswer = userAnswers[q.id];
       
       if (q.type === 'Fill in the Gap') {
@@ -98,7 +103,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
       } else if (q.type === 'Select All That Apply') {
           setMultiSelectAnswers(safeParseJSON(savedAnswer, []));
       }
-  }, [currentQuestionIdx, userAnswers]);
+  }, [internalIndex, userAnswers, questions]);
 
   // DUEL: Subscribe to updates if submitted
   useEffect(() => {
@@ -109,7 +114,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
               // Host Logic to Trigger Sudden Death Generation
               if (data.status === 'SUDDEN_DEATH_PENDING' && data.hostId === user?.uid && !isGeneratingSD) {
                   setIsGeneratingSD(true);
-                  // Generate using the original content context
                   generateSuddenDeathQuestion(data.content || "General Knowledge").then((q) => {
                       activateSuddenDeath(duelId, q);
                   });
@@ -128,25 +132,16 @@ export const QuizView: React.FC<QuizViewProps> = ({
           if (now - lastStrikeTime.current < 1500) return; 
           lastStrikeTime.current = now;
 
-          if (difficulty === 'Nightmare' && strikes >= 3) return;
-
           setStrikes(prev => {
               const newStrikes = prev + 1;
               const toast = document.createElement('div');
               toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest z-[100] animate-bounce shadow-[0_0_20px_red] pointer-events-none transition-opacity duration-500';
-              toast.innerText = `⚠️ FOCUS LOST. STRIKE ${newStrikes}${difficulty === 'Nightmare' ? '/3' : ''}`;
+              toast.innerText = `⚠️ FOCUS LOST. STRIKE ${newStrikes}`;
               document.body.appendChild(toast);
               setTimeout(() => {
                   toast.style.opacity = '0';
                   setTimeout(() => toast.remove(), 500);
               }, 2500);
-
-              if (difficulty === 'Nightmare' && newStrikes >= 3) {
-                  setTimeout(() => {
-                      alert("ACADEMIC INTEGRITY VIOLATED. EXAM TERMINATED.");
-                      onSubmit();
-                  }, 500);
-              }
               return newStrikes;
           });
       };
@@ -163,31 +158,41 @@ export const QuizView: React.FC<QuizViewProps> = ({
           document.removeEventListener('visibilitychange', onVisibilityChange);
           window.removeEventListener('blur', onWindowBlur);
       };
-  }, [isSubmitted, difficulty, onSubmit, strikes]);
-
-  useEffect(() => {
-      if (isCramMode && !isSubmitted) setTimeLeft(10);
-  }, [currentQuestionIdx, isCramMode, isSubmitted]);
+  }, [isSubmitted, strikes]);
 
   useEffect(() => {
     if (isSubmitted || timeLeft === null) return;
     if (timeLeft <= 0) {
-      if (isCramMode) handleNextQuestion();
-      else onTimeExpired();
+      onTimeExpired();
       return;
     }
     const timer = setInterval(() => {
       setTimeLeft(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, isSubmitted, onTimeExpired, isCramMode]);
+  }, [timeLeft, isSubmitted, onTimeExpired]);
 
   const handleNextQuestion = () => {
-      if (currentQuestionIdx < questions.length - 1) {
-          setCurrentQuestionIdx(prev => prev + 1);
+      if (internalIndex < questions.length - 1) {
+          const newIdx = internalIndex + 1;
+          setInternalIndex(newIdx);
+          onIndexChange(newIdx);
       } else {
           onSubmit();
       }
+  };
+
+  const handlePrevQuestion = () => {
+      if (internalIndex > 0) {
+          const newIdx = internalIndex - 1;
+          setInternalIndex(newIdx);
+          onIndexChange(newIdx);
+      }
+  };
+
+  const handleJumpToQuestion = (idx: number) => {
+      setInternalIndex(idx);
+      onIndexChange(idx);
   };
 
   const handleSuddenDeathAnswer = (opt: string) => {
@@ -197,20 +202,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
       setSuddenDeathSubmitted(true);
   };
 
-  const currentQ = questions[currentQuestionIdx];
+  const currentQ = questions[internalIndex];
   const total = questions.length;
   
-  const getAuraClass = () => {
-      if (isCramMode) return 'shadow-[0_0_150px_rgba(6,182,212,0.35)] border-cyan-500/50 bg-[#001015]';
-      if (difficulty === 'Nightmare') return 'shadow-[0_0_150px_rgba(126,34,206,0.35)] border-purple-600/50 bg-[#0f001a]';
-      if (difficulty === 'Hard') return 'shadow-[0_0_80px_rgba(239,68,68,0.25)] border-red-500/40 bg-[#1a0505]';
-      if (difficulty === 'Easy') return 'border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.1)]';
-      return 'border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.1)]'; 
-  };
-
   const getXPFeedback = (score: number) => {
-      const xp = Math.min(score * 50, 500) * (isCramMode ? 2 : 1); 
-      return `+${xp} XP Gained ${isCramMode ? '(2x Adrenaline)' : ''}`;
+      const xp = Math.min(score * 50, 500); 
+      return `+${xp} XP Gained`;
   };
 
   const handleELI5 = async (q: QuizQuestion) => {
@@ -245,7 +242,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
   // --- REPORT CARD ---
   if (isSubmitted) {
-    // Pick a random witty remark based on score
     const feedbacks = getWittyFeedback(score, total);
     const feedback = feedbacks[Math.floor(Math.random() * feedbacks.length)];
 
@@ -354,7 +350,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
             </div>
         </div>
 
-        {/* Question Review (Same as before) */}
+        {/* Question Review */}
         <div className="space-y-6">
           <h3 className="text-lg font-bold text-white uppercase tracking-widest mb-4 border-b border-white/10 pb-2">Detailed Analysis</h3>
           {questions.map((q, idx) => {
@@ -386,7 +382,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
                      </span>
                   </div>
                   
-                  {/* Options & Explanation (Same as before) */}
                   <div className="text-sm text-gray-300 bg-black/30 p-4 rounded-xl border border-white/5 flex flex-col gap-3 mt-4">
                       <div className="flex gap-3">
                           <div className="flex-1">
@@ -419,21 +414,21 @@ export const QuizView: React.FC<QuizViewProps> = ({
     );
   }
 
-  // --- EXAM MODE (Returns existing JSX) ---
+  // --- EXAM MODE ---
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col">
        {/* HUD */}
-       <div className={`glass-panel p-3 sm:p-4 rounded-2xl mb-4 sticky top-4 z-30 flex flex-col gap-2 backdrop-blur-xl transition-all duration-700 ${getAuraClass()}`}>
+       <div className="glass-panel p-3 sm:p-4 rounded-2xl mb-4 sticky top-4 z-30 flex flex-col gap-2 backdrop-blur-xl transition-all duration-700 border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.1)]">
           <div className="flex justify-between items-center px-1 sm:px-2">
              <div className="flex items-center gap-2 sm:gap-3">
-                 <div className={`w-2 h-2 rounded-full animate-pulse ${isCramMode ? 'bg-cyan-500 shadow-[0_0_10px_cyan]' : difficulty === 'Nightmare' ? 'bg-purple-500 shadow-[0_0_10px_purple]' : difficulty === 'Hard' ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-blue-500'}`}></div>
-                 <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-none ${isCramMode ? 'text-cyan-300' : difficulty === 'Nightmare' ? 'text-purple-300 animate-pulse' : 'text-white'}`}>
-                    {duelId ? 'DUEL IN PROGRESS' : (isCramMode ? 'ADRENALINE PROTOCOL' : difficulty === 'Nightmare' ? 'NIGHTMARE' : difficulty === 'Hard' ? 'HARDCORE' : 'LIVE EXAM')}
+                 <div className="w-2 h-2 rounded-full animate-pulse bg-blue-500"></div>
+                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-none text-white">
+                    {duelId ? 'DUEL IN PROGRESS' : 'LIVE EXAM'}
                  </span>
              </div>
              
              <div className="flex items-center gap-3">
-                 <div className={`font-mono text-sm sm:text-xl font-bold tracking-widest bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 min-w-[70px] text-center ${isCramMode ? 'text-cyan-400 border-cyan-500/50' : 'text-white'}`}>
+                 <div className="font-mono text-sm sm:text-xl font-bold tracking-widest bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 min-w-[70px] text-center text-white">
                     {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2,'0')}` : '∞'}
                  </div>
              </div>
@@ -445,8 +440,8 @@ export const QuizView: React.FC<QuizViewProps> = ({
                  let statusColor = "bg-white/5 text-gray-500 border-white/5 hover:bg-white/10";
                  const isFlagged = flaggedQuestions.includes(q.id);
                  
-                 if (currentQuestionIdx === idx) {
-                     statusColor = isCramMode ? "bg-cyan-600 text-black border-cyan-500 ring-2 ring-cyan-500/30" : "bg-blue-600 text-white border-blue-500 ring-2 ring-blue-500/30 shadow-lg z-10";
+                 if (internalIndex === idx) {
+                     statusColor = "bg-blue-600 text-white border-blue-500 ring-2 ring-blue-500/30 shadow-lg z-10";
                  } else if (userAnswers[q.id]) {
                      statusColor = "bg-blue-900/20 text-blue-400 border-blue-500/30";
                  } else if (isFlagged) {
@@ -456,7 +451,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                  return (
                     <button 
                       key={q.id} 
-                      onClick={() => setCurrentQuestionIdx(idx)}
+                      onClick={() => handleJumpToQuestion(idx)}
                       className={`flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg border flex items-center justify-center text-xs font-bold transition-all relative ${statusColor}`}
                     >
                       {idx + 1}
@@ -468,9 +463,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
        </div>
 
        {/* Question Card */}
-       <div className={`glass-panel rounded-3xl p-5 md:p-10 flex-1 relative flex flex-col shadow-2xl border-white/10 ${isCramMode ? 'border-cyan-500/20' : ''}`}>
+       <div className="glass-panel rounded-3xl p-5 md:p-10 flex-1 relative flex flex-col shadow-2xl border-white/10">
           <div className="flex justify-between items-start mb-6 sm:mb-8">
-              <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border ${isCramMode ? 'text-cyan-400 bg-cyan-900/10 border-cyan-500/20' : 'text-blue-400 bg-blue-900/10 border-blue-500/20'}`}>Question {currentQuestionIdx + 1} / {total}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border text-blue-400 bg-blue-900/10 border-blue-500/20">Question {internalIndex + 1} / {total}</span>
               <button onClick={() => onFlagQuestion(currentQ.id)} className={`flex items-center gap-2 text-xs uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg transition-all ${flaggedQuestions.includes(currentQ.id) ? 'bg-amber-900/20 text-amber-500 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill={flaggedQuestions.includes(currentQ.id) ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-8a2 2 0 01-2-1.85V19a2 2 0 00-2 2h2zM5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H9c-1.105 0-2 .895-2 2v12z" /></svg>
                  {flaggedQuestions.includes(currentQ.id) ? 'Flagged' : 'Flag'}
@@ -523,7 +518,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                      onClick={() => onAnswerSelect(currentQ.id, opt)}
                      className={`w-full text-left p-4 sm:p-5 rounded-2xl border transition-all relative group ${
                         userAnswers[currentQ.id] === opt 
-                        ? isCramMode ? 'bg-cyan-600 text-black border-cyan-500 shadow-xl shadow-cyan-900/20 scale-[1.01]' : 'bg-blue-600 text-white border-blue-500 shadow-xl shadow-blue-900/20 scale-[1.01]' 
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-xl shadow-blue-900/20 scale-[1.01]' 
                         : 'bg-white/5 border-transparent text-gray-300 hover:bg-white/10 hover:border-white/10'
                      }`}
                    >
@@ -538,14 +533,14 @@ export const QuizView: React.FC<QuizViewProps> = ({
              <button 
                onClick={() => {
                    if (currentQ.type === 'Fill in the Gap') saveTextInput(); 
-                   setCurrentQuestionIdx(Math.max(0, currentQuestionIdx - 1));
+                   handlePrevQuestion();
                }} 
-               disabled={currentQuestionIdx === 0} 
+               disabled={internalIndex === 0} 
                className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 font-bold text-xs uppercase hover:bg-white/10 disabled:opacity-30 transition-all"
              >
                Prev
              </button>
-             {currentQuestionIdx === questions.length - 1 ? (
+             {internalIndex === questions.length - 1 ? (
                 <button 
                     onClick={() => {
                         if (currentQ.type === 'Fill in the Gap') saveTextInput();
@@ -561,7 +556,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         if (currentQ.type === 'Fill in the Gap') saveTextInput();
                         handleNextQuestion();
                     }} 
-                    className={`px-8 py-3 rounded-xl text-white font-bold text-xs uppercase transition-all shadow-lg ${isCramMode ? 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-900/20 text-black' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/20'}`}
+                    className="px-8 py-3 rounded-xl text-white font-bold text-xs uppercase transition-all shadow-lg bg-blue-600 hover:bg-blue-500 shadow-blue-900/20"
                 >
                     Next
                 </button>

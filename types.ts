@@ -28,14 +28,14 @@ export interface EssayAnalysis {
 
 export interface QuizState {
   questions: QuizQuestion[];
-  userAnswers: Record<number, string>; // questionId -> selectedOption (or JSON string for multi)
+  userAnswers: Record<number, string>; // questionId -> selectedOption
   flaggedQuestions: number[]; // Array of question IDs
   isSubmitted: boolean;
   score: number;
   startTime: number | null; // Timestamp
   timeRemaining: number | null; // Seconds (null if limitless)
   focusStrikes?: number; // Number of times focus was lost
-  isCramMode?: boolean; // New Adrenaline Protocol
+  currentQuestionIndex: number; // For persistence
 }
 
 export interface ProfessorState {
@@ -114,8 +114,7 @@ export interface QuizConfig {
   analogyDomain: AnalogyDomain;
   // Excellentia Supreme Features
   useOracle?: boolean; // Predictive questioning
-  useWeaknessDestroyer?: boolean; // Focus on past mistakes
-  isCramMode?: boolean; // 10s per question
+  useWeaknessDestroyer?: boolean;
 }
 
 export type SubscriptionTier = 'Fresher' | 'Scholar' | 'Excellentia';
@@ -191,13 +190,6 @@ export interface ProcessedFile {
   name: string;
 }
 
-export interface DriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-  size?: string;
-}
-
 export interface SystemLog {
   id: string;
   action: string;
@@ -220,4 +212,11 @@ export interface StudyProtocol {
   questions?: string[]; // SQ3R or Retrieval questions
   step: 'SURVEY' | 'QUESTION' | 'READ' | 'RECITE' | 'REVIEW';
   userNotes?: string;
+}
+
+export interface DriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: number;
 }

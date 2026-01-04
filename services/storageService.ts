@@ -168,8 +168,14 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   
   let updated = { ...profile };
 
-  // Reset daily limits if new day (Check simple date string match)
-  if (now.toDateString() !== lastGen.toDateString()) {
+  // Check if days are different
+  const isSameDay = (d1: Date, d2: Date) => 
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  // Reset daily limits if new day
+  if (!isSameDay(now, lastGen)) {
     updated.dailyQuizzesGenerated = 0;
     updated.dailyFilesUploaded = 0;
     updated.dailyImagesUploaded = 0;
@@ -179,19 +185,29 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   }
 
   // Streak Logic
-  if (now.toDateString() === last.toDateString()) {
+  if (isSameDay(now, last)) {
     return updated;
   }
   
   const diffTime = Math.abs(now.getTime() - last.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
-  if (diffDays <= 2) { 
-    updated.streak = profile.streak + 1;
+  // diffDays includes current day roughly. 
+  // If last study was yesterday (diffDays approx 1), increment streak.
+  // If today is Monday and last study was Sunday, it's 1 day diff.
+  
+  // More robust day diff:
+  const oneDay = 1000 * 60 * 60 * 24;
+  const daysDiff = Math.floor((now.getTime() - last.getTime()) / oneDay);
+
+  if (daysDiff <= 1) { 
+    updated.streak = (updated.streak || 0) + 1;
   } else {
     // Check for Freeze
     if (updated.hasStreakFreeze) {
         updated.hasStreakFreeze = false; // Consume freeze
+        // Streak maintained but not incremented? Or reset to 1? usually reset to 1 but freeze keeps it.
+        // Let's assume freeze keeps the number but doesn't increment.
     } else {
         updated.streak = 1;
     }
@@ -214,16 +230,21 @@ export const incrementDailyUsage = (profile: UserProfile, type: 'QUIZ' | 'FILE' 
   return updated;
 };
 
-export const buyItem = (profile: UserProfile, itemCost: number, itemType: 'FREEZE' | 'THEME'): UserProfile => {
-    if (profile.xp < itemCost) throw new Error("Insufficient XP");
-    const updated = { ...profile, xp: profile.xp - itemCost };
-    
-    if (itemType === 'FREEZE') {
-        updated.hasStreakFreeze = true;
-    }
-    
-    return updated;
-}
+export const calculateLevel = (xp: number) => {
+    // Level = sqrt(XP / 100) + 1
+    // 0 XP = Lvl 1
+    // 100 XP = Lvl 2
+    // 400 XP = Lvl 3
+    // 10000 XP = Lvl 11
+    return Math.floor(Math.sqrt(xp / 100)) + 1;
+};
 
-export const calculateLevel = (xp: number) => Math.floor(xp / 100) + 1;
-export const calculateProgress = (xp: number) => xp % 100;
+export const calculateProgress = (xp: number) => {
+    // Calculate progress to next level
+    const level = calculateLevel(xp);
+    const currentLevelXP = Math.pow(level - 1, 2) * 100;
+    const nextLevelXP = Math.pow(level, 2) * 100;
+    const range = nextLevelXP - currentLevelXP;
+    const current = xp - currentLevelXP;
+    return Math.min(100, Math.max(0, (current / range) * 100));
+};

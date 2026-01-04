@@ -73,17 +73,31 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
   }, [state]);
 
   useEffect(() => {
-      if (contentRef.current && window.renderMathInElement) {
-          window.renderMathInElement(contentRef.current, {
-              delimiters: [
-                  {left: '$$', right: '$$', display: true},
-                  {left: '$', right: '$', display: false},
-                  {left: '\\(', right: '\\)', display: false},
-                  {left: '\\[', right: '\\]', display: true}
-              ],
-              throwOnError: false
-          });
-      }
+      const renderMath = () => {
+          if (contentRef.current && window.renderMathInElement) {
+              try {
+                  window.renderMathInElement(contentRef.current, {
+                      delimiters: [
+                          {left: '$$', right: '$$', display: true},
+                          {left: '$', right: '$', display: false},
+                          {left: '\\(', right: '\\)', display: false},
+                          {left: '\\[', right: '\\]', display: true}
+                      ],
+                      throwOnError: false
+                  });
+              } catch (e) {
+                  // Suppress KaTeX parsing errors
+                  console.debug("KaTeX Render Warn:", e);
+              }
+          }
+      };
+
+      // Attempt render
+      renderMath();
+      
+      // Retry in case scripts loaded late
+      const timer = setTimeout(renderMath, 1500);
+      return () => clearTimeout(timer);
   }, [currentSectionIdx, state, summaryContent, lockInConfig]);
 
   const handleSave = () => {
