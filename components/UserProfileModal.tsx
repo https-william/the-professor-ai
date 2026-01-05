@@ -19,6 +19,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   // Long Press Logic
   const [isHolding, setIsHolding] = useState(false);
   const holdTimer = useRef<any>(null);
+  const startTime = useRef<number>(0);
   const HOLD_DURATION = 3000; // 3 Seconds
 
   // Clean up timer on unmount
@@ -28,22 +29,46 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       };
   }, []);
 
+  const triggerSuccess = () => {
+      setIsHolding(false);
+      if (holdTimer.current) {
+          clearTimeout(holdTimer.current);
+          holdTimer.current = null;
+      }
+      
+      if (onTriggerAdmin) {
+          // Trigger vibration if supported for tactile feedback
+          if (navigator.vibrate) navigator.vibrate(200);
+          onTriggerAdmin();
+      }
+  };
+
   const startHold = (e: React.SyntheticEvent) => {
-      // Prevent default to stop text selection or weird browser behaviors
-      e.preventDefault();
+      // Prevent default on touch to stop scrolling, but allow mouse to behave normally if needed
+      if (e.type === 'touchstart') {
+          // e.preventDefault(); // Can interfere with some browser behaviors, usually okay for long press buttons
+      }
+      
       setIsHolding(true);
+      startTime.current = Date.now();
+      
+      if (holdTimer.current) clearTimeout(holdTimer.current);
       
       holdTimer.current = setTimeout(() => {
-          setIsHolding(false);
-          if (onTriggerAdmin) {
-              // Trigger vibration if supported for tactile feedback
-              if (navigator.vibrate) navigator.vibrate(200);
-              onTriggerAdmin();
-          }
+          triggerSuccess();
       }, HOLD_DURATION);
   };
 
-  const endHold = () => {
+  const endHold = (e: React.SyntheticEvent) => {
+      // If endHold fires, check if we actually held long enough
+      // This covers the race condition where user releases exactly when visual finishes but timer hasn't ticked.
+      const elapsed = Date.now() - startTime.current;
+      
+      if (isHolding && elapsed >= HOLD_DURATION - 100) { // 100ms tolerance
+          triggerSuccess();
+          return;
+      }
+
       setIsHolding(false);
       if (holdTimer.current) {
           clearTimeout(holdTimer.current);
@@ -119,16 +144,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
               <div 
-                className="relative w-10 h-10 select-none touch-none"
+                className="relative w-10 h-10 select-none touch-none cursor-pointer"
                 onMouseDown={startHold}
                 onMouseUp={endHold}
                 onMouseLeave={endHold}
                 onTouchStart={startHold}
                 onTouchEnd={endHold}
-                onTouchCancel={endHold}
               >
                   {/* Background Icon */}
-                  <div className="absolute inset-0 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 cursor-pointer z-10 transition-transform active:scale-95">
+                  <div className={`absolute inset-0 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 z-10 transition-transform ${isHolding ? 'scale-95' : ''}`}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
                   </div>
 
@@ -139,7 +163,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                           cy="24"
                           r="20"
                           fill="none"
-                          stroke="red"
+                          stroke="#ef4444"
                           strokeWidth="3"
                           strokeDasharray="126" // 2 * PI * 20
                           strokeDashoffset={isHolding ? '0' : '126'}
