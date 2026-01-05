@@ -68,14 +68,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const isFresher = userProfile.subscriptionTier === 'Fresher';
   const isExcellentia = userProfile.subscriptionTier === 'Excellentia';
   
-  // TIGHTENED BUSINESS LIMITS
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-  const QUIZ_LIMIT = isFresher ? 1 : 999; // Reduced to 1 per day to force upgrade
-  const FILE_LIMIT_DAILY = isFresher ? 1 : 999; // Reduced to 1 per day
-  const IMG_LIMIT_DAILY = isFresher ? 1 : 999;
+  const QUIZ_LIMIT = isFresher ? 1 : 999;
+  const FILE_LIMIT_DAILY = isFresher ? 1 : 999;
   const DUEL_LIMIT = isFresher ? 1 : 999;
 
-  const canChat = !isFresher; // Only paid users get Professor Chat
+  const canChat = !isFresher; 
 
   const quizzesLeft = QUIZ_LIMIT - (userProfile.dailyQuizzesGenerated || 0);
   const isLimitReached = quizzesLeft <= 0;
@@ -91,12 +89,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
     const validFiles: File[] = [];
     let errorMsg = null;
 
-    let newFilesCount = 0;
-    
-    // Simple pre-check
     if ((userProfile.dailyFilesUploaded || 0) + files.length > FILE_LIMIT_DAILY) {
         setFileError("Daily file limit reached. Unlock unlimited uploads.");
-        // We do not block here, we let them try to upload but the button will be locked or prompt upgrade
     }
 
     for (const f of files) {
@@ -151,10 +145,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
     
     const finalMode = targetMode || appMode;
 
-    // --- SUBTLE UPSELL LOGIC ---
     if (isLimitReached) {
         setFileError("Daily limit reached.");
-        onShowSubscription(); // Open modal directly
+        onShowSubscription(); 
         return;
     }
     
@@ -270,17 +263,15 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
-      {/* Configuration Modals */}
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
 
-      {/* Duel Selector */}
       {showDuelSelector && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowDuelSelector(false)}>
               <div className="bg-[#18181b] border border-purple-500/30 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
                   <div className="text-center mb-6">
-                      <h3 className="text-white font-bold text-lg font-serif">Enter The Arena</h3>
+                      <h3 className="text-white font-bold text-lg font-display">Enter The Arena</h3>
                       <p className="text-gray-400 text-xs">Mass Multiplayer Academic Combat</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -314,16 +305,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
       <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
         
-        {/* Limit Bar (Subtle Prompt) */}
-        {isFresher && (
-            <div className="absolute top-0 left-0 w-full h-1 bg-gray-800 z-50">
-                <div 
-                    className={`h-full transition-all duration-500 ${isLimitReached ? 'bg-red-500' : 'bg-blue-500'}`} 
-                    style={{ width: `${Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100)}%` }}
-                ></div>
-            </div>
-        )}
-
         {/* EXAM VIEW */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
             
@@ -534,7 +515,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
                              </div>
                              <div className="text-left">
-                                 <span className="block text-lg font-serif font-bold text-white group-hover:text-green-400 transition-colors">The Hub</span>
+                                 <span className="block text-lg font-display font-bold text-white group-hover:text-green-400 transition-colors">The Hub</span>
                                  <span className="block text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-gray-300">Live Study Lounge</span>
                              </div>
                          </div>

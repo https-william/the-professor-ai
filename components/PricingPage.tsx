@@ -11,16 +11,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
   const [currency, setCurrency] = useState<'USD' | 'NGN'>('USD');
 
   useEffect(() => {
-    // STRICT GEO-FENCING
-    // Default is USD. Only switch to NGN if explicitly in Nigeria.
-    // This prevents international arbitrage.
     try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (tz === 'Africa/Lagos') {
             setCurrency('NGN');
         }
     } catch (e) {
-        // Fallback to USD on error
         setCurrency('USD');
     }
   }, []);
@@ -42,7 +38,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
       },
       {
           name: "Scholar",
-          price: currency === 'NGN' ? '₦3,500' : '$8.99',
+          price: currency === 'NGN' ? '₦4,500' : '$8.99',
           period: '/mo',
           desc: "For the serious student.",
           features: [
@@ -58,7 +54,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
       },
       {
           name: "Excellentia",
-          price: currency === 'NGN' ? '₦8,000' : '$19.99',
+          price: currency === 'NGN' ? '₦12,000' : '$24.99',
           period: '/mo',
           desc: "Academic immortality.",
           features: [
@@ -82,7 +78,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
             <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
                 <div className="flex items-center gap-3 cursor-pointer" onClick={onBack}>
                     <div className="w-8 h-8"><BrandLogo /></div>
-                    <span className="font-serif font-bold text-lg hidden sm:block">The Professor</span>
+                    <span className="font-display font-bold text-lg hidden sm:block">The Professor</span>
                 </div>
                 <button onClick={onBack} className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors">
                     ← Back to Home
@@ -93,7 +89,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
         <div className="pt-32 pb-20 px-6 relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-20">
                 <span className="text-amber-500 font-bold text-xs uppercase tracking-[0.2em] mb-4 block">Tuition & Fees</span>
-                <h1 className="text-5xl md:text-7xl font-serif font-medium text-white mb-6">Invest in your <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-amber-200">Neural Upgrade.</span></h1>
+                <h1 className="text-5xl md:text-7xl font-display font-medium text-white mb-6">Invest in your <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-amber-200">Neural Upgrade.</span></h1>
                 <p className="text-gray-400 text-lg leading-relaxed">
                     Standard education gives you information. The Professor gives you mastery. <br/>
                     Choose the plan that fits your ambition.
@@ -114,7 +110,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
                             </div>
                         )}
 
-                        <h3 className={`text-2xl font-bold mb-2 ${plan.highlight ? 'text-amber-500 font-serif' : 'text-gray-200'}`}>{plan.name}</h3>
+                        <h3 className={`text-2xl font-bold mb-2 ${plan.highlight ? 'text-amber-500 font-display' : 'text-gray-200'}`}>{plan.name}</h3>
                         <div className="flex items-baseline gap-1 mb-6">
                             <span className="text-5xl font-mono font-bold text-white">{plan.price}</span>
                             {plan.period && <span className="text-xs text-gray-500">{plan.period}</span>}

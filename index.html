@@ -127,10 +127,10 @@
               'accent-dim': 'var(--accent-dim)',
             },
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['Merriweather', 'serif'],
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              serif: ['Mirage Against', 'Merriweather', 'serif'],
               mono: ['JetBrains Mono', 'monospace'],
-              display: ['UnifrakturMaguntia', 'cursive'],
+              display: ['Mirage Against', 'serif'],
             },
             animation: {
               'fade-in': 'fadeIn 0.6s ease-out',
@@ -162,8 +162,20 @@
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=UnifrakturMaguntia&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+      /* --- CUSTOM FONTS --- */
+      @font-face {
+        font-family: 'Mirage Against';
+        src: url('/fonts/MirageAgainst.otf') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* Fallback if user hasn't uploaded font file yet */
+      .font-display { font-family: 'Mirage Against', 'Merriweather', serif; }
+
       /* --- SEMANTIC THEME VARIABLES --- */
       :root {
         /* Default: Deep Space (OLED) */

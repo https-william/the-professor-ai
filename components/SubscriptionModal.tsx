@@ -22,7 +22,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
   const [paymentMode, setPaymentMode] = useState<'LIVE' | 'TEST' | 'OFFLINE'>('OFFLINE');
 
   useEffect(() => {
-      // 1. Check Paystack Mode
       const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
       if (publicKey.startsWith('pk_live')) {
           setPaymentMode('LIVE');
@@ -32,7 +31,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
           setPaymentMode('OFFLINE');
       }
 
-      // 2. Strict Geo Check for Currency
       try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (tz === 'Africa/Lagos') {
@@ -46,8 +44,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   const handleCheckout = (tierId: SubscriptionTier, price: number) => {
-    if (!userEmail) {
-        alert("Email required for transaction. Please complete your profile.");
+    // Auto-use email from props if available
+    const emailToUse = userEmail; 
+    
+    if (!emailToUse) {
+        alert("Email required for transaction. Please complete your profile or log in again.");
         return;
     }
 
@@ -66,10 +67,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         
         paystack.newTransaction({
             key: publicKey,
-            email: userEmail,
+            email: emailToUse,
             amount: price * 100, // Paystack expects amount in Kobo/Cents
             currency: currency,
-            ref: '' + Math.floor((Math.random() * 1000000000) + 1), // Unique Ref
+            ref: '' + Math.floor((Math.random() * 1000000000) + 1), 
             metadata: {
                 tier: tierId,
                 custom_fields: [
@@ -112,8 +113,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Scholar' as SubscriptionTier,
       name: 'The Scholar',
-      priceDisplay: currency === 'NGN' ? '₦3,500' : '$8.99',
-      amount: currency === 'NGN' ? 3500 : 8.99,
+      priceDisplay: currency === 'NGN' ? '₦4,500' : '$8.99',
+      amount: currency === 'NGN' ? 4500 : 8.99,
       desc: "For the serious student.",
       features: [
         'Unlimited Quizzes',
@@ -129,8 +130,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Excellentia' as SubscriptionTier, 
       name: 'Excellentia',
-      priceDisplay: currency === 'NGN' ? '₦8,000' : '$19.99',
-      amount: currency === 'NGN' ? 8000 : 19.99,
+      priceDisplay: currency === 'NGN' ? '₦12,000' : '$24.99',
+      amount: currency === 'NGN' ? 12000 : 24.99,
       desc: "Academic immortality.",
       features: [
         'Unlimited Everything',
@@ -153,7 +154,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
            <div className="flex items-center gap-3">
              <span className="text-2xl">🎓</span>
-             <h2 className="text-xl font-bold text-white font-serif">Tuition Plans</h2>
+             <h2 className="text-xl font-bold text-white font-display">Tuition Plans</h2>
            </div>
            
            <div className="flex items-center gap-4">
@@ -176,7 +177,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
 
         <div className="overflow-y-auto p-4 md:p-8 custom-scrollbar bg-[#050505]">
            <div className="text-center mb-12">
-             <h3 className="text-3xl md:text-5xl font-serif font-bold mb-4 text-white">Invest in your mind.</h3>
+             <h3 className="text-3xl md:text-5xl font-display font-bold mb-4 text-white">Invest in your mind.</h3>
              <p className="text-gray-400 max-w-md mx-auto">The cost of ignorance is higher than the price of education.</p>
            </div>
 
@@ -192,7 +193,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                      </div>
                    )}
                    
-                   <h4 className={`text-2xl font-bold mb-2 flex items-center gap-2 ${tier.id === 'Excellentia' ? 'text-[#D4AF37] font-serif' : 'text-white'}`}>
+                   <h4 className={`text-2xl font-bold mb-2 flex items-center gap-2 ${tier.id === 'Excellentia' ? 'text-[#D4AF37] font-display' : 'text-white'}`}>
                      {tier.name}
                    </h4>
                    

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -45,43 +46,34 @@ const ADMIN_EMAILS = [
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
   
-  // New High-Level Routing
   const [currentView, setCurrentView] = useState<ViewState>('LANDING');
-  
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
-  
-  // Ad-Blocker State
   const [isAdBlockActive, setIsAdBlockActive] = useState(false);
-  
   const [userProfile, setUserProfile] = useState<UserProfile>(getDefaultProfile());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
-  
   const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
-
   const [quizState, setQuizState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
   const [professorState, setProfessorState] = useState<ProfessorState>({ sections: [] });
   const [chatState, setChatState] = useState<ChatState>({ messages: [], fileContext: '', fileName: '' });
-  
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
-
-  // Duel State
   const [duelReadyData, setDuelReadyData] = useState<{ id: string, code: string, isHost: boolean } | null>(null);
   const [activeDuelId, setActiveDuelId] = useState<string | null>(null);
-  
-  // Confirmation Modal State
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
   const saveTimeoutRef = useRef<any>(null);
 
-  // Paystack Mode Safety Check
+  // Constants for Limits
+  const isFresher = userProfile.subscriptionTier === 'Fresher';
+  const QUIZ_LIMIT = isFresher ? 1 : 100;
+  const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
+
   useEffect(() => {
       const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
       if (publicKey.startsWith('pk_live')) {
@@ -91,7 +83,6 @@ const App: React.FC = () => {
       }
   }, []);
 
-  // Helper to check admin status safely
   const checkIsAdmin = (email: string | null | undefined) => {
       if (!email) return false;
       const normalized = email.toLowerCase().trim();
@@ -100,20 +91,14 @@ const App: React.FC = () => {
 
   const isAdmin = checkIsAdmin(user?.email);
 
-  // Sync View with Auth State
   useEffect(() => {
     if (loading) return;
-
     if (user) {
-        // Only force redirect to APP if we are NOT on a special page like Admin Login or Pricing
         if (currentView === 'LANDING' || currentView === 'AUTH') {
             setCurrentView('APP');
-            if (checkIsAdmin(user.email)) {
-                setAppMode('ADMIN');
-            }
+            if (checkIsAdmin(user.email)) setAppMode('ADMIN');
         }
     } else {
-        // If not logged in, but on APP or Admin Dash, kick to Landing
         if (currentView === 'APP' || (currentView === 'ADMIN_LOGIN' && appMode === 'ADMIN')) {
             setCurrentView('LANDING'); 
         }
@@ -123,11 +108,9 @@ const App: React.FC = () => {
   // Real-time History Sync
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
-
       const syncHistory = () => {
           let dataToSave: any = null;
           let title = '';
-          
           if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
               dataToSave = quizState;
               title = history.find(h => h.id === activeHistoryId)?.title || 'Exam';
@@ -138,7 +121,6 @@ const App: React.FC = () => {
               dataToSave = chatState;
               title = chatState.fileName || 'Chat';
           }
-
           if (dataToSave) {
               const item: HistoryItem = {
                   id: activeHistoryId,
@@ -152,44 +134,31 @@ const App: React.FC = () => {
               setHistory(loadHistory());
           }
       };
-
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(syncHistory, 2000);
-
-      return () => {
-          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      };
+      return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
   }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
 
   useEffect(() => {
     if (!user) return;
-    
-    // --- ADMIN AUTO-ROUTING ---
     if (checkIsAdmin(user.email) && currentView === 'APP') {
-        console.log("Welcome Dean.");
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
         return; 
     }
-
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
     let mergedProfile: UserProfile = { ...localProfile };
-
     if (firestoreProfile) {
         mergedProfile = { ...mergedProfile, ...firestoreProfile, socials: firestoreProfile.socials || mergedProfile.socials, xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp };
     }
-
     if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
     else setOnboardingStep('COMPLETE');
-    
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
-    
     mergedProfile = updateStreak(mergedProfile);
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
-    
     if (!checkIsAdmin(user.email)) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
@@ -202,15 +171,9 @@ const App: React.FC = () => {
     }
   }, [user]);
 
-  // Request Admin Access from User Profile Modal
   const handleRequestAdminAccess = async () => {
-      // We set the view first to prevent the auth effect from redirecting us
       setCurrentView('ADMIN_LOGIN');
-      // If user is currently logged in as non-admin, logging out helps clean state
-      // but if we are just switching to login screen, we can keep session until they auth as admin
-      if (user && !checkIsAdmin(user.email)) {
-          await logout(); 
-      }
+      if (user && !checkIsAdmin(user.email)) await logout(); 
   };
 
   const handleAdminSuccess = () => {
@@ -219,11 +182,8 @@ const App: React.FC = () => {
       setStatus(AppStatus.READY);
   };
 
-  // Safe Exit Wrapper
   const attemptAction = (action: () => void, force: boolean = false) => {
-      if (!force && status === AppStatus.READY && (
-          (appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS')
-      )) {
+      if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
           setPendingAction(() => action);
           setShowExitConfirmation(true);
       } else {
@@ -272,14 +232,12 @@ const App: React.FC = () => {
     try {
       setActiveHistoryId(Date.now().toString()); 
       const summaryPromise = getDocumentSummary(file.content);
-
       if (mode === 'CHAT') {
         const summary = await summaryPromise;
         const newState: ChatState = { messages: [], fileContext: file.content, fileName: file.name };
         setChatState(newState);
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
-        
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: summary };
         saveToHistory(historyItem);
         setHistory(loadHistory());
@@ -289,19 +247,13 @@ const App: React.FC = () => {
       setStatus(AppStatus.GENERATING_CONTENT);
       setErrorMsg(null);
       const timeRemaining = parseDuration(config.timerDuration);
-
       if (mode === 'EXAM' || mode === 'FLASHCARDS') {
         setStatusText("Constructing Materials...");
         const questions = await generateQuizFromText(file.content, config, userProfile);
-        
-        if (!questions || questions.length === 0) {
-            throw new Error("Neural Failure: No questions generated.");
-        }
-
+        if (!questions || questions.length === 0) throw new Error("Neural Failure: No questions generated.");
         const summary = await summaryPromise;
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
-        
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: summary };
         saveToHistory(historyItem);
         setAppMode(mode); 
@@ -311,7 +263,6 @@ const App: React.FC = () => {
         const newState: ProfessorState = { sections };
         setProfessorState(newState);
         setQuizState(prev => ({ ...prev, timeRemaining }));
-        
         const summary = await summaryPromise;
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: summary };
         saveToHistory(historyItem);
@@ -329,10 +280,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCancelGeneration = () => {
-      setStatus(AppStatus.IDLE);
-      setErrorMsg(null);
-  };
+  const handleCancelGeneration = () => { setStatus(AppStatus.IDLE); setErrorMsg(null); };
 
   const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
     if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
@@ -356,20 +304,15 @@ const App: React.FC = () => {
           }
       });
       setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
-      
       const xpGained = score * 50;
       let newXP = (userProfile.xp || 0) + xpGained;
       if (newXP > 10000) newXP = 10000;
-
       const newProfile = { ...userProfile, questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, correctAnswers: userProfile.correctAnswers + score, xp: newXP };
       setUserProfile(newProfile);
       saveUserProfile(newProfile);
-      
       if (user) {
           await saveUserToFirestore(user.uid, { xp: newXP });
-          if (activeDuelId) {
-              await submitDuelScore(activeDuelId, user.uid, score);
-          }
+          if (activeDuelId) await submitDuelScore(activeDuelId, user.uid, score);
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -400,7 +343,6 @@ const App: React.FC = () => {
           setChatState(newState);
           setAppMode('CHAT');
           setStatus(AppStatus.READY);
-          
           const newId = Date.now().toString();
           setActiveHistoryId(newId);
           saveToHistory({ id: newId, timestamp: Date.now(), mode: 'CHAT', title: 'General Inquiry', data: newState });
@@ -408,7 +350,6 @@ const App: React.FC = () => {
       }
   };
 
-  // --- DUEL LOGIC ---
   const handleDuelStart = async (data: { wager: number, file: File }) => {
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
@@ -450,7 +391,6 @@ const App: React.FC = () => {
               setStatus(AppStatus.READY);
               setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
-              
               const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: `Duel: ${duelState.code}`, data: newState, config: duelState.quizConfig };
               saveToHistory(historyItem);
               setHistory(loadHistory());
@@ -460,44 +400,16 @@ const App: React.FC = () => {
       }
   };
 
-  // --- RENDER ROUTING ---
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
+  if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => setCurrentView('LANDING')} onSuccess={handleAdminSuccess} />;
+  if (currentView === 'PRICING') return <PricingPage onBack={() => setCurrentView('LANDING')} onSignUp={() => setCurrentView('AUTH')} />;
+  if (currentView === 'AUTH' && !user) return <AuthPage />;
+  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => setCurrentView('AUTH')} onPricing={() => setCurrentView('PRICING')} />;
 
-  // 1. Admin Login View (High Priority)
-  if (currentView === 'ADMIN_LOGIN') {
-      return (
-          <AdminLoginPage 
-            onBack={() => setCurrentView('LANDING')} 
-            onSuccess={handleAdminSuccess}
-          />
-      );
-  }
-
-  // 2. Pricing View
-  if (currentView === 'PRICING') {
-      return (
-          <PricingPage 
-            onBack={() => setCurrentView('LANDING')}
-            onSignUp={() => setCurrentView('AUTH')}
-          />
-      );
-  }
-
-  // 3. Auth View
-  if (currentView === 'AUTH' && !user) {
-      return <AuthPage />;
-  }
-
-  // 4. Landing View (Default if not logged in)
-  if (currentView === 'LANDING' && !user) {
-      return <LandingPage onEnter={() => setCurrentView('AUTH')} onPricing={() => setCurrentView('PRICING')} />;
-  }
-
-  // 5. App Dashboard (Authenticated)
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   
   return (
-    <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505]`}>
+    <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505] font-sans`}>
       <AmbientBackground theme='Deep Space' />
       <CountdownTimer />
       <PWAPrompt />
@@ -510,7 +422,6 @@ const App: React.FC = () => {
         userEmail={user?.email || undefined}
       />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
-      
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
       {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
 
@@ -520,25 +431,35 @@ const App: React.FC = () => {
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
-               <span className="font-serif font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
+               <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
+
+            {/* Neural Energy Limit Bar */}
+            {isFresher && appMode !== 'ADMIN' && (
+                <div className="hidden md:flex flex-col w-48 gap-1" title="Daily Neural Energy">
+                    <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                        <span>Neural Energy</span>
+                        <span className={usagePercentage > 90 ? 'text-red-500' : 'text-blue-400'}>{Math.round(100 - usagePercentage)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
+                            style={{ width: `${100 - usagePercentage}%` }}
+                        ></div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
-                   <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">
-                       Exit Office
-                   </button>
+                   <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
-               {/* ALWAYS VISIBLE LIBRARY */}
                {appMode !== 'ADMIN' && (
                    <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
                    </button>
                )}
-               
-               {/* Notification Bell */}
                <NotificationBell />
-
                {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
                        <span>Upgrade</span>
@@ -583,49 +504,18 @@ const App: React.FC = () => {
         }}
       />
 
-      <UserProfileModal 
-        isOpen={isProfileOpen} 
-        onClose={() => setIsProfileOpen(false)} 
-        profile={userProfile} 
-        onSave={(updated) => {
-            setUserProfile(updated);
-            saveUserProfile(updated);
-            if (user) saveUserToFirestore(user.uid, updated);
-        }}
-        onClearHistory={() => {}}
-        onLogout={async () => {
-            await logout();
-            window.location.reload();
-        }}
-        isAdmin={!!isAdmin}
-        onRequestAdminAccess={handleRequestAdminAccess}
-      />
-
+      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={!!isAdmin} onRequestAdminAccess={handleRequestAdminAccess} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
          {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
              <>
                 <Hero />
-                <InputSection 
-                    onProcess={handleProcess} 
-                    isLoading={false} 
-                    appMode={appMode}
-                    setAppMode={setAppMode}
-                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }}
-                    userProfile={userProfile}
-                    onShowSubscription={() => setIsSubscriptionOpen(true)}
-                    onOpenProfile={() => setIsProfileOpen(true)}
-                    onDuelStart={handleDuelStart}
-                    onDuelJoin={handleDuelJoin}
-                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }}
-                />
+                <InputSection onProcess={handleProcess} isLoading={false} appMode={appMode} setAppMode={setAppMode} defaultConfig={{ difficulty: userProfile.defaultDifficulty }} userProfile={userProfile} onShowSubscription={() => setIsSubscriptionOpen(true)} onOpenProfile={() => setIsProfileOpen(true)} onDuelStart={handleDuelStart} onDuelJoin={handleDuelJoin} onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} />
              </>
          )}
-
          {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
          {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
-         
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-white rounded-full animate-spin"></div></div>}>
@@ -638,7 +528,6 @@ const App: React.FC = () => {
                  </Suspense>
              </div>
          )}
-
          {status === AppStatus.ERROR && (
              <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center animate-bounce-subtle">
                  <div className="text-4xl mb-4">⚠️</div>
