@@ -32,7 +32,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
           name: "Scholar",
           price: currency === 'NGN' ? '₦2,000' : '$5',
           period: '/mo',
-          desc: "For the serious student.",
+          desc: "For the serious learner.",
           features: ["Unlimited Quizzes", "Feynman Tutor Mode", "Upload 10 Files/Day", "Priority Processing", "War Room Access"],
           cta: "Enroll Now",
           popular: true,
@@ -74,14 +74,6 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
                     Standard education gives you information. The Professor gives you mastery. <br/>
                     Choose the plan that fits your ambition.
                 </p>
-                
-                {/* Currency Toggle */}
-                <div className="flex justify-center mt-8">
-                    <div className="bg-white/5 p-1 rounded-lg border border-white/10 flex">
-                        <button onClick={() => setCurrency('NGN')} className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${currency === 'NGN' ? 'bg-white text-black' : 'text-gray-500'}`}>NGN</button>
-                        <button onClick={() => setCurrency('USD')} className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${currency === 'USD' ? 'bg-white text-black' : 'text-gray-500'}`}>USD</button>
-                    </div>
-                </div>
             </div>
 
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -124,8 +116,8 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
             </div>
             
             <div className="max-w-4xl mx-auto mt-20 text-center border-t border-white/5 pt-10">
-                <h3 className="text-xl font-bold text-white mb-4">Enterprise / School Licenses</h3>
-                <p className="text-gray-400 mb-6">Want to deploy The Professor for your entire department or university?</p>
+                <h3 className="text-xl font-bold text-white mb-4">Enterprise Licenses</h3>
+                <p className="text-gray-400 mb-6">Want to deploy The Professor for your entire organization or university?</p>
                 <a href="mailto:vexis.automations@gmail.com" className="inline-block px-8 py-3 border border-white/20 hover:bg-white/10 rounded-full text-white text-xs font-bold uppercase tracking-widest transition-all">Contact Sales</a>
             </div>
         </div>

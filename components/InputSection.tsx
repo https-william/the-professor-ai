@@ -17,7 +17,7 @@ interface InputSectionProps {
   onOpenProfile: () => void;
   onDuelStart?: (config: any) => void;
   onDuelJoin?: (code: string) => void;
-  onHubEnter: () => void; // New Prop
+  onHubEnter: () => void;
 }
 
 export const InputSection: React.FC<InputSectionProps> = ({ 
@@ -280,13 +280,13 @@ export const InputSection: React.FC<InputSectionProps> = ({
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowDuelSelector(false)}>
               <div className="bg-[#18181b] border border-purple-500/30 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
                   <div className="text-center mb-6">
-                      <h3 className="text-white font-bold text-lg">Enter The Arena</h3>
-                      <p className="text-gray-400 text-xs">Choose your path, gladiator.</p>
+                      <h3 className="text-white font-bold text-lg font-serif">Enter The Arena</h3>
+                      <p className="text-gray-400 text-xs">Mass Multiplayer Academic Combat</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                       <button onClick={() => { setShowDuelSelector(false); setShowDuelCreate(true); }} className="p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition-all flex flex-col items-center gap-2">
                           <span className="text-2xl">⚔️</span>
-                          <span className="text-xs font-bold uppercase tracking-wider text-white">Create Duel</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-white">Create Arena</span>
                       </button>
                       <button onClick={() => { setShowDuelSelector(false); setShowDuelJoin(true); }} className="p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition-all flex flex-col items-center gap-2">
                           <span className="text-2xl">🔑</span>
@@ -412,34 +412,28 @@ export const InputSection: React.FC<InputSectionProps> = ({
               </div>
             </div>
 
-            {/* ACTION GRID */}
+            {/* ACTION GRID - Reorganized */}
             <div className="p-4 border-t border-white/10 bg-[#0a0a0a] shrink-0">
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+               <div className="grid grid-cols-3 gap-3 mb-4">
                    <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="p-3 bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                      <span className="text-[10px] font-bold uppercase text-purple-400">Duel</span>
+                      <div className="p-2 bg-purple-500/10 rounded-full group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase text-purple-400">Arena</span>
                    </button>
                    
                    <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="p-3 bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                      <span className="text-[10px] font-bold uppercase text-amber-500">Chat</span>
+                      <div className="p-2 bg-amber-500/10 rounded-full group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase text-amber-500">Chat Material</span>
                    </button>
                    
                    <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="p-3 bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                      <span className="text-[10px] font-bold uppercase text-indigo-400">Cards</span>
-                   </button>
-                   
-                   {/* ELI5 PROMINENT BUTTON */}
-                   <button 
-                     onClick={() => handleGenerate('PROFESSOR')} 
-                     disabled={isLoading}
-                     className="p-3 bg-green-900/20 border border-green-500/30 hover:bg-green-900/40 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all"
-                   >
-                      <div className="bg-green-500/20 p-1.5 rounded-full mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" /></svg>
+                      <div className="p-2 bg-indigo-500/10 rounded-full group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                       </div>
-                      <span className="text-[9px] font-black uppercase text-green-400">Explain It</span>
+                      <span className="text-[10px] font-bold uppercase text-indigo-400">Study Cards</span>
                    </button>
                </div>
 
@@ -461,7 +455,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
         {/* STUDY ROOM / HUB INPUT */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
-             <h3 className="text-3xl font-serif font-bold text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
+             <h3 className="text-3xl font-display font-bold text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
                   
                   {/* Selected Files Display */}
@@ -504,18 +498,26 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
              </div>
              
-             {/* THE HUB BUTTON - REPLACES GROUP */}
-             <div className="mt-8 flex justify-center">
+             {/* THE HUB BUTTON - ENHANCED */}
+             <div className="mt-8 flex justify-center w-full max-w-md">
                  <button 
                     onClick={onHubEnter}
-                    className="flex items-center gap-3 px-6 py-3 bg-[#1a1a1a] border border-green-500/20 rounded-full hover:border-green-500/50 hover:bg-green-900/10 transition-all group"
+                    className="w-full relative group overflow-hidden rounded-2xl bg-[#121212] border border-white/5 hover:border-green-500/50 transition-all shadow-2xl"
                  >
-                     <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                     </div>
-                     <div className="text-left">
-                         <span className="block text-xs font-bold text-white uppercase tracking-wider">The Hub</span>
-                         <span className="block text-[10px] text-gray-500">Collaborative Study Rooms</span>
+                     <div className="absolute inset-0 bg-green-900/10 group-hover:bg-green-900/20 transition-colors"></div>
+                     <div className="relative p-6 flex items-center justify-between">
+                         <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 border border-green-500/20 group-hover:scale-110 transition-transform">
+                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                             </div>
+                             <div className="text-left">
+                                 <span className="block text-lg font-serif font-bold text-white group-hover:text-green-400 transition-colors">The Hub</span>
+                                 <span className="block text-xs text-gray-500 uppercase tracking-widest group-hover:text-gray-300">Premium Lounge</span>
+                             </div>
+                         </div>
+                         <div className="text-gray-600 group-hover:text-green-500 transition-colors">
+                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                         </div>
                      </div>
                  </button>
              </div>

@@ -46,7 +46,7 @@ export const Hero: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative text-center py-20 sm:py-28 px-4 z-10 overflow-hidden min-h-[60vh] flex flex-col items-center justify-center">
+    <div className="relative text-center py-16 sm:py-20 px-4 z-10 overflow-hidden min-h-[50vh] flex flex-col items-center justify-center">
       
       {/* Parallax Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -61,7 +61,7 @@ export const Hero: React.FC = () => {
       </div>
 
       {/* The Hook: System Status */}
-      <div className="mb-10 animate-slide-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
+      <div className="mb-8 animate-slide-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
         <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md cursor-default group hover:border-blue-500/30 transition-colors">
            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -74,20 +74,20 @@ export const Hero: React.FC = () => {
       </div>
       
       {/* Main Headline */}
-      <div className="relative z-10 mb-8 group cursor-default flex flex-col items-center">
+      <div className="relative z-10 mb-6 group cursor-default flex flex-col items-center">
         {/* 'The' */}
-        <span className="font-serif italic text-2xl sm:text-3xl text-gray-500 mb-[-5px] sm:mb-[-10px] opacity-0 animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
+        <span className="font-display italic text-2xl sm:text-3xl text-gray-500 mb-[-5px] sm:mb-[-10px] opacity-0 animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
           The
         </span>
         
-        {/* 'Professor' - Scaled and Refined */}
-        <h1 className="text-6xl sm:text-7xl md:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-600 drop-shadow-xl animate-shimmer bg-[length:200%_auto] leading-[0.9] pb-2 px-4">
+        {/* 'Professor' - Baldoug Style (Cinzel Decorative) */}
+        <h1 className="text-6xl sm:text-7xl md:text-9xl font-display font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-100 to-gray-400 drop-shadow-2xl animate-shimmer bg-[length:200%_auto] leading-[0.9] pb-2 px-4">
           <DecryptedText text="Professor" />
         </h1>
       </div>
       
       {/* XYZ Tagline */}
-      <div className="max-w-3xl mx-auto relative z-10 px-4 animate-slide-up-fade opacity-0 mb-8" style={{ animationFillMode: 'forwards', animationDelay: '0.5s' }}>
+      <div className="max-w-3xl mx-auto relative z-10 px-4 animate-slide-up-fade opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.5s' }}>
          <div className="text-lg sm:text-2xl text-gray-400 font-light tracking-wide flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
             <span>Learning is as simple as</span>
             
@@ -96,9 +96,9 @@ export const Hero: React.FC = () => {
                 <div className="relative mr-3 opacity-60 rotate-[-6deg] select-none hover:opacity-80 transition-opacity">
                     <span className="text-gray-600 font-mono font-bold text-2xl sm:text-3xl relative inline-block">
                         ABC
-                        {/* Custom SVG Red Strike */}
-                        <svg className="absolute top-1/2 left-[-10%] w-[120%] h-[40%] -translate-y-1/2 text-red-600 opacity-90 pointer-events-none overflow-visible" viewBox="0 0 100 10" preserveAspectRatio="none">
-                            <path d="M0 5 Q 50 10 100 2" stroke="currentColor" strokeWidth="12" strokeLinecap="round" fill="none" />
+                        {/* Custom SVG Red Strike - Reduced Size */}
+                        <svg className="absolute top-1/2 left-0 w-full h-[3px] -translate-y-1/2 text-red-600 opacity-80 pointer-events-none overflow-visible" viewBox="0 0 100 10" preserveAspectRatio="none">
+                            <path d="M0 5 L100 5" stroke="currentColor" strokeWidth="15" strokeLinecap="round" fill="none" />
                         </svg>
                     </span>
                 </div>
@@ -115,14 +115,6 @@ export const Hero: React.FC = () => {
                 </span>
             </div>
          </div>
-      </div>
-
-      {/* Subtext */}
-      <div className="animate-fade-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.7s' }}>
-          <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-              Don't just read. Interrogate your notes. <br/>
-              Upload materials and dominate your exams.
-          </p>
       </div>
 
       {/* Scroll Indicator */}

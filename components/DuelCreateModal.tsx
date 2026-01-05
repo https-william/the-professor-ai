@@ -16,7 +16,7 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Participant limits per tier
-  const participantLimit = tier === 'Fresher' ? 2 : tier === 'Scholar' ? 5 : 10;
+  const participantLimit = tier === 'Fresher' ? 2 : tier === 'Scholar' ? 10 : 30;
   
   const maxWager = Math.min(userXP, 1000);
 
@@ -44,10 +44,10 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
         
         <div className="text-center mb-8 relative">
            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-purple-900/30 text-purple-300 text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-b-lg border-x border-b border-purple-500/30">
-              Max Participants: {participantLimit}
+              Capacity: Up to {participantLimit}
            </div>
-           <h2 className="text-4xl font-black text-white font-serif mb-2 tracking-tighter italic mix-blend-overlay opacity-90">THE ARENA</h2>
-           <p className="text-purple-400 text-xs uppercase tracking-widest font-mono">Peer-to-Peer Academic Combat</p>
+           <h2 className="text-4xl font-black text-white font-display mb-2 tracking-tighter italic mix-blend-overlay opacity-90">THE ARENA</h2>
+           <p className="text-purple-400 text-xs uppercase tracking-widest font-mono">Mass Multiplayer Academic Combat</p>
         </div>
 
         <div className="space-y-6">
@@ -101,8 +101,8 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
               ) : (
                  <div className="flex flex-col items-center">
                     <span className="text-3xl mb-3 text-gray-600 group-hover:text-purple-400 transition-colors">⚔️</span>
-                    <span className="text-gray-300 text-sm font-bold group-hover:text-white transition-colors">Select Duel Material</span>
-                    <span className="text-[10px] text-gray-500 mt-2">Both players will face the exact same questions.</span>
+                    <span className="text-gray-300 text-sm font-bold group-hover:text-white transition-colors">Select Arena Material</span>
+                    <span className="text-[10px] text-gray-500 mt-2">All participants will face questions from this file.</span>
                  </div>
               )}
            </div>
