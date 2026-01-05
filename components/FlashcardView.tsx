@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { QuizState, QuizQuestion } from '../types';
 
 interface FlashcardViewProps {
@@ -8,14 +8,16 @@ interface FlashcardViewProps {
 }
 
 export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit }) => {
-  const [questions, setQuestions] = useState<QuizQuestion[]>(quizState.questions);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [masteredIds, setMasteredIds] = useState<number[]>([]);
   const [reviewIds, setReviewIds] = useState<number[]>([]);
   const [flipped, setFlipped] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'LEFT' | 'RIGHT' | null>(null);
   
-  const currentQ = questions[0];
-  const nextQ = questions[1];
+  const questions = quizState.questions;
+  const currentQ = questions[currentIndex];
+  const nextQ = questions[currentIndex + 1];
+  const isComplete = currentIndex >= questions.length;
 
   const handleSwipe = (direction: 'LEFT' | 'RIGHT') => {
     if (!currentQ) return;
@@ -24,33 +26,36 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
 
     setTimeout(() => {
         if (direction === 'RIGHT') {
-            // SRS: Mastered = High confidence. Pushing to next "session" (logic handled by parent ideally, but simulated here)
+            // SRS: Mastered
             setMasteredIds(prev => [...prev, currentQ.id]);
         } else {
-            // SRS: Review = Low confidence. Should reappear sooner.
+            // SRS: Review
             setReviewIds(prev => [...prev, currentQ.id]);
         }
         
-        setQuestions(prev => prev.slice(1));
+        setCurrentIndex(prev => prev + 1);
         setSwipeDirection(null);
     }, 300);
   };
 
-  const handleRestart = () => {
-      // SRS Implementation: If reviewing weaknesses, we just reload those questions.
-      // In a full DB app, this would update a 'nextReviewDate' field.
-      if (reviewIds.length > 0) {
-          const reviewQuestions = quizState.questions.filter(q => reviewIds.includes(q.id));
-          // Shuffle review questions
-          setQuestions(reviewQuestions.sort(() => Math.random() - 0.5));
-      } else {
-          setQuestions(quizState.questions);
+  const handlePrevious = () => {
+      if (currentIndex > 0) {
+          setFlipped(false);
+          const prevQ = questions[currentIndex - 1];
+          // Remove previous question from mastered/review lists if it was there
+          setMasteredIds(prev => prev.filter(id => id !== prevQ.id));
+          setReviewIds(prev => prev.filter(id => id !== prevQ.id));
+          setCurrentIndex(prev => prev - 1);
       }
+  };
+
+  const handleRestart = () => {
+      setCurrentIndex(0);
       setMasteredIds([]);
       setReviewIds([]);
   };
 
-  if (!currentQ) {
+  if (isComplete) {
       return (
           <div className="max-w-md mx-auto min-h-[60vh] flex flex-col items-center justify-center p-6 text-center animate-fade-in">
               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 text-white">
@@ -65,7 +70,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
               
               <div className="flex flex-col gap-3 w-full">
                   <button onClick={handleRestart} className="w-full py-4 bg-white text-black rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-200 shadow-lg">
-                      {reviewIds.length > 0 ? 'Review Weaknesses' : 'Restart All'}
+                      Restart Session
                   </button>
                   <button onClick={() => onExit(true)} className="w-full py-4 bg-white/5 text-gray-400 hover:text-white border border-white/10 rounded-xl font-bold uppercase text-xs tracking-widest">
                       Exit
@@ -82,7 +87,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
                 Exit
             </button>
             <div className="text-xs font-mono text-gray-500">
-                {quizState.questions.length - questions.length + 1} / {quizState.questions.length}
+                {currentIndex + 1} / {questions.length}
             </div>
         </div>
 
@@ -145,7 +150,17 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
         </div>
 
         {/* Controls */}
-        <div className="h-24 flex items-center justify-center gap-8 pb-4">
+        <div className="h-24 flex items-center justify-center gap-6 pb-4">
+            {currentIndex > 0 ? (
+                <button 
+                    onClick={handlePrevious}
+                    className="w-12 h-12 rounded-full bg-[#1a1a1d] border border-white/10 text-gray-400 flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
+                    title="Previous Card"
+                >
+                    ←
+                </button>
+            ) : <div className="w-12"></div>}
+
             <button 
                 onClick={() => handleSwipe('LEFT')}
                 className="w-16 h-16 rounded-full bg-[#1a1a1d] border border-red-500/30 text-red-500 text-2xl flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all active:scale-95"
@@ -166,6 +181,8 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
             >
                 ✓
             </button>
+            
+            <div className="w-12"></div>
         </div>
     </div>
   );

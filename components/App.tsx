@@ -66,7 +66,6 @@ const App: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   // Admin Override State
-  const [logoClicks, setLogoClicks] = useState(0);
   const [adminOverride, setAdminOverride] = useState(false);
   const [showAdminAuth, setShowAdminAuth] = useState(false);
 
@@ -94,7 +93,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (user && isEmailAdmin) {
         console.log(`[System] Welcome Dean ${user.email}`);
-        // Visual Toast for confirmation
         const toast = document.createElement('div');
         toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-amber-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg z-[100] animate-slide-in';
         toast.innerText = 'Dean Access Granted';
@@ -103,26 +101,6 @@ const App: React.FC = () => {
     }
   }, [user, isEmailAdmin]);
 
-  // Handle Logo Click Backdoor
-  const handleLogoClick = () => {
-      setLogoClicks(prev => {
-          const newCount = prev + 1;
-          if (newCount >= 5) {
-              setShowAdminAuth(true); // Trigger Auth Modal
-              return 0;
-          }
-          return newCount;
-      });
-      // Reset after 2 seconds of inactivity
-      setTimeout(() => setLogoClicks(0), 2000);
-      
-      // Standard Reset behavior if NOT triggering admin
-      if (logoClicks < 4) {
-          if (appMode === 'ADMIN') setAppMode('EXAM'); 
-          else handleQuizAction('RESET');
-      }
-  };
-
   // Admin Shortcut (Ctrl+Shift+D)
   useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -130,7 +108,6 @@ const App: React.FC = () => {
               if (isAdmin) {
                   setAppMode('ADMIN');
               } else {
-                  // Trigger Auth Modal instead of direct access
                   setShowAdminAuth(true);
               }
           }
@@ -562,10 +539,9 @@ const App: React.FC = () => {
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer select-none" onClick={handleLogoClick}>
+            <div className="flex items-center gap-3 cursor-pointer select-none">
                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white border border-white/10 shadow-lg overflow-hidden relative">
                   <BrandLogo />
-                  {logoClicks > 0 && <div className="absolute inset-0 bg-red-500/50 animate-ping"></div>}
                </div>
                <span className="font-serif font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
@@ -619,7 +595,16 @@ const App: React.FC = () => {
             setStatus(AppStatus.READY); setActiveHistoryId(item.id); setIsHistoryOpen(false);
         }} onDelete={(id) => { deleteHistoryItem(id); setHistory(loadHistory()); if (activeHistoryId === id) handleQuizAction('RESET', { force: true }); }} />
 
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={isAdmin} />
+      <UserProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        profile={userProfile} 
+        onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} 
+        onClearHistory={() => {}} 
+        onLogout={async () => { await logout(); window.location.reload(); }} 
+        isAdmin={isAdmin}
+        onTriggerAdmin={() => { setShowAdminAuth(true); setIsProfileOpen(false); }}
+      />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)] pb-32">
