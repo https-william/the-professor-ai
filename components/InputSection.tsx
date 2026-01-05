@@ -66,28 +66,19 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isFresher = userProfile.subscriptionTier === 'Fresher';
-  const isScholar = userProfile.subscriptionTier === 'Scholar';
   const isExcellentia = userProfile.subscriptionTier === 'Excellentia';
   
-  // RELAXED LIMITS
+  // TIGHTENED BUSINESS LIMITS
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-  const QUIZ_LIMIT = isFresher ? 10 : 999;
-  const FILE_LIMIT_DAILY = isFresher ? 5 : 999;
-  const IMG_LIMIT_DAILY = isFresher ? 5 : 999;
-  const DUEL_LIMIT = isFresher ? 5 : 999;
+  const QUIZ_LIMIT = isFresher ? 1 : 999; // Reduced to 1 per day to force upgrade
+  const FILE_LIMIT_DAILY = isFresher ? 1 : 999; // Reduced to 1 per day
+  const IMG_LIMIT_DAILY = isFresher ? 1 : 999;
+  const DUEL_LIMIT = isFresher ? 1 : 999;
 
-  const canChat = !isFresher;
+  const canChat = !isFresher; // Only paid users get Professor Chat
 
-  // --- LIMIT HANDLER ---
-  const checkLimit = (current: number, max: number, featureName: string): boolean => {
-      if (current >= max) {
-          if (confirm(`${featureName} limit reached for your plan. Unlock unlimited access with Scholar tier?`)) {
-              onShowSubscription();
-          }
-          return false;
-      }
-      return true;
-  };
+  const quizzesLeft = QUIZ_LIMIT - (userProfile.dailyQuizzesGenerated || 0);
+  const isLimitReached = quizzesLeft <= 0;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -101,7 +92,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
     let errorMsg = null;
 
     let newFilesCount = 0;
-    let newImagesCount = 0;
+    
+    // Simple pre-check
+    if ((userProfile.dailyFilesUploaded || 0) + files.length > FILE_LIMIT_DAILY) {
+        setFileError("Daily file limit reached. Unlock unlimited uploads.");
+        // We do not block here, we let them try to upload but the button will be locked or prompt upgrade
+    }
 
     for (const f of files) {
         if (!validExtensions.some(ext => f.name.toLowerCase().endsWith(ext))) {
@@ -112,16 +108,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
             errorMsg = "Skipped files larger than 50MB.";
             continue;
         }
-        
-        const isImage = f.type.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|webp)$/);
-        if (isImage) newImagesCount++;
-        else newFilesCount++;
-
         validFiles.push(f);
     }
-
-    if (!checkLimit((userProfile.dailyFilesUploaded || 0) + newFilesCount, FILE_LIMIT_DAILY, "File Upload")) return;
-    if (!checkLimit((userProfile.dailyImagesUploaded || 0) + newImagesCount, IMG_LIMIT_DAILY, "Image Upload")) return;
 
     if (errorMsg) setFileError(errorMsg);
     if (selectedFiles.length + validFiles.length > 10 && !isExcellentia) {
@@ -161,16 +149,22 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const handleGenerate = async (targetMode?: AppMode) => {
     if (isLoading) return;
     
-    // Usage Checks
-    if (!checkLimit(userProfile.dailyQuizzesGenerated || 0, QUIZ_LIMIT, "Daily Exam")) return;
+    const finalMode = targetMode || appMode;
+
+    // --- SUBTLE UPSELL LOGIC ---
+    if (isLimitReached) {
+        setFileError("Daily limit reached.");
+        onShowSubscription(); // Open modal directly
+        return;
+    }
     
-    if (targetMode === 'CHAT' && !canChat) {
+    if (finalMode === 'CHAT' && !canChat) {
+        setFileError("Professor Chat is a Scholar feature.");
         onShowSubscription();
         return;
     }
 
     setUploadProgress(0);
-    const finalMode = targetMode || appMode;
 
     try {
       let fullContent = "";
@@ -224,7 +218,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   const handleDuelSubmit = (wager: number, file: File) => {
-      if (!checkLimit(userProfile.dailyDuelsJoined || 0, DUEL_LIMIT, "Duel")) return;
+      if ((userProfile.dailyDuelsJoined || 0) >= DUEL_LIMIT) {
+          onShowSubscription();
+          return;
+      }
       if (onDuelStart) {
           addFiles([file]);
           onDuelStart({ wager, file }); 
@@ -232,7 +229,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   const handleDuelJoinSubmit = (code: string) => {
-      if (!checkLimit(userProfile.dailyDuelsJoined || 0, DUEL_LIMIT, "Duel")) return;
+      if ((userProfile.dailyDuelsJoined || 0) >= DUEL_LIMIT) {
+          onShowSubscription();
+          return;
+      }
       if (onDuelJoin) onDuelJoin(code);
   }
 
@@ -269,7 +269,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   );
 
   return (
-    <div className="max-w-5xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
+    <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       {/* Configuration Modals */}
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
@@ -314,6 +314,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
       <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : 'border-blue-500/10'}`}>
         
+        {/* Limit Bar (Subtle Prompt) */}
+        {isFresher && (
+            <div className="absolute top-0 left-0 w-full h-1 bg-gray-800 z-50">
+                <div 
+                    className={`h-full transition-all duration-500 ${isLimitReached ? 'bg-red-500' : 'bg-blue-500'}`} 
+                    style={{ width: `${Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100)}%` }}
+                ></div>
+            </div>
+        )}
+
         {/* EXAM VIEW */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
             
@@ -345,12 +355,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
                
                <div className="flex-1 flex flex-col gap-6">
                   {/* TEXT AREA - PROMINENT */}
-                  <div className="relative">
-                      <div className="absolute top-3 left-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[#151515] px-2 rounded">
+                  <div className="relative group">
+                      <div className="absolute top-3 left-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-[#151515] px-2 rounded border border-white/5">
                           Input Source Text
                       </div>
                       <textarea 
-                        className="w-full h-32 md:h-40 bg-[#151515] text-gray-200 rounded-2xl p-4 pt-8 border border-white/10 focus:border-blue-500/50 outline-none text-sm font-mono placeholder-gray-700 resize-none transition-all shadow-inner" 
+                        className="w-full h-32 md:h-40 bg-[#151515] text-gray-200 rounded-2xl p-4 pt-10 border border-white/10 outline-none text-sm font-mono placeholder-gray-700 resize-none transition-all shadow-inner focus:border-blue-500 focus:bg-[#1a1a1a]" 
                         placeholder="Paste lecture notes, articles, or topics here..." 
                         value={textInput} 
                         onChange={(e) => setTextInput(e.target.value)} 
@@ -365,7 +375,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
                   {/* FILE DROP ZONE */}
                   <div 
-                    className={`border-2 border-dashed rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[120px] ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
+                    className={`border-2 border-dashed rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[160px] bg-[#0c0c0c] ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/20 hover:border-blue-400/50 hover:bg-white/5'}`}
                     onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -392,11 +402,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
                             </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center gap-2 p-6">
-                           <div className="p-3 bg-white/5 rounded-full mb-1 group-hover:scale-110 transition-transform">
-                               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <div className="flex flex-col items-center gap-3 p-6">
+                           <div className="p-4 bg-white/5 rounded-full mb-1 group-hover:scale-110 transition-transform border border-white/10 group-hover:border-blue-500/50">
+                               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                            </div>
-                           <p className="text-gray-400 font-bold text-xs uppercase tracking-wide">Drop PDF, DOCX, PPTX</p>
+                           <div className="text-center">
+                               <p className="text-gray-300 font-bold text-sm uppercase tracking-wide group-hover:text-white">Click to Upload</p>
+                               <p className="text-gray-600 text-xs mt-1">PDF, DOCX, PPTX, TXT, IMAGES</p>
+                           </div>
                         </div>
                       )}
                   </div>
@@ -413,35 +426,45 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
 
             {/* ACTION GRID - Reorganized */}
-            <div className="p-4 border-t border-white/10 bg-[#0a0a0a] shrink-0">
-               <div className="grid grid-cols-3 gap-3 mb-4">
-                   <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="p-3 bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all">
-                      <div className="p-2 bg-purple-500/10 rounded-full group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <div className="p-6 border-t border-white/10 bg-[#0a0a0a] shrink-0">
+               <div className="grid grid-cols-3 gap-4 mb-6">
+                   <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="p-4 bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28">
+                      <div className="p-3 bg-purple-500/10 rounded-full group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                       </div>
                       <span className="text-[10px] font-bold uppercase text-purple-400">Arena</span>
                    </button>
                    
-                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="p-3 bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all">
-                      <div className="p-2 bg-amber-500/10 rounded-full group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="p-4 bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28 relative overflow-hidden">
+                      {!canChat && <div className="absolute top-2 right-2 text-amber-500 text-xs">🔒</div>}
+                      <div className="p-3 bg-amber-500/10 rounded-full group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                       </div>
-                      <span className="text-[10px] font-bold uppercase text-amber-500">Chat Material</span>
+                      <span className="text-[10px] font-bold uppercase text-amber-500 text-center leading-tight">Chat with Material</span>
                    </button>
                    
-                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="p-3 bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all">
-                      <div className="p-2 bg-indigo-500/10 rounded-full group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="p-4 bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28">
+                      <div className="p-3 bg-indigo-500/10 rounded-full group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                       </div>
                       <span className="text-[10px] font-bold uppercase text-indigo-400">Study Cards</span>
                    </button>
                </div>
 
-               <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
+               <button 
+                 onClick={() => handleGenerate()} 
+                 disabled={isLoading} 
+                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${isLimitReached ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20 disabled:opacity-50'}`}
+               >
                   {isLoading || ingestionStatus ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         {ingestionStatus || 'Processing...'}
+                      </>
+                  ) : isLimitReached ? (
+                      <>
+                        Daily Limit Reached (Unlock)
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                       </>
                   ) : (
                       <>
@@ -455,7 +478,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
         {/* STUDY ROOM / HUB INPUT */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
-             <h3 className="text-3xl font-display font-bold text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
+             <h3 className="text-3xl font-display font-normal text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
                   
                   {/* Selected Files Display */}
@@ -498,21 +521,21 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
              </div>
              
-             {/* THE HUB BUTTON - ENHANCED */}
+             {/* THE HUB BUTTON - ENHANCED & GREEN */}
              <div className="mt-8 flex justify-center w-full max-w-md">
                  <button 
                     onClick={onHubEnter}
-                    className="w-full relative group overflow-hidden rounded-2xl bg-[#121212] border border-white/5 hover:border-green-500/50 transition-all shadow-2xl"
+                    className="w-full relative group overflow-hidden rounded-2xl bg-[#0c120c] border border-white/5 hover:border-green-600/50 transition-all shadow-2xl"
                  >
-                     <div className="absolute inset-0 bg-green-900/10 group-hover:bg-green-900/20 transition-colors"></div>
+                     <div className="absolute inset-0 bg-green-950/30 group-hover:bg-green-900/40 transition-colors"></div>
                      <div className="relative p-6 flex items-center justify-between">
                          <div className="flex items-center gap-4">
-                             <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 border border-green-500/20 group-hover:scale-110 transition-transform">
-                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                             <div className="w-12 h-12 rounded-xl bg-green-900/20 flex items-center justify-center text-green-500 border border-green-500/20 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(20,83,45,0.4)]">
+                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
                              </div>
                              <div className="text-left">
                                  <span className="block text-lg font-serif font-bold text-white group-hover:text-green-400 transition-colors">The Hub</span>
-                                 <span className="block text-xs text-gray-500 uppercase tracking-widest group-hover:text-gray-300">Premium Lounge</span>
+                                 <span className="block text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-gray-300">Live Study Lounge</span>
                              </div>
                          </div>
                          <div className="text-gray-600 group-hover:text-green-500 transition-colors">

@@ -68,6 +68,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.stripe.com/v3/"></script>
+    <!-- Paystack Inline Script -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     
     <script>
       if (typeof process === 'undefined') { window.process = { env: {} }; }
@@ -128,7 +130,7 @@
               sans: ['Inter', 'sans-serif'],
               serif: ['Merriweather', 'serif'],
               mono: ['JetBrains Mono', 'monospace'],
-              display: ['Cinzel Decorative', 'serif'],
+              display: ['UnifrakturMaguntia', 'cursive'],
             },
             animation: {
               'fade-in': 'fadeIn 0.6s ease-out',
@@ -160,7 +162,7 @@
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Cinzel+Decorative:wght@400;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=UnifrakturMaguntia&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
       /* --- SEMANTIC THEME VARIABLES --- */
       :root {

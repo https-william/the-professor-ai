@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -81,6 +80,16 @@ const App: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const saveTimeoutRef = useRef<any>(null);
+
+  // Paystack Mode Safety Check
+  useEffect(() => {
+      const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
+      if (publicKey.startsWith('pk_live')) {
+          console.log('%c PAYSTACK MODE: LIVE ', 'background: #22c55e; color: #fff; padding: 4px; border-radius: 4px; font-weight: bold;');
+      } else {
+          console.warn('Paystack Mode: TEST (Transactions will be simulated)');
+      }
+  }, []);
 
   // Helper to check admin status safely
   const checkIsAdmin = (email: string | null | undefined) => {
@@ -486,15 +495,20 @@ const App: React.FC = () => {
 
   // 5. App Dashboard (Authenticated)
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
-  const isActiveSession = status === AppStatus.READY;
-
+  
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505]`}>
       <AmbientBackground theme='Deep Space' />
       <CountdownTimer />
       <PWAPrompt />
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
-      <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
+      <SubscriptionModal 
+        isOpen={isSubscriptionOpen} 
+        onClose={() => setIsSubscriptionOpen(false)} 
+        currentTier={userProfile.subscriptionTier} 
+        onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} 
+        userEmail={user?.email || undefined}
+      />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}

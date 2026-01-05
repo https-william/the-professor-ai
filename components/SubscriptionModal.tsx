@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SubscriptionTier } from '../types';
 
 interface SubscriptionModalProps {
@@ -7,26 +7,91 @@ interface SubscriptionModalProps {
   onClose: () => void;
   currentTier: SubscriptionTier;
   onUpgrade: (tier: SubscriptionTier) => void;
+  userEmail?: string;
 }
 
-export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, currentTier, onUpgrade }) => {
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
+
+export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, currentTier, onUpgrade, userEmail }) => {
   const [loading, setLoading] = useState(false);
-  const [currency, setCurrency] = useState<'NGN' | 'USD'>('NGN');
+  const [currency, setCurrency] = useState<'NGN' | 'USD'>('USD');
+  const [paymentMode, setPaymentMode] = useState<'LIVE' | 'TEST' | 'OFFLINE'>('OFFLINE');
+
+  useEffect(() => {
+      // 1. Check Paystack Mode
+      const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
+      if (publicKey.startsWith('pk_live')) {
+          setPaymentMode('LIVE');
+      } else if (publicKey.startsWith('pk_test')) {
+          setPaymentMode('TEST');
+      } else {
+          setPaymentMode('OFFLINE');
+      }
+
+      // 2. Strict Geo Check for Currency
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz === 'Africa/Lagos') {
+            setCurrency('NGN');
+        } else {
+            setCurrency('USD');
+        }
+      } catch(e) { setCurrency('USD'); }
+  }, []);
 
   if (!isOpen) return null;
 
   const handleCheckout = (tierId: SubscriptionTier, price: number) => {
+    if (!userEmail) {
+        alert("Email required for transaction. Please complete your profile.");
+        return;
+    }
+
     setLoading(true);
     
-    setTimeout(() => {
-        const confirm = window.confirm("Redirecting to Secure Checkout...\n\n(Simulation: Click OK to complete payment)");
-        if (confirm) {
-            onUpgrade(tierId);
-            alert("Payment Successful! Welcome to The Professor " + tierId + ".");
-            onClose();
+    try {
+        const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY;
+        
+        if (!publicKey) {
+            alert("Payment system configuration missing. Please check Vercel Environment Variables.");
+            setLoading(false);
+            return;
         }
+
+        const paystack = new window.PaystackPop();
+        
+        paystack.newTransaction({
+            key: publicKey,
+            email: userEmail,
+            amount: price * 100, // Paystack expects amount in Kobo/Cents
+            currency: currency,
+            ref: '' + Math.floor((Math.random() * 1000000000) + 1), // Unique Ref
+            metadata: {
+                tier: tierId,
+                custom_fields: [
+                    { display_name: "Subscription Tier", variable_name: "tier", value: tierId }
+                ]
+            },
+            onSuccess: (transaction: any) => {
+                onUpgrade(tierId);
+                alert(`Payment Successful! Reference: ${transaction.reference}`);
+                onClose();
+                setLoading(false);
+            },
+            onCancel: () => {
+                setLoading(false);
+            }
+        });
+
+    } catch (e: any) {
+        console.error("Paystack Error:", e);
+        alert("Failed to initialize payment gateway. Ensure network connection is active.");
         setLoading(false);
-    }, 1500);
+    }
   };
 
   const tiers = [
@@ -35,47 +100,45 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
       name: 'The Fresher',
       priceDisplay: 'Free',
       amount: 0,
-      desc: "Just enough to pass.",
+      desc: "The sampler pack.",
       features: [
-        '3 Quizzes / Day',
-        '2 Duels / Day',
-        '1 PDF, 2 Images / Day',
-        'Standard Speed (Queue)',
-        '1 Lock-In Session / Day'
+        '1 Quiz / Day',
+        '1 File Upload / Day',
+        'Standard Queue',
+        'No Professor Chat'
       ],
       style: 'bg-[#18181b] border-white/10 text-gray-400'
     },
     {
       id: 'Scholar' as SubscriptionTier,
       name: 'The Scholar',
-      priceDisplay: currency === 'NGN' ? '₦2,000' : '$5',
-      amount: currency === 'NGN' ? 2000 : 5,
-      desc: "For the 5.0 GPA chaser.",
+      priceDisplay: currency === 'NGN' ? '₦3,500' : '$8.99',
+      amount: currency === 'NGN' ? 3500 : 8.99,
+      desc: "For the serious student.",
       features: [
-        '10 Exams / Day',
+        'Unlimited Quizzes',
+        'Feynman Tutor (Chat)',
         '10 Files Upload / Day',
-        'Unlimited Duels',
-        'War Room (Premium Lock-In)',
-        'Feynman Explanations'
+        'Priority Processing',
+        'War Room Access'
       ],
       style: 'bg-blue-900/10 border-blue-500/50 relative overflow-hidden',
       tag: 'Popular',
       tagColor: 'bg-blue-600'
     },
     {
-      id: 'Excellentia' as SubscriptionTier, // Renamed ID logic should handle legacy 'Excellentia Supreme' mapping if needed in backend
+      id: 'Excellentia' as SubscriptionTier, 
       name: 'Excellentia',
-      priceDisplay: currency === 'NGN' ? '₦5,000' : '$12',
-      amount: currency === 'NGN' ? 5000 : 12,
-      desc: "Academic Immortality.",
+      priceDisplay: currency === 'NGN' ? '₦8,000' : '$19.99',
+      amount: currency === 'NGN' ? 8000 : 19.99,
+      desc: "Academic immortality.",
       features: [
         'Unlimited Everything',
         'Nightmare Difficulty',
         'The Oracle (Predictive AI)',
-        'Priority Access (No Queue)',
-        'Weakness Destroyer'
+        'Weakness Destroyer',
+        'Admin-Level Support'
       ],
-      // VIP LOOK: Radial Gradient Black/Gold, distinct border
       style: 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#2a2a2a] via-[#0f0f0f] to-black border-[#D4AF37]/60 shadow-[0_0_25px_rgba(212,175,55,0.15)]',
       tag: 'VIP ACCESS',
       tagColor: 'bg-gradient-to-r from-[#D4AF37] to-[#B59410] text-black font-black tracking-widest'
@@ -93,12 +156,22 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
              <h2 className="text-xl font-bold text-white font-serif">Tuition Plans</h2>
            </div>
            
-           <div className="flex bg-black rounded-lg p-1 border border-white/10">
-               <button onClick={() => setCurrency('NGN')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${currency === 'NGN' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}>NGN</button>
-               <button onClick={() => setCurrency('USD')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${currency === 'USD' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}>USD</button>
-           </div>
+           <div className="flex items-center gap-4">
+               {/* Mode Indicator */}
+               <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-widest ${
+                   paymentMode === 'LIVE' ? 'bg-green-900/20 text-green-400 border-green-500/30' : 
+                   paymentMode === 'TEST' ? 'bg-amber-900/20 text-amber-400 border-amber-500/30' :
+                   'bg-red-900/20 text-red-400 border-red-500/30'
+               }`}>
+                   <div className={`w-1.5 h-1.5 rounded-full ${
+                       paymentMode === 'LIVE' ? 'bg-green-500 animate-pulse' : 
+                       paymentMode === 'TEST' ? 'bg-amber-500' : 'bg-red-500'
+                   }`}></div>
+                   {paymentMode === 'LIVE' ? 'SECURE PAYMENTS' : paymentMode === 'TEST' ? 'TEST MODE' : 'OFFLINE'}
+               </div>
 
-           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-4 p-2 bg-white/5 rounded-full">✕</button>
+               <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-2 p-2 bg-white/5 rounded-full">✕</button>
+           </div>
         </div>
 
         <div className="overflow-y-auto p-4 md:p-8 custom-scrollbar bg-[#050505]">

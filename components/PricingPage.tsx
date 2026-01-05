@@ -11,10 +11,17 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
   const [currency, setCurrency] = useState<'USD' | 'NGN'>('USD');
 
   useEffect(() => {
-    // Auto-detect currency based on Timezone
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz.includes('Lagos') || tz.includes('Africa/Lagos') || tz.includes('Nigeria')) {
-        setCurrency('NGN');
+    // STRICT GEO-FENCING
+    // Default is USD. Only switch to NGN if explicitly in Nigeria.
+    // This prevents international arbitrage.
+    try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz === 'Africa/Lagos') {
+            setCurrency('NGN');
+        }
+    } catch (e) {
+        // Fallback to USD on error
+        setCurrency('USD');
     }
   }, []);
 
@@ -22,28 +29,45 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
       {
           name: "Fresher",
           price: "Free",
-          desc: "For casual study.",
-          features: ["3 Quizzes / Day", "Standard Speed", "Basic Flashcards", "1 Lock-In Session"],
+          desc: "The sampler pack.",
+          features: [
+              "1 Quiz / Day", 
+              "1 File Upload / Day", 
+              "Standard Queue", 
+              "No Professor Chat"
+          ],
           cta: "Start Free",
           popular: false,
           color: "border-white/10"
       },
       {
           name: "Scholar",
-          price: currency === 'NGN' ? '₦2,000' : '$5',
+          price: currency === 'NGN' ? '₦3,500' : '$8.99',
           period: '/mo',
-          desc: "For the serious learner.",
-          features: ["Unlimited Quizzes", "Feynman Tutor Mode", "Upload 10 Files/Day", "Priority Processing", "War Room Access"],
+          desc: "For the serious student.",
+          features: [
+              "Unlimited Quizzes", 
+              "Feynman Tutor (Chat)", 
+              "10 Files / Day", 
+              "Priority Processing", 
+              "War Room Access"
+          ],
           cta: "Enroll Now",
           popular: true,
           color: "border-blue-500/50 bg-blue-900/5"
       },
       {
           name: "Excellentia",
-          price: currency === 'NGN' ? '₦5,000' : '$12',
+          price: currency === 'NGN' ? '₦8,000' : '$19.99',
           period: '/mo',
           desc: "Academic immortality.",
-          features: ["Unlimited Everything", "Nightmare Difficulty", "The Oracle (Predictive AI)", "Weakness Destroyer", "Admin-Level Support"],
+          features: [
+              "Unlimited Everything", 
+              "Nightmare Difficulty", 
+              "The Oracle (Predictive AI)", 
+              "Weakness Destroyer", 
+              "Admin-Level Support"
+          ],
           cta: "Go Ultimate",
           popular: false,
           highlight: true,

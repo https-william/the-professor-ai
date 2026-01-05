@@ -15,7 +15,7 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Participant limits per tier
+  // Participant limits per tier - Increased
   const participantLimit = tier === 'Fresher' ? 2 : tier === 'Scholar' ? 10 : 30;
   
   const maxWager = Math.min(userXP, 1000);
