@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile } from '../types';
 
 interface UserProfileModalProps {
@@ -10,27 +10,48 @@ interface UserProfileModalProps {
   onClearHistory: () => void;
   onLogout: () => void;
   isAdmin?: boolean; 
-  onTriggerAdmin?: () => void; // New prop
+  onTriggerAdmin?: () => void;
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onTriggerAdmin }) => {
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
-  const [clickCount, setClickCount] = useState(0);
+  
+  // Long Press Logic
+  const [isHolding, setIsHolding] = useState(false);
+  const holdTimer = useRef<any>(null);
+  const HOLD_DURATION = 3000; // 3 Seconds
+
+  // Clean up timer on unmount
+  useEffect(() => {
+      return () => {
+          if (holdTimer.current) clearTimeout(holdTimer.current);
+      };
+  }, []);
+
+  const startHold = (e: React.SyntheticEvent) => {
+      // Prevent default to stop text selection or weird browser behaviors
+      e.preventDefault();
+      setIsHolding(true);
+      
+      holdTimer.current = setTimeout(() => {
+          setIsHolding(false);
+          if (onTriggerAdmin) {
+              // Trigger vibration if supported for tactile feedback
+              if (navigator.vibrate) navigator.vibrate(200);
+              onTriggerAdmin();
+          }
+      }, HOLD_DURATION);
+  };
+
+  const endHold = () => {
+      setIsHolding(false);
+      if (holdTimer.current) {
+          clearTimeout(holdTimer.current);
+          holdTimer.current = null;
+      }
+  };
 
   if (!isOpen) return null;
-
-  const handleIdClick = () => {
-      setClickCount(prev => {
-          const newCount = prev + 1;
-          if (newCount >= 5) {
-              if (onTriggerAdmin) onTriggerAdmin();
-              return 0;
-          }
-          return newCount;
-      });
-      // Reset after 2 seconds
-      setTimeout(() => setClickCount(0), 2000);
-  };
 
   const achievements = [
       { 
@@ -98,11 +119,36 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
               <div 
-                onClick={handleIdClick}
-                className="w-10 h-10 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 cursor-pointer hover:bg-blue-900/30 transition-colors select-none active:scale-95"
+                className="relative w-10 h-10 select-none touch-none"
+                onMouseDown={startHold}
+                onMouseUp={endHold}
+                onMouseLeave={endHold}
+                onTouchStart={startHold}
+                onTouchEnd={endHold}
+                onTouchCancel={endHold}
               >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                  {/* Background Icon */}
+                  <div className="absolute inset-0 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 cursor-pointer z-10 transition-transform active:scale-95">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                  </div>
+
+                  {/* Progress Ring Overlay */}
+                  <svg className="absolute -inset-1 w-[48px] h-[48px] pointer-events-none z-0 transform -rotate-90">
+                      <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          fill="none"
+                          stroke="red"
+                          strokeWidth="3"
+                          strokeDasharray="126" // 2 * PI * 20
+                          strokeDashoffset={isHolding ? '0' : '126'}
+                          className={`transition-all ease-linear ${isHolding ? 'opacity-100' : 'opacity-0'}`}
+                          style={{ transitionDuration: isHolding ? '3000ms' : '0ms' }}
+                      />
+                  </svg>
               </div>
+
               <div>
                   <h3 className="font-bold text-white text-lg tracking-tight font-serif">Student Dossier</h3>
                   <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">ID: {editedProfile.alias || 'UNKNOWN'}</p>
