@@ -24,6 +24,8 @@ import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuel
 import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
+// FIXED: Removed .then(...) wrappers as components use export default. 
+// This resolves the IntrinsicAttributes error.
 const QuizView = React.lazy(() => import('./components/QuizView'));
 const ProfessorView = React.lazy(() => import('./components/ProfessorView'));
 const ChatView = React.lazy(() => import('./components/ChatView'));

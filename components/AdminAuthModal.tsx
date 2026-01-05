@@ -13,23 +13,15 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
   const [checking, setChecking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // SHA-256 Hash of "Admin01$"
-  // We store the hash, not the password, so savvy users inspecting code cannot see the password.
-  const TARGET_HASH = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";
+  // Simplified Direct Check for Stability
+  // (Client-side hashing fails in non-HTTPS environments)
+  const TARGET_PASS = "Admin01$";
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
-
-  const hashPassword = async (string: string) => {
-    const utf8 = new TextEncoder().encode(string);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map((bytes) => bytes.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,25 +30,18 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
     setChecking(true);
     setError(false);
 
-    try {
-      const hash = await hashPassword(input);
-      
-      // Artificial delay for dramatic effect (and to prevent timing attacks theoretically, though negligible here)
-      setTimeout(() => {
-          if (hash === TARGET_HASH) {
-              onSuccess();
-              onClose();
-              setInput('');
-          } else {
-              setError(true);
-              setInput(''); // Clear input on fail
-          }
-          setChecking(false);
-      }, 800);
-    } catch (err) {
-      console.error("Crypto subsystem failed");
-      setChecking(false);
-    }
+    // Artificial delay for UX
+    setTimeout(() => {
+        if (input === TARGET_PASS) {
+            onSuccess();
+            onClose();
+            setInput('');
+        } else {
+            setError(true);
+            setInput(''); 
+        }
+        setChecking(false);
+    }, 500);
   };
 
   if (!isOpen) return null;
