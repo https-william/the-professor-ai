@@ -24,8 +24,7 @@ import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuel
 import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
-// FIXED: Removed .then(...) wrappers as components use export default. 
-// This resolves the IntrinsicAttributes error.
+// FIXED: Using direct import() for default exports. The previous .then() chain was incorrect for default exports.
 const QuizView = React.lazy(() => import('./components/QuizView'));
 const ProfessorView = React.lazy(() => import('./components/ProfessorView'));
 const ChatView = React.lazy(() => import('./components/ChatView'));
@@ -79,14 +78,12 @@ const App: React.FC = () => {
   const checkIsAdmin = (email: string | null | undefined) => {
       if (!email) return false;
       const normalized = email.toLowerCase().trim();
-      // Allow specific whitelist OR any email containing vexis.automation (super admin domain)
       return ADMIN_EMAILS.includes(normalized) || normalized.includes('vexis.automation');
   };
 
   const isAdmin = checkIsAdmin(user?.email);
 
   useEffect(() => {
-    // Detect AdBlocker via Firebase failure
     const originalConsoleError = console.error;
     console.error = (...args) => {
         if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
@@ -94,8 +91,6 @@ const App: React.FC = () => {
         }
         originalConsoleError(...args);
     };
-    
-    // Also check on window error events
     window.addEventListener('error', (e) => {
         if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
     }, true);
@@ -135,14 +130,13 @@ const App: React.FC = () => {
                   mode: appMode,
                   title: title,
                   data: dataToSave,
-                  summary: history.find(h => h.id === activeHistoryId)?.summary // Preserve summary
+                  summary: history.find(h => h.id === activeHistoryId)?.summary
               };
               saveToHistory(item);
-              setHistory(loadHistory()); // Update UI
+              setHistory(loadHistory());
           }
       };
 
-      // Debounce saving to avoid disk thrashing
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(syncHistory, 2000);
 
@@ -151,24 +145,17 @@ const App: React.FC = () => {
       };
   }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
 
-  // Notification Polling Logic
   useEffect(() => {
     const checkReminder = () => {
       if (!userProfile.studyReminders || !userProfile.reminderTime) return;
-      
       const now = new Date();
       const [targetHours, targetMinutes] = userProfile.reminderTime.split(':').map(Number);
-      
       if (now.getHours() === targetHours && now.getMinutes() === targetMinutes && now.getSeconds() < 10) {
          if (Notification.permission === 'granted') {
-             new Notification("The Professor", {
-                 body: "Class is in session. Do not be late.",
-                 icon: "/favicon.ico"
-             });
+             new Notification("The Professor", { body: "Class is in session.", icon: "/favicon.ico" });
          }
       }
     };
-
     const interval = setInterval(checkReminder, 10000); 
     return () => clearInterval(interval);
   }, [userProfile]);
@@ -177,44 +164,30 @@ const App: React.FC = () => {
     if (!user) return;
     
     // --- ADMIN AUTO-ROUTING ---
-    // If the logged-in user is the designated admin, route directly to the office.
     if (checkIsAdmin(user.email)) {
-        console.log("Admin Detected via Email. Routing to HQ.");
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
-        return; // Skip profile sync for admin to avoid overrides
+        return; 
     }
-    // --------------------------
 
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
-    
     let mergedProfile: UserProfile = { ...localProfile };
 
     if (firestoreProfile) {
-        mergedProfile = {
-            ...mergedProfile,
-            ...firestoreProfile,
-            socials: firestoreProfile.socials || mergedProfile.socials,
-            xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp
-        };
+        mergedProfile = { ...mergedProfile, ...firestoreProfile, socials: firestoreProfile.socials || mergedProfile.socials, xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp };
     }
 
-    if (user.hasCompletedOnboarding === false) {
-        setOnboardingStep('WELCOME');
-    } else {
-        setOnboardingStep('COMPLETE');
-    }
+    if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
+    else setOnboardingStep('COMPLETE');
     
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
     
     mergedProfile = updateStreak(mergedProfile);
-    
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    // Only load session if NOT admin
     if (!checkIsAdmin(user.email)) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
@@ -227,13 +200,9 @@ const App: React.FC = () => {
     }
   }, [user]);
 
-  // Safe Exit Wrapper
   const attemptAction = (action: () => void, force: boolean = false) => {
       if (!force && status === AppStatus.READY && (
-          (appMode === 'EXAM' && !quizState.isSubmitted) || 
-          (appMode === 'PROFESSOR') ||
-          (appMode === 'CHAT') ||
-          (appMode === 'FLASHCARDS')
+          (appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS')
       )) {
           setPendingAction(() => action);
           setShowExitConfirmation(true);
@@ -253,14 +222,10 @@ const App: React.FC = () => {
         await saveUserToFirestore(user.uid, { ...data, hasCompletedOnboarding: true });
         await refreshUser(); 
     }
-    
     const updated = { ...userProfile, ...data, hasCompletedOnboarding: true };
     setUserProfile(updated);
     saveUserProfile(updated);
-    
-    if (updated.studyReminders) {
-        Notification.requestPermission();
-    }
+    if (updated.studyReminders) Notification.requestPermission();
     setOnboardingStep('COMPLETE');
   };
 
@@ -274,7 +239,6 @@ const App: React.FC = () => {
       return totalSeconds > 0 ? totalSeconds : null;
   };
 
-  // Helper to get 5-word summary
   const getDocumentSummary = async (text: string): Promise<string> => {
       try {
           const summary = await simplifyExplanation(text.substring(0, 5000), 'ELA', "5 word abstract/tagline");
@@ -291,23 +255,12 @@ const App: React.FC = () => {
 
       if (mode === 'CHAT') {
         const summary = await summaryPromise;
-        const newState: ChatState = {
-            messages: [],
-            fileContext: file.content,
-            fileName: file.name
-        };
+        const newState: ChatState = { messages: [], fileContext: file.content, fileName: file.name };
         setChatState(newState);
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
         
-        const historyItem: HistoryItem = { 
-            id: Date.now().toString(), 
-            timestamp: Date.now(), 
-            mode: 'CHAT', 
-            title: file.name, 
-            data: newState,
-            summary: summary 
-        };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: summary };
         saveToHistory(historyItem);
         setHistory(loadHistory());
         setActiveHistoryId(historyItem.id);
@@ -322,22 +275,14 @@ const App: React.FC = () => {
         const questions = await generateQuizFromText(file.content, config, userProfile);
         
         if (!questions || questions.length === 0) {
-            throw new Error("Neural Failure: No questions generated. Content might be insufficient or blocked.");
+            throw new Error("Neural Failure: No questions generated.");
         }
 
         const summary = await summaryPromise;
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
         
-        const historyItem: HistoryItem = { 
-            id: Date.now().toString(), 
-            timestamp: Date.now(), 
-            mode: mode, 
-            title: file.name, 
-            data: newState, 
-            config,
-            summary: summary
-        };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: summary };
         saveToHistory(historyItem);
         setAppMode(mode); 
       } else {
@@ -348,14 +293,7 @@ const App: React.FC = () => {
         setQuizState(prev => ({ ...prev, timeRemaining }));
         
         const summary = await summaryPromise;
-        const historyItem: HistoryItem = { 
-            id: Date.now().toString(), 
-            timestamp: Date.now(), 
-            mode: 'PROFESSOR', 
-            title: file.name, 
-            data: newState,
-            summary: summary 
-        };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: summary };
         saveToHistory(historyItem);
       }
       setHistory(loadHistory());
@@ -403,13 +341,7 @@ const App: React.FC = () => {
       let newXP = (userProfile.xp || 0) + xpGained;
       if (newXP > 10000) newXP = 10000;
 
-      const newProfile = { 
-          ...userProfile, 
-          questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, 
-          correctAnswers: userProfile.correctAnswers + score, 
-          xp: newXP 
-      };
-      
+      const newProfile = { ...userProfile, questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, correctAnswers: userProfile.correctAnswers + score, xp: newXP };
       setUserProfile(newProfile);
       saveUserProfile(newProfile);
       
@@ -419,7 +351,6 @@ const App: React.FC = () => {
               await submitDuelScore(activeDuelId, user.uid, score);
           }
       }
-      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (action === 'RESET') {
@@ -436,82 +367,42 @@ const App: React.FC = () => {
           setDuelReadyData(null); 
           setActiveDuelId(null); 
       };
-
-      if (force) {
-          resetLogic();
-      } else {
-          attemptAction(resetLogic);
-      }
+      if (force) resetLogic();
+      else attemptAction(resetLogic);
     }
   };
 
-  const handleChatUpdate = (updatedState: ChatState) => {
-      setChatState(updatedState);
-      // History sync handled by useEffect now
-  };
+  const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
 
   const handleOpenFloatingChat = () => {
       if (appMode !== 'CHAT') {
-          const newState: ChatState = {
-              messages: [{
-                  id: 'init-float',
-                  role: 'model',
-                  content: "I am The Professor. How can I assist your studies today?",
-                  timestamp: Date.now()
-              }],
-              fileContext: '',
-              fileName: 'General Inquiry'
-          };
+          const newState: ChatState = { messages: [{ id: 'init-float', role: 'model', content: "I am The Professor. How can I assist?", timestamp: Date.now() }], fileContext: '', fileName: 'General Inquiry' };
           setChatState(newState);
           setAppMode('CHAT');
           setStatus(AppStatus.READY);
           
           const newId = Date.now().toString();
           setActiveHistoryId(newId);
-          saveToHistory({
-              id: newId,
-              timestamp: Date.now(),
-              mode: 'CHAT',
-              title: 'General Inquiry',
-              data: newState
-          });
+          saveToHistory({ id: newId, timestamp: Date.now(), mode: 'CHAT', title: 'General Inquiry', data: newState });
           setHistory(loadHistory());
       }
   };
 
   // --- DUEL LOGIC ---
-
   const handleDuelStart = async (data: { wager: number, file: File }) => {
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
       setErrorMsg(null);
-      
       try {
           const processed = await processFile(data.file);
-          
-          const config: QuizConfig = {
-              difficulty: 'Hard',
-              questionType: 'Mixed',
-              questionCount: 10,
-              timerDuration: 'Limitless',
-              personality: 'Academic',
-              analogyDomain: 'General',
-              useOracle: true,
-              useWeaknessDestroyer: false
-          };
-
+          const config: QuizConfig = { difficulty: 'Hard', questionType: 'Mixed', questionCount: 10, timerDuration: 'Limitless', personality: 'Academic', analogyDomain: 'General', useOracle: true, useWeaknessDestroyer: false };
           setStatusText("Initializing Arena...");
           const { duelId, code } = await initDuelLobby(user.uid, userProfile.alias || 'Host', data.wager, processed.content, config);
-          
           setDuelReadyData({ id: duelId, code, isHost: true });
           setStatus(AppStatus.IDLE);
-
           generateQuizFromText(processed.content, config, userProfile).then(async (questions) => {
-              if (questions && questions.length > 0) {
-                   await updateDuelWithQuestions(duelId, questions);
-              }
+              if (questions && questions.length > 0) await updateDuelWithQuestions(duelId, questions);
           }).catch(err => console.error("Background Gen Error", err));
-
       } catch (e: any) {
           console.error(e);
           setErrorMsg(e.message || "Failed to start duel.");
@@ -533,31 +424,14 @@ const App: React.FC = () => {
       if (duelReadyData) {
           const duelState = await getDuel(duelReadyData.id);
           if (duelState && duelState.quizQuestions) {
-              const newState: QuizState = { 
-                  questions: duelState.quizQuestions, 
-                  userAnswers: {}, 
-                  flaggedQuestions: [], 
-                  isSubmitted: false, 
-                  score: 0, 
-                  startTime: Date.now(), 
-                  timeRemaining: null, 
-                  focusStrikes: 0,
-                  currentQuestionIndex: 0
-              };
+              const newState: QuizState = { questions: duelState.quizQuestions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining: null, focusStrikes: 0, currentQuestionIndex: 0 };
               setQuizState(newState);
               setAppMode('EXAM');
               setStatus(AppStatus.READY);
               setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
               
-              const historyItem: HistoryItem = { 
-                  id: Date.now().toString(), 
-                  timestamp: Date.now(), 
-                  mode: 'EXAM', 
-                  title: `Duel: ${duelState.code}`, 
-                  data: newState,
-                  config: duelState.quizConfig
-              };
+              const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: `Duel: ${duelState.code}`, data: newState, config: duelState.quizConfig };
               saveToHistory(historyItem);
               setHistory(loadHistory());
           } else {
@@ -581,6 +455,8 @@ const App: React.FC = () => {
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
+      
+      {/* Admin Modal */}
       <AdminAuthModal 
           isOpen={showAdminAuth} 
           onClose={() => setShowAdminAuth(false)} 
@@ -591,20 +467,8 @@ const App: React.FC = () => {
           }} 
       />
       
-      {duelReadyData && (
-          <DuelReadyModal 
-            duelId={duelReadyData.id} 
-            initialCode={duelReadyData.code}
-            isHost={duelReadyData.isHost}
-            onEnter={handleEnterDuel} 
-          />
-      )}
-      
-      {isAdBlockActive && (
-          <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">
-              ⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database
-          </div>
-      )}
+      {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
+      {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
@@ -616,35 +480,23 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-               {/* ADMIN SHORTCUT: Only visible if appMode is ADMIN to allow exit, or implicitly handled via profile */}
                {appMode === 'ADMIN' && (
-                   <button 
-                     onClick={() => setAppMode('EXAM')}
-                     className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all"
-                   >
+                   <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">
                        Exit Office
                    </button>
                )}
-
                {isActiveSession && appMode !== 'ADMIN' && (
-                   <button 
-                     onClick={() => setIsHistoryOpen(true)}
-                     className="p-2 text-gray-400 hover:text-white transition-colors relative"
-                     title="My Library"
-                   >
+                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative" title="My Library">
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
                    </button>
                )}
-               
                {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
                        <span>Upgrade</span>
                        <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
                    </button>
                )}
-
                <div className="h-6 w-px bg-white/10 mx-2"></div>
-
                <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
                    <div className="text-right hidden sm:block">
                        <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">{userProfile.alias}</p>
@@ -665,9 +517,6 @@ const App: React.FC = () => {
         onSelect={(item) => {
             if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
                 setQuizState(item.data as QuizState);
-                if (item.config) {
-                    // Restore config
-                }
             } else if (item.mode === 'PROFESSOR') {
                 setProfessorState(item.data as ProfessorState);
             } else if (item.mode === 'CHAT') {
@@ -749,12 +598,8 @@ const App: React.FC = () => {
          )}
       </main>
       
-      {/* Floating Chat Trigger (Visible in non-chat modes, excluding ADMIN) */}
       {status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && !isModalOpen && (
-          <button 
-            onClick={handleOpenFloatingChat}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group"
-          >
+          <button onClick={handleOpenFloatingChat} className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group">
               <span className="text-2xl group-hover:animate-wiggle">💬</span>
           </button>
       )}
