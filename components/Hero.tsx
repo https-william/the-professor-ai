@@ -92,10 +92,16 @@ export const Hero: React.FC = () => {
             <span>Learning is as simple as</span>
             
             <div className="relative inline-flex items-center px-2">
-                {/* Crossed out ABC */}
-                <span className="text-gray-600 font-mono line-through decoration-red-500/80 decoration-[3px] mr-3 opacity-60">
-                    ABC
-                </span>
+                {/* Crossed out ABC - Hand-drawn Style */}
+                <div className="relative mr-3 opacity-60 rotate-[-6deg] select-none hover:opacity-80 transition-opacity">
+                    <span className="text-gray-600 font-mono font-bold text-2xl sm:text-3xl relative inline-block">
+                        ABC
+                        {/* Custom SVG Red Strike */}
+                        <svg className="absolute top-1/2 left-[-10%] w-[120%] h-[40%] -translate-y-1/2 text-red-600 opacity-90 pointer-events-none overflow-visible" viewBox="0 0 100 10" preserveAspectRatio="none">
+                            <path d="M0 5 Q 50 10 100 2" stroke="currentColor" strokeWidth="12" strokeLinecap="round" fill="none" />
+                        </svg>
+                    </span>
+                </div>
                 
                 {/* Glowing XYZ */}
                 <span className="font-black text-white text-xl sm:text-3xl relative">

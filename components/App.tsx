@@ -185,8 +185,6 @@ const App: React.FC = () => {
       else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
       setStatus(AppStatus.READY);
       
-      // Need to find which history ID this session belongs to or create a dummy one
-      // For simplicity, we just look for latest in history
       const latest = loadHistory().sort((a,b) => b.timestamp - a.timestamp)[0];
       if (latest) setActiveHistoryId(latest.id);
     }
@@ -469,7 +467,10 @@ const App: React.FC = () => {
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
-  const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
+  
+  const ADMIN_EMAILS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'];
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
+  
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
 
   return (
@@ -510,10 +511,22 @@ const App: React.FC = () => {
                )}
                <div className="h-6 w-px bg-white/10 mx-2"></div>
                
-               {/* Admin Button */}
+               {/* Admin Button - Enhanced */}
                {isAdmin && (
-                   <button onClick={() => setAppMode('ADMIN')} className="p-2 text-gray-400 hover:text-amber-500 transition-colors" title="Dean's Office">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                   <button 
+                     onClick={() => setAppMode('ADMIN')} 
+                     className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-amber-900/20 text-amber-500 border border-amber-500/20 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-amber-900/40 transition-all"
+                   >
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                       <span>Dean's Office</span>
+                   </button>
+               )}
+               {isAdmin && (
+                   <button 
+                     onClick={() => setAppMode('ADMIN')} 
+                     className="md:hidden p-2 text-amber-500 bg-amber-900/10 rounded-lg"
+                   >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                    </button>
                )}
 
