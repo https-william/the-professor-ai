@@ -5,7 +5,6 @@ import { processFile } from '../services/fileService';
 import { CameraScanner } from './CameraScanner';
 import { DuelCreateModal } from './DuelCreateModal';
 import { DuelJoinModal } from './DuelJoinModal';
-import { StudyRoomModal } from './StudyRoomModal';
 
 interface InputSectionProps {
   onProcess: (processedFile: ProcessedFile, config: QuizConfig, mode: AppMode) => void;
@@ -18,6 +17,7 @@ interface InputSectionProps {
   onOpenProfile: () => void;
   onDuelStart?: (config: any) => void;
   onDuelJoin?: (code: string) => void;
+  onHubEnter: () => void; // New Prop
 }
 
 export const InputSection: React.FC<InputSectionProps> = ({ 
@@ -29,7 +29,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   userProfile,
   onShowSubscription,
   onDuelStart,
-  onDuelJoin
+  onDuelJoin,
+  onHubEnter
 }) => {
   const [textInput, setTextInput] = useState('');
   const [chatInput, setChatInput] = useState('');
@@ -44,7 +45,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [showDuelCreate, setShowDuelCreate] = useState(false);
   const [showDuelJoin, setShowDuelJoin] = useState(false);
   const [showDuelSelector, setShowDuelSelector] = useState(false); 
-  const [showStudyRoomModal, setShowStudyRoomModal] = useState(false);
 
   // Config State
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultConfig.difficulty);
@@ -274,7 +274,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
-      {showStudyRoomModal && <StudyRoomModal onClose={() => setShowStudyRoomModal(false)} user={userProfile} />}
 
       {/* Duel Selector */}
       {showDuelSelector && (
@@ -431,17 +430,17 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       <span className="text-[10px] font-bold uppercase text-indigo-400">Cards</span>
                    </button>
                    
-                   {isScholar || isExcellentia ? (
-                       <button onClick={() => setShowStudyRoomModal(true)} disabled={isLoading} className="p-3 bg-green-900/10 border border-green-500/20 hover:bg-green-900/20 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                          <span className="text-[10px] font-bold uppercase text-green-400">Group</span>
-                       </button>
-                   ) : (
-                       <button onClick={onShowSubscription} className="p-3 bg-white/5 border border-white/5 opacity-50 rounded-xl flex flex-col items-center justify-center gap-1 cursor-not-allowed">
-                          <span className="text-lg">🔒</span>
-                          <span className="text-[10px] font-bold uppercase text-gray-500">Group</span>
-                       </button>
-                   )}
+                   {/* ELI5 PROMINENT BUTTON */}
+                   <button 
+                     onClick={() => handleGenerate('PROFESSOR')} 
+                     disabled={isLoading}
+                     className="p-3 bg-green-900/20 border border-green-500/30 hover:bg-green-900/40 rounded-xl flex flex-col items-center justify-center gap-1 group transition-all"
+                   >
+                      <div className="bg-green-500/20 p-1.5 rounded-full mb-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" /></svg>
+                      </div>
+                      <span className="text-[9px] font-black uppercase text-green-400">Explain It</span>
+                   </button>
                </div>
 
                <button onClick={() => handleGenerate()} disabled={isLoading} className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
@@ -460,7 +459,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
         </div>
 
-        {/* STUDY ROOM INPUT */}
+        {/* STUDY ROOM / HUB INPUT */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-serif font-bold text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
@@ -505,9 +504,20 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
              </div>
              
-             <div className="mt-6 flex items-center gap-2 relative z-0">
-                <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-                <p className="text-xs text-gray-500 font-mono uppercase tracking-widest">The Professor is listening.</p>
+             {/* THE HUB BUTTON - REPLACES GROUP */}
+             <div className="mt-8 flex justify-center">
+                 <button 
+                    onClick={onHubEnter}
+                    className="flex items-center gap-3 px-6 py-3 bg-[#1a1a1a] border border-green-500/20 rounded-full hover:border-green-500/50 hover:bg-green-900/10 transition-all group"
+                 >
+                     <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                     </div>
+                     <div className="text-left">
+                         <span className="block text-xs font-bold text-white uppercase tracking-wider">The Hub</span>
+                         <span className="block text-[10px] text-gray-500">Collaborative Study Rooms</span>
+                     </div>
+                 </button>
              </div>
         </div>
       </div>

@@ -66,7 +66,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
         </nav>
       </div>
 
-      {/* Hero Section */}
+      {/* Hero Section (Restored XYZ Style) */}
       <section className="relative pt-32 sm:pt-48 pb-20 px-4 sm:px-6 min-h-[90vh] flex flex-col justify-center items-center text-center z-10">
         <div className="max-w-5xl mx-auto">
           
@@ -125,35 +125,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
         </div>
       </section>
 
-      {/* Features Grid */}
+      {/* Expanded Feature Explanations (Simple & Professional) */}
       <section id="features" className="py-24 relative z-10 border-t border-white/5 bg-[#080808]">
           <div className="max-w-7xl mx-auto px-6">
               <div className="text-center mb-16">
-                  <h2 className="text-3xl md:text-4xl font-bold font-serif mb-4 text-gray-200">Learn Faster. Remember Longer.</h2>
-                  <p className="text-gray-500 max-w-2xl mx-auto text-sm tracking-wide">We use proven study techniques to hack your brain's memory.</p>
+                  <h2 className="text-3xl md:text-4xl font-bold font-serif mb-4 text-gray-200">Complete Academic Suite</h2>
+                  <p className="text-gray-500 max-w-2xl mx-auto text-sm tracking-wide">Everything you need to master your coursework, from exams to group study.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {/* Feature 1 */}
                   <div className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-amber-500/20 transition-all group">
                       <div className="text-4xl mb-6 text-amber-600 group-hover:text-amber-500 group-hover:scale-110 transition-transform duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>
                       </div>
-                      <h3 className="text-xl font-bold mb-3 text-gray-200">Hard Mode Exams</h3>
-                      <p className="text-gray-500 text-sm leading-relaxed">The AI generates questions that trick you on purpose. If you can pass this, you can pass the real thing.</p>
+                      <h3 className="text-xl font-bold mb-3 text-gray-200">Practice Exams</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">
+                          Upload your notes and generate instant mock exams. Identify gaps in your knowledge and get grading feedback before the real test.
+                      </p>
                   </div>
+
+                  {/* Feature 2 */}
                   <div className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all group">
                       <div className="text-4xl mb-6 text-blue-600 group-hover:text-blue-500 group-hover:scale-110 transition-transform duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
                       </div>
-                      <h3 className="text-xl font-bold mb-3 text-gray-200">Simple Explanations</h3>
-                      <p className="text-gray-500 text-sm leading-relaxed">Confused? The Professor explains complex topics using analogies from sports, movies, or games.</p>
+                      <h3 className="text-xl font-bold mb-3 text-gray-200">Intelligent Tutoring</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">
+                          Stuck on a concept? The AI Professor explains complex topics simply, tailored to your learning style, ensuring you truly understand the material.
+                      </p>
                   </div>
+
+                  {/* Feature 3 */}
                   <div className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-purple-500/20 transition-all group">
                       <div className="text-4xl mb-6 text-purple-600 group-hover:text-purple-500 group-hover:scale-110 transition-transform duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                       </div>
-                      <h3 className="text-xl font-bold mb-3 text-gray-200">Battle Your Friends</h3>
-                      <p className="text-gray-500 text-sm leading-relaxed">Don't study alone. Challenge your classmates to a quiz duel. Winner takes the glory.</p>
+                      <h3 className="text-xl font-bold mb-3 text-gray-200">Collaborative Hub</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">
+                          Create study rooms and invite friends. Share notes, chat, and learn together in synchronized sessions with built-in voice notes.
+                      </p>
                   </div>
               </div>
           </div>

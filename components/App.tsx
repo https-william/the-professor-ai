@@ -1,35 +1,37 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { Hero } from './components/Hero';
-import { InputSection } from './components/InputSection';
-import { LoadingOverlay } from './components/LoadingOverlay';
-import { HistorySidebar } from './components/HistorySidebar';
-import { UserProfileModal } from './components/UserProfileModal';
-import { AboutModal } from './components/AboutModal';
-import { SubscriptionModal } from './components/SubscriptionModal';
-import { WelcomeModal } from './components/Onboarding/WelcomeModal';
-import { AuthPage } from './components/Auth/AuthPage';
-import { AdminLoginPage } from './components/Auth/AdminLoginPage';
-import { LandingPage } from './components/LandingPage';
-import { PricingPage } from './components/PricingPage';
-import { CountdownTimer } from './components/CountdownTimer';
-import { AmbientBackground } from './components/AmbientBackground';
-import { PWAPrompt } from './components/PWAPrompt';
-import { DuelReadyModal } from './components/DuelReadyModal';
-import { ConfirmationModal } from './components/ConfirmationModal';
-import { useAuth } from './contexts/AuthContext';
-import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState } from './types';
-import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from './services/firebase';
-import { processFile } from './services/fileService';
+import { Hero } from './Hero';
+import { InputSection } from './InputSection';
+import { LoadingOverlay } from './LoadingOverlay';
+import { HistorySidebar } from './HistorySidebar';
+import { UserProfileModal } from './UserProfileModal';
+import { AboutModal } from './AboutModal';
+import { SubscriptionModal } from './SubscriptionModal';
+import { WelcomeModal } from './Onboarding/WelcomeModal';
+import { AuthPage } from './Auth/AuthPage';
+import { AdminLoginPage } from './Auth/AdminLoginPage';
+import { LandingPage } from './LandingPage';
+import { PricingPage } from './PricingPage';
+import { CountdownTimer } from './CountdownTimer';
+import { AmbientBackground } from './AmbientBackground';
+import { PWAPrompt } from './PWAPrompt';
+import { DuelReadyModal } from './DuelReadyModal';
+import { ConfirmationModal } from './ConfirmationModal';
+import { NotificationBell } from './NotificationBell';
+import { useAuth } from '../contexts/AuthContext';
+import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from '../services/geminiService';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from '../services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, HubState } from '../types';
+import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from '../services/firebase';
+import { processFile } from '../services/fileService';
 
 // Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./components/QuizView'));
-const ProfessorView = React.lazy(() => import('./components/ProfessorView'));
-const ChatView = React.lazy(() => import('./components/ChatView'));
-const FlashcardView = React.lazy(() => import('./components/FlashcardView'));
-const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
+const QuizView = React.lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
+const ProfessorView = React.lazy(() => import('./ProfessorView').then(module => ({ default: module.ProfessorView })));
+const ChatView = React.lazy(() => import('./ChatView').then(module => ({ default: module.ChatView })));
+const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => ({ default: module.FlashcardView })));
+const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
 // Routing State
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP';
@@ -89,47 +91,25 @@ const App: React.FC = () => {
 
   const isAdmin = checkIsAdmin(user?.email);
 
-  useEffect(() => {
-    const originalConsoleError = console.error;
-    console.error = (...args) => {
-        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
-            setIsAdBlockActive(true);
-        }
-        originalConsoleError(...args);
-    };
-    window.addEventListener('error', (e) => {
-        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
-    }, true);
-  }, []);
-
   // Sync View with Auth State
   useEffect(() => {
     if (loading) return;
 
     if (user) {
-        // If user is logged in, show App
-        // But if view is currently ADMIN_LOGIN, we need to check if user IS admin
-        if (currentView === 'ADMIN_LOGIN') {
-            if (checkIsAdmin(user.email)) {
-                setAppMode('ADMIN');
-                setCurrentView('APP');
-            } else {
-                // If standard user logs in on admin page, log them out (handled by AdminLoginPage mainly, but failsafe here)
-            }
-        } else {
-            // Normal Login
+        // Only force redirect to APP if we are NOT on a special page like Admin Login or Pricing
+        if (currentView === 'LANDING' || currentView === 'AUTH') {
             setCurrentView('APP');
             if (checkIsAdmin(user.email)) {
                 setAppMode('ADMIN');
             }
         }
     } else {
-        // Logged out
-        if (currentView === 'APP') {
-            setCurrentView('LANDING'); // Kick to landing
+        // If not logged in, but on APP or Admin Dash, kick to Landing
+        if (currentView === 'APP' || (currentView === 'ADMIN_LOGIN' && appMode === 'ADMIN')) {
+            setCurrentView('LANDING'); 
         }
     }
-  }, [user, loading]);
+  }, [user, loading, currentView]);
 
   // Real-time History Sync
   useEffect(() => {
@@ -176,7 +156,7 @@ const App: React.FC = () => {
     if (!user) return;
     
     // --- ADMIN AUTO-ROUTING ---
-    if (checkIsAdmin(user.email)) {
+    if (checkIsAdmin(user.email) && currentView === 'APP') {
         console.log("Welcome Dean.");
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
@@ -215,10 +195,13 @@ const App: React.FC = () => {
 
   // Request Admin Access from User Profile Modal
   const handleRequestAdminAccess = async () => {
-      // Force logout first to ensure clean admin login
-      if (user) await logout();
-      setIsProfileOpen(false);
+      // We set the view first to prevent the auth effect from redirecting us
       setCurrentView('ADMIN_LOGIN');
+      // If user is currently logged in as non-admin, logging out helps clean state
+      // but if we are just switching to login screen, we can keep session until they auth as admin
+      if (user && !checkIsAdmin(user.email)) {
+          await logout(); 
+      }
   };
 
   const handleAdminSuccess = () => {
@@ -532,11 +515,16 @@ const App: React.FC = () => {
                        Exit Office
                    </button>
                )}
-               {isActiveSession && appMode !== 'ADMIN' && (
-                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative" title="My Library">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
+               {/* ALWAYS VISIBLE LIBRARY */}
+               {appMode !== 'ADMIN' && (
+                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
                    </button>
                )}
+               
+               {/* Notification Bell */}
+               <NotificationBell />
+
                {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
                        <span>Upgrade</span>
@@ -616,6 +604,7 @@ const App: React.FC = () => {
                     onOpenProfile={() => setIsProfileOpen(true)}
                     onDuelStart={handleDuelStart}
                     onDuelJoin={handleDuelJoin}
+                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }}
                 />
              </>
          )}
@@ -630,6 +619,7 @@ const App: React.FC = () => {
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
+                    {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => setAppMode('EXAM')} />}
                  </Suspense>
              </div>
@@ -645,7 +635,7 @@ const App: React.FC = () => {
          )}
       </main>
       
-      {status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && !isModalOpen && (
+      {status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && appMode !== 'HUB' && !isModalOpen && (
           <button onClick={handleOpenFloatingChat} className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group">
               <span className="text-2xl group-hover:animate-wiggle">💬</span>
           </button>

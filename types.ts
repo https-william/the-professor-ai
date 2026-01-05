@@ -53,6 +53,12 @@ export interface EssayState {
   analysis: EssayAnalysis | null;
 }
 
+export interface HubState {
+  // Placeholder for Hub state if needed
+  roomId?: string;
+  active: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
@@ -94,7 +100,7 @@ export enum AppStatus {
 }
 
 export type InputMode = 'FILE' | 'TEXT' | 'CAMERA';
-export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT' | 'DUEL' | 'FLASHCARDS' | 'ESSAY';
+export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT' | 'DUEL' | 'FLASHCARDS' | 'ESSAY' | 'HUB';
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Nightmare';
 export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Mixed' | 'Select All That Apply';
 export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '45m' | '1h' | '1h 30m' | '2h';

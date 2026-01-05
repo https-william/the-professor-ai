@@ -29,6 +29,7 @@ const ProfessorView = React.lazy(() => import('./components/ProfessorView').then
 const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView })));
 const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView })));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const TheHub = React.lazy(() => import('./components/TheHub').then(module => ({ default: module.TheHub })));
 
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
@@ -676,6 +677,7 @@ const App: React.FC = () => {
                     onOpenProfile={() => setIsProfileOpen(true)}
                     onDuelStart={handleDuelStart}
                     onDuelJoin={handleDuelJoin}
+                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }}
                 />
              </>
          )}
@@ -691,6 +693,7 @@ const App: React.FC = () => {
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
                     {appMode === 'ADMIN' && <AdminDashboard />}
+                    {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                  </Suspense>
              </div>
          )}

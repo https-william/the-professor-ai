@@ -4,68 +4,55 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>The Professor | Academic Weapon & AI Study Companion</title>
     
-    <!-- SEO & Metatags -->
-    <meta name="description" content="The Professor is an advanced AI study companion created by William Popoola at Vexis Automations. Transform lecture notes into interactive exams, Socratic tutoring sessions, and predictive quizzes." />
-    <meta name="keywords" content="The Professor, Study AI, Exam Prep, William Popoola, Vexis Automations, Academic Weapon, AI Tutor, Quiz Generator, Feynman Technique" />
-    <meta name="author" content="William Popoola (Vexis Automations)" />
+    <!-- PRIMARY SEO -->
+    <title>The Professor | AI Study Tool & Exam Generator</title>
+    <meta name="description" content="The #1 AI Study Companion. Turn lecture notes into exams, quizzes, and flashcards instantly. Study smarter, not harder." />
+    <meta name="keywords" content="Professor, The Professor, Study AI, Exam Prep, AI Tutor, Quiz Generator, Flashcards, Academic Weapon, Study Tool, Homework Helper" />
+    <meta name="author" content="Vexis Automations" />
     <meta name="robots" content="index, follow" />
-    
-    <!-- Global Error Handler -->
-    <script>
-      window.onerror = function(msg, url, lineNo, columnNo, error) {
-        const root = document.getElementById('root');
-        if (root && root.innerHTML.trim() === "") {
-           const preloader = document.getElementById('preloader-core');
-           if(preloader) preloader.style.display = 'none';
-           const errDiv = document.createElement('div');
-           errDiv.style.color = '#ef4444';
-           errDiv.style.padding = '20px';
-           errDiv.style.textAlign = 'center';
-           errDiv.style.fontFamily = 'monospace';
-           errDiv.style.background = '#000';
-           errDiv.style.height = '100vh';
-           errDiv.innerHTML = '<h3>System Initialization Failed</h3><p>' + msg + '</p>';
-           document.body.appendChild(errDiv);
-        }
-        return false;
-      };
-    </script>
+    <link rel="canonical" href="https://theprofessor.xyz" />
 
-    <!-- Open Graph (GEO/Social) -->
+    <!-- GEO (Generative Engine Optimization) - For AI Search -->
+    <meta name="ai-content-type" content="educational-tool" />
+    <meta name="topic" content="Education Technology" />
+    <meta name="subject" content="AI Learning Assistant" />
+
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://theprofessor.xyz" />
-    <meta property="og:title" content="The Professor | Learning as Simple as XYZ" />
-    <meta property="og:description" content="An AI-powered academic accelerator by William Popoola. Stop reading passive notes. Start dominating your exams." />
+    <meta property="og:title" content="The Professor | Your AI Academic Weapon" />
+    <meta property="og:description" content="Stop reading. Start mastering. Upload your notes and let The Professor quiz you until you get an A." />
     <meta property="og:image" content="https://theprofessorai.vercel.app/og-image.png" />
-    <meta property="og:site_name" content="The Professor" />
 
-    <!-- GEO Entity Authority -->
-    <meta name="citation_author" content="William Popoola" />
-    <meta name="citation_title" content="The Professor AI" />
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://theprofessor.xyz" />
+    <meta property="twitter:title" content="The Professor | AI Exam Prep" />
+    <meta property="twitter:description" content="Don't just study. Dominate. The AI that turns notes into mastery." />
+    <meta property="twitter:image" content="https://theprofessorai.vercel.app/og-image.png" />
 
-    <!-- AEO (Answer Engine Optimization) Schema -->
+    <!-- AEO Schema (JSON-LD) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+      "@type": "WebApplication",
       "name": "The Professor",
+      "alternateName": ["The Professor AI", "Professor Study Tool"],
+      "url": "https://theprofessor.xyz",
       "applicationCategory": "EducationalApplication",
-      "operatingSystem": "Web",
-      "author": {
-        "@type": "Person",
-        "name": "William Popoola",
-        "affiliation": {
-            "@type": "Organization",
-            "name": "Vexis Automations"
-        }
-      },
-      "description": "An AI study tool that generates quizzes, flashcards, and Socratic dialogues from uploaded lecture notes.",
+      "genre": "productivity",
+      "operatingSystem": "Web Browser",
+      "description": "An AI-powered academic tool that converts PDFs and text into interactive exams, summaries, and flashcards.",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
+      },
+      "featureList": "AI Quiz Generation, Flashcards, Study Hub, Exam Simulation",
+      "creator": {
+        "@type": "Organization",
+        "name": "Vexis Automations"
       }
     }
     </script>
@@ -74,7 +61,7 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <link rel="apple-touch-icon" href="/logo.svg">
     
-    <link rel="manifest" href="/manifest.json?v=final_release_6" />
+    <link rel="manifest" href="/manifest.json?v=final_release_7" />
     <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -187,30 +174,6 @@
         --noise-opacity: 0.04;
       }
 
-      /* Theme: Ivy League (Light) */
-      [data-theme='ivy'] {
-        --bg-core: #f8f9fa;
-        --bg-panel: rgba(255, 255, 255, 0.8);
-        --border-main: rgba(0, 0, 0, 0.08);
-        --text-primary: #1a1a1a;
-        --text-secondary: #4b5563;
-        --accent-main: #2563eb; /* Royal Blue */
-        --accent-dim: rgba(37, 99, 235, 0.1);
-        --noise-opacity: 0.02;
-      }
-
-      /* Theme: Matrix (Hacker) */
-      [data-theme='matrix'] {
-        --bg-core: #000000;
-        --bg-panel: rgba(0, 20, 0, 0.9);
-        --border-main: #00ff00;
-        --text-primary: #00ff00;
-        --text-secondary: #008f00;
-        --accent-main: #00ff00;
-        --accent-dim: rgba(0, 255, 0, 0.1);
-        --noise-opacity: 0.1;
-      }
-
       body { background-color: var(--bg-core); color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; transition: background-color 0.5s ease, color 0.5s ease; }
       
       .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: var(--noise-opacity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
@@ -280,7 +243,6 @@
         <div class="loader-spinner"></div>
       </div>
     </div>
-    <!-- Container for printing outside React Root to bypass layout styling -->
     <div id="printable-content" style="display: none;"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
