@@ -16,83 +16,59 @@ interface UserProfileModalProps {
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onTriggerAdmin }) => {
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
   
-  // Long Press Logic
-  const [isHolding, setIsHolding] = useState(false);
-  const holdTimer = useRef<any>(null);
+  // --- ROBUST LONG PRESS LOGIC ---
+  const [holdProgress, setHoldProgress] = useState(0);
+  const animationFrame = useRef<number>(0);
   const startTime = useRef<number>(0);
-  const isTouchInteraction = useRef<boolean>(false);
-  const HOLD_DURATION = 3000; // 3 Seconds
+  const isReady = holdProgress >= 100;
 
-  // Clean up timer on unmount
   useEffect(() => {
-      return () => {
-          if (holdTimer.current) clearTimeout(holdTimer.current);
-      };
+      // Cleanup on unmount
+      return () => cancelAnimationFrame(animationFrame.current);
   }, []);
 
-  const triggerSuccess = () => {
-      setIsHolding(false);
-      if (holdTimer.current) {
-          clearTimeout(holdTimer.current);
-          holdTimer.current = null;
-      }
-      
-      // Reset interaction flag
-      isTouchInteraction.current = false;
-
-      if (onTriggerAdmin) {
-          // Trigger vibration if supported for tactile feedback
-          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-          onTriggerAdmin();
-      }
-  };
-
   const startHold = (e: React.SyntheticEvent) => {
-      // If this is a mouse event but we recently had a touch event, ignore it (ghost click)
-      if (e.type === 'mousedown' && isTouchInteraction.current) return;
+      // Prevent context menu on right click or long press touch
+      // e.preventDefault(); 
       
-      if (e.type === 'touchstart') {
-          isTouchInteraction.current = true;
-          // Prevent default to stop scrolling and ghost clicks
-          // e.preventDefault(); // Keeping this optional but generally good for buttons
-      } else {
-          // Mouse interaction, ensure we don't treat it as touch
-          isTouchInteraction.current = false;
-      }
-      
-      // Clear any existing timer
-      if (holdTimer.current) clearTimeout(holdTimer.current);
-
-      setIsHolding(true);
       startTime.current = Date.now();
+      setHoldProgress(0);
       
-      holdTimer.current = setTimeout(() => {
-          triggerSuccess();
-      }, HOLD_DURATION);
+      const animate = () => {
+          const elapsed = Date.now() - startTime.current;
+          // Duration: 3 seconds
+          const progress = Math.min((elapsed / 3000) * 100, 100);
+          setHoldProgress(progress);
+          
+          if (progress < 100) {
+              animationFrame.current = requestAnimationFrame(animate);
+          } else {
+              // Haptic feedback when ready
+              if (navigator.vibrate) navigator.vibrate(50);
+          }
+      };
+      
+      cancelAnimationFrame(animationFrame.current);
+      animationFrame.current = requestAnimationFrame(animate);
   };
 
   const endHold = (e: React.SyntheticEvent) => {
-      // If ghost click release, ignore
-      if (e.type === 'mouseup' && isTouchInteraction.current) {
-          isTouchInteraction.current = false; // Reset after ghost click
-          return;
-      }
-
-      // Check elapsed time to handle cases where visual feedback finishes right before release
-      // giving a grace period for the "human reaction time"
-      const elapsed = Date.now() - startTime.current;
+      cancelAnimationFrame(animationFrame.current);
       
-      // If user held for at least 95% of duration, count it
-      if (isHolding && elapsed >= HOLD_DURATION * 0.95) { 
-          triggerSuccess();
-          return;
+      // If fully charged, trigger action
+      if (holdProgress >= 100) {
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Success vibration
+          if (onTriggerAdmin) onTriggerAdmin();
       }
+      
+      // Reset immediately
+      setHoldProgress(0);
+  };
 
-      setIsHolding(false);
-      if (holdTimer.current) {
-          clearTimeout(holdTimer.current);
-          holdTimer.current = null;
-      }
+  const getProgressColor = () => {
+      if (isReady) return '#22c55e'; // Green-500
+      if (holdProgress > 60) return '#eab308'; // Yellow-500
+      return '#ef4444'; // Red-500
   };
 
   if (!isOpen) return null;
@@ -162,8 +138,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         {/* Header - Dossier Style */}
         <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
+              {/* LONG PRESS TRIGGER */}
               <div 
-                className="relative w-10 h-10 select-none touch-none cursor-pointer"
+                className="relative w-12 h-12 select-none touch-none cursor-pointer flex items-center justify-center group"
                 onMouseDown={startHold}
                 onMouseUp={endHold}
                 onMouseLeave={endHold}
@@ -173,25 +150,45 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                 onContextMenu={(e) => e.preventDefault()}
               >
                   {/* Background Icon */}
-                  <div className={`absolute inset-0 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 z-10 transition-transform duration-200 ${isHolding ? 'scale-95' : ''}`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                  <div className={`absolute inset-1 bg-blue-900/20 rounded-lg flex items-center justify-center border transition-all duration-200 z-10 
+                      ${isReady ? 'border-green-500/50 bg-green-900/20 text-green-400 scale-110 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'border-blue-500/20 text-blue-400'} 
+                      ${holdProgress > 0 && !isReady ? 'scale-95' : ''}`}
+                  >
+                      {isReady ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                      ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                      )}
                   </div>
 
                   {/* Progress Ring Overlay */}
-                  <svg className="absolute -inset-1 w-[48px] h-[48px] pointer-events-none z-0 transform -rotate-90">
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 transform -rotate-90">
                       <circle
                           cx="24"
                           cy="24"
                           r="20"
                           fill="none"
-                          stroke="#ef4444"
+                          stroke={getProgressColor()}
                           strokeWidth="3"
                           strokeDasharray="126" // 2 * PI * 20
-                          strokeDashoffset={isHolding ? '0' : '126'}
-                          className={`transition-all ease-linear ${isHolding ? 'opacity-100' : 'opacity-0'}`}
-                          style={{ transitionDuration: isHolding ? '3000ms' : '0ms' }}
+                          strokeDashoffset={126 - (holdProgress / 100) * 126}
+                          strokeLinecap="round"
+                          className="transition-all duration-75 ease-linear"
+                          style={{ opacity: holdProgress > 0 ? 1 : 0 }}
                       />
                   </svg>
+                  
+                  {/* Tooltip for instructions */}
+                  {holdProgress > 0 && holdProgress < 100 && (
+                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/80 px-2 py-1 rounded text-[9px] text-white font-mono uppercase tracking-widest pointer-events-none">
+                          Hold to Access
+                      </div>
+                  )}
+                  {isReady && (
+                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-green-900/90 border border-green-500/50 px-2 py-1 rounded text-[9px] text-green-300 font-bold uppercase tracking-widest pointer-events-none animate-bounce">
+                          Release Now
+                      </div>
+                  )}
               </div>
 
               <div>
