@@ -5,6 +5,7 @@ import { BrandLogo } from './BrandLogo';
 
 interface LandingPageProps {
   onEnter: () => void;
+  onPricing: () => void;
 }
 
 const DecryptedText = ({ text, className = "", delay = 0 }: { text: string, className?: string, delay?: number }) => {
@@ -26,52 +27,14 @@ const DecryptedText = ({ text, className = "", delay = 0 }: { text: string, clas
     return <span className={`font-mono ${className}`}>{displayText}</span>;
 };
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) => {
   const [scrolled, setScrolled] = useState(0);
-  const [currency, setCurrency] = useState<'USD' | 'NGN'>('USD');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY);
     window.addEventListener('scroll', handleScroll);
-    
-    // Auto-detect currency based on Timezone
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz.includes('Lagos') || tz.includes('Africa/Lagos') || tz.includes('Nigeria')) {
-        setCurrency('NGN');
-    }
-
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const pricing = [
-      {
-          name: "Fresher",
-          price: "Free",
-          desc: "For casual study.",
-          features: ["3 Quizzes / Day", "Standard Speed", "Basic Flashcards"],
-          cta: "Start Free",
-          popular: false
-      },
-      {
-          name: "Scholar",
-          price: currency === 'NGN' ? '₦2,000' : '$5',
-          period: '/mo',
-          desc: "For the serious student.",
-          features: ["Unlimited Quizzes", "Feynman Tutor Mode", "Upload 10 Files/Day", "Priority Processing"],
-          cta: "Upgrade",
-          popular: true
-      },
-      {
-          name: "Excellentia",
-          price: currency === 'NGN' ? '₦5,000' : '$12',
-          period: '/mo',
-          desc: "Academic immortality.",
-          features: ["Everything in Scholar", "Nightmare Difficulty", "The Oracle (Predictive AI)", "Weakness Destroyer"],
-          cta: "Go Ultimate",
-          popular: false,
-          highlight: true
-      }
-  ];
 
   return (
     <div className="min-h-screen bg-[#050505] text-white relative overflow-x-hidden font-sans selection:bg-amber-500/30">
@@ -94,8 +57,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               </div>
               <span className="font-bold text-lg tracking-tight font-serif text-gray-200 hidden sm:block">The Professor</span>
             </div>
-            <div className="flex items-center gap-4">
-              {/* Tuition link removed as per request */}
+            <div className="flex items-center gap-6">
+              <button onClick={onPricing} className="text-xs font-bold uppercase tracking-widest text-amber-500 hover:text-amber-300 transition-colors">Tuition</button>
               <button onClick={onEnter} className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Log In</button>
               <button onClick={onEnter} className="px-6 py-2 rounded-full bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)]">Get Started</button>
             </div>
@@ -192,53 +155,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                       <h3 className="text-xl font-bold mb-3 text-gray-200">Battle Your Friends</h3>
                       <p className="text-gray-500 text-sm leading-relaxed">Don't study alone. Challenge your classmates to a quiz duel. Winner takes the glory.</p>
                   </div>
-              </div>
-          </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 relative z-10 border-t border-white/5 bg-[#050505]">
-          <div className="max-w-7xl mx-auto px-6">
-              <div className="text-center mb-16">
-                  <h2 className="text-3xl md:text-4xl font-bold font-serif mb-4 text-gray-200">Tuition Plans</h2>
-                  <p className="text-gray-500 text-sm">Invest in your brain. It pays the best interest.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                  {pricing.map((plan, idx) => (
-                      <div key={idx} className={`relative p-8 rounded-3xl border flex flex-col h-full transition-all duration-300 ${plan.highlight ? 'bg-gradient-to-b from-[#1a1a1a] to-black border-[#D4AF37]/40 shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}>
-                          {plan.popular && (
-                              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-700 text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-lg tracking-widest">
-                                  Most Popular
-                              </div>
-                          )}
-                          {plan.highlight && (
-                              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#D4AF37] text-black text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-lg tracking-widest">
-                                  Best Value
-                              </div>
-                          )}
-
-                          <h3 className={`text-xl font-bold mb-2 ${plan.highlight ? 'text-[#D4AF37] font-serif' : 'text-gray-200'}`}>{plan.name}</h3>
-                          <div className="flex items-baseline gap-1 mb-6">
-                              <span className="text-4xl font-mono font-bold text-white">{plan.price}</span>
-                              {plan.period && <span className="text-xs text-gray-500">{plan.period}</span>}
-                          </div>
-                          <p className="text-xs text-gray-500 mb-8 h-8">{plan.desc}</p>
-
-                          <ul className="space-y-4 mb-8 flex-1">
-                              {plan.features.map((feat, i) => (
-                                  <li key={i} className="flex items-start gap-3 text-sm">
-                                      <span className={`text-lg leading-none ${plan.highlight ? 'text-[#D4AF37]' : 'text-blue-500'}`}>•</span>
-                                      <span className="text-gray-400">{feat}</span>
-                                  </li>
-                              ))}
-                          </ul>
-
-                          <button onClick={onEnter} className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all ${plan.highlight ? 'bg-gradient-to-r from-[#D4AF37] to-[#8C7323] text-black hover:scale-[1.02]' : 'bg-white text-black hover:bg-gray-200'}`}>
-                              {plan.cta}
-                          </button>
-                      </div>
-                  ))}
               </div>
           </div>
       </section>

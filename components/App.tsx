@@ -9,37 +9,44 @@ import { AboutModal } from './components/AboutModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
 import { AuthPage } from './components/Auth/AuthPage';
+import { AdminLoginPage } from './components/Auth/AdminLoginPage';
 import { LandingPage } from './components/LandingPage';
+import { PricingPage } from './components/PricingPage';
 import { CountdownTimer } from './components/CountdownTimer';
 import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
 import { DuelReadyModal } from './components/DuelReadyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
-import { AdminAuthModal } from './components/AdminAuthModal';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from './types';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState } from './types';
 import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from './services/firebase';
 import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
-// FIXED: Using direct import() for default exports. The previous .then() chain was incorrect for default exports.
 const QuizView = React.lazy(() => import('./components/QuizView'));
 const ProfessorView = React.lazy(() => import('./components/ProfessorView'));
 const ChatView = React.lazy(() => import('./components/ChatView'));
 const FlashcardView = React.lazy(() => import('./components/FlashcardView'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 
+// Routing State
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP';
+
 // Admin Whitelist - Lowercase
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
-    'professoradmin@gmail.com'
+    'professoradmin@gmail.com',
+    'vexis.automations@gmail.com'
 ];
 
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
-  const [showAuth, setShowAuth] = useState(false);
+  
+  // New High-Level Routing
+  const [currentView, setCurrentView] = useState<ViewState>('LANDING');
+  
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -52,7 +59,6 @@ const App: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
-  const [showAdminAuth, setShowAdminAuth] = useState(false);
   
   const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
 
@@ -96,13 +102,34 @@ const App: React.FC = () => {
     }, true);
   }, []);
 
+  // Sync View with Auth State
   useEffect(() => {
-    if (!user) return;
-    if (status === AppStatus.IDLE) window.history.pushState({ page: 'dashboard' }, '', window.location.href);
-    const handlePopState = () => { if (status === AppStatus.READY) setStatus(AppStatus.IDLE); else setShowAuth(false); };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [user, status]);
+    if (loading) return;
+
+    if (user) {
+        // If user is logged in, show App
+        // But if view is currently ADMIN_LOGIN, we need to check if user IS admin
+        if (currentView === 'ADMIN_LOGIN') {
+            if (checkIsAdmin(user.email)) {
+                setAppMode('ADMIN');
+                setCurrentView('APP');
+            } else {
+                // If standard user logs in on admin page, log them out (handled by AdminLoginPage mainly, but failsafe here)
+            }
+        } else {
+            // Normal Login
+            setCurrentView('APP');
+            if (checkIsAdmin(user.email)) {
+                setAppMode('ADMIN');
+            }
+        }
+    } else {
+        // Logged out
+        if (currentView === 'APP') {
+            setCurrentView('LANDING'); // Kick to landing
+        }
+    }
+  }, [user, loading]);
 
   // Real-time History Sync
   useEffect(() => {
@@ -146,25 +173,11 @@ const App: React.FC = () => {
   }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
 
   useEffect(() => {
-    const checkReminder = () => {
-      if (!userProfile.studyReminders || !userProfile.reminderTime) return;
-      const now = new Date();
-      const [targetHours, targetMinutes] = userProfile.reminderTime.split(':').map(Number);
-      if (now.getHours() === targetHours && now.getMinutes() === targetMinutes && now.getSeconds() < 10) {
-         if (Notification.permission === 'granted') {
-             new Notification("The Professor", { body: "Class is in session.", icon: "/favicon.ico" });
-         }
-      }
-    };
-    const interval = setInterval(checkReminder, 10000); 
-    return () => clearInterval(interval);
-  }, [userProfile]);
-
-  useEffect(() => {
     if (!user) return;
     
     // --- ADMIN AUTO-ROUTING ---
     if (checkIsAdmin(user.email)) {
+        console.log("Welcome Dean.");
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
         return; 
@@ -200,6 +213,21 @@ const App: React.FC = () => {
     }
   }, [user]);
 
+  // Request Admin Access from User Profile Modal
+  const handleRequestAdminAccess = async () => {
+      // Force logout first to ensure clean admin login
+      if (user) await logout();
+      setIsProfileOpen(false);
+      setCurrentView('ADMIN_LOGIN');
+  };
+
+  const handleAdminSuccess = () => {
+      setAppMode('ADMIN');
+      setCurrentView('APP');
+      setStatus(AppStatus.READY);
+  };
+
+  // Safe Exit Wrapper
   const attemptAction = (action: () => void, force: boolean = false) => {
       if (!force && status === AppStatus.READY && (
           (appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS')
@@ -440,11 +468,41 @@ const App: React.FC = () => {
       }
   };
 
+  // --- RENDER ROUTING ---
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
-  if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
-  if (!user && showAuth) return <AuthPage />;
-  
-  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation || showAdminAuth;
+
+  // 1. Admin Login View (High Priority)
+  if (currentView === 'ADMIN_LOGIN') {
+      return (
+          <AdminLoginPage 
+            onBack={() => setCurrentView('LANDING')} 
+            onSuccess={handleAdminSuccess}
+          />
+      );
+  }
+
+  // 2. Pricing View
+  if (currentView === 'PRICING') {
+      return (
+          <PricingPage 
+            onBack={() => setCurrentView('LANDING')}
+            onSignUp={() => setCurrentView('AUTH')}
+          />
+      );
+  }
+
+  // 3. Auth View
+  if (currentView === 'AUTH' && !user) {
+      return <AuthPage />;
+  }
+
+  // 4. Landing View (Default if not logged in)
+  if (currentView === 'LANDING' && !user) {
+      return <LandingPage onEnter={() => setCurrentView('AUTH')} onPricing={() => setCurrentView('PRICING')} />;
+  }
+
+  // 5. App Dashboard (Authenticated)
+  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const isActiveSession = status === AppStatus.READY;
 
   return (
@@ -456,23 +514,12 @@ const App: React.FC = () => {
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       
-      {/* Admin Modal */}
-      <AdminAuthModal 
-          isOpen={showAdminAuth} 
-          onClose={() => setShowAdminAuth(false)} 
-          onSuccess={() => {
-              setAppMode('ADMIN');
-              setStatus(AppStatus.READY);
-              setIsProfileOpen(false);
-          }} 
-      />
-      
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
       {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') return; else handleQuizAction('RESET'); }}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
@@ -549,7 +596,7 @@ const App: React.FC = () => {
             window.location.reload();
         }}
         isAdmin={!!isAdmin}
-        onRequestAdminAccess={() => setShowAdminAuth(true)}
+        onRequestAdminAccess={handleRequestAdminAccess}
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />

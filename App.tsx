@@ -10,6 +10,7 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
 import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/LandingPage';
+import { PricingPage } from './components/PricingPage';
 import { CountdownTimer } from './components/CountdownTimer';
 import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
@@ -32,6 +33,7 @@ const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').th
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -534,8 +536,15 @@ const App: React.FC = () => {
   };
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
-  if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
-  if (!user && showAuth) return <AuthPage />;
+  
+  if (!user) {
+    if (showPricing) {
+        return <PricingPage onBack={() => setShowPricing(false)} onSignUp={() => { setShowPricing(false); setShowAuth(true); }} />;
+    }
+    if (showAuth) return <AuthPage />;
+    return <LandingPage onEnter={() => setShowAuth(true)} onPricing={() => setShowPricing(true)} />;
+  }
+
   const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
 
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
@@ -695,16 +704,8 @@ const App: React.FC = () => {
              </div>
          )}
       </main>
-
-      {/* Admin Secret Entry */}
-      {isAdmin && (
-          <div className="fixed bottom-2 right-2 opacity-20 hover:opacity-100 transition-opacity z-50">
-              <button onClick={() => setAppMode('ADMIN')} className="text-[10px] uppercase font-mono text-gray-500">Admin</button>
-          </div>
-      )}
       
-      {/* Floating Chat Trigger (Visible in non-chat modes) */}
-      {status === AppStatus.READY && appMode !== 'CHAT' && !isModalOpen && (
+      {status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && !isModalOpen && (
           <button 
             onClick={handleOpenFloatingChat}
             className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group"
