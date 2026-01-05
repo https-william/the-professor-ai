@@ -9,14 +9,13 @@ interface UserProfileModalProps {
   onSave: (profile: UserProfile) => void;
   onClearHistory: () => void;
   onLogout: () => void;
+  isAdmin?: boolean; // New prop
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin }) => {
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
 
   if (!isOpen) return null;
-
-  const isAdmin = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'].includes((JSON.parse(localStorage.getItem('user_email') || '""') || '').toLowerCase());
 
   const achievements = [
       { 

@@ -16,6 +16,7 @@ import { AmbientBackground } from './AmbientBackground';
 import { PWAPrompt } from './PWAPrompt';
 import { DuelReadyModal } from './DuelReadyModal';
 import { ConfirmationModal } from './ConfirmationModal';
+import { AdminAuthModal } from './AdminAuthModal';
 import { BrandLogo } from './BrandLogo';
 import { useAuth } from '../contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from '../services/geminiService';
@@ -64,12 +65,18 @@ const App: React.FC = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
+  // Admin Override State
+  const [logoClicks, setLogoClicks] = useState(0);
+  const [adminOverride, setAdminOverride] = useState(false);
+  const [showAdminAuth, setShowAdminAuth] = useState(false);
+
   const saveTimeoutRef = useRef<any>(null);
 
   // Admin Detection
   const ADMIN_EMAILS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'];
   const normalizedEmail = user?.email?.toLowerCase().trim();
-  const isAdmin = !!(normalizedEmail && ADMIN_EMAILS.includes(normalizedEmail));
+  const isEmailAdmin = !!(normalizedEmail && ADMIN_EMAILS.includes(normalizedEmail));
+  const isAdmin = isEmailAdmin || adminOverride;
 
   useEffect(() => {
     const originalConsoleError = console.error;
@@ -85,10 +92,36 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (user) {
-        console.log(`[System] Identity: ${user.email} | Admin Privileges: ${isAdmin ? 'GRANTED' : 'DENIED'}`);
+    if (user && isEmailAdmin) {
+        console.log(`[System] Welcome Dean ${user.email}`);
+        // Visual Toast for confirmation
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-amber-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg z-[100] animate-slide-in';
+        toast.innerText = 'Dean Access Granted';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
-  }, [user, isAdmin]);
+  }, [user, isEmailAdmin]);
+
+  // Handle Logo Click Backdoor
+  const handleLogoClick = () => {
+      setLogoClicks(prev => {
+          const newCount = prev + 1;
+          if (newCount >= 5) {
+              setShowAdminAuth(true); // Trigger Auth Modal
+              return 0;
+          }
+          return newCount;
+      });
+      // Reset after 2 seconds of inactivity
+      setTimeout(() => setLogoClicks(0), 2000);
+      
+      // Standard Reset behavior if NOT triggering admin
+      if (logoClicks < 4) {
+          if (appMode === 'ADMIN') setAppMode('EXAM'); 
+          else handleQuizAction('RESET');
+      }
+  };
 
   // Admin Shortcut (Ctrl+Shift+D)
   useEffect(() => {
@@ -96,13 +129,25 @@ const App: React.FC = () => {
           if (e.ctrlKey && e.shiftKey && e.key === 'D') {
               if (isAdmin) {
                   setAppMode('ADMIN');
-                  console.log("Admin override activated.");
+              } else {
+                  // Trigger Auth Modal instead of direct access
+                  setShowAdminAuth(true);
               }
           }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isAdmin]);
+
+  const handleAdminAuthSuccess = () => {
+      setAdminOverride(true);
+      setAppMode('ADMIN');
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded-full text-xs font-bold shadow-lg z-[200] animate-bounce';
+      toast.innerText = 'OVERRIDE: ADMIN PRIVILEGES GRANTED';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -493,7 +538,7 @@ const App: React.FC = () => {
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
   
-  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
+  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation || showAdminAuth;
 
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative bg-[#050505]`}>
@@ -506,13 +551,21 @@ const App: React.FC = () => {
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
       
+      {/* Secure Admin Auth Modal */}
+      <AdminAuthModal 
+        isOpen={showAdminAuth} 
+        onClose={() => setShowAdminAuth(false)} 
+        onSuccess={handleAdminAuthSuccess} 
+      />
+      
       {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
-               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white border border-white/10 shadow-lg overflow-hidden">
+            <div className="flex items-center gap-3 cursor-pointer select-none" onClick={handleLogoClick}>
+               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white border border-white/10 shadow-lg overflow-hidden relative">
                   <BrandLogo />
+                  {logoClicks > 0 && <div className="absolute inset-0 bg-red-500/50 animate-ping"></div>}
                </div>
                <span className="font-serif font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
@@ -566,7 +619,7 @@ const App: React.FC = () => {
             setStatus(AppStatus.READY); setActiveHistoryId(item.id); setIsHistoryOpen(false);
         }} onDelete={(id) => { deleteHistoryItem(id); setHistory(loadHistory()); if (activeHistoryId === id) handleQuizAction('RESET', { force: true }); }} />
 
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} />
+      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={isAdmin} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)] pb-32">
