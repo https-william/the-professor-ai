@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
@@ -27,6 +28,14 @@ const ProfessorView = React.lazy(() => import('./components/ProfessorView'));
 const ChatView = React.lazy(() => import('./components/ChatView'));
 const FlashcardView = React.lazy(() => import('./components/FlashcardView'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
+
+// Admin Whitelist - Lowercase
+const ADMIN_EMAILS = [
+    'popoolaariseoluwa@gmail.com', 
+    'professoradmin@gmail.com', 
+    'vexis.automations@gmail.com', 
+    'vexis.automation@gmail.com'
+];
 
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
@@ -64,7 +73,13 @@ const App: React.FC = () => {
 
   const saveTimeoutRef = useRef<any>(null);
 
-  const ADMIN_EMAILS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com', 'vexis.automation@gmail.com'];
+  // Helper to check admin status safely
+  const checkIsAdmin = (email: string | null | undefined) => {
+      if (!email) return false;
+      return ADMIN_EMAILS.includes(email.toLowerCase().trim());
+  };
+
+  const isAdmin = checkIsAdmin(user?.email);
 
   useEffect(() => {
     // Detect AdBlocker via Firebase failure
@@ -159,9 +174,11 @@ const App: React.FC = () => {
     
     // --- ADMIN AUTO-ROUTING ---
     // If the logged-in user is the designated admin, route directly to the office.
-    if (user.email && ADMIN_EMAILS.includes(user.email)) {
+    if (checkIsAdmin(user.email)) {
+        console.log("Admin Detected. Routing to HQ.");
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
+        return; // Skip profile sync for admin to avoid overrides
     }
     // --------------------------
 
@@ -193,8 +210,8 @@ const App: React.FC = () => {
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    // Only load session if NOT admin (to prevent overwriting admin view)
-    if (user.email && !ADMIN_EMAILS.includes(user.email)) {
+    // Only load session if NOT admin
+    if (!checkIsAdmin(user.email)) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
           setAppMode(savedSession.mode);
@@ -549,8 +566,6 @@ const App: React.FC = () => {
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
   
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
-
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const isActiveSession = status === AppStatus.READY;
 
@@ -588,6 +603,16 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
+               {/* ADMIN SHORTCUT: Only visible to admins, lets them toggle modes if needed */}
+               {isAdmin && (
+                   <button 
+                     onClick={() => setAppMode(appMode === 'ADMIN' ? 'EXAM' : 'ADMIN')}
+                     className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all"
+                   >
+                       {appMode === 'ADMIN' ? 'Exit Office' : 'Dean\'s Access'}
+                   </button>
+               )}
+
                {isActiveSession && appMode !== 'ADMIN' && (
                    <button 
                      onClick={() => setIsHistoryOpen(true)}
