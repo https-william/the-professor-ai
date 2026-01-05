@@ -15,7 +15,11 @@ interface UserData {
   profile?: UserProfile; // Full profile data
 }
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+    onExit?: () => void;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<'REGISTRY' | 'LOGS'>('REGISTRY');
   const [users, setUsers] = useState<UserData[]>([]);
   const [logs, setLogs] = useState<SystemLog[]>([]);
@@ -164,7 +168,13 @@ export const AdminDashboard: React.FC = () => {
               </div>
               
               <div className="flex gap-2 mt-4 md:mt-0">
-                  <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/5">
+                  <button 
+                    onClick={() => {
+                        if (onExit) onExit();
+                        else window.location.reload();
+                    }} 
+                    className="px-6 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/5"
+                  >
                       Return to Campus
                   </button>
                   <button onClick={() => setActiveTab('REGISTRY')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'REGISTRY' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Student Registry</button>

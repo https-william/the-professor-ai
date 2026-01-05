@@ -1,33 +1,32 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { Hero } from './Hero';
-import { InputSection } from './InputSection';
-import { LoadingOverlay } from './LoadingOverlay';
-import { HistorySidebar } from './HistorySidebar';
-import { UserProfileModal } from './UserProfileModal';
-import { AboutModal } from './AboutModal';
-import { SubscriptionModal } from './SubscriptionModal';
-import { WelcomeModal } from './Onboarding/WelcomeModal';
-import { AuthPage } from './Auth/AuthPage';
-import { LandingPage } from './LandingPage';
-import { CountdownTimer } from './CountdownTimer';
-import { AmbientBackground } from './AmbientBackground';
-import { PWAPrompt } from './PWAPrompt';
-import { DuelReadyModal } from './DuelReadyModal';
-import { ConfirmationModal } from './ConfirmationModal';
-import { useAuth } from '../contexts/AuthContext';
-import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from '../services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from '../services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from '../types';
-import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from '../services/firebase';
-import { processFile } from '../services/fileService';
+import { Hero } from './components/Hero';
+import { InputSection } from './components/InputSection';
+import { LoadingOverlay } from './components/LoadingOverlay';
+import { HistorySidebar } from './components/HistorySidebar';
+import { UserProfileModal } from './components/UserProfileModal';
+import { AboutModal } from './components/AboutModal';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { WelcomeModal } from './components/Onboarding/WelcomeModal';
+import { AuthPage } from './components/Auth/AuthPage';
+import { LandingPage } from './components/LandingPage';
+import { CountdownTimer } from './components/CountdownTimer';
+import { AmbientBackground } from './components/AmbientBackground';
+import { PWAPrompt } from './components/PWAPrompt';
+import { DuelReadyModal } from './components/DuelReadyModal';
+import { ConfirmationModal } from './components/ConfirmationModal';
+import { useAuth } from './contexts/AuthContext';
+import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from './types';
+import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from './services/firebase';
+import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./QuizView'));
-const ProfessorView = React.lazy(() => import('./ProfessorView'));
-const ChatView = React.lazy(() => import('./ChatView'));
-const FlashcardView = React.lazy(() => import('./FlashcardView'));
-const AdminDashboard = React.lazy(() => import('./AdminDashboard'));
+const QuizView = React.lazy(() => import('./components/QuizView'));
+const ProfessorView = React.lazy(() => import('./components/ProfessorView'));
+const ChatView = React.lazy(() => import('./components/ChatView'));
+const FlashcardView = React.lazy(() => import('./components/FlashcardView'));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
@@ -64,6 +63,8 @@ const App: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const saveTimeoutRef = useRef<any>(null);
+
+  const ADMIN_EMAILS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com', 'vexis.automation@gmail.com'];
 
   useEffect(() => {
     // Detect AdBlocker via Firebase failure
@@ -158,7 +159,7 @@ const App: React.FC = () => {
     
     // --- ADMIN AUTO-ROUTING ---
     // If the logged-in user is the designated admin, route directly to the office.
-    if (user.email === 'vexis.automations@gmail.com') {
+    if (user.email && ADMIN_EMAILS.includes(user.email)) {
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
     }
@@ -192,8 +193,8 @@ const App: React.FC = () => {
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    // Only load session if NOT admin
-    if (user.email !== 'vexis.automations@gmail.com') {
+    // Only load session if NOT admin (to prevent overwriting admin view)
+    if (user.email && !ADMIN_EMAILS.includes(user.email)) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
           setAppMode(savedSession.mode);
@@ -548,7 +549,7 @@ const App: React.FC = () => {
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
   
-  const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'].includes(user.email);
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const isActiveSession = status === AppStatus.READY;
@@ -694,7 +695,7 @@ const App: React.FC = () => {
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
-                    {appMode === 'ADMIN' && <AdminDashboard />}
+                    {appMode === 'ADMIN' && <AdminDashboard onExit={() => setAppMode('EXAM')} />}
                  </Suspense>
              </div>
          )}
