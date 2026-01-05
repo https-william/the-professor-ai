@@ -10,9 +10,10 @@ interface UserProfileModalProps {
   onClearHistory: () => void;
   onLogout: () => void;
   isAdmin?: boolean; 
+  onRequestAdminAccess?: () => void;
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess }) => {
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
 
   if (!isOpen) return null;
@@ -82,9 +83,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         {/* Header - Dossier Style */}
         <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400">
+              <button 
+                  onClick={onRequestAdminAccess}
+                  className="w-10 h-10 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 hover:bg-blue-900/40 hover:text-white transition-all cursor-pointer shadow-lg active:scale-95"
+                  title="Verify Identity Clearance"
+              >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
-              </div>
+              </button>
               <div>
                   <h3 className="font-bold text-white text-lg tracking-tight font-serif">Student Dossier</h3>
                   <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">ID: {editedProfile.alias || 'UNKNOWN'}</p>

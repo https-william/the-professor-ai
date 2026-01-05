@@ -15,6 +15,7 @@ import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
 import { DuelReadyModal } from './components/DuelReadyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
+import { AdminAuthModal } from './components/AdminAuthModal';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
@@ -32,9 +33,7 @@ const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 // Admin Whitelist - Lowercase
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
-    'professoradmin@gmail.com', 
-    'vexis.automations@gmail.com', 
-    'vexis.automation@gmail.com'
+    'professoradmin@gmail.com'
 ];
 
 const App: React.FC = () => {
@@ -52,6 +51,7 @@ const App: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [showAdminAuth, setShowAdminAuth] = useState(false);
   
   const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
 
@@ -76,7 +76,9 @@ const App: React.FC = () => {
   // Helper to check admin status safely
   const checkIsAdmin = (email: string | null | undefined) => {
       if (!email) return false;
-      return ADMIN_EMAILS.includes(email.toLowerCase().trim());
+      const normalized = email.toLowerCase().trim();
+      // Allow specific whitelist OR any email containing vexis.automation (super admin domain)
+      return ADMIN_EMAILS.includes(normalized) || normalized.includes('vexis.automation');
   };
 
   const isAdmin = checkIsAdmin(user?.email);
@@ -175,7 +177,7 @@ const App: React.FC = () => {
     // --- ADMIN AUTO-ROUTING ---
     // If the logged-in user is the designated admin, route directly to the office.
     if (checkIsAdmin(user.email)) {
-        console.log("Admin Detected. Routing to HQ.");
+        console.log("Admin Detected via Email. Routing to HQ.");
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
         return; // Skip profile sync for admin to avoid overrides
@@ -566,7 +568,7 @@ const App: React.FC = () => {
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
   
-  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
+  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation || showAdminAuth;
   const isActiveSession = status === AppStatus.READY;
 
   return (
@@ -577,6 +579,15 @@ const App: React.FC = () => {
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
+      <AdminAuthModal 
+          isOpen={showAdminAuth} 
+          onClose={() => setShowAdminAuth(false)} 
+          onSuccess={() => {
+              setAppMode('ADMIN');
+              setStatus(AppStatus.READY);
+              setIsProfileOpen(false);
+          }} 
+      />
       
       {duelReadyData && (
           <DuelReadyModal 
@@ -603,13 +614,13 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-               {/* ADMIN SHORTCUT: Only visible to admins, lets them toggle modes if needed */}
-               {isAdmin && (
+               {/* ADMIN SHORTCUT: Only visible if appMode is ADMIN to allow exit, or implicitly handled via profile */}
+               {appMode === 'ADMIN' && (
                    <button 
-                     onClick={() => setAppMode(appMode === 'ADMIN' ? 'EXAM' : 'ADMIN')}
+                     onClick={() => setAppMode('EXAM')}
                      className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all"
                    >
-                       {appMode === 'ADMIN' ? 'Exit Office' : 'Dean\'s Access'}
+                       Exit Office
                    </button>
                )}
 
@@ -687,6 +698,7 @@ const App: React.FC = () => {
             window.location.reload();
         }}
         isAdmin={!!isAdmin}
+        onRequestAdminAccess={() => setShowAdminAuth(true)}
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
