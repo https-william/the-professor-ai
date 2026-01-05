@@ -16,6 +16,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
+  const isAdmin = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'].includes((JSON.parse(localStorage.getItem('user_email') || '""') || '').toLowerCase());
+
   const achievements = [
       { 
           id: 'fresh_meat', 
@@ -102,9 +104,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                <div className="text-center sm:text-left flex-1 w-full">
                    <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
                        <h2 className="text-3xl font-bold text-white font-serif">{editedProfile.alias || 'Anonymous'}</h2>
-                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${editedProfile.subscriptionTier === 'Excellentia' ? 'bg-amber-900/20 text-amber-500 border-amber-500/20' : 'bg-blue-900/20 text-blue-400 border-blue-500/20'}`}>
-                           {editedProfile.subscriptionTier}
-                       </span>
+                       <div className="flex gap-2">
+                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${editedProfile.subscriptionTier === 'Excellentia' ? 'bg-amber-900/20 text-amber-500 border-amber-500/20' : 'bg-blue-900/20 text-blue-400 border-blue-500/20'}`}>
+                               {editedProfile.subscriptionTier}
+                           </span>
+                           {isAdmin && (
+                               <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border bg-red-900/20 text-red-500 border-red-500/20 animate-pulse">
+                                   DEAN
+                               </span>
+                           )}
+                       </div>
                    </div>
                    
                    <div className="grid grid-cols-2 gap-4 mt-6">

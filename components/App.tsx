@@ -66,6 +66,11 @@ const App: React.FC = () => {
 
   const saveTimeoutRef = useRef<any>(null);
 
+  // Admin Detection
+  const ADMIN_EMAILS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'];
+  const normalizedEmail = user?.email?.toLowerCase().trim();
+  const isAdmin = !!(normalizedEmail && ADMIN_EMAILS.includes(normalizedEmail));
+
   useEffect(() => {
     const originalConsoleError = console.error;
     console.error = (...args) => {
@@ -78,6 +83,26 @@ const App: React.FC = () => {
         if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
     }, true);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+        console.log(`[System] Identity: ${user.email} | Admin Privileges: ${isAdmin ? 'GRANTED' : 'DENIED'}`);
+    }
+  }, [user, isAdmin]);
+
+  // Admin Shortcut (Ctrl+Shift+D)
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+              if (isAdmin) {
+                  setAppMode('ADMIN');
+                  console.log("Admin override activated.");
+              }
+          }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!user) return;
@@ -468,9 +493,6 @@ const App: React.FC = () => {
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
   
-  const ADMIN_EMAILS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'];
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
-  
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
 
   return (
@@ -511,22 +533,15 @@ const App: React.FC = () => {
                )}
                <div className="h-6 w-px bg-white/10 mx-2"></div>
                
-               {/* Admin Button - Enhanced */}
+               {/* Admin Button - High Visibility Force Render */}
                {isAdmin && (
                    <button 
                      onClick={() => setAppMode('ADMIN')} 
-                     className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-amber-900/20 text-amber-500 border border-amber-500/20 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-amber-900/40 transition-all"
+                     className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-amber-800 text-white border border-amber-400/50 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_15px_rgba(245,158,11,0.4)] animate-pulse-slow"
+                     title="Access Dean's Office"
                    >
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                       <span>Dean's Office</span>
-                   </button>
-               )}
-               {isAdmin && (
-                   <button 
-                     onClick={() => setAppMode('ADMIN')} 
-                     className="md:hidden p-2 text-amber-500 bg-amber-900/10 rounded-lg"
-                   >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                       <span className="hidden sm:block">Dean's Office</span>
                    </button>
                )}
 
