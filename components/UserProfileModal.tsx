@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserProfile } from '../types';
 
 interface UserProfileModalProps {
@@ -10,85 +10,10 @@ interface UserProfileModalProps {
   onClearHistory: () => void;
   onLogout: () => void;
   isAdmin?: boolean; 
-  onTriggerAdmin?: () => void;
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onTriggerAdmin }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin }) => {
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
-  
-  // --- ROBUST LONG PRESS LOGIC ---
-  const [holdProgress, setHoldProgress] = useState(0);
-  const animationFrame = useRef<number>(0);
-  const startTime = useRef<number>(0);
-  const isHolding = useRef<boolean>(false); // Ref for immediate synchronous access
-  const isReady = holdProgress >= 100;
-
-  useEffect(() => {
-      // Cleanup on unmount
-      return () => cancelAnimationFrame(animationFrame.current);
-  }, []);
-
-  const startHold = (e: React.SyntheticEvent) => {
-      // Prevent phantom clicks if possible, but keep selection enabling
-      if (e.type === 'touchstart') {
-          // e.preventDefault(); // Optional: might block scrolling
-      }
-      
-      isHolding.current = true;
-      startTime.current = Date.now();
-      setHoldProgress(0);
-      
-      const animate = () => {
-          if (!isHolding.current) return;
-
-          const elapsed = Date.now() - startTime.current;
-          // Duration: 3 seconds
-          const progress = Math.min((elapsed / 3000) * 100, 100);
-          setHoldProgress(progress);
-          
-          if (progress < 100) {
-              animationFrame.current = requestAnimationFrame(animate);
-          } else {
-              // Haptic feedback when ready (Visuals handled by state)
-              if (navigator.vibrate) navigator.vibrate(50);
-          }
-      };
-      
-      cancelAnimationFrame(animationFrame.current);
-      animationFrame.current = requestAnimationFrame(animate);
-  };
-
-  const endHold = (e: React.SyntheticEvent) => {
-      e.preventDefault(); // Stop event propagation
-      isHolding.current = false;
-      cancelAnimationFrame(animationFrame.current);
-      
-      // CRITICAL FIX: Calculate raw elapsed time. 
-      // Do not rely on 'holdProgress' state which might be stale in this closure.
-      const elapsed = Date.now() - startTime.current;
-      
-      // Allow a tiny buffer (2900ms) for human reaction time
-      if (elapsed >= 2900) {
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
-          
-          // Force Trigger
-          if (onTriggerAdmin) {
-              console.log("Admin Trigger Activated via Long Press");
-              onTriggerAdmin();
-          } else {
-              console.error("onTriggerAdmin prop is missing");
-          }
-      }
-      
-      // Reset immediately
-      setHoldProgress(0);
-  };
-
-  const getProgressColor = () => {
-      if (isReady) return '#22c55e'; // Green-500
-      if (holdProgress > 60) return '#eab308'; // Yellow-500
-      return '#ef4444'; // Red-500
-  };
 
   if (!isOpen) return null;
 
@@ -157,59 +82,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         {/* Header - Dossier Style */}
         <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-              {/* LONG PRESS TRIGGER */}
-              <div 
-                className="relative w-12 h-12 select-none touch-none cursor-pointer flex items-center justify-center group"
-                onMouseDown={startHold}
-                onMouseUp={endHold}
-                onMouseLeave={endHold}
-                onTouchStart={startHold}
-                onTouchEnd={endHold}
-                onTouchCancel={endHold}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                  {/* Background Icon */}
-                  <div className={`absolute inset-1 bg-blue-900/20 rounded-lg flex items-center justify-center border transition-all duration-200 z-10 
-                      ${isReady ? 'border-green-500/50 bg-green-900/20 text-green-400 scale-110 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'border-blue-500/20 text-blue-400'} 
-                      ${holdProgress > 0 && !isReady ? 'scale-95' : ''}`}
-                  >
-                      {isReady ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                      ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
-                      )}
-                  </div>
-
-                  {/* Progress Ring Overlay */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 transform -rotate-90">
-                      <circle
-                          cx="24"
-                          cy="24"
-                          r="20"
-                          fill="none"
-                          stroke={getProgressColor()}
-                          strokeWidth="3"
-                          strokeDasharray="126" // 2 * PI * 20
-                          strokeDashoffset={126 - (holdProgress / 100) * 126}
-                          strokeLinecap="round"
-                          className="transition-all duration-75 ease-linear"
-                          style={{ opacity: holdProgress > 0 ? 1 : 0 }}
-                      />
-                  </svg>
-                  
-                  {/* Tooltip for instructions */}
-                  {holdProgress > 0 && holdProgress < 100 && (
-                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/80 px-2 py-1 rounded text-[9px] text-white font-mono uppercase tracking-widest pointer-events-none">
-                          Hold to Access
-                      </div>
-                  )}
-                  {isReady && (
-                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-green-900/90 border border-green-500/50 px-2 py-1 rounded text-[9px] text-green-300 font-bold uppercase tracking-widest pointer-events-none animate-bounce">
-                          Release Now
-                      </div>
-                  )}
+              <div className="w-10 h-10 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
               </div>
-
               <div>
                   <h3 className="font-bold text-white text-lg tracking-tight font-serif">Student Dossier</h3>
                   <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">ID: {editedProfile.alias || 'UNKNOWN'}</p>

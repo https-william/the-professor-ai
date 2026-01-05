@@ -566,3 +566,5 @@ export const QuizView: React.FC<QuizViewProps> = ({
     </div>
   );
 };
+
+export default QuizView;

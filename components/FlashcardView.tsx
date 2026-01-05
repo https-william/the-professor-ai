@@ -187,3 +187,5 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
     </div>
   );
 };
+
+export default FlashcardView;

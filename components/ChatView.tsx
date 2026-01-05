@@ -255,3 +255,5 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
     </div>
   );
 };
+
+export default ChatView;

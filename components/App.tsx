@@ -1,34 +1,33 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { Hero } from './components/Hero';
-import { InputSection } from './components/InputSection';
-import { LoadingOverlay } from './components/LoadingOverlay';
-import { HistorySidebar } from './components/HistorySidebar';
-import { UserProfileModal } from './components/UserProfileModal';
-import { AboutModal } from './components/AboutModal';
-import { SubscriptionModal } from './components/SubscriptionModal';
-import { WelcomeModal } from './components/Onboarding/WelcomeModal';
-import { AuthPage } from './components/Auth/AuthPage';
-import { LandingPage } from './components/LandingPage';
-import { CountdownTimer } from './components/CountdownTimer';
-import { AmbientBackground } from './components/AmbientBackground';
-import { PWAPrompt } from './components/PWAPrompt';
-import { DuelReadyModal } from './components/DuelReadyModal';
-import { ConfirmationModal } from './components/ConfirmationModal';
-import { AdminAuthModal } from './components/AdminAuthModal';
-import { useAuth } from './contexts/AuthContext';
-import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from './types';
-import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from './services/firebase';
-import { processFile } from './services/fileService';
+import { Hero } from './Hero';
+import { InputSection } from './InputSection';
+import { LoadingOverlay } from './LoadingOverlay';
+import { HistorySidebar } from './HistorySidebar';
+import { UserProfileModal } from './UserProfileModal';
+import { AboutModal } from './AboutModal';
+import { SubscriptionModal } from './SubscriptionModal';
+import { WelcomeModal } from './Onboarding/WelcomeModal';
+import { AuthPage } from './Auth/AuthPage';
+import { LandingPage } from './LandingPage';
+import { CountdownTimer } from './CountdownTimer';
+import { AmbientBackground } from './AmbientBackground';
+import { PWAPrompt } from './PWAPrompt';
+import { DuelReadyModal } from './DuelReadyModal';
+import { ConfirmationModal } from './ConfirmationModal';
+import { useAuth } from '../contexts/AuthContext';
+import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from '../services/geminiService';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from '../services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from '../types';
+import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from '../services/firebase';
+import { processFile } from '../services/fileService';
 
 // Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./components/QuizView').then(module => ({ default: module.QuizView })));
-const ProfessorView = React.lazy(() => import('./components/ProfessorView').then(module => ({ default: module.ProfessorView })));
-const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView })));
-const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView })));
-const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const QuizView = React.lazy(() => import('./QuizView'));
+const ProfessorView = React.lazy(() => import('./ProfessorView'));
+const ChatView = React.lazy(() => import('./ChatView'));
+const FlashcardView = React.lazy(() => import('./FlashcardView'));
+const AdminDashboard = React.lazy(() => import('./AdminDashboard'));
 
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
@@ -45,7 +44,6 @@ const App: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
-  const [showAdminAuth, setShowAdminAuth] = useState(false);
   
   const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
 
@@ -158,6 +156,14 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
+    // --- ADMIN AUTO-ROUTING ---
+    // If the logged-in user is the designated admin, route directly to the office.
+    if (user.email === 'vexis.automations@gmail.com') {
+        setAppMode('ADMIN');
+        setStatus(AppStatus.READY);
+    }
+    // --------------------------
+
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
     
@@ -186,13 +192,16 @@ const App: React.FC = () => {
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    const savedSession = loadCurrentSession();
-    if (savedSession) {
-      setAppMode(savedSession.mode);
-      if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
-      else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
-      else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
-      setStatus(AppStatus.READY);
+    // Only load session if NOT admin
+    if (user.email !== 'vexis.automations@gmail.com') {
+        const savedSession = loadCurrentSession();
+        if (savedSession) {
+          setAppMode(savedSession.mode);
+          if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
+          else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
+          else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
+          setStatus(AppStatus.READY);
+        }
     }
   }, [user]);
 
@@ -539,9 +548,9 @@ const App: React.FC = () => {
   if (!user && !showAuth) return <LandingPage onEnter={() => setShowAuth(true)} />;
   if (!user && showAuth) return <AuthPage />;
   
-  const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
+  const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'].includes(user.email);
 
-  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation || showAdminAuth;
+  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const isActiveSession = status === AppStatus.READY;
 
   return (
@@ -552,7 +561,6 @@ const App: React.FC = () => {
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
-      <AdminAuthModal isOpen={showAdminAuth} onClose={() => setShowAdminAuth(false)} onSuccess={() => { setAppMode('ADMIN'); setShowAdminAuth(false); }} />
       
       {duelReadyData && (
           <DuelReadyModal 
@@ -571,7 +579,7 @@ const App: React.FC = () => {
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') return; else handleQuizAction('RESET'); }}>
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
@@ -579,7 +587,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-               {isActiveSession && (
+               {isActiveSession && appMode !== 'ADMIN' && (
                    <button 
                      onClick={() => setIsHistoryOpen(true)}
                      className="p-2 text-gray-400 hover:text-white transition-colors relative"
@@ -589,7 +597,7 @@ const App: React.FC = () => {
                    </button>
                )}
                
-               {userProfile.subscriptionTier === 'Fresher' && (
+               {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
                        <span>Upgrade</span>
                        <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
@@ -653,16 +661,12 @@ const App: React.FC = () => {
             window.location.reload();
         }}
         isAdmin={!!isAdmin}
-        onTriggerAdmin={() => { 
-            setShowAdminAuth(true); 
-            setTimeout(() => setIsProfileOpen(false), 50); 
-        }}
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
-         {status === AppStatus.IDLE && (
+         {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
              <>
                 <Hero />
                 <InputSection 
@@ -704,16 +708,9 @@ const App: React.FC = () => {
              </div>
          )}
       </main>
-
-      {/* Admin Secret Entry */}
-      {isAdmin && (
-          <div className="fixed bottom-2 right-2 opacity-20 hover:opacity-100 transition-opacity z-50">
-              <button onClick={() => setAppMode('ADMIN')} className="text-[10px] uppercase font-mono text-gray-500">Admin</button>
-          </div>
-      )}
       
-      {/* Floating Chat Trigger (Visible in non-chat modes) */}
-      {status === AppStatus.READY && appMode !== 'CHAT' && !isModalOpen && (
+      {/* Floating Chat Trigger (Visible in non-chat modes, excluding ADMIN) */}
+      {status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && !isModalOpen && (
           <button 
             onClick={handleOpenFloatingChat}
             className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group"
