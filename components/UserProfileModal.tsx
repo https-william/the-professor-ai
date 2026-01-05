@@ -20,6 +20,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const [holdProgress, setHoldProgress] = useState(0);
   const animationFrame = useRef<number>(0);
   const startTime = useRef<number>(0);
+  const isHolding = useRef<boolean>(false); // Ref for immediate synchronous access
   const isReady = holdProgress >= 100;
 
   useEffect(() => {
@@ -28,13 +29,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   }, []);
 
   const startHold = (e: React.SyntheticEvent) => {
-      // Prevent context menu on right click or long press touch
-      // e.preventDefault(); 
+      // Prevent phantom clicks if possible, but keep selection enabling
+      if (e.type === 'touchstart') {
+          // e.preventDefault(); // Optional: might block scrolling
+      }
       
+      isHolding.current = true;
       startTime.current = Date.now();
       setHoldProgress(0);
       
       const animate = () => {
+          if (!isHolding.current) return;
+
           const elapsed = Date.now() - startTime.current;
           // Duration: 3 seconds
           const progress = Math.min((elapsed / 3000) * 100, 100);
@@ -43,7 +49,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           if (progress < 100) {
               animationFrame.current = requestAnimationFrame(animate);
           } else {
-              // Haptic feedback when ready
+              // Haptic feedback when ready (Visuals handled by state)
               if (navigator.vibrate) navigator.vibrate(50);
           }
       };
@@ -53,12 +59,25 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   };
 
   const endHold = (e: React.SyntheticEvent) => {
+      e.preventDefault(); // Stop event propagation
+      isHolding.current = false;
       cancelAnimationFrame(animationFrame.current);
       
-      // If fully charged, trigger action
-      if (holdProgress >= 100) {
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Success vibration
-          if (onTriggerAdmin) onTriggerAdmin();
+      // CRITICAL FIX: Calculate raw elapsed time. 
+      // Do not rely on 'holdProgress' state which might be stale in this closure.
+      const elapsed = Date.now() - startTime.current;
+      
+      // Allow a tiny buffer (2900ms) for human reaction time
+      if (elapsed >= 2900) {
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+          
+          // Force Trigger
+          if (onTriggerAdmin) {
+              console.log("Admin Trigger Activated via Long Press");
+              onTriggerAdmin();
+          } else {
+              console.error("onTriggerAdmin prop is missing");
+          }
       }
       
       // Reset immediately
