@@ -10,27 +10,10 @@ interface SubscriptionModalProps {
   userEmail?: string;
 }
 
-declare global {
-  interface Window {
-    PaystackPop: any;
-  }
-}
-
-export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, currentTier, onUpgrade, userEmail }) => {
-  const [loading, setLoading] = useState(false);
+export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, currentTier, onUpgrade }) => {
   const [currency, setCurrency] = useState<'NGN' | 'USD'>('USD');
-  const [paymentMode, setPaymentMode] = useState<'LIVE' | 'TEST' | 'OFFLINE'>('OFFLINE');
 
   useEffect(() => {
-      const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
-      if (publicKey.startsWith('pk_live')) {
-          setPaymentMode('LIVE');
-      } else if (publicKey.startsWith('pk_test')) {
-          setPaymentMode('TEST');
-      } else {
-          setPaymentMode('OFFLINE');
-      }
-
       try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (tz === 'Africa/Lagos') {
@@ -42,58 +25,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
   }, []);
 
   if (!isOpen) return null;
-
-  const handleCheckout = (tierId: SubscriptionTier, price: number) => {
-    // Auto-use email from props if available
-    const emailToUse = userEmail; 
-    
-    if (!emailToUse) {
-        alert("Email required for transaction. Please complete your profile or log in again.");
-        return;
-    }
-
-    setLoading(true);
-    
-    try {
-        const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY;
-        
-        if (!publicKey) {
-            alert("Payment system configuration missing. Please check Vercel Environment Variables.");
-            setLoading(false);
-            return;
-        }
-
-        const paystack = new window.PaystackPop();
-        
-        paystack.newTransaction({
-            key: publicKey,
-            email: emailToUse,
-            amount: price * 100, // Paystack expects amount in Kobo/Cents
-            currency: currency,
-            ref: '' + Math.floor((Math.random() * 1000000000) + 1), 
-            metadata: {
-                tier: tierId,
-                custom_fields: [
-                    { display_name: "Subscription Tier", variable_name: "tier", value: tierId }
-                ]
-            },
-            onSuccess: (transaction: any) => {
-                onUpgrade(tierId);
-                alert(`Payment Successful! Reference: ${transaction.reference}`);
-                onClose();
-                setLoading(false);
-            },
-            onCancel: () => {
-                setLoading(false);
-            }
-        });
-
-    } catch (e: any) {
-        console.error("Paystack Error:", e);
-        alert("Failed to initialize payment gateway. Ensure network connection is active.");
-        setLoading(false);
-    }
-  };
 
   const tiers = [
     {
@@ -113,9 +44,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     {
       id: 'Scholar' as SubscriptionTier,
       name: 'The Scholar',
-      priceDisplay: currency === 'NGN' ? '₦4,500' : '$8.99',
-      amount: currency === 'NGN' ? 4500 : 8.99,
-      desc: "For the serious student.",
+      priceDisplay: currency === 'NGN' ? '₦2,900' : '$4.99',
+      amount: currency === 'NGN' ? 2900 : 4.99,
+      desc: "Less than a pizza. 100x the value.",
       features: [
         'Unlimited Quizzes',
         'Feynman Tutor (Chat)',
@@ -124,24 +55,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
         'War Room Access'
       ],
       style: 'bg-blue-900/10 border-blue-500/50 relative overflow-hidden',
-      tag: 'Popular',
+      tag: 'Best Value',
       tagColor: 'bg-blue-600'
     },
     {
       id: 'Excellentia' as SubscriptionTier, 
       name: 'Excellentia',
-      priceDisplay: currency === 'NGN' ? '₦12,000' : '$24.99',
-      amount: currency === 'NGN' ? 12000 : 24.99,
+      priceDisplay: currency === 'NGN' ? '₦8,500' : '$14.99',
+      amount: currency === 'NGN' ? 8500 : 14.99,
       desc: "Academic immortality.",
       features: [
         'Unlimited Everything',
         'Nightmare Difficulty',
         'The Oracle (Predictive AI)',
         'Weakness Destroyer',
-        'Admin-Level Support'
+        'Direct Admin Line'
       ],
       style: 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#2a2a2a] via-[#0f0f0f] to-black border-[#D4AF37]/60 shadow-[0_0_25px_rgba(212,175,55,0.15)]',
-      tag: 'VIP ACCESS',
+      tag: 'VIP ONLY',
       tagColor: 'bg-gradient-to-r from-[#D4AF37] to-[#B59410] text-black font-black tracking-widest'
     }
   ];
@@ -156,23 +87,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
              <span className="text-2xl">🎓</span>
              <h2 className="text-xl font-bold text-white font-display">Tuition Plans</h2>
            </div>
-           
-           <div className="flex items-center gap-4">
-               {/* Mode Indicator */}
-               <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-widest ${
-                   paymentMode === 'LIVE' ? 'bg-green-900/20 text-green-400 border-green-500/30' : 
-                   paymentMode === 'TEST' ? 'bg-amber-900/20 text-amber-400 border-amber-500/30' :
-                   'bg-red-900/20 text-red-400 border-red-500/30'
-               }`}>
-                   <div className={`w-1.5 h-1.5 rounded-full ${
-                       paymentMode === 'LIVE' ? 'bg-green-500 animate-pulse' : 
-                       paymentMode === 'TEST' ? 'bg-amber-500' : 'bg-red-500'
-                   }`}></div>
-                   {paymentMode === 'LIVE' ? 'SECURE PAYMENTS' : paymentMode === 'TEST' ? 'TEST MODE' : 'OFFLINE'}
-               </div>
-
-               <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-2 p-2 bg-white/5 rounded-full">✕</button>
-           </div>
+           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors ml-2 p-2 bg-white/5 rounded-full">✕</button>
         </div>
 
         <div className="overflow-y-auto p-4 md:p-8 custom-scrollbar bg-[#050505]">
@@ -216,8 +131,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                    </ul>
 
                    <button 
-                     onClick={() => handleCheckout(tier.id, tier.amount)}
-                     disabled={loading}
+                     onClick={() => onUpgrade(tier.id)}
                      className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
                        currentTier === tier.id 
                          ? 'bg-white/5 text-gray-500 cursor-default border border-white/5' 
@@ -228,7 +142,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                                 : 'bg-white text-black hover:bg-gray-200'
                      }`}
                    >
-                     {loading ? 'Processing...' : (currentTier === tier.id ? 'Current Plan' : tier.amount === 0 ? 'Downgrade' : 'Select Plan')}
+                     {currentTier === tier.id ? 'Current Plan' : tier.amount === 0 ? 'Downgrade' : 'Select Plan'}
                    </button>
                 </div>
               ))}

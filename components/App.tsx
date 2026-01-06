@@ -12,6 +12,7 @@ import { AuthPage } from './Auth/AuthPage';
 import { AdminLoginPage } from './Auth/AdminLoginPage';
 import { LandingPage } from './LandingPage';
 import { PricingPage } from './PricingPage';
+import { PlanCheckoutPage } from './PlanCheckoutPage';
 import { CountdownTimer } from './CountdownTimer';
 import { AmbientBackground } from './AmbientBackground';
 import { PWAPrompt } from './PWAPrompt';
@@ -21,7 +22,7 @@ import { NotificationBell } from './NotificationBell';
 import { useAuth } from '../contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from '../services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from '../services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, HubState } from '../types';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, HubState, SubscriptionTier } from '../types';
 import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from '../services/firebase';
 import { processFile } from '../services/fileService';
 
@@ -34,7 +35,7 @@ const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module =
 const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
 // Routing State
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT';
 
 // Admin Whitelist - Lowercase
 const ADMIN_EMAILS = [
@@ -67,6 +68,8 @@ const App: React.FC = () => {
   const [activeDuelId, setActiveDuelId] = useState<string | null>(null);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(null);
+  
   const saveTimeoutRef = useRef<any>(null);
 
   // Constants for Limits
@@ -400,14 +403,22 @@ const App: React.FC = () => {
       }
   };
 
+  const handleGoToCheckout = (tier: SubscriptionTier) => {
+      setCheckoutTier(tier);
+      setIsSubscriptionOpen(false);
+      setCurrentView('CHECKOUT');
+  };
+
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
   if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => setCurrentView('LANDING')} onSuccess={handleAdminSuccess} />;
   if (currentView === 'PRICING') return <PricingPage onBack={() => setCurrentView('LANDING')} onSignUp={() => setCurrentView('AUTH')} />;
+  if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => setCurrentView('APP')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setCurrentView('APP'); }} />;
   if (currentView === 'AUTH' && !user) return <AuthPage />;
   if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => setCurrentView('AUTH')} onPricing={() => setCurrentView('PRICING')} />;
 
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
-  
+  const showFAB = status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && appMode !== 'HUB' && !isModalOpen && !quizState.isSubmitted;
+
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505] font-sans`}>
       <AmbientBackground theme='Deep Space' />
@@ -418,7 +429,7 @@ const App: React.FC = () => {
         isOpen={isSubscriptionOpen} 
         onClose={() => setIsSubscriptionOpen(false)} 
         currentTier={userProfile.subscriptionTier} 
-        onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} 
+        onUpgrade={handleGoToCheckout} 
         userEmail={user?.email || undefined}
       />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
@@ -538,7 +549,7 @@ const App: React.FC = () => {
          )}
       </main>
       
-      {status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && appMode !== 'HUB' && !isModalOpen && (
+      {showFAB && (
           <button onClick={handleOpenFloatingChat} className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group">
               <span className="text-2xl group-hover:animate-wiggle">💬</span>
           </button>

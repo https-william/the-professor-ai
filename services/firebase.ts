@@ -9,8 +9,8 @@ import {
   signOut,
   Auth
 } from "firebase/auth";
-import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp, setDoc, getDoc, query, where, getDocs, onSnapshot } from "firebase/firestore";
-import { SubscriptionTier, UserProfile, DuelState, QuizQuestion, QuizConfig, DuelParticipant } from "../types";
+import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp, setDoc, getDoc, query, where, getDocs, onSnapshot, orderBy } from "firebase/firestore";
+import { SubscriptionTier, UserProfile, DuelState, QuizQuestion, QuizConfig, DuelParticipant, ProfessorSection } from "../types";
 
 // --- SECURE CONFIGURATION ---
 const getEnv = (key: string): string => {
@@ -208,7 +208,6 @@ export const updateUserUsage = async (userId: string, usage: number) => {
 
 // --- DUEL SYSTEM (THE ARENA) ---
 
-// Creative Word Generator for Codes
 const generateDuelCode = (): string => {
     const ADJ = ["IRON", "NEON", "CYBER", "VOID", "AZURE", "SOLAR", "LUNAR", "HYPER", "DARK", "SILENT", "ATOMIC", "PRIME", "OMEGA", "NOVA"];
     const NOUN = ["TIGER", "WOLF", "EAGLE", "STORM", "VORTEX", "CORE", "FLAME", "SHARD", "TITAN", "GHOST", "PULSE", "VIPER", "DRIFT", "ECHO"];
@@ -223,7 +222,6 @@ export const initDuelLobby = async (hostId: string, hostName: string, wager: num
     try {
         const code = generateDuelCode();
         
-        // Host is the first participant
         const participants: DuelParticipant[] = [{
             id: hostId,
             name: hostName,
@@ -235,9 +233,9 @@ export const initDuelLobby = async (hostId: string, hostName: string, wager: num
             hostId,
             participants,
             wager,
-            content, // Raw content saved first
+            content, 
             quizConfig,
-            status: 'INITIALIZING', // Important: Logic handles this state
+            status: 'INITIALIZING', 
             createdAt: Date.now()
         };
         
@@ -270,7 +268,6 @@ export const joinDuelByCode = async (code: string, userId: string, userName: str
     const duelDoc = snapshot.docs[0];
     const duelData = duelDoc.data() as DuelState;
     
-    // Check if user already joined
     if (duelData.participants.some(p => p.id === userId)) return duelDoc.id;
     
     const newParticipant: DuelParticipant = {
@@ -286,7 +283,6 @@ export const joinDuelByCode = async (code: string, userId: string, userName: str
     return duelDoc.id;
 };
 
-// Real-time Listener for Lobby
 export const subscribeToDuel = (duelId: string, onUpdate: (data: DuelState) => void) => {
     if (!db) return () => {};
     const unsub = onSnapshot(doc(db, "duels", duelId), (doc) => {
@@ -321,28 +317,18 @@ export const getDuel = async (duelId: string): Promise<DuelState | null> => {
 
 export const submitDuelScore = async (duelId: string, userId: string, score: number) => {
     if (!db) return;
-    
     const duelRef = doc(db, "duels", duelId);
-    
     try {
         const snap = await getDoc(duelRef);
         if (!snap.exists()) return;
-        
         const data = snap.data() as DuelState;
         const updatedParticipants = data.participants.map(p => 
             p.id === userId ? { ...p, score, status: 'COMPLETED' } : p
         );
-        
-        // Check if all completed
         const allDone = updatedParticipants.every(p => p.status === 'COMPLETED');
         let updateData: any = { participants: updatedParticipants };
-        
         if (allDone) {
-            // Determine winner or TIE
             const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
-            
-            // TIE BREAKER CHECK
-            // If at least 2 players have the same high score
             if (sorted.length > 1 && sorted[0].score === sorted[1].score) {
                 updateData.status = 'SUDDEN_DEATH_PENDING';
             } else {
@@ -350,9 +336,7 @@ export const submitDuelScore = async (duelId: string, userId: string, score: num
                 updateData.winnerId = sorted[0].id;
             }
         }
-        
         await updateDoc(duelRef, updateData as any);
-        
     } catch (e) {
         console.error("Score Submit Error", e);
     }
@@ -371,36 +355,82 @@ export const activateSuddenDeath = async (duelId: string, question: QuizQuestion
 export const submitSuddenDeathAnswer = async (duelId: string, userId: string, isCorrect: boolean) => {
     if (!db) return;
     const duelRef = doc(db, "duels", duelId);
-    
     try {
         const snap = await getDoc(duelRef);
         if (!snap.exists()) return;
-        
         const data = snap.data() as DuelState;
-        
         const updatedParticipants = data.participants.map(p => 
-            p.id === userId 
-            ? { 
-                ...p, 
-                score: isCorrect ? (p.score || 0) + 1 : (p.score || 0), // Add bonus point
-                suddenDeathStatus: 'COMPLETED' 
-              } 
-            : p
+            p.id === userId ? { ...p, score: isCorrect ? (p.score || 0) + 1 : (p.score || 0), suddenDeathStatus: 'COMPLETED' } : p
         );
-        
-        // Check if all active sudden death participants completed
-        // (Assuming all participants from main round participate in SD, or we just wait for everyone)
         const allSDDone = updatedParticipants.every(p => p.suddenDeathStatus === 'COMPLETED');
         let updateData: any = { participants: updatedParticipants };
-        
         if (allSDDone) {
             updateData.status = 'COMPLETED';
             const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
             updateData.winnerId = sorted[0].id;
         }
-        
         await updateDoc(duelRef, updateData as any);
     } catch (e) {
         console.error("SD Submit Error", e);
     }
+};
+
+// --- THE HUB (REAL-TIME STUDY ROOMS) ---
+
+export const createHubRoom = async (hostAlias: string, modules: ProfessorSection[]): Promise<string> => {
+    if (!db) throw new Error("Offline.");
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    await addDoc(collection(db, "hubs"), {
+        code,
+        host: hostAlias,
+        modules,
+        createdAt: serverTimestamp(),
+        participants: [hostAlias]
+    });
+    return code;
+};
+
+export const joinHubRoom = async (code: string, userAlias: string): Promise<string> => {
+    if (!db) throw new Error("Offline.");
+    const q = query(collection(db, "hubs"), where("code", "==", code.toUpperCase()));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) throw new Error("Room not found.");
+    
+    const roomDoc = snapshot.docs[0];
+    const data = roomDoc.data();
+    
+    const participants = data.participants || [];
+    if (!participants.includes(userAlias)) {
+        await updateDoc(doc(db, "hubs", roomDoc.id), {
+            participants: [...participants, userAlias]
+        });
+    }
+    
+    return roomDoc.id;
+};
+
+export const subscribeToHubRoom = (roomId: string, onUpdate: (data: any) => void) => {
+    if (!db) return () => {};
+    return onSnapshot(doc(db, "hubs", roomId), (doc) => {
+        if (doc.exists()) onUpdate({ id: doc.id, ...doc.data() });
+    });
+};
+
+export const sendHubMessage = async (roomId: string, sender: string, content: string) => {
+    if (!db) return;
+    await addDoc(collection(db, "hubs", roomId, "messages"), {
+        sender,
+        content,
+        timestamp: serverTimestamp()
+    });
+};
+
+export const subscribeToHubMessages = (roomId: string, onUpdate: (msgs: any[]) => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "hubs", roomId, "messages"), orderBy("timestamp", "asc"));
+    return onSnapshot(q, (snapshot) => {
+        const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        onUpdate(msgs);
+    });
 };

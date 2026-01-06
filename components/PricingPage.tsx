@@ -38,9 +38,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
       },
       {
           name: "Scholar",
-          price: currency === 'NGN' ? '₦4,500' : '$8.99',
+          price: currency === 'NGN' ? '₦2,900' : '$4.99',
           period: '/mo',
-          desc: "For the serious student.",
+          desc: "Less than a pizza. 100x the value.",
           features: [
               "Unlimited Quizzes", 
               "Feynman Tutor (Chat)", 
@@ -54,7 +54,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
       },
       {
           name: "Excellentia",
-          price: currency === 'NGN' ? '₦12,000' : '$24.99',
+          price: currency === 'NGN' ? '₦8,500' : '$14.99',
           period: '/mo',
           desc: "Academic immortality.",
           features: [
