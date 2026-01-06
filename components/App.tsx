@@ -78,10 +78,9 @@ const App: React.FC = () => {
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
   useEffect(() => {
-      // SECRET ADMIN ROUTE CHECK
-      if (window.location.pathname === '/administrator' || window.location.hash === '#/administrator') {
+      // IMMEDIATE ROUTE CHECK
+      if (window.location.pathname === '/administrator') {
           setCurrentView('ADMIN_LOGIN');
-          return;
       }
 
       const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
@@ -100,6 +99,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (loading) return;
+
+    // PROTECTION: Do not redirect if on Admin Login or Checkout pages
+    if (currentView === 'ADMIN_LOGIN' || currentView === 'CHECKOUT') return;
+
     if (user) {
         if (currentView === 'LANDING' || currentView === 'AUTH') {
             setCurrentView('APP');

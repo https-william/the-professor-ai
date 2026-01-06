@@ -74,6 +74,7 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
 
   useEffect(() => {
       const renderMath = () => {
+          // Critical check: Element must exist
           if (contentRef.current && window.renderMathInElement) {
               try {
                   window.renderMathInElement(contentRef.current, {
@@ -92,11 +93,11 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
           }
       };
 
-      // Attempt render
+      // Attempt render immediately
       renderMath();
       
-      // Retry in case scripts loaded late
-      const timer = setTimeout(renderMath, 1500);
+      // Retry in case scripts loaded late or DOM wasn't ready
+      const timer = setTimeout(renderMath, 1000);
       return () => clearTimeout(timer);
   }, [currentSectionIdx, state, summaryContent, lockInConfig]);
 

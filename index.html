@@ -90,6 +90,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
     <script>
+      // Force Worker Source
       const PDF_WORKER_SRC = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
       window.addEventListener('load', function() {
@@ -108,8 +109,14 @@
                }, 2000);
             }
          }
-         if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
-         if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+         
+         if (typeof pdfjsLib !== 'undefined') {
+             pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
+         }
+         
+         if (typeof mermaid !== 'undefined') {
+             mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+         }
       });
 
       // --- THEME ENGINE ---
@@ -128,9 +135,9 @@
             },
             fontFamily: {
               sans: ['Inter', 'system-ui', 'sans-serif'],
-              serif: ['Mirage Against', 'Merriweather', 'serif'],
+              serif: ['Cinzel', 'Merriweather', 'serif'], // Switched to Cinzel to avoid 404
               mono: ['JetBrains Mono', 'monospace'],
-              display: ['Mirage Against', 'serif'],
+              display: ['Cinzel', 'serif'], // Switched to Cinzel
             },
             animation: {
               'fade-in': 'fadeIn 0.6s ease-out',
@@ -162,20 +169,8 @@
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-      /* --- CUSTOM FONTS --- */
-      @font-face {
-        font-family: 'Mirage Against';
-        src: url('/fonts/MirageAgainst.otf') format('opentype');
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-
-      /* Fallback if user hasn't uploaded font file yet */
-      .font-display { font-family: 'Mirage Against', 'Merriweather', serif; }
-
       /* --- SEMANTIC THEME VARIABLES --- */
       :root {
         /* Default: Deep Space (OLED) */
