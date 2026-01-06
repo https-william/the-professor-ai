@@ -406,7 +406,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
               </div>
             </div>
 
-            {/* ACTION GRID - Reorganized */}
+            {/* ACTION GRID */}
             <div className="p-6 border-t border-white/10 bg-[#0a0a0a] shrink-0">
                <div className="grid grid-cols-3 gap-4 mb-6">
                    <button onClick={() => setShowDuelSelector(true)} disabled={isLoading} className="p-4 bg-purple-900/10 border border-purple-500/20 hover:bg-purple-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28">
@@ -457,7 +457,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
         </div>
 
-        {/* STUDY ROOM / HUB INPUT */}
+        {/* STUDY ROOM / HUB INPUT - FIXED WIDTH */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-display font-normal text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
@@ -476,22 +476,33 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   )}
 
                   <div className="relative">
+                      {/* Responsive Padding: Smaller PR on mobile (12), Larger on Desktop (48) */}
                       <input 
                         type="text" 
                         value={chatInput} 
                         onChange={(e) => setChatInput(e.target.value)} 
                         onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                        className="w-full bg-black/60 border border-amber-500/30 rounded-2xl pl-6 pr-48 py-6 text-white outline-none focus:border-amber-500 placeholder-gray-600 text-lg shadow-2xl transition-all focus:bg-black/80 z-20 relative" 
-                        placeholder="Ask a question or upload files..." 
+                        className="w-full bg-black/60 border border-amber-500/30 rounded-2xl pl-6 pr-12 md:pr-48 py-6 text-white outline-none focus:border-amber-500 placeholder-gray-600 text-lg shadow-2xl transition-all focus:bg-black/80 z-20 relative" 
+                        placeholder="Ask a question..." 
                       />
-                      <div className="absolute right-3 top-3 bottom-3 flex items-center gap-2 z-30">
-                        <button onClick={() => setShowCamera(true)} className="h-full px-3 text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10" title="Snap & Solve">
+                      
+                      {/* Button Group Container */}
+                      <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1 z-30">
+                        {/* Desktop Icons */}
+                        <button onClick={() => setShowCamera(true)} className="h-full px-2 text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10 hidden md:block" title="Snap & Solve">
                             <span className="text-xl">📸</span>
                         </button>
-                        <button onClick={() => fileInputRef.current?.click()} className="h-full px-3 text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10">
+                        <button onClick={() => fileInputRef.current?.click()} className="h-full px-2 text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10 hidden md:block">
                             <span className="text-xl">📎</span>
                         </button>
-                        <button onClick={() => handleGenerate()} className="h-full px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
+                        
+                        {/* Mobile Attachment - Only shows on small screens */}
+                        <button onClick={() => fileInputRef.current?.click()} className="md:hidden h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl">
+                            <span className="text-xl">+</span>
+                        </button>
+
+                        {/* Send Button - Compact on mobile */}
+                        <button onClick={() => handleGenerate()} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                             ) : (

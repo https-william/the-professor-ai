@@ -33,11 +33,13 @@ export const clearCurrentSession = () => {
  * Generates a smart, descriptive title for the history item.
  */
 export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorState | ChatState): string => {
+  const clean = (str: string) => str.replace(/[*_#\[\]]/g, '').replace(/\s+/g, ' ').trim();
+
   if (mode === 'EXAM') {
     const quizData = data as QuizState;
     if (quizData.questions.length > 0) {
       const firstQ = quizData.questions[0].question;
-      const cleanQ = firstQ.replace(/[*_#]/g, '').replace(/\s+/g, ' ').trim();
+      const cleanQ = clean(firstQ);
       return cleanQ.length > 45 ? `${cleanQ.substring(0, 45)}...` : cleanQ;
     }
     return 'Untitled Exam';
@@ -45,7 +47,7 @@ export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorS
     const profData = data as ProfessorState;
     if (profData.sections.length > 0) {
       const title = profData.sections[0].title;
-      const cleanTitle = title.replace(/[*_#]/g, '').trim();
+      const cleanTitle = clean(title);
       return `Class: ${cleanTitle}`;
     }
     return 'Untitled Class';
@@ -57,7 +59,7 @@ export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorS
       if (chatData.messages && chatData.messages.length > 0) {
           const firstUserMsg = chatData.messages.find(m => m.role === 'user');
           if (firstUserMsg) {
-              const content = firstUserMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, '[Image]').trim();
+              const content = clean(firstUserMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, 'Image'));
               return content.length > 30 ? content.substring(0, 30) + '...' : content;
           }
       }
@@ -70,13 +72,24 @@ export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorS
  * Generates a short snippet preview of the session state.
  */
 export const getHistorySnippet = (item: HistoryItem): string => {
+    const clean = (str: string) => str.replace(/[*_#\[\]]/g, '').replace(/\s+/g, ' ').trim();
+
     if (item.mode === 'CHAT') {
         const data = item.data as ChatState;
         if (!data.messages || data.messages.length === 0) return 'No messages yet';
+        
+        // Find last user message or last bot message
         const lastMsg = data.messages[data.messages.length - 1];
+        if (!lastMsg) return 'Empty';
+
         const sender = lastMsg.role === 'user' ? 'You' : 'Prof';
-        const content = lastMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, '📷 Image');
-        return `${sender}: ${content.substring(0, 40)}${content.length > 40 ? '...' : ''}`;
+        const rawContent = lastMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, '📷 Image');
+        
+        // Remove JSON artifacts if present
+        let cleanContent = clean(rawContent);
+        if (cleanContent.startsWith('{') || cleanContent.startsWith('[')) cleanContent = "Structured Data";
+
+        return `${sender}: ${cleanContent.substring(0, 40)}${cleanContent.length > 40 ? '...' : ''}`;
     }
     if (item.mode === 'EXAM') {
         const data = item.data as QuizState;
@@ -190,13 +203,6 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   }
   
   const diffTime = Math.abs(now.getTime() - last.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-
-  // diffDays includes current day roughly. 
-  // If last study was yesterday (diffDays approx 1), increment streak.
-  // If today is Monday and last study was Sunday, it's 1 day diff.
-  
-  // More robust day diff:
   const oneDay = 1000 * 60 * 60 * 24;
   const daysDiff = Math.floor((now.getTime() - last.getTime()) / oneDay);
 
@@ -206,8 +212,6 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
     // Check for Freeze
     if (updated.hasStreakFreeze) {
         updated.hasStreakFreeze = false; // Consume freeze
-        // Streak maintained but not incremented? Or reset to 1? usually reset to 1 but freeze keeps it.
-        // Let's assume freeze keeps the number but doesn't increment.
     } else {
         updated.streak = 1;
     }
@@ -228,23 +232,4 @@ export const incrementDailyUsage = (profile: UserProfile, type: 'QUIZ' | 'FILE' 
 
   saveUserProfile(updated);
   return updated;
-};
-
-export const calculateLevel = (xp: number) => {
-    // Level = sqrt(XP / 100) + 1
-    // 0 XP = Lvl 1
-    // 100 XP = Lvl 2
-    // 400 XP = Lvl 3
-    // 10000 XP = Lvl 11
-    return Math.floor(Math.sqrt(xp / 100)) + 1;
-};
-
-export const calculateProgress = (xp: number) => {
-    // Calculate progress to next level
-    const level = calculateLevel(xp);
-    const currentLevelXP = Math.pow(level - 1, 2) * 100;
-    const nextLevelXP = Math.pow(level, 2) * 100;
-    const range = nextLevelXP - currentLevelXP;
-    const current = xp - currentLevelXP;
-    return Math.min(100, Math.max(0, (current / range) * 100));
 };

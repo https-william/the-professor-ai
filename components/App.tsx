@@ -78,11 +78,15 @@ const App: React.FC = () => {
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
   useEffect(() => {
+      // SECRET ADMIN ROUTE CHECK
+      if (window.location.pathname === '/administrator' || window.location.hash === '#/administrator') {
+          setCurrentView('ADMIN_LOGIN');
+          return;
+      }
+
       const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
       if (publicKey.startsWith('pk_live')) {
           console.log('%c PAYSTACK MODE: LIVE ', 'background: #22c55e; color: #fff; padding: 4px; border-radius: 4px; font-weight: bold;');
-      } else {
-          console.warn('Paystack Mode: TEST (Transactions will be simulated)');
       }
   }, []);
 
@@ -340,19 +344,6 @@ const App: React.FC = () => {
 
   const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
 
-  const handleOpenFloatingChat = () => {
-      if (appMode !== 'CHAT') {
-          const newState: ChatState = { messages: [{ id: 'init-float', role: 'model', content: "I am The Professor. How can I assist?", timestamp: Date.now() }], fileContext: '', fileName: 'General Inquiry' };
-          setChatState(newState);
-          setAppMode('CHAT');
-          setStatus(AppStatus.READY);
-          const newId = Date.now().toString();
-          setActiveHistoryId(newId);
-          saveToHistory({ id: newId, timestamp: Date.now(), mode: 'CHAT', title: 'General Inquiry', data: newState });
-          setHistory(loadHistory());
-      }
-  };
-
   const handleDuelStart = async (data: { wager: number, file: File }) => {
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
@@ -417,7 +408,7 @@ const App: React.FC = () => {
   if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => setCurrentView('AUTH')} onPricing={() => setCurrentView('PRICING')} />;
 
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
-  const showFAB = status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && appMode !== 'HUB' && !isModalOpen && !quizState.isSubmitted;
+  const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
 
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505] font-sans`}>
@@ -465,12 +456,17 @@ const App: React.FC = () => {
                {appMode === 'ADMIN' && (
                    <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
-               {appMode !== 'ADMIN' && (
+               
+               {/* LIBRARY BUTTON - ONLY ON DASHBOARD */}
+               {showLibrary && (
                    <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
+                       {/* SVG Book Icon */}
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                    </button>
                )}
+               
                <NotificationBell />
+               
                {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
                        <span>Upgrade</span>
@@ -548,12 +544,6 @@ const App: React.FC = () => {
              </div>
          )}
       </main>
-      
-      {showFAB && (
-          <button onClick={handleOpenFloatingChat} className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group">
-              <span className="text-2xl group-hover:animate-wiggle">💬</span>
-          </button>
-      )}
     </div>
   );
 };
