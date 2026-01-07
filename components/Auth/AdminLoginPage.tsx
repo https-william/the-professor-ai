@@ -91,7 +91,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
 
                   {error && (
                       <div className="py-3 px-4 bg-red-950/20 border border-red-500/30 text-red-400 text-xs font-mono">
-                          > ERROR: {error}
+                          &gt; ERROR: {error}
                       </div>
                   )}
 
