@@ -94,8 +94,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
   // Sync internal input state when question changes
   useEffect(() => {
+      // GUARD: Ensure questions exist
+      if (!questions || questions.length === 0) return;
+      
       const q = questions[internalIndex];
       if (!q) return;
+      
       const savedAnswer = userAnswers[q.id];
       
       if (q.type === 'Fill in the Gap') {
@@ -202,7 +206,20 @@ export const QuizView: React.FC<QuizViewProps> = ({
       setSuddenDeathSubmitted(true);
   };
 
-  const currentQ = questions[internalIndex];
+  // CRITICAL GUARD: If questions are missing or index is broken, show fallback
+  const currentQ = questions?.[internalIndex];
+  if (!currentQ && !isSubmitted) {
+      return (
+          <div className="flex items-center justify-center h-full p-8 text-center">
+              <div>
+                  <h3 className="text-xl font-bold text-red-500 mb-2">Data Corruption Detected</h3>
+                  <p className="text-gray-400 mb-6">The exam structure is invalid. Please reset.</p>
+                  <button onClick={onReset} className="px-6 py-2 bg-white text-black rounded-lg font-bold">Reset System</button>
+              </div>
+          </div>
+      );
+  }
+
   const total = questions.length;
   
   const getXPFeedback = (score: number) => {
@@ -224,7 +241,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   };
 
   const saveTextInput = () => {
-      if (textAnswer.trim()) {
+      if (textAnswer.trim() && currentQ) {
           onAnswerSelect(currentQ.id, textAnswer.trim());
       }
   };
@@ -237,7 +254,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
           newSelection = [...multiSelectAnswers, opt].sort();
       }
       setMultiSelectAnswers(newSelection);
-      onAnswerSelect(currentQ.id, JSON.stringify(newSelection));
+      if(currentQ) onAnswerSelect(currentQ.id, JSON.stringify(newSelection));
   };
 
   // --- REPORT CARD ---

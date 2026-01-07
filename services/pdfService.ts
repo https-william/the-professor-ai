@@ -1,3 +1,4 @@
+
 // Declaration for window.pdfjsLib since we are loading it via script tag
 declare global {
   interface Window {
@@ -7,22 +8,30 @@ declare global {
 
 export const extractTextFromPdf = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
+    // 1. Check Library
     if (!window.pdfjsLib) {
-      reject(new Error("PDF Library failed to load. Please refresh the page."));
+      reject(new Error("PDF Engine offline. Please refresh the page."));
       return;
     }
 
-    // Failsafe: Ensure workerSrc is set to avoid "Setting up fake worker failed" errors
-    if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-    }
+    // 2. FORCE Worker Source (Fixes 'No Internet' / 404 errors on workers)
+    // We use unpkg as a reliable CDN.
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
     const reader = new FileReader();
 
     reader.onload = async (event) => {
       try {
         const typedarray = new Uint8Array(event.target?.result as ArrayBuffer);
-        const pdf = await window.pdfjsLib.getDocument(typedarray).promise;
+        
+        // 3. Load Document with explicit params to prevent network fetch errors
+        const loadingTask = window.pdfjsLib.getDocument({
+            data: typedarray,
+            cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+            cMapPacked: true,
+        });
+
+        const pdf = await loadingTask.promise;
         
         let fullText = '';
         
@@ -36,17 +45,21 @@ export const extractTextFromPdf = async (file: File): Promise<string> => {
         }
 
         if (fullText.trim().length === 0) {
-          reject(new Error("No text found in PDF. It might be an image-based PDF."));
+          reject(new Error("This appears to be an image-only PDF. Please use the Camera Scan feature instead."));
         } else {
           resolve(fullText);
         }
-      } catch (error) {
-        console.error("Error parsing PDF:", error);
-        reject(error);
+      } catch (error: any) {
+        console.error("PDF Parse Error:", error);
+        if (error.name === 'MissingPDFException') {
+            reject(new Error("PDF file is corrupted or unreadable."));
+        } else {
+            reject(new Error("Failed to process PDF. Ensure you have an active internet connection for the PDF engine."));
+        }
       }
     };
 
-    reader.onerror = (error) => reject(error);
+    reader.onerror = () => reject(new Error("Failed to read file from disk."));
     reader.readAsArrayBuffer(file);
   });
 };

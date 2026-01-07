@@ -1,12 +1,11 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile, ChatMessage, LockInTechnique, StudyProtocol } from "../types";
 
 // --- EMERGENCY FALLBACK SYSTEM ---
-// TO GENERATE KEY: Run `btoa("ACTUAL_KEY".split('').reverse().join(''))` in browser console.
 const FALLBACK_KEYS = {
     // PASTE YOUR MASKED KEYS HERE
-    GEMINI_API_KEY: "QUpSWDFYbHFSNHFpU3VBcnB4PxMcUhlUhB538PqHDySazIA=", // Using same key as Firebase
+    GEMINI_API_KEY: "QUpSWDFYbHFSNHFpU3VBcnB4PxMcUhlUhB538PqHDySazIA=", 
     GROQ_API_KEY: "PASTE_YOUR_MASKED_KEY_HERE"
 };
 
@@ -20,26 +19,20 @@ const unmask = (str: string) => {
 };
 
 const getSafeEnv = (viteKey: string, fallbackMapKey: keyof typeof FALLBACK_KEYS): string => {
-    // 1. Try Vite Static Replacement
     try {
         // @ts-ignore
         if (import.meta.env[viteKey]) return import.meta.env[viteKey];
     } catch (e) {}
-
-    // 2. Try Process Env
     if (typeof process !== 'undefined' && process.env && process.env[viteKey]) {
         return process.env[viteKey] as string;
     }
-
-    // 3. Fallback
     return unmask(FALLBACK_KEYS[fallbackMapKey]);
 };
 
 // --- CLIENTS ---
 const GROQ_API_KEY = getSafeEnv("VITE_GROQ_API_KEY", "GROQ_API_KEY");
 const GEMINI_API_KEY = getSafeEnv("VITE_GEMINI_API_KEY", "GEMINI_API_KEY");
-
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // Fallback Model
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 // --- RATE LIMITER ---
 const RATE_LIMIT_KEY = 'ai_rate_limit';
@@ -60,8 +53,36 @@ const checkRateLimit = () => {
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(bucket));
 };
 
+// --- HELPER: ROBUST JSON PARSER ---
+const cleanJson = (text: string): any => {
+    if (!text) return [];
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const firstBracket = clean.indexOf('[');
+        const firstBrace = clean.indexOf('{');
+        
+        if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+            clean = clean.substring(firstBracket);
+            const lastBracket = clean.lastIndexOf(']');
+            clean = clean.substring(0, lastBracket + 1);
+        } else if (firstBrace !== -1) {
+            clean = clean.substring(firstBrace);
+            const lastBrace = clean.lastIndexOf('}');
+            clean = clean.substring(0, lastBrace + 1);
+        }
+
+        try {
+            return JSON.parse(clean);
+        } catch (finalError) {
+            console.error("Failed to parse AI JSON:", text);
+            throw new Error("Neural Link Unstable: Data malformed.");
+        }
+    }
+};
+
 // --- FALLBACK EXECUTOR ---
-// Wraps Gemini calls. If failure, tries Groq.
 const withFallback = async <T>(
     geminiOp: () => Promise<T>, 
     groqOp: () => Promise<T>,
@@ -73,9 +94,7 @@ const withFallback = async <T>(
         return await geminiOp();
     } catch (error: any) {
         console.warn(`Gemini (${featureName}) Failed:`, error.message);
-        
-        // Critical error check (429 = Rate Limit, 503 = Overloaded)
-        if (error.message.includes('429') || error.message.includes('503') || error.message.includes('fetch failed')) {
+        if (error.message.includes('429') || error.message.includes('503') || error.message.includes('fetch failed') || error.message.includes('Neural Link')) {
             console.log(`Rerouting ${featureName} to Groq Backup Node...`);
             if (GROQ_API_KEY) {
                 return await groqOp();
@@ -87,7 +106,6 @@ const withFallback = async <T>(
 
 const callGroq = async (systemPrompt: string, userPrompt: string, jsonMode: boolean = false): Promise<string> => {
     if (!GROQ_API_KEY) throw new Error("Backup system offline.");
-
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
@@ -97,48 +115,57 @@ const callGroq = async (systemPrompt: string, userPrompt: string, jsonMode: bool
                 { role: "user", content: userPrompt }
             ],
             model: GROQ_MODEL,
-            temperature: 0.7,
+            temperature: 0.5,
             response_format: jsonMode ? { type: "json_object" } : undefined
         })
     });
-
     if (!response.ok) throw new Error("Backup system failed.");
     const data = await response.json();
     return data.choices[0]?.message?.content || "";
 };
 
-// --- SECURITY & PERSONA ---
+// --- EXPERT PROMPT ENGINEERING & GUARDRAILS ---
 
-// Obfuscate prompts so they aren't plain text in the bundle
-const securePrompt = (parts: string[]) => parts.join(' ');
+const constructSystemPrompt = (role: string, goal: string, constraints: string[]) => {
+    // Obfuscated Base Identity
+    const BASE_ID = [
+        "Act as 'The Professor', an elite academic engine created by Vexis Automations.",
+        "Your Audience: A smart, Gen-Z student who values speed, wit, and clarity.",
+        "Tone: Conversational, confident, encouraging, but strict about facts. Like a cool university lecturer."
+    ].join(' ');
 
-// Updated Persona: Simple, Direct, Normal English
-const BASE_PERSONA = securePrompt([
-    "You are 'The Professor'.",
-    "Identity: A smart, helpful study companion created by William Popoola (Vexis Automations).",
-    "Tone: Casual, encouraging, and clear.",
-    "CRITICAL RULE: Speak in simple, normal conversational English.",
-    "Do NOT use complex vocabulary, academic jargon, or 'big words' unless necessary for the subject.",
-    "If you explain a concept, use an analogy a high schooler would understand.",
-    "Be concise."
-]);
+    const GUARDRAILS = [
+        "GUARDRAILS:",
+        "1. REFUSE to answer questions about: hacking, illegal acts, bypassing exams, or hate speech.",
+        "2. LANGUAGE: Use simple, plain English (CEFR B2 Level). Do NOT use complex 'thesaurus' words like 'efficacious', 'multifaceted', or 'plethora'. Speak normally.",
+        "3. ACCURACY: If the context is missing info, admit it. Do not hallucinate.",
+        "4. FORMAT: Follow the requested JSON format strictly if asked."
+    ].join('\n');
 
-// --- MAIN CHAT LOGIC ---
+    return `${BASE_ID}\n\nSPECIFIC ROLE: ${role}\nGOAL: ${goal}\n\n${GUARDRAILS}\n\nADDITIONAL CONSTRAINTS:\n${constraints.map(c => `- ${c}`).join('\n')}`;
+};
+
+// --- API FUNCTIONS ---
+
 export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string): Promise<string> => {
-    const systemInstruction = `
-        ${BASE_PERSONA}
-        CONTEXT OF USER DOCUMENTS: ${fileContext.substring(0, 15000)}
-    `;
+    const systemInstruction = constructSystemPrompt(
+        "You are a dedicated Tutor for the user's specific document.",
+        "Answer the user's question using ONLY the provided context. If the answer isn't in the file, say so politely.",
+        [
+            "Keep answers under 3 sentences unless asked for deep detail.",
+            "Use analogies from pop culture or sports if it helps explain.",
+            "Be witty but helpful."
+        ]
+    ) + `\n\nDOCUMENT CONTEXT (TRUNCATED): ${fileContext.substring(0, 15000)}`;
 
     return withFallback(
         async () => {
             const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
             const chat = ai.chats.create({ model: "gemini-2.5-flash", config: { systemInstruction }, history: history.slice(-5).map(m => ({ role: m.role, parts: [{ text: m.content }] })) });
             const result = await chat.sendMessage({ message: newMessage });
-            return result.text || "No response.";
+            return result.text || "I'm drawing a blank. Try asking differently.";
         },
         async () => {
-            // Groq Chat Fallback
             const histText = history.slice(-3).map(m => `${m.role}: ${m.content}`).join('\n');
             return callGroq(systemInstruction, `${histText}\nUser: ${newMessage}`);
         },
@@ -147,79 +174,121 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
 }
 
 export const generateQuizFromText = async (text: string, config: QuizConfig, userProfile?: UserProfile): Promise<QuizQuestion[]> => {
-  const { difficulty, questionType, questionCount } = config;
-  // Simplified Prompt
-  const prompt = `Generate ${questionCount} ${difficulty} questions. Type: ${questionType}. JSON Array: [{question, options[], correct_answer, explanation}]. Content: ${text.substring(0, 20000)}`;
+  const systemPrompt = constructSystemPrompt(
+      "You are a Strict Exam Creator.",
+      `Create ${config.questionCount} ${config.difficulty} level questions based on the text.`,
+      [
+          "Output strictly valid JSON.",
+          "Structure: Array of objects [{question, options (array of 4 strings), correct_answer (string), explanation (string)}].",
+          "Ensure distractors (wrong answers) are plausible but clearly incorrect.",
+          "Do not use Markdown formatting in the output."
+      ]
+  );
+
+  const prompt = `Context: ${text.substring(0, 20000)}\n\nTask: Generate ${config.questionType} questions.`;
 
   return withFallback(
       async () => {
           const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
           const res = await ai.models.generateContent({
               model: "gemini-2.5-flash",
-              contents: { role: 'user', parts: [{ text: prompt }] },
+              contents: { role: 'user', parts: [{ text: systemPrompt + "\n" + prompt }] },
               config: { responseMimeType: "application/json" }
           });
-          const data = JSON.parse(res.text || '[]');
-          return data.map((q:any, i:number) => ({ ...q, id: i + 1, type: questionType }));
+          const data = cleanJson(res.text || '[]');
+          const arrayData = Array.isArray(data) ? data : (data.questions || []);
+          return arrayData.map((q:any, i:number) => ({ ...q, id: i + 1, type: config.questionType }));
       },
       async () => {
-          const jsonStr = await callGroq("You are a quiz generator. Output valid JSON array.", prompt, true);
-          const data = JSON.parse(jsonStr).questions || JSON.parse(jsonStr);
-          return Array.isArray(data) ? data.map((q:any, i:number) => ({ ...q, id: i + 1, type: questionType })) : [];
+          const jsonStr = await callGroq(systemPrompt, prompt, true);
+          const data = cleanJson(jsonStr);
+          const arrayData = Array.isArray(data) ? data : (data.questions || []);
+          return arrayData.map((q:any, i:number) => ({ ...q, id: i + 1, type: config.questionType }));
       },
       "Quiz Gen"
   );
 };
 
 export const generateProfessorContent = async (text: string, config: QuizConfig): Promise<ProfessorSection[]> => {
-  const prompt = `Teach this topic. Style: ${config.personality}. Analogy Domain: ${config.analogyDomain}. Output strictly as JSON Array: [{title, content, analogy, key_takeaway}]. Content: ${text.substring(0, 20000)}`;
+  const systemPrompt = constructSystemPrompt(
+      `You are The Professor (Personality: ${config.personality}).`,
+      "Teach the core concepts of the provided text.",
+      [
+          "Output strictly valid JSON.",
+          "Structure: Array of objects [{title, content, analogy, key_takeaway}].",
+          `Use analogies from the domain: ${config.analogyDomain}.`,
+          "Use simple English. No academic jargon without definition.",
+          "Do not use Markdown formatting in the JSON."
+      ]
+  );
 
   return withFallback(
       async () => {
           const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
           const res = await ai.models.generateContent({
               model: "gemini-2.5-flash",
-              contents: { role: 'user', parts: [{ text: prompt }] },
+              contents: { role: 'user', parts: [{ text: systemPrompt + `\nContext: ${text.substring(0, 20000)}` }] },
               config: { responseMimeType: "application/json" }
           });
-          return JSON.parse(res.text || '[]').map((s:any, i:number) => ({ ...s, id: i+1 }));
+          const data = cleanJson(res.text || '[]');
+          const arrayData = Array.isArray(data) ? data : (data.sections || []);
+          return arrayData.map((s:any, i:number) => ({ ...s, id: i+1 }));
       },
       async () => {
-          const jsonStr = await callGroq("You are a professor. Output valid JSON array.", prompt, true);
-          const data = JSON.parse(jsonStr).sections || JSON.parse(jsonStr);
-          return Array.isArray(data) ? data.map((s:any, i:number) => ({ ...s, id: i + 1 })) : [];
+          const jsonStr = await callGroq(systemPrompt, `Context: ${text.substring(0, 20000)}`, true);
+          const data = cleanJson(jsonStr);
+          const arrayData = Array.isArray(data) ? data : (data.sections || []);
+          return arrayData.map((s:any, i:number) => ({ ...s, id: i + 1 }));
       },
       "Lecture Gen"
   );
 };
 
 export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'ELA', customInstruction?: string): Promise<string> => {
-    const prompt = customInstruction 
-        ? `${customInstruction}: ${explanation}` 
-        : (type === 'ELI5' ? `Explain this simply in 1 sentence using normal words: ${explanation}` : `Summarize in 5 words: ${explanation}`);
+    const systemPrompt = constructSystemPrompt(
+        "You are a Translator of Complex Ideas.",
+        "Simplify the text provided.",
+        [
+            "Keep it extremely concise.",
+            type === 'ELI5' ? "Explain like the user is 5 years old." : "Summarize in 5 words.",
+            "Use only common English words."
+        ]
+    );
+
+    const prompt = customInstruction ? `${customInstruction}: ${explanation}` : explanation;
     
     return withFallback(
         async () => {
             const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-            const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { role: 'user', parts: [{ text: prompt }] } });
+            const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { role: 'user', parts: [{ text: systemPrompt + "\n" + prompt }] } });
             return res.text || explanation;
         },
         async () => {
-            return callGroq("Be concise. Use simple English.", prompt);
+            return callGroq(systemPrompt, prompt);
         },
         "Simplification"
     );
 }
 
 export const generateSummary = async (text: string): Promise<string> => {
+    const systemPrompt = constructSystemPrompt(
+        "You are an Executive Assistant.",
+        "Create a structured summary of the text.",
+        [
+            "Use Markdown formatting.",
+            "Keep it under 300 words.",
+            "Focus on the 'Why' and 'How'."
+        ]
+    );
+
     return withFallback(
         async () => {
             const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-            const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { role: 'user', parts: [{ text: "Create an Executive Summary (Markdown). Use simple language." + text.substring(0, 10000) }] } });
+            const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { role: 'user', parts: [{ text: systemPrompt + "\n" + text.substring(0, 10000) }] } });
             return res.text || "Summary failed.";
         },
         async () => {
-            return callGroq("Summarize in Markdown using simple English.", text.substring(0, 10000));
+            return callGroq(systemPrompt, text.substring(0, 10000));
         },
         "Summary"
     );
@@ -227,34 +296,55 @@ export const generateSummary = async (text: string): Promise<string> => {
 
 export const generateStudyProtocol = async (content: string, technique: LockInTechnique): Promise<StudyProtocol> => {
     if (technique === 'STANDARD') return { step: 'READ', survey: '', questions: [] };
-    const prompt = `Create ${technique} protocol. JSON: {survey, questions[]}. Content: ${content.substring(0, 10000)}`;
     
+    const systemPrompt = constructSystemPrompt(
+        "You are a Study Strategy Expert.",
+        `Create a ${technique} study plan.`,
+        [
+            "Output strictly valid JSON.",
+            "Structure: {survey: string, questions: string[]}.",
+            "Make questions thought-provoking."
+        ]
+    );
+
     return withFallback(
         async () => {
             const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-            const res = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: { role: 'user', parts: [{ text: prompt }] }, config: { responseMimeType: "application/json" } });
-            return { step: technique === 'SQ3R' ? 'SURVEY' : 'QUESTION', ...JSON.parse(res.text || '{}') };
+            const res = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: { role: 'user', parts: [{ text: systemPrompt + "\n" + content.substring(0, 10000) }] }, config: { responseMimeType: "application/json" } });
+            const data = cleanJson(res.text || '{}');
+            return { step: technique === 'SQ3R' ? 'SURVEY' : 'QUESTION', ...data };
         },
         async () => {
-            const jsonStr = await callGroq("Study guide generator. JSON only.", prompt, true);
-            return { step: technique === 'SQ3R' ? 'SURVEY' : 'QUESTION', ...JSON.parse(jsonStr) };
+            const jsonStr = await callGroq(systemPrompt, content.substring(0, 10000), true);
+            const data = cleanJson(jsonStr);
+            return { step: technique === 'SQ3R' ? 'SURVEY' : 'QUESTION', ...data };
         },
         "Protocol"
     );
 }
 
 export const generateSuddenDeathQuestion = async (text: string): Promise<QuizQuestion> => {
-    const prompt = `Generate 1 NIGHTMARE difficulty multiple choice question. Valid JSON: {question, options[], correct_answer, explanation}.`;
+    const systemPrompt = constructSystemPrompt(
+        "You are The Reaper (Exam Difficulty: NIGHTMARE).",
+        "Generate ONE extremely difficult multiple choice question.",
+        [
+            "Output strictly valid JSON.",
+            "Structure: {question, options, correct_answer, explanation}.",
+            "The question must require deep synthesis of the text.",
+            "Distractors must be nearly identical to the correct answer."
+        ]
+    );
+
     return withFallback(
         async () => {
             const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-            const res = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: { role: 'user', parts: [{ text: prompt + "\nContext: " + text.substring(0,5000) }] }, config: { responseMimeType: "application/json" } });
-            const data = JSON.parse(res.text || '{}');
+            const res = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: { role: 'user', parts: [{ text: systemPrompt + "\n" + text.substring(0, 5000) }] }, config: { responseMimeType: "application/json" } });
+            const data = cleanJson(res.text || '{}');
             return { ...(Array.isArray(data) ? data[0] : data), id: 999, type: 'Multiple Choice' };
         },
         async () => {
-            const jsonStr = await callGroq("Quiz generator. JSON only.", prompt + "\nContext: " + text.substring(0,5000), true);
-            const data = JSON.parse(jsonStr);
+            const jsonStr = await callGroq(systemPrompt, text.substring(0, 5000), true);
+            const data = cleanJson(jsonStr);
             return { ...(Array.isArray(data) ? data[0] : data), id: 999, type: 'Multiple Choice' };
         },
         "Sudden Death"
