@@ -24,7 +24,6 @@ export const AuthPage: React.FC = () => {
   }, [isAuthenticating]);
 
   const isValidEmail = (e: string) => {
-      // Robust Regex for Email Validation
       const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
       return re.test(e);
   };
@@ -50,7 +49,6 @@ export const AuthPage: React.FC = () => {
       else if (err.message.includes("auth/email-already-in-use")) setError("Email already registered.");
       else setError(err.message);
     }
-    // Note: On success, the AuthContext will redirect, component unmounts.
   };
 
   return (

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LockInConfig, StudyProtocol, ProfessorSection } from '../types';
-import { generateStudyProtocol } from '../services/geminiService';
+import { generateStudyProtocol, callGroq } from '../services/geminiService';
 import DOMPurify from 'dompurify';
 
 interface StudyRoomProps {
@@ -18,12 +18,15 @@ export const StudyRoom: React.FC<StudyRoomProps> = ({ section, config, onExit, o
   const [timer, setTimer] = useState(25 * 60); // 25 mins
   const [timerActive, setTimerActive] = useState(config.usePomodoro);
   const [recitation, setRecitation] = useState('');
+  const [aiFeedback, setAiFeedback] = useState('');
+  const [reviewing, setReviewing] = useState(false);
   
   useEffect(() => {
       // Reset state on section change
       setLoading(true);
       setProtocol(null);
       setRecitation('');
+      setAiFeedback('');
       
       const initProtocol = async () => {
           if (config.technique === 'STANDARD') {
@@ -51,13 +54,27 @@ export const StudyRoom: React.FC<StudyRoomProps> = ({ section, config, onExit, o
       return () => clearInterval(interval);
   }, [timerActive, config.usePomodoro]);
 
-  const advanceStep = () => {
+  const advanceStep = async () => {
       if (!protocol) return;
       
       if (protocol.step === 'SURVEY') setProtocol({ ...protocol, step: 'QUESTION' });
       else if (protocol.step === 'QUESTION') setProtocol({ ...protocol, step: 'READ' });
       else if (protocol.step === 'READ') setProtocol({ ...protocol, step: 'RECITE' });
-      else if (protocol.step === 'RECITE') setProtocol({ ...protocol, step: 'REVIEW' });
+      else if (protocol.step === 'RECITE') {
+          // Generate feedback before moving to review
+          setReviewing(true);
+          try {
+              const feedback = await callGroq(
+                  "You are a strict professor grading a student's recall.",
+                  `Compare the student's recall: "${recitation}" \n\n To the actual key takeaway: "${section.key_takeaway}". \n\n Provide a 1-sentence verdict on their accuracy.`
+              );
+              setAiFeedback(feedback);
+          } catch (e) {
+              setAiFeedback("Analysis failed. Proceed to self-review.");
+          }
+          setReviewing(false);
+          setProtocol({ ...protocol, step: 'REVIEW' });
+      }
       else if (protocol.step === 'REVIEW') {
           // Done with this section
           onNext();
@@ -171,7 +188,16 @@ export const StudyRoom: React.FC<StudyRoomProps> = ({ section, config, onExit, o
 
                {protocol.step === 'REVIEW' && (
                    <div className="text-center py-10">
-                        <h3 className="text-3xl font-serif font-bold text-white mb-6">Review</h3>
+                        <h3 className="text-3xl font-serif font-bold text-white mb-6">Review & Verify</h3>
+                        
+                        {/* AI Feedback */}
+                        {aiFeedback && (
+                            <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl mb-8 animate-slide-up-fade">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 block mb-1">Prof. AI Feedback</span>
+                                <p className="text-white italic">"{aiFeedback}"</p>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                             <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
                                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Key Takeaway</h4>
@@ -191,9 +217,10 @@ export const StudyRoom: React.FC<StudyRoomProps> = ({ section, config, onExit, o
        <div className="mt-6 flex justify-end">
            <button 
              onClick={advanceStep} 
-             className="px-10 py-4 bg-amber-500 text-black font-bold uppercase text-xs tracking-widest rounded-xl hover:bg-amber-400 shadow-lg shadow-amber-500/20 transition-all"
+             disabled={reviewing}
+             className="px-10 py-4 bg-amber-500 text-black font-bold uppercase text-xs tracking-widest rounded-xl hover:bg-amber-400 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
            >
-               {protocol.step === 'REVIEW' ? (isLast ? 'Complete Session' : 'Next Concept →') : 'Continue →'}
+               {reviewing ? 'Grading...' : protocol.step === 'REVIEW' ? (isLast ? 'Complete Session' : 'Next Concept →') : 'Continue →'}
            </button>
        </div>
     </div>

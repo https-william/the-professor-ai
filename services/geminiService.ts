@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile, ChatMessage, LockInTechnique, StudyProtocol } from "../types";
 
@@ -107,7 +106,7 @@ const withFallback = async <T>(
     }
 };
 
-const callGroq = async (systemPrompt: string, userPrompt: string, jsonMode: boolean = false): Promise<string> => {
+export const callGroq = async (systemPrompt: string, userPrompt: string, jsonMode: boolean = false): Promise<string> => {
     if (!GROQ_API_KEY) throw new Error("Backup system offline.");
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",

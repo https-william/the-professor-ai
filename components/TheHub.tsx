@@ -33,6 +33,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
     const [roomData, setRoomData] = useState<any>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [memberListOpen, setMemberListOpen] = useState(false);
     
     // Connection Status
     const [isConnected, setIsConnected] = useState(false);
@@ -51,6 +52,10 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [showExitModal, setShowExitModal] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Simulated Streaming State
+    const [visibleModules, setVisibleModules] = useState<any[]>([]);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
         if (!activeRoomId) return;
@@ -95,7 +100,10 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                 setParticipants(users);
             })
             .on('broadcast', { event: 'message' }, ({ payload }) => {
-                setMessages((prev) => [...prev, payload]);
+                setMessages((prev) => {
+                    if (prev.find(m => m.id === payload.id)) return prev;
+                    return [...prev, payload];
+                });
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${activeRoomId}` }, (payload) => {
                 const newMsg = payload.new;
@@ -149,31 +157,53 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
             const processed = await processFile(file);
             
             setStatusText("Generating Course Modules...");
-            const sections = await generateProfessorContent(processed.content, { 
+            
+            // Initial room setup
+            const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            setActiveRoomId(roomId);
+            setMode('ROOM');
+            setIsGenerating(true);
+            setVisibleModules([]);
+
+            // Generate content in background
+            generateProfessorContent(processed.content, { 
                 personality: 'Academic', 
                 analogyDomain: 'General', 
                 difficulty: 'Medium', 
                 questionType: 'Mixed', 
                 questionCount: 5, 
                 timerDuration: 'Limitless' 
+            }).then(async (sections) => {
+                // "Stream" the results
+                const enhancedSections = [];
+                for (let i = 0; i < sections.length; i++) {
+                    const s = sections[i];
+                    // Enhance one by one
+                    const prompt = await simplifyExplanation(s.content, 'ELA', "Generate a provocative 1-sentence discussion question about this topic.");
+                    const enhanced = { ...s, discussionQuestion: prompt.replace(/"/g, '') };
+                    enhancedSections.push(enhanced);
+                    
+                    // Update UI incrementally
+                    setRoomData(prev => ({ 
+                        code: roomId, 
+                        modules: enhancedSections 
+                    }));
+                    setVisibleModules(prev => [...prev, enhanced]);
+                    
+                    // Small delay to simulate streaming feel
+                    await new Promise(r => setTimeout(r, 800));
+                }
+                setIsGenerating(false);
+            }).catch(e => {
+                console.error(e);
+                setIsGenerating(false);
+                alert("Generation failed.");
             });
-
-            setStatusText("Synthesizing Discussion Prompts...");
-            const enhancedSections = await Promise.all(sections.map(async (s) => {
-                const prompt = await simplifyExplanation(s.content, 'ELA', "Generate a provocative 1-sentence discussion question about this topic.");
-                return { ...s, discussionQuestion: prompt.replace(/"/g, '') };
-            }));
-            
-            setStatusText("Establishing Uplink...");
-            const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            setRoomData({ code: roomId, modules: enhancedSections });
-            setActiveRoomId(roomId);
-            setMode('ROOM');
             
         } catch (err) {
             console.error(err);
             alert("Failed to create room.");
+            setUploading(false);
         } finally {
             setUploading(false);
             setStatusText("");
@@ -188,8 +218,8 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     };
 
     const handleCopyCode = () => {
-        if (roomData?.code) {
-            navigator.clipboard.writeText(roomData.code);
+        if (roomData?.code || activeRoomId) {
+            navigator.clipboard.writeText(roomData?.code || activeRoomId);
             setCopySuccess(true);
             setTimeout(() => setCopySuccess(false), 2000);
         }
@@ -207,7 +237,11 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
             timestamp: new Date().toISOString()
         };
 
-        // 1. Send via Broadcast for Immediate UI (optional but fast)
+        // Optimistic Update immediately
+        setMessages(prev => [...prev, payload]);
+        setChatInput('');
+
+        // 1. Send via Broadcast for Immediate UI (others)
         const channel = supabase.channel(`room:${activeRoomId}`);
         await channel.send({
             type: 'broadcast',
@@ -216,19 +250,14 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
         });
 
         // 2. Persist to Supabase
-        // Note: 'messages' table must exist in Supabase with columns: room_id, sender, content, type
         supabase.from('messages').insert({
             room_id: activeRoomId,
             sender: user.alias || 'You',
-            content: chatInput,
+            content: payload.content,
             type: 'text'
         }).then(({ error }) => {
             if (error) console.error("Message Persistence Error:", error);
         });
-
-        // Optimistic Update
-        setMessages(prev => [...prev, payload]);
-        setChatInput('');
     };
 
     const updateSlide = async (newIndex: number) => {
@@ -242,7 +271,8 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
         });
     };
 
-    const modules = roomData?.modules || [];
+    // Use simulated visible modules or fallback to room data
+    const modules = visibleModules.length > 0 ? visibleModules : (roomData?.modules || []);
     const currentSlide = modules[currentSlideIndex];
 
     if (mode === 'LOBBY') {
@@ -322,43 +352,67 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
             />
 
             {/* Header */}
-            <div className="h-16 border-b border-white/5 bg-[#0c0c0c] flex justify-between items-center px-6 shrink-0">
+            <div className="h-16 border-b border-white/5 bg-[#0c0c0c] flex justify-between items-center px-4 shrink-0">
                 <div className="flex items-center gap-4">
-                    <button onClick={handleCopyCode} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 transition-all group">
-                        <span className="text-lg font-mono font-bold text-green-400 tracking-widest">{roomData?.code || joinCode}</span>
-                        <span className="text-[10px] text-gray-500 uppercase font-bold group-hover:text-white">{copySuccess ? 'COPIED' : 'COPY CODE'}</span>
+                    {/* Room Code Button */}
+                    <button onClick={handleCopyCode} className="flex flex-col items-start bg-white/5 hover:bg-white/10 px-3 py-1 rounded-lg border border-white/5 transition-all group">
+                        <span className="text-[10px] text-gray-500 uppercase font-bold group-hover:text-white tracking-widest">{copySuccess ? 'COPIED!' : 'ROOM CODE'}</span>
+                        <span className="text-sm font-mono font-bold text-green-400 tracking-wider">{activeRoomId || 'LOADING'}</span>
                     </button>
                     
                     {/* LIVE STATUS INDICATOR */}
-                    <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full border border-white/5">
+                    <div className="hidden sm:flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full border border-white/5">
                         <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_lime] animate-pulse' : 'bg-red-500'}`}></div>
                         <span className={`text-[10px] font-bold uppercase tracking-wider ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
-                            {isConnected ? 'LIVE UPLINK' : 'OFFLINE'}
+                            {isConnected ? 'LIVE' : 'OFFLINE'}
                         </span>
                     </div>
+                </div>
 
-                    <div className="h-4 w-px bg-white/10"></div>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                    {/* Members Toggle */}
+                    <button onClick={() => setMemberListOpen(!memberListOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5">
                         <div className="flex -space-x-2">
-                            {participants.map((p: string, i: number) => (
-                                <div key={i} className="w-6 h-6 rounded-full bg-gray-800 border border-black flex items-center justify-center text-[8px] font-bold text-gray-300" title={p}>
+                            {participants.slice(0,3).map((p: string, i: number) => (
+                                <div key={i} className="w-5 h-5 rounded-full bg-gray-800 border border-black flex items-center justify-center text-[8px] font-bold text-gray-300 uppercase">
                                     {p.charAt(0)}
                                 </div>
                             ))}
                         </div>
-                    </div>
+                        <span className="text-xs font-bold text-gray-400">{participants.length}</span>
+                    </button>
+
+                    <button onClick={() => setShowExitModal(true)} className="px-3 py-1.5 bg-red-900/20 text-red-500 hover:bg-red-900/40 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-900/30">
+                        Leave
+                    </button>
                 </div>
-                <button onClick={() => setShowExitModal(true)} className="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest">Leave</button>
             </div>
 
-            <div className="flex-1 flex overflow-hidden">
+            {/* Main Content Area */}
+            <div className="flex-1 flex overflow-hidden relative">
+                
+                {/* Members List Popover (Mobile/Desktop) */}
+                {memberListOpen && (
+                    <div className="absolute top-0 right-0 z-30 m-4 w-48 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl animate-fade-in p-4">
+                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Active Agents</h4>
+                        <div className="space-y-2">
+                            {participants.map((p, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="text-sm text-gray-300 truncate">{p}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex-1 flex flex-col bg-[#080808] relative overflow-hidden">
                     {modules.length > 0 ? (
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12 flex flex-col">
-                            {currentSlide && (
-                                <div className="max-w-3xl mx-auto w-full">
+                            {currentSlide ? (
+                                <div className="max-w-3xl mx-auto w-full animate-slide-in">
                                     <div className="flex justify-between items-center mb-8">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Module {currentSlideIndex + 1} / {modules.length}</span>
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Module {currentSlideIndex + 1} / {modules.length} {isGenerating && '(Generating...)'}</span>
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={() => updateSlide(Math.max(0, currentSlideIndex - 1))}
@@ -377,8 +431,8 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                                         </div>
                                     </div>
 
-                                    <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-6 leading-tight animate-slide-in">{currentSlide.title}</h2>
-                                    <div className="prose prose-invert prose-lg text-gray-300 leading-relaxed mb-8 animate-fade-in">
+                                    <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-6 leading-tight">{currentSlide.title}</h2>
+                                    <div className="prose prose-invert prose-lg text-gray-300 leading-relaxed mb-8">
                                         {currentSlide.content}
                                     </div>
 
@@ -397,19 +451,34 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                                         </div>
                                     )}
                                 </div>
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-gray-500">
+                                    <p className="animate-pulse">Waiting for host stream...</p>
+                                </div>
                             )}
                         </div>
                     ) : (
                         <div className="flex items-center justify-center h-full text-gray-500 text-sm flex-col gap-4">
-                            <p>Waiting for host data sync...</p>
-                            <p className="text-xs opacity-50">Join via code to chat.</p>
+                            {isGenerating ? (
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <p className="text-green-500 uppercase text-xs tracking-widest">Initializing Neural Stream...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <p>Waiting for host data sync...</p>
+                                    <p className="text-xs opacity-50">Join via code to chat.</p>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
 
+                {/* Sidebar */}
                 <div className={`w-80 md:w-96 bg-[#0f0f10] border-l border-white/5 flex flex-col z-20 absolute md:static right-0 h-full transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
-                    <div className="p-4 border-b border-white/5 bg-[#121212]">
+                    <div className="p-4 border-b border-white/5 bg-[#121212] flex justify-between items-center">
                         <h3 className="text-xs font-bold text-white uppercase tracking-widest">Live Comm-Link</h3>
+                        <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-500">✕</button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
@@ -441,10 +510,19 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                                 type="text" 
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && sendTextMessage()}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        sendTextMessage();
+                                    }
+                                }}
                                 placeholder="Type a message..."
                                 className="flex-1 bg-black/40 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition-colors"
                             />
+                            {/* Voice Note Button */}
+                            <button className="p-2 text-gray-400 hover:text-white bg-white/5 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" /></svg>
+                            </button>
                             <button 
                                 onClick={sendTextMessage} 
                                 disabled={!chatInput.trim()}

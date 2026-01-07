@@ -91,6 +91,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       onUpdate({ ...chatState, messages: newMessages });
   };
 
+  const handleCopy = (text: string) => {
+      navigator.clipboard.writeText(text);
+      // Optional: Toast notification here
+  };
+
   const handleVoiceInput = () => {
       if (!('webkitSpeechRecognition' in window)) {
           alert("Voice input is not supported in this browser.");
@@ -164,13 +169,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                   <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 relative group ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-[#1a1a1a] border border-white/10 text-gray-200 rounded-tl-sm'}`}>
                       <div className="prose prose-invert prose-sm max-w-none leading-relaxed" dangerouslySetInnerHTML={renderMarkdown(msg.content)} />
                       
-                      {/* Timestamp Footer */}
-                      <div className="mt-2 flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                          <span className="text-[9px] text-gray-400 font-mono uppercase tracking-widest">
-                              {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </span>
+                      {/* Message Tools */}
+                      <div className="mt-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity pt-2 border-t border-white/5">
+                          <button onClick={() => handleCopy(msg.content)} className="text-gray-400 hover:text-white transition-colors" title="Copy">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                          </button>
                           {msg.role === 'model' && (
-                              <button onClick={() => handleToggleSave(msg.id)} className={`ml-2 ${msg.isSaved ? 'text-amber-500' : 'text-gray-500 hover:text-white'}`}>
+                              <button onClick={() => handleToggleSave(msg.id)} className={`${msg.isSaved ? 'text-amber-500' : 'text-gray-400 hover:text-white'}`} title="Save">
                                   {msg.isSaved ? (
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
                                   ) : (
@@ -178,6 +183,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                                   )}
                               </button>
                           )}
+                          <span className="text-[9px] text-gray-500 font-mono uppercase">
+                              {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
                       </div>
                   </div>
               </div>
