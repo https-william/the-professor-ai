@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, AppMode, AIPersonality, AnalogyDomain, UserProfile } from '../types';
 import { processFile } from '../services/fileService';
-import { CameraScanner } from './CameraScanner';
 import { DuelCreateModal } from './DuelCreateModal';
 import { DuelJoinModal } from './DuelJoinModal';
 import { queueAction } from '../services/syncService';
@@ -42,7 +41,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [ingestionStatus, setIngestionStatus] = useState('');
   
-  const [showCamera, setShowCamera] = useState(false);
   const [showDuelCreate, setShowDuelCreate] = useState(false);
   const [showDuelJoin, setShowDuelJoin] = useState(false);
   const [showDuelSelector, setShowDuelSelector] = useState(false); 
@@ -145,7 +143,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   const initiateGeneration = (targetMode?: AppMode) => {
       const finalMode = targetMode || appMode;
-      // Intercept EXAM mode for Wagering
       if (finalMode === 'EXAM' && !isFresher) {
           setShowWagerModal(true);
       } else {
@@ -155,17 +152,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   const handleWagerConfirm = () => {
       setShowWagerModal(false);
-      // Deduct XP immediately (Stock Market Logic)
       if (wagerAmount > 0) {
           queueAction('UPDATE_PROFILE', { 
-              uid: 'self', // Handled by context
+              uid: 'self',
               data: { xp: (userProfile.xp || 0) - wagerAmount } 
           });
       }
       executeGeneration('EXAM');
   };
 
-  const executeGeneration = async (finalMode: AppMode) => {
+  const executeGeneration = async (finalMode: AppMode, overrideContent?: string, overrideName?: string) => {
     if (isLoading) return;
     
     if (isLimitReached) {
@@ -183,9 +179,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
     setUploadProgress(0);
 
     try {
-      let fullContent = "";
+      let fullContent = overrideContent || "";
       
-      if (selectedFiles.length > 0) {
+      if (!overrideContent && selectedFiles.length > 0) {
          setUploadProgress(15);
          for (let i = 0; i < selectedFiles.length; i++) {
             const processed = await processFile(selectedFiles[i], (p) => setUploadProgress(15 + (p * 0.85))); 
@@ -197,18 +193,20 @@ export const InputSection: React.FC<InputSectionProps> = ({
          }
       }
 
-      if (finalMode === 'PROFESSOR') {
+      if (finalMode === 'PROFESSOR' && !overrideContent) {
          if (chatInput.trim()) fullContent += `\n\nUser Context/Question: ${chatInput}`;
          if (!fullContent.trim()) { setFileError("Please ask a question or upload a file."); return; }
-      } else {
+      } else if (!overrideContent) {
          if (textInput.trim()) fullContent += `\n\n${textInput}`;
          if (!fullContent.trim()) { setFileError("Please upload a file or paste text content."); return; }
       }
 
+      const name = overrideName || (selectedFiles.length > 0 ? (selectedFiles.length === 1 ? selectedFiles[0].name : 'Multi-File Session') : 'Text Input');
+
       onProcess({ 
           type: 'TEXT', 
           content: fullContent, 
-          name: selectedFiles.length > 0 ? (selectedFiles.length === 1 ? selectedFiles[0].name : 'Multi-File Session') : 'Text Input' 
+          name: name
       }, getFullConfig(), finalMode);
       
       setChatInput('');
@@ -218,19 +216,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
       setFileError(err.message);
       setUploadProgress(0);
     }
-  };
-
-  const handleCameraCapture = (base64: string) => {
-      setShowCamera(false);
-      const byteCharacters = atob(base64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], {type: 'image/jpeg'});
-      const file = new File([blob], `scan_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      addFiles([file]);
   };
 
   const handleDuelSubmit = (wager: number, file: File) => {
@@ -286,9 +271,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
-      {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
       
-      {/* Wager Modal */}
       {showWagerModal && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowWagerModal(false)}>
               <div className="bg-[#18181b] border border-amber-500/30 rounded-2xl p-8 w-full max-w-sm relative overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -399,7 +382,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             <div id="upload-zone-target" className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-gradient-to-b from-black/0 to-black/20 custom-scrollbar min-h-[300px]">
                
                <div className="flex-1 flex flex-col gap-6">
-                  {/* TEXT AREA - PROMINENT */}
+                  {/* TEXT AREA */}
                   <div className="relative group">
                       <div className="absolute top-3 left-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-[#151515] px-2 rounded border border-white/5">
                           Input Source Text
@@ -458,15 +441,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         </div>
                       )}
                   </div>
-                  
-                  {/* Camera Button - Mobile Friendly */}
-                  <button 
-                    onClick={() => setShowCamera(true)}
-                    className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs font-bold uppercase tracking-widest"
-                  >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      OCR Sniper (Scan)
-                  </button>
               </div>
             </div>
 
@@ -521,12 +495,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
         </div>
 
-        {/* STUDY ROOM / HUB INPUT - FIXED WIDTH */}
+        {/* STUDY ROOM / HUB INPUT */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0a0a0a] ${appMode === 'PROFESSOR' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-display font-normal text-amber-100 mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
                   
-                  {/* Selected Files Display */}
                   {selectedFiles.length > 0 && (
                     <div className="flex gap-2 flex-wrap w-full mb-3 justify-center">
                         {selectedFiles.map((f, i) => (
@@ -540,7 +513,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   )}
 
                   <div className="relative">
-                      {/* Responsive Padding: Smaller PR on mobile (12), Larger on Desktop (48) */}
                       <input 
                         type="text" 
                         value={chatInput} 
@@ -550,22 +522,15 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         placeholder="Ask a question..." 
                       />
                       
-                      {/* Button Group Container */}
                       <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1 z-30">
-                        {/* Desktop Icons */}
-                        <button onClick={() => setShowCamera(true)} className="h-full px-2 text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10 hidden md:block" title="Snap & Solve">
-                            <span className="text-xl">📸</span>
-                        </button>
                         <button onClick={() => fileInputRef.current?.click()} className="h-full px-2 text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10 hidden md:block">
                             <span className="text-xl">📎</span>
                         </button>
                         
-                        {/* Mobile Attachment - Only shows on small screens */}
                         <button onClick={() => fileInputRef.current?.click()} className="md:hidden h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors hover:bg-white/5 rounded-xl">
                             <span className="text-xl">+</span>
                         </button>
 
-                        {/* Send Button - Compact on mobile */}
                         <button onClick={() => initiateGeneration()} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -577,7 +542,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
              </div>
              
-             {/* THE HUB BUTTON - ENHANCED & GREEN */}
              <div className="mt-8 flex justify-center w-full max-w-md">
                  <button 
                     onClick={onHubEnter}

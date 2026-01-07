@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { queueAction } from '../services/syncService';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,11 @@ interface UserProfileModalProps {
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess }) => {
   const { user } = useAuth();
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+
+  // CRITICAL FIX: Sync local state when the prop changes or modal opens
+  useEffect(() => {
+      setEditedProfile(profile);
+  }, [profile, isOpen]);
 
   if (!isOpen) return null;
 

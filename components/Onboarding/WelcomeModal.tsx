@@ -47,19 +47,19 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
 
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-3xl">
-                {step === 1 && '🎓'}
-                {step === 2 && '🪪'}
-                {step === 3 && '🌐'}
+            <span className="text-3xl animate-bounce-subtle">
+                {step === 1 && '🤖'}
+                {step === 2 && '🧬'}
+                {step === 3 && '🤝'}
             </span>
           </div>
           <h2 className="text-3xl font-serif font-bold text-white tracking-tight">
-            {step === 1 && "Identification"}
-            {step === 2 && "Academic Profile"}
-            {step === 3 && "Network Protocols"}
+            {step === 1 && "Identity Verification"}
+            {step === 2 && "Neural Calibration"}
+            {step === 3 && "Final Protocols"}
           </h2>
           <p className="text-gray-500 text-xs mt-2 font-mono uppercase tracking-widest">
-             Step {step} of 3
+             Phase {step} of 3
           </p>
         </div>
 
@@ -68,11 +68,12 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
             {step === 1 && (
                 <div className="space-y-6 animate-slide-in">
                     <p className="text-sm text-gray-400 text-center leading-relaxed">
-                        I am The Professor. To enroll in my class, I must know who you are.
-                        Choose an alias for the leaderboards.
+                        I am <span className="text-amber-500 font-bold">The Professor</span>. I do not care about your grades, I care about your <span className="italic">results</span>.
+                        <br/><br/>
+                        First, tell me who I am addressing. Pick a codename. Real names are boring.
                     </p>
                     <div>
-                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Codename (Alias)</label>
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Operator Alias (Required)</label>
                         <input
                             type="text"
                             value={formData.alias}
@@ -83,14 +84,15 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Full Name (Private)</label>
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Full Name (Confidential)</label>
                         <input
                             type="text"
                             value={formData.fullName}
                             onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                            placeholder="Student Name"
+                            placeholder="Your legal name"
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none placeholder-gray-700"
                         />
+                        <p className="text-[9px] text-gray-600 mt-1 text-right">I won't tell the Dean.</p>
                     </div>
                 </div>
             )}
@@ -99,7 +101,8 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
             {step === 2 && (
                 <div className="space-y-5 animate-slide-in">
                     <p className="text-sm text-gray-400 text-center leading-relaxed">
-                        Help me tailor your curriculum. This data helps me understand your context.
+                        I need to know how much you <i>don't</i> know. Help me calibrate the difficulty.
+                        If you lie, you only cheat yourself.
                     </p>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -108,12 +111,12 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                                 type="text"
                                 value={formData.age}
                                 onChange={(e) => setFormData({...formData, age: e.target.value})}
-                                placeholder="Age"
+                                placeholder="Level"
                                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none placeholder-gray-700"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Country</label>
+                            <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Region</label>
                             <input
                                 type="text"
                                 value={formData.country}
@@ -124,7 +127,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">School / Institution</label>
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Base of Operations (School)</label>
                         <input
                             type="text"
                             value={formData.school}
@@ -134,12 +137,12 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Level / Class</label>
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-2 block tracking-wider">Current Rank (Level)</label>
                         <input
                             type="text"
                             value={formData.academicLevel}
                             onChange={(e) => setFormData({...formData, academicLevel: e.target.value})}
-                            placeholder="Undergraduate / High School"
+                            placeholder="e.g. Year 2, PhD, High School"
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none placeholder-gray-700"
                         />
                     </div>
@@ -152,7 +155,10 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                                 onChange={(e) => setFormData({...formData, studyReminders: e.target.checked})}
                                 className="w-5 h-5 rounded accent-blue-500"
                             />
-                            <span className="text-sm text-white font-medium">Enable Study Reminders?</span>
+                            <div>
+                                <span className="text-sm text-white font-medium block">Harass me to study?</span>
+                                <span className="text-[10px] text-gray-500">I will send notifications if you slack off.</span>
+                            </div>
                         </label>
                         {formData.studyReminders && (
                             <div className="mt-3 animate-slide-up-fade">
@@ -173,7 +179,8 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
             {step === 3 && (
                 <div className="space-y-5 animate-slide-in">
                     <p className="text-sm text-gray-400 text-center leading-relaxed">
-                        Connect your networks. (Optional)
+                        Where can I find you when you're procrastinating? 
+                        This is optional, but it helps when you want to show off your scores.
                     </p>
                     <div className="space-y-4">
                         {[
@@ -217,7 +224,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                     : 'bg-white/5 text-gray-600 cursor-not-allowed'
                 }`}
             >
-                {step === 3 ? 'Initialize Student' : 'Next Step →'}
+                {step === 3 ? 'Initiate Link' : 'Next Step →'}
             </button>
         </div>
 

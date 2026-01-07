@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 
 interface CameraScannerProps {
-  onCapture: (base64Image: string) => void;
+  onCapture: (base64Image: string, isInstantSolve: boolean) => void;
   onClose: () => void;
   mode: 'QUIZ' | 'SOLVE';
 }
@@ -13,6 +13,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onClose
   const streamRef = useRef<MediaStream | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [targets, setTargets] = useState<{x: number, y: number, id: number}[]>([]);
 
   useEffect(() => {
     const startCamera = async () => {
@@ -44,6 +45,24 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onClose
     };
   }, []);
 
+  // Simulate AR Targets
+  useEffect(() => {
+      if (!hasPermission) return;
+      
+      const interval = setInterval(() => {
+          if (Math.random() > 0.7) {
+              // Add random target
+              const newTarget = {
+                  x: Math.random() * 80 + 10, // 10-90%
+                  y: Math.random() * 60 + 20, // 20-80%
+                  id: Date.now()
+              };
+              setTargets(prev => [...prev.slice(-2), newTarget]);
+          }
+      }, 800);
+      return () => clearInterval(interval);
+  }, [hasPermission]);
+
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
       setIsScanning(true);
@@ -60,8 +79,9 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onClose
         
         // Simulate Scan Delay for Effect
         setTimeout(() => {
-            onCapture(base64);
-        }, 800);
+            // If in SOLVE mode (Study Room), trigger instant solve
+            onCapture(base64, mode === 'SOLVE');
+        }, 600);
       }
     }
   };
@@ -86,13 +106,24 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ onCapture, onClose
         
         {/* OCR SNIPER HUD */}
         <div className="absolute inset-0 pointer-events-none">
+            {/* Dynamic Target Boxes */}
+            {targets.map(t => (
+                <div 
+                    key={t.id}
+                    className="absolute border border-green-500/50 w-16 h-8 flex items-center justify-center animate-ping"
+                    style={{ left: `${t.x}%`, top: `${t.y}%` }}
+                >
+                    <span className="text-[6px] text-green-500 bg-black/50 px-1">TXT DETECTED</span>
+                </div>
+            ))}
+
             {/* Grid Overlay */}
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grid-me.png')] opacity-10"></div>
             
             {/* Top Bar */}
             <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black/90 to-transparent flex flex-col items-center pt-8">
                 <span className="bg-green-900/30 text-green-400 px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-[0.2em] border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                    {mode === 'QUIZ' ? 'INPUT MODE: TEXT RECOGNITION' : 'INPUT MODE: PROBLEM SOLVER'}
+                    {mode === 'QUIZ' ? 'MODE: TEXT EXTRACTION' : 'MODE: INSTANT SOLVER'}
                 </span>
                 <div className="flex gap-1 mt-2">
                     <span className="w-16 h-0.5 bg-green-500/50"></span>

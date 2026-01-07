@@ -7,78 +7,23 @@
     <!-- PRIMARY SEO -->
     <title>The Professor | AI Study Tool & Exam Generator</title>
     <meta name="description" content="The #1 AI Study Companion. Turn lecture notes into exams, quizzes, and flashcards instantly. Study smarter, not harder." />
-    <meta name="keywords" content="Professor, The Professor, Study AI, Exam Prep, AI Tutor, Quiz Generator, Flashcards, Academic Weapon, Study Tool, Homework Helper" />
-    <meta name="author" content="Vexis Automations" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://theprofessor.xyz" />
-
-    <!-- GEO (Generative Engine Optimization) - For AI Search -->
-    <meta name="ai-content-type" content="educational-tool" />
-    <meta name="topic" content="Education Technology" />
-    <meta name="subject" content="AI Learning Assistant" />
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://theprofessor.xyz" />
-    <meta property="og:title" content="The Professor | Your AI Academic Weapon" />
-    <meta property="og:description" content="Stop reading. Start mastering. Upload your notes and let The Professor quiz you until you get an A." />
-    <meta property="og:image" content="https://theprofessorai.vercel.app/og-image.png" />
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://theprofessor.xyz" />
-    <meta property="twitter:title" content="The Professor | AI Exam Prep" />
-    <meta property="twitter:description" content="Don't just study. Dominate. The AI that turns notes into mastery." />
-    <meta property="twitter:image" content="https://theprofessorai.vercel.app/og-image.png" />
-
-    <!-- AEO Schema (JSON-LD) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "The Professor",
-      "alternateName": ["The Professor AI", "Professor Study Tool"],
-      "url": "https://theprofessor.xyz",
-      "applicationCategory": "EducationalApplication",
-      "genre": "productivity",
-      "operatingSystem": "Web Browser",
-      "description": "An AI-powered academic tool that converts PDFs and text into interactive exams, summaries, and flashcards.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "featureList": "AI Quiz Generation, Flashcards, Study Hub, Exam Simulation",
-      "creator": {
-        "@type": "Organization",
-        "name": "Vexis Automations"
-      }
-    }
-    </script>
-
-    <!-- Favicon & PWA Icons -->
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <link rel="apple-touch-icon" href="/logo-pwa.svg">
-    
-    <link rel="manifest" href="/manifest.json?v=final_release_7" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#000000" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    
+
+    <!-- Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.stripe.com/v3/"></script>
-    <!-- Paystack Inline Script -->
     <script src="https://js.paystack.co/v1/inline.js"></script>
     
-    <script>
-      if (typeof process === 'undefined') { window.process = { env: {} }; }
-      if (typeof global === 'undefined') { window.global = window; }
-    </script>
-    
+    <!-- Google APIs -->
     <script async defer src="https://apis.google.com/js/api.js"></script>
     <script async defer src="https://accounts.google.com/gsi/client.js"></script>
 
-    <!-- Libs -->
+    <!-- PDF & Math Libs -->
     <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -89,63 +34,56 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
     <script>
-      // Force Worker Source
+      // Global Polyfills
+      if (typeof process === 'undefined') { window.process = { env: {} }; }
+      if (typeof global === 'undefined') { window.global = window; }
+      
+      // PDF Worker
       const PDF_WORKER_SRC = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-
+      
       window.addEventListener('load', function() {
          const preloader = document.getElementById('preloader-core');
          if(preloader) {
-            const root = document.getElementById('root');
-            if (root && root.childElementCount > 0) {
+            setTimeout(() => {
                preloader.style.opacity = '0';
                preloader.style.pointerEvents = 'none';
                setTimeout(() => preloader.remove(), 500);
-            } else {
-               setTimeout(() => {
-                   preloader.style.opacity = '0';
-                   preloader.style.pointerEvents = 'none';
-                   setTimeout(() => preloader.remove(), 500);
-               }, 2000);
-            }
+            }, 1000); 
          }
          
          if (typeof pdfjsLib !== 'undefined') {
              pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
          }
-         
          if (typeof mermaid !== 'undefined') {
              mermaid.initialize({ startOnLoad: false, theme: 'dark' });
          }
       });
 
-      // --- THEME ENGINE ---
+      // Tailwind Config
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              'core': 'var(--bg-core)',
-              'panel': 'var(--bg-panel)',
-              'border-main': 'var(--border-main)',
-              'text-pri': 'var(--text-primary)',
-              'text-sec': 'var(--text-secondary)',
-              'accent': 'var(--accent-main)',
-              'accent-dim': 'var(--accent-dim)',
+              'core': '#050505',
+              'panel': 'rgba(20, 20, 20, 0.4)',
+              'border-main': 'rgba(255, 255, 255, 0.08)',
+              'text-pri': '#e8eaed',
+              'text-sec': '#9ca3af',
+              'accent': '#f59e0b',
             },
             fontFamily: {
               sans: ['Inter', 'system-ui', 'sans-serif'],
-              serif: ['Cinzel', 'Merriweather', 'serif'], // Switched to Cinzel to avoid 404
+              serif: ['Cinzel', 'Merriweather', 'serif'],
               mono: ['JetBrains Mono', 'monospace'],
-              display: ['Cinzel', 'serif'], // Switched to Cinzel
+              display: ['Cinzel', 'serif'],
             },
             animation: {
               'fade-in': 'fadeIn 0.6s ease-out',
               'slide-in': 'slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
               'slide-up-fade': 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-              'bounce-subtle': 'bounceSubtle 3s infinite ease-in-out',
               'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'shimmer': 'shimmer 2.5s linear infinite',
-              'progress': 'progress 1s ease-in-out infinite',
               'orbit': 'orbit 3s linear infinite',
               'orbit-reverse': 'orbit-reverse 4s linear infinite',
               'breathe': 'breathe 3s ease-in-out infinite',
@@ -154,96 +92,49 @@
               fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
               slideIn: { '0%': { transform: 'translateX(30px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
               slideUpFade: { '0%': { opacity: '0', transform: 'translateY(30px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
-              bounceSubtle: { '0%, 100%': { transform: 'translateY(-5%)' }, '50%': { transform: 'translateY(0)' } },
               shimmer: { '0%': { backgroundPosition: '-200% center' }, '100%': { backgroundPosition: '200% center' } },
-              progress: { '0%': { backgroundPosition: '0% 0%' }, '100%': { backgroundPosition: '100% 100%' } },
               orbit: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
               'orbit-reverse': { '0%': { transform: 'rotate(360deg)' }, '100%': { transform: 'rotate(0deg)' } },
               breathe: { '0%, 100%': { transform: 'scale(1)', opacity: '0.8' }, '50%': { transform: 'scale(1.1)', opacity: '0.4' } },
             },
-            padding: {
-              'safe': 'env(safe-area-inset-bottom)',
-            }
           },
         }
       }
     </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
     <style>
-      /* --- SEMANTIC THEME VARIABLES --- */
-      :root {
-        /* Default: Deep Space (OLED) */
-        --bg-core: #050505;
-        --bg-panel: rgba(20, 20, 20, 0.4);
-        --border-main: rgba(255, 255, 255, 0.08);
-        --text-primary: #e8eaed;
-        --text-secondary: #9ca3af;
-        --accent-main: #f59e0b; /* Amber */
-        --accent-dim: rgba(245, 158, 11, 0.2);
-        --noise-opacity: 0.04;
-      }
-
-      body { background-color: var(--bg-core); color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; transition: background-color 0.5s ease, color 0.5s ease; }
-      
-      .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: var(--noise-opacity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
-      
-      .glass-panel { background: var(--bg-panel); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border-main); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); will-change: backdrop-filter; transition: background 0.5s ease, border 0.5s ease; }
-      
-      .text-shimmer { background: linear-gradient(to right, var(--text-secondary) 20%, var(--text-primary) 50%, var(--text-secondary) 80%); background-size: 200% auto; color: transparent; background-clip: text; -webkit-background-clip: text; animation: shimmer 4s linear infinite; }
-      
-      ::-webkit-scrollbar { width: 4px; height: 4px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: var(--accent-main); }
-      
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      
+      body { background-color: #050505; color: #e8eaed; font-family: 'Inter', sans-serif; margin: 0; }
+      .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+      .glass-panel { background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
       #preloader-core { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
       .loader-spinner { width: 50px; height: 50px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      
-      .prose p { margin-bottom: 0.75em; color: var(--text-primary); }
-      .prose strong { font-weight: 700; color: var(--accent-main); }
-      .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; color: var(--text-secondary); }
-      
-      /* --- PRINT STYLES (PDF EXPORT FIX) --- */
-      @media print {
-        body { background-color: white !important; color: black !important; }
-        .bg-noise, nav, .glass-panel, .fixed, .no-print, button, .hidden-print { display: none !important; }
-        #root { display: none !important; } 
-        
-        #printable-content {
-           display: block !important;
-           position: absolute;
-           top: 0;
-           left: 0;
-           width: 100%;
-           height: auto;
-           background: white !important;
-           color: black !important;
-           z-index: 9999;
-           padding: 20px;
-           visibility: visible;
-        }
-        #printable-content * { visibility: visible; color: black !important; }
-        @page { size: auto; margin: 15mm; }
-      }
     </style>
-  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
-  <script type="importmap">
+
+    <!-- ES Module Shims -->
+    <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+    
+    <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
-    "dompurify": "https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.es.min.js"
+    "react": "https://esm.sh/react@18.2.0",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@0.12.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js",
+    "dompurify": "https://esm.sh/dompurify@3.0.9",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div class="bg-noise"></div>
@@ -253,6 +144,7 @@
       </div>
     </div>
     <div id="printable-content" style="display: none;"></div>
+    <script type="module" src="./index.tsx"></script>
   <script type="module" src="/index.tsx"></script>
 </body>
 </html>

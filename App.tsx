@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
@@ -9,18 +8,22 @@ import { AboutModal } from './components/AboutModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
 import { AuthPage } from './components/Auth/AuthPage';
+import { AdminLoginPage } from './components/Auth/AdminLoginPage';
 import { LandingPage } from './components/LandingPage';
 import { PricingPage } from './components/PricingPage';
+import { PlanCheckoutPage } from './components/PlanCheckoutPage';
 import { CountdownTimer } from './components/CountdownTimer';
 import { AmbientBackground } from './components/AmbientBackground';
 import { PWAPrompt } from './components/PWAPrompt';
 import { DuelReadyModal } from './components/DuelReadyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
+import { NotificationBell } from './components/NotificationBell';
+import { AdminVerifyModal } from './components/AdminVerifyModal';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, generateHistoryTitle, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, DuelState } from './types';
-import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from './services/firebase';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, HubState, SubscriptionTier } from './types';
+import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from './services/firebase';
 import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
@@ -31,75 +34,159 @@ const FlashcardView = React.lazy(() => import('./components/FlashcardView').then
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const TheHub = React.lazy(() => import('./components/TheHub').then(module => ({ default: module.TheHub })));
 
+// Routing State
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'APP' | 'CHECKOUT' | 'ADMIN_LOGIN';
+
+// Admin Whitelist - Lowercase
+const ADMIN_EMAILS = [
+    'vexis.automations@gmail.com'
+];
+
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
-  const [showAuth, setShowAuth] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
+  
+  // ROUTING: Initialize based on URL
+  const [currentView, setCurrentView] = useState<ViewState>(() => {
+      if (typeof window !== 'undefined') {
+          const path = window.location.pathname.toLowerCase();
+          if (path === '/pricing' || path === '/tuition') return 'PRICING';
+          if (path === '/login' || path === '/auth') return 'AUTH';
+          if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
+      }
+      return 'LANDING';
+  });
+
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
-  
-  // Ad-Blocker State
   const [isAdBlockActive, setIsAdBlockActive] = useState(false);
-  
   const [userProfile, setUserProfile] = useState<UserProfile>(getDefaultProfile());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
-  
   const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
-
   const [quizState, setQuizState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
   const [professorState, setProfessorState] = useState<ProfessorState>({ sections: [] });
   const [chatState, setChatState] = useState<ChatState>({ messages: [], fileContext: '', fileName: '' });
-  
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
-
-  // Duel State
   const [duelReadyData, setDuelReadyData] = useState<{ id: string, code: string, isHost: boolean } | null>(null);
   const [activeDuelId, setActiveDuelId] = useState<string | null>(null);
-  
-  // Confirmation Modal State
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  
+  // Admin & Security States
+  const [showAdminVerify, setShowAdminVerify] = useState(false);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
 
+  const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(() => {
+      if (typeof window !== 'undefined') {
+          const path = window.location.pathname.toLowerCase();
+          if (path === '/scholar') return 'Scholar';
+          if (path === '/excellentia') return 'Excellentia';
+      }
+      return null;
+  });
+
+  const [initialRouteHandled, setInitialRouteHandled] = useState(false);
   const saveTimeoutRef = useRef<any>(null);
 
-  useEffect(() => {
-    // Detect AdBlocker via Firebase failure
-    const originalConsoleError = console.error;
-    console.error = (...args) => {
-        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
-            setIsAdBlockActive(true);
-        }
-        originalConsoleError(...args);
-    };
-    
-    // Also check on window error events
-    window.addEventListener('error', (e) => {
-        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
-    }, true);
-  }, []);
+  // Constants for Limits
+  const isFresher = userProfile.subscriptionTier === 'Fresher';
+  const QUIZ_LIMIT = isFresher ? 1 : 100;
+  const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
+
+  // --- NAVIGATION ENGINE ---
+  const navigate = (view: ViewState, url: string) => {
+      window.history.pushState({}, '', url);
+      setCurrentView(view);
+  };
 
   useEffect(() => {
-    if (!user) return;
-    if (status === AppStatus.IDLE) window.history.pushState({ page: 'dashboard' }, '', window.location.href);
-    const handlePopState = () => { if (status === AppStatus.READY) setStatus(AppStatus.IDLE); else setShowAuth(false); };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [user, status]);
+      const handlePopState = () => {
+          const path = window.location.pathname.toLowerCase();
+          if (path === '/pricing') setCurrentView('PRICING');
+          else if (path === '/login') setCurrentView('AUTH');
+          else if (path === '/') setCurrentView(user ? 'APP' : 'LANDING');
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+  }, [user]);
+
+  // --- INITIAL ROUTING LOGIC ---
+  useEffect(() => {
+      if (loading || initialRouteHandled) return;
+
+      const path = window.location.pathname.toLowerCase();
+      
+      if (path === '/scholar' || path === '/excellentia') {
+          const tier = path === '/scholar' ? 'Scholar' : 'Excellentia';
+          if (user) {
+              setCheckoutTier(tier);
+              setCurrentView('CHECKOUT');
+          } else {
+              localStorage.setItem('pending_plan', tier);
+              setCurrentView('AUTH');
+          }
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      if (path === '/pricing' || path === '/tuition') {
+          if (!user) setCurrentView('PRICING');
+          else setCurrentView('APP');
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      if (path === '/login' || path === '/auth') {
+          if (!user) setCurrentView('AUTH');
+          else setCurrentView('APP');
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      if (user) {
+          setCurrentView('APP');
+      }
+
+      setInitialRouteHandled(true);
+  }, [loading, user, initialRouteHandled]);
+
+  const isPotentialAdmin = (email: string | null | undefined) => {
+      if (!email) return false;
+      const normalized = email.toLowerCase().trim();
+      return ADMIN_EMAILS.includes(normalized);
+  };
+
+  const isAdmin = isPotentialAdmin(user?.email);
+
+  useEffect(() => {
+    if (loading) return;
+    if (currentView === 'CHECKOUT' || currentView === 'PRICING') return;
+
+    if (user) {
+        const storedPendingPlan = localStorage.getItem('pending_plan');
+        if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
+            setCheckoutTier(storedPendingPlan as SubscriptionTier);
+            setCurrentView('CHECKOUT');
+            localStorage.removeItem('pending_plan');
+        } else if (currentView === 'LANDING' || currentView === 'AUTH') {
+            setCurrentView('APP');
+        }
+    } else {
+        if (currentView === 'APP') setCurrentView('LANDING'); 
+    }
+  }, [user, loading, currentView]);
 
   // Real-time History Sync
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
-
       const syncHistory = () => {
           let dataToSave: any = null;
           let title = '';
-          
           if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
               dataToSave = quizState;
               title = history.find(h => h.id === activeHistoryId)?.title || 'Exam';
@@ -110,7 +197,6 @@ const App: React.FC = () => {
               dataToSave = chatState;
               title = chatState.fileName || 'Chat';
           }
-
           if (dataToSave) {
               const item: HistoryItem = {
                   id: activeHistoryId,
@@ -118,93 +204,57 @@ const App: React.FC = () => {
                   mode: appMode,
                   title: title,
                   data: dataToSave,
-                  summary: history.find(h => h.id === activeHistoryId)?.summary // Preserve summary
+                  summary: history.find(h => h.id === activeHistoryId)?.summary
               };
               saveToHistory(item);
-              setHistory(loadHistory()); // Update UI
+              setHistory(loadHistory());
           }
       };
-
-      // Debounce saving to avoid disk thrashing
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(syncHistory, 2000);
-
-      return () => {
-          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      };
+      return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
   }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
-
-  // Notification Polling Logic
-  useEffect(() => {
-    const checkReminder = () => {
-      if (!userProfile.studyReminders || !userProfile.reminderTime) return;
-      
-      const now = new Date();
-      const [targetHours, targetMinutes] = userProfile.reminderTime.split(':').map(Number);
-      
-      if (now.getHours() === targetHours && now.getMinutes() === targetMinutes && now.getSeconds() < 10) {
-         if (Notification.permission === 'granted') {
-             new Notification("The Professor", {
-                 body: "Class is in session. Do not be late.",
-                 icon: "/favicon.ico"
-             });
-         }
-      }
-    };
-
-    const interval = setInterval(checkReminder, 10000); 
-    return () => clearInterval(interval);
-  }, [userProfile]);
 
   useEffect(() => {
     if (!user) return;
-    
+    // Auto-switch to admin if previously unlocked in session, but typically we want re-verification
+    // We do NOT auto-switch appMode to ADMIN here. That is done via the modal.
+
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
-    
     let mergedProfile: UserProfile = { ...localProfile };
-
     if (firestoreProfile) {
-        mergedProfile = {
-            ...mergedProfile,
-            ...firestoreProfile,
-            socials: firestoreProfile.socials || mergedProfile.socials,
-            xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp
-        };
+        mergedProfile = { ...mergedProfile, ...firestoreProfile, socials: firestoreProfile.socials || mergedProfile.socials, xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp };
     }
-
-    if (user.hasCompletedOnboarding === false) {
-        setOnboardingStep('WELCOME');
-    } else {
-        setOnboardingStep('COMPLETE');
-    }
-    
+    if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
+    else setOnboardingStep('COMPLETE');
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
-    
     mergedProfile = updateStreak(mergedProfile);
-    
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    const savedSession = loadCurrentSession();
-    if (savedSession) {
-      setAppMode(savedSession.mode);
-      if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
-      else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
-      else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
-      setStatus(AppStatus.READY);
+    // Only restore session if NOT admin mode
+    if (!isAdminUnlocked) {
+        const savedSession = loadCurrentSession();
+        if (savedSession) {
+          setAppMode(savedSession.mode);
+          if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
+          else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
+          else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
+          setStatus(AppStatus.READY);
+        }
     }
-  }, [user]);
+  }, [user, isAdminUnlocked]);
 
-  // Safe Exit Wrapper
+  const handleAdminSuccess = () => {
+      setIsAdminUnlocked(true);
+      setAppMode('ADMIN');
+      setStatus(AppStatus.READY);
+  };
+
   const attemptAction = (action: () => void, force: boolean = false) => {
-      if (!force && status === AppStatus.READY && (
-          (appMode === 'EXAM' && !quizState.isSubmitted) || 
-          (appMode === 'PROFESSOR') ||
-          (appMode === 'CHAT') ||
-          (appMode === 'FLASHCARDS')
-      )) {
+      if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
           setPendingAction(() => action);
           setShowExitConfirmation(true);
       } else {
@@ -223,14 +273,10 @@ const App: React.FC = () => {
         await saveUserToFirestore(user.uid, { ...data, hasCompletedOnboarding: true });
         await refreshUser(); 
     }
-    
     const updated = { ...userProfile, ...data, hasCompletedOnboarding: true };
     setUserProfile(updated);
     saveUserProfile(updated);
-    
-    if (updated.studyReminders) {
-        Notification.requestPermission();
-    }
+    if (updated.studyReminders) Notification.requestPermission();
     setOnboardingStep('COMPLETE');
   };
 
@@ -244,7 +290,6 @@ const App: React.FC = () => {
       return totalSeconds > 0 ? totalSeconds : null;
   };
 
-  // Helper to get 5-word summary
   const getDocumentSummary = async (text: string): Promise<string> => {
       try {
           const summary = await simplifyExplanation(text.substring(0, 5000), 'ELA', "5 word abstract/tagline");
@@ -256,58 +301,37 @@ const App: React.FC = () => {
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
-      setActiveHistoryId(Date.now().toString()); 
-      const summaryPromise = getDocumentSummary(file.content);
+      setStatus(AppStatus.GENERATING_CONTENT);
+      setStatusText("Initializing Neural Link...");
+      setErrorMsg(null);
 
+      setActiveHistoryId(Date.now().toString()); 
+      
+      const summaryPromise = getDocumentSummary(file.content);
+      
       if (mode === 'CHAT') {
+        setStatusText("Analyzing Context...");
         const summary = await summaryPromise;
-        const newState: ChatState = {
-            messages: [],
-            fileContext: file.content,
-            fileName: file.name
-        };
+        const newState: ChatState = { messages: [], fileContext: file.content, fileName: file.name };
         setChatState(newState);
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
-        
-        const historyItem: HistoryItem = { 
-            id: Date.now().toString(), 
-            timestamp: Date.now(), 
-            mode: 'CHAT', 
-            title: file.name, 
-            data: newState,
-            summary: summary 
-        };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: summary };
         saveToHistory(historyItem);
         setHistory(loadHistory());
         setActiveHistoryId(historyItem.id);
         return;
       }
-      setStatus(AppStatus.GENERATING_CONTENT);
-      setErrorMsg(null);
-      const timeRemaining = parseDuration(config.timerDuration);
 
+      const timeRemaining = parseDuration(config.timerDuration);
       if (mode === 'EXAM' || mode === 'FLASHCARDS') {
         setStatusText("Constructing Materials...");
         const questions = await generateQuizFromText(file.content, config, userProfile);
-        
-        if (!questions || questions.length === 0) {
-            throw new Error("Neural Failure: No questions generated. Content might be insufficient or blocked.");
-        }
-
+        if (!questions || questions.length === 0) throw new Error("Neural Failure: No questions generated.");
         const summary = await summaryPromise;
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
-        
-        const historyItem: HistoryItem = { 
-            id: Date.now().toString(), 
-            timestamp: Date.now(), 
-            mode: mode, 
-            title: file.name, 
-            data: newState, 
-            config,
-            summary: summary
-        };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: summary };
         saveToHistory(historyItem);
         setAppMode(mode); 
       } else {
@@ -316,16 +340,8 @@ const App: React.FC = () => {
         const newState: ProfessorState = { sections };
         setProfessorState(newState);
         setQuizState(prev => ({ ...prev, timeRemaining }));
-        
         const summary = await summaryPromise;
-        const historyItem: HistoryItem = { 
-            id: Date.now().toString(), 
-            timestamp: Date.now(), 
-            mode: 'PROFESSOR', 
-            title: file.name, 
-            data: newState,
-            summary: summary 
-        };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: summary };
         saveToHistory(historyItem);
       }
       setHistory(loadHistory());
@@ -341,10 +357,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCancelGeneration = () => {
-      setStatus(AppStatus.IDLE);
-      setErrorMsg(null);
-  };
+  const handleCancelGeneration = () => { setStatus(AppStatus.IDLE); setErrorMsg(null); };
 
   const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
     if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
@@ -368,28 +381,16 @@ const App: React.FC = () => {
           }
       });
       setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
-      
       const xpGained = score * 50;
       let newXP = (userProfile.xp || 0) + xpGained;
       if (newXP > 10000) newXP = 10000;
-
-      const newProfile = { 
-          ...userProfile, 
-          questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, 
-          correctAnswers: userProfile.correctAnswers + score, 
-          xp: newXP 
-      };
-      
+      const newProfile = { ...userProfile, questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, correctAnswers: userProfile.correctAnswers + score, xp: newXP };
       setUserProfile(newProfile);
       saveUserProfile(newProfile);
-      
       if (user) {
           await saveUserToFirestore(user.uid, { xp: newXP });
-          if (activeDuelId) {
-              await submitDuelScore(activeDuelId, user.uid, score);
-          }
+          if (activeDuelId) await submitDuelScore(activeDuelId, user.uid, score);
       }
-      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (action === 'RESET') {
@@ -406,82 +407,27 @@ const App: React.FC = () => {
           setDuelReadyData(null); 
           setActiveDuelId(null); 
       };
-
-      if (force) {
-          resetLogic();
-      } else {
-          attemptAction(resetLogic);
-      }
+      if (force) resetLogic();
+      else attemptAction(resetLogic);
     }
   };
 
-  const handleChatUpdate = (updatedState: ChatState) => {
-      setChatState(updatedState);
-      // History sync handled by useEffect now
-  };
-
-  const handleOpenFloatingChat = () => {
-      if (appMode !== 'CHAT') {
-          const newState: ChatState = {
-              messages: [{
-                  id: 'init-float',
-                  role: 'model',
-                  content: "I am The Professor. How can I assist your studies today?",
-                  timestamp: Date.now()
-              }],
-              fileContext: '',
-              fileName: 'General Inquiry'
-          };
-          setChatState(newState);
-          setAppMode('CHAT');
-          setStatus(AppStatus.READY);
-          
-          const newId = Date.now().toString();
-          setActiveHistoryId(newId);
-          saveToHistory({
-              id: newId,
-              timestamp: Date.now(),
-              mode: 'CHAT',
-              title: 'General Inquiry',
-              data: newState
-          });
-          setHistory(loadHistory());
-      }
-  };
-
-  // --- DUEL LOGIC ---
+  const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
 
   const handleDuelStart = async (data: { wager: number, file: File }) => {
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
       setErrorMsg(null);
-      
       try {
           const processed = await processFile(data.file);
-          
-          const config: QuizConfig = {
-              difficulty: 'Hard',
-              questionType: 'Mixed',
-              questionCount: 10,
-              timerDuration: 'Limitless',
-              personality: 'Academic',
-              analogyDomain: 'General',
-              useOracle: true,
-              useWeaknessDestroyer: false
-          };
-
+          const config: QuizConfig = { difficulty: 'Hard', questionType: 'Mixed', questionCount: 10, timerDuration: 'Limitless', personality: 'Academic', analogyDomain: 'General', useOracle: true, useWeaknessDestroyer: false };
           setStatusText("Initializing Arena...");
           const { duelId, code } = await initDuelLobby(user.uid, userProfile.alias || 'Host', data.wager, processed.content, config);
-          
           setDuelReadyData({ id: duelId, code, isHost: true });
           setStatus(AppStatus.IDLE);
-
           generateQuizFromText(processed.content, config, userProfile).then(async (questions) => {
-              if (questions && questions.length > 0) {
-                   await updateDuelWithQuestions(duelId, questions);
-              }
+              if (questions && questions.length > 0) await updateDuelWithQuestions(duelId, questions);
           }).catch(err => console.error("Background Gen Error", err));
-
       } catch (e: any) {
           console.error(e);
           setErrorMsg(e.message || "Failed to start duel.");
@@ -503,31 +449,13 @@ const App: React.FC = () => {
       if (duelReadyData) {
           const duelState = await getDuel(duelReadyData.id);
           if (duelState && duelState.quizQuestions) {
-              const newState: QuizState = { 
-                  questions: duelState.quizQuestions, 
-                  userAnswers: {}, 
-                  flaggedQuestions: [], 
-                  isSubmitted: false, 
-                  score: 0, 
-                  startTime: Date.now(), 
-                  timeRemaining: null, 
-                  focusStrikes: 0,
-                  currentQuestionIndex: 0
-              };
+              const newState: QuizState = { questions: duelState.quizQuestions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining: null, focusStrikes: 0, currentQuestionIndex: 0 };
               setQuizState(newState);
               setAppMode('EXAM');
               setStatus(AppStatus.READY);
               setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
-              
-              const historyItem: HistoryItem = { 
-                  id: Date.now().toString(), 
-                  timestamp: Date.now(), 
-                  mode: 'EXAM', 
-                  title: `Duel: ${duelState.code}`, 
-                  data: newState,
-                  config: duelState.quizConfig
-              };
+              const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: `Duel: ${duelState.code}`, data: newState, config: duelState.quizConfig };
               saveToHistory(historyItem);
               setHistory(loadHistory());
           } else {
@@ -536,43 +464,79 @@ const App: React.FC = () => {
       }
   };
 
+  const handleGoToCheckout = async (tier: SubscriptionTier) => {
+      if (tier === 'Fresher') {
+          if (confirm("Are you sure you want to downgrade to the Fresher plan? Access to advanced features will be revoked.")) {
+              const updatedProfile = { ...userProfile, subscriptionTier: 'Fresher' as SubscriptionTier };
+              setUserProfile(updatedProfile);
+              saveUserProfile(updatedProfile);
+              if (user) await updateUserPlan(user.uid, 'Fresher');
+              setIsSubscriptionOpen(false);
+              alert("You are now on the Fresher plan.");
+          }
+      } else {
+          setCheckoutTier(tier);
+          setIsSubscriptionOpen(false);
+          navigate('CHECKOUT', `/${tier.toLowerCase()}`);
+      }
+  };
+
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
   
-  if (!user) {
-    if (showPricing) {
-        return <PricingPage onBack={() => setShowPricing(false)} onSignUp={() => { setShowPricing(false); setShowAuth(true); }} />;
-    }
-    if (showAuth) return <AuthPage />;
-    return <LandingPage onEnter={() => setShowAuth(true)} onPricing={() => setShowPricing(true)} />;
-  }
-
-  const isAdmin = user?.email && ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com'].includes(user.email);
+  if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => navigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
+  
+  if (currentView === 'PRICING') return <PricingPage onBack={() => navigate('LANDING', '/')} onSelectPlan={(tier) => {
+      localStorage.setItem('pending_plan', tier);
+      navigate('AUTH', '/login');
+  }} />;
+  
+  if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => navigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); navigate('APP', '/'); }} />;
+  if (currentView === 'AUTH' && !user) return <AuthPage />;
+  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => navigate('AUTH', '/login')} onPricing={() => navigate('PRICING', '/pricing')} />;
 
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
-  const isActiveSession = status === AppStatus.READY;
+  const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
+  
+  // CONDITIONAL FAB LOGIC
+  // Hide FABs during active Exam (unless submitted) or Duel
+  const hideFABs = appMode === 'EXAM' && !quizState.isSubmitted;
 
   return (
-    <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505]`}>
+    <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505] font-sans`}>
       <AmbientBackground theme='Deep Space' />
       <CountdownTimer />
       <PWAPrompt />
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={handleOnboardingComplete} />}
-      <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setIsSubscriptionOpen(false); }} />
+      <SubscriptionModal 
+        isOpen={isSubscriptionOpen} 
+        onClose={() => setIsSubscriptionOpen(false)} 
+        currentTier={userProfile.subscriptionTier} 
+        onUpgrade={handleGoToCheckout} 
+        userEmail={user?.email || undefined}
+      />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
+      {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
+      {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
       
-      {duelReadyData && (
-          <DuelReadyModal 
-            duelId={duelReadyData.id} 
-            initialCode={duelReadyData.code}
-            isHost={duelReadyData.isHost}
-            onEnter={handleEnterDuel} 
-          />
-      )}
-      
-      {isAdBlockActive && (
-          <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">
-              ⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database
-          </div>
+      {/* Admin Verify Modal */}
+      <AdminVerifyModal 
+        isOpen={showAdminVerify} 
+        onClose={() => setShowAdminVerify(false)} 
+        onSuccess={handleAdminSuccess}
+      />
+
+      {/* Floating Admin Button (Only if authorized email) */}
+      {isPotentialAdmin(user?.email) && !hideFABs && (
+          <button 
+            onClick={() => setShowAdminVerify(true)}
+            className="fixed bottom-6 left-6 z-50 w-12 h-12 bg-red-900/80 border border-red-500/50 rounded-full flex items-center justify-center text-red-400 hover:text-white hover:bg-red-600 hover:scale-110 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] backdrop-blur-md animate-pulse-slow group"
+            title="Dean's Office"
+          >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              <div className="absolute left-full ml-3 px-3 py-1 bg-black/80 text-red-500 text-[10px] font-bold uppercase rounded border border-red-900/50 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  Secure Access
+              </div>
+          </button>
       )}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
@@ -581,29 +545,47 @@ const App: React.FC = () => {
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
-               <span className="font-serif font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
+               <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
 
+            {/* Neural Energy Limit Bar */}
+            {isFresher && appMode !== 'ADMIN' && (
+                <div className="hidden md:flex flex-col w-48 gap-1" title="Daily Neural Energy">
+                    <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                        <span>Neural Energy</span>
+                        <span className={usagePercentage > 90 ? 'text-red-500' : 'text-blue-400'}>{Math.round(100 - usagePercentage)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
+                            style={{ width: `${100 - usagePercentage}%` }}
+                        ></div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center gap-2 sm:gap-4">
-               {isActiveSession && (
-                   <button 
-                     onClick={() => setIsHistoryOpen(true)}
-                     className="p-2 text-gray-400 hover:text-white transition-colors relative"
-                     title="My Library"
-                   >
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" /></svg>
+               {appMode === 'ADMIN' && (
+                   <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
+               )}
+               
+               {/* LIBRARY BUTTON - ONLY ON DASHBOARD */}
+               {showLibrary && (
+                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
+                       {/* SVG Book Icon */}
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                    </button>
                )}
                
-               {userProfile.subscriptionTier === 'Fresher' && (
+               <NotificationBell />
+               
+               {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
                        <span>Upgrade</span>
                        <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
                    </button>
                )}
-
                <div className="h-6 w-px bg-white/10 mx-2"></div>
-
                <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
                    <div className="text-right hidden sm:block">
                        <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">{userProfile.alias}</p>
@@ -624,9 +606,6 @@ const App: React.FC = () => {
         onSelect={(item) => {
             if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
                 setQuizState(item.data as QuizState);
-                if (item.config) {
-                    // Restore config
-                }
             } else if (item.mode === 'PROFESSOR') {
                 setProfessorState(item.data as ProfessorState);
             } else if (item.mode === 'CHAT') {
@@ -644,47 +623,18 @@ const App: React.FC = () => {
         }}
       />
 
-      <UserProfileModal 
-        isOpen={isProfileOpen} 
-        onClose={() => setIsProfileOpen(false)} 
-        profile={userProfile} 
-        onSave={(updated) => {
-            setUserProfile(updated);
-            saveUserProfile(updated);
-            if (user) saveUserToFirestore(user.uid, updated);
-        }}
-        onClearHistory={() => {}}
-        onLogout={async () => {
-            await logout();
-            window.location.reload();
-        }}
-      />
-
+      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={!!isAdmin} onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
-         {status === AppStatus.IDLE && (
+         {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
              <>
                 <Hero />
-                <InputSection 
-                    onProcess={handleProcess} 
-                    isLoading={false} 
-                    appMode={appMode}
-                    setAppMode={setAppMode}
-                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }}
-                    userProfile={userProfile}
-                    onShowSubscription={() => setIsSubscriptionOpen(true)}
-                    onOpenProfile={() => setIsProfileOpen(true)}
-                    onDuelStart={handleDuelStart}
-                    onDuelJoin={handleDuelJoin}
-                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }}
-                />
+                <InputSection onProcess={handleProcess} isLoading={false} appMode={appMode} setAppMode={setAppMode} defaultConfig={{ difficulty: userProfile.defaultDifficulty }} userProfile={userProfile} onShowSubscription={() => setIsSubscriptionOpen(true)} onOpenProfile={() => setIsProfileOpen(true)} onDuelStart={handleDuelStart} onDuelJoin={handleDuelJoin} onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} />
              </>
          )}
-
          {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
          {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
-         
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-white rounded-full animate-spin"></div></div>}>
@@ -692,12 +642,11 @@ const App: React.FC = () => {
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
-                    {appMode === 'ADMIN' && <AdminDashboard />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
+                    {appMode === 'ADMIN' && <AdminDashboard onExit={() => setAppMode('EXAM')} />}
                  </Suspense>
              </div>
          )}
-
          {status === AppStatus.ERROR && (
              <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center animate-bounce-subtle">
                  <div className="text-4xl mb-4">⚠️</div>
@@ -707,15 +656,6 @@ const App: React.FC = () => {
              </div>
          )}
       </main>
-      
-      {status === AppStatus.READY && appMode !== 'CHAT' && appMode !== 'ADMIN' && !isModalOpen && (
-          <button 
-            onClick={handleOpenFloatingChat}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-40 group"
-          >
-              <span className="text-2xl group-hover:animate-wiggle">💬</span>
-          </button>
-      )}
     </div>
   );
 };
