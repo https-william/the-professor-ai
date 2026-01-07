@@ -42,6 +42,13 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
       }
       setLoading(true);
 
+      // CRITICAL CHECK: Ensure Paystack Loaded
+      if (typeof window.PaystackPop === 'undefined') {
+          alert("Payment gateway unreachable. Please disable ad-blockers or check your connection.");
+          setLoading(false);
+          return;
+      }
+
       try {
         const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY;
         const paystack = new window.PaystackPop();

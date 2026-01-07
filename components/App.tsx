@@ -47,7 +47,20 @@ const ADMIN_EMAILS = [
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
   
-  const [currentView, setCurrentView] = useState<ViewState>('LANDING');
+  // ROUTING FIX: Lazy initialization to catch the URL before first render
+  // This prevents the "flash" of the landing page that causes the 404/redirect loop
+  const [currentView, setCurrentView] = useState<ViewState>(() => {
+      if (typeof window !== 'undefined') {
+          const path = window.location.pathname.toLowerCase();
+          if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
+          if (path === '/pricing' || path === '/tuition') return 'PRICING';
+          if (path === '/login' || path === '/auth') return 'AUTH';
+          // For checkout links, we set view to CHECKOUT, tier logic handled in effect
+          if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
+      }
+      return 'LANDING';
+  });
+
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -68,7 +81,17 @@ const App: React.FC = () => {
   const [activeDuelId, setActiveDuelId] = useState<string | null>(null);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(null);
+  
+  // Initialize checkout tier based on URL
+  const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(() => {
+      if (typeof window !== 'undefined') {
+          const path = window.location.pathname.toLowerCase();
+          if (path === '/scholar') return 'Scholar';
+          if (path === '/excellentia') return 'Excellentia';
+      }
+      return null;
+  });
+
   const [initialRouteHandled, setInitialRouteHandled] = useState(false);
   
   const saveTimeoutRef = useRef<any>(null);
@@ -87,60 +110,54 @@ const App: React.FC = () => {
       
       // 1. Admin Route
       if (path === '/administrator' || path === '/admin') {
-          setCurrentView('ADMIN_LOGIN');
-          window.history.replaceState(null, '', '/administrator'); // Keep URL
-          setInitialRouteHandled(true);
-          return;
-      }
-
-      // 2. Scholar Link (Direct Purchase)
-      if (path === '/scholar') {
-          if (user) {
-              setCheckoutTier('Scholar');
-              setCurrentView('CHECKOUT');
-          } else {
-              localStorage.setItem('pending_plan', 'Scholar');
-              setCurrentView('AUTH');
-          }
-          window.history.replaceState(null, '', '/'); // Clean URL
-          setInitialRouteHandled(true);
-          return;
-      }
-
-      // 3. Excellentia Link (Direct Purchase)
-      if (path === '/excellentia') {
-          if (user) {
-              setCheckoutTier('Excellentia');
-              setCurrentView('CHECKOUT');
-          } else {
-              localStorage.setItem('pending_plan', 'Excellentia');
-              setCurrentView('AUTH');
-          }
-          window.history.replaceState(null, '', '/');
-          setInitialRouteHandled(true);
-          return;
-      }
-
-      // 4. Pricing / Tuition
-      if (path === '/pricing' || path === '/tuition') {
-          if (!user) {
-              setCurrentView('PRICING');
-          } else {
-              // If logged in, prefer app view (upgrade modal available there)
+          // If logged in as admin, go to APP (Admin Mode), else Login
+          if (user && checkIsAdmin(user.email)) {
+              setAppMode('ADMIN');
               setCurrentView('APP');
+          } else {
+              setCurrentView('ADMIN_LOGIN');
           }
+          window.history.replaceState(null, '', '/administrator');
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      // 2. Direct Purchase Links
+      if (path === '/scholar' || path === '/excellentia') {
+          const tier = path === '/scholar' ? 'Scholar' : 'Excellentia';
+          if (user) {
+              setCheckoutTier(tier);
+              setCurrentView('CHECKOUT');
+          } else {
+              localStorage.setItem('pending_plan', tier);
+              setCurrentView('AUTH');
+          }
+          window.history.replaceState(null, '', '/'); 
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      // 3. Pricing
+      if (path === '/pricing' || path === '/tuition') {
+          if (!user) setCurrentView('PRICING');
+          else setCurrentView('APP'); // Logged in users see App
           window.history.replaceState(null, '', '/');
           setInitialRouteHandled(true);
           return;
       }
 
-      // 5. Auth
+      // 4. Auth
       if (path === '/login' || path === '/auth') {
           if (!user) setCurrentView('AUTH');
           else setCurrentView('APP');
           window.history.replaceState(null, '', '/');
           setInitialRouteHandled(true);
           return;
+      }
+
+      // 5. Default App
+      if (user) {
+          setCurrentView('APP');
       }
 
       setInitialRouteHandled(true);
@@ -158,7 +175,7 @@ const App: React.FC = () => {
     if (loading) return;
 
     // PROTECTION: Do not redirect if we are specifically on these views
-    if (currentView === 'ADMIN_LOGIN' || currentView === 'CHECKOUT') return;
+    if (currentView === 'ADMIN_LOGIN' || currentView === 'CHECKOUT' || currentView === 'PRICING') return;
 
     if (user) {
         // Check for pending plan in LocalStorage (Robust persistence)
@@ -168,14 +185,14 @@ const App: React.FC = () => {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
             setCurrentView('CHECKOUT');
             localStorage.removeItem('pending_plan'); // Consume
-        } else if (currentView === 'LANDING' || currentView === 'AUTH' || currentView === 'PRICING') {
+        } else if (currentView === 'LANDING' || currentView === 'AUTH') {
             setCurrentView('APP');
         }
         
         if (checkIsAdmin(user.email)) setAppMode('ADMIN');
     } else {
-        // Not logged in
-        if (currentView === 'APP' || (currentView === 'ADMIN_LOGIN' && appMode === 'ADMIN')) {
+        // Not logged in -> Redirect to Landing if on protected views
+        if (currentView === 'APP') {
             setCurrentView('LANDING'); 
         }
     }
@@ -220,7 +237,7 @@ const App: React.FC = () => {
     if (checkIsAdmin(user.email) && currentView === 'APP') {
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
-        return; 
+        // Don't return here, let profile load
     }
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
@@ -235,6 +252,8 @@ const App: React.FC = () => {
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
+    
+    // Only load session if NOT admin mode
     if (!checkIsAdmin(user.email)) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
@@ -248,7 +267,6 @@ const App: React.FC = () => {
   }, [user]);
 
   const handleRequestAdminAccess = async () => {
-      // Log out first to ensure we land on the Admin Auth page cleanly, even if already logged in as a normal user.
       if (user) await logout();
       setCurrentView('ADMIN_LOGIN');
   };
@@ -586,6 +604,9 @@ const App: React.FC = () => {
         onSelect={(item) => {
             if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
                 setQuizState(item.data as QuizState);
+                if (item.config) {
+                    // Restore config
+                }
             } else if (item.mode === 'PROFESSOR') {
                 setProfessorState(item.data as ProfessorState);
             } else if (item.mode === 'CHAT') {

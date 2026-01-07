@@ -6,6 +6,12 @@ declare global {
   }
 }
 
+// FORCE WORKER SOURCE - Executed on module import
+if (typeof window !== 'undefined' && typeof window.pdfjsLib !== 'undefined') {
+    // Explicitly set worker to the CDN version that matches the script tag
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+}
+
 export const extractTextFromPdf = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     // 1. Check Library
@@ -14,8 +20,7 @@ export const extractTextFromPdf = async (file: File): Promise<string> => {
       return;
     }
 
-    // 2. FORCE Worker Source (Fixes 'No Internet' / 404 errors on workers)
-    // We use unpkg as a reliable CDN that matches the script tag version in index.html
+    // 2. FORCE Worker Source AGAIN (Just in case it wasn't set earlier or overridden)
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
     const reader = new FileReader();
@@ -25,6 +30,7 @@ export const extractTextFromPdf = async (file: File): Promise<string> => {
         const typedarray = new Uint8Array(event.target?.result as ArrayBuffer);
         
         // 3. Load Document with explicit params to prevent network fetch errors for fonts/cmaps
+        // Use CDN for CMaps to prevent local file 404s
         const loadingTask = window.pdfjsLib.getDocument({
             data: typedarray,
             cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
