@@ -4,13 +4,13 @@
   "name": "The Professor AI",
   "icons": [
     {
-      "src": "/logo.svg",
+      "src": "/logo-pwa.svg",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any"
     },
     {
-      "src": "/logo.svg",
+      "src": "/logo-pwa.svg",
       "type": "image/svg+xml",
       "sizes": "192x192 512x512",
       "purpose": "maskable"

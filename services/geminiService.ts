@@ -1,21 +1,43 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { QuizQuestion, QuizConfig, ProfessorSection, UserProfile, ChatMessage, LockInTechnique, StudyProtocol } from "../types";
 
-// --- ENV HELPER ---
-const getEnv = (key: string): string => {
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) {
-    return (import.meta as any).env[key];
-  }
-  if (typeof process !== 'undefined' && process.env && process.env[key]) {
-    return process.env[key];
-  }
-  return "";
+// --- EMERGENCY FALLBACK SYSTEM ---
+// TO GENERATE KEY: Run `btoa("ACTUAL_KEY".split('').reverse().join(''))` in browser console.
+const FALLBACK_KEYS = {
+    // PASTE YOUR MASKED KEYS HERE
+    GEMINI_API_KEY: "QUpSWDFYbHFSNHFpU3VBcnB4PxMcUhlUhB538PqHDySazIA=", // Using same key as Firebase
+    GROQ_API_KEY: "PASTE_YOUR_MASKED_KEY_HERE"
+};
+
+const unmask = (str: string) => {
+    if (!str || str.includes("PASTE_YOUR")) return "";
+    try {
+        return atob(str).split('').reverse().join('');
+    } catch (e) {
+        return "";
+    }
+};
+
+const getSafeEnv = (viteKey: string, fallbackMapKey: keyof typeof FALLBACK_KEYS): string => {
+    // 1. Try Vite Static Replacement
+    try {
+        // @ts-ignore
+        if (import.meta.env[viteKey]) return import.meta.env[viteKey];
+    } catch (e) {}
+
+    // 2. Try Process Env
+    if (typeof process !== 'undefined' && process.env && process.env[viteKey]) {
+        return process.env[viteKey] as string;
+    }
+
+    // 3. Fallback
+    return unmask(FALLBACK_KEYS[fallbackMapKey]);
 };
 
 // --- CLIENTS ---
-const GROQ_API_KEY = getEnv("VITE_GROQ_API_KEY");
-const GEMINI_API_KEY = getEnv("VITE_GEMINI_API_KEY");
+const GROQ_API_KEY = getSafeEnv("VITE_GROQ_API_KEY", "GROQ_API_KEY");
+const GEMINI_API_KEY = getSafeEnv("VITE_GEMINI_API_KEY", "GEMINI_API_KEY");
+
 const GROQ_MODEL = "llama-3.3-70b-versatile"; // Fallback Model
 
 // --- RATE LIMITER ---
@@ -46,6 +68,7 @@ const withFallback = async <T>(
 ): Promise<T> => {
     try {
         checkRateLimit();
+        if (!GEMINI_API_KEY && !GROQ_API_KEY) throw new Error("System Offline: Keys missing.");
         return await geminiOp();
     } catch (error: any) {
         console.warn(`Gemini (${featureName}) Failed:`, error.message);

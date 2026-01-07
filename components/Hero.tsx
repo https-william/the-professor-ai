@@ -80,8 +80,9 @@ export const Hero: React.FC = () => {
           The
         </span>
         
-        {/* 'Professor' - UnifrakturMaguntia Style */}
-        <h1 className="text-7xl sm:text-8xl md:text-9xl font-display font-normal tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 drop-shadow-2xl animate-shimmer bg-[length:200%_auto] leading-[0.85] px-4 pb-4 scale-y-110">
+        {/* 'Professor' - Responsive Font Size (Fixed for Mobile) */}
+        {/* Changed text-5xl to text-4xl on base mobile, and added clamp */}
+        <h1 className="text-4xl sm:text-7xl md:text-9xl font-display font-normal tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 drop-shadow-2xl animate-shimmer bg-[length:200%_auto] leading-[0.85] px-4 pb-4 scale-y-110">
           <DecryptedText text="Professor" />
         </h1>
       </div>

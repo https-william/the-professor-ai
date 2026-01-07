@@ -12,25 +12,63 @@ import {
 import { getFirestore, doc, updateDoc, deleteDoc, addDoc, collection, serverTimestamp, setDoc, getDoc, query, where, getDocs, onSnapshot, orderBy } from "firebase/firestore";
 import { SubscriptionTier, UserProfile, DuelState, QuizQuestion, QuizConfig, DuelParticipant, ProfessorSection } from "../types";
 
+// --- EMERGENCY FALLBACK SYSTEM ---
+// If Vercel env vars fail, these hardcoded (masked) keys will kick in.
+// SECURITY NOTE: This is obfuscation, not encryption. 
+// TO GENERATE KEY: Run `btoa("ACTUAL_KEY".split('').reverse().join(''))` in browser console.
+
+const FALLBACK_KEYS = {
+    // INJECTED MASKED KEY (User Provided)
+    API_KEY: "QUpSWDFYbHFSNHFpU3VBcnB4PxMcUhlUhB538PqHDySazIA=", 
+    
+    // Other keys rely on Env Vars or will need to be added similarly if issues persist
+    AUTH_DOMAIN: "PASTE_YOUR_MASKED_KEY_HERE",
+    PROJECT_ID: "PASTE_YOUR_MASKED_KEY_HERE",
+    STORAGE_BUCKET: "PASTE_YOUR_MASKED_KEY_HERE",
+    MESSAGING_SENDER_ID: "PASTE_YOUR_MASKED_KEY_HERE",
+    APP_ID: "PASTE_YOUR_MASKED_KEY_HERE",
+    MEASUREMENT_ID: "PASTE_YOUR_MASKED_KEY_HERE"
+};
+
+const unmask = (str: string) => {
+    if (!str || str.includes("PASTE_YOUR")) return "";
+    try {
+        // Reverse Base64 Decode
+        return atob(str).split('').reverse().join('');
+    } catch (e) {
+        console.warn("Security mask check failed.");
+        return "";
+    }
+};
+
 // --- SECURE CONFIGURATION ---
-const getEnv = (key: string): string => {
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) {
-    return (import.meta as any).env[key];
-  }
-  if (typeof process !== 'undefined' && process.env && process.env[key]) {
-    return process.env[key];
-  }
-  return "";
+const getSafeEnv = (viteKey: string, processKey: string, fallbackMapKey: keyof typeof FALLBACK_KEYS): string => {
+    // 1. Try Vite Static Replacement
+    try {
+        // @ts-ignore
+        if (import.meta.env[viteKey]) return import.meta.env[viteKey];
+    } catch (e) {}
+
+    // 2. Try Process Env (Node/Server)
+    if (typeof process !== 'undefined' && process.env && process.env[viteKey]) {
+        return process.env[viteKey] as string;
+    }
+
+    // 3. Emergency Hardcoded Fallback
+    const fallback = unmask(FALLBACK_KEYS[fallbackMapKey]);
+    if (fallback) return fallback;
+
+    return ""; 
 };
 
 const firebaseConfig = {
-  apiKey: getEnv("VITE_FIREBASE_API_KEY"),
-  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN"),
-  projectId: getEnv("VITE_FIREBASE_PROJECT_ID"),
-  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET"),
-  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID"),
-  appId: getEnv("VITE_FIREBASE_APP_ID"),
-  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID")
+  apiKey: getSafeEnv("VITE_FIREBASE_API_KEY", "VITE_FIREBASE_API_KEY", "API_KEY"),
+  authDomain: getSafeEnv("VITE_FIREBASE_AUTH_DOMAIN", "VITE_FIREBASE_AUTH_DOMAIN", "AUTH_DOMAIN"),
+  projectId: getSafeEnv("VITE_FIREBASE_PROJECT_ID", "VITE_FIREBASE_PROJECT_ID", "PROJECT_ID"),
+  storageBucket: getSafeEnv("VITE_FIREBASE_STORAGE_BUCKET", "VITE_FIREBASE_STORAGE_BUCKET", "STORAGE_BUCKET"),
+  messagingSenderId: getSafeEnv("VITE_FIREBASE_MESSAGING_SENDER_ID", "VITE_FIREBASE_MESSAGING_SENDER_ID", "MESSAGING_SENDER_ID"),
+  appId: getSafeEnv("VITE_FIREBASE_APP_ID", "VITE_FIREBASE_APP_ID", "APP_ID"),
+  measurementId: getSafeEnv("VITE_FIREBASE_MEASUREMENT_ID", "VITE_FIREBASE_MEASUREMENT_ID", "MEASUREMENT_ID")
 };
 
 // Initialize Firebase
@@ -40,29 +78,30 @@ let googleProvider: GoogleAuthProvider;
 let db: any;
 
 try {
-  // Check critical keys
-  if (!firebaseConfig.apiKey) {
-      console.warn("Firebase Configuration Missing: API Key not found in environment.");
-  }
-
-  if (!getApps().length) {
-    if (firebaseConfig.apiKey) {
+  // Silent fail check to prevent "undefined" crashes
+  if (firebaseConfig.apiKey) {
+      if (!getApps().length) {
         app = initializeApp(firebaseConfig);
-    }
+      } else {
+        app = getApp();
+      }
+      
+      if (app) {
+          auth = getAuth(app);
+          db = getFirestore(app);
+          googleProvider = new GoogleAuthProvider();
+      }
   } else {
-    app = getApp();
-  }
-  
-  if (app) {
-      auth = getAuth(app);
-      db = getFirestore(app);
-      googleProvider = new GoogleAuthProvider();
+      console.warn("Critical: Firebase Config completely missing. App will function in offline/demo mode only.");
   }
 } catch (error: any) {
   console.error("Firebase Initialization Error:", error);
 }
 
 export { auth, db, googleProvider };
+
+// Export the raw API key for other services (Drive, Gemini) to use as fallback
+export const GLOBAL_API_KEY = firebaseConfig.apiKey;
 
 export const isConfigured = () => {
   return !!firebaseConfig.apiKey && !!auth;
@@ -71,7 +110,7 @@ export const isConfigured = () => {
 // --- AUTHENTICATION ---
 
 export const signInWithGoogle = async () => {
-  if (!auth) throw new Error("Authentication System Unavailable. Check API Keys.");
+  if (!auth) throw new Error("Authentication System Unavailable. API Key Missing.");
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
@@ -81,7 +120,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const registerWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("Authentication System Unavailable. Check API Keys.");
+  if (!auth) throw new Error("Authentication System Unavailable. API Key Missing.");
   try {
     return await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -91,7 +130,7 @@ export const registerWithEmail = async (email: string, password: string) => {
 };
 
 export const loginWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("Authentication System Unavailable. Check API Keys.");
+  if (!auth) throw new Error("Authentication System Unavailable. API Key Missing.");
   try {
     return await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -112,7 +151,10 @@ export const logout = async () => {
 // --- FIRESTORE HELPERS ---
 
 const ensureDB = () => {
-    if (!db) throw new Error("Database connection unavailable. Check internet connection or ad-blockers.");
+    if (!db) {
+        if (!firebaseConfig.apiKey) throw new Error("Configuration Error: API Key missing.");
+        throw new Error("Database connection unavailable. Check internet connection.");
+    }
 };
 
 export const saveUserToFirestore = async (userId: string, data: Partial<UserProfile>) => {
