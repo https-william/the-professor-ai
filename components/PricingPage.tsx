@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrandLogo } from './BrandLogo';
+import { SubscriptionTier } from '../types';
 
 interface PricingPageProps {
   onBack: () => void;
-  onSignUp: () => void;
+  onSelectPlan: (tier: SubscriptionTier) => void;
 }
 
-export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) => {
+export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSelectPlan }) => {
   const [currency, setCurrency] = useState<'USD' | 'NGN'>('USD');
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
 
   const plans = [
       {
+          id: 'Fresher' as SubscriptionTier,
           name: "Fresher",
           price: "Free",
           desc: "The sampler pack.",
@@ -37,6 +39,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
           color: "border-white/10"
       },
       {
+          id: 'Scholar' as SubscriptionTier,
           name: "Scholar",
           price: currency === 'NGN' ? '₦2,900' : '$4.99',
           period: '/mo',
@@ -53,6 +56,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
           color: "border-blue-500/50 bg-blue-900/5"
       },
       {
+          id: 'Excellentia' as SubscriptionTier,
           name: "Excellentia",
           price: currency === 'NGN' ? '₦8,500' : '$14.99',
           period: '/mo',
@@ -128,7 +132,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignUp }) =>
                             ))}
                         </ul>
 
-                        <button onClick={onSignUp} className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all ${plan.highlight ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-white text-black hover:bg-gray-200'}`}>
+                        <button onClick={() => onSelectPlan(plan.id)} className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all ${plan.highlight ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-white text-black hover:bg-gray-200'}`}>
                             {plan.cta}
                         </button>
                     </div>

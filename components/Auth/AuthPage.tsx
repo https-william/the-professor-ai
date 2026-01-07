@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signInWithGoogle, registerWithEmail, loginWithEmail, isConfigured } from '../../services/firebase';
 
 export const AuthPage: React.FC = () => {
@@ -7,6 +7,21 @@ export const AuthPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
+  // Loading State
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authStatusText, setAuthStatusText] = useState('CONNECTING...');
+
+  useEffect(() => {
+      if (!isAuthenticating) return;
+      const stages = ['ENCRYPTING...', 'VERIFYING...', 'HANDSHAKING...', 'ACCESSING...'];
+      let i = 0;
+      const interval = setInterval(() => {
+          setAuthStatusText(stages[i % stages.length]);
+          i++;
+      }, 600);
+      return () => clearInterval(interval);
+  }, [isAuthenticating]);
 
   const isValidEmail = (e: string) => {
       // Robust Regex for Email Validation
@@ -16,20 +31,26 @@ export const AuthPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isAuthenticating) return;
+    
     setError(null);
     
     if (!isConfigured()) { setError("System config missing."); return; }
     if (!isValidEmail(email)) { setError("Invalid email address format."); return; }
     if (mode === 'REGISTER' && password.length < 8) { setError("Password must be at least 8 characters."); return; }
 
+    setIsAuthenticating(true);
+
     try {
       if (mode === 'LOGIN') await loginWithEmail(email, password);
       else await registerWithEmail(email, password);
     } catch (err: any) {
+      setIsAuthenticating(false);
       if (err.message.includes("auth/invalid-credential")) setError("Incorrect Credentials.");
       else if (err.message.includes("auth/email-already-in-use")) setError("Email already registered.");
       else setError(err.message);
     }
+    // Note: On success, the AuthContext will redirect, component unmounts.
   };
 
   return (
@@ -92,9 +113,27 @@ export const AuthPage: React.FC = () => {
             
             <button 
               type="submit" 
-              className="w-full bg-white text-black font-bold uppercase text-xs py-4 rounded-xl hover:bg-gray-200 hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+              disabled={isAuthenticating}
+              className={`w-full py-4 rounded-xl font-bold uppercase text-xs transition-all relative overflow-hidden ${
+                  isAuthenticating 
+                  ? 'bg-gray-900 text-blue-400 border border-blue-500/30 cursor-wait' 
+                  : 'bg-white text-black hover:bg-gray-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.2)]'
+              }`}
             >
-              {mode === 'LOGIN' ? 'Authenticate' : 'Initialize Record'}
+              {isAuthenticating ? (
+                  <>
+                      {/* Tech Background Pattern */}
+                      <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(59,130,246,0.05)_10px,rgba(59,130,246,0.05)_20px)] animate-[slideIn_20s_linear_infinite]"></div>
+                      {/* Scanning Light */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
+                      <div className="flex items-center justify-center gap-2 relative z-10">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
+                          <span className="tracking-[0.2em]">{authStatusText}</span>
+                      </div>
+                  </>
+              ) : (
+                  mode === 'LOGIN' ? 'Authenticate' : 'Initialize Record'
+              )}
             </button>
          </form>
 
@@ -106,7 +145,8 @@ export const AuthPage: React.FC = () => {
 
          <button 
            onClick={signInWithGoogle} 
-           className="w-full bg-[#1a1a1a] hover:bg-[#252525] border border-border-main text-white font-bold text-xs py-3.5 rounded-xl flex items-center justify-center gap-3 transition-all group hover:border-white/20"
+           disabled={isAuthenticating}
+           className="w-full bg-[#1a1a1a] hover:bg-[#252525] border border-border-main text-white font-bold text-xs py-3.5 rounded-xl flex items-center justify-center gap-3 transition-all group hover:border-white/20 disabled:opacity-50"
          >
             <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-1 group-hover:scale-110 transition-transform">
               <svg viewBox="0 0 24 24" className="w-full h-full"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>

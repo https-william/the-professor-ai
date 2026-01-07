@@ -142,7 +142,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                                 : 'bg-white text-black hover:bg-gray-200'
                      }`}
                    >
-                     {currentTier === tier.id ? 'Current Plan' : tier.amount === 0 ? 'Downgrade' : 'Select Plan'}
+                     {currentTier === tier.id ? 'Current Plan' : tier.amount === 0 ? 'Downgrade to Free' : 'Select Plan'}
                    </button>
                 </div>
               ))}

@@ -17,8 +17,84 @@ interface HubMessage {
     id: string;
     sender: string;
     content: string;
+    type?: 'text' | 'audio';
     timestamp: any;
 }
+
+const AudioMessage: React.FC<{ src: string, duration?: string, isMe: boolean }> = ({ src, duration, isMe }) => {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [progress, setProgress] = useState(0);
+
+    const togglePlay = () => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    };
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const updateProgress = () => {
+            if (audio.duration) {
+                setProgress((audio.currentTime / audio.duration) * 100);
+            }
+        };
+
+        const handleEnded = () => {
+            setIsPlaying(false);
+            setProgress(0);
+        };
+
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('ended', handleEnded);
+        return () => {
+            audio.removeEventListener('timeupdate', updateProgress);
+            audio.removeEventListener('ended', handleEnded);
+        };
+    }, []);
+
+    return (
+        <div className={`flex items-center gap-3 px-3 py-2 rounded-full min-w-[200px] select-none ${isMe ? 'bg-blue-600' : 'bg-[#1a1a1a] border border-white/10'}`}>
+            <button 
+                onClick={togglePlay}
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${isMe ? 'bg-white text-blue-600' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+                {isPlaying ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-0.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                )}
+            </button>
+            
+            {/* Waveform Visualization (Simulated) */}
+            <div className="flex-1 flex items-center gap-[2px] h-6 overflow-hidden">
+                {Array.from({ length: 20 }).map((_, i) => {
+                    // Simulated waveform height
+                    const h = 30 + Math.random() * 70; 
+                    const isActive = (i / 20) * 100 < progress;
+                    return (
+                        <div 
+                            key={i} 
+                            className={`w-1 rounded-full transition-all duration-300 ${isMe ? (isActive ? 'bg-white' : 'bg-white/40') : (isActive ? 'bg-blue-500' : 'bg-gray-600')}`}
+                            style={{ height: `${h}%`, animation: isPlaying ? `bounceSubtle 0.5s infinite ${i * 0.05}s` : 'none' }}
+                        ></div>
+                    );
+                })}
+            </div>
+
+            <span className={`text-[9px] font-mono font-bold tracking-widest ${isMe ? 'text-blue-100' : 'text-gray-500'}`}>
+                {duration || '0:05'}
+            </span>
+            <audio ref={audioRef} src={src} className="hidden" />
+        </div>
+    );
+};
 
 export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [mode, setMode] = useState<HubMode>('LOBBY');
@@ -41,6 +117,13 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [showExitModal, setShowExitModal] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Voice Recording State
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<BlobPart[]>([]);
+    const timerRef = useRef<any>(null);
 
     // Subscriptions
     useEffect(() => {
@@ -136,11 +219,81 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const sendTextMessage = async () => {
         if (!chatInput.trim() || !activeRoomId) return;
         try {
-            await sendHubMessage(activeRoomId, user.alias || 'You', chatInput);
+            await sendHubMessage(activeRoomId, user.alias || 'You', chatInput, 'text');
             setChatInput('');
         } catch (e) {
             console.error("Msg failed", e);
         }
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            chunksRef.current = [];
+            
+            mediaRecorderRef.current.ondataavailable = (e) => {
+                if (e.data.size > 0) chunksRef.current.push(e.data);
+            };
+
+            mediaRecorderRef.current.onstop = async () => {
+                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    const base64 = reader.result as string;
+                    // Check size limit (e.g. 1MB for firestore sanity)
+                    if (blob.size > 1000000) {
+                        alert("Voice note too long. Limit: 1 minute.");
+                        return;
+                    }
+                    if (activeRoomId) {
+                        // Calculate simplified duration string
+                        const mins = Math.floor(recordingTime / 60);
+                        const secs = recordingTime % 60;
+                        const durationStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+                        // We store the duration as part of the content string or handle it differently.
+                        // For simplicity, we'll append it to content like "DURATION|BASE64"
+                        await sendHubMessage(activeRoomId, user.alias || 'You', `${durationStr}|${base64}`, 'audio');
+                    }
+                    setRecordingTime(0);
+                };
+                // Stop tracks
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+            
+            timerRef.current = setInterval(() => {
+                setRecordingTime(prev => {
+                    if (prev >= 60) { // Auto stop at 60s
+                        stopRecording();
+                        return prev;
+                    }
+                    return prev + 1;
+                });
+            }, 1000);
+
+        } catch (e) {
+            console.error("Mic access denied", e);
+            alert("Microphone access is required for voice notes.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            clearInterval(timerRef.current);
+        }
+    };
+
+    const formatTime = (timestamp: any) => {
+        if (!timestamp) return '';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     const modules = roomData?.modules || [];
@@ -302,7 +455,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                     )}
                 </div>
 
-                {/* Right: Chat (Collapsible on mobile?) - Fixed width on Desktop */}
+                {/* Right: Chat - Fixed width on Desktop */}
                 <div className={`w-80 md:w-96 bg-[#0f0f10] border-l border-white/5 flex flex-col z-20 absolute md:static right-0 h-full transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
                     {/* Chat Header */}
                     <div className="p-4 border-b border-white/5 bg-[#121212]">
@@ -315,10 +468,30 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                             const isMe = msg.sender === user.alias;
                             return (
                                 <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                    <div className={`max-w-[90%] px-3 py-2 rounded-xl text-sm ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/10 text-gray-200 rounded-tl-none'}`}>
-                                        <p>{msg.content}</p>
+                                    <div className={`flex items-end gap-2 max-w-[90%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                        {/* Avatar Placeholder */}
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border border-white/10 ${isMe ? 'bg-blue-900/50 text-blue-200' : 'bg-gray-800 text-gray-300'}`}>
+                                            {msg.sender.charAt(0)}
+                                        </div>
+
+                                        {msg.type === 'audio' ? (
+                                            <AudioMessage 
+                                                src={msg.content.split('|')[1]} 
+                                                duration={msg.content.split('|')[0]}
+                                                isMe={isMe} 
+                                            />
+                                        ) : (
+                                            <div className={`px-4 py-2 rounded-2xl text-sm leading-relaxed ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/10 text-gray-200 rounded-tl-none'}`}>
+                                                <p>{msg.content}</p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <span className="text-[9px] text-gray-600 mt-1 uppercase font-bold">{msg.sender}</span>
+                                    
+                                    <div className={`flex items-center gap-2 mt-1 ${isMe ? 'mr-10' : 'ml-10'}`}>
+                                        <span className="text-[9px] text-gray-600 font-bold uppercase">{msg.sender}</span>
+                                        <span className="text-[9px] text-gray-700">•</span>
+                                        <span className="text-[9px] text-gray-600 font-mono">{formatTime(msg.timestamp)}</span>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -326,20 +499,49 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                     </div>
 
                     {/* Input */}
-                    <div className="p-3 bg-[#121212] border-t border-white/5">
-                        <div className="flex gap-2">
-                            <input 
-                                type="text" 
-                                value={chatInput}
-                                onChange={(e) => setChatInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && sendTextMessage()}
-                                placeholder="Type a message..."
-                                className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
-                            />
-                            <button onClick={sendTextMessage} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-500">
-                                ➤
-                            </button>
-                        </div>
+                    <div className="p-3 bg-[#121212] border-t border-white/5 relative">
+                        {isRecording ? (
+                            <div className="absolute inset-0 bg-[#121212] z-10 flex items-center justify-between px-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                                    <span className="text-red-500 font-mono font-bold">{Math.floor(recordingTime / 60)}:{String(recordingTime % 60).padStart(2, '0')}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-widest animate-pulse">Recording Voice Note...</span>
+                                    <button 
+                                        onClick={stopRecording}
+                                        className="bg-red-500/10 border border-red-500/50 text-red-500 px-3 py-1.5 rounded-lg text-xs font-bold uppercase hover:bg-red-500 hover:text-white transition-all"
+                                    >
+                                        Send
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex gap-2 items-center">
+                                <button 
+                                    onClick={startRecording}
+                                    className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                                    title="Record Voice Note"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                </button>
+                                <input 
+                                    type="text" 
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && sendTextMessage()}
+                                    placeholder="Type a message..."
+                                    className="flex-1 bg-black/40 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition-colors"
+                                />
+                                <button 
+                                    onClick={sendTextMessage} 
+                                    disabled={!chatInput.trim()}
+                                    className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

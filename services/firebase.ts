@@ -391,11 +391,12 @@ export const subscribeToHubRoom = (roomId: string, onUpdate: (data: any) => void
     });
 };
 
-export const sendHubMessage = async (roomId: string, sender: string, content: string) => {
+export const sendHubMessage = async (roomId: string, sender: string, content: string, type: 'text' | 'audio' = 'text') => {
     if (!db) return;
     await addDoc(collection(db, "hubs", roomId, "messages"), {
         sender,
         content,
+        type,
         timestamp: serverTimestamp()
     });
 };

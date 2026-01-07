@@ -156,14 +156,25 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
                     <button 
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 ${
+                        className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all relative overflow-hidden flex items-center justify-center gap-2 ${
+                            loading ? 'bg-green-900/20 border border-green-500/30 text-green-400' :
                             tier === 'Excellentia' 
-                            ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-amber-500/20' 
-                            : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20'
+                            ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20 hover:scale-[1.02]' 
+                            : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20 hover:scale-[1.02]'
                         }`}
                     >
-                        {loading ? 'Securing Link...' : 'Confirm Upgrade'}
-                        {!loading && <span>→</span>}
+                        {loading ? (
+                            <>
+                                <div className="absolute inset-0 bg-green-500/10 animate-pulse"></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/20 to-transparent -translate-x-full animate-[shimmer_1s_infinite]"></div>
+                                <span className="relative z-10">Establishing Secure Tunnel...</span>
+                            </>
+                        ) : (
+                            <>
+                                Confirm Upgrade
+                                <span>→</span>
+                            </>
+                        )}
                     </button>
                 </form>
 

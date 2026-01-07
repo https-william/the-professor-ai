@@ -98,9 +98,21 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
                   <button 
                     type="submit"
                     disabled={loading || !email || !password}
-                    className="w-full py-5 bg-white text-black font-bold uppercase text-xs tracking-[0.2em] hover:bg-gray-200 transition-all disabled:opacity-50"
+                    className={`w-full py-5 font-bold uppercase text-xs tracking-[0.2em] transition-all relative overflow-hidden ${
+                        loading ? 'bg-red-950/30 text-red-500 border border-red-500/30' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-50'
+                    }`}
                   >
-                      {loading ? 'Verifying Identity...' : 'Access Terminal'}
+                      {loading ? (
+                          <>
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent -translate-x-full animate-[shimmer_1s_infinite]"></div>
+                              <span className="relative z-10 flex items-center justify-center gap-2">
+                                  <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                                  OVERRIDING SECURITY...
+                              </span>
+                          </>
+                      ) : (
+                          'Access Terminal'
+                      )}
                   </button>
               </form>
           </div>

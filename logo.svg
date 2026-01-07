@@ -7,16 +7,14 @@
     </linearGradient>
   </defs>
   
-  <!-- Transparent Background for Web/Favicon -->
-  
-  <!-- Graduation Cap Top (Diamond) -->
-  <path d="M15 45 L50 25 L85 45 L50 65 Z" fill="url(#grad)" stroke="#ffffff" stroke-width="2"/>
+  <!-- Graduation Cap Top (Diamond) - Removed Stroke for Favicon clarity -->
+  <path d="M15 45 L50 25 L85 45 L50 65 Z" fill="url(#grad)"/>
   <!-- Tassel String -->
-  <path d="M85 45 V70" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M85 45 V70" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
   <!-- Tassel Ball -->
-  <circle cx="85" cy="75" r="5" fill="#f59e0b"/>
+  <circle cx="85" cy="75" r="6" fill="#f59e0b"/>
   <!-- Cap Base -->
-  <path d="M30 55 V75 C30 85 70 85 70 75 V55" fill="none" stroke="white" stroke-width="2"/>
+  <path d="M30 55 V75 C30 85 70 85 70 75 V55" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
   <!-- Center Button -->
-  <circle cx="50" cy="45" r="5" fill="#fff"/>
+  <circle cx="50" cy="45" r="6" fill="#fff"/>
 </svg>

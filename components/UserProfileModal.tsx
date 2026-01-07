@@ -204,7 +204,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
            {/* Added Explicit Login Button */}
            <button 
              onClick={onRequestAdminAccess}
-             className="text-[9px] font-bold uppercase tracking-widest text-gray-700 hover:text-red-500 transition-colors"
+             className="text-[7px] font-bold uppercase tracking-widest text-gray-800 hover:text-red-900 transition-colors"
            >
              Authorized Personnel Login
            </button>

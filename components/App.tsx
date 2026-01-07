@@ -23,7 +23,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from '../services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from '../services/storageService';
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, HubState, SubscriptionTier } from '../types';
-import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from '../services/firebase';
+import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/firebase';
 import { processFile } from '../services/fileService';
 
 // Lazy Load Heavy Components
@@ -104,18 +104,27 @@ const App: React.FC = () => {
     if (currentView === 'ADMIN_LOGIN' || currentView === 'CHECKOUT') return;
 
     if (user) {
-        if (currentView === 'LANDING' || currentView === 'AUTH') {
+        // Check for pending plan in LocalStorage (Robust persistence)
+        const storedPendingPlan = localStorage.getItem('pending_plan');
+        
+        if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
+            setCheckoutTier(storedPendingPlan as SubscriptionTier);
+            setCurrentView('CHECKOUT');
+            localStorage.removeItem('pending_plan'); // Consume
+        } else if (currentView === 'LANDING' || currentView === 'AUTH' || currentView === 'PRICING') {
             setCurrentView('APP');
-            if (checkIsAdmin(user.email)) setAppMode('ADMIN');
         }
+        
+        if (checkIsAdmin(user.email)) setAppMode('ADMIN');
     } else {
+        // Not logged in
         if (currentView === 'APP' || (currentView === 'ADMIN_LOGIN' && appMode === 'ADMIN')) {
             setCurrentView('LANDING'); 
         }
     }
   }, [user, loading, currentView]);
 
-  // Real-time History Sync
+  // Real-time History Sync (omitted for brevity, unchanged)
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
       const syncHistory = () => {
@@ -182,8 +191,9 @@ const App: React.FC = () => {
   }, [user]);
 
   const handleRequestAdminAccess = async () => {
+      // Log out first to ensure we land on the Admin Auth page cleanly, even if already logged in as a normal user.
+      if (user) await logout();
       setCurrentView('ADMIN_LOGIN');
-      if (user && !checkIsAdmin(user.email)) await logout(); 
   };
 
   const handleAdminSuccess = () => {
@@ -397,15 +407,37 @@ const App: React.FC = () => {
       }
   };
 
-  const handleGoToCheckout = (tier: SubscriptionTier) => {
-      setCheckoutTier(tier);
-      setIsSubscriptionOpen(false);
-      setCurrentView('CHECKOUT');
+  const handleGoToCheckout = async (tier: SubscriptionTier) => {
+      if (tier === 'Fresher') {
+          // Immediate Downgrade for Free Tier
+          if (confirm("Are you sure you want to downgrade to the Fresher plan? Access to advanced features will be revoked.")) {
+              const updatedProfile = { ...userProfile, subscriptionTier: 'Fresher' as SubscriptionTier };
+              setUserProfile(updatedProfile);
+              saveUserProfile(updatedProfile);
+              
+              if (user) {
+                  await updateUserPlan(user.uid, 'Fresher');
+              }
+              
+              setIsSubscriptionOpen(false);
+              alert("You are now on the Fresher plan.");
+          }
+      } else {
+          // Paid Plans - Go to Checkout
+          setCheckoutTier(tier);
+          setIsSubscriptionOpen(false);
+          setCurrentView('CHECKOUT');
+      }
   };
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
   if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => setCurrentView('LANDING')} onSuccess={handleAdminSuccess} />;
-  if (currentView === 'PRICING') return <PricingPage onBack={() => setCurrentView('LANDING')} onSignUp={() => setCurrentView('AUTH')} />;
+  
+  if (currentView === 'PRICING') return <PricingPage onBack={() => setCurrentView('LANDING')} onSelectPlan={(tier) => {
+      localStorage.setItem('pending_plan', tier);
+      setCurrentView('AUTH');
+  }} />;
+  
   if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => setCurrentView('APP')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setCurrentView('APP'); }} />;
   if (currentView === 'AUTH' && !user) return <AuthPage />;
   if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => setCurrentView('AUTH')} onPricing={() => setCurrentView('PRICING')} />;
