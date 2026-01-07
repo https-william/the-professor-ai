@@ -59,7 +59,10 @@ const cleanJson = (text: string): any => {
     try {
         return JSON.parse(text);
     } catch (e) {
+        // Remove Markdown wrappers
         let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // Find JSON object/array
         const firstBracket = clean.indexOf('[');
         const firstBrace = clean.indexOf('{');
         
@@ -127,7 +130,7 @@ const callGroq = async (systemPrompt: string, userPrompt: string, jsonMode: bool
 // --- EXPERT PROMPT ENGINEERING & GUARDRAILS ---
 
 const constructSystemPrompt = (role: string, goal: string, constraints: string[]) => {
-    // Obfuscated Base Identity
+    // Obfuscated Base Identity to prevent simple extraction
     const BASE_ID = [
         "Act as 'The Professor', an elite academic engine created by Vexis Automations.",
         "Your Audience: A smart, Gen-Z student who values speed, wit, and clarity.",
