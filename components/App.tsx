@@ -69,6 +69,7 @@ const App: React.FC = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(null);
+  const [initialRouteHandled, setInitialRouteHandled] = useState(false);
   
   const saveTimeoutRef = useRef<any>(null);
 
@@ -77,17 +78,73 @@ const App: React.FC = () => {
   const QUIZ_LIMIT = isFresher ? 1 : 100;
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
+  // --- ROUTING ENGINE ---
   useEffect(() => {
-      // IMMEDIATE ROUTE CHECK
-      if (window.location.pathname === '/administrator') {
+      // Only run once when auth loading finishes
+      if (loading || initialRouteHandled) return;
+
+      const path = window.location.pathname.toLowerCase();
+      
+      // 1. Admin Route
+      if (path === '/administrator' || path === '/admin') {
           setCurrentView('ADMIN_LOGIN');
+          window.history.replaceState(null, '', '/administrator'); // Keep URL
+          setInitialRouteHandled(true);
+          return;
       }
 
-      const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || '';
-      if (publicKey.startsWith('pk_live')) {
-          console.log('%c PAYSTACK MODE: LIVE ', 'background: #22c55e; color: #fff; padding: 4px; border-radius: 4px; font-weight: bold;');
+      // 2. Scholar Link (Direct Purchase)
+      if (path === '/scholar') {
+          if (user) {
+              setCheckoutTier('Scholar');
+              setCurrentView('CHECKOUT');
+          } else {
+              localStorage.setItem('pending_plan', 'Scholar');
+              setCurrentView('AUTH');
+          }
+          window.history.replaceState(null, '', '/'); // Clean URL
+          setInitialRouteHandled(true);
+          return;
       }
-  }, []);
+
+      // 3. Excellentia Link (Direct Purchase)
+      if (path === '/excellentia') {
+          if (user) {
+              setCheckoutTier('Excellentia');
+              setCurrentView('CHECKOUT');
+          } else {
+              localStorage.setItem('pending_plan', 'Excellentia');
+              setCurrentView('AUTH');
+          }
+          window.history.replaceState(null, '', '/');
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      // 4. Pricing / Tuition
+      if (path === '/pricing' || path === '/tuition') {
+          if (!user) {
+              setCurrentView('PRICING');
+          } else {
+              // If logged in, prefer app view (upgrade modal available there)
+              setCurrentView('APP');
+          }
+          window.history.replaceState(null, '', '/');
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      // 5. Auth
+      if (path === '/login' || path === '/auth') {
+          if (!user) setCurrentView('AUTH');
+          else setCurrentView('APP');
+          window.history.replaceState(null, '', '/');
+          setInitialRouteHandled(true);
+          return;
+      }
+
+      setInitialRouteHandled(true);
+  }, [loading, user, initialRouteHandled]);
 
   const checkIsAdmin = (email: string | null | undefined) => {
       if (!email) return false;
@@ -100,7 +157,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (loading) return;
 
-    // PROTECTION: Do not redirect if on Admin Login or Checkout pages
+    // PROTECTION: Do not redirect if we are specifically on these views
     if (currentView === 'ADMIN_LOGIN' || currentView === 'CHECKOUT') return;
 
     if (user) {
