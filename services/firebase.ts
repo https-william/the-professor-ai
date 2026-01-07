@@ -43,18 +43,15 @@ const unmask = (str: string) => {
 
 // --- SECURE CONFIGURATION ---
 const getSafeEnv = (viteKey: string, processKey: string, fallbackMapKey: keyof typeof FALLBACK_KEYS): string => {
-    // 1. Try Vite Static Replacement
     try {
         // @ts-ignore
         if (import.meta.env[viteKey]) return import.meta.env[viteKey];
     } catch (e) {}
 
-    // 2. Try Process Env (Node/Server)
     if (typeof process !== 'undefined' && process.env && process.env[viteKey]) {
         return process.env[viteKey] as string;
     }
 
-    // 3. Emergency Hardcoded Fallback
     const fallback = unmask(FALLBACK_KEYS[fallbackMapKey]);
     if (fallback) return fallback;
 
@@ -78,7 +75,6 @@ let googleProvider: GoogleAuthProvider;
 let db: any;
 
 try {
-  // Silent fail check to prevent "undefined" crashes
   if (firebaseConfig.apiKey) {
       if (!getApps().length) {
         app = initializeApp(firebaseConfig);
@@ -100,11 +96,36 @@ try {
 
 export { auth, db, googleProvider };
 
-// Export the raw API key for other services (Drive, Gemini) to use as fallback
 export const GLOBAL_API_KEY = firebaseConfig.apiKey;
 
 export const isConfigured = () => {
   return !!firebaseConfig.apiKey && !!auth;
+};
+
+// --- MOCK SERVICE FOR HUB (LOCAL FALLBACK) ---
+// This allows the "Hub" to work locally even without Firebase Keys
+const MOCK_HUB_KEY = 'mock_hub_rooms';
+
+const mockCreateHub = (hostAlias: string, modules: any[]) => {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const id = Date.now().toString();
+    const room = { id, code, host: hostAlias, modules, participants: [hostAlias], messages: [] };
+    
+    const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+    existing.push(room);
+    localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
+    return id;
+};
+
+const mockJoinHub = (code: string, userAlias: string) => {
+    const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+    const room = existing.find((r: any) => r.code === code);
+    if (!room) throw new Error("Room not found (Check Code)");
+    if (!room.participants.includes(userAlias)) {
+        room.participants.push(userAlias);
+        localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
+    }
+    return room.id;
 };
 
 // --- AUTHENTICATION ---
@@ -153,7 +174,8 @@ export const logout = async () => {
 const ensureDB = () => {
     if (!db) {
         if (!firebaseConfig.apiKey) throw new Error("Configuration Error: API Key missing.");
-        throw new Error("Database connection unavailable. Check internet connection.");
+        // We throw a specific error that TheHub can catch to switch to mock mode
+        throw new Error("DB_OFFLINE");
     }
 };
 
@@ -163,7 +185,7 @@ export const saveUserToFirestore = async (userId: string, data: Partial<UserProf
         const userRef = doc(db, "users", userId);
         await setDoc(userRef, data, { merge: true });
     } catch (e) {
-        console.error("Sync Profile Error:", e);
+        console.warn("Sync Profile Error (Offline Mode):", e);
     }
 }
 
@@ -232,7 +254,7 @@ export const updateUserUsage = async (userId: string, usage: number) => {
       ensureDB();
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { dailyQuizzesGenerated: usage });
-  } catch (e) { /* silent fail for usage stats */ }
+  } catch (e) { /* silent fail */ }
 };
 
 // --- DUEL SYSTEM (THE ARENA) ---
@@ -262,14 +284,10 @@ export const joinDuelByCode = async (code: string, userId: string, userName: str
     ensureDB();
     const q = query(collection(db, "duels"), where("code", "==", code.toUpperCase()), where("status", "in", ["INITIALIZING", "WAITING"]));
     const snapshot = await getDocs(q);
-    
     if (snapshot.empty) throw new Error("Arena not found or active.");
-    
     const duelDoc = snapshot.docs[0];
     const duelData = duelDoc.data() as DuelState;
-    
     if (duelData.participants.some(p => p.id === userId)) return duelDoc.id;
-    
     const newParticipant: DuelParticipant = { id: userId, name: userName, status: 'JOINED' };
     await updateDoc(doc(db, "duels", duelDoc.id), { participants: [...duelData.participants, newParticipant] });
     return duelDoc.id;
@@ -302,14 +320,11 @@ export const submitDuelScore = async (duelId: string, userId: string, score: num
         const duelRef = doc(db, "duels", duelId);
         const snap = await getDoc(duelRef);
         if (!snap.exists()) return;
-        
         const data = snap.data() as DuelState;
         const updatedParticipants = data.participants.map(p => 
             p.id === userId ? { ...p, score, status: 'COMPLETED' } : p
         );
-        
         let updateData: any = { participants: updatedParticipants };
-        
         if (updatedParticipants.every(p => p.status === 'COMPLETED')) {
             const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
             if (sorted.length > 1 && sorted[0].score === sorted[1].score) {
@@ -350,59 +365,99 @@ export const submitSuddenDeathAnswer = async (duelId: string, userId: string, is
     await updateDoc(duelRef, updateData as any);
 };
 
-// --- THE HUB (REAL-TIME SYNC ONLY) ---
+// --- THE HUB (REAL-TIME + FALLBACK) ---
 
 export const createHubRoom = async (hostAlias: string, modules: ProfessorSection[]): Promise<string> => {
-    ensureDB();
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const ref = await addDoc(collection(db, "hubs"), {
-        code,
-        host: hostAlias,
-        modules,
-        createdAt: serverTimestamp(),
-        participants: [hostAlias]
-    });
-    return ref.id;
+    try {
+        ensureDB();
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const ref = await addDoc(collection(db, "hubs"), {
+            code,
+            host: hostAlias,
+            modules,
+            createdAt: serverTimestamp(),
+            participants: [hostAlias]
+        });
+        return ref.id;
+    } catch (e: any) {
+        // Fallback for Demo/Local
+        if (e.message === 'DB_OFFLINE' || e.code === 'unavailable') {
+            return mockCreateHub(hostAlias, modules);
+        }
+        throw e;
+    }
 };
 
 export const joinHubRoom = async (code: string, userAlias: string): Promise<string> => {
-    ensureDB();
-    const q = query(collection(db, "hubs"), where("code", "==", code.toUpperCase()));
-    const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) throw new Error("Room not found.");
-    
-    const roomDoc = snapshot.docs[0];
-    const data = roomDoc.data();
-    
-    const participants = data.participants || [];
-    if (!participants.includes(userAlias)) {
-        await updateDoc(doc(db, "hubs", roomDoc.id), {
-            participants: [...participants, userAlias]
-        });
+    try {
+        ensureDB();
+        const q = query(collection(db, "hubs"), where("code", "==", code.toUpperCase()));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) throw new Error("Room not found.");
+        const roomDoc = snapshot.docs[0];
+        const data = roomDoc.data();
+        const participants = data.participants || [];
+        if (!participants.includes(userAlias)) {
+            await updateDoc(doc(db, "hubs", roomDoc.id), {
+                participants: [...participants, userAlias]
+            });
+        }
+        return roomDoc.id;
+    } catch (e: any) {
+        if (e.message === 'DB_OFFLINE' || e.code === 'unavailable') {
+            return mockJoinHub(code, userAlias);
+        }
+        throw e;
     }
-    return roomDoc.id;
 };
 
 export const subscribeToHubRoom = (roomId: string, onUpdate: (data: any) => void) => {
-    if (!db) return () => {};
+    if (!db) {
+        // Mock Subscription
+        const interval = setInterval(() => {
+            const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+            const room = existing.find((r: any) => r.id === roomId);
+            if (room) onUpdate(room);
+        }, 1000);
+        return () => clearInterval(interval);
+    }
     return onSnapshot(doc(db, "hubs", roomId), (doc) => {
         if (doc.exists()) onUpdate({ id: doc.id, ...doc.data() });
     });
 };
 
 export const sendHubMessage = async (roomId: string, sender: string, content: string, type: 'text' | 'audio' = 'text') => {
-    if (!db) return;
-    await addDoc(collection(db, "hubs", roomId, "messages"), {
-        sender,
-        content,
-        type,
-        timestamp: serverTimestamp()
-    });
+    try {
+        ensureDB();
+        await addDoc(collection(db, "hubs", roomId, "messages"), {
+            sender,
+            content,
+            type,
+            timestamp: serverTimestamp()
+        });
+    } catch (e) {
+        // Mock Send
+        const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+        const idx = existing.findIndex((r: any) => r.id === roomId);
+        if (idx !== -1) {
+            existing[idx].messages.push({
+                id: Date.now().toString(),
+                sender, content, type, timestamp: Date.now()
+            });
+            localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
+        }
+    }
 };
 
 export const subscribeToHubMessages = (roomId: string, onUpdate: (msgs: any[]) => void) => {
-    if (!db) return () => {};
+    if (!db) {
+        const interval = setInterval(() => {
+            const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+            const room = existing.find((r: any) => r.id === roomId);
+            if (room) onUpdate(room.messages || []);
+        }, 1000);
+        return () => clearInterval(interval);
+    }
     const q = query(collection(db, "hubs", roomId, "messages"), orderBy("timestamp", "asc"));
     return onSnapshot(q, (snapshot) => {
         const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));

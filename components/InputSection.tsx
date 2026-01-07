@@ -5,6 +5,7 @@ import { processFile } from '../services/fileService';
 import { CameraScanner } from './CameraScanner';
 import { DuelCreateModal } from './DuelCreateModal';
 import { DuelJoinModal } from './DuelJoinModal';
+import { queueAction } from '../services/syncService';
 
 interface InputSectionProps {
   onProcess: (processedFile: ProcessedFile, config: QuizConfig, mode: AppMode) => void;
@@ -45,6 +46,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [showDuelCreate, setShowDuelCreate] = useState(false);
   const [showDuelJoin, setShowDuelJoin] = useState(false);
   const [showDuelSelector, setShowDuelSelector] = useState(false); 
+  const [showWagerModal, setShowWagerModal] = useState(false);
+  const [wagerAmount, setWagerAmount] = useState(0);
 
   // Config State
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultConfig.difficulty);
@@ -140,11 +143,31 @@ export const InputSection: React.FC<InputSectionProps> = ({
       difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle
   });
 
-  const handleGenerate = async (targetMode?: AppMode) => {
+  const initiateGeneration = (targetMode?: AppMode) => {
+      const finalMode = targetMode || appMode;
+      // Intercept EXAM mode for Wagering
+      if (finalMode === 'EXAM' && !isFresher) {
+          setShowWagerModal(true);
+      } else {
+          executeGeneration(finalMode);
+      }
+  };
+
+  const handleWagerConfirm = () => {
+      setShowWagerModal(false);
+      // Deduct XP immediately (Stock Market Logic)
+      if (wagerAmount > 0) {
+          queueAction('UPDATE_PROFILE', { 
+              uid: 'self', // Handled by context
+              data: { xp: (userProfile.xp || 0) - wagerAmount } 
+          });
+      }
+      executeGeneration('EXAM');
+  };
+
+  const executeGeneration = async (finalMode: AppMode) => {
     if (isLoading) return;
     
-    const finalMode = targetMode || appMode;
-
     if (isLimitReached) {
         setFileError("Daily limit reached.");
         onShowSubscription(); 
@@ -264,6 +287,47 @@ export const InputSection: React.FC<InputSectionProps> = ({
   return (
     <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       {showCamera && <CameraScanner onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} mode={appMode === 'PROFESSOR' ? 'SOLVE' : 'QUIZ'} />}
+      
+      {/* Wager Modal */}
+      {showWagerModal && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowWagerModal(false)}>
+              <div className="bg-[#18181b] border border-amber-500/30 rounded-2xl p-8 w-full max-w-sm relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                  <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
+                  <div className="text-center mb-6">
+                      <h3 className="text-white font-bold text-xl font-display">Stake Your Reputation</h3>
+                      <p className="text-gray-400 text-xs mt-2">Invest XP in your performance. High returns for high scores.</p>
+                  </div>
+                  
+                  <div className="bg-black/40 rounded-xl p-4 mb-6 border border-white/10">
+                      <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs text-gray-500 font-bold uppercase">Wager Amount</span>
+                          <span className="text-amber-500 font-mono font-bold">{wagerAmount} XP</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max={Math.min(userProfile.xp || 0, 1000)} 
+                        step="50" 
+                        value={wagerAmount} 
+                        onChange={(e) => setWagerAmount(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      />
+                      <div className="flex justify-between text-[10px] text-gray-600 mt-1 font-mono">
+                          <span>0</span>
+                          <span>{Math.min(userProfile.xp || 0, 1000)} MAX</span>
+                      </div>
+                  </div>
+
+                  <button 
+                    onClick={handleWagerConfirm}
+                    className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-black font-black uppercase text-xs tracking-widest rounded-xl transition-all shadow-lg shadow-amber-500/20"
+                  >
+                      {wagerAmount > 0 ? `Stake ${wagerAmount} XP & Start` : 'Start Without Staking'}
+                  </button>
+              </div>
+          </div>
+      )}
+
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
 
@@ -401,7 +465,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs font-bold uppercase tracking-widest"
                   >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      Scan Document
+                      OCR Sniper (Scan)
                   </button>
               </div>
             </div>
@@ -416,7 +480,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       <span className="text-[10px] font-bold uppercase text-purple-400">Arena</span>
                    </button>
                    
-                   <button onClick={() => handleGenerate('CHAT')} disabled={isLoading} className="p-4 bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28 relative overflow-hidden">
+                   <button onClick={() => initiateGeneration('CHAT')} disabled={isLoading} className="p-4 bg-amber-900/10 border border-amber-500/20 hover:bg-amber-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28 relative overflow-hidden">
                       {!canChat && <div className="absolute top-2 right-2 text-amber-500 text-xs">🔒</div>}
                       <div className="p-3 bg-amber-500/10 rounded-full group-hover:scale-110 transition-transform">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
@@ -424,7 +488,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       <span className="text-[10px] font-bold uppercase text-amber-500 text-center leading-tight">Chat with Material</span>
                    </button>
                    
-                   <button onClick={() => handleGenerate('FLASHCARDS')} disabled={isLoading} className="p-4 bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28">
+                   <button onClick={() => initiateGeneration('FLASHCARDS')} disabled={isLoading} className="p-4 bg-indigo-900/10 border border-indigo-500/20 hover:bg-indigo-900/20 rounded-2xl flex flex-col items-center justify-center gap-2 group transition-all h-28">
                       <div className="p-3 bg-indigo-500/10 rounded-full group-hover:scale-110 transition-transform">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                       </div>
@@ -433,7 +497,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                </div>
 
                <button 
-                 onClick={() => handleGenerate()} 
+                 onClick={() => initiateGeneration()} 
                  disabled={isLoading} 
                  className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${isLimitReached ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20 disabled:opacity-50'}`}
                >
@@ -481,7 +545,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         type="text" 
                         value={chatInput} 
                         onChange={(e) => setChatInput(e.target.value)} 
-                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                        onKeyDown={(e) => e.key === 'Enter' && initiateGeneration()}
                         className="w-full bg-black/60 border border-amber-500/30 rounded-2xl pl-6 pr-12 md:pr-48 py-6 text-white outline-none focus:border-amber-500 placeholder-gray-600 text-lg shadow-2xl transition-all focus:bg-black/80 z-20 relative" 
                         placeholder="Ask a question..." 
                       />
@@ -502,7 +566,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         </button>
 
                         {/* Send Button - Compact on mobile */}
-                        <button onClick={() => handleGenerate()} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
+                        <button onClick={() => initiateGeneration()} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                             ) : (

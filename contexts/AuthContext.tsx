@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { auth, db } from '../services/firebase';
 import { SubscriptionTier, UserRole, UserProfile } from '../types';
+import { saveUserProfile } from '../services/storageService';
 
 export interface ExtendedUser extends User {
   uid: string;
@@ -14,7 +15,7 @@ export interface ExtendedUser extends User {
   role?: UserRole;
   isBanned?: boolean;
   hasCompletedOnboarding?: boolean; 
-  profile?: Partial<UserProfile>; // This must contain EVERYTHING from firestore
+  profile?: Partial<UserProfile>; 
 }
 
 interface AuthContextType {
@@ -29,106 +30,104 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (currentUser: User) => {
-    try {
-      if (!db) return;
-      
-      const userDocRef = doc(db, "users", currentUser.uid);
-      const userSnap = await getDoc(userDocRef);
+  useEffect(() => {
+    let unsubscribeUserDoc: (() => void) | null = null;
 
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        
-        if (userData.isBanned) {
-            await signOut(auth);
-            setUser(null);
-            alert("Your account has been expelled from The Professor's academy.");
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        if (!db) {
+            // Offline/No-DB Mode Fallback
+            setUser({ ...currentUser } as ExtendedUser);
+            setLoading(false);
             return;
         }
 
-        const extendedUser: ExtendedUser = {
-          ...currentUser,
-          uid: currentUser.uid,
-          email: currentUser.email,
-          displayName: currentUser.displayName,
-          photoURL: currentUser.photoURL,
-          plan: userData.plan || 'Fresher',
-          role: userData.role || 'student',
-          isBanned: userData.isBanned || false,
-          hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
-          // CRITICAL: Map all fields directly from Firestore to the profile object
-          profile: {
-             alias: userData.alias,
-             fullName: userData.fullName,
-             school: userData.school,
-             academicLevel: userData.academicLevel,
-             country: userData.country,
-             age: userData.age,
-             socials: userData.socials || {},
-             xp: userData.xp || 0,
-             avatarGradient: userData.avatarGradient,
-             studyReminders: userData.studyReminders,
-             reminderTime: userData.reminderTime,
-             ambientTheme: userData.ambientTheme
-          }
-        };
-        setUser(extendedUser);
-      } else {
-        // Create minimal record if doesn't exist
-        const newUser = {
-          uid: currentUser.uid,
-          email: currentUser.email,
-          photoURL: currentUser.photoURL,
-          plan: 'Fresher',
-          role: 'student',
-          createdAt: serverTimestamp(),
-          isBanned: false,
-          hasCompletedOnboarding: false,
-          xp: 500 // Signing Bonus
-        };
-        await setDoc(userDocRef, newUser, { merge: true });
+        const userDocRef = doc(db, "users", currentUser.uid);
         
-        const extendedUser: ExtendedUser = {
-          ...currentUser,
-          uid: currentUser.uid,
-          email: currentUser.email,
-          displayName: currentUser.displayName,
-          photoURL: currentUser.photoURL,
-          plan: 'Fresher',
-          role: 'student',
-          isBanned: false,
-          hasCompletedOnboarding: false,
-          profile: { xp: 500 }
-        };
-        setUser(extendedUser);
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      // Fallback
-      setUser({ ...currentUser } as ExtendedUser);
-    }
-  };
+        // REAL-TIME LISTENER
+        unsubscribeUserDoc = onSnapshot(userDocRef, async (userSnap) => {
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                
+                if (userData.isBanned) {
+                    await signOut(auth);
+                    setUser(null);
+                    alert("Your account has been expelled from The Professor's academy.");
+                    return;
+                }
 
-  useEffect(() => {
-    if (auth) {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-          if (currentUser) {
-            await fetchUserData(currentUser);
-          } else {
-            setUser(null);
-          }
-          setLoading(false);
+                const profileData = {
+                     alias: userData.alias,
+                     fullName: userData.fullName,
+                     school: userData.school,
+                     academicLevel: userData.academicLevel,
+                     country: userData.country,
+                     age: userData.age,
+                     socials: userData.socials || {},
+                     xp: userData.xp || 0,
+                     avatarGradient: userData.avatarGradient,
+                     studyReminders: userData.studyReminders,
+                     reminderTime: userData.reminderTime,
+                     ambientTheme: userData.ambientTheme,
+                     dailyQuizzesGenerated: userData.dailyQuizzesGenerated,
+                     // Add other synced fields
+                };
+
+                const extendedUser: ExtendedUser = {
+                  ...currentUser,
+                  uid: currentUser.uid,
+                  email: currentUser.email,
+                  displayName: currentUser.displayName,
+                  photoURL: currentUser.photoURL,
+                  plan: userData.plan || 'Fresher',
+                  role: userData.role || 'student',
+                  isBanned: userData.isBanned || false,
+                  hasCompletedOnboarding: userData.hasCompletedOnboarding ?? false,
+                  profile: profileData
+                };
+                
+                // Sync to local storage for offline use
+                saveUserProfile(profileData as UserProfile);
+                
+                setUser(extendedUser);
+                setLoading(false);
+            } else {
+                // Initialize new user
+                const newUser = {
+                  uid: currentUser.uid,
+                  email: currentUser.email,
+                  photoURL: currentUser.photoURL,
+                  plan: 'Fresher',
+                  role: 'student',
+                  createdAt: serverTimestamp(),
+                  isBanned: false,
+                  hasCompletedOnboarding: false,
+                  xp: 500 // Signing Bonus
+                };
+                await setDoc(userDocRef, newUser, { merge: true });
+            }
+        }, (error) => {
+            console.error("Auth Snapshot Error", error);
+            // Fallback if snapshot fails (e.g. permission denied)
+            setUser({ ...currentUser } as ExtendedUser);
+            setLoading(false);
         });
-        return () => unsubscribe();
-    } else {
+
+      } else {
+        if (unsubscribeUserDoc) unsubscribeUserDoc();
+        setUser(null);
         setLoading(false);
-    }
+      }
+    });
+
+    return () => {
+        unsubscribeAuth();
+        if (unsubscribeUserDoc) unsubscribeUserDoc();
+    };
   }, []);
 
   const refreshUser = async () => {
-    if (auth.currentUser) {
-      await fetchUserData(auth.currentUser);
-    }
+    // No-op for snapshot listeners, they update automatically
   };
 
   return (

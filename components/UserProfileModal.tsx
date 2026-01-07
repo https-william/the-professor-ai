@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { UserProfile } from '../types';
+import { queueAction } from '../services/syncService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -14,16 +16,28 @@ interface UserProfileModalProps {
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess }) => {
+  const { user } = useAuth();
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
 
   if (!isOpen) return null;
 
+  const handleSave = () => {
+      onSave(editedProfile);
+      // Use Hydra Queue
+      if (user) {
+          queueAction('UPDATE_PROFILE', { uid: user.uid, data: editedProfile });
+      }
+      onClose();
+  };
+
+  // Achievement Logic with Progress
   const achievements = [
       { 
           id: 'fresh_meat', 
           name: "Fresh Meat", 
-          desc: "Completed your first exam. Welcome to the grinder.", 
-          unlocked: (editedProfile.questionsAnswered || 0) > 0, 
+          desc: "Complete your first exam.", 
+          progress: Math.min((profile.questionsAnswered || 0), 1),
+          total: 1,
           icon: "🥩",
           rarity: "Common",
           color: "bg-gray-800 border-gray-600"
@@ -31,8 +45,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       { 
           id: 'academic_weapon', 
           name: "Academic Weapon", 
-          desc: "Reached 1,000 XP. You are now a threat to the grading curve.", 
-          unlocked: (editedProfile.xp || 0) >= 1000, 
+          desc: "Reach 1,000 XP.", 
+          progress: Math.min((profile.xp || 0), 1000),
+          total: 1000,
           icon: "⚔️",
           rarity: "Rare",
           color: "bg-blue-900/40 border-blue-500"
@@ -40,26 +55,29 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       { 
           id: 'no_life', 
           name: "Touch Grass", 
-          desc: "14 Day Streak. The outside world misses you.", 
-          unlocked: (editedProfile.streak || 0) >= 14, 
+          desc: "7 Day Streak.", 
+          progress: Math.min((profile.streak || 0), 7),
+          total: 7,
           icon: "🧟",
           rarity: "Epic",
           color: "bg-purple-900/40 border-purple-500"
       },
       { 
-          id: 'night_owl', 
-          name: "Vampire Scholar", 
-          desc: "Studied between 2 AM and 5 AM. The sun burns, doesn't it?", 
-          unlocked: false, 
-          icon: "🧛",
+          id: 'veteran', 
+          name: "Veteran", 
+          desc: "Answer 100 Questions.", 
+          progress: Math.min((profile.questionsAnswered || 0), 100),
+          total: 100,
+          icon: "🎖️",
           rarity: "Rare",
           color: "bg-indigo-900/40 border-indigo-500"
       },
       { 
           id: 'einstein', 
-          name: "Actually Einstein", 
-          desc: "100% Score on Nightmare Mode. Are you cheating?", 
-          unlocked: (editedProfile.correctAnswers > 100 && (editedProfile.xp || 0) > 5000), 
+          name: "Einstein", 
+          desc: "Reach 5,000 XP.", 
+          progress: Math.min((profile.xp || 0), 5000),
+          total: 5000,
           icon: "🧠",
           rarity: "Legendary",
           color: "bg-amber-900/40 border-amber-500"
@@ -67,8 +85,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       { 
           id: 'sharpshooter', 
           name: "Sharpshooter", 
-          desc: "Maintained a 100% accuracy streak for 10 questions.", 
-          unlocked: false,
+          desc: "Get 50 Correct Answers.", 
+          progress: Math.min((profile.correctAnswers || 0), 50),
+          total: 50,
           icon: "🎯",
           rarity: "Epic",
           color: "bg-red-900/40 border-red-500"
@@ -119,53 +138,53 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                    <div className="grid grid-cols-2 gap-4 mt-6">
                        <div className="bg-white/5 p-3 rounded-xl border border-white/5">
                            <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">XP Level</span>
-                           <span className="text-xl text-white font-mono">{Math.floor((editedProfile.xp || 0)/100)}</span>
+                           <span className="text-xl text-white font-mono">{Math.floor((profile.xp || 0)/100)}</span>
+                           <span className="text-[10px] text-gray-600 block mt-1">{(profile.xp || 0)} Total XP</span>
                        </div>
                        <div className="bg-white/5 p-3 rounded-xl border border-white/5">
                            <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Streak</span>
-                           <span className="text-xl text-amber-500 font-mono">{editedProfile.streak} Days</span>
+                           <span className="text-xl text-amber-500 font-mono">{profile.streak} Days</span>
+                           <span className="text-[10px] text-gray-600 block mt-1">Keep it up</span>
                        </div>
                    </div>
                </div>
             </div>
 
-            {/* Achievements - Redesigned */}
+            {/* Achievements - Progress Logic */}
             <div>
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-white/5 pb-2">Service Records & Medals</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {achievements.map(ach => (
-                        <div key={ach.id} className={`relative p-4 rounded-xl border transition-all duration-300 group overflow-hidden ${ach.unlocked ? `${ach.color} bg-opacity-20` : 'bg-black border-white/5 opacity-50 grayscale'}`}>
-                            {/* Unlock Glow */}
-                            {ach.unlocked && <div className={`absolute -inset-1 rounded-xl blur opacity-20 group-hover:opacity-40 transition-opacity ${ach.color.split(' ')[0]}`}></div>}
-                            
-                            <div className="relative z-10 flex flex-col items-center text-center h-full">
-                                <div className={`text-4xl mb-3 transform transition-transform group-hover:scale-110 drop-shadow-md ${!ach.unlocked && 'opacity-50'}`}>
-                                    {ach.icon}
+                    {achievements.map(ach => {
+                        const isUnlocked = ach.progress >= ach.total;
+                        const percent = (ach.progress / ach.total) * 100;
+                        
+                        return (
+                            <div key={ach.id} className={`relative p-4 rounded-xl border transition-all duration-300 group overflow-hidden ${isUnlocked ? `${ach.color} bg-opacity-20` : 'bg-black border-white/5 opacity-70 grayscale'}`}>
+                                {isUnlocked && <div className={`absolute -inset-1 rounded-xl blur opacity-20 group-hover:opacity-40 transition-opacity ${ach.color.split(' ')[0]}`}></div>}
+                                
+                                <div className="relative z-10 flex flex-col items-center text-center h-full">
+                                    <div className={`text-4xl mb-3 transform transition-transform group-hover:scale-110 drop-shadow-md`}>
+                                        {ach.icon}
+                                    </div>
+                                    <h5 className={`font-bold text-xs uppercase tracking-wider mb-1 ${isUnlocked ? 'text-white' : 'text-gray-500'}`}>
+                                        {ach.name}
+                                    </h5>
+                                    <p className="text-[10px] text-gray-400 leading-tight mb-3">
+                                        {ach.desc}
+                                    </p>
+                                    
+                                    {/* Progress Bar */}
+                                    <div className="w-full bg-black/50 h-1.5 rounded-full overflow-hidden border border-white/5 mt-auto">
+                                        <div 
+                                            className={`h-full transition-all duration-1000 ${isUnlocked ? 'bg-green-500' : 'bg-blue-500'}`}
+                                            style={{ width: `${percent}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-[8px] font-mono text-gray-500 mt-1">{ach.progress} / {ach.total}</span>
                                 </div>
-                                <h5 className={`font-bold text-xs uppercase tracking-wider mb-1 ${ach.unlocked ? 'text-white' : 'text-gray-500'}`}>
-                                    {ach.name}
-                                </h5>
-                                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full mb-2 ${
-                                    ach.rarity === 'Legendary' ? 'bg-amber-500/20 text-amber-400' : 
-                                    ach.rarity === 'Epic' ? 'bg-purple-500/20 text-purple-400' :
-                                    ach.rarity === 'Rare' ? 'bg-blue-500/20 text-blue-400' : 
-                                    'bg-gray-500/20 text-gray-400'
-                                }`}>
-                                    {ach.rarity}
-                                </span>
-                                <p className="text-[10px] text-gray-400 leading-tight">
-                                    {ach.unlocked ? ach.desc : '???????????'}
-                                </p>
                             </div>
-
-                            {/* Lock Icon Overlay */}
-                            {!ach.unlocked && (
-                                <div className="absolute top-2 right-2 text-gray-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
@@ -201,7 +220,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         </div>
 
         <div className="p-6 border-t border-white/5 bg-black/40 flex justify-between items-center shrink-0">
-           {/* Added Explicit Login Button */}
            <button 
              onClick={onRequestAdminAccess}
              className="text-[7px] font-bold uppercase tracking-widest text-gray-800 hover:text-red-900 transition-colors"
@@ -209,7 +227,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
              Authorized Personnel Login
            </button>
            
-           <button onClick={() => { onSave(editedProfile); onClose(); }} className="px-8 py-3 bg-white text-black rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors shadow-lg">Save Updates</button>
+           <button onClick={handleSave} className="px-8 py-3 bg-white text-black rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors shadow-lg">Save Updates</button>
         </div>
       </div>
     </div>

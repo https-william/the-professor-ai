@@ -29,8 +29,8 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
   const [summaryContent, setSummaryContent] = useState<string | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isFocusTunnel, setIsFocusTunnel] = useState(false);
   
-  // Lock-In State
   const [showLockInModal, setShowLockInModal] = useState(false);
   const [lockInConfig, setLockInConfig] = useState<LockInConfig | null>(null);
   
@@ -38,43 +38,45 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
 
   const section = state.sections[currentSectionIdx];
 
-  // Sync content for printing whenever sections update
+  // FOCUS TUNNEL STYLE INJECTION
   useEffect(() => {
-      const printContainer = document.getElementById('printable-content');
-      if (printContainer) {
-          let html = `
-            <div style="margin-bottom: 40px; border-bottom: 2px solid black; padding-bottom: 20px;">
-                <h1 style="font-size: 32pt; font-weight: bold;">The Professor: Study Notes</h1>
-                <p style="font-size: 12pt; color: #666;">Generated on ${new Date().toLocaleDateString()}</p>
-            </div>
+      const styleId = 'focus-tunnel-style';
+      let styleTag = document.getElementById(styleId);
+      
+      if (isFocusTunnel) {
+          if (!styleTag) {
+              styleTag = document.createElement('style');
+              styleTag.id = styleId;
+              document.head.appendChild(styleTag);
+          }
+          styleTag.innerHTML = `
+            .focus-tunnel-active p, 
+            .focus-tunnel-active ul, 
+            .focus-tunnel-active h1, 
+            .focus-tunnel-active h2,
+            .focus-tunnel-active h3 {
+                filter: blur(4px);
+                opacity: 0.3;
+                transition: all 0.3s ease;
+            }
+            .focus-tunnel-active p:hover, 
+            .focus-tunnel-active ul:hover,
+            .focus-tunnel-active h1:hover, 
+            .focus-tunnel-active h2:hover,
+            .focus-tunnel-active h3:hover {
+                filter: blur(0);
+                opacity: 1;
+                transform: scale(1.01);
+            }
           `;
-          
-          state.sections.forEach((s, i) => {
-              // Sanitize content for safety
-              const cleanContent = DOMPurify.sanitize(s.content);
-              // Parse markdown if marked is available
-              const parsedContent = window.marked ? window.marked.parse(cleanContent) : cleanContent;
-              
-              html += `
-               <div style="margin-bottom: 40px; page-break-inside: avoid;">
-                   <h2 style="font-size: 20pt; font-weight: bold; border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">${i+1}. ${s.title}</h2>
-                   <div style="font-size: 12pt; line-height: 1.6;">${parsedContent}</div>
-                   <div style="margin-top: 20px; padding: 15px; border-left: 4px solid #000; background: #f5f5f5; font-style: italic;">
-                       <strong>Analogy:</strong> ${s.analogy}
-                   </div>
-                   <div style="margin-top: 10px; font-size: 10pt; font-weight: bold;">
-                       KEY TAKEAWAY: ${s.key_takeaway}
-                   </div>
-               </div>
-              `;
-          });
-          printContainer.innerHTML = html;
+      } else {
+          if (styleTag) styleTag.remove();
       }
-  }, [state]);
+      return () => { if (styleTag) styleTag.remove(); };
+  }, [isFocusTunnel]);
 
   useEffect(() => {
       const renderMath = () => {
-          // Critical check: Element must exist
           if (contentRef.current && window.renderMathInElement) {
               try {
                   window.renderMathInElement(contentRef.current, {
@@ -87,16 +89,11 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
                       throwOnError: false
                   });
               } catch (e) {
-                  // Suppress KaTeX parsing errors
                   console.debug("KaTeX Render Warn:", e);
               }
           }
       };
-
-      // Attempt render immediately
       renderMath();
-      
-      // Retry in case scripts loaded late or DOM wasn't ready
       const timer = setTimeout(renderMath, 1000);
       return () => clearTimeout(timer);
   }, [currentSectionIdx, state, summaryContent, lockInConfig]);
@@ -205,7 +202,6 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
       return { __html: sanitized };
   };
 
-  // --- LOCK-IN MODE VIEW ---
   if (lockInConfig) {
       return (
           <div className="max-w-5xl mx-auto pb-20 px-4 animate-fade-in">
@@ -246,7 +242,6 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
                    </span>
                  </div>
                  
-                 {/* Lock-In Button */}
                  <button 
                     onClick={() => setShowLockInModal(true)}
                     className="px-4 py-2 bg-amber-500 text-black font-black uppercase text-xs tracking-wider rounded-xl hover:bg-amber-400 transition-transform hover:scale-105 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse-slow flex items-center gap-2"
@@ -268,14 +263,14 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
                     <span>{isSaved ? 'Saved' : 'Save'}</span>
                  </button>
 
-                 <button onClick={startPodcast} className={`py-3 px-2 border rounded-xl text-[10px] font-bold uppercase transition-all flex flex-col items-center justify-center gap-1.5 ${isPodcastMode ? 'bg-accent text-white border-accent shadow-lg' : 'bg-white/5 border-white/10 text-text-sec hover:text-white hover:bg-white/10'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isPodcastMode ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-                    <span>{isPodcastMode ? 'Playing' : 'Podcast'}</span>
+                 <button onClick={() => setIsFocusTunnel(!isFocusTunnel)} className={`py-3 px-2 border rounded-xl text-[10px] font-bold uppercase transition-all flex flex-col items-center justify-center gap-1.5 ${isFocusTunnel ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg' : 'bg-white/5 border-white/10 text-text-sec hover:text-white hover:bg-white/10'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    <span>{isFocusTunnel ? 'Tunnel On' : 'Focus'}</span>
                  </button>
                  
-                 <button onClick={handleSummary} className="py-3 px-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase text-text-sec hover:text-white hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                    <span>Briefing</span>
+                 <button onClick={startPodcast} className={`py-3 px-2 border rounded-xl text-[10px] font-bold uppercase transition-all flex flex-col items-center justify-center gap-1.5 ${isPodcastMode ? 'bg-accent text-white border-accent shadow-lg' : 'bg-white/5 border-white/10 text-text-sec hover:text-white hover:bg-white/10'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isPodcastMode ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                    <span>{isPodcastMode ? 'Playing' : 'Audio'}</span>
                  </button>
 
                  <button onClick={handleExportPDF} className="py-3 px-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase text-text-sec hover:text-white hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-1.5">
@@ -299,7 +294,7 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
               }} 
            />
 
-           <div className="glass-panel rounded-3xl p-6 md:p-12 animate-slide-up-fade relative overflow-hidden">
+           <div className={`glass-panel rounded-3xl p-6 md:p-12 animate-slide-up-fade relative overflow-hidden ${isFocusTunnel ? 'focus-tunnel-active' : ''}`}>
               <div className="absolute top-4 right-6 text-[10px] font-bold font-mono text-gray-600 uppercase tracking-widest">
                  Section {currentSectionIdx + 1} / {state.sections.length}
               </div>
@@ -360,5 +355,3 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
     </div>
   );
 };
-
-export default ProfessorView;

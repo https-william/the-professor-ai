@@ -48,14 +48,12 @@ const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
   
   // ROUTING FIX: Lazy initialization to catch the URL before first render
-  // This prevents the "flash" of the landing page that causes the 404/redirect loop
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
           if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
-          // For checkout links, we set view to CHECKOUT, tier logic handled in effect
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
       }
       return 'LANDING';
@@ -82,7 +80,6 @@ const App: React.FC = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   
-  // Initialize checkout tier based on URL
   const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(() => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
@@ -93,7 +90,6 @@ const App: React.FC = () => {
   });
 
   const [initialRouteHandled, setInitialRouteHandled] = useState(false);
-  
   const saveTimeoutRef = useRef<any>(null);
 
   // Constants for Limits
@@ -101,28 +97,41 @@ const App: React.FC = () => {
   const QUIZ_LIMIT = isFresher ? 1 : 100;
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
-  // --- ROUTING ENGINE ---
+  // --- NAVIGATION ENGINE ---
+  const navigate = (view: ViewState, url: string) => {
+      window.history.pushState({}, '', url);
+      setCurrentView(view);
+  };
+
   useEffect(() => {
-      // Only run once when auth loading finishes
+      const handlePopState = () => {
+          const path = window.location.pathname.toLowerCase();
+          if (path === '/administrator' || path.startsWith('/admin')) setCurrentView('ADMIN_LOGIN');
+          else if (path === '/pricing') setCurrentView('PRICING');
+          else if (path === '/login') setCurrentView('AUTH');
+          else if (path === '/') setCurrentView(user ? 'APP' : 'LANDING');
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+  }, [user]);
+
+  // --- INITIAL ROUTING LOGIC ---
+  useEffect(() => {
       if (loading || initialRouteHandled) return;
 
       const path = window.location.pathname.toLowerCase();
       
-      // 1. Admin Route
       if (path === '/administrator' || path === '/admin') {
-          // If logged in as admin, go to APP (Admin Mode), else Login
           if (user && checkIsAdmin(user.email)) {
               setAppMode('ADMIN');
               setCurrentView('APP');
           } else {
               setCurrentView('ADMIN_LOGIN');
           }
-          window.history.replaceState(null, '', '/administrator');
           setInitialRouteHandled(true);
           return;
       }
 
-      // 2. Direct Purchase Links
       if (path === '/scholar' || path === '/excellentia') {
           const tier = path === '/scholar' ? 'Scholar' : 'Excellentia';
           if (user) {
@@ -132,30 +141,24 @@ const App: React.FC = () => {
               localStorage.setItem('pending_plan', tier);
               setCurrentView('AUTH');
           }
-          window.history.replaceState(null, '', '/'); 
           setInitialRouteHandled(true);
           return;
       }
 
-      // 3. Pricing
       if (path === '/pricing' || path === '/tuition') {
           if (!user) setCurrentView('PRICING');
-          else setCurrentView('APP'); // Logged in users see App
-          window.history.replaceState(null, '', '/');
+          else setCurrentView('APP');
           setInitialRouteHandled(true);
           return;
       }
 
-      // 4. Auth
       if (path === '/login' || path === '/auth') {
           if (!user) setCurrentView('AUTH');
           else setCurrentView('APP');
-          window.history.replaceState(null, '', '/');
           setInitialRouteHandled(true);
           return;
       }
 
-      // 5. Default App
       if (user) {
           setCurrentView('APP');
       }
@@ -173,32 +176,24 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (loading) return;
-
-    // PROTECTION: Do not redirect if we are specifically on these views
     if (currentView === 'ADMIN_LOGIN' || currentView === 'CHECKOUT' || currentView === 'PRICING') return;
 
     if (user) {
-        // Check for pending plan in LocalStorage (Robust persistence)
         const storedPendingPlan = localStorage.getItem('pending_plan');
-        
         if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
             setCurrentView('CHECKOUT');
-            localStorage.removeItem('pending_plan'); // Consume
+            localStorage.removeItem('pending_plan');
         } else if (currentView === 'LANDING' || currentView === 'AUTH') {
             setCurrentView('APP');
         }
-        
         if (checkIsAdmin(user.email)) setAppMode('ADMIN');
     } else {
-        // Not logged in -> Redirect to Landing if on protected views
-        if (currentView === 'APP') {
-            setCurrentView('LANDING'); 
-        }
+        if (currentView === 'APP') setCurrentView('LANDING'); 
     }
   }, [user, loading, currentView]);
 
-  // Real-time History Sync (omitted for brevity, unchanged)
+  // Real-time History Sync
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
       const syncHistory = () => {
@@ -237,7 +232,6 @@ const App: React.FC = () => {
     if (checkIsAdmin(user.email) && currentView === 'APP') {
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
-        // Don't return here, let profile load
     }
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
@@ -253,7 +247,6 @@ const App: React.FC = () => {
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    // Only load session if NOT admin mode
     if (!checkIsAdmin(user.email)) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
@@ -268,12 +261,12 @@ const App: React.FC = () => {
 
   const handleRequestAdminAccess = async () => {
       if (user) await logout();
-      setCurrentView('ADMIN_LOGIN');
+      navigate('ADMIN_LOGIN', '/administrator');
   };
 
   const handleAdminSuccess = () => {
       setAppMode('ADMIN');
-      setCurrentView('APP');
+      navigate('APP', '/');
       setStatus(AppStatus.READY);
   };
 
@@ -325,9 +318,17 @@ const App: React.FC = () => {
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
+      // 1. SHOW LOADING IMMEDIATELY - FIXES "Nothing Happens" BUG
+      setStatus(AppStatus.GENERATING_CONTENT);
+      setStatusText("Initializing Neural Link...");
+      setErrorMsg(null);
+
       setActiveHistoryId(Date.now().toString()); 
+      
       const summaryPromise = getDocumentSummary(file.content);
+      
       if (mode === 'CHAT') {
+        setStatusText("Analyzing Context...");
         const summary = await summaryPromise;
         const newState: ChatState = { messages: [], fileContext: file.content, fileName: file.name };
         setChatState(newState);
@@ -339,8 +340,7 @@ const App: React.FC = () => {
         setActiveHistoryId(historyItem.id);
         return;
       }
-      setStatus(AppStatus.GENERATING_CONTENT);
-      setErrorMsg(null);
+
       const timeRemaining = parseDuration(config.timerDuration);
       if (mode === 'EXAM' || mode === 'FLASHCARDS') {
         setStatusText("Constructing Materials...");
@@ -484,38 +484,34 @@ const App: React.FC = () => {
 
   const handleGoToCheckout = async (tier: SubscriptionTier) => {
       if (tier === 'Fresher') {
-          // Immediate Downgrade for Free Tier
           if (confirm("Are you sure you want to downgrade to the Fresher plan? Access to advanced features will be revoked.")) {
               const updatedProfile = { ...userProfile, subscriptionTier: 'Fresher' as SubscriptionTier };
               setUserProfile(updatedProfile);
               saveUserProfile(updatedProfile);
-              
-              if (user) {
-                  await updateUserPlan(user.uid, 'Fresher');
-              }
-              
+              if (user) await updateUserPlan(user.uid, 'Fresher');
               setIsSubscriptionOpen(false);
               alert("You are now on the Fresher plan.");
           }
       } else {
-          // Paid Plans - Go to Checkout
           setCheckoutTier(tier);
           setIsSubscriptionOpen(false);
-          setCurrentView('CHECKOUT');
+          // NAVIGATION FIX
+          navigate('CHECKOUT', `/${tier.toLowerCase()}`);
       }
   };
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
-  if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => setCurrentView('LANDING')} onSuccess={handleAdminSuccess} />;
   
-  if (currentView === 'PRICING') return <PricingPage onBack={() => setCurrentView('LANDING')} onSelectPlan={(tier) => {
+  if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => navigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
+  
+  if (currentView === 'PRICING') return <PricingPage onBack={() => navigate('LANDING', '/')} onSelectPlan={(tier) => {
       localStorage.setItem('pending_plan', tier);
-      setCurrentView('AUTH');
+      navigate('AUTH', '/login');
   }} />;
   
-  if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => setCurrentView('APP')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); setCurrentView('APP'); }} />;
+  if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => navigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); navigate('APP', '/'); }} />;
   if (currentView === 'AUTH' && !user) return <AuthPage />;
-  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => setCurrentView('AUTH')} onPricing={() => setCurrentView('PRICING')} />;
+  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => navigate('AUTH', '/login')} onPricing={() => navigate('PRICING', '/pricing')} />;
 
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
@@ -604,9 +600,6 @@ const App: React.FC = () => {
         onSelect={(item) => {
             if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
                 setQuizState(item.data as QuizState);
-                if (item.config) {
-                    // Restore config
-                }
             } else if (item.mode === 'PROFESSOR') {
                 setProfessorState(item.data as ProfessorState);
             } else if (item.mode === 'CHAT') {
