@@ -287,11 +287,15 @@ const App: React.FC = () => {
   };
 
   const handleAdminExit = () => {
-      // When leaving admin, don't show active quiz if it's empty
+      // Safe Exit Logic: Check if we have an active session to return to
       if (quizState.questions && quizState.questions.length > 0) {
           setAppMode('EXAM');
           setStatus(AppStatus.READY);
+      } else if (professorState.sections && professorState.sections.length > 0) {
+          setAppMode('PROFESSOR');
+          setStatus(AppStatus.READY);
       } else {
+          // No active session? Go to Input
           setAppMode('EXAM');
           setStatus(AppStatus.IDLE);
       }

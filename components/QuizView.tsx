@@ -50,6 +50,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [internalIndex, setInternalIndex] = useState(currentQuestionIndex || 0);
   
   // TIMER LOGIC: Calculate real remaining time based on startTime
+  // This prevents the timer from resetting to full duration on refresh
   const calculateRealTimeLeft = () => {
       if (initialDuration === null) return null; // Limitless
       if (!startTime) return initialDuration;
