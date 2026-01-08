@@ -1,18 +1,14 @@
 
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, orderBy, query, limit, addDoc, serverTimestamp } from "firebase/firestore";
-import { db, toggleBanUser, deleteUserAccount, updateUserPlan, resetUserLimits, adminUpdateUser } from '../services/firebase';
-import { SubscriptionTier, SystemLog, UserProfile } from '../types';
+import { fetchAllUsers, sendAnnouncement, adminUpdateProfile } from '../services/supabase';
+import { SubscriptionTier, UserProfile } from '../types';
 
 interface UserData {
   id: string;
   email: string;
   plan: SubscriptionTier;
-  role: string;
   createdAt: any;
-  isBanned?: boolean;
-  dailyQuizzesGenerated?: number;
-  profile?: UserProfile; // Full profile data
+  profile?: UserProfile;
 }
 
 interface AdminDashboardProps {
@@ -20,124 +16,87 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'REGISTRY' | 'LOGS' | 'BROADCAST'>('REGISTRY');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'STUDENTS' | 'COMMS'>('OVERVIEW');
   const [users, setUsers] = useState<UserData[]>([]);
-  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   
   // Student Dossier Modal State
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
-  const [editForm, setEditForm] = useState<Partial<UserProfile> & { socials?: any }>({});
+  const [editForm, setEditForm] = useState<Partial<UserProfile>>({});
 
   // Broadcast State
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
 
   useEffect(() => {
-    fetchUsers();
-    fetchLogs();
+    loadData();
   }, []);
 
-  const fetchUsers = async () => {
+  useEffect(() => {
+      if (!search.trim()) {
+          setFilteredUsers(users);
+      } else {
+          const lower = search.toLowerCase();
+          setFilteredUsers(users.filter(u => 
+              u.email?.toLowerCase().includes(lower) || 
+              u.profile?.alias?.toLowerCase().includes(lower)
+          ));
+      }
+  }, [search, users]);
+
+  const loadData = async () => {
     try {
-      if (!db) return;
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const userList: UserData[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        userList.push({
-          id: doc.id,
-          email: data.email,
-          plan: data.plan || 'Fresher',
-          role: data.role || 'student',
-          createdAt: data.createdAt,
-          isBanned: data.isBanned || false,
-          dailyQuizzesGenerated: data.dailyQuizzesGenerated || 0,
-          profile: {
-              alias: data.alias || '',
-              fullName: data.fullName || '',
-              country: data.country || '',
-              school: data.school || '',
-              academicLevel: data.academicLevel || '',
-              socials: data.socials || {},
-              xp: data.xp || 0,
-          } as UserProfile
-        });
-      });
-      setUsers(userList);
-    } catch (error: any) {
-      console.error("Error fetching users:", error);
+      const profiles = await fetchAllUsers();
+      if (profiles) {
+          const mappedUsers: UserData[] = profiles.map((p: any) => ({
+              id: p.id,
+              email: p.email,
+              plan: p.subscription_tier || 'Fresher',
+              createdAt: p.created_at,
+              profile: {
+                  alias: p.alias,
+                  school: p.school,
+                  country: p.country,
+                  xp: p.xp,
+                  subscriptionTier: p.subscription_tier,
+                  streak: p.streak
+              } as UserProfile
+          }));
+          setUsers(mappedUsers);
+          setFilteredUsers(mappedUsers);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchLogs = async () => {
-      try {
-          if (!db) return;
-          const q = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(50));
-          const querySnapshot = await getDocs(q);
-          const logList: SystemLog[] = [];
-          querySnapshot.forEach((doc) => {
-              const data = doc.data();
-              logList.push({
-                  id: doc.id,
-                  action: data.action,
-                  details: data.details,
-                  adminEmail: data.adminEmail,
-                  targetUserId: data.targetUserId,
-                  timestamp: data.timestamp
-              });
-          });
-          setLogs(logList);
-      } catch (error) {
-          console.error("Error fetching logs", error);
-      }
   };
 
   const handleOpenDossier = (user: UserData) => {
       setSelectedUser(user);
       setEditForm({
           alias: user.profile?.alias,
-          fullName: user.profile?.fullName,
           school: user.profile?.school,
           country: user.profile?.country,
-          academicLevel: user.profile?.academicLevel,
           xp: user.profile?.xp,
-          socials: { ...(user.profile?.socials || {}) }
+          subscriptionTier: user.plan
       });
   };
 
   const handleSaveDossier = async () => {
       if (!selectedUser) return;
-      setProcessingId(selectedUser.id);
       try {
-          await adminUpdateUser(selectedUser.id, editForm);
+          await adminUpdateProfile(selectedUser.id, editForm);
           setUsers(prev => prev.map(u => u.id === selectedUser.id ? { 
               ...u, 
+              plan: editForm.subscriptionTier || u.plan,
               profile: { ...u.profile, ...editForm } as UserProfile 
           } : u));
           setSelectedUser(null);
-          alert("Dossier Updated Successfully");
       } catch (e) {
-          alert("Failed to update dossier");
-      } finally {
-          setProcessingId(null);
-      }
-  };
-
-  const handleDelete = async (userId: string) => {
-      if (!confirm("CONFIRM EXPULSION: This will permanently delete the student record.")) return;
-      setProcessingId(userId);
-      try {
-          await deleteUserAccount(userId);
-          setUsers(prev => prev.filter(u => u.id !== userId));
-          setSelectedUser(null); 
-      } catch (error) {
-          alert("Failed to delete user");
-      } finally {
-          setProcessingId(null);
+          alert("Failed to update dossier. Check permissions.");
       }
   };
 
@@ -146,12 +105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       if (!confirm("This will notify EVERY student. Confirm broadcast?")) return;
       
       try {
-          await addDoc(collection(db, "announcements"), {
-              title: broadcastTitle,
-              message: broadcastMessage,
-              timestamp: serverTimestamp(),
-              author: "Dean's Office"
-          });
+          await sendAnnouncement(broadcastTitle, broadcastMessage);
           setBroadcastTitle('');
           setBroadcastMessage('');
           alert("Signal Sent.");
@@ -160,126 +114,197 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       }
   };
 
+  // Stats Calculation
+  const totalUsers = users.length;
+  const excellentiaUsers = users.filter(u => u.plan === 'Excellentia').length;
+  const scholarUsers = users.filter(u => u.plan === 'Scholar').length;
+  const totalXP = users.reduce((acc, curr) => acc + (curr.profile?.xp || 0), 0);
+
   if (loading) return <div className="flex items-center justify-center h-screen bg-[#050505]"><div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans p-4 md:p-8 animate-fade-in relative">
+    <div className="min-h-screen bg-[#050505] text-white font-mono p-4 md:p-8 animate-fade-in relative selection:bg-amber-500/30">
       
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-900/10 blur-[120px] rounded-full"></div>
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-900/10 blur-[120px] rounded-full"></div>
-      </div>
+      {/* HUD Background */}
+      <div className="fixed inset-0 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+      <div className="fixed top-0 left-0 w-full h-1 bg-amber-600/50 shadow-[0_0_20px_rgba(245,158,11,0.5)] z-50"></div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-amber-500/20 pb-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-end mb-10 pb-6 border-b border-white/10">
               <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-[#0f0f10] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.1)] text-amber-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" /></svg>
+                  <div className="w-16 h-16 bg-[#0f0f10] border border-amber-500/50 rounded-none flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.2)] text-amber-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" /></svg>
                   </div>
                   <div>
-                      <h1 className="text-4xl md:text-5xl font-serif font-black text-amber-500 tracking-tight">DEAN'S OFFICE</h1>
-                      <div className="flex items-center gap-3 mt-2">
-                          <span className="px-2 py-0.5 bg-amber-900/30 border border-amber-500/30 rounded text-[10px] font-bold uppercase tracking-widest text-amber-200">Superintendent Access</span>
+                      <h1 className="text-3xl font-black text-white tracking-[0.2em] uppercase glitch-effect">GOD MODE</h1>
+                      <div className="flex items-center gap-3 mt-1">
+                          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">System Nominal // v2.4.0</span>
                       </div>
                   </div>
               </div>
               
-              <div className="flex gap-2 mt-4 md:mt-0">
-                  <button onClick={onExit} className="px-6 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/5">Return to Campus</button>
-                  <button onClick={() => setActiveTab('REGISTRY')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'REGISTRY' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Student Registry</button>
-                  <button onClick={() => setActiveTab('BROADCAST')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'BROADCAST' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Broadcast</button>
-                  <button onClick={() => setActiveTab('LOGS')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'LOGS' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Audit Logs</button>
+              <div className="flex gap-1 mt-4 md:mt-0 bg-[#121212] p-1 rounded-lg border border-white/10">
+                  <button onClick={() => setActiveTab('OVERVIEW')} className={`px-6 py-2 rounded font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'OVERVIEW' ? 'bg-amber-600 text-black' : 'text-gray-500 hover:text-white'}`}>Overview</button>
+                  <button onClick={() => setActiveTab('STUDENTS')} className={`px-6 py-2 rounded font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'STUDENTS' ? 'bg-amber-600 text-black' : 'text-gray-500 hover:text-white'}`}>Registry</button>
+                  <button onClick={() => setActiveTab('COMMS')} className={`px-6 py-2 rounded font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'COMMS' ? 'bg-amber-600 text-black' : 'text-gray-500 hover:text-white'}`}>Comms</button>
+                  <button onClick={onExit} className="px-6 py-2 rounded font-bold text-[10px] uppercase tracking-widest text-red-500 hover:bg-red-900/20">Logout</button>
               </div>
           </div>
 
-          {activeTab === 'REGISTRY' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {users.map(user => (
-                      <div key={user.id} className="bg-[#0f0f10] border border-white/5 hover:border-amber-500/30 rounded-2xl p-6 transition-all group hover:bg-[#151515] relative overflow-hidden">
-                          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                          <div className="flex justify-between items-start mb-4">
-                              <div>
-                                  <h3 className="font-bold text-lg text-white group-hover:text-amber-400 transition-colors">{user.profile?.alias || 'Unknown Student'}</h3>
-                                  <p className="text-xs text-gray-500 font-mono">{user.email}</p>
-                              </div>
-                              <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${user.plan === 'Excellentia' ? 'bg-amber-900/20 text-amber-500 border border-amber-500/20' : 'bg-blue-900/20 text-blue-500 border border-blue-500/20'}`}>
-                                  {user.plan}
-                              </span>
-                          </div>
-                          <button onClick={() => handleOpenDossier(user)} className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-300 transition-all flex items-center justify-center gap-2">
-                             <span>Open Dossier</span>
-                          </button>
-                      </div>
-                  ))}
-              </div>
-          )}
-
-          {activeTab === 'BROADCAST' && (
-              <div className="bg-[#0f0f10] border border-white/5 rounded-2xl p-8 max-w-2xl mx-auto">
-                  <h3 className="text-xl font-bold text-white mb-6">Campus-Wide Announcement</h3>
-                  <div className="space-y-4 mb-6">
-                      <input type="text" placeholder="Subject Line" value={broadcastTitle} onChange={(e) => setBroadcastTitle(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500" />
-                      <textarea placeholder="Message content..." value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)} className="w-full h-40 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500" />
+          {activeTab === 'OVERVIEW' && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in">
+                  <div className="bg-[#0f0f10] border-l-4 border-blue-500 p-6 rounded-r-xl">
+                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total Population</p>
+                      <h2 className="text-4xl font-bold text-white mt-2">{totalUsers}</h2>
                   </div>
-                  <button onClick={handleSendBroadcast} className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold uppercase text-xs tracking-widest rounded-xl transition-all shadow-lg shadow-amber-500/20">Transmit Signal</button>
+                  <div className="bg-[#0f0f10] border-l-4 border-amber-500 p-6 rounded-r-xl">
+                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Excellentia Elite</p>
+                      <h2 className="text-4xl font-bold text-amber-500 mt-2">{excellentiaUsers}</h2>
+                  </div>
+                  <div className="bg-[#0f0f10] border-l-4 border-purple-500 p-6 rounded-r-xl">
+                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Scholars</p>
+                      <h2 className="text-4xl font-bold text-purple-500 mt-2">{scholarUsers}</h2>
+                  </div>
+                  <div className="bg-[#0f0f10] border-l-4 border-green-500 p-6 rounded-r-xl">
+                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total XP Mined</p>
+                      <h2 className="text-4xl font-bold text-green-500 mt-2">{(totalXP / 1000).toFixed(1)}k</h2>
+                  </div>
               </div>
           )}
 
-          {activeTab === 'LOGS' && (
-              <div className="bg-[#0f0f10] border border-white/5 rounded-2xl overflow-hidden">
-                  <table className="w-full text-left">
-                      <thead className="bg-black/40 border-b border-white/5">
-                          <tr>
-                              <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Time</th>
-                              <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Action</th>
-                              <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Details</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                          {logs.map(log => (
-                              <tr key={log.id} className="hover:bg-white/5">
-                                  <td className="px-6 py-4 text-xs font-mono text-gray-500">{new Date(log.timestamp?.seconds * 1000).toLocaleString()}</td>
-                                  <td className="px-6 py-4"><span className="px-2 py-1 bg-white/5 rounded text-[10px] font-bold uppercase">{log.action}</span></td>
-                                  <td className="px-6 py-4 text-sm text-gray-400">{log.details}</td>
+          {activeTab === 'STUDENTS' && (
+              <div className="animate-fade-in">
+                  <div className="mb-6 flex justify-between items-center bg-[#0f0f10] p-4 rounded-xl border border-white/5">
+                      <input 
+                        type="text" 
+                        placeholder="SEARCH ID / EMAIL..." 
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="bg-transparent border-b border-white/20 px-4 py-2 text-white outline-none w-64 text-xs font-mono focus:border-amber-500 transition-colors uppercase"
+                      />
+                      <span className="text-[10px] text-gray-500 font-mono">{filteredUsers.length} RECORDS FOUND</span>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-xl border border-white/10">
+                      <table className="w-full text-left bg-[#0f0f10]">
+                          <thead className="bg-[#1a1a1c] text-[10px] text-gray-500 uppercase font-bold tracking-widest">
+                              <tr>
+                                  <th className="px-6 py-4">Identity</th>
+                                  <th className="px-6 py-4">Clearance</th>
+                                  <th className="px-6 py-4">XP</th>
+                                  <th className="px-6 py-4">Joined</th>
+                                  <th className="px-6 py-4 text-right">Action</th>
                               </tr>
-                          ))}
-                      </tbody>
-                  </table>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                              {filteredUsers.map(user => (
+                                  <tr key={user.id} className="hover:bg-white/5 transition-colors group">
+                                      <td className="px-6 py-4">
+                                          <div className="font-bold text-white text-sm">{user.profile?.alias || 'Unknown'}</div>
+                                          <div className="text-[10px] text-gray-500 font-mono">{user.email}</div>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                          <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase border ${user.plan === 'Excellentia' ? 'bg-amber-900/20 text-amber-500 border-amber-500/20' : user.plan === 'Scholar' ? 'bg-blue-900/20 text-blue-500 border-blue-500/20' : 'bg-gray-800 text-gray-400 border-gray-700'}`}>
+                                              {user.plan}
+                                          </span>
+                                      </td>
+                                      <td className="px-6 py-4 font-mono text-xs text-gray-300">
+                                          {user.profile?.xp?.toLocaleString()}
+                                      </td>
+                                      <td className="px-6 py-4 text-[10px] text-gray-500 font-mono">
+                                          {new Date(user.createdAt).toLocaleDateString()}
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                          <button onClick={() => handleOpenDossier(user)} className="text-[10px] font-bold uppercase text-amber-500 hover:text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded hover:bg-amber-900/20 transition-all">
+                                              Modify
+                                          </button>
+                                      </td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          )}
+
+          {activeTab === 'COMMS' && (
+              <div className="bg-[#0f0f10] border border-white/5 rounded-2xl p-8 max-w-2xl mx-auto animate-fade-in relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
+                  <h3 className="text-xl font-bold text-white mb-6 uppercase tracking-widest">Global Broadcast System</h3>
+                  <div className="space-y-4 mb-6">
+                      <div>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Frequency Header</label>
+                          <input type="text" placeholder="URGENT UPDATE" value={broadcastTitle} onChange={(e) => setBroadcastTitle(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500 font-mono text-sm" />
+                      </div>
+                      <div>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Payload</label>
+                          <textarea placeholder="Message content..." value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)} className="w-full h-40 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500 font-mono text-sm" />
+                      </div>
+                  </div>
+                  <button onClick={handleSendBroadcast} className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold uppercase text-xs tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-amber-500/20">Transmit Signal</button>
               </div>
           )}
       </div>
 
       {selectedUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
-              <div className="w-full max-w-4xl bg-[#0f0f10] border border-amber-500/20 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                  <div className="p-6 border-b border-white/5 bg-black/40 flex justify-between items-center">
-                      <h2 className="text-xl font-bold text-white uppercase tracking-wider">Restricted Dossier</h2>
-                      <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">✕</button>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
+              <div className="w-full max-w-2xl bg-[#0f0f10] border border-amber-500/30 rounded-none shadow-[0_0_50px_rgba(245,158,11,0.1)] overflow-hidden flex flex-col max-h-[90vh]">
+                  {/* Modal Header */}
+                  <div className="p-4 border-b border-amber-500/20 bg-amber-900/10 flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                          <span className="text-2xl">📁</span>
+                          <h2 className="text-sm font-bold text-amber-500 uppercase tracking-[0.2em]">Subject Dossier</h2>
+                      </div>
+                      <button onClick={() => setSelectedUser(null)} className="text-amber-500 hover:text-white font-mono text-xl">×</button>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <div className="space-y-6">
-                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Identity Matrix</h3>
-                              <div className="space-y-4">
-                                  <input type="text" value={editForm.alias || ''} onChange={(e) => setEditForm({...editForm, alias: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none" placeholder="Alias" />
-                                  <input type="text" value={editForm.fullName || ''} onChange={(e) => setEditForm({...editForm, fullName: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none" placeholder="Full Name" />
-                              </div>
+                  
+                  <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+                      <div className="grid grid-cols-2 gap-6">
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Codename</label>
+                              <input type="text" value={editForm.alias || ''} onChange={(e) => setEditForm({...editForm, alias: e.target.value})} className="w-full bg-black border border-white/10 px-3 py-2 text-white font-mono text-sm focus:border-amber-500 outline-none" />
                           </div>
-                          <div className="space-y-6">
-                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Academic & Network</h3>
-                              <div className="bg-amber-900/10 p-4 rounded-xl border border-amber-500/20">
-                                  <label className="text-[10px] font-bold text-amber-500 uppercase block mb-2">XP Override</label>
-                                  <div className="flex items-center gap-4">
-                                      <input type="range" min="0" max="10000" step="100" value={editForm.xp || 0} onChange={(e) => setEditForm({...editForm, xp: parseInt(e.target.value)})} className="flex-1 h-2 bg-black rounded-lg appearance-none cursor-pointer accent-amber-500" />
-                                      <span className="text-white font-mono">{editForm.xp}</span>
-                                  </div>
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Clearance Level</label>
+                              <select 
+                                value={editForm.subscriptionTier} 
+                                onChange={(e) => setEditForm({...editForm, subscriptionTier: e.target.value as SubscriptionTier})}
+                                className="w-full bg-black border border-white/10 px-3 py-2 text-white font-mono text-sm focus:border-amber-500 outline-none"
+                              >
+                                  <option value="Fresher">Fresher</option>
+                                  <option value="Scholar">Scholar</option>
+                                  <option value="Excellentia">Excellentia</option>
+                              </select>
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">XP Override</label>
+                          <div className="bg-white/5 p-4 border border-white/10">
+                              <div className="flex items-center gap-4">
+                                  <input type="range" min="0" max="10000" step="100" value={editForm.xp || 0} onChange={(e) => setEditForm({...editForm, xp: parseInt(e.target.value)})} className="flex-1 h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+                                  <span className="text-amber-500 font-mono font-bold">{editForm.xp} XP</span>
                               </div>
                           </div>
                       </div>
+
+                      <div className="grid grid-cols-2 gap-6">
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">School</label>
+                              <input type="text" value={editForm.school || ''} onChange={(e) => setEditForm({...editForm, school: e.target.value})} className="w-full bg-black border border-white/10 px-3 py-2 text-white font-mono text-sm focus:border-amber-500 outline-none" />
+                          </div>
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Country</label>
+                              <input type="text" value={editForm.country || ''} onChange={(e) => setEditForm({...editForm, country: e.target.value})} className="w-full bg-black border border-white/10 px-3 py-2 text-white font-mono text-sm focus:border-amber-500 outline-none" />
+                          </div>
+                      </div>
                   </div>
-                  <div className="p-6 border-t border-white/5 bg-black/40 flex justify-between items-center">
-                      <button onClick={() => handleDelete(selectedUser.id)} className="px-6 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-500/20 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">Expel Student</button>
-                      <button onClick={handleSaveDossier} className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 transition-all">Update Records</button>
+
+                  <div className="p-4 border-t border-white/10 bg-black flex justify-end gap-3">
+                      <button onClick={() => setSelectedUser(null)} className="px-6 py-3 text-gray-500 hover:text-white text-xs font-bold uppercase tracking-widest">Cancel</button>
+                      <button onClick={handleSaveDossier} className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-black text-xs font-bold uppercase tracking-widest shadow-lg shadow-amber-500/20">Save Records</button>
                   </div>
               </div>
           </div>

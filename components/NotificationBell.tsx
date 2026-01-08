@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { fetchAnnouncements } from '../services/supabase';
 
 interface Notification {
     id: string;
@@ -17,49 +16,32 @@ export const NotificationBell: React.FC = () => {
     const [hasUnread, setHasUnread] = useState(false);
 
     useEffect(() => {
-        if (!db) return; // Silent fail for offline/demo
+        const loadNotifications = async () => {
+            const data = await fetchAnnouncements();
+            if (data) {
+                const lastReadTime = parseInt(localStorage.getItem('last_read_notification_time') || '0');
+                const fetched: Notification[] = data.map((d: any) => ({
+                    id: d.id,
+                    title: d.title,
+                    message: d.message,
+                    timestamp: new Date(d.created_at).getTime(),
+                    isRead: new Date(d.created_at).getTime() <= lastReadTime
+                }));
 
-        const q = query(collection(db, "announcements"), orderBy("timestamp", "desc"), limit(5));
-        
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const lastReadTime = parseInt(localStorage.getItem('last_read_notification_time') || '0');
-            const fetched: Notification[] = [];
-            let unreadFound = false;
-
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const time = data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now();
-                const isRead = time <= lastReadTime;
-                
-                if (!isRead) unreadFound = true;
-
-                fetched.push({
-                    id: doc.id,
-                    title: data.title,
-                    message: data.message,
-                    timestamp: time,
-                    isRead: isRead
-                });
-            });
-
-            // Demo Notifications if empty
-            if (fetched.length === 0) {
-                fetched.push(
-                    { id: '1', title: 'System Update', message: 'The Hub is now live.', timestamp: Date.now() - 100000, isRead: true },
-                    { id: '2', title: 'Exam Tip', message: 'Try "Nightmare" mode for extra XP.', timestamp: Date.now() - 200000, isRead: true }
-                );
+                const unread = fetched.some(n => !n.isRead);
+                setNotifications(fetched);
+                setHasUnread(unread);
             }
-
-            setNotifications(fetched);
-            setHasUnread(unreadFound);
-        });
-
-        return () => unsubscribe();
+        };
+        loadNotifications();
+        
+        // Simple polling instead of realtime to save resources
+        const interval = setInterval(loadNotifications, 60000); 
+        return () => clearInterval(interval);
     }, []);
 
     const toggleOpen = () => {
         if (!isOpen) {
-            // Mark all as read locally
             localStorage.setItem('last_read_notification_time', Date.now().toString());
             setHasUnread(false);
             setNotifications(prev => prev.map(n => ({...n, isRead: true})));

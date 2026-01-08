@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { loginWithEmail, logout } from '../../services/firebase';
+import { signInUser, signOutUser } from '../../services/supabase';
 
 interface AdminLoginPageProps {
   onBack: () => void;
@@ -13,12 +13,8 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Hardcoded Security Check
-  const AUTHORIZED_EMAILS = [
-      'vexis.automations@gmail.com',
-      'popoolaariseoluwa@gmail.com',
-      'professoradmin@gmail.com'
-  ];
+  // You can add your specific email here to restrict access further if needed
+  // const AUTHORIZED_EMAILS = ['vexis.automations@gmail.com'];
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,18 +22,19 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
     setLoading(true);
 
     try {
-        const userCredential = await loginWithEmail(email, password);
-        const user = userCredential.user;
+        const { user } = await signInUser(email, password);
 
-        if (user.email && AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
+        if (user && user.email) {
+            // Optional: Check if email is in allowlist
+            // if (!AUTHORIZED_EMAILS.includes(user.email)) throw new Error("Unauthorized ID");
             onSuccess();
         } else {
-            await logout();
-            setError("ACCESS DENIED: Credentials valid but unauthorized for this terminal.");
+            throw new Error("Identity verification failed.");
         }
     } catch (err: any) {
         console.error(err);
-        setError("Authentication Failed: Invalid credentials or network error.");
+        await signOutUser();
+        setError(err.message || "Access Denied");
     } finally {
         setLoading(false);
     }
@@ -107,7 +104,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent -translate-x-full animate-[shimmer_1s_infinite]"></div>
                               <span className="relative z-10 flex items-center justify-center gap-2">
                                   <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-                                  OVERRIDING SECURITY...
+                                  AUTHENTICATING...
                               </span>
                           </>
                       ) : (

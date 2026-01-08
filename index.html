@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
@@ -5,26 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
     <!-- PRIMARY SEO -->
-    <title>The Professor | AI Study Tool & Exam Generator</title>
-    <meta name="description" content="The #1 AI Study Companion. Turn lecture notes into exams, quizzes, and flashcards instantly. Study smarter, not harder." />
+    <title>The Professor | AI Study Tool</title>
+    <meta name="description" content="AI-powered academic accelerator. Transform materials into mastery." />
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <link rel="apple-touch-icon" href="/logo-pwa.svg">
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#050505" />
 
     <!-- Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Payments (Critical: Loaded Early) -->
-    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Payments -->
     <script src="https://js.paystack.co/v1/inline.js"></script>
     
-    <!-- Google APIs -->
-    <script async defer src="https://apis.google.com/js/api.js"></script>
-    <script async defer src="https://accounts.google.com/gsi/client.js"></script>
-
     <!-- PDF & Math Libs -->
     <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -40,7 +36,6 @@
       if (typeof process === 'undefined') { window.process = { env: {} }; }
       if (typeof global === 'undefined') { window.global = window; }
       
-      // PDF Worker
       const PDF_WORKER_SRC = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
       
       window.addEventListener('load', function() {
@@ -50,9 +45,8 @@
                preloader.style.opacity = '0';
                preloader.style.pointerEvents = 'none';
                setTimeout(() => preloader.remove(), 500);
-            }, 1000); 
+            }, 500); 
          }
-         
          if (typeof pdfjsLib !== 'undefined') {
              pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
          }
@@ -68,9 +62,9 @@
           extend: {
             colors: {
               'core': '#050505',
-              'panel': 'rgba(20, 20, 20, 0.4)',
+              'panel': 'rgba(24, 24, 27, 0.6)',
               'border-main': 'rgba(255, 255, 255, 0.08)',
-              'text-pri': '#e8eaed',
+              'text-pri': '#f3f4f6',
               'text-sec': '#9ca3af',
               'accent': '#f59e0b',
             },
@@ -81,37 +75,25 @@
               display: ['Cinzel', 'serif'],
             },
             animation: {
-              'fade-in': 'fadeIn 0.6s ease-out',
-              'slide-in': 'slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-              'slide-up-fade': 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'shimmer': 'shimmer 2.5s linear infinite',
-              'orbit': 'orbit 3s linear infinite',
-              'orbit-reverse': 'orbit-reverse 4s linear infinite',
-              'breathe': 'breathe 3s ease-in-out infinite',
+              'fade-in': 'fadeIn 0.4s ease-out',
+              'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             },
             keyframes: {
               fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-              slideIn: { '0%': { transform: 'translateX(30px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
-              slideUpFade: { '0%': { opacity: '0', transform: 'translateY(30px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
-              shimmer: { '0%': { backgroundPosition: '-200% center' }, '100%': { backgroundPosition: '200% center' } },
-              orbit: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
-              'orbit-reverse': { '0%': { transform: 'rotate(360deg)' }, '100%': { transform: 'rotate(0deg)' } },
-              breathe: { '0%, 100%': { transform: 'scale(1)', opacity: '0.8' }, '50%': { transform: 'scale(1.1)', opacity: '0.4' } },
+              slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
             },
           },
         }
       }
     </script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
-      body { background-color: #050505; color: #e8eaed; font-family: 'Inter', sans-serif; margin: 0; }
-      .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
-      .glass-panel { background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-      #preloader-core { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
-      .loader-spinner { width: 50px; height: 50px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+      body { background-color: #050505; color: #f3f4f6; font-family: 'Inter', sans-serif; margin: 0; -webkit-font-smoothing: antialiased; }
+      .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+      #preloader-core { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
+      .loader-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 
@@ -125,7 +107,9 @@
     "react/": "https://esm.sh/react@18.2.0/",
     "react-dom": "https://esm.sh/react-dom@18.2.0",
     "react-dom/": "https://esm.sh/react-dom@18.2.0/",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?deps=react@18.2.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?deps=react@18.2.0,react-dom@18.2.0",
+    "framer-motion": "https://esm.sh/framer-motion@11.0.8?deps=react@18.2.0,react-dom@18.2.0",
     "@google/genai": "https://esm.sh/@google/genai@0.12.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
     "firebase/app": "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js",
@@ -145,7 +129,6 @@
         <div class="loader-spinner"></div>
       </div>
     </div>
-    <div id="printable-content" style="display: none;"></div>
     <script type="module" src="./index.tsx"></script>
   <script type="module" src="/index.tsx"></script>
 </body>

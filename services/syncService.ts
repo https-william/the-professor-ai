@@ -1,5 +1,6 @@
 
-import { saveUserToFirestore, updateUserUsage, submitDuelScore } from './firebase';
+import { updateUserProfile } from './supabase';
+import { submitDuelScore } from './firebase'; // Legacy stub if needed, or implement in Supabase
 import { UserProfile, HistoryItem } from '../types';
 import { saveUserProfile, loadUserProfile, saveToHistory } from './storageService';
 
@@ -40,7 +41,7 @@ export const queueAction = (type: SyncTask['type'], payload: any) => {
     if (type === 'UPDATE_PROFILE') {
         const current = loadUserProfile();
         if (current) {
-            const updated = { ...current, ...payload };
+            const updated = { ...current, ...payload.data }; // payload is { uid, data }
             saveUserProfile(updated);
         }
     } else if (type === 'SAVE_HISTORY') {
@@ -60,7 +61,7 @@ const processTask = async (task: SyncTask) => {
     switch (task.type) {
         case 'UPDATE_PROFILE':
             // Payload is { uid, data }
-            await saveUserToFirestore(task.payload.uid, task.payload.data);
+            await updateUserProfile(task.payload.uid, task.payload.data);
             break;
         case 'DUEL_SCORE':
             await submitDuelScore(task.payload.duelId, task.payload.userId, task.payload.score);
@@ -68,7 +69,6 @@ const processTask = async (task: SyncTask) => {
         case 'SAVE_HISTORY':
             // History is typically local-only in this architecture, 
             // but if we had cloud history, we'd push it here.
-            // For now, we simulate a cloud ping.
             await new Promise(resolve => setTimeout(resolve, 100));
             break;
     }

@@ -61,14 +61,39 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
       }
 
       // 2. Check if the Script loaded in index.html
-      if (!window.PaystackPop) {
+      // We check for 'setup' specifically to ensure we have the correct object type
+      if (!window.PaystackPop || typeof window.PaystackPop.setup !== 'function') {
+          // Fallback check: sometimes it loads as a constructor despite the error
+          if (typeof window.PaystackPop === 'function') {
+             // It is a constructor (v2 or specific load), try legacy
+             try {
+                 // @ts-ignore
+                 const handler = new window.PaystackPop();
+                 handler.newTransaction({
+                    key: publicKey,
+                    email: email,
+                    amount: price * 100,
+                    currency: currency,
+                    ref: 'PRO_' + Math.floor((Math.random() * 1000000000) + 1),
+                    onSuccess: (transaction: any) => {
+                        onSuccess(tier);
+                        setLoading(false);
+                    },
+                    onCancel: () => setLoading(false)
+                 });
+                 return;
+             } catch(err) {
+                 console.error("Legacy init failed", err);
+             }
+          }
+          
           alert("Secure Gateway is not loaded. Please refresh the page and check your internet connection.");
           setLoading(false);
           return;
       }
 
       try {
-        // 3. THE FIX: Use .setup() instead of 'new PaystackPop()'
+        // 3. THE FIX: Use .setup() directly
         // This bypasses the constructor error completely.
         const handler = window.PaystackPop.setup({
             key: publicKey,

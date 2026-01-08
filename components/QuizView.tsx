@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { QuizState, QuizQuestion, DuelState } from '../types';
 import { simplifyExplanation, generateSuddenDeathQuestion } from '../services/geminiService';
 import { subscribeToDuel, activateSuddenDeath, submitSuddenDeathAnswer } from '../services/firebase';
+import { createShareLink } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 interface QuizViewProps {
@@ -48,25 +49,13 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const { questions, userAnswers, flaggedQuestions, isSubmitted, score, timeRemaining: initialDuration, startTime, focusStrikes, currentQuestionIndex } = quizState;
   
   const [internalIndex, setInternalIndex] = useState(currentQuestionIndex || 0);
-  
-  // TIMER LOGIC: Calculate real remaining time based on startTime
-  // This prevents the timer from resetting to full duration on refresh
-  const calculateRealTimeLeft = () => {
-      if (initialDuration === null) return null; // Limitless
-      if (!startTime) return initialDuration;
-      
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - startTime) / 1000);
-      const remaining = initialDuration - elapsedSeconds;
-      return Math.max(0, remaining);
-  };
-
-  const [timeLeft, setTimeLeft] = useState<number | null>(calculateRealTimeLeft);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [strikes, setStrikes] = useState(focusStrikes || 0);
   
   const [duelData, setDuelData] = useState<DuelState | null>(null);
   const [suddenDeathSubmitted, setSuddenDeathSubmitted] = useState(false);
   const [isGeneratingSD, setIsGeneratingSD] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   
   const [textAnswer, setTextAnswer] = useState('');
   const [multiSelectAnswers, setMultiSelectAnswers] = useState<string[]>([]);
@@ -76,6 +65,20 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
   const lastStrikeTime = useRef<number>(0);
   const isMountedRef = useRef(true);
+
+  // Initialize Timer Logic safely for re-renders
+  useEffect(() => {
+      if (initialDuration === null) {
+          setTimeLeft(null);
+      } else if (startTime && !isSubmitted) {
+          const now = Date.now();
+          const elapsed = Math.floor((now - startTime) / 1000);
+          const remaining = Math.max(0, initialDuration - elapsed);
+          setTimeLeft(remaining);
+      } else {
+          setTimeLeft(initialDuration);
+      }
+  }, [initialDuration, startTime, isSubmitted]);
 
   useEffect(() => {
       isMountedRef.current = true;
@@ -195,6 +198,22 @@ export const QuizView: React.FC<QuizViewProps> = ({
       setSuddenDeathSubmitted(true);
   };
 
+  const handleShare = async () => {
+      if (isSharing) return;
+      setIsSharing(true);
+      
+      const shareId = await createShareLink('EXAM', quizState);
+      
+      if (shareId) {
+          const url = `https://theprofessor.xyz/#/share/${shareId}`;
+          navigator.clipboard.writeText(url);
+          alert("Public Link Copied: " + url);
+      } else {
+          alert("Failed to create secure link. Please try again.");
+      }
+      setIsSharing(false);
+  };
+
   const currentQ = questions?.[internalIndex];
   if (!currentQ && !isSubmitted) {
       return (
@@ -269,7 +288,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
              Exam Results
            </h2>
-           <button onClick={onReset} className="px-6 py-2 bg-white text-black rounded-full font-bold uppercase text-xs hover:bg-gray-200">Exit Session</button>
+           <div className="flex gap-2">
+               <button onClick={handleShare} disabled={isSharing} className="px-4 py-2 bg-blue-900/30 text-blue-400 border border-blue-500/30 rounded-full font-bold uppercase text-xs hover:bg-blue-900/50 flex items-center gap-2">
+                   {isSharing ? 'Uploading...' : 'Share Results'}
+               </button>
+               <button onClick={onReset} className="px-6 py-2 bg-white text-black rounded-full font-bold uppercase text-xs hover:bg-gray-200">Exit Session</button>
+           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
@@ -420,7 +444,10 @@ export const QuizView: React.FC<QuizViewProps> = ({
           <div className="flex justify-between mt-8 pt-6 border-t border-white/5">
              <button onClick={() => { if (currentQ.type === 'Fill in the Gap') saveTextInput(); handlePrevQuestion(); }} disabled={internalIndex === 0} className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 font-bold text-xs uppercase hover:bg-white/10 disabled:opacity-30 transition-all">Prev</button>
              {internalIndex === questions.length - 1 ? (
-                <button onClick={() => { if (currentQ.type === 'Fill in the Gap') saveTextInput(); onSubmit(); }} className="px-10 py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-white/10">Submit Exam</button>
+                <div className="flex gap-3">
+                    <button onClick={handleShare} disabled={isSharing} className="px-6 py-3 rounded-xl border border-blue-500/20 text-blue-400 font-bold text-xs uppercase hover:bg-blue-500/10">Share Exam</button>
+                    <button onClick={() => { if (currentQ.type === 'Fill in the Gap') saveTextInput(); onSubmit(); }} className="px-10 py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-white/10">Submit Exam</button>
+                </div>
              ) : (
                 <button onClick={() => { if (currentQ.type === 'Fill in the Gap') saveTextInput(); handleNextQuestion(); }} className="px-8 py-3 rounded-xl text-white font-bold text-xs uppercase transition-all shadow-lg bg-blue-600 hover:bg-blue-500 shadow-blue-900/20">Next</button>
              )}
