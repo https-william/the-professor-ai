@@ -21,9 +21,12 @@ export const AuthPage: React.FC = () => {
       // Check for errors returned in the URL (e.g. from OAuth redirects)
       const params = new URLSearchParams(location.hash.substring(1)); // Supabase uses hash fragments often
       const errorDescription = params.get('error_description');
+      const errorCode = params.get('error_code');
       const errorMsg = params.get('error');
 
-      if (errorDescription) {
+      if (errorCode === 'bad_oauth_state') {
+          setError("Session Expired. Please try logging in again.");
+      } else if (errorDescription) {
           setError(decodeURIComponent(errorDescription).replace(/\+/g, ' '));
       } else if (errorMsg) {
           setError("Authentication Error: " + errorMsg);

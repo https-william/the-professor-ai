@@ -70,10 +70,19 @@ export const signInUser = async (email: string, password: string) => {
 };
 
 export const signInWithGoogle = async () => {
+    // Explicitly define the redirect URL based on where the user currently is.
+    // This MUST match one of the "Redirect URLs" in your Supabase Dashboard.
+    const redirectUrl = window.location.origin; 
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.origin
+            redirectTo: redirectUrl,
+            queryParams: {
+                // Force consent to ensure we get a fresh refresh token and avoid 'bad_oauth_state'
+                access_type: 'offline',
+                prompt: 'consent',
+            }
         }
     });
     if (error) throw error;
