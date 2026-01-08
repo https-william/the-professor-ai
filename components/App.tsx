@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate, Outlet } from 'react-router-dom';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
 import { LoadingOverlay } from './LoadingOverlay';
@@ -44,7 +44,7 @@ const Layout = ({ children, userProfile, onOpenProfile, onOpenHistory, onOpenSub
     
     <nav className="border-b backdrop-blur-md sticky top-0 z-40 bg-black/60 border-white/5">
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.location.reload()}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.location.href = '/'}>
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
@@ -189,7 +189,7 @@ const App: React.FC = () => {
             <Route path="/share/:id" element={<Suspense fallback={<div>Loading...</div>}><SharedView /></Suspense>} />
             
             {/* Protected Routes */}
-            <Route path="/app" element={user ? <Layout userProfile={userProfile} onOpenProfile={() => setIsProfileOpen(true)} onOpenHistory={() => setIsHistoryOpen(true)} onOpenSubscription={() => setIsSubscriptionOpen(true)}><div /></Layout> : <Navigate to="/auth" />}>
+            <Route path="/app" element={user ? <Layout userProfile={userProfile} onOpenProfile={() => setIsProfileOpen(true)} onOpenHistory={() => setIsHistoryOpen(true)} onOpenSubscription={() => setIsSubscriptionOpen(true)}><Outlet /></Layout> : <Navigate to="/auth" />}>
                 <Route path="dashboard" element={
                     <>
                         <Hero />
