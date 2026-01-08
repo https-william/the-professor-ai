@@ -16,7 +16,7 @@ interface UserData {
 }
 
 interface AdminDashboardProps {
-    onExit?: () => void;
+    onExit: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
@@ -191,10 +191,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
               
               <div className="flex gap-2 mt-4 md:mt-0">
                   <button 
-                    onClick={() => {
-                        if (onExit) onExit();
-                        else window.location.reload();
-                    }} 
+                    onClick={onExit} 
                     className="px-6 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/5"
                   >
                       Return to Campus
@@ -305,141 +302,4 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
               <div className="w-full max-w-4xl bg-[#0f0f10] border border-amber-500/20 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                   
                   {/* Modal Header */}
-                  <div className="p-6 border-b border-white/5 bg-black/40 flex justify-between items-center">
-                      <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-amber-900/20 rounded-xl border border-amber-500/20 flex items-center justify-center text-2xl text-amber-500">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" /></svg>
-                          </div>
-                          <div>
-                              <h2 className="text-xl font-bold text-white uppercase tracking-wider">Restricted Dossier</h2>
-                              <p className="text-xs text-gray-500 font-mono">{selectedUser.id}</p>
-                          </div>
-                      </div>
-                      <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">✕</button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          
-                          {/* Identity Section */}
-                          <div className="space-y-6">
-                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Identity Matrix</h3>
-                              
-                              <div className="space-y-4">
-                                  <div>
-                                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Alias (Codename)</label>
-                                      <input 
-                                          type="text" 
-                                          value={editForm.alias || ''} 
-                                          onChange={(e) => setEditForm({...editForm, alias: e.target.value})}
-                                          className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
-                                      />
-                                  </div>
-                                  <div>
-                                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Full Name</label>
-                                      <input 
-                                          type="text" 
-                                          value={editForm.fullName || ''} 
-                                          onChange={(e) => setEditForm({...editForm, fullName: e.target.value})}
-                                          className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
-                                      />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                          <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Country</label>
-                                          <input 
-                                              type="text" 
-                                              value={editForm.country || ''} 
-                                              onChange={(e) => setEditForm({...editForm, country: e.target.value})}
-                                              className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
-                                          />
-                                      </div>
-                                      <div>
-                                          <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Academic Level</label>
-                                          <input 
-                                              type="text" 
-                                              value={editForm.academicLevel || ''} 
-                                              onChange={(e) => setEditForm({...editForm, academicLevel: e.target.value})}
-                                              className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
-                                          />
-                                      </div>
-                                  </div>
-                                  <div>
-                                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Institution</label>
-                                      <input 
-                                          type="text" 
-                                          value={editForm.school || ''} 
-                                          onChange={(e) => setEditForm({...editForm, school: e.target.value})}
-                                          className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
-                                      />
-                                  </div>
-                              </div>
-                          </div>
-
-                          {/* Metrics & Socials */}
-                          <div className="space-y-6">
-                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Academic & Network</h3>
-                              
-                              <div className="bg-amber-900/10 p-4 rounded-xl border border-amber-500/20">
-                                  <label className="text-[10px] font-bold text-amber-500 uppercase block mb-2">Override Experience Points (XP)</label>
-                                  <div className="flex items-center gap-4">
-                                      <input 
-                                          type="range" min="0" max="10000" step="100" 
-                                          value={editForm.xp || 0} 
-                                          onChange={(e) => setEditForm({...editForm, xp: parseInt(e.target.value)})}
-                                          className="flex-1 h-2 bg-black rounded-lg appearance-none cursor-pointer accent-amber-500"
-                                      />
-                                      <input 
-                                          type="number" 
-                                          value={editForm.xp || 0} 
-                                          onChange={(e) => setEditForm({...editForm, xp: parseInt(e.target.value)})}
-                                          className="w-24 bg-black/40 border border-amber-500/30 rounded px-2 py-1 text-right font-mono text-amber-400"
-                                      />
-                                  </div>
-                              </div>
-
-                              <div className="space-y-3">
-                                  <label className="text-[10px] font-bold text-gray-500 uppercase block">Social Handles</label>
-                                  {['whatsapp', 'telegram', 'instagram', 'snapchat'].map(platform => (
-                                      <div key={platform} className="flex items-center gap-2">
-                                          <span className="w-24 text-xs text-gray-400 capitalize">{platform}:</span>
-                                          <input 
-                                              type="text" 
-                                              value={editForm.socials?.[platform] || ''}
-                                              onChange={(e) => setEditForm({
-                                                  ...editForm, 
-                                                  socials: { ...editForm.socials, [platform]: e.target.value }
-                                              })}
-                                              className="flex-1 bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-amber-500 outline-none"
-                                              placeholder="Not linked"
-                                          />
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div className="p-6 border-t border-white/5 bg-black/40 flex justify-between items-center">
-                      <button 
-                        onClick={() => handleDelete(selectedUser.id)} 
-                        className="px-6 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-500/20 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
-                      >
-                          Expel Student
-                      </button>
-                      <div className="flex gap-4">
-                          <button onClick={() => setSelectedUser(null)} className="px-6 py-3 text-gray-500 hover:text-white font-bold uppercase text-xs">Cancel</button>
-                          <button 
-                             onClick={handleSaveDossier}
-                             className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 transition-all"
-                          >
-                             Update Records
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      )}
-    </div>
-  );
-};
+                  <div className="p-6 border

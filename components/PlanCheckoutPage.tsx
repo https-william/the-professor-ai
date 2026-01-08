@@ -17,6 +17,7 @@ declare global {
 export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack, onSuccess }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
   const [currency, setCurrency] = useState<'NGN' | 'USD'>('USD');
 
   // Pricing Matrix
@@ -32,6 +33,23 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
     } catch(e) { setCurrency('USD'); }
   }, []);
 
+  // Dynamic Script Loader for Stability
+  useEffect(() => {
+      const loadPaystack = () => {
+          if (window.PaystackPop) {
+              setScriptLoaded(true);
+              return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://js.paystack.co/v1/inline.js';
+          script.async = true;
+          script.onload = () => setScriptLoaded(true);
+          script.onerror = () => console.error("Failed to load Paystack script");
+          document.body.appendChild(script);
+      };
+      loadPaystack();
+  }, []);
+
   const price = PRICES[tier as keyof typeof PRICES]?.[currency] || 0;
 
   const handleCheckout = (e: React.FormEvent) => {
@@ -40,6 +58,7 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
           alert("A valid communication channel is required.");
           return;
       }
+      
       setLoading(true);
 
       // 1. Get Key Safely
@@ -50,15 +69,15 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
       } catch (e) {}
 
       if (!publicKey) {
-          console.error("Paystack Key Missing in Environment Variables");
-          alert("System Error: Payment Gateway Configuration Missing. Please contact support.");
+          console.error("PAYSTACK ERROR: VITE_PAYSTACK_PUBLIC_KEY is missing in your environment variables.");
+          alert("System Error: Payment Gateway Configuration Missing. Please check console.");
           setLoading(false);
           return;
       }
 
-      // 2. Check Script
-      if (typeof window.PaystackPop === 'undefined') {
-          alert("Secure Gateway Unreachable. Please disable Ad-Blockers and refresh.");
+      // 2. Check if Paystack script loaded
+      if (!scriptLoaded || typeof window.PaystackPop === 'undefined') {
+          alert("Secure Gateway is still initializing. Please wait 3 seconds and try again.");
           setLoading(false);
           return;
       }
@@ -84,8 +103,8 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
             onCancel: () => setLoading(false)
         });
       } catch (e) {
-          console.error("Paystack Init Error:", e);
-          alert("Secure link failed. Check console for details.");
+          console.error("Paystack Init Exception:", e);
+          alert("Secure link failed to initialize. Check console for details.");
           setLoading(false);
       }
   };
@@ -118,8 +137,10 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
             <button onClick={onBack} className="text-gray-500 hover:text-white text-xs uppercase tracking-widest">← Abort Transaction</button>
             <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Secure Gateway</span>
+                <div className={`w-2 h-2 rounded-full ${scriptLoaded ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    {scriptLoaded ? 'Secure Gateway' : 'Initializing...'}
+                </span>
             </div>
         </div>
 
@@ -176,7 +197,7 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
 
                     <button 
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !scriptLoaded}
                         className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all relative overflow-hidden flex items-center justify-center gap-2 ${
                             loading ? 'bg-green-900/20 border border-green-500/30 text-green-400' :
                             tier === 'Excellentia' 
@@ -190,6 +211,8 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/20 to-transparent -translate-x-full animate-[shimmer_1s_infinite]"></div>
                                 <span className="relative z-10">Establishing Secure Tunnel...</span>
                             </>
+                        ) : !scriptLoaded ? (
+                            "Loading Gateway..."
                         ) : (
                             <>
                                 Confirm Upgrade

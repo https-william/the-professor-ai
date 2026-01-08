@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
@@ -61,7 +62,10 @@ const App: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
   const [isAdBlockActive, setIsAdBlockActive] = useState(false);
+  
+  // PERSISTENCE FIX: Load profile immediately on init to avoid visual reset
   const [userProfile, setUserProfile] = useState<UserProfile>(() => loadUserProfile() || getDefaultProfile());
+  
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
@@ -242,12 +246,12 @@ const App: React.FC = () => {
     
     if (firestoreProfile) {
         // Priority to firestore for synced fields, but local daily counters usually stick to local unless reset
+        // Crucial Fix: Use Math.max to prevent lower/zero value from cloud overwriting higher local progress
         mergedProfile = { 
             ...mergedProfile, 
             ...firestoreProfile, 
             socials: firestoreProfile.socials || mergedProfile.socials, 
             xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp,
-            // Ensure daily limits aren't overwritten by stale firestore data if local is fresher
             dailyQuizzesGenerated: Math.max(mergedProfile.dailyQuizzesGenerated, firestoreProfile.dailyQuizzesGenerated || 0)
         };
     }
