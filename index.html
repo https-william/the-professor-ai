@@ -15,22 +15,7 @@
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#050505" />
 
-    <!-- Styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Payments -->
-    <script src="https://js.paystack.co/v1/inline.js"></script>
-    
-    <!-- PDF & Math Libs -->
-    <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-
+    <!-- Tailwind Config - MUST BE LOADED BEFORE TAILWIND SCRIPT -->
     <script>
       // Global Polyfills
       if (typeof process === 'undefined') { window.process = { env: {} }; }
@@ -55,53 +40,70 @@
          }
       });
 
-      // Tailwind Config
-      tailwind.config = {
+      tailwind = {
         darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              'core': '#050505',
-              'panel': 'rgba(24, 24, 27, 0.6)',
-              'border-main': 'rgba(255, 255, 255, 0.08)',
-              'text-pri': '#f3f4f6',
-              'text-sec': '#9ca3af',
-              'accent': '#f59e0b',
+        config: {
+          theme: {
+            extend: {
+              colors: {
+                'core': '#050505',
+                'panel': 'rgba(24, 24, 27, 0.6)',
+                'border-main': 'rgba(255, 255, 255, 0.08)',
+                'text-pri': '#f3f4f6',
+                'text-sec': '#9ca3af',
+                'accent': '#f59e0b',
+              },
+              fontFamily: {
+                sans: ['Inter', 'system-ui', 'sans-serif'],
+                serif: ['Cinzel', 'Merriweather', 'serif'],
+                mono: ['JetBrains Mono', 'monospace'],
+                display: ['Cinzel', 'serif'],
+              },
+              animation: {
+                'fade-in': 'fadeIn 0.4s ease-out forwards',
+                'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                'slide-in': 'slideIn 0.6s ease-out forwards',
+                'slide-up-fade': 'slideUpFade 0.6s ease-out forwards',
+                'pulse-slow': 'pulseSlow 4s infinite',
+                'shimmer': 'shimmer 2s linear infinite',
+                'orbit': 'orbit 10s linear infinite',
+                'orbit-reverse': 'orbitReverse 15s linear infinite',
+                'breathe': 'breathe 4s ease-in-out infinite',
+                'bounce-subtle': 'bounceSubtle 2s infinite',
+              },
+              keyframes: {
+                fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                slideIn: { '0%': { opacity: '0', transform: 'translateY(-20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                slideUpFade: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                pulseSlow: { '0%, 100%': { opacity: '0.4' }, '50%': { opacity: '0.7' } },
+                shimmer: { '0%': { backgroundPosition: '200% 0' }, '100%': { backgroundPosition: '-200% 0' } },
+                orbit: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+                orbitReverse: { '0%': { transform: 'rotate(360deg)' }, '100%': { transform: 'rotate(0deg)' } },
+                breathe: { '0%, 100%': { transform: 'scale(1)', opacity: '0.3' }, '50%': { transform: 'scale(1.1)', opacity: '0.6' } },
+                bounceSubtle: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-5px)' } },
+              },
             },
-            fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
-              serif: ['Cinzel', 'Merriweather', 'serif'],
-              mono: ['JetBrains Mono', 'monospace'],
-              display: ['Cinzel', 'serif'],
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.4s ease-out forwards',
-              'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'slide-in': 'slideIn 0.6s ease-out forwards',
-              'slide-up-fade': 'slideUpFade 0.6s ease-out forwards',
-              'pulse-slow': 'pulseSlow 4s infinite',
-              'shimmer': 'shimmer 2s linear infinite',
-              'orbit': 'orbit 10s linear infinite',
-              'orbit-reverse': 'orbitReverse 15s linear infinite',
-              'breathe': 'breathe 4s ease-in-out infinite',
-              'bounce-subtle': 'bounceSubtle 2s infinite',
-            },
-            keyframes: {
-              fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-              slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-              slideIn: { '0%': { opacity: '0', transform: 'translateY(-20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-              slideUpFade: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-              pulseSlow: { '0%, 100%': { opacity: '0.4' }, '50%': { opacity: '0.7' } },
-              shimmer: { '0%': { backgroundPosition: '200% 0' }, '100%': { backgroundPosition: '-200% 0' } },
-              orbit: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
-              orbitReverse: { '0%': { transform: 'rotate(360deg)' }, '100%': { transform: 'rotate(0deg)' } },
-              breathe: { '0%, 100%': { transform: 'scale(1)', opacity: '0.3' }, '50%': { transform: 'scale(1.1)', opacity: '0.6' } },
-              bounceSubtle: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-5px)' } },
-            },
-          },
+          }
         }
       }
     </script>
+
+    <!-- Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Payments -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    
+    <!-- PDF & Math Libs -->
+    <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     

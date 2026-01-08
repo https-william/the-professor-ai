@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 
 // Decrypted Text Component
-const DecryptedText = ({ text, className = "" }: { text: string, className?: string }) => {
-  const [displayText, setDisplayText] = useState(text);
+const DecryptedText = ({ text = "", className = "" }: { text?: string, className?: string }) => {
+  const safeText = text || "";
+  const [displayText, setDisplayText] = useState(safeText);
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
 
   useEffect(() => {
@@ -12,18 +13,18 @@ const DecryptedText = ({ text, className = "" }: { text: string, className?: str
     
     interval = setInterval(() => {
       setDisplayText(prev => 
-        text
+        safeText
           .split("")
           .map((letter, index) => {
             if (index < iteration) {
-              return text[index];
+              return safeText[index];
             }
             return chars[Math.floor(Math.random() * chars.length)];
           })
           .join("")
       );
 
-      if (iteration >= text.length) {
+      if (iteration >= safeText.length) {
         clearInterval(interval);
       }
       
@@ -31,7 +32,7 @@ const DecryptedText = ({ text, className = "" }: { text: string, className?: str
     }, 30);
 
     return () => clearInterval(interval);
-  }, [text]);
+  }, [safeText]);
 
   return <span className={className}>{displayText}</span>;
 };
@@ -61,7 +62,7 @@ export const Hero: React.FC = () => {
       </div>
 
       {/* The Hook: System Status */}
-      <div className="mb-6 animate-slide-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
+      <div className="mb-6 animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
         <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md cursor-default group hover:border-blue-500/30 transition-colors">
            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -76,19 +77,18 @@ export const Hero: React.FC = () => {
       {/* Main Headline */}
       <div className="relative z-10 mb-4 group cursor-default flex flex-col items-center">
         {/* 'The' */}
-        <span className="font-serif italic text-xl sm:text-2xl text-gray-500 mb-[-5px] opacity-0 animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
+        <span className="font-serif italic text-xl sm:text-2xl text-gray-500 mb-[-5px] animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
           The
         </span>
         
         {/* 'Professor' - Responsive Font Size (Fixed for Mobile) */}
-        {/* Changed text-5xl to text-4xl on base mobile, and added clamp */}
         <h1 className="text-4xl sm:text-7xl md:text-9xl font-display font-normal tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 drop-shadow-2xl animate-shimmer bg-[length:200%_auto] leading-[0.85] px-4 pb-4 scale-y-110">
           <DecryptedText text="Professor" />
         </h1>
       </div>
       
       {/* XYZ Tagline */}
-      <div className="max-w-3xl mx-auto relative z-10 px-4 animate-slide-up-fade opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.5s' }}>
+      <div className="max-w-3xl mx-auto relative z-10 px-4 animate-slide-up-fade" style={{ animationFillMode: 'forwards', animationDelay: '0.5s' }}>
          <div className="text-lg sm:text-2xl text-gray-400 font-light tracking-wide flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
             <span>Learning is as simple as</span>
             
