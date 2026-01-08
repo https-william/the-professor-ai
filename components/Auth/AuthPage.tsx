@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { signInUser, signUpUser, sendPasswordReset, signInWithGoogle } from '../../services/supabase';
 
 export const AuthPage: React.FC = () => {
@@ -13,6 +14,21 @@ export const AuthPage: React.FC = () => {
   // Loading State
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authStatusText, setAuthStatusText] = useState('CONNECTING...');
+
+  const location = useLocation();
+
+  useEffect(() => {
+      // Check for errors returned in the URL (e.g. from OAuth redirects)
+      const params = new URLSearchParams(location.hash.substring(1)); // Supabase uses hash fragments often
+      const errorDescription = params.get('error_description');
+      const errorMsg = params.get('error');
+
+      if (errorDescription) {
+          setError(decodeURIComponent(errorDescription).replace(/\+/g, ' '));
+      } else if (errorMsg) {
+          setError("Authentication Error: " + errorMsg);
+      }
+  }, [location]);
 
   useEffect(() => {
       if (!isAuthenticating) return;
@@ -136,7 +152,7 @@ export const AuthPage: React.FC = () => {
                 </div>
             )}
 
-            {error && <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-lg text-red-400 text-xs text-center">{error}</div>}
+            {error && <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-lg text-red-400 text-xs text-center break-words">{error}</div>}
             {successMsg && <div className="p-3 bg-green-900/20 border border-green-500/20 rounded-lg text-green-400 text-xs text-center">{successMsg}</div>}
             
             <button 
