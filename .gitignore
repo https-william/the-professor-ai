@@ -120,3 +120,16 @@ dist
 
 # Vercel
 .vercel
+
+# --- SECURITY & MIGRATION ---
+# Explicitly ignore service account keys and migration scripts containing secrets
+serviceAccountKey.json
+scripts/serviceAccountKey.json
+scripts/migrate*.js
+scripts/migrate*.cjs
+**/*.json
+!manifest.json
+!metadata.json
+!package.json
+!tsconfig.json
+!vercel.json
