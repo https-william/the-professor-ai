@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
@@ -62,7 +61,7 @@ const App: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
   const [isAdBlockActive, setIsAdBlockActive] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>(getDefaultProfile());
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => loadUserProfile() || getDefaultProfile());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
@@ -103,17 +102,18 @@ const App: React.FC = () => {
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
   useEffect(() => {
-      if (!isFresher) return;
+      // Logic to calculate time until midnight local time
       const interval = setInterval(() => {
           const now = new Date();
-          const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-          const diff = tomorrow.getTime() - now.getTime();
+          const midnight = new Date(now);
+          midnight.setHours(24, 0, 0, 0);
+          const diff = midnight.getTime() - now.getTime();
           const hours = Math.floor(diff / (1000 * 60 * 60));
           const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
           setTimeUntilReset(`${hours}h ${mins}m`);
       }, 60000);
       return () => clearInterval(interval);
-  }, [isFresher]);
+  }, []);
 
   // --- NAVIGATION ENGINE ---
   const navigate = (view: ViewState, url: string) => {
@@ -234,25 +234,37 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    // Auto-switch to admin if previously unlocked in session, but typically we want re-verification
-    // We do NOT auto-switch appMode to ADMIN here. That is done via the modal.
-
+    
+    // Merge remote profile with local
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
     let mergedProfile: UserProfile = { ...localProfile };
+    
     if (firestoreProfile) {
-        mergedProfile = { ...mergedProfile, ...firestoreProfile, socials: firestoreProfile.socials || mergedProfile.socials, xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp };
+        // Priority to firestore for synced fields, but local daily counters usually stick to local unless reset
+        mergedProfile = { 
+            ...mergedProfile, 
+            ...firestoreProfile, 
+            socials: firestoreProfile.socials || mergedProfile.socials, 
+            xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp,
+            // Ensure daily limits aren't overwritten by stale firestore data if local is fresher
+            dailyQuizzesGenerated: Math.max(mergedProfile.dailyQuizzesGenerated, firestoreProfile.dailyQuizzesGenerated || 0)
+        };
     }
+    
     if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
     else setOnboardingStep('COMPLETE');
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
+    
+    // Check Date for Reset
     mergedProfile = updateStreak(mergedProfile);
+    
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
     // Only restore session if NOT admin mode
-    if (!isAdminUnlocked) {
+    if (!isAdminUnlocked && appMode !== 'ADMIN') {
         const savedSession = loadCurrentSession();
         if (savedSession) {
           setAppMode(savedSession.mode);
@@ -270,7 +282,24 @@ const App: React.FC = () => {
       setStatus(AppStatus.READY);
   };
 
+  const handleAdminExit = () => {
+      // When leaving admin, don't show active quiz if it's empty
+      if (quizState.questions && quizState.questions.length > 0) {
+          setAppMode('EXAM');
+          setStatus(AppStatus.READY);
+      } else {
+          setAppMode('EXAM');
+          setStatus(AppStatus.IDLE);
+      }
+  };
+
   const attemptAction = (action: () => void, force: boolean = false) => {
+      // Don't trigger abandon modal if we are just switching away from Admin dashboard
+      if (appMode === 'ADMIN') {
+          action();
+          return;
+      }
+
       if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
           setPendingAction(() => action);
           setShowExitConfirmation(true);
@@ -543,38 +572,35 @@ const App: React.FC = () => {
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            {/* Logo Section */}
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') handleAdminExit(); else handleQuizAction('RESET'); }}>
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
 
-            {/* Neural Energy Limit Bar (Mobile & Desktop) */}
+            {/* Neural Energy Limit Bar - Aligned correctly */}
             {isFresher && appMode !== 'ADMIN' && (
-                <div className="flex flex-col w-32 md:w-48 gap-1 mx-4" title={`Resets in ${timeUntilReset}`}>
-                    <div className="flex justify-between items-center text-[8px] md:text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                <div className="hidden md:flex flex-col w-32 items-center gap-1 mx-4" title={`Resets in ${timeUntilReset}`}>
+                    <div className="w-full flex justify-between items-center text-[8px] uppercase tracking-widest text-gray-500 font-bold">
                         <span>Energy</span>
                         <span className={usagePercentage > 90 ? 'text-red-500' : 'text-blue-400'}>{Math.round(100 - usagePercentage)}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden relative group">
+                    <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div 
                             className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
                             style={{ width: `${100 - usagePercentage}%` }}
                         ></div>
                     </div>
-                    <div className="text-[8px] text-gray-600 text-right opacity-60">Resets: {timeUntilReset || '...'}</div>
                 </div>
             )}
 
-            {/* Right Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
-                   <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
+                   <button onClick={handleAdminExit} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
                
-               {/* LIBRARY BUTTON - ONLY ON DASHBOARD */}
+               {/* LIBRARY BUTTON */}
                {showLibrary && (
                    <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
@@ -584,21 +610,18 @@ const App: React.FC = () => {
                {!hideFABs && <NotificationBell />}
                
                {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
-                   <button onClick={() => setIsSubscriptionOpen(true)} className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
-                       <span className="hidden sm:inline">Upgrade</span>
-                       <span className="sm:hidden">PRO</span>
+                   <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
+                       <span>Upgrade</span>
                        <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
                    </button>
                )}
-               
-               <div className="h-6 w-px bg-white/10 mx-2 hidden sm:block"></div>
-               
+               <div className="h-6 w-px bg-white/10 mx-2"></div>
                <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
                    <div className="text-right hidden sm:block">
                        <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">{userProfile.alias}</p>
                        <p className="text-[9px] font-mono text-gray-500 uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
                    </div>
-                   <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-blue-500 transition-all shadow-lg`}>
+                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-blue-500 transition-all shadow-lg`}>
                        <span className="text-sm">{userProfile.avatarEmoji}</span>
                    </div>
                </button>
@@ -650,7 +673,7 @@ const App: React.FC = () => {
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'ADMIN' && <AdminDashboard onExit={() => setAppMode('EXAM')} />}
+                    {appMode === 'ADMIN' && <AdminDashboard onExit={handleAdminExit} />}
                  </Suspense>
              </div>
          )}

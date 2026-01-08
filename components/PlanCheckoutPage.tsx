@@ -42,15 +42,28 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
       }
       setLoading(true);
 
-      // CRITICAL CHECK: Ensure Paystack Loaded
+      // 1. Get Key Safely
+      let publicKey = '';
+      try {
+          // @ts-ignore
+          publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+      } catch (e) {}
+
+      if (!publicKey) {
+          console.error("Paystack Key Missing in Environment Variables");
+          alert("System Error: Payment Gateway Configuration Missing. Please contact support.");
+          setLoading(false);
+          return;
+      }
+
+      // 2. Check Script
       if (typeof window.PaystackPop === 'undefined') {
-          alert("Payment gateway unreachable. Please disable ad-blockers or check your connection.");
+          alert("Secure Gateway Unreachable. Please disable Ad-Blockers and refresh.");
           setLoading(false);
           return;
       }
 
       try {
-        const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY;
         const paystack = new window.PaystackPop();
         
         paystack.newTransaction({
@@ -71,7 +84,8 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
             onCancel: () => setLoading(false)
         });
       } catch (e) {
-          alert("Secure link failed. Check connection.");
+          console.error("Paystack Init Error:", e);
+          alert("Secure link failed. Check console for details.");
           setLoading(false);
       }
   };

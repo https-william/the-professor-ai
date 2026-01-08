@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, limit, addDoc, serverTimestamp } from "firebase/firestore";
 import { db, toggleBanUser, deleteUserAccount, updateUserPlan, resetUserLimits, adminUpdateUser } from '../services/firebase';
 import { SubscriptionTier, SystemLog, UserProfile } from '../types';
 
@@ -20,7 +20,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'REGISTRY' | 'LOGS'>('REGISTRY');
+  const [activeTab, setActiveTab] = useState<'REGISTRY' | 'LOGS' | 'BROADCAST'>('REGISTRY');
   const [users, setUsers] = useState<UserData[]>([]);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +29,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   // Student Dossier Modal State
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [editForm, setEditForm] = useState<Partial<UserProfile> & { socials?: any }>({});
+
+  // Broadcast State
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -57,7 +61,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
               academicLevel: data.academicLevel || '',
               socials: data.socials || {},
               xp: data.xp || 0,
-              // Map other fields as needed
           } as UserProfile
         });
       });
@@ -140,6 +143,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       }
   };
 
+  const handleSendBroadcast = async () => {
+      if (!broadcastTitle.trim() || !broadcastMessage.trim()) return;
+      if (!confirm("This will notify EVERY student. Confirm broadcast?")) return;
+      
+      try {
+          await addDoc(collection(db, "announcements"), {
+              title: broadcastTitle,
+              message: broadcastMessage,
+              timestamp: serverTimestamp(),
+              author: "Dean's Office"
+          });
+          setBroadcastTitle('');
+          setBroadcastMessage('');
+          alert("Signal Sent.");
+      } catch (e) {
+          alert("Signal Failed.");
+      }
+  };
+
   if (loading) return <div className="flex items-center justify-center h-screen bg-[#050505]"><div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
@@ -178,11 +200,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                       Return to Campus
                   </button>
                   <button onClick={() => setActiveTab('REGISTRY')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'REGISTRY' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Student Registry</button>
+                  <button onClick={() => setActiveTab('BROADCAST')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'BROADCAST' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Broadcast</button>
                   <button onClick={() => setActiveTab('LOGS')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'LOGS' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Audit Logs</button>
               </div>
           </div>
 
-          {activeTab === 'REGISTRY' ? (
+          {activeTab === 'REGISTRY' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {users.map(user => (
                       <div key={user.id} className="bg-[#0f0f10] border border-white/5 hover:border-amber-500/30 rounded-2xl p-6 transition-all group hover:bg-[#151515] relative overflow-hidden">
@@ -221,7 +244,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                       </div>
                   ))}
               </div>
-          ) : (
+          )}
+
+          {activeTab === 'BROADCAST' && (
+              <div className="bg-[#0f0f10] border border-white/5 rounded-2xl p-8 max-w-2xl mx-auto">
+                  <h3 className="text-xl font-bold text-white mb-6">Campus-Wide Announcement</h3>
+                  
+                  <div className="space-y-4 mb-6">
+                      <input 
+                        type="text" 
+                        placeholder="Subject Line" 
+                        value={broadcastTitle}
+                        onChange={(e) => setBroadcastTitle(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500"
+                      />
+                      <textarea 
+                        placeholder="Message content..." 
+                        value={broadcastMessage}
+                        onChange={(e) => setBroadcastMessage(e.target.value)}
+                        className="w-full h-40 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500"
+                      />
+                  </div>
+                  
+                  <button 
+                    onClick={handleSendBroadcast}
+                    className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold uppercase text-xs tracking-widest rounded-xl transition-all shadow-lg shadow-amber-500/20"
+                  >
+                      Transmit Signal
+                  </button>
+              </div>
+          )}
+
+          {activeTab === 'LOGS' && (
               <div className="bg-[#0f0f10] border border-white/5 rounded-2xl overflow-hidden">
                   <table className="w-full text-left">
                       <thead className="bg-black/40 border-b border-white/5">
@@ -389,5 +443,3 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     </div>
   );
 };
-
-export default AdminDashboard;

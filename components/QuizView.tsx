@@ -86,6 +86,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
 
   const lastStrikeTime = useRef<number>(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+      isMountedRef.current = true;
+      return () => { isMountedRef.current = false; };
+  }, []);
 
   // Sync state when parent updates
   useEffect(() => {
@@ -132,6 +138,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
       if (isSubmitted) return;
 
       const handleFocusLost = () => {
+          // If unmounted, do nothing
+          if (!isMountedRef.current) return;
+
           const now = Date.now();
           if (now - lastStrikeTime.current < 1500) return; 
           lastStrikeTime.current = now;
@@ -583,5 +592,3 @@ export const QuizView: React.FC<QuizViewProps> = ({
     </div>
   );
 };
-
-export default QuizView;
