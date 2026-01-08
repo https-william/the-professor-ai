@@ -19,6 +19,7 @@ import { PWAPrompt } from './PWAPrompt';
 import { DuelReadyModal } from './DuelReadyModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { NotificationBell } from './NotificationBell';
+import { AdminVerifyModal } from './AdminVerifyModal';
 import { useAuth } from '../contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from '../services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from '../services/storageService';
@@ -35,23 +36,20 @@ const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module =
 const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
 // Routing State
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'APP' | 'CHECKOUT' | 'ADMIN_LOGIN';
 
 // Admin Whitelist - Lowercase
 const ADMIN_EMAILS = [
-    'popoolaariseoluwa@gmail.com', 
-    'professoradmin@gmail.com',
     'vexis.automations@gmail.com'
 ];
 
 const App: React.FC = () => {
   const { user, loading, refreshUser } = useAuth();
   
-  // ROUTING FIX: Lazy initialization to catch the URL before first render
+  // ROUTING: Initialize based on URL
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
-          if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
@@ -64,7 +62,10 @@ const App: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
   const [isAdBlockActive, setIsAdBlockActive] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>(getDefaultProfile());
+  
+  // PERSISTENCE FIX: Load profile immediately on init to avoid visual reset
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => loadUserProfile() || getDefaultProfile());
+  
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
@@ -80,6 +81,13 @@ const App: React.FC = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   
+  // Admin & Security States
+  const [showAdminVerify, setShowAdminVerify] = useState(false);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+
+  // Time until midnight countdown
+  const [timeUntilReset, setTimeUntilReset] = useState('');
+
   const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(() => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
@@ -97,6 +105,20 @@ const App: React.FC = () => {
   const QUIZ_LIMIT = isFresher ? 1 : 100;
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
+  useEffect(() => {
+      // Logic to calculate time until midnight local time
+      const interval = setInterval(() => {
+          const now = new Date();
+          const midnight = new Date(now);
+          midnight.setHours(24, 0, 0, 0);
+          const diff = midnight.getTime() - now.getTime();
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          setTimeUntilReset(`${hours}h ${mins}m`);
+      }, 60000);
+      return () => clearInterval(interval);
+  }, []);
+
   // --- NAVIGATION ENGINE ---
   const navigate = (view: ViewState, url: string) => {
       window.history.pushState({}, '', url);
@@ -106,8 +128,7 @@ const App: React.FC = () => {
   useEffect(() => {
       const handlePopState = () => {
           const path = window.location.pathname.toLowerCase();
-          if (path === '/administrator' || path.startsWith('/admin')) setCurrentView('ADMIN_LOGIN');
-          else if (path === '/pricing') setCurrentView('PRICING');
+          if (path === '/pricing') setCurrentView('PRICING');
           else if (path === '/login') setCurrentView('AUTH');
           else if (path === '/') setCurrentView(user ? 'APP' : 'LANDING');
       };
@@ -121,17 +142,6 @@ const App: React.FC = () => {
 
       const path = window.location.pathname.toLowerCase();
       
-      if (path === '/administrator' || path === '/admin') {
-          if (user && checkIsAdmin(user.email)) {
-              setAppMode('ADMIN');
-              setCurrentView('APP');
-          } else {
-              setCurrentView('ADMIN_LOGIN');
-          }
-          setInitialRouteHandled(true);
-          return;
-      }
-
       if (path === '/scholar' || path === '/excellentia') {
           const tier = path === '/scholar' ? 'Scholar' : 'Excellentia';
           if (user) {
@@ -166,17 +176,17 @@ const App: React.FC = () => {
       setInitialRouteHandled(true);
   }, [loading, user, initialRouteHandled]);
 
-  const checkIsAdmin = (email: string | null | undefined) => {
+  const isPotentialAdmin = (email: string | null | undefined) => {
       if (!email) return false;
       const normalized = email.toLowerCase().trim();
-      return ADMIN_EMAILS.includes(normalized) || normalized.includes('vexis.automation');
+      return ADMIN_EMAILS.includes(normalized);
   };
 
-  const isAdmin = checkIsAdmin(user?.email);
+  const isAdmin = isPotentialAdmin(user?.email);
 
   useEffect(() => {
     if (loading) return;
-    if (currentView === 'ADMIN_LOGIN' || currentView === 'CHECKOUT' || currentView === 'PRICING') return;
+    if (currentView === 'CHECKOUT' || currentView === 'PRICING') return;
 
     if (user) {
         const storedPendingPlan = localStorage.getItem('pending_plan');
@@ -187,7 +197,6 @@ const App: React.FC = () => {
         } else if (currentView === 'LANDING' || currentView === 'AUTH') {
             setCurrentView('APP');
         }
-        if (checkIsAdmin(user.email)) setAppMode('ADMIN');
     } else {
         if (currentView === 'APP') setCurrentView('LANDING'); 
     }
@@ -229,25 +238,37 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (checkIsAdmin(user.email) && currentView === 'APP') {
-        setAppMode('ADMIN');
-        setStatus(AppStatus.READY);
-    }
+    
+    // Merge remote profile with local
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
     let mergedProfile: UserProfile = { ...localProfile };
+    
     if (firestoreProfile) {
-        mergedProfile = { ...mergedProfile, ...firestoreProfile, socials: firestoreProfile.socials || mergedProfile.socials, xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp };
+        // Priority to firestore for synced fields, but local daily counters usually stick to local unless reset
+        // Crucial Fix: Use Math.max to prevent lower/zero value from cloud overwriting higher local progress
+        mergedProfile = { 
+            ...mergedProfile, 
+            ...firestoreProfile, 
+            socials: firestoreProfile.socials || mergedProfile.socials, 
+            xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp,
+            dailyQuizzesGenerated: Math.max(mergedProfile.dailyQuizzesGenerated, firestoreProfile.dailyQuizzesGenerated || 0)
+        };
     }
+    
     if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
     else setOnboardingStep('COMPLETE');
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
+    
+    // Check Date for Reset
     mergedProfile = updateStreak(mergedProfile);
+    
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    if (!checkIsAdmin(user.email)) {
+    // Only restore session if NOT admin mode
+    if (!isAdminUnlocked && appMode !== 'ADMIN') {
         const savedSession = loadCurrentSession();
         if (savedSession) {
           setAppMode(savedSession.mode);
@@ -257,20 +278,36 @@ const App: React.FC = () => {
           setStatus(AppStatus.READY);
         }
     }
-  }, [user]);
-
-  const handleRequestAdminAccess = async () => {
-      if (user) await logout();
-      navigate('ADMIN_LOGIN', '/administrator');
-  };
+  }, [user, isAdminUnlocked]);
 
   const handleAdminSuccess = () => {
+      setIsAdminUnlocked(true);
       setAppMode('ADMIN');
-      navigate('APP', '/');
       setStatus(AppStatus.READY);
   };
 
+  const handleAdminExit = () => {
+      // Safe Exit Logic: Check if we have an active session to return to
+      if (quizState.questions && quizState.questions.length > 0) {
+          setAppMode('EXAM');
+          setStatus(AppStatus.READY);
+      } else if (professorState.sections && professorState.sections.length > 0) {
+          setAppMode('PROFESSOR');
+          setStatus(AppStatus.READY);
+      } else {
+          // No active session? Go to Input
+          setAppMode('EXAM');
+          setStatus(AppStatus.IDLE);
+      }
+  };
+
   const attemptAction = (action: () => void, force: boolean = false) => {
+      // Don't trigger abandon modal if we are just switching away from Admin dashboard
+      if (appMode === 'ADMIN') {
+          action();
+          return;
+      }
+
       if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
           setPendingAction(() => action);
           setShowExitConfirmation(true);
@@ -318,7 +355,6 @@ const App: React.FC = () => {
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
-      // 1. SHOW LOADING IMMEDIATELY - FIXES "Nothing Happens" BUG
       setStatus(AppStatus.GENERATING_CONTENT);
       setStatusText("Initializing Neural Link...");
       setErrorMsg(null);
@@ -495,7 +531,6 @@ const App: React.FC = () => {
       } else {
           setCheckoutTier(tier);
           setIsSubscriptionOpen(false);
-          // NAVIGATION FIX
           navigate('CHECKOUT', `/${tier.toLowerCase()}`);
       }
   };
@@ -515,6 +550,9 @@ const App: React.FC = () => {
 
   const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
+  
+  // CONDITIONAL FAB LOGIC
+  const hideFABs = appMode === 'EXAM' && !quizState.isSubmitted;
 
   return (
     <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505] font-sans`}>
@@ -532,24 +570,31 @@ const App: React.FC = () => {
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
       {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
+      
+      {/* Admin Verify Modal */}
+      <AdminVerifyModal 
+        isOpen={showAdminVerify} 
+        onClose={() => setShowAdminVerify(false)} 
+        onSuccess={handleAdminSuccess}
+      />
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') handleAdminExit(); else handleQuizAction('RESET'); }}>
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
 
-            {/* Neural Energy Limit Bar */}
+            {/* Neural Energy Limit Bar - Aligned correctly */}
             {isFresher && appMode !== 'ADMIN' && (
-                <div className="hidden md:flex flex-col w-48 gap-1" title="Daily Neural Energy">
-                    <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-gray-500 font-bold">
-                        <span>Neural Energy</span>
+                <div className="hidden md:flex flex-col w-32 items-center gap-1 mx-4" title={`Resets in ${timeUntilReset}`}>
+                    <div className="w-full flex justify-between items-center text-[8px] uppercase tracking-widest text-gray-500 font-bold">
+                        <span>Energy</span>
                         <span className={usagePercentage > 90 ? 'text-red-500' : 'text-blue-400'}>{Math.round(100 - usagePercentage)}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div 
                             className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
                             style={{ width: `${100 - usagePercentage}%` }}
@@ -560,18 +605,17 @@ const App: React.FC = () => {
 
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
-                   <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
+                   <button onClick={handleAdminExit} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
                
-               {/* LIBRARY BUTTON - ONLY ON DASHBOARD */}
+               {/* LIBRARY BUTTON */}
                {showLibrary && (
                    <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
-                       {/* SVG Book Icon */}
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                    </button>
                )}
                
-               <NotificationBell />
+               {!hideFABs && <NotificationBell />}
                
                {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
                    <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
@@ -617,7 +661,7 @@ const App: React.FC = () => {
         }}
       />
 
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={!!isAdmin} onRequestAdminAccess={handleRequestAdminAccess} />
+      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={!!isAdmin} onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
@@ -637,7 +681,7 @@ const App: React.FC = () => {
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'ADMIN' && <AdminDashboard onExit={() => setAppMode('EXAM')} />}
+                    {appMode === 'ADMIN' && <AdminDashboard onExit={handleAdminExit} />}
                  </Suspense>
              </div>
          )}

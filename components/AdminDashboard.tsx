@@ -41,6 +41,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
   const fetchUsers = async () => {
     try {
+      if (!db) return;
       const querySnapshot = await getDocs(collection(db, "users"));
       const userList: UserData[] = [];
       querySnapshot.forEach((doc) => {
@@ -74,6 +75,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
   const fetchLogs = async () => {
       try {
+          if (!db) return;
           const q = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(50));
           const querySnapshot = await getDocs(q);
           const logList: SystemLog[] = [];
@@ -111,15 +113,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       if (!selectedUser) return;
       setProcessingId(selectedUser.id);
       try {
-          // Merge edits into firestore
           await adminUpdateUser(selectedUser.id, editForm);
-          
-          // Update local state
           setUsers(prev => prev.map(u => u.id === selectedUser.id ? { 
               ...u, 
               profile: { ...u.profile, ...editForm } as UserProfile 
           } : u));
-          
           setSelectedUser(null);
           alert("Dossier Updated Successfully");
       } catch (e) {
@@ -135,7 +133,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       try {
           await deleteUserAccount(userId);
           setUsers(prev => prev.filter(u => u.id !== userId));
-          setSelectedUser(null); // Close modal if open
+          setSelectedUser(null); 
       } catch (error) {
           alert("Failed to delete user");
       } finally {
@@ -167,14 +165,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans p-4 md:p-8 animate-fade-in relative">
       
-      {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-900/10 blur-[120px] rounded-full"></div>
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-900/10 blur-[120px] rounded-full"></div>
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-          {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-amber-500/20 pb-6">
               <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-[#0f0f10] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.1)] text-amber-500">
@@ -184,18 +180,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                       <h1 className="text-4xl md:text-5xl font-serif font-black text-amber-500 tracking-tight">DEAN'S OFFICE</h1>
                       <div className="flex items-center gap-3 mt-2">
                           <span className="px-2 py-0.5 bg-amber-900/30 border border-amber-500/30 rounded text-[10px] font-bold uppercase tracking-widest text-amber-200">Superintendent Access</span>
-                          <span className="text-xs text-gray-500 font-mono">:: SECURE CONNECTION ESTABLISHED</span>
                       </div>
                   </div>
               </div>
               
               <div className="flex gap-2 mt-4 md:mt-0">
-                  <button 
-                    onClick={onExit} 
-                    className="px-6 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/5"
-                  >
-                      Return to Campus
-                  </button>
+                  <button onClick={onExit} className="px-6 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/5">Return to Campus</button>
                   <button onClick={() => setActiveTab('REGISTRY')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'REGISTRY' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Student Registry</button>
                   <button onClick={() => setActiveTab('BROADCAST')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'BROADCAST' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Broadcast</button>
                   <button onClick={() => setActiveTab('LOGS')} className={`px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'LOGS' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:text-white'}`}>Audit Logs</button>
@@ -207,7 +197,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                   {users.map(user => (
                       <div key={user.id} className="bg-[#0f0f10] border border-white/5 hover:border-amber-500/30 rounded-2xl p-6 transition-all group hover:bg-[#151515] relative overflow-hidden">
                           <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                          
                           <div className="flex justify-between items-start mb-4">
                               <div>
                                   <h3 className="font-bold text-lg text-white group-hover:text-amber-400 transition-colors">{user.profile?.alias || 'Unknown Student'}</h3>
@@ -217,26 +206,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                                   {user.plan}
                               </span>
                           </div>
-
-                          <div className="grid grid-cols-2 gap-4 mb-6">
-                              <div className="bg-black/40 p-3 rounded-lg border border-white/5">
-                                  <div className="text-[10px] text-gray-500 uppercase">XP</div>
-                                  <div className="text-xl font-mono text-white">{user.profile?.xp || 0}</div>
-                              </div>
-                              <div className="bg-black/40 p-3 rounded-lg border border-white/5">
-                                  <div className="text-[10px] text-gray-500 uppercase">Usage</div>
-                                  <div className="text-xl font-mono text-white">{user.dailyQuizzesGenerated || 0}</div>
-                              </div>
-                          </div>
-
-                          <button 
-                            onClick={() => handleOpenDossier(user)}
-                            className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-300 transition-all flex items-center justify-center gap-2"
-                          >
-                             <span>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" /></svg>
-                             </span>
-                             Open Dossier
+                          <button onClick={() => handleOpenDossier(user)} className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-300 transition-all flex items-center justify-center gap-2">
+                             <span>Open Dossier</span>
                           </button>
                       </div>
                   ))}
@@ -246,29 +217,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           {activeTab === 'BROADCAST' && (
               <div className="bg-[#0f0f10] border border-white/5 rounded-2xl p-8 max-w-2xl mx-auto">
                   <h3 className="text-xl font-bold text-white mb-6">Campus-Wide Announcement</h3>
-                  
                   <div className="space-y-4 mb-6">
-                      <input 
-                        type="text" 
-                        placeholder="Subject Line" 
-                        value={broadcastTitle}
-                        onChange={(e) => setBroadcastTitle(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500"
-                      />
-                      <textarea 
-                        placeholder="Message content..." 
-                        value={broadcastMessage}
-                        onChange={(e) => setBroadcastMessage(e.target.value)}
-                        className="w-full h-40 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500"
-                      />
+                      <input type="text" placeholder="Subject Line" value={broadcastTitle} onChange={(e) => setBroadcastTitle(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500" />
+                      <textarea placeholder="Message content..." value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)} className="w-full h-40 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500" />
                   </div>
-                  
-                  <button 
-                    onClick={handleSendBroadcast}
-                    className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold uppercase text-xs tracking-widest rounded-xl transition-all shadow-lg shadow-amber-500/20"
-                  >
-                      Transmit Signal
-                  </button>
+                  <button onClick={handleSendBroadcast} className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold uppercase text-xs tracking-widest rounded-xl transition-all shadow-lg shadow-amber-500/20">Transmit Signal</button>
               </div>
           )}
 
@@ -296,10 +249,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           )}
       </div>
 
-      {/* STUDENT DOSSIER MODAL */}
       {selectedUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
               <div className="w-full max-w-4xl bg-[#0f0f10] border border-amber-500/20 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                  
-                  {/* Modal Header */}
-                  <div className="p-6 border
+                  <div className="p-6 border-b border-white/5 bg-black/40 flex justify-between items-center">
+                      <h2 className="text-xl font-bold text-white uppercase tracking-wider">Restricted Dossier</h2>
+                      <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">✕</button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-6">
+                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Identity Matrix</h3>
+                              <div className="space-y-4">
+                                  <input type="text" value={editForm.alias || ''} onChange={(e) => setEditForm({...editForm, alias: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none" placeholder="Alias" />
+                                  <input type="text" value={editForm.fullName || ''} onChange={(e) => setEditForm({...editForm, fullName: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none" placeholder="Full Name" />
+                              </div>
+                          </div>
+                          <div className="space-y-6">
+                              <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest border-b border-amber-500/20 pb-2">Academic & Network</h3>
+                              <div className="bg-amber-900/10 p-4 rounded-xl border border-amber-500/20">
+                                  <label className="text-[10px] font-bold text-amber-500 uppercase block mb-2">XP Override</label>
+                                  <div className="flex items-center gap-4">
+                                      <input type="range" min="0" max="10000" step="100" value={editForm.xp || 0} onChange={(e) => setEditForm({...editForm, xp: parseInt(e.target.value)})} className="flex-1 h-2 bg-black rounded-lg appearance-none cursor-pointer accent-amber-500" />
+                                      <span className="text-white font-mono">{editForm.xp}</span>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  <div className="p-6 border-t border-white/5 bg-black/40 flex justify-between items-center">
+                      <button onClick={() => handleDelete(selectedUser.id)} className="px-6 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-500/20 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">Expel Student</button>
+                      <button onClick={handleSaveDossier} className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 transition-all">Update Records</button>
+                  </div>
+              </div>
+          </div>
+      )}
+    </div>
+  );
+};
