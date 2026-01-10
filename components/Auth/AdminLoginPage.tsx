@@ -71,7 +71,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
                       <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black border-b border-white/20 py-3 text-white text-lg focus:border-red-500 outline-none transition-colors placeholder-gray-700" placeholder="Passcode" />
                   </div>
 
-                  {error && <div className="py-3 px-4 bg-red-950/20 border border-red-500/30 text-red-400 text-xs font-mono">> ERROR: {error}</div>}
+                  {error && <div className="py-3 px-4 bg-red-950/20 border border-red-500/30 text-red-400 text-xs font-mono">&gt; ERROR: {error}</div>}
 
                   <button type="submit" disabled={loading || !email || !password} className={`w-full py-5 font-bold uppercase text-xs tracking-[0.2em] transition-all relative overflow-hidden ${loading ? 'bg-red-950/30 text-red-500 border border-red-500/30' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-50'}`}>
                       {loading ? (
