@@ -1,1 +1,0 @@
-// This file has been removed. Please use the manual script provided in the chat to migrate users from Firebase to Supabase.
