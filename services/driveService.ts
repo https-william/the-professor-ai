@@ -1,5 +1,6 @@
 
 import { DriveFile } from "../types";
+import { GLOBAL_API_KEY } from "./firebase"; // Import masked/fallback key
 
 // Scope: drive.file only grants access to files opened by the user in Picker
 // This is non-sensitive and usually bypasses strict verification checks.
@@ -39,13 +40,7 @@ export const openDrivePicker = async (accessToken: string): Promise<DriveFile[]>
 
 const createPicker = (accessToken: string, resolve: (files: DriveFile[]) => void, reject: (err: any) => void) => {
     try {
-        // Use Environment Variable or fallback to empty string (prevents usage of dummy keys)
-        // @ts-ignore
-        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || "";
-        
-        if (!apiKey) {
-            console.warn("Google API Key missing (VITE_GOOGLE_API_KEY). Drive Picker may fail.");
-        }
+        const apiKey = GLOBAL_API_KEY; // Use the robust key from firebase.ts
         
         const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS);
         view.setMimeTypes("application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.google-apps.document,application/vnd.google-apps.presentation");

@@ -8,11 +8,23 @@ interface PlanCheckoutPageProps {
   onSuccess: (tier: SubscriptionTier) => void;
 }
 
-// 1. TypeScript Declaration for the Raw Window Object
+// --- TYPE DEFINITIONS FOR RAW PAYSTACK ---
+// This tells TypeScript exactly what the window object looks like
 declare global {
   interface Window {
     PaystackPop: {
-      setup: (options: any) => { openIframe: () => void };
+      setup: (options: {
+        key: string;
+        email: string;
+        amount: number;
+        currency?: string;
+        ref?: string;
+        metadata?: any;
+        callback: (response: any) => void;
+        onClose: () => void;
+      }) => {
+        openIframe: () => void;
+      };
     };
   }
 }
@@ -39,66 +51,38 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
 
   const handleCheckout = (e: React.FormEvent) => {
       e.preventDefault();
+      
+      // 1. Validation
       if (!email || !email.includes('@')) {
           alert("A valid communication channel is required.");
           return;
       }
+
+      // 2. Environment Key Check
+      // @ts-ignore
+      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
       
+      if (!publicKey) {
+          console.error("Paystack Key Missing. Check Vercel Environment Variables.");
+          alert("System Error: Payment Link Not Configured.");
+          return;
+      }
+
+      // 3. Script Load Check
+      if (!window.PaystackPop || typeof window.PaystackPop.setup !== 'function') {
+          alert("Secure Gateway (Paystack) not loaded. Please refresh or disable ad-blockers.");
+          return;
+      }
+
       setLoading(true);
 
-      // 1. Get Key Safely
-      let publicKey = '';
       try {
-          // @ts-ignore
-          publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
-      } catch (e) {}
-
-      if (!publicKey) {
-          console.error("PAYSTACK ERROR: VITE_PAYSTACK_PUBLIC_KEY is missing in your environment variables.");
-          alert("System Error: Payment Gateway Configuration Missing. Please check console.");
-          setLoading(false);
-          return;
-      }
-
-      // 2. Check if the Script loaded in index.html
-      // We check for 'setup' specifically to ensure we have the correct object type
-      if (!window.PaystackPop || typeof window.PaystackPop.setup !== 'function') {
-          // Fallback check: sometimes it loads as a constructor despite the error
-          if (typeof window.PaystackPop === 'function') {
-             // It is a constructor (v2 or specific load), try legacy
-             try {
-                 // @ts-ignore
-                 const handler = new window.PaystackPop();
-                 handler.newTransaction({
-                    key: publicKey,
-                    email: email,
-                    amount: price * 100,
-                    currency: currency,
-                    ref: 'PRO_' + Math.floor((Math.random() * 1000000000) + 1),
-                    onSuccess: (transaction: any) => {
-                        onSuccess(tier);
-                        setLoading(false);
-                    },
-                    onCancel: () => setLoading(false)
-                 });
-                 return;
-             } catch(err) {
-                 console.error("Legacy init failed", err);
-             }
-          }
-          
-          alert("Secure Gateway is not loaded. Please refresh the page and check your internet connection.");
-          setLoading(false);
-          return;
-      }
-
-      try {
-        // 3. THE FIX: Use .setup() directly
-        // This bypasses the constructor error completely.
+        // 4. MANUAL MODE EXECUTION
+        // Do NOT use 'new PaystackPop()'. Use 'PaystackPop.setup()'.
         const handler = window.PaystackPop.setup({
             key: publicKey,
             email: email,
-            amount: price * 100, // Amount in Kobo/Cents
+            amount: price * 100, // Amount in kobo/cents
             currency: currency,
             ref: 'PRO_' + Math.floor((Math.random() * 1000000000) + 1), 
             metadata: {
@@ -106,25 +90,25 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
                 custom_fields: [{ display_name: "Subscription Tier", variable_name: "tier", value: tier }]
             },
             callback: (response: any) => {
-                // Success Handler
+                // Payment Success
                 console.log("Payment complete", response);
                 onSuccess(tier);
                 alert(`Welcome to the elite. Reference: ${response.reference}`);
                 setLoading(false);
             },
             onClose: () => {
-                // Close Handler
-                alert("Transaction cancelled.");
+                // User closed popup
+                console.log("Transaction aborted");
                 setLoading(false);
             }
         });
 
-        // 4. Open the Iframe
+        // 5. Trigger
         handler.openIframe();
 
       } catch (e) {
-          console.error("Paystack Init Exception:", e);
-          alert("Secure link failed to initialize. Check console for details.");
+          console.error("Paystack Init Error:", e);
+          alert("Secure link failed. Check console for details.");
           setLoading(false);
       }
   };
@@ -153,31 +137,24 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans">
-        {/* Header */}
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
             <button onClick={onBack} className="text-gray-500 hover:text-white text-xs uppercase tracking-widest">← Abort Transaction</button>
             <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Secure Gateway
-                </span>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Secure Gateway</span>
             </div>
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full p-6 gap-12 items-center justify-center">
-            
-            {/* The Pitch (Left) */}
             <div className="w-full md:w-1/2 space-y-8 animate-slide-in">
                 <div>
                     <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-4 leading-tight">{copy.title}</h1>
                     <p className="text-xl text-gray-400 font-light">{copy.subtitle}</p>
                 </div>
-
                 <div className="bg-red-900/10 border-l-4 border-red-500 p-6 rounded-r-xl">
                     <p className="text-red-400 font-mono text-xs uppercase tracking-widest mb-2 font-bold">Reality Check</p>
                     <p className="text-gray-300 text-sm leading-relaxed">{copy.warning}</p>
                 </div>
-
                 <ul className="space-y-4">
                     {copy.benefits.map((benefit, i) => (
                         <li key={i} className="flex items-start gap-4">
@@ -188,7 +165,6 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
                 </ul>
             </div>
 
-            {/* The Transaction (Right) */}
             <div className="w-full md:w-1/3 bg-[#0f0f10] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden animate-slide-up-fade">
                 <div className={`absolute top-0 left-0 w-full h-1 ${tier === 'Excellentia' ? 'bg-amber-500' : 'bg-blue-500'}`}></div>
                 

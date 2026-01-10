@@ -25,14 +25,14 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSelectPlan }
   const plans = [
       {
           id: 'Fresher' as SubscriptionTier,
-          name: "Basic",
+          name: "Fresher",
           price: "Free",
-          desc: "Essential study tools.",
+          desc: "The sampler pack.",
           features: [
               "1 Quiz / Day", 
               "1 File Upload / Day", 
-              "Standard Speed", 
-              "Read-Only Chat"
+              "Standard Queue", 
+              "No Professor Chat"
           ],
           cta: "Start Free",
           popular: false,
@@ -40,35 +40,35 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSelectPlan }
       },
       {
           id: 'Scholar' as SubscriptionTier,
-          name: "Pro",
+          name: "Scholar",
           price: currency === 'NGN' ? '₦2,900' : '$4.99',
           period: '/mo',
-          desc: "Advanced features for serious students.",
+          desc: "Less than a pizza. 100x the value.",
           features: [
               "Unlimited Quizzes", 
-              "AI Tutor Access", 
-              "10 File Uploads / Day", 
-              "Priority Speed", 
-              "Collaborative Study Rooms"
+              "Feynman Tutor (Chat)", 
+              "10 Files / Day", 
+              "Priority Processing", 
+              "War Room Access"
           ],
-          cta: "Select Pro",
+          cta: "Enroll Now",
           popular: true,
           color: "border-blue-500/50 bg-blue-900/5"
       },
       {
           id: 'Excellentia' as SubscriptionTier,
-          name: "Premium",
+          name: "Excellentia",
           price: currency === 'NGN' ? '₦8,500' : '$14.99',
           period: '/mo',
-          desc: "Complete access to all capabilities.",
+          desc: "Academic immortality.",
           features: [
-              "No Usage Limits", 
-              "Hardest Difficulty Unlocked", 
-              "Predictive Questioning", 
-              "Weakness Analysis", 
-              "Priority Support"
+              "Unlimited Everything", 
+              "Nightmare Difficulty", 
+              "The Oracle (Predictive AI)", 
+              "Weakness Destroyer", 
+              "Admin-Level Support"
           ],
-          cta: "Select Premium",
+          cta: "Go Ultimate",
           popular: false,
           highlight: true,
           color: "border-amber-500/50 bg-gradient-to-b from-amber-900/10 to-black"
@@ -92,10 +92,11 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSelectPlan }
 
         <div className="pt-32 pb-20 px-6 relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-20">
-                <span className="text-amber-500 font-bold text-xs uppercase tracking-[0.2em] mb-4 block">Tuition</span>
-                <h1 className="text-5xl md:text-7xl font-display font-medium text-white mb-6">Simple, transparent pricing.</h1>
+                <span className="text-amber-500 font-bold text-xs uppercase tracking-[0.2em] mb-4 block">Tuition & Fees</span>
+                <h1 className="text-5xl md:text-7xl font-display font-medium text-white mb-6">Invest in your <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-amber-200">Neural Upgrade.</span></h1>
                 <p className="text-gray-400 text-lg leading-relaxed">
-                    Choose the plan that fits your academic needs. Cancel anytime.
+                    Standard education gives you information. The Professor gives you mastery. <br/>
+                    Choose the plan that fits your ambition.
                 </p>
             </div>
 
@@ -104,7 +105,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSelectPlan }
                     <div key={idx} className={`relative p-8 rounded-3xl border flex flex-col h-full transition-all duration-300 group hover:-translate-y-2 ${plan.color}`}>
                         {plan.popular && (
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-lg tracking-widest">
-                                Most Popular
+                                Recommended
                             </div>
                         )}
                         {plan.highlight && (
@@ -136,6 +137,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSelectPlan }
                         </button>
                     </div>
                 ))}
+            </div>
+            
+            <div className="max-w-4xl mx-auto mt-20 text-center border-t border-white/5 pt-10">
+                <h3 className="text-xl font-bold text-white mb-4">Enterprise Licenses</h3>
+                <p className="text-gray-400 mb-6">Want to deploy The Professor for your entire organization or university?</p>
+                <a href="mailto:vexis.automations@gmail.com" className="inline-block px-8 py-3 border border-white/20 hover:bg-white/10 rounded-full text-white text-xs font-bold uppercase tracking-widest transition-all">Contact Sales</a>
             </div>
         </div>
     </div>

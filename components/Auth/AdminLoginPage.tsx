@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { signInUser, signOutUser } from '../../services/supabase';
+import { loginWithEmail, logout } from '../../services/supabase';
 
 interface AdminLoginPageProps {
   onBack: () => void;
@@ -13,8 +13,11 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // You can add your specific email here to restrict access further if needed
-  // const AUTHORIZED_EMAILS = ['vexis.automations@gmail.com'];
+  const AUTHORIZED_EMAILS = [
+      'vexis.automations@gmail.com',
+      'popoolaariseoluwa@gmail.com',
+      'professoradmin@gmail.com'
+  ];
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,19 +25,17 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
     setLoading(true);
 
     try {
-        const { user } = await signInUser(email, password);
+        const { user } = await loginWithEmail(email, password);
 
-        if (user && user.email) {
-            // Optional: Check if email is in allowlist
-            // if (!AUTHORIZED_EMAILS.includes(user.email)) throw new Error("Unauthorized ID");
+        if (user && user.email && AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
             onSuccess();
         } else {
-            throw new Error("Identity verification failed.");
+            await logout();
+            setError("ACCESS DENIED: Credentials valid but unauthorized for this terminal.");
         }
     } catch (err: any) {
         console.error(err);
-        await signOutUser();
-        setError(err.message || "Access Denied");
+        setError("Authentication Failed: Invalid credentials or network error.");
     } finally {
         setLoading(false);
     }
@@ -42,8 +43,6 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
 
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 relative overflow-hidden font-mono text-white">
-      
-      {/* Background with serious ambience */}
       <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-1 bg-red-900/50"></div>
           <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-red-900/10 to-transparent"></div>
@@ -56,7 +55,6 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
           </div>
 
           <div className="bg-[#0a0a0c] border border-white/10 p-8 md:p-12 shadow-2xl relative">
-              {/* Corner Decals */}
               <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-red-500"></div>
               <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-red-500"></div>
               <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-red-500"></div>
@@ -65,59 +63,29 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onBack, onSucces
               <form onSubmit={handleLogin} className="space-y-8">
                   <div className="space-y-1">
                       <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Administrator ID</label>
-                      <input 
-                        type="email" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-black border-b border-white/20 py-3 text-white text-lg focus:border-red-500 outline-none transition-colors placeholder-gray-700"
-                        placeholder="Authorized Email"
-                        autoComplete="off"
-                      />
+                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black border-b border-white/20 py-3 text-white text-lg focus:border-red-500 outline-none transition-colors placeholder-gray-700" placeholder="Authorized Email" autoComplete="off" />
                   </div>
                   
                   <div className="space-y-1">
                       <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Security Clearance</label>
-                      <input 
-                        type="password" 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black border-b border-white/20 py-3 text-white text-lg focus:border-red-500 outline-none transition-colors placeholder-gray-700"
-                        placeholder="Passcode"
-                      />
+                      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black border-b border-white/20 py-3 text-white text-lg focus:border-red-500 outline-none transition-colors placeholder-gray-700" placeholder="Passcode" />
                   </div>
 
-                  {error && (
-                      <div className="py-3 px-4 bg-red-950/20 border border-red-500/30 text-red-400 text-xs font-mono">
-                          &gt; ERROR: {error}
-                      </div>
-                  )}
+                  {error && <div className="py-3 px-4 bg-red-950/20 border border-red-500/30 text-red-400 text-xs font-mono">> ERROR: {error}</div>}
 
-                  <button 
-                    type="submit"
-                    disabled={loading || !email || !password}
-                    className={`w-full py-5 font-bold uppercase text-xs tracking-[0.2em] transition-all relative overflow-hidden ${
-                        loading ? 'bg-red-950/30 text-red-500 border border-red-500/30' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-50'
-                    }`}
-                  >
+                  <button type="submit" disabled={loading || !email || !password} className={`w-full py-5 font-bold uppercase text-xs tracking-[0.2em] transition-all relative overflow-hidden ${loading ? 'bg-red-950/30 text-red-500 border border-red-500/30' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-50'}`}>
                       {loading ? (
                           <>
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent -translate-x-full animate-[shimmer_1s_infinite]"></div>
-                              <span className="relative z-10 flex items-center justify-center gap-2">
-                                  <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-                                  AUTHENTICATING...
-                              </span>
+                              <span className="relative z-10 flex items-center justify-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>OVERRIDING SECURITY...</span>
                           </>
-                      ) : (
-                          'Access Terminal'
-                      )}
+                      ) : 'Access Terminal'}
                   </button>
               </form>
           </div>
           
           <div className="mt-8 text-center">
-              <button onClick={onBack} className="text-gray-600 hover:text-white text-xs uppercase tracking-widest transition-colors">
-                  Return to Campus
-              </button>
+              <button onClick={onBack} className="text-gray-600 hover:text-white text-xs uppercase tracking-widest transition-colors">Return to Campus</button>
           </div>
       </div>
     </div>
