@@ -54,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 await supabase.auth.signOut();
                 setUser(null);
                 alert("Account suspended by administration.");
-                setLoading(false);
                 return;
             }
 
@@ -112,69 +111,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
     
     const initializeAuth = async () => {
-        // 1. Hash Detection
-        // Supabase OAuth redirects contain #access_token=...
-        const hash = window.location.hash;
-        const isUrlRedirect = hash && (hash.includes('access_token') || hash.includes('type=recovery'));
+        try {
+            // 1. Hash Detection
+            // Supabase OAuth redirects contain #access_token=...
+            const hash = window.location.hash;
+            const isUrlRedirect = hash && (hash.includes('access_token') || hash.includes('type=recovery'));
 
-        // If redirecting, we force loading to stay true until we resolve it
-        if (!isUrlRedirect) {
-            // No hash? Check existing local session quickly
-            const { data: { session } } = await supabase.auth.getSession();
-            if (mounted) {
-                if (session) {
-                    await processSession(session);
-                }
-                // Only turn off loading if we definitely aren't waiting for a redirect
-                setLoading(false);
-            }
-        } else {
-            // 2. Handle Redirect Manually
-            // Sometimes onAuthStateChange fires too late. We parse manually to be fast.
-            try {
-                // Remove the # character
-                const params = new URLSearchParams(hash.substring(1));
-                const accessToken = params.get('access_token');
-                const refreshToken = params.get('refresh_token');
-
-                if (accessToken) {
-                    const { data, error } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: refreshToken || '',
-                    });
-
-                    if (!error && data.session) {
-                        if (mounted) await processSession(data.session);
-                        // Clean URL immediately after successful setSession
-                        window.history.replaceState(null, '', window.location.pathname);
-                        if (mounted) setLoading(false);
-                        return;
+            if (!isUrlRedirect) {
+                // No hash? Check existing local session quickly
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (mounted) {
+                    if (session) {
+                        await processSession(session);
                     }
+                    setLoading(false);
                 }
-            } catch (e) {
-                console.error("Manual hash parse failed", e);
+            } else {
+                // 2. Handle Redirect Manually
+                try {
+                    // Remove the # character
+                    const params = new URLSearchParams(hash.substring(1));
+                    const accessToken = params.get('access_token');
+                    const refreshToken = params.get('refresh_token');
+
+                    if (accessToken) {
+                        const { data, error } = await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken || '',
+                        });
+
+                        if (!error && data.session) {
+                            if (mounted) await processSession(data.session);
+                            // Clean URL immediately after successful setSession
+                            window.history.replaceState(null, '', window.location.pathname);
+                        } else {
+                            console.error("Manual session set failed:", error);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Manual hash parse failed", e);
+                } finally {
+                    // CRITICAL: Ensure we stop loading even if parsing fails
+                    if (mounted) setLoading(false);
+                }
             }
+        } catch (globalErr) {
+            console.error("Auth Init Error:", globalErr);
+            if (mounted) setLoading(false);
         }
     };
 
     initializeAuth();
 
-    // 3. Listener as backup
+    // 3. Listener as backup (handles sign-outs and background updates)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
       if (session) {
           await processSession(session);
-          setLoading(false);
       } else if (event === 'SIGNED_OUT') {
           setUser(null);
-          setLoading(false);
       }
+      // Ensure loading is cleared on auth state change events too
+      setLoading(false);
     });
+
+    // 4. Safety Valve: Force stop loading after 6 seconds to prevent infinite spinner
+    const safetyTimer = setTimeout(() => {
+        if (mounted && loading) {
+            console.warn("Auth timeout reached. Forcing UI load.");
+            setLoading(false);
+        }
+    }, 6000);
 
     return () => {
         mounted = false;
         authListener.subscription.unsubscribe();
+        clearTimeout(safetyTimer);
     };
   }, []);
 
