@@ -39,7 +39,7 @@ const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module =
 const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
 // Routing State
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
@@ -50,16 +50,12 @@ const ADMIN_EMAILS = [
 const App: React.FC = () => {
   const { user, loading } = useAuth();
   
-  // ROUTING: Initialize based on URL
+  // Initialize View based on URL Path only (Auth state handled by effect)
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
           const hash = window.location.hash;
-          
           if (hash.startsWith('#/share/')) return 'SHARED';
-          // CRITICAL: Detect Auth Callback immediately
-          if (hash.includes('access_token') || hash.includes('type=recovery')) return 'AUTH_CALLBACK';
-          
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
@@ -168,28 +164,30 @@ const App: React.FC = () => {
 
   const isAdmin = isPotentialAdmin(user?.email);
 
-  // --- AUTH STATE ROUTING ---
+  // --- MASTER ROUTING LOGIC ---
   useEffect(() => {
-    // If in special views, don't auto-redirect
-    if (currentView === 'SHARED' || currentView === 'ADMIN_LOGIN' || currentView === 'PRICING') return;
+    if (loading) return; // Wait for auth to resolve
+
+    // Protected views don't redirect
+    if (currentView === 'SHARED') return;
+    if (currentView === 'PRICING') return;
+    if (currentView === 'ADMIN_LOGIN' && !user) return; // Allow admin login screen
 
     if (user) {
-        // CLEAN URL IMMEDIATELY
-        if (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery')) {
-            window.history.replaceState(null, '', '/'); 
-        }
-        
+        // User is authenticated
         const storedPendingPlan = localStorage.getItem('pending_plan');
         if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
             setCurrentView('CHECKOUT');
             localStorage.removeItem('pending_plan');
         } else {
+            // Default to App
             setCurrentView('APP');
         }
-    } else if (!loading) {
-        // Only redirect to landing if completely logged out and not in a waiting state
-        if (currentView === 'APP' || currentView === 'AUTH_CALLBACK') {
+    } else {
+        // User is NOT authenticated
+        // If they were trying to access APP or Checkout, bump to Landing/Auth
+        if (currentView === 'APP' || currentView === 'CHECKOUT') {
             setCurrentView('LANDING');
         }
     }
@@ -245,9 +243,8 @@ const App: React.FC = () => {
         };
     }
     
-    // Explicitly check for onboarding status from DB
-    if (user.hasCompletedOnboarding) setOnboardingStep('COMPLETE');
-    else setOnboardingStep('WELCOME');
+    if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
+    else setOnboardingStep('COMPLETE');
     
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
     
@@ -494,12 +491,17 @@ const App: React.FC = () => {
   };
 
   // --- LOADER ---
-  if (loading || currentView === 'AUTH_CALLBACK') {
+  // Force specific text if hash is present
+  const isHashRedirect = typeof window !== 'undefined' && window.location.hash.includes('access_token');
+  
+  if (loading) {
       return (
           <div className="min-h-screen bg-[#050505] flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                   <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-500 animate-pulse">Establishing Neural Link...</p>
+                  <p className="text-xs font-mono uppercase tracking-widest text-gray-500 animate-pulse">
+                      {isHashRedirect ? "Authenticating..." : "Establishing Neural Link..."}
+                  </p>
               </div>
           </div>
       );
