@@ -29,12 +29,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    // 1. Setup Auth Listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       if (session?.user) {
         const currentUser = session.user;
         
         // Fetch Profile from 'profiles' table
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', currentUser.id)
@@ -65,14 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     country: profile.country,
                     xp: profile.xp,
                     dailyQuizzesGenerated: profile.daily_quizzes_generated,
-                    // Map other fields from DB snake_case to camelCase
                     ...profile
                 }
             };
             
-            // Sync local storage
             saveUserProfile(extendedUser.profile as UserProfile);
-            
             setUser(extendedUser);
         } else {
             // New User - Insert default profile
@@ -102,8 +104,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
+    // 2. Safety Valve: Force stop loading after 3 seconds if Supabase hangs
+    // This prevents the "Blank Texture Page" on custom domains/slow connections
+    const safetyTimer = setTimeout(() => {
+        if (loading) {
+            console.warn("Auth initialization timed out. Forcing render.");
+            setLoading(false);
+        }
+    }, 3000);
+
     return () => {
+        mounted = false;
         authListener.subscription.unsubscribe();
+        clearTimeout(safetyTimer);
     };
   }, []);
 
@@ -123,7 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser }}>
-      {!loading && children}
+      {/* Always render children, let App.tsx handle the loading spinner UI */}
+      {children}
     </AuthContext.Provider>
   );
 };
