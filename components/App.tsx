@@ -39,7 +39,7 @@ const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module =
 const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
 // Routing State
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK';
 
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
@@ -55,13 +55,15 @@ const App: React.FC = () => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
           const hash = window.location.hash;
+          
           if (hash.startsWith('#/share/')) return 'SHARED';
+          // CRITICAL: Detect Auth Callback immediately
+          if (hash.includes('access_token') || hash.includes('type=recovery')) return 'AUTH_CALLBACK';
+          
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
           if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
-          // Check for OAuth callback specifically to prevent flash of landing page
-          if (hash.includes('access_token') || hash.includes('type=recovery')) return 'AUTH'; 
       }
       return 'LANDING';
   });
@@ -166,31 +168,30 @@ const App: React.FC = () => {
 
   const isAdmin = isPotentialAdmin(user?.email);
 
+  // --- AUTH STATE ROUTING ---
   useEffect(() => {
-    if (loading) return;
-    
-    // Handle Shared Links Early
-    if (currentView === 'SHARED') return;
+    // If in special views, don't auto-redirect
+    if (currentView === 'SHARED' || currentView === 'ADMIN_LOGIN' || currentView === 'PRICING') return;
 
     if (user) {
-        // --- CLEANUP OAUTH URL ---
-        if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery'))) {
-            // Remove the hash cleanly to prevent "messy URL"
-            window.history.replaceState(null, '', window.location.pathname);
+        // CLEAN URL IMMEDIATELY
+        if (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery')) {
+            window.history.replaceState(null, '', '/'); 
         }
-
+        
         const storedPendingPlan = localStorage.getItem('pending_plan');
         if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
             setCurrentView('CHECKOUT');
             localStorage.removeItem('pending_plan');
-        } else if (currentView === 'LANDING' || currentView === 'AUTH') {
-            // Redirect to App Dashboard if currently on landing or auth pages
+        } else {
             setCurrentView('APP');
         }
-    } else {
-        // Only redirect to landing if we are in app mode but no user
-        if (currentView === 'APP') setCurrentView('LANDING'); 
+    } else if (!loading) {
+        // Only redirect to landing if completely logged out and not in a waiting state
+        if (currentView === 'APP' || currentView === 'AUTH_CALLBACK') {
+            setCurrentView('LANDING');
+        }
     }
   }, [user, loading, currentView]);
 
@@ -492,7 +493,17 @@ const App: React.FC = () => {
       }
   };
 
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
+  // --- LOADER ---
+  if (loading || currentView === 'AUTH_CALLBACK') {
+      return (
+          <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+              <div className="flex flex-col items-center gap-4">
+                  <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-xs font-mono uppercase tracking-widest text-gray-500 animate-pulse">Establishing Neural Link...</p>
+              </div>
+          </div>
+      );
+  }
   
   if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
   if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => navigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;

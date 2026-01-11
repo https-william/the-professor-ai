@@ -100,29 +100,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-
-    // 1. Check active session immediately (handles OAuth redirect hash parsing)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-        if (mounted && session) {
-            processSession(session);
-        } else if (mounted && !session) {
-            // If no session found yet, wait for onAuthStateChange or timeout
-            // Don't set loading false here immediately to avoid flash of login page if hash parsing is slow
+    
+    const initializeAuth = async () => {
+        // 1. Manual Hash Parsing (Robust Fallback)
+        // Sometimes Supabase auto-detection misses if the app re-renders too fast
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+            try {
+                // Extract tokens
+                const params = new URLSearchParams(hash.substring(1));
+                const access_token = params.get('access_token');
+                const refresh_token = params.get('refresh_token');
+                
+                if (access_token && refresh_token) {
+                    const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
+                    if (!error && data.session) {
+                        await processSession(data.session);
+                        return; // Exit, we handled it manually
+                    }
+                }
+            } catch (e) {
+                console.error("Manual hash parsing failed", e);
+            }
         }
-    });
 
-    // 2. Setup Auth Listener
+        // 2. Standard Session Check
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+            if (session) {
+                await processSession(session);
+            } else {
+                // If we didn't find a session and we aren't mid-redirect (manual check passed), stop loading
+                if (!hash.includes('access_token')) {
+                    setLoading(false);
+                }
+            }
+        }
+    };
+
+    initializeAuth();
+
+    // 3. Auth Listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      await processSession(session);
+      if (session) {
+          await processSession(session);
+      } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setLoading(false);
+      }
     });
 
-    // 3. Safety Valve: Force stop loading after 4 seconds if Supabase hangs
+    // 4. Safety Timeout
     const safetyTimer = setTimeout(() => {
-        if (loading) {
-            setLoading(false);
-        }
-    }, 4000);
+        if (loading) setLoading(false);
+    }, 8000);
 
     return () => {
         mounted = false;
