@@ -20,8 +20,19 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // --- AUTHENTICATION ---
 
 export const signInWithGoogle = async () => {
+    // Explicitly set the redirect URL to the current origin (e.g., https://theprofessor.xyz)
+    // This prevents 500 errors caused by mismatches between Site URL and current domain.
+    const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+    
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+            redirectTo: redirectTo,
+            queryParams: {
+                access_type: 'offline',
+                prompt: 'consent',
+            },
+        },
     });
     if (error) throw error;
 };

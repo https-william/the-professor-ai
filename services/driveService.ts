@@ -1,10 +1,25 @@
 
 import { DriveFile } from "../types";
-import { GLOBAL_API_KEY } from "./firebase"; // Import masked/fallback key
 
 // Scope: drive.file only grants access to files opened by the user in Picker
-// This is non-sensitive and usually bypasses strict verification checks.
 export const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+
+// Robust Env Getter (Duplicate of logic in other services to remain standalone)
+const getSafeEnv = (key: string, fallback: string): string => {
+    try {
+        // @ts-ignore
+        if (import.meta.env[key]) return import.meta.env[key];
+    } catch (e) {}
+    
+    // Obfuscated fallback check
+    if (fallback.includes("Uhl")) {
+        try { return atob(fallback).split('').reverse().join(''); } catch(e) { return ""; }
+    }
+    return "";
+};
+
+// Use the existing key logic but defined locally to break dependency on broken firebase.ts
+const GOOGLE_PICKER_KEY = getSafeEnv("VITE_FIREBASE_API_KEY", "QUpSWDFYbHFSNHFpU3VBcnB4PxMcUhlUhB538PqHDySazIA=");
 
 declare global {
   interface Window {
@@ -40,8 +55,6 @@ export const openDrivePicker = async (accessToken: string): Promise<DriveFile[]>
 
 const createPicker = (accessToken: string, resolve: (files: DriveFile[]) => void, reject: (err: any) => void) => {
     try {
-        const apiKey = GLOBAL_API_KEY; // Use the robust key from firebase.ts
-        
         const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS);
         view.setMimeTypes("application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.google-apps.document,application/vnd.google-apps.presentation");
         view.setIncludeFolders(true); // Allow navigating folders
@@ -50,7 +63,7 @@ const createPicker = (accessToken: string, resolve: (files: DriveFile[]) => void
         const picker = new window.google.picker.PickerBuilder()
             .addView(view)
             .setOAuthToken(accessToken)
-            .setDeveloperKey(apiKey)
+            .setDeveloperKey(GOOGLE_PICKER_KEY)
             .setCallback((data: any) => {
                 if (data.action === window.google.picker.Action.PICKED) {
                     const files = data.docs.map((doc: any) => ({
@@ -75,8 +88,6 @@ const createPicker = (accessToken: string, resolve: (files: DriveFile[]) => void
 };
 
 // Download a specific file
-// Note: Since we used drive.file scope and the user selected these files in Picker,
-// we now have permission to download them.
 export const downloadDriveFile = async (fileId: string, mimeType: string, accessToken: string): Promise<Blob> => {
     let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
     
@@ -100,6 +111,5 @@ export const downloadDriveFile = async (fileId: string, mimeType: string, access
     return await response.blob();
 };
 
-// Helper dummies to satisfy types if needed elsewhere, though unused now
 export const extractFolderId = (link: string) => null;
 export const listDriveFiles = async () => [];
