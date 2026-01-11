@@ -68,7 +68,7 @@ export const Hero: React.FC = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
            </span>
            <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest group-hover:text-blue-300 transition-colors">
-              <DecryptedText text="PROFESSOR ONLINE" />
+              <DecryptedText text="SYSTEM ONLINE" />
            </span>
         </div>
       </div>
@@ -77,7 +77,7 @@ export const Hero: React.FC = () => {
       <div className="relative z-10 mb-4 group cursor-default flex flex-col items-center">
         {/* Intro */}
         <span className="font-serif italic text-xl sm:text-2xl text-gray-500 mb-2 opacity-0 animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
-          Welcome to
+          Ready to Assist
         </span>
         
         {/* 'The Professor' - Responsive Font Size */}
@@ -86,29 +86,10 @@ export const Hero: React.FC = () => {
         </h1>
       </div>
       
-      {/* XYZ Tagline */}
+      {/* Subline */}
       <div className="max-w-3xl mx-auto relative z-10 px-4 animate-slide-up-fade opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.5s' }}>
-         <div className="text-lg sm:text-2xl text-gray-400 font-light tracking-wide flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-            <span>Learning is as simple as</span>
-            
-            <div className="relative inline-flex items-center px-2">
-                {/* Crossed out ABC - Hand-drawn Style */}
-                <div className="relative mr-3 opacity-60 rotate-[-6deg] select-none hover:opacity-80 transition-opacity">
-                    <span className="text-gray-600 font-mono font-bold text-2xl sm:text-3xl relative inline-block">
-                        ABC
-                        {/* Custom SVG Red Strike - Reduced Size & Opacity */}
-                        <svg className="absolute top-1/2 left-0 w-full h-[2px] -translate-y-1/2 text-red-600 opacity-60 pointer-events-none overflow-visible" viewBox="0 0 100 10" preserveAspectRatio="none">
-                            <path d="M0 5 L100 5" stroke="currentColor" strokeWidth="8" strokeLinecap="round" fill="none" />
-                        </svg>
-                    </span>
-                </div>
-                
-                {/* Glowing XYZ */}
-                <span className="font-black text-white text-xl sm:text-3xl relative">
-                    <span className="absolute -inset-1 bg-blue-500/20 blur-lg rounded-full"></span>
-                    <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">XYZ</span>
-                </span>
-            </div>
+         <div className="text-lg sm:text-xl text-gray-400 font-light tracking-wide text-center">
+            Upload your materials below to begin the neural link.
          </div>
       </div>
     </div>

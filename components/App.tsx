@@ -60,6 +60,8 @@ const App: React.FC = () => {
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
           if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
+          // Check for OAuth callback specifically to prevent flash of landing page
+          if (hash.includes('access_token')) return 'AUTH'; 
       }
       return 'LANDING';
   });
@@ -171,12 +173,19 @@ const App: React.FC = () => {
     if (currentView === 'SHARED') return;
 
     if (user) {
+        // --- CLEANUP OAUTH URL ---
+        if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('error'))) {
+            // Remove the hash cleanly to prevent "messy URL"
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+
         const storedPendingPlan = localStorage.getItem('pending_plan');
         if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
             setCurrentView('CHECKOUT');
             localStorage.removeItem('pending_plan');
         } else if (currentView === 'LANDING' || currentView === 'AUTH') {
+            // Redirect to App Dashboard if currently on landing or auth pages
             setCurrentView('APP');
         }
     } else {
