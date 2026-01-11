@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './components/Hero';
 import { InputSection } from './components/InputSection';
@@ -19,11 +20,12 @@ import { DuelReadyModal } from './components/DuelReadyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { NotificationBell } from './components/NotificationBell';
 import { AdminVerifyModal } from './components/AdminVerifyModal';
+import { SharedView } from './components/SharedView';
 import { useAuth } from './contexts/AuthContext';
-import { generateQuizFromText, generateProfessorContent, simplifyExplanation } from './services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, HubState, SubscriptionTier } from './types';
-import { logout, updateUserUsage, saveUserToFirestore, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from './services/firebase';
+import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
+import { loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from './types';
+import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from './services/supabase';
 import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
@@ -35,25 +37,36 @@ const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').th
 const TheHub = React.lazy(() => import('./components/TheHub').then(module => ({ default: module.TheHub })));
 
 // Routing State
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'APP' | 'CHECKOUT' | 'ADMIN_LOGIN';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
-// Admin Whitelist - Lowercase
 const ADMIN_EMAILS = [
+    'popoolaariseoluwa@gmail.com', 
+    'professoradmin@gmail.com',
     'vexis.automations@gmail.com'
 ];
 
 const App: React.FC = () => {
-  const { user, loading, refreshUser } = useAuth();
+  const { user, loading } = useAuth();
   
   // ROUTING: Initialize based on URL
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
+          const hash = window.location.hash;
+          if (hash.startsWith('#/share/')) return 'SHARED';
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
+          if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
       }
       return 'LANDING';
+  });
+
+  const [shareId, setShareId] = useState<string | null>(() => {
+      if (typeof window !== 'undefined' && window.location.hash.startsWith('#/share/')) {
+          return window.location.hash.split('/share/')[1];
+      }
+      return null;
   });
 
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
@@ -61,14 +74,18 @@ const App: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
   const [isAdBlockActive, setIsAdBlockActive] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>(getDefaultProfile());
+  
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => loadUserProfile() || getDefaultProfile());
+  
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
+  
   const [quizState, setQuizState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
   const [professorState, setProfessorState] = useState<ProfessorState>({ sections: [] });
   const [chatState, setChatState] = useState<ChatState>({ messages: [], fileContext: '', fileName: '' });
+  
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
@@ -81,22 +98,28 @@ const App: React.FC = () => {
   const [showAdminVerify, setShowAdminVerify] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
 
-  const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(() => {
-      if (typeof window !== 'undefined') {
-          const path = window.location.pathname.toLowerCase();
-          if (path === '/scholar') return 'Scholar';
-          if (path === '/excellentia') return 'Excellentia';
-      }
-      return null;
-  });
-
-  const [initialRouteHandled, setInitialRouteHandled] = useState(false);
+  const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(null);
   const saveTimeoutRef = useRef<any>(null);
 
-  // Constants for Limits
   const isFresher = userProfile.subscriptionTier === 'Fresher';
   const QUIZ_LIMIT = isFresher ? 1 : 100;
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
+
+  // --- HASH ROUTING ---
+  useEffect(() => {
+    const handleHashChange = () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#/share/')) {
+            const id = hash.split('/share/')[1];
+            if (id) {
+                setShareId(id);
+                setCurrentView('SHARED');
+            }
+        }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // --- NAVIGATION ENGINE ---
   const navigate = (view: ViewState, url: string) => {
@@ -109,51 +132,27 @@ const App: React.FC = () => {
           const path = window.location.pathname.toLowerCase();
           if (path === '/pricing') setCurrentView('PRICING');
           else if (path === '/login') setCurrentView('AUTH');
-          else if (path === '/') setCurrentView(user ? 'APP' : 'LANDING');
+          else if (path === '/administrator') setCurrentView('ADMIN_LOGIN');
+          else if (user) setCurrentView('APP');
+          else setCurrentView('LANDING');
       };
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
-  // --- INITIAL ROUTING LOGIC ---
+  // --- AD BLOCK CHECK ---
   useEffect(() => {
-      if (loading || initialRouteHandled) return;
-
-      const path = window.location.pathname.toLowerCase();
-      
-      if (path === '/scholar' || path === '/excellentia') {
-          const tier = path === '/scholar' ? 'Scholar' : 'Excellentia';
-          if (user) {
-              setCheckoutTier(tier);
-              setCurrentView('CHECKOUT');
-          } else {
-              localStorage.setItem('pending_plan', tier);
-              setCurrentView('AUTH');
-          }
-          setInitialRouteHandled(true);
-          return;
-      }
-
-      if (path === '/pricing' || path === '/tuition') {
-          if (!user) setCurrentView('PRICING');
-          else setCurrentView('APP');
-          setInitialRouteHandled(true);
-          return;
-      }
-
-      if (path === '/login' || path === '/auth') {
-          if (!user) setCurrentView('AUTH');
-          else setCurrentView('APP');
-          setInitialRouteHandled(true);
-          return;
-      }
-
-      if (user) {
-          setCurrentView('APP');
-      }
-
-      setInitialRouteHandled(true);
-  }, [loading, user, initialRouteHandled]);
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
+            setIsAdBlockActive(true);
+        }
+        originalConsoleError(...args);
+    };
+    window.addEventListener('error', (e) => {
+        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
+    }, true);
+  }, []);
 
   const isPotentialAdmin = (email: string | null | undefined) => {
       if (!email) return false;
@@ -165,7 +164,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (loading) return;
-    if (currentView === 'CHECKOUT' || currentView === 'PRICING') return;
+    
+    // Handle Shared Links Early
+    if (currentView === 'SHARED') return;
 
     if (user) {
         const storedPendingPlan = localStorage.getItem('pending_plan');
@@ -217,24 +218,31 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    // Auto-switch to admin if previously unlocked in session, but typically we want re-verification
-    // We do NOT auto-switch appMode to ADMIN here. That is done via the modal.
 
     const firestoreProfile = user.profile;
     const localProfile = loadUserProfile() || getDefaultProfile();
     let mergedProfile: UserProfile = { ...localProfile };
+    
     if (firestoreProfile) {
-        mergedProfile = { ...mergedProfile, ...firestoreProfile, socials: firestoreProfile.socials || mergedProfile.socials, xp: firestoreProfile.xp !== undefined ? firestoreProfile.xp : mergedProfile.xp };
+        mergedProfile = { 
+            ...mergedProfile, 
+            ...firestoreProfile, 
+            socials: firestoreProfile.socials || mergedProfile.socials, 
+            xp: Math.max(firestoreProfile.xp || 0, mergedProfile.xp || 0)
+        };
     }
+    
     if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
     else setOnboardingStep('COMPLETE');
+    
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
+    
     mergedProfile = updateStreak(mergedProfile);
+    
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
     setHistory(loadHistory());
     
-    // Only restore session if NOT admin mode
     if (!isAdminUnlocked) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
@@ -250,6 +258,7 @@ const App: React.FC = () => {
   const handleAdminSuccess = () => {
       setIsAdminUnlocked(true);
       setAppMode('ADMIN');
+      navigate('APP', '/');
       setStatus(AppStatus.READY);
   };
 
@@ -270,8 +279,7 @@ const App: React.FC = () => {
 
   const handleOnboardingComplete = async (data: Partial<UserProfile>) => {
     if (user) {
-        await saveUserToFirestore(user.uid, { ...data, hasCompletedOnboarding: true });
-        await refreshUser(); 
+        await saveUserToSupabase(user.uid, { ...data, hasCompletedOnboarding: true });
     }
     const updated = { ...userProfile, ...data, hasCompletedOnboarding: true };
     setUserProfile(updated);
@@ -291,12 +299,7 @@ const App: React.FC = () => {
   };
 
   const getDocumentSummary = async (text: string): Promise<string> => {
-      try {
-          const summary = await simplifyExplanation(text.substring(0, 5000), 'ELA', "5 word abstract/tagline");
-          return summary.replace(/"/g, '').trim();
-      } catch (e) {
-          return "Uploaded Document";
-      }
+      return "Document"; // Simplified for performance
   };
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
@@ -307,16 +310,13 @@ const App: React.FC = () => {
 
       setActiveHistoryId(Date.now().toString()); 
       
-      const summaryPromise = getDocumentSummary(file.content);
-      
       if (mode === 'CHAT') {
         setStatusText("Analyzing Context...");
-        const summary = await summaryPromise;
         const newState: ChatState = { messages: [], fileContext: file.content, fileName: file.name };
         setChatState(newState);
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: summary };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: "Chat Session" };
         saveToHistory(historyItem);
         setHistory(loadHistory());
         setActiveHistoryId(historyItem.id);
@@ -328,10 +328,9 @@ const App: React.FC = () => {
         setStatusText("Constructing Materials...");
         const questions = await generateQuizFromText(file.content, config, userProfile);
         if (!questions || questions.length === 0) throw new Error("Neural Failure: No questions generated.");
-        const summary = await summaryPromise;
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: summary };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: "Exam" };
         saveToHistory(historyItem);
         setAppMode(mode); 
       } else {
@@ -340,8 +339,7 @@ const App: React.FC = () => {
         const newState: ProfessorState = { sections };
         setProfessorState(newState);
         setQuizState(prev => ({ ...prev, timeRemaining }));
-        const summary = await summaryPromise;
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: summary };
+        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: "Lecture" };
         saveToHistory(historyItem);
       }
       setHistory(loadHistory());
@@ -388,7 +386,7 @@ const App: React.FC = () => {
       setUserProfile(newProfile);
       saveUserProfile(newProfile);
       if (user) {
-          await saveUserToFirestore(user.uid, { xp: newXP });
+          await saveUserToSupabase(user.uid, { xp: newXP });
           if (activeDuelId) await submitDuelScore(activeDuelId, user.uid, score);
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -483,6 +481,7 @@ const App: React.FC = () => {
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
   
+  if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
   if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => navigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
   
   if (currentView === 'PRICING') return <PricingPage onBack={() => navigate('LANDING', '/')} onSelectPlan={(tier) => {
@@ -494,11 +493,7 @@ const App: React.FC = () => {
   if (currentView === 'AUTH' && !user) return <AuthPage />;
   if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => navigate('AUTH', '/login')} onPricing={() => navigate('PRICING', '/pricing')} />;
 
-  const isModalOpen = isProfileOpen || isAboutOpen || isSubscriptionOpen || onboardingStep === 'WELCOME' || !!duelReadyData || showExitConfirmation;
   const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
-  
-  // CONDITIONAL FAB LOGIC
-  // Hide FABs during active Exam (unless submitted) or Duel
   const hideFABs = appMode === 'EXAM' && !quizState.isSubmitted;
 
   return (
@@ -541,16 +536,22 @@ const App: React.FC = () => {
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (appMode === 'ADMIN') setAppMode('EXAM'); else handleQuizAction('RESET'); }}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
+                if (appMode === 'ADMIN') {
+                    setAppMode('EXAM');
+                    setStatus(AppStatus.IDLE); 
+                } else {
+                    handleQuizAction('RESET');
+                }
+            }}>
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
 
-            {/* Neural Energy Limit Bar */}
             {isFresher && appMode !== 'ADMIN' && (
-                <div className="hidden md:flex flex-col w-48 gap-1" title="Daily Neural Energy">
+                <div className="hidden md:flex flex-col w-48 gap-1 mx-6 items-stretch justify-center" title="Daily Neural Energy">
                     <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                         <span>Neural Energy</span>
                         <span className={usagePercentage > 90 ? 'text-red-500' : 'text-blue-400'}>{Math.round(100 - usagePercentage)}%</span>
@@ -566,13 +567,11 @@ const App: React.FC = () => {
 
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
-                   <button onClick={() => setAppMode('EXAM')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
+                   <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
                
-               {/* LIBRARY BUTTON - ONLY ON DASHBOARD */}
                {showLibrary && (
                    <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
-                       {/* SVG Book Icon */}
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                    </button>
                )}
@@ -599,10 +598,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <HistorySidebar 
-        isOpen={isHistoryOpen} 
-        onClose={() => setIsHistoryOpen(false)} 
-        history={history}
+      <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} 
         onSelect={(item) => {
             if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
                 setQuizState(item.data as QuizState);
@@ -615,15 +611,14 @@ const App: React.FC = () => {
             setStatus(AppStatus.READY);
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
-        }}
+        }} 
         onDelete={(id) => {
             deleteHistoryItem(id);
             setHistory(loadHistory());
             if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
         }}
       />
-
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToFirestore(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={!!isAdmin} onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} />
+      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToSupabase(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={!!isAdmin} onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
@@ -643,7 +638,7 @@ const App: React.FC = () => {
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'ADMIN' && <AdminDashboard onExit={() => setAppMode('EXAM')} />}
+                    {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}
                  </Suspense>
              </div>
          )}
