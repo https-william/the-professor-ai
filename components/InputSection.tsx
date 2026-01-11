@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, AppMode, AIPersonality, AnalogyDomain, UserProfile } from '../types';
+import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, AppMode, AIPersonality, AnalogyDomain, UserProfile, UserMood } from '../types';
 import { processFile } from '../services/fileService';
 import { DuelCreateModal } from './DuelCreateModal';
 import { DuelJoinModal } from './DuelJoinModal';
@@ -51,6 +51,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [timerDuration, setTimerDuration] = useState<TimerDuration>('Limitless');
   const [personality, setPersonality] = useState<AIPersonality>(userProfile.defaultPersonality || 'Academic');
   const [analogyDomain, setAnalogyDomain] = useState<AnalogyDomain>('General');
+  const [mood, setMood] = useState<UserMood>('Neutral');
   
   const [useOracle, setUseOracle] = useState(false);
 
@@ -133,7 +134,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   const getFullConfig = (): QuizConfig => ({ 
-      difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle
+      difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle, mood
   });
 
   const executeGeneration = async (finalMode: AppMode, overrideContent?: string, overrideName?: string) => {
@@ -244,6 +245,33 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </button>
   );
 
+  const MoodSelector = () => {
+      const moods: { id: UserMood, emoji: string }[] = [
+          { id: 'Neutral', emoji: '😐' },
+          { id: 'Focused', emoji: '🧠' },
+          { id: 'Anxious', emoji: '😰' },
+          { id: 'Confident', emoji: '🦁' },
+          { id: 'Tired', emoji: '😴' },
+          { id: 'Chaos', emoji: '🔥' }
+      ];
+
+      return (
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
+              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mr-2 shrink-0">Calibrate Neural State:</span>
+              {moods.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setMood(m.id)}
+                    className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${mood === m.id ? 'bg-blue-900/40 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'}`}
+                  >
+                      <span>{m.emoji}</span>
+                      <span>{m.id}</span>
+                  </button>
+              ))}
+          </div>
+      );
+  };
+
   return (
     <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       
@@ -267,33 +295,35 @@ export const InputSection: React.FC<InputSectionProps> = ({
             
             {/* CONTROL DECK */}
             <div id="exam-config-target" className="border-b border-white/5 bg-black/40 z-20 flex-shrink-0 backdrop-blur-md p-4">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                  <div className="flex flex-wrap gap-2 w-full">
-                      <ConfigPill label="Difficulty" value={difficulty} setter={setDifficulty} options={["Easy", "Medium", "Hard", isExcellentia ? "Nightmare" : "Nightmare (Locked)"]} disabled={difficulty === 'Nightmare' && !isExcellentia} />
-                      <ConfigPill label="Question Type" value={questionType} setter={setQuestionType} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
-                      <ConfigPill label="Timer" value={timerDuration} setter={setTimerDuration} options={["Limitless", "5m", "10m", "30m", "1h"]} />
-                      <ConfigPill label="Count" value={questionCount} setter={(v: string) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
-                  </div>
+              <div className="flex flex-col gap-3">
+                  <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                      <div className="flex flex-wrap gap-2 w-full">
+                          <ConfigPill label="Difficulty" value={difficulty} setter={setDifficulty} options={["Easy", "Medium", "Hard", isExcellentia ? "Nightmare" : "Nightmare (Locked)"]} disabled={difficulty === 'Nightmare' && !isExcellentia} />
+                          <ConfigPill label="Question Type" value={questionType} setter={setQuestionType} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
+                          <ConfigPill label="Timer" value={timerDuration} setter={setTimerDuration} options={["Limitless", "5m", "10m", "30m", "1h"]} />
+                          <ConfigPill label="Count" value={questionCount} setter={(v: string) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
+                      </div>
 
-                  {/* Oracle Toggle with SVG */}
-                  <div className="flex-shrink-0">
-                      {isExcellentia ? (
-                          <TogglePill 
-                            label="The Oracle" 
-                            active={useOracle} 
-                            onClick={() => setUseOracle(!useOracle)} 
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>} 
-                          />
-                      ) : (
-                          <div onClick={onShowSubscription}>
+                      {/* Oracle Toggle with SVG */}
+                      <div className="flex-shrink-0">
+                          {isExcellentia ? (
                               <TogglePill 
                                 label="The Oracle" 
-                                active={false} 
-                                onClick={()=>{}} 
-                                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>} 
+                                active={useOracle} 
+                                onClick={() => setUseOracle(!useOracle)} 
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>} 
                               />
-                          </div>
-                      )}
+                          ) : (
+                              <div onClick={onShowSubscription}>
+                                  <TogglePill 
+                                    label="The Oracle" 
+                                    active={false} 
+                                    onClick={()=>{}} 
+                                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>} 
+                                  />
+                              </div>
+                          )}
+                      </div>
                   </div>
               </div>
             </div>
@@ -366,6 +396,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
             {/* ACTION GRID */}
             <div className="p-6 border-t border-white/10 bg-[#0a0a0a] shrink-0">
+               <MoodSelector />
                <button 
                  onClick={() => executeGeneration('EXAM')} 
                  disabled={isLoading} 

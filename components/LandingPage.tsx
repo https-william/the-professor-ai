@@ -66,7 +66,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
         </nav>
       </div>
 
-      {/* Hero Section (Restored XYZ Style) */}
+      {/* Hero Section */}
       <section className="relative pt-32 sm:pt-48 pb-20 px-4 sm:px-6 min-h-[90vh] flex flex-col justify-center items-center text-center z-10">
         <div className="max-w-5xl mx-auto">
           
@@ -109,7 +109,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
           <div className="mb-12 animate-fade-in opacity-0 max-w-xl mx-auto" style={{ animationFillMode: 'forwards', animationDelay: '0.8s' }}>
               <p className="text-gray-400 text-lg sm:text-xl leading-relaxed font-light tracking-wide">
                   Stop reading. <span className="text-gray-200 font-medium border-b border-amber-500/30 pb-0.5">Start mastering.</span> <br/>
-                  Upload materials and dominate your exams.
+                  Upload materials and dominate your exams with your personal Professor.
               </p>
           </div>
 
@@ -125,7 +125,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
         </div>
       </section>
 
-      {/* Expanded Feature Explanations (Simple & Professional) */}
+      {/* Expanded Feature Explanations */}
       <section id="features" className="py-24 relative z-10 border-t border-white/5 bg-[#080808]">
           <div className="max-w-7xl mx-auto px-6">
               <div className="text-center mb-16">
@@ -177,11 +177,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
                  <div className="w-6 h-6 grayscale opacity-50">
                     <BrandLogo />
                  </div>
-                 <span className="font-bold text-gray-500">The Professor AI</span>
+                 <span className="font-bold text-gray-500">The Professor</span>
              </div>
              
              <div className="flex flex-col items-center md:items-end gap-1">
-                 <p className="font-mono uppercase tracking-widest text-amber-500/50">Copyright The Professor AI</p>
+                 <p className="font-mono uppercase tracking-widest text-amber-500/50">Copyright The Professor</p>
                  <p className="opacity-30">A sub system of Vexis Automations.</p>
                  <div className="flex gap-4 mt-2">
                      <a href="mailto:vexis.automations@gmail.com" className="hover:text-white transition-colors">Support Email</a>

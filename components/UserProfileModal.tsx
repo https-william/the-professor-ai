@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, HistoryItem, QuizState } from '../types';
 import { queueAction } from '../services/syncService';
 import { useAuth } from '../contexts/AuthContext';
+import { loadHistory } from '../services/storageService';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -15,27 +16,115 @@ interface UserProfileModalProps {
   onRequestAdminAccess?: () => void;
 }
 
+declare global {
+    interface Window {
+        jspdf: any;
+    }
+}
+
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess }) => {
   const { user } = useAuth();
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // CRITICAL FIX: Sync local state when the prop changes or modal opens
   useEffect(() => {
       setEditedProfile(profile);
+      if (isOpen) {
+          setHistory(loadHistory());
+      }
   }, [profile, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
       onSave(editedProfile);
-      // Use Hydra Queue
       if (user) {
           queueAction('UPDATE_PROFILE', { uid: user.uid, data: editedProfile });
       }
       onClose();
   };
 
-  // Achievement Logic with Progress
+  const calculateGrade = (score: number, total: number) => {
+      const pct = (score / total) * 100;
+      if (pct >= 90) return { letter: 'A', gpa: 4.0 };
+      if (pct >= 80) return { letter: 'B', gpa: 3.0 };
+      if (pct >= 70) return { letter: 'C', gpa: 2.0 };
+      if (pct >= 60) return { letter: 'D', gpa: 1.0 };
+      return { letter: 'F', gpa: 0.0 };
+  };
+
+  const generateTranscript = () => {
+      if (!window.jspdf) {
+          alert("PDF Generator is initializing. Please wait...");
+          return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.text("OFFICIAL ACADEMIC TRANSCRIPT", 105, 20, { align: "center" });
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Student: ${editedProfile.alias || 'Unknown'}`, 20, 40);
+      doc.text(`Institution: ${editedProfile.school || 'The Professor AI'}`, 20, 45);
+      doc.text(`Date Generated: ${new Date().toLocaleDateString()}`, 20, 50);
+      
+      doc.line(20, 55, 190, 55);
+
+      // Data Processing
+      const exams = history.filter(h => h.mode === 'EXAM' && (h.data as QuizState).isSubmitted);
+      let totalGPA = 0;
+      let totalExams = 0;
+
+      const rows = exams.map(exam => {
+          const data = exam.data as QuizState;
+          const totalQ = data.questions.length;
+          const score = data.score;
+          const { letter, gpa } = calculateGrade(score, totalQ);
+          
+          totalGPA += gpa;
+          totalExams++;
+
+          return [
+              new Date(exam.timestamp).toLocaleDateString(),
+              exam.title.substring(0, 40),
+              `${score}/${totalQ}`,
+              letter,
+              gpa.toFixed(1)
+          ];
+      });
+
+      const finalGPA = totalExams > 0 ? (totalGPA / totalExams).toFixed(2) : "0.00";
+
+      // Table
+      doc.autoTable({
+          startY: 60,
+          head: [['Date', 'Exam Title', 'Score', 'Grade', 'Points']],
+          body: rows,
+          theme: 'grid',
+          headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+          styles: { fontSize: 9 }
+      });
+
+      // Summary
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Cumulative GPA: ${finalGPA}`, 20, finalY);
+      doc.text(`Total Exams Completed: ${totalExams}`, 20, finalY + 7);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.text("Certified by The Professor AI Neural Engine.", 105, 280, { align: "center" });
+
+      doc.save(`Transcript_${editedProfile.alias}.pdf`);
+  };
+
   const achievements = [
       { 
           id: 'fresh_meat', 
@@ -152,6 +241,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                            <span className="text-[10px] text-gray-600 block mt-1">Keep it up</span>
                        </div>
                    </div>
+                   
+                   <button 
+                     onClick={generateTranscript}
+                     className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold uppercase tracking-widest border border-white/10 flex items-center justify-center gap-2"
+                   >
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                       Download Official Transcript
+                   </button>
                </div>
             </div>
 

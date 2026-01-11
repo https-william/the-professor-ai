@@ -104,6 +104,7 @@ export type AppMode = 'EXAM' | 'PROFESSOR' | 'ADMIN' | 'CHAT' | 'DUEL' | 'FLASHC
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Nightmare';
 export type QuestionType = 'Multiple Choice' | 'True/False' | 'Fill in the Gap' | 'Scenario-based' | 'Matching' | 'Mixed' | 'Select All That Apply';
 export type TimerDuration = 'Limitless' | '5m' | '10m' | '30m' | '45m' | '1h' | '1h 30m' | '2h';
+export type UserMood = 'Focused' | 'Anxious' | 'Tired' | 'Confident' | 'Neutral' | 'Chaos';
 
 // Professor Mode Specifics
 export type AIPersonality = 'Buddy' | 'Academic' | 'Drill Sergeant' | 'ELI5';
@@ -121,6 +122,7 @@ export interface QuizConfig {
   // Excellentia Supreme Features
   useOracle?: boolean; // Predictive questioning
   useWeaknessDestroyer?: boolean;
+  mood?: UserMood;
 }
 
 export type SubscriptionTier = 'Fresher' | 'Scholar' | 'Excellentia';
@@ -187,6 +189,7 @@ export interface HistoryItem {
   data: QuizState | ProfessorState | ChatState | EssayState;
   config?: QuizConfig;
   summary?: string; // Short 5-word summary of the source content
+  mood?: UserMood;
 }
 
 export interface ProcessedFile {

@@ -21,12 +21,12 @@ const TIPS = [
 ];
 
 const WAIT_MESSAGES = [
-  "Consulting the archives...",
-  "Synthesizing neural pathways...",
-  "Calibrating difficulty vectors...",
-  "Traffic is high. Queuing your request...",
-  "Rerouting power to the core...",
-  "Constructing your academic arsenal...",
+  "Accessing Neural Database...",
+  "Synthesizing concepts...",
+  "Calibrating difficulty...",
+  "Traffic is high. Queuing request...",
+  "Rerouting focus...",
+  "Preparing your study guide...",
   "Almost there. Stay focused."
 ];
 
@@ -63,7 +63,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type, on
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]/95 backdrop-blur-xl animate-fade-in p-6">
       
-      {/* Neural Core Visualization */}
+      {/* Core Visualization */}
       <div className="relative w-48 h-48 mb-16 flex items-center justify-center">
          
          {/* Orbit Ring 1 */}
@@ -91,7 +91,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type, on
       <div className="text-center space-y-4 max-w-lg w-full">
         <div>
           <h2 className="text-3xl font-serif font-bold text-white tracking-tight mb-2 animate-pulse">
-            {isProfessor ? "Designing Lesson Plan" : "Constructing Exam"}
+            {isProfessor ? "Planning Lesson" : "Generating Exam"}
           </h2>
           <div className="flex items-center justify-center gap-2 text-gray-400 font-mono text-xs uppercase tracking-widest opacity-60">
              <span className="w-2 h-2 rounded-full bg-current animate-bounce"></span>

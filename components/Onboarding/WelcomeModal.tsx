@@ -10,10 +10,11 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
   const [alias, setAlias] = useState('');
 
   const handleStart = () => {
+      // Logic for saving state is handled by parent App.tsx via onComplete
+      // This modal just collects the name.
       if (alias.trim()) {
           onComplete({ alias });
       } else {
-          // Allow anonymous
           onComplete({ alias: 'Guest Student' });
       }
   };

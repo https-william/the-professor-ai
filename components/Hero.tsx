@@ -68,22 +68,21 @@ export const Hero: React.FC = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
            </span>
            <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest group-hover:text-blue-300 transition-colors">
-              <DecryptedText text="SYSTEM ONLINE" />
+              <DecryptedText text="PROFESSOR ONLINE" />
            </span>
         </div>
       </div>
       
       {/* Main Headline */}
       <div className="relative z-10 mb-4 group cursor-default flex flex-col items-center">
-        {/* 'The' */}
-        <span className="font-serif italic text-xl sm:text-2xl text-gray-500 mb-[-5px] opacity-0 animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
-          The
+        {/* Intro */}
+        <span className="font-serif italic text-xl sm:text-2xl text-gray-500 mb-2 opacity-0 animate-slide-in" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
+          Welcome to
         </span>
         
-        {/* 'Professor' - Responsive Font Size (Fixed for Mobile) */}
-        {/* Changed text-5xl to text-4xl on base mobile, and added clamp */}
-        <h1 className="text-4xl sm:text-7xl md:text-9xl font-display font-normal tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 drop-shadow-2xl animate-shimmer bg-[length:200%_auto] leading-[0.85] px-4 pb-4 scale-y-110">
-          <DecryptedText text="Professor" />
+        {/* 'The Professor' - Responsive Font Size */}
+        <h1 className="text-4xl sm:text-7xl md:text-8xl font-display font-normal tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 drop-shadow-2xl animate-shimmer bg-[length:200%_auto] leading-[0.9] px-4 pb-4 scale-y-110">
+          <DecryptedText text="The Professor" />
         </h1>
       </div>
       
