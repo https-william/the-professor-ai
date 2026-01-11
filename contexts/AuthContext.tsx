@@ -28,13 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-
-    // 1. Setup Auth Listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-      
+  const processSession = async (session: any) => {
       if (session?.user) {
         const currentUser = session.user;
         
@@ -102,16 +96,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       }
       setLoading(false);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    // 1. Check active session immediately (handles OAuth redirect hash parsing)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        if (mounted && session) {
+            processSession(session);
+        } else if (mounted && !session) {
+            // If no session found yet, wait for onAuthStateChange or timeout
+            // Don't set loading false here immediately to avoid flash of login page if hash parsing is slow
+        }
     });
 
-    // 2. Safety Valve: Force stop loading after 3 seconds if Supabase hangs
-    // This prevents the "Blank Texture Page" on custom domains/slow connections
+    // 2. Setup Auth Listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      await processSession(session);
+    });
+
+    // 3. Safety Valve: Force stop loading after 4 seconds if Supabase hangs
     const safetyTimer = setTimeout(() => {
         if (loading) {
-            console.warn("Auth initialization timed out. Forcing render.");
             setLoading(false);
         }
-    }, 3000);
+    }, 4000);
 
     return () => {
         mounted = false;
@@ -122,21 +133,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-          const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-          if (profile) {
-              setUser(prev => prev ? ({ 
-                  ...prev, 
-                  plan: profile.plan, 
-                  profile: { ...prev.profile, ...profile } 
-              }) : null);
-          }
+      if (session) {
+          await processSession(session);
       }
   };
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser }}>
-      {/* Always render children, let App.tsx handle the loading spinner UI */}
       {children}
     </AuthContext.Provider>
   );

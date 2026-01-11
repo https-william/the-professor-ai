@@ -61,7 +61,7 @@ const App: React.FC = () => {
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
           if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
           // Check for OAuth callback specifically to prevent flash of landing page
-          if (hash.includes('access_token')) return 'AUTH'; 
+          if (hash.includes('access_token') || hash.includes('type=recovery')) return 'AUTH'; 
       }
       return 'LANDING';
   });
@@ -174,7 +174,7 @@ const App: React.FC = () => {
 
     if (user) {
         // --- CLEANUP OAUTH URL ---
-        if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('error'))) {
+        if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery'))) {
             // Remove the hash cleanly to prevent "messy URL"
             window.history.replaceState(null, '', window.location.pathname);
         }
@@ -189,6 +189,7 @@ const App: React.FC = () => {
             setCurrentView('APP');
         }
     } else {
+        // Only redirect to landing if we are in app mode but no user
         if (currentView === 'APP') setCurrentView('LANDING'); 
     }
   }, [user, loading, currentView]);
