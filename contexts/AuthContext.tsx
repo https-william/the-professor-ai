@@ -115,13 +115,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const initializeAuth = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (mounted) {
-            if (session) {
-                await processSession(session);
+        try {
+            // Race condition timeout: If Supabase takes > 3s, force load as guest/unauth
+            const sessionPromise = supabase.auth.getSession();
+            const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) => 
+                setTimeout(() => resolve({ data: { session: null } }), 3000)
+            );
+
+            const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+            
+            if (mounted) {
+                if (session) {
+                    await processSession(session);
+                }
+                setLoading(false);
             }
-            setLoading(false);
+        } catch (e) {
+            console.error("Auth Init Failed:", e);
+            if (mounted) setLoading(false);
         }
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
