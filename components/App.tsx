@@ -266,6 +266,7 @@ const App: React.FC = () => {
     }
   }, [user, isAdminUnlocked]);
 
+  // ... (Rest of event handlers remain unchanged) ...
   const handleAdminSuccess = () => {
       setIsAdminUnlocked(true);
       setAppMode('ADMIN');
@@ -307,10 +308,6 @@ const App: React.FC = () => {
       const minMatch = duration.match(/(\d+)m/);
       if (minMatch) totalSeconds += parseInt(minMatch[1]) * 60;
       return totalSeconds > 0 ? totalSeconds : null;
-  };
-
-  const getDocumentSummary = async (text: string): Promise<string> => {
-      return "Document"; // Simplified for performance
   };
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
@@ -369,6 +366,7 @@ const App: React.FC = () => {
   const handleCancelGeneration = () => { setStatus(AppStatus.IDLE); setErrorMsg(null); };
 
   const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
+    // ... (Keep existing implementation) ...
     if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
     if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
     if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
@@ -424,6 +422,7 @@ const App: React.FC = () => {
   const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
 
   const handleDuelStart = async (data: { wager: number, file: File }) => {
+      // ... (Keep existing implementation) ...
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
       setErrorMsg(null);
@@ -491,17 +490,27 @@ const App: React.FC = () => {
   };
 
   // --- LOADER ---
-  // Force specific text if hash is present
-  const isHashRedirect = typeof window !== 'undefined' && window.location.hash.includes('access_token');
   
   if (loading) {
       return (
-          <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                  <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-500 animate-pulse">
-                      {isHashRedirect ? "Authenticating..." : "Establishing Neural Link..."}
-                  </p>
+          <div className="min-h-screen bg-[#050505] flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
+              
+              <div className="flex flex-col items-center gap-6 z-10">
+                  <div className="relative">
+                      <div className="w-16 h-16 border-4 border-blue-900/30 rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 border-4 border-t-blue-500 border-l-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
+                      <div className="absolute inset-4 bg-blue-500/10 rounded-full animate-pulse"></div>
+                  </div>
+                  
+                  <div className="text-center">
+                      <p className="text-xs font-mono uppercase tracking-[0.3em] text-blue-400 animate-pulse">
+                          Authenticating Scholar
+                      </p>
+                      <p className="text-[10px] text-gray-600 font-mono mt-2">
+                          Retrieving Student Profile...
+                      </p>
+                  </div>
               </div>
           </div>
       );

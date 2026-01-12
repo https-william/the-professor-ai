@@ -14,7 +14,7 @@ export const AuthPage: React.FC = () => {
 
   useEffect(() => {
       if (!isAuthenticating) return;
-      const stages = ['ENCRYPTING...', 'VERIFYING...', 'HANDSHAKING...', 'ACCESSING...'];
+      const stages = ['REVIEWING APPLICATION...', 'CHECKING RECORDS...', 'VERIFYING ID...', 'MATRICULATING...'];
       let i = 0;
       const interval = setInterval(() => {
           setAuthStatusText(stages[i % stages.length]);
@@ -52,7 +52,7 @@ export const AuthPage: React.FC = () => {
           // We must stop the loader and inform the user.
           if (result && !result.session) {
               setIsAuthenticating(false);
-              setSuccessMsg("Access Requested. Check your email inbox to verify your credentials.");
+              setSuccessMsg("Access Requested. Check your email inbox to verify your student ID. (Note: The verification email may come from 'Supabase').");
               setMode('LOGIN'); // Switch back to login view for them to sign in after clicking link
           }
           // If result.session exists, they are auto-logged in, and AuthContext handles redirect.
@@ -104,7 +104,7 @@ export const AuthPage: React.FC = () => {
             {successMsg && (
                 <div className="p-3 bg-green-900/20 border border-green-500/20 rounded-lg text-green-400 text-xs flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                    {successMsg}
+                    <span>{successMsg}</span>
                 </div>
             )}
             
