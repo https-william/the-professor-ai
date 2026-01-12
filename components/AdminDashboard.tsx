@@ -51,19 +51,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {/* Master Header */}
         <div className="flex justify-between items-end mb-8 border-b border-red-900/50 pb-4">
             <div>
-                <h1 className="text-4xl font-black text-red-600 tracking-tighter glitch-effect">OVERLORD PANEL</h1>
-                <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">System Status: <span className="text-green-500">OPTIMAL</span></p>
+                <h1 className="text-4xl font-bold text-red-600 tracking-tight">ADMINISTRATION</h1>
+                <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">System Status: <span className="text-green-500">OPERATIONAL</span></p>
             </div>
             <div className="flex gap-4">
                 <button onClick={onExit} className="px-6 py-2 border border-white/20 text-gray-400 hover:text-white uppercase text-xs font-bold transition-colors">Log Out</button>
-                <button onClick={refreshData} className="px-6 py-2 bg-red-600 text-black uppercase text-xs font-bold hover:bg-red-500 transition-colors shadow-[0_0_15px_red]">Refresh Grid</button>
+                <button onClick={refreshData} className="px-6 py-2 bg-red-600 text-black uppercase text-xs font-bold hover:bg-red-500 transition-colors shadow-[0_0_15px_red]">Refresh Data</button>
             </div>
         </div>
 
         {/* Stats Bar */}
         <div className="grid grid-cols-4 gap-4 mb-8">
             <div className="bg-[#0f0f10] border border-white/10 p-4 rounded-xl">
-                <p className="text-[10px] text-gray-500 uppercase">Total Operatives</p>
+                <p className="text-[10px] text-gray-500 uppercase">Total Students</p>
                 <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
             </div>
             <div className="bg-[#0f0f10] border border-white/10 p-4 rounded-xl">
@@ -71,11 +71,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 <p className="text-2xl font-bold text-blue-500">24%</p>
             </div>
             <div className="bg-[#0f0f10] border border-white/10 p-4 rounded-xl">
-                <p className="text-[10px] text-gray-500 uppercase">Threat Level</p>
-                <p className="text-2xl font-bold text-green-500">LOW</p>
+                <p className="text-[10px] text-gray-500 uppercase">System Health</p>
+                <p className="text-2xl font-bold text-green-500">GOOD</p>
             </div>
             <div className="bg-[#0f0f10] border border-white/10 p-4 rounded-xl">
-                <p className="text-[10px] text-gray-500 uppercase">Revenue Est.</p>
+                <p className="text-[10px] text-gray-500 uppercase">Revenue</p>
                 <p className="text-2xl font-bold text-amber-500">$0.00</p>
             </div>
         </div>
@@ -96,7 +96,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
         {/* Data Grid */}
         <div className="bg-[#0a0a0c] border border-white/10 rounded-xl overflow-hidden min-h-[500px]">
             {loading ? (
-                <div className="p-10 text-center text-gray-500 animate-pulse">Establishing Uplink...</div>
+                <div className="p-10 text-center text-gray-500 animate-pulse">Loading Records...</div>
             ) : (
                 <table className="w-full text-left text-xs">
                     <thead className="bg-white/5 text-gray-400 uppercase tracking-wider">
@@ -136,10 +136,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                                 <td className="p-4 text-gray-400">{u.email}</td>
                                 <td className="p-4"><span className={`px-2 py-1 rounded bg-white/10 ${u.plan === 'Excellentia' ? 'text-amber-500' : 'text-gray-400'}`}>{u.plan}</span></td>
                                 <td className="p-4 font-mono text-blue-400">{u.xp}</td>
-                                <td className="p-4">{u.is_banned ? <span className="text-red-500 font-bold">BANNED</span> : <span className="text-green-500">ACTIVE</span>}</td>
+                                <td className="p-4">{u.is_banned ? <span className="text-red-500 font-bold">SUSPENDED</span> : <span className="text-green-500">ACTIVE</span>}</td>
                                 <td className="p-4 text-right flex justify-end gap-2">
-                                    <button onClick={() => handleAction(u.is_banned ? 'UNBAN' : 'BAN', u.id)} className="text-amber-500 hover:text-white">{u.is_banned ? 'Restore' : 'Ban'}</button>
-                                    <button onClick={() => handleAction('DELETE', u.id)} className="text-red-500 hover:text-white">Purge</button>
+                                    <button onClick={() => handleAction(u.is_banned ? 'UNBAN' : 'BAN', u.id)} className="text-amber-500 hover:text-white">{u.is_banned ? 'Restore' : 'Suspend'}</button>
+                                    <button onClick={() => handleAction('DELETE', u.id)} className="text-red-500 hover:text-white">Delete</button>
                                 </td>
                             </tr>
                         ))}

@@ -97,22 +97,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
           console.error("Session processing error:", err);
+          // Fallback
+          setUser({
+              uid: session.user.id,
+              email: session.user.email,
+              displayName: session.user.email?.split('@')[0],
+              photoURL: null,
+              plan: 'Fresher',
+              role: 'student',
+              hasCompletedOnboarding: false,
+              profile: { xp: 500 }
+          });
       }
   };
 
   useEffect(() => {
     let mounted = true;
-    
-    // 1. Detect if we are waiting for a magic link or OAuth redirect
-    // The hash usually contains 'access_token', 'type=signup', or 'type=recovery'
-    const isRedirecting = window.location.hash && (
-        window.location.hash.includes('access_token') || 
-        window.location.hash.includes('type=signup') ||
-        window.location.hash.includes('type=recovery')
-    );
 
     const initializeAuth = async () => {
-        // Standard Listener
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (mounted) {
+            if (session) {
+                await processSession(session);
+            }
+            setLoading(false);
+        }
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
             
@@ -121,37 +132,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else if (event === 'SIGNED_OUT') {
                 setUser(null);
             }
-            // Listener fired, so we can stop loading
             setLoading(false);
         });
 
-        // Check existing local session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (mounted) {
-            if (session) {
-                await processSession(session);
-                setLoading(false);
-            } else if (!isRedirecting) {
-                // If NO session and NOT redirecting, stop loading.
-                // If we ARE redirecting, keep loading true and wait for onAuthStateChange to fire.
-                setLoading(false);
-            }
-        }
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
     };
 
     initializeAuth();
-
-    // Safety fallback: If redirecting but nothing happens for 5 seconds, stop loading
-    if (isRedirecting) {
-        setTimeout(() => {
-            if (mounted) setLoading(false);
-        }, 5000);
-    }
-
-    return () => {
-        mounted = false;
-    };
   }, []);
 
   const refreshUser = async () => {

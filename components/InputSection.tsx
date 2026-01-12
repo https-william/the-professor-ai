@@ -245,26 +245,27 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </button>
   );
 
+  // SVG Mood Shapes
   const MoodSelector = () => {
-      const moods: { id: UserMood, emoji: string }[] = [
-          { id: 'Neutral', emoji: '😐' },
-          { id: 'Focused', emoji: '🧠' },
-          { id: 'Anxious', emoji: '😰' },
-          { id: 'Confident', emoji: '🦁' },
-          { id: 'Tired', emoji: '😴' },
-          { id: 'Chaos', emoji: '🔥' }
+      const moods: { id: UserMood, shape: React.ReactNode }[] = [
+          { id: 'Neutral', shape: <div className="w-3 h-3 rounded-full border-2 border-current"></div> },
+          { id: 'Focused', shape: <div className="w-3 h-3 border-2 border-current rotate-45 bg-current"></div> },
+          { id: 'Anxious', shape: <div className="w-3 h-3 border-b-2 border-current animate-pulse"></div> },
+          { id: 'Confident', shape: <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[10px] border-b-current"></div> },
+          { id: 'Tired', shape: <div className="w-3 h-1 bg-current rounded-full opacity-50"></div> },
+          { id: 'Chaos', shape: <div className="w-3 h-3 relative"><div className="absolute inset-0 border-2 border-current rotate-12"></div><div className="absolute inset-0 border-2 border-current -rotate-12"></div></div> }
       ];
 
       return (
           <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
-              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mr-2 shrink-0">Calibrate Neural State:</span>
+              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mr-2 shrink-0">State:</span>
               {moods.map(m => (
                   <button
                     key={m.id}
                     onClick={() => setMood(m.id)}
                     className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${mood === m.id ? 'bg-blue-900/40 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'}`}
                   >
-                      <span>{m.emoji}</span>
+                      {m.shape}
                       <span>{m.id}</span>
                   </button>
               ))}
@@ -283,7 +284,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
         <div className="relative bg-[#0a0a0a] backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 flex w-full max-w-2xl shadow-2xl">
           <button onClick={() => setAppMode('EXAM')} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl ${appMode === 'EXAM' ? 'bg-blue-900/50 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Exam</button>
           <button onClick={() => setAppMode('PROFESSOR')} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl ${appMode === 'PROFESSOR' ? 'bg-amber-900/50 text-amber-100 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Study</button>
-          <button onClick={() => setAppMode('HUB')} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl ${appMode === 'HUB' ? 'bg-green-900/50 text-green-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Hub</button>
+          <button onClick={() => { setAppMode('HUB'); onHubEnter(); }} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl ${appMode === 'HUB' ? 'bg-green-900/50 text-green-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Hub</button>
           <button onClick={() => { setShowDuelCreate(true); }} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl hover:text-purple-400 text-gray-500`}>Arena</button>
         </div>
       </div>

@@ -38,7 +38,6 @@ const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => 
 const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
-// Routing State
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
 const ADMIN_EMAILS = [
@@ -50,7 +49,6 @@ const ADMIN_EMAILS = [
 const App: React.FC = () => {
   const { user, loading } = useAuth();
   
-  // Initialize View based on URL Path only (Auth state handled by effect)
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
           const path = window.location.pathname.toLowerCase();
@@ -107,7 +105,6 @@ const App: React.FC = () => {
   const QUIZ_LIMIT = isFresher ? 1 : 100;
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
-  // --- HASH ROUTING ---
   useEffect(() => {
     const handleHashChange = () => {
         const hash = window.location.hash;
@@ -123,7 +120,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // --- NAVIGATION ENGINE ---
   const navigate = (view: ViewState, url: string) => {
       window.history.pushState({}, '', url);
       setCurrentView(view);
@@ -142,7 +138,6 @@ const App: React.FC = () => {
       return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
-  // --- AD BLOCK CHECK ---
   useEffect(() => {
     const originalConsoleError = console.error;
     console.error = (...args) => {
@@ -164,36 +159,28 @@ const App: React.FC = () => {
 
   const isAdmin = isPotentialAdmin(user?.email);
 
-  // --- MASTER ROUTING LOGIC ---
   useEffect(() => {
-    if (loading) return; // Wait for auth to resolve
-
-    // Protected views don't redirect
+    if (loading) return; 
     if (currentView === 'SHARED') return;
     if (currentView === 'PRICING') return;
-    if (currentView === 'ADMIN_LOGIN' && !user) return; // Allow admin login screen
+    if (currentView === 'ADMIN_LOGIN' && !user) return;
 
     if (user) {
-        // User is authenticated
         const storedPendingPlan = localStorage.getItem('pending_plan');
         if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
             setCurrentView('CHECKOUT');
             localStorage.removeItem('pending_plan');
         } else {
-            // Default to App
             setCurrentView('APP');
         }
     } else {
-        // User is NOT authenticated
-        // If they were trying to access APP or Checkout, bump to Landing/Auth
         if (currentView === 'APP' || currentView === 'CHECKOUT') {
             setCurrentView('LANDING');
         }
     }
   }, [user, loading, currentView]);
 
-  // Real-time History Sync
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
       const syncHistory = () => {
@@ -266,7 +253,6 @@ const App: React.FC = () => {
     }
   }, [user, isAdminUnlocked]);
 
-  // ... (Rest of event handlers remain unchanged) ...
   const handleAdminSuccess = () => {
       setIsAdminUnlocked(true);
       setAppMode('ADMIN');
@@ -366,7 +352,6 @@ const App: React.FC = () => {
   const handleCancelGeneration = () => { setStatus(AppStatus.IDLE); setErrorMsg(null); };
 
   const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
-    // ... (Keep existing implementation) ...
     if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
     if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
     if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
@@ -422,7 +407,6 @@ const App: React.FC = () => {
   const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
 
   const handleDuelStart = async (data: { wager: number, file: File }) => {
-      // ... (Keep existing implementation) ...
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
       setErrorMsg(null);
@@ -490,7 +474,6 @@ const App: React.FC = () => {
   };
 
   // --- LOADER ---
-  
   if (loading) {
       return (
           <div className="min-h-screen bg-[#050505] flex items-center justify-center relative overflow-hidden">
@@ -554,6 +537,17 @@ const App: React.FC = () => {
         onClose={() => setShowAdminVerify(false)} 
         onSuccess={handleAdminSuccess}
       />
+
+      {/* Floating Admin Button - Only if Authorized AND IDLE */}
+      {isPotentialAdmin(user?.email) && status === AppStatus.IDLE && appMode !== 'ADMIN' && (
+          <button 
+            onClick={() => setShowAdminVerify(true)}
+            className="fixed bottom-6 left-6 z-50 w-12 h-12 bg-red-900/80 border border-red-500/50 rounded-full flex items-center justify-center text-red-400 hover:text-white hover:bg-red-600 hover:scale-110 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] backdrop-blur-md animate-pulse-slow group"
+            title="Dean's Office"
+          >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+          </button>
+      )}
 
       {/* Professor Character (Chat Trigger) - Only show when IDLE and not in Admin Mode */}
       {status === AppStatus.IDLE && appMode !== 'ADMIN' && (

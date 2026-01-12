@@ -132,7 +132,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           desc: "Complete your first exam.", 
           progress: Math.min((profile.questionsAnswered || 0), 1),
           total: 1,
-          icon: "🥩",
+          icon: <div className="w-8 h-8 bg-gray-500 rounded-sm transform rotate-45"></div>,
           rarity: "Common",
           color: "bg-gray-800 border-gray-600"
       },
@@ -142,7 +142,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           desc: "Reach 1,000 XP.", 
           progress: Math.min((profile.xp || 0), 1000),
           total: 1000,
-          icon: "⚔️",
+          icon: <div className="w-8 h-8 border-2 border-blue-500 rounded-full flex items-center justify-center"><div className="w-4 h-4 bg-blue-500 rounded-full"></div></div>,
           rarity: "Rare",
           color: "bg-blue-900/40 border-blue-500"
       },
@@ -152,7 +152,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           desc: "7 Day Streak.", 
           progress: Math.min((profile.streak || 0), 7),
           total: 7,
-          icon: "🧟",
+          icon: <div className="w-8 h-8 border-2 border-purple-500 transform rotate-12"></div>,
           rarity: "Epic",
           color: "bg-purple-900/40 border-purple-500"
       },
@@ -162,7 +162,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           desc: "Answer 100 Questions.", 
           progress: Math.min((profile.questionsAnswered || 0), 100),
           total: 100,
-          icon: "🎖️",
+          icon: <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center"><div className="w-1 h-6 bg-black"></div><div className="w-6 h-1 bg-black absolute"></div></div>,
           rarity: "Rare",
           color: "bg-indigo-900/40 border-indigo-500"
       },
@@ -172,7 +172,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           desc: "Reach 5,000 XP.", 
           progress: Math.min((profile.xp || 0), 5000),
           total: 5000,
-          icon: "🧠",
+          icon: <div className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full shadow-[0_0_15px_orange]"></div>,
           rarity: "Legendary",
           color: "bg-amber-900/40 border-amber-500"
       },
@@ -182,7 +182,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           desc: "Get 50 Correct Answers.", 
           progress: Math.min((profile.correctAnswers || 0), 50),
           total: 50,
-          icon: "🎯",
+          icon: <div className="w-8 h-8 border-2 border-red-500 rounded-full flex items-center justify-center"><div className="w-2 h-2 bg-red-500 rounded-full"></div></div>,
           rarity: "Epic",
           color: "bg-red-900/40 border-red-500"
       }
@@ -212,7 +212,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             {/* Identity Block */}
             <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
                <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${editedProfile.avatarGradient} flex items-center justify-center shadow-2xl ring-4 ring-black/50 border border-white/10 shrink-0`}>
-                   <span className="text-5xl drop-shadow-lg">{editedProfile.avatarEmoji}</span>
+                   {/* Abstract Geometric Avatar instead of Emoji */}
+                   <div className="w-16 h-16 bg-white/20 rotate-45 transform skew-x-12 rounded-xl backdrop-blur-sm border border-white/40"></div>
                </div>
                <div className="text-center sm:text-left flex-1 w-full">
                    <div className="flex flex-col sm:flex-row justify-between items-center mb-2">

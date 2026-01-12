@@ -20,8 +20,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // --- AUTHENTICATION ---
 
 export const signInWithGoogle = async () => {
-    // Explicitly set the redirect URL to the current origin (e.g., https://theprofessor.xyz)
-    // This prevents 500 errors caused by mismatches between Site URL and current domain.
     const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
     
     const { error } = await supabase.auth.signInWithOAuth({
@@ -83,20 +81,27 @@ export const updateUserPlan = async (userId: string, newPlan: SubscriptionTier) 
     await supabase.from('profiles').update({ plan: newPlan }).eq('id', userId);
 };
 
-// --- SHARING SYSTEM (ChatGPT Style) ---
+// --- SHARING SYSTEM ---
 
 export const createShareLink = async (type: 'EXAM' | 'PROFESSOR', title: string, data: any): Promise<string | null> => {
-    const { data: shareData, error } = await supabase.from('public_shares').insert([{
-        type,
-        title,
-        data
-    }]).select('id').single();
+    try {
+        const { data: shareData, error } = await supabase.from('public_shares').insert([{
+            type,
+            title,
+            data
+        }]).select('id').single();
 
-    if (error) {
-        console.error("Share creation failed:", error);
+        if (error) {
+            console.error("Share creation failed:", error);
+            // This usually fails due to RLS if not logged in or policy restriction
+            // We return null so the UI can handle it gracefully
+            return null;
+        }
+        return shareData.id;
+    } catch(e) {
+        console.error("Failed to share:", e);
         return null;
     }
-    return shareData.id;
 };
 
 export const getShareData = async (id: string) => {
@@ -108,9 +113,12 @@ export const getShareData = async (id: string) => {
 // --- DUEL SYSTEM (ARENA) ---
 
 export const initDuelLobby = async (hostId: string, hostName: string, wager: number, content: string, quizConfig: QuizConfig): Promise<{ duelId: string, code: string }> => {
-    const ADJ = ["IRON", "NEON", "CYBER", "VOID", "AZURE", "SOLAR", "LUNAR", "HYPER", "DARK", "SILENT"];
-    const NOUN = ["TIGER", "WOLF", "EAGLE", "STORM", "VORTEX", "CORE", "FLAME", "SHARD", "TITAN", "GHOST"];
-    const code = `${ADJ[Math.floor(Math.random()*ADJ.length)]}-${NOUN[Math.floor(Math.random()*NOUN.length)]}`;
+    const ADJ = ["IRON", "NEON", "CYBER", "VOID", "AZURE", "SOLAR", "LUNAR", "HYPER", "DARK", "SILENT", "CRIMSON", "GOLDEN", "FROZEN", "TOXIC", "RAPID"];
+    const NOUN = ["TIGER", "WOLF", "EAGLE", "STORM", "VORTEX", "CORE", "FLAME", "SHARD", "TITAN", "GHOST", "DRAGON", "PHANTOM", "VIPER", "HAWK", "RAVEN"];
+    
+    // Append 4 random digits to ensure uniqueness
+    const suffix = Math.floor(1000 + Math.random() * 9000); 
+    const code = `${ADJ[Math.floor(Math.random()*ADJ.length)]}-${NOUN[Math.floor(Math.random()*NOUN.length)]}-${suffix}`;
 
     const participants: DuelParticipant[] = [{ id: hostId, name: hostName, status: 'JOINED' }];
     
@@ -150,6 +158,9 @@ export const joinDuelByCode = async (code: string, userId: string, userName: str
     // Check if already joined
     if (participants.some(p => p.id === userId)) return duel.id;
     
+    // Check capacity (Hard limit 30 based on new modal requirement)
+    if (participants.length >= 30) throw new Error("Arena is full.");
+
     // Add participant
     const newParticipant: DuelParticipant = { id: userId, name: userName, status: 'JOINED' };
     const updatedParticipants = [...participants, newParticipant];

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
+import { createHubRoom, joinHubRoom, subscribeToHubMessages, sendHubMessage } from '../services/firebase';
 
 interface TheHubProps {
     user: UserProfile;
@@ -11,34 +12,73 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [mode, setMode] = useState<'LOBBY' | 'ROOM'>('LOBBY');
     const [roomCode, setRoomCode] = useState('');
     const [messages, setMessages] = useState<any[]>([]);
-    const [participants, setParticipants] = useState<string[]>([]);
+    const [participants, setParticipants] = useState<string[]>([user.alias || 'You']);
     const [input, setInput] = useState('');
-    
-    // Mock for demo purposes - in real app, connect to Supabase/Firebase Realtime
-    useEffect(() => {
-        if (mode === 'ROOM') {
-            const initialMsg = { sender: 'System', text: `Welcome to Room ${roomCode}. Collaborative tools active.` };
-            setMessages([initialMsg]);
-        }
-    }, [mode, roomCode]);
+    const [loading, setLoading] = useState(false);
+    const [roomId, setRoomId] = useState('');
 
-    const handleCreate = () => {
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-        setRoomCode(code);
-        setMode('ROOM');
-        setParticipants([user.alias || 'You']);
+    useEffect(() => {
+        if (mode === 'ROOM' && roomId) {
+            const unsub = subscribeToHubMessages(roomId, (msgs) => {
+                setMessages(msgs);
+            });
+            return () => unsub();
+        }
+    }, [mode, roomId]);
+
+    const handleCreate = async () => {
+        setLoading(true);
+        try {
+            // Using placeholder modules for now
+            const id = await createHubRoom(user.alias || 'Host', []);
+            setRoomId(id);
+            setMode('ROOM');
+            // In real flow, code is returned or fetched
+            setRoomCode("HUB-" + Math.floor(1000 + Math.random() * 9000)); 
+        } catch (e) {
+            console.error(e);
+            alert("Hub creation failed.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleJoin = () => {
+    const handleJoin = async () => {
         if (!roomCode.trim()) return;
-        setMode('ROOM');
-        setParticipants(['Host', user.alias || 'You']);
+        setLoading(true);
+        try {
+            const id = await joinHubRoom(roomCode, user.alias || 'You');
+            setRoomId(id);
+            setMode('ROOM');
+        } catch (e) {
+            console.error(e);
+            alert("Could not join room. Check code.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (!input.trim() || !roomId) return;
+        await sendHubMessage(roomId, user.alias || 'You', input);
+        setInput('');
     };
 
     const handleCopy = () => {
         navigator.clipboard.writeText(roomCode);
-        alert("Code Copied: " + roomCode);
+        alert("Code Copied!");
     };
+
+    if (loading) {
+        return (
+            <div className="max-w-4xl mx-auto h-[70vh] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-green-500 font-bold uppercase text-xs tracking-widest animate-pulse">Establishing Uplink...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (mode === 'LOBBY') {
         return (
@@ -95,7 +135,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                     <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity" onClick={handleCopy}>
                         <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Room Code</span>
                         <div className="flex items-center gap-2">
-                            <span className="text-xl font-mono font-bold text-green-400 tracking-wider">{roomCode}</span>
+                            <span className="text-xl font-mono font-bold text-green-400 tracking-wider">{roomCode || "ACTIVE"}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                         </div>
                     </div>
@@ -115,9 +155,9 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                     <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
                         <div className="text-center text-gray-600 text-[10px] uppercase tracking-widest mt-4">Session Started</div>
                         {messages.map((m, i) => (
-                            <div key={i} className={`flex flex-col ${m.sender === 'You' ? 'items-end' : 'items-start'} animate-slide-in`}>
+                            <div key={i} className={`flex flex-col ${m.sender === (user.alias || 'You') ? 'items-end' : 'items-start'} animate-slide-in`}>
                                 <span className="text-[10px] text-gray-500 mb-1 ml-1">{m.sender}</span>
-                                <span className={`px-3 py-2 rounded-xl text-sm max-w-[85%] ${m.sender === 'You' ? 'bg-green-900/20 text-green-100 border border-green-500/20' : 'bg-white/5 text-gray-300 border border-white/5'}`}>{m.text}</span>
+                                <span className={`px-3 py-2 rounded-xl text-sm max-w-[85%] ${m.sender === (user.alias || 'You') ? 'bg-green-900/20 text-green-100 border border-green-500/20' : 'bg-white/5 text-gray-300 border border-white/5'}`}>{m.content || m.text}</span>
                             </div>
                         ))}
                     </div>
@@ -128,10 +168,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                             value={input}
                             onChange={e => setInput(e.target.value)}
                             onKeyDown={e => {
-                                if (e.key === 'Enter' && input.trim()) {
-                                    setMessages([...messages, { sender: 'You', text: input }]);
-                                    setInput('');
-                                }
+                                if (e.key === 'Enter') handleSendMessage();
                             }}
                         />
                     </div>

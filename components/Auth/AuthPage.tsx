@@ -19,7 +19,7 @@ export const AuthPage: React.FC = () => {
       const interval = setInterval(() => {
           setAuthStatusText(stages[i % stages.length]);
           i++;
-      }, 600);
+      }, 1200); // Slowed down to 1.2s for better UX
       return () => clearInterval(interval);
   }, [isAuthenticating]);
 
@@ -43,19 +43,13 @@ export const AuthPage: React.FC = () => {
     try {
       if (mode === 'LOGIN') {
           await loginWithEmail(email, password);
-          // If successful, the AuthContext listener in App.tsx will trigger the redirect.
-          // We leave isAuthenticating=true to prevent UI flicker before redirect.
       } else {
           const result = await registerWithEmail(email, password);
-          
-          // CRITICAL FIX: If no session is returned immediately, it means Email Verification is required.
-          // We must stop the loader and inform the user.
           if (result && !result.session) {
               setIsAuthenticating(false);
-              setSuccessMsg("Access Requested. Check your email inbox to verify your student ID. (Note: The verification email may come from 'Supabase').");
-              setMode('LOGIN'); // Switch back to login view for them to sign in after clicking link
+              setSuccessMsg("Access Requested. Check your email inbox (Sender: Supabase) to verify your student ID.");
+              setMode('LOGIN'); 
           }
-          // If result.session exists, they are auto-logged in, and AuthContext handles redirect.
       }
     } catch (err: any) {
       setIsAuthenticating(false);
@@ -65,7 +59,6 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-core flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] animate-pulse-slow"></div>
          <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-amber-900/10 rounded-full blur-[100px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
@@ -103,7 +96,6 @@ export const AuthPage: React.FC = () => {
             
             {successMsg && (
                 <div className="p-3 bg-green-900/20 border border-green-500/20 rounded-lg text-green-400 text-xs flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                     <span>{successMsg}</span>
                 </div>
             )}
