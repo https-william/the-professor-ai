@@ -116,10 +116,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
         try {
-            // Race condition timeout: If Supabase takes > 3s, force load as guest/unauth
+            // SMART AUTH FIX:
+            // Check if we are returning from an OAuth redirect (Token in URL)
+            const isAuthRedirect = window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('error_description'));
+            
+            // If redirecting, give Supabase more time (10s) to process the token.
+            // If normal visit, fail fast (3s) to show Landing Page.
+            const timeoutDuration = isAuthRedirect ? 10000 : 3000;
+
             const sessionPromise = supabase.auth.getSession();
             const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) => 
-                setTimeout(() => resolve({ data: { session: null } }), 3000)
+                setTimeout(() => resolve({ data: { session: null } }), timeoutDuration)
             );
 
             const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
@@ -127,6 +134,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (mounted) {
                 if (session) {
                     await processSession(session);
+                    // Cleanup URL bar if token lingers
+                    if (window.location.hash && window.location.hash.includes('access_token')) {
+                        window.history.replaceState(null, '', window.location.pathname);
+                    }
                 }
                 setLoading(false);
             }

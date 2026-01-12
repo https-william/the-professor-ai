@@ -70,7 +70,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
       <section className="relative pt-32 sm:pt-48 pb-20 px-4 sm:px-6 min-h-[90vh] flex flex-col justify-center items-center text-center z-10">
         <div className="max-w-5xl mx-auto">
           
-          <div className="mb-8 animate-slide-in opacity-0 flex justify-center" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
+          <div className="mb-8 animate-slide-in flex justify-center" style={{ animationFillMode: 'backwards', animationDelay: '0.2s' }}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md cursor-default">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
               <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest"><DecryptedText text="ACADEMIC WEAPON DETECTED" delay={500} /></span>
@@ -106,7 +106,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
              </div>
           </h1>
           
-          <div className="mb-12 animate-fade-in opacity-0 max-w-xl mx-auto" style={{ animationFillMode: 'forwards', animationDelay: '0.8s' }}>
+          <div className="mb-12 animate-fade-in max-w-xl mx-auto" style={{ animationFillMode: 'backwards', animationDelay: '0.8s' }}>
               <p className="text-gray-400 text-lg sm:text-xl leading-relaxed font-light tracking-wide">
                   Stop reading. <span className="text-gray-200 font-medium border-b border-amber-500/30 pb-0.5">Start mastering.</span> <br/>
                   Upload materials and dominate your exams with your personal Professor.
