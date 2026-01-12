@@ -110,84 +110,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
     
+    // Check if we are expecting a redirect (contains access_token)
+    // If so, we want to stay in 'loading' state until the listener fires.
+    // If not, we want to resolve loading immediately if no session exists.
+    const isRedirect = window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery'));
+
     const initializeAuth = async () => {
+        // 1. Setup Listener (Supabase SDK handles URL parsing automatically here)
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!mounted) return;
+            
+            if (session) {
+                await processSession(session);
+            } else if (event === 'SIGNED_OUT') {
+                setUser(null);
+            }
+            
+            // Listener fired, so we are definitely done loading
+            setLoading(false);
+        });
+
+        // 2. Check current local session (fast check)
         try {
-            // 1. Hash Detection
-            // Supabase OAuth redirects contain #access_token=...
-            const hash = window.location.hash;
-            const isUrlRedirect = hash && (hash.includes('access_token') || hash.includes('type=recovery'));
-
-            if (!isUrlRedirect) {
-                // No hash? Check existing local session quickly
-                const { data: { session }, error } = await supabase.auth.getSession();
-                if (mounted) {
-                    if (session) {
-                        await processSession(session);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (mounted) {
+                if (session) {
+                    await processSession(session);
+                    setLoading(false); // Session found, stop loading
+                } else {
+                    // No local session found.
+                    // CRITICAL: Only stop loading if we are NOT waiting for a redirect hash.
+                    // If we ARE waiting for a redirect, the onAuthStateChange above will handle it.
+                    if (!isRedirect) {
+                        setLoading(false);
                     }
-                    setLoading(false);
-                }
-            } else {
-                // 2. Handle Redirect Manually
-                try {
-                    // Remove the # character
-                    const params = new URLSearchParams(hash.substring(1));
-                    const accessToken = params.get('access_token');
-                    const refreshToken = params.get('refresh_token');
-
-                    if (accessToken) {
-                        const { data, error } = await supabase.auth.setSession({
-                            access_token: accessToken,
-                            refresh_token: refreshToken || '',
-                        });
-
-                        if (!error && data.session) {
-                            if (mounted) await processSession(data.session);
-                            // Clean URL immediately after successful setSession
-                            window.history.replaceState(null, '', window.location.pathname);
-                        } else {
-                            console.error("Manual session set failed:", error);
-                        }
-                    }
-                } catch (e) {
-                    console.error("Manual hash parse failed", e);
-                } finally {
-                    // CRITICAL: Ensure we stop loading even if parsing fails
-                    if (mounted) setLoading(false);
                 }
             }
-        } catch (globalErr) {
-            console.error("Auth Init Error:", globalErr);
-            if (mounted) setLoading(false);
+        } catch (e) {
+            console.error("Auth Init Error", e);
+            if (!isRedirect) setLoading(false);
         }
+
+        return () => {
+            mounted = false;
+            authListener.subscription.unsubscribe();
+        };
     };
 
-    initializeAuth();
+    const cleanupPromise = initializeAuth();
 
-    // 3. Listener as backup (handles sign-outs and background updates)
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-      
-      if (session) {
-          await processSession(session);
-      } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-      }
-      // Ensure loading is cleared on auth state change events too
-      setLoading(false);
-    });
-
-    // 4. Safety Valve: Force stop loading after 6 seconds to prevent infinite spinner
+    // 3. Fallback Safety Timer
+    // If for some reason Supabase never fires (e.g. network hang on redirect), allow app to load eventually.
+    // We only need a long timeout if we are redirecting; otherwise it should be instant.
     const safetyTimer = setTimeout(() => {
-        if (mounted && loading) {
-            console.warn("Auth timeout reached. Forcing UI load.");
+        if (loading) {
+            console.warn("Auth timeout. Releasing lock.");
             setLoading(false);
         }
-    }, 6000);
+    }, isRedirect ? 10000 : 2000); 
 
     return () => {
         mounted = false;
-        authListener.subscription.unsubscribe();
         clearTimeout(safetyTimer);
+        cleanupPromise.then(cleanup => cleanup && cleanup());
     };
   }, []);
 

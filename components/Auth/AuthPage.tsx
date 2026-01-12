@@ -7,6 +7,7 @@ export const AuthPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authStatusText, setAuthStatusText] = useState('CONNECTING...');
@@ -32,6 +33,7 @@ export const AuthPage: React.FC = () => {
     if (isAuthenticating) return;
     
     setError(null);
+    setSuccessMsg(null);
     
     if (!isValidEmail(email)) { setError("Invalid email address format."); return; }
     if (mode === 'REGISTER' && password.length < 8) { setError("Password must be at least 8 characters."); return; }
@@ -39,8 +41,22 @@ export const AuthPage: React.FC = () => {
     setIsAuthenticating(true);
 
     try {
-      if (mode === 'LOGIN') await loginWithEmail(email, password);
-      else await registerWithEmail(email, password);
+      if (mode === 'LOGIN') {
+          await loginWithEmail(email, password);
+          // If successful, the AuthContext listener in App.tsx will trigger the redirect.
+          // We leave isAuthenticating=true to prevent UI flicker before redirect.
+      } else {
+          const result = await registerWithEmail(email, password);
+          
+          // CRITICAL FIX: If no session is returned immediately, it means Email Verification is required.
+          // We must stop the loader and inform the user.
+          if (result && !result.session) {
+              setIsAuthenticating(false);
+              setSuccessMsg("Access Requested. Check your email inbox to verify your credentials.");
+              setMode('LOGIN'); // Switch back to login view for them to sign in after clicking link
+          }
+          // If result.session exists, they are auto-logged in, and AuthContext handles redirect.
+      }
     } catch (err: any) {
       setIsAuthenticating(false);
       setError(err.message || "Authentication failed.");
@@ -74,8 +90,8 @@ export const AuthPage: React.FC = () => {
          </div>
 
          <div className="flex border-b border-border-main mb-6 relative">
-            <button onClick={() => setMode('LOGIN')} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'LOGIN' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Log In</button>
-            <button onClick={() => setMode('REGISTER')} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'REGISTER' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Enroll</button>
+            <button onClick={() => { setMode('LOGIN'); setError(null); setSuccessMsg(null); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'LOGIN' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Log In</button>
+            <button onClick={() => { setMode('REGISTER'); setError(null); setSuccessMsg(null); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'REGISTER' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Enroll</button>
             <div className={`absolute bottom-0 h-0.5 bg-blue-500 transition-all duration-300 w-1/2 ${mode === 'LOGIN' ? 'left-0' : 'left-1/2'}`}></div>
          </div>
 
@@ -84,6 +100,14 @@ export const AuthPage: React.FC = () => {
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email Address" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passcode" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
             </div>
+            
+            {successMsg && (
+                <div className="p-3 bg-green-900/20 border border-green-500/20 rounded-lg text-green-400 text-xs flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                    {successMsg}
+                </div>
+            )}
+            
             {error && <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-lg text-red-400 text-xs">{error}</div>}
             
             <button type="submit" disabled={isAuthenticating} className={`w-full py-4 rounded-xl font-bold uppercase text-xs transition-all relative overflow-hidden ${isAuthenticating ? 'bg-gray-900 text-blue-400 border border-blue-500/30 cursor-wait' : 'bg-white text-black hover:bg-gray-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.2)]'}`}>
