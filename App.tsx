@@ -10,6 +10,7 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
 import { AuthPage } from './components/Auth/AuthPage';
 import { AdminLoginPage } from './components/Auth/AdminLoginPage';
+import { AuthCallback } from './components/Auth/AuthCallback';
 import { LandingPage } from './components/LandingPage';
 import { PricingPage } from './components/PricingPage';
 import { PlanCheckoutPage } from './components/PlanCheckoutPage';
@@ -21,9 +22,11 @@ import { ConfirmationModal } from './components/ConfirmationModal';
 import { NotificationBell } from './components/NotificationBell';
 import { AdminVerifyModal } from './components/AdminVerifyModal';
 import { SharedView } from './components/SharedView';
+import { ProfessorCharacter } from './components/ProfessorCharacter';
+import { ArenaView } from './components/ArenaView';
 import { useAuth } from './contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
-import { loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from './types';
 import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from './services/supabase';
 import { processFile } from './services/fileService';
@@ -36,8 +39,7 @@ const FlashcardView = React.lazy(() => import('./components/FlashcardView').then
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const TheHub = React.lazy(() => import('./components/TheHub').then(module => ({ default: module.TheHub })));
 
-// Routing State
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'CALLBACK';
 
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
@@ -46,14 +48,18 @@ const ADMIN_EMAILS = [
 ];
 
 const App: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   
-  // ROUTING: Initialize based on URL
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
-          const path = window.location.pathname.toLowerCase();
           const hash = window.location.hash;
+          // Priority Check: Auth Token in URL
+          if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
+              return 'CALLBACK';
+          }
           if (hash.startsWith('#/share/')) return 'SHARED';
+          
+          const path = window.location.pathname.toLowerCase();
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
@@ -94,7 +100,6 @@ const App: React.FC = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   
-  // Admin & Security States
   const [showAdminVerify, setShowAdminVerify] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
 
@@ -105,7 +110,6 @@ const App: React.FC = () => {
   const QUIZ_LIMIT = isFresher ? 1 : 100;
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
-  // --- HASH ROUTING ---
   useEffect(() => {
     const handleHashChange = () => {
         const hash = window.location.hash;
@@ -121,7 +125,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // --- NAVIGATION ENGINE ---
   const navigate = (view: ViewState, url: string) => {
       window.history.pushState({}, '', url);
       setCurrentView(view);
@@ -140,20 +143,6 @@ const App: React.FC = () => {
       return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
-  // --- AD BLOCK CHECK ---
-  useEffect(() => {
-    const originalConsoleError = console.error;
-    console.error = (...args) => {
-        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
-            setIsAdBlockActive(true);
-        }
-        originalConsoleError(...args);
-    };
-    window.addEventListener('error', (e) => {
-        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
-    }, true);
-  }, []);
-
   const isPotentialAdmin = (email: string | null | undefined) => {
       if (!email) return false;
       const normalized = email.toLowerCase().trim();
@@ -163,10 +152,13 @@ const App: React.FC = () => {
   const isAdmin = isPotentialAdmin(user?.email);
 
   useEffect(() => {
-    if (loading) return;
+    // If we are in CALLBACK mode, do not redirect based on user state yet
+    if (currentView === 'CALLBACK') return;
     
-    // Handle Shared Links Early
+    if (loading) return; 
     if (currentView === 'SHARED') return;
+    if (currentView === 'PRICING') return;
+    if (currentView === 'ADMIN_LOGIN' && !user) return;
 
     if (user) {
         const storedPendingPlan = localStorage.getItem('pending_plan');
@@ -174,15 +166,17 @@ const App: React.FC = () => {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
             setCurrentView('CHECKOUT');
             localStorage.removeItem('pending_plan');
-        } else if (currentView === 'LANDING' || currentView === 'AUTH') {
+        } else {
             setCurrentView('APP');
         }
     } else {
-        if (currentView === 'APP') setCurrentView('LANDING'); 
+        if (currentView === 'APP' || currentView === 'CHECKOUT') {
+            setCurrentView('LANDING');
+        }
     }
   }, [user, loading, currentView]);
 
-  // Real-time History Sync
+  // ... (Rest of useEffects for History Sync, Profile Loading, Admin Success etc. remain unchanged)
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
       const syncHistory = () => {
@@ -255,6 +249,7 @@ const App: React.FC = () => {
     }
   }, [user, isAdminUnlocked]);
 
+  // ... (Rest of handlers: handleAdminSuccess, attemptAction, etc. remain unchanged)
   const handleAdminSuccess = () => {
       setIsAdminUnlocked(true);
       setAppMode('ADMIN');
@@ -296,10 +291,6 @@ const App: React.FC = () => {
       const minMatch = duration.match(/(\d+)m/);
       if (minMatch) totalSeconds += parseInt(minMatch[1]) * 60;
       return totalSeconds > 0 ? totalSeconds : null;
-  };
-
-  const getDocumentSummary = async (text: string): Promise<string> => {
-      return "Document"; // Simplified for performance
   };
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
@@ -357,6 +348,7 @@ const App: React.FC = () => {
 
   const handleCancelGeneration = () => { setStatus(AppStatus.IDLE); setErrorMsg(null); };
 
+  // ... (Rest of handlers: handleQuizAction, handleChatUpdate, etc. remain unchanged)
   const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
     if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
     if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
@@ -479,7 +471,42 @@ const App: React.FC = () => {
       }
   };
 
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>;
+  const handleAuthSuccess = async () => {
+      await refreshUser();
+      setCurrentView('APP');
+  };
+
+  // --- VIEW RENDERING ---
+  
+  if (currentView === 'CALLBACK') {
+      return <AuthCallback onSuccess={handleAuthSuccess} onError={(msg) => { alert(msg); navigate('AUTH', '/login'); }} />;
+  }
+
+  // Loading state checks (Only if NOT in callback mode)
+  if (loading && currentView !== 'CALLBACK') {
+      return (
+          <div className="min-h-screen bg-[#050505] flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
+              
+              <div className="flex flex-col items-center gap-6 z-10">
+                  <div className="relative">
+                      <div className="w-16 h-16 border-4 border-blue-900/30 rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 border-4 border-t-blue-500 border-l-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
+                      <div className="absolute inset-4 bg-blue-500/10 rounded-full animate-pulse"></div>
+                  </div>
+                  
+                  <div className="text-center">
+                      <p className="text-xs font-mono uppercase tracking-[0.3em] text-blue-400 animate-pulse">
+                          Authenticating Scholar
+                      </p>
+                      <p className="text-[10px] text-gray-600 font-mono mt-2">
+                          Retrieving Student Profile...
+                      </p>
+                  </div>
+              </div>
+          </div>
+      );
+  }
   
   if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
   if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => navigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
@@ -520,18 +547,20 @@ const App: React.FC = () => {
         onSuccess={handleAdminSuccess}
       />
 
-      {/* Floating Admin Button (Only if authorized email) */}
-      {isPotentialAdmin(user?.email) && !hideFABs && (
+      {/* Floating Admin Button */}
+      {isPotentialAdmin(user?.email) && status === AppStatus.IDLE && appMode !== 'ADMIN' && (
           <button 
             onClick={() => setShowAdminVerify(true)}
             className="fixed bottom-6 left-6 z-50 w-12 h-12 bg-red-900/80 border border-red-500/50 rounded-full flex items-center justify-center text-red-400 hover:text-white hover:bg-red-600 hover:scale-110 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] backdrop-blur-md animate-pulse-slow group"
             title="Dean's Office"
           >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-              <div className="absolute left-full ml-3 px-3 py-1 bg-black/80 text-red-500 text-[10px] font-bold uppercase rounded border border-red-900/50 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  Secure Access
-              </div>
           </button>
+      )}
+
+      {/* Professor Character */}
+      {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
+          <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
       )}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
@@ -550,21 +579,7 @@ const App: React.FC = () => {
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
             </div>
 
-            {isFresher && appMode !== 'ADMIN' && (
-                <div className="hidden md:flex flex-col w-48 gap-1 mx-6 items-stretch justify-center" title="Daily Neural Energy">
-                    <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-gray-500 font-bold">
-                        <span>Neural Energy</span>
-                        <span className={usagePercentage > 90 ? 'text-red-500' : 'text-blue-400'}>{Math.round(100 - usagePercentage)}%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
-                            style={{ width: `${100 - usagePercentage}%` }}
-                        ></div>
-                    </div>
-                </div>
-            )}
-
+            {/* Nav Content */}
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
                    <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
@@ -625,7 +640,19 @@ const App: React.FC = () => {
          {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
              <>
                 <Hero />
-                <InputSection onProcess={handleProcess} isLoading={false} appMode={appMode} setAppMode={setAppMode} defaultConfig={{ difficulty: userProfile.defaultDifficulty }} userProfile={userProfile} onShowSubscription={() => setIsSubscriptionOpen(true)} onOpenProfile={() => setIsProfileOpen(true)} onDuelStart={handleDuelStart} onDuelJoin={handleDuelJoin} onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} />
+                <InputSection 
+                    onProcess={handleProcess} 
+                    isLoading={false} 
+                    appMode={appMode} 
+                    setAppMode={setAppMode} 
+                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
+                    userProfile={userProfile} 
+                    onShowSubscription={() => setIsSubscriptionOpen(true)} 
+                    onOpenProfile={() => setIsProfileOpen(true)} 
+                    onDuelStart={handleDuelStart} 
+                    onDuelJoin={handleDuelJoin} 
+                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} 
+                />
              </>
          )}
          {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
@@ -638,6 +665,7 @@ const App: React.FC = () => {
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
+                    {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}
                  </Suspense>
              </div>

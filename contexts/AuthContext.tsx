@@ -37,6 +37,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const currentUser = session.user;
         
+        // Optimistic basic user data to prevent flicker
+        const baseUser: ExtendedUser = {
+            uid: currentUser.id,
+            email: currentUser.email || null,
+            displayName: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0],
+            photoURL: currentUser.user_metadata?.avatar_url,
+            plan: 'Fresher',
+            role: 'student',
+            hasCompletedOnboarding: false,
+            profile: { xp: 500 }
+        };
+
         const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
@@ -52,10 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             const extendedUser: ExtendedUser = {
-                uid: currentUser.id,
-                email: currentUser.email || null,
-                displayName: profile.alias || currentUser.user_metadata.full_name,
-                photoURL: currentUser.user_metadata.avatar_url,
+                ...baseUser,
+                displayName: profile.alias || baseUser.displayName,
                 plan: profile.plan || 'Fresher',
                 role: profile.role || 'student',
                 isBanned: profile.is_banned,
@@ -74,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             saveUserProfile(extendedUser.profile as UserProfile);
             setUser(extendedUser);
         } else {
-            // New User Setup
+            // New User Profile Setup
             const newProfile = {
                 id: currentUser.id,
                 email: currentUser.email,
@@ -83,21 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 xp: 500
             };
             await supabase.from('profiles').insert([newProfile]);
-            
-            setUser({
-                uid: currentUser.id,
-                email: currentUser.email || null,
-                displayName: null,
-                photoURL: null,
-                plan: 'Fresher',
-                role: 'student',
-                hasCompletedOnboarding: false,
-                profile: { xp: 500 }
-            });
+            setUser(baseUser);
         }
       } catch (err) {
           console.error("Session processing error:", err);
-          // Fallback
+          // Fallback to basic session if profile fetch fails
           setUser({
               uid: session.user.id,
               email: session.user.email,
@@ -116,28 +116,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
         try {
-            // SMART AUTH FIX:
-            // Check if we are returning from an OAuth redirect (Token in URL)
-            const isAuthRedirect = window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('error_description'));
-            
-            // If redirecting, give Supabase more time (10s) to process the token.
-            // If normal visit, fail fast (3s) to show Landing Page.
-            const timeoutDuration = isAuthRedirect ? 10000 : 3000;
-
-            const sessionPromise = supabase.auth.getSession();
-            const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) => 
-                setTimeout(() => resolve({ data: { session: null } }), timeoutDuration)
-            );
-
-            const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+            // Check for existing session
+            const { data: { session } } = await supabase.auth.getSession();
             
             if (mounted) {
                 if (session) {
                     await processSession(session);
-                    // Cleanup URL bar if token lingers
-                    if (window.location.hash && window.location.hash.includes('access_token')) {
-                        window.history.replaceState(null, '', window.location.pathname);
-                    }
                 }
                 setLoading(false);
             }
