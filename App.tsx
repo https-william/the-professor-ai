@@ -10,7 +10,6 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { WelcomeModal } from './components/Onboarding/WelcomeModal';
 import { AuthPage } from './components/Auth/AuthPage';
 import { AdminLoginPage } from './components/Auth/AdminLoginPage';
-import { AuthCallback } from './components/Auth/AuthCallback';
 import { LandingPage } from './components/LandingPage';
 import { PricingPage } from './components/PricingPage';
 import { PlanCheckoutPage } from './components/PlanCheckoutPage';
@@ -39,7 +38,7 @@ const FlashcardView = React.lazy(() => import('./components/FlashcardView').then
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const TheHub = React.lazy(() => import('./components/TheHub').then(module => ({ default: module.TheHub })));
 
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'CALLBACK';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
@@ -53,10 +52,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
           const hash = window.location.hash;
-          // Priority Check: Auth Token in URL
-          if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
-              return 'CALLBACK';
-          }
+          // Check for Shared Links
           if (hash.startsWith('#/share/')) return 'SHARED';
           
           const path = window.location.pathname.toLowerCase();
@@ -152,15 +148,18 @@ const App: React.FC = () => {
   const isAdmin = isPotentialAdmin(user?.email);
 
   useEffect(() => {
-    // If we are in CALLBACK mode, do not redirect based on user state yet
-    if (currentView === 'CALLBACK') return;
-    
-    if (loading) return; 
+    if (loading) return;
     if (currentView === 'SHARED') return;
     if (currentView === 'PRICING') return;
     if (currentView === 'ADMIN_LOGIN' && !user) return;
 
     if (user) {
+        // If coming back from OAuth, hash might be present. 
+        // Supabase cleaned it up in memory, but let's visually clean URL if needed.
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+             window.history.replaceState(null, '', window.location.pathname);
+        }
+
         const storedPendingPlan = localStorage.getItem('pending_plan');
         if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
@@ -478,12 +477,8 @@ const App: React.FC = () => {
 
   // --- VIEW RENDERING ---
   
-  if (currentView === 'CALLBACK') {
-      return <AuthCallback onSuccess={handleAuthSuccess} onError={(msg) => { alert(msg); navigate('AUTH', '/login'); }} />;
-  }
-
-  // Loading state checks (Only if NOT in callback mode)
-  if (loading && currentView !== 'CALLBACK') {
+  // Loading state checks
+  if (loading) {
       return (
           <div className="min-h-screen bg-[#050505] flex items-center justify-center relative overflow-hidden">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>

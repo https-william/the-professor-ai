@@ -31,13 +31,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const processSession = async (session: any) => {
       if (!session?.user) {
           setUser(null);
+          setLoading(false);
           return;
       }
 
       try {
         const currentUser = session.user;
         
-        // Optimistic basic user data to prevent flicker
+        // Basic user structure
         const baseUser: ExtendedUser = {
             uid: currentUser.id,
             email: currentUser.email || null,
@@ -49,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             profile: { xp: 500 }
         };
 
+        // Fetch extra profile data
         const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
@@ -60,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 await supabase.auth.signOut();
                 setUser(null);
                 alert("Account suspended by administration.");
+                setLoading(false);
                 return;
             }
 
@@ -84,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             saveUserProfile(extendedUser.profile as UserProfile);
             setUser(extendedUser);
         } else {
-            // New User Profile Setup
+            // First time user? Create profile
             const newProfile = {
                 id: currentUser.id,
                 email: currentUser.email,
@@ -97,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
           console.error("Session processing error:", err);
-          // Fallback to basic session if profile fetch fails
+          // Fallback to basic session if DB fails
           setUser({
               uid: session.user.id,
               email: session.user.email,
@@ -108,46 +111,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               hasCompletedOnboarding: false,
               profile: { xp: 500 }
           });
+      } finally {
+          setLoading(false);
       }
   };
 
   useEffect(() => {
-    let mounted = true;
+    // 1. Check active session on startup
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        processSession(session);
+      } else {
+        setLoading(false);
+      }
+    });
 
-    const initializeAuth = async () => {
-        try {
-            // Check for existing session
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (mounted) {
-                if (session) {
-                    await processSession(session);
-                }
-                setLoading(false);
-            }
-        } catch (e) {
-            console.error("Auth Init Failed:", e);
-            if (mounted) setLoading(false);
-        }
+    // 2. Listen for changes (SignIn, SignOut, Auto-Refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        processSession(session);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (!mounted) return;
-            
-            if (session) {
-                await processSession(session);
-            } else if (event === 'SIGNED_OUT') {
-                setUser(null);
-            }
-            setLoading(false);
-        });
-
-        return () => {
-            mounted = false;
-            subscription.unsubscribe();
-        };
-    };
-
-    initializeAuth();
+    return () => subscription.unsubscribe();
   }, []);
 
   const refreshUser = async () => {
