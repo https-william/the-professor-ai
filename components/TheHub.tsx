@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { createHubRoom, joinHubRoom, subscribeToHubMessages, sendHubMessage } from '../services/firebase';
@@ -186,3 +185,5 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
         </div>
     );
 };
+
+export default TheHub;

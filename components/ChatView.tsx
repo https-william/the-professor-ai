@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, ChatState } from '../types';
 import { generateChatResponse } from '../services/geminiService';
@@ -226,3 +225,5 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
     </div>
   );
 };
+
+export default ChatView;

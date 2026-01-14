@@ -13,7 +13,7 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <link rel="apple-touch-icon" href="/logo-pwa.svg">
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#050505" />
 
     <!-- Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,14 +47,15 @@
       const PDF_WORKER_SRC = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
       
       window.addEventListener('load', function() {
-         const preloader = document.getElementById('preloader-core');
-         if(preloader) {
-            setTimeout(() => {
-               preloader.style.opacity = '0';
-               preloader.style.pointerEvents = 'none';
-               setTimeout(() => preloader.remove(), 500);
-            }, 1000); 
-         }
+         // SAFETY TIMEOUT: If React doesn't hydrate within 5 seconds, remove the loader
+         setTimeout(() => {
+             const preloader = document.getElementById('preloader-core');
+             if(preloader) {
+                preloader.style.opacity = '0';
+                preloader.style.pointerEvents = 'none';
+                setTimeout(() => preloader.remove(), 500);
+             }
+         }, 5000);
          
          if (typeof pdfjsLib !== 'undefined') {
              pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
@@ -70,12 +71,12 @@
         theme: {
           extend: {
             colors: {
-              'core': '#050505',
-              'panel': 'rgba(20, 20, 20, 0.4)',
-              'border-main': 'rgba(255, 255, 255, 0.08)',
-              'text-pri': '#e8eaed',
-              'text-sec': '#9ca3af',
-              'accent': '#f59e0b',
+              'core': 'var(--bg-core)',
+              'panel': 'var(--bg-panel)',
+              'border-main': 'var(--border-main)',
+              'text-pri': 'var(--text-pri)',
+              'text-sec': 'var(--text-sec)',
+              'accent': 'var(--accent-solid)',
             },
             fontFamily: {
               sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -92,6 +93,8 @@
               'orbit': 'orbit 3s linear infinite',
               'orbit-reverse': 'orbit-reverse 4s linear infinite',
               'breathe': 'breathe 3s ease-in-out infinite',
+              'liquid-blob': 'liquidBlob 20s infinite alternate',
+              'mesh-drift': 'meshDrift 20s ease-in-out infinite alternate',
             },
             keyframes: {
               fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -101,6 +104,16 @@
               orbit: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
               'orbit-reverse': { '0%': { transform: 'rotate(360deg)' }, '100%': { transform: 'rotate(0deg)' } },
               breathe: { '0%, 100%': { transform: 'scale(1)', opacity: '0.8' }, '50%': { transform: 'scale(1.1)', opacity: '0.4' } },
+              liquidBlob: {
+                '0%': { transform: 'translate(0, 0) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0, 0) scale(1)' }
+              },
+              meshDrift: {
+                '0%': { transform: 'translate(0, 0) rotate(0deg)' },
+                '100%': { transform: 'translate(-20px, -20px) rotate(2deg)' }
+              }
             },
           },
         }
@@ -110,11 +123,87 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
-      body { background-color: #050505; color: #e8eaed; font-family: 'Inter', sans-serif; margin: 0; }
-      .bg-noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
-      .glass-panel { background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-      #preloader-core { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
-      .loader-spinner { width: 50px; height: 50px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+      /* SEMANTIC VARIABLES */
+      :root {
+        /* Light Mode: "Cluely" Aesthetic - Soft, Airy, Modern */
+        --bg-core: #F8FAFC; 
+        --bg-panel: rgba(255, 255, 255, 0.6); /* Highly transparent frost */
+        --border-main: rgba(226, 232, 240, 0.6); /* Very subtle border */
+        --text-pri: #0F172A; /* Slate 900 */
+        --text-sec: #64748B; /* Slate 500 */
+        --accent-solid: #3B82F6; /* Vibrant Blue */
+        --noise-opacity: 0.015; /* Barely visible texture */
+      }
+
+      .dark {
+        /* Dark Mode: "Deep Space" - High Contrast, Neon */
+        --bg-core: #030712; 
+        --bg-panel: rgba(17, 24, 39, 0.7); 
+        --border-main: rgba(255, 255, 255, 0.08);
+        --text-pri: #F8FAFC; 
+        --text-sec: #94A3B8; 
+        --accent-solid: #3B82F6;
+        --noise-opacity: 0.05;
+      }
+
+      body { 
+        background-color: var(--bg-core); 
+        color: var(--text-pri); 
+        font-family: 'Inter', sans-serif; 
+        margin: 0; 
+        transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .bg-noise { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; 
+        opacity: var(--noise-opacity); 
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); 
+        transition: opacity 0.5s ease;
+      }
+      
+      /* New macOS Style Glass */
+      .glass-panel { 
+        background: var(--bg-panel); 
+        backdrop-filter: blur(20px) saturate(180%); 
+        -webkit-backdrop-filter: blur(20px) saturate(180%); 
+        border: 1px solid var(--border-main); 
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+        transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      /* LIQUID BUTTON - "Cluely" Style */
+      .btn-liquid {
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        color: white;
+        box-shadow: 
+          0 4px 15px rgba(37, 99, 235, 0.4), /* Colored drop shadow */
+          inset 0 1px 0 rgba(255, 255, 255, 0.3), /* Top highlight */
+          inset 0 -1px 0 rgba(0, 0, 0, 0.1); /* Bottom subtle shade */
+        border: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .btn-liquid:hover {
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #4F93F7 0%, #306FEA 100%);
+        box-shadow: 
+          0 8px 25px rgba(37, 99, 235, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      }
+      
+      .btn-liquid:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+      }
+
+      #preloader-core { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-core); z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease; 
+      }
+      
+      .loader-spinner { 
+        width: 50px; height: 50px; border: 2px solid var(--border-main); border-top-color: var(--accent-solid); border-radius: 50%; animation: spin 1s linear infinite; 
+      }
+      
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 

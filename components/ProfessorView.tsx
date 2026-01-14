@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ProfessorState, LockInConfig } from '../types';
 import { MermaidDiagram } from './MermaidDiagram';
@@ -99,3 +98,5 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
     </div>
   );
 };
+
+export default ProfessorView;

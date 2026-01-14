@@ -1,42 +1,42 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { Hero } from './components/Hero';
-import { InputSection } from './components/InputSection';
-import { LoadingOverlay } from './components/LoadingOverlay';
-import { HistorySidebar } from './components/HistorySidebar';
-import { UserProfileModal } from './components/UserProfileModal';
-import { AboutModal } from './components/AboutModal';
-import { SubscriptionModal } from './components/SubscriptionModal';
-import { WelcomeModal } from './components/Onboarding/WelcomeModal';
-import { AuthPage } from './components/Auth/AuthPage';
-import { AdminLoginPage } from './components/Auth/AdminLoginPage';
-import { LandingPage } from './components/LandingPage';
-import { PricingPage } from './components/PricingPage';
-import { PlanCheckoutPage } from './components/PlanCheckoutPage';
-import { CountdownTimer } from './components/CountdownTimer';
-import { AmbientBackground } from './components/AmbientBackground';
-import { PWAPrompt } from './components/PWAPrompt';
-import { DuelReadyModal } from './components/DuelReadyModal';
-import { ConfirmationModal } from './components/ConfirmationModal';
-import { NotificationBell } from './components/NotificationBell';
-import { AdminVerifyModal } from './components/AdminVerifyModal';
-import { SharedView } from './components/SharedView';
-import { ProfessorCharacter } from './components/ProfessorCharacter';
-import { ArenaView } from './components/ArenaView';
-import { useAuth } from './contexts/AuthContext';
-import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from './types';
-import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from './services/supabase';
-import { processFile } from './services/fileService';
+import { Hero } from './Hero';
+import { InputSection } from './InputSection';
+import { LoadingOverlay } from './LoadingOverlay';
+import { HistorySidebar } from './HistorySidebar';
+import { UserProfileModal } from './UserProfileModal';
+import { AboutModal } from './AboutModal';
+import { SubscriptionModal } from './SubscriptionModal';
+import { WelcomeModal } from './Onboarding/WelcomeModal';
+import { AuthPage } from './Auth/AuthPage';
+import { AdminLoginPage } from './Auth/AdminLoginPage';
+import { LandingPage } from './LandingPage';
+import { PricingPage } from './PricingPage';
+import { PlanCheckoutPage } from './PlanCheckoutPage';
+import { CountdownTimer } from './CountdownTimer';
+import { AmbientBackground } from './AmbientBackground';
+import { PWAPrompt } from './PWAPrompt';
+import { DuelReadyModal } from './DuelReadyModal';
+import { ConfirmationModal } from './ConfirmationModal';
+import { NotificationBell } from './NotificationBell';
+import { AdminVerifyModal } from './AdminVerifyModal';
+import { SharedView } from './SharedView';
+import { ProfessorCharacter } from './ProfessorCharacter';
+import { ArenaView } from './ArenaView';
+import { useAuth } from '../contexts/AuthContext';
+import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from '../services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from '../types';
+import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/supabase';
+import { processFile } from '../services/fileService';
 
 // Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./components/QuizView').then(module => ({ default: module.QuizView })));
-const ProfessorView = React.lazy(() => import('./components/ProfessorView').then(module => ({ default: module.ProfessorView })));
-const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView })));
-const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView })));
-const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const TheHub = React.lazy(() => import('./components/TheHub').then(module => ({ default: module.TheHub })));
+const QuizView = React.lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
+const ProfessorView = React.lazy(() => import('./ProfessorView').then(module => ({ default: module.ProfessorView })));
+const ChatView = React.lazy(() => import('./ChatView').then(module => ({ default: module.ChatView })));
+const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => ({ default: module.FlashcardView })));
+const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
@@ -47,15 +47,13 @@ const ADMIN_EMAILS = [
 ];
 
 const App: React.FC = () => {
-  const { user, loading, refreshUser } = useAuth();
+  const { user, loading } = useAuth();
   
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
-          const hash = window.location.hash;
-          // Check for Shared Links
-          if (hash.startsWith('#/share/')) return 'SHARED';
-          
           const path = window.location.pathname.toLowerCase();
+          const hash = window.location.hash;
+          if (hash.startsWith('#/share/')) return 'SHARED';
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/scholar' || path === '/excellentia') return 'CHECKOUT';
@@ -96,6 +94,7 @@ const App: React.FC = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   
+  // Admin & Security States
   const [showAdminVerify, setShowAdminVerify] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
 
@@ -139,6 +138,19 @@ const App: React.FC = () => {
       return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
+  useEffect(() => {
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
+            setIsAdBlockActive(true);
+        }
+        originalConsoleError(...args);
+    };
+    window.addEventListener('error', (e) => {
+        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
+    }, true);
+  }, []);
+
   const isPotentialAdmin = (email: string | null | undefined) => {
       if (!email) return false;
       const normalized = email.toLowerCase().trim();
@@ -148,18 +160,12 @@ const App: React.FC = () => {
   const isAdmin = isPotentialAdmin(user?.email);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading) return; 
     if (currentView === 'SHARED') return;
     if (currentView === 'PRICING') return;
     if (currentView === 'ADMIN_LOGIN' && !user) return;
 
     if (user) {
-        // If coming back from OAuth, hash might be present. 
-        // Supabase cleaned it up in memory, but let's visually clean URL if needed.
-        if (window.location.hash && window.location.hash.includes('access_token')) {
-             window.history.replaceState(null, '', window.location.pathname);
-        }
-
         const storedPendingPlan = localStorage.getItem('pending_plan');
         if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
             setCheckoutTier(storedPendingPlan as SubscriptionTier);
@@ -175,7 +181,6 @@ const App: React.FC = () => {
     }
   }, [user, loading, currentView]);
 
-  // ... (Rest of useEffects for History Sync, Profile Loading, Admin Success etc. remain unchanged)
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
       const syncHistory = () => {
@@ -248,7 +253,6 @@ const App: React.FC = () => {
     }
   }, [user, isAdminUnlocked]);
 
-  // ... (Rest of handlers: handleAdminSuccess, attemptAction, etc. remain unchanged)
   const handleAdminSuccess = () => {
       setIsAdminUnlocked(true);
       setAppMode('ADMIN');
@@ -347,7 +351,6 @@ const App: React.FC = () => {
 
   const handleCancelGeneration = () => { setStatus(AppStatus.IDLE); setErrorMsg(null); };
 
-  // ... (Rest of handlers: handleQuizAction, handleChatUpdate, etc. remain unchanged)
   const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
     if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
     if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
@@ -470,31 +473,24 @@ const App: React.FC = () => {
       }
   };
 
-  const handleAuthSuccess = async () => {
-      await refreshUser();
-      setCurrentView('APP');
-  };
-
-  // --- VIEW RENDERING ---
-  
-  // Loading state checks
+  // --- LOADER ---
   if (loading) {
       return (
-          <div className="min-h-screen bg-[#050505] flex items-center justify-center relative overflow-hidden">
+          <div className="min-h-screen bg-core flex items-center justify-center relative overflow-hidden transition-colors duration-500">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
               
               <div className="flex flex-col items-center gap-6 z-10">
                   <div className="relative">
-                      <div className="w-16 h-16 border-4 border-blue-900/30 rounded-full animate-spin"></div>
-                      <div className="absolute inset-0 border-4 border-t-blue-500 border-l-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
-                      <div className="absolute inset-4 bg-blue-500/10 rounded-full animate-pulse"></div>
+                      <div className="w-16 h-16 border-4 border-border-main rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 border-4 border-t-accent border-l-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
+                      <div className="absolute inset-4 bg-accent rounded-full animate-pulse opacity-20"></div>
                   </div>
                   
                   <div className="text-center">
-                      <p className="text-xs font-mono uppercase tracking-[0.3em] text-blue-400 animate-pulse">
+                      <p className="text-xs font-mono uppercase tracking-[0.3em] text-accent animate-pulse">
                           Authenticating Scholar
                       </p>
-                      <p className="text-[10px] text-gray-600 font-mono mt-2">
+                      <p className="text-[10px] text-text-sec font-mono mt-2">
                           Retrieving Student Profile...
                       </p>
                   </div>
@@ -519,7 +515,7 @@ const App: React.FC = () => {
   const hideFABs = appMode === 'EXAM' && !quizState.isSubmitted;
 
   return (
-    <div className={`min-h-screen text-white selection:bg-blue-500/30 overflow-x-hidden relative transition-colors duration-1000 bg-[#050505] font-sans`}>
+    <div className={`min-h-screen text-text-pri bg-core selection:bg-accent/30 overflow-x-hidden relative transition-colors duration-1000 font-sans`}>
       <AmbientBackground theme='Deep Space' />
       <CountdownTimer />
       <PWAPrompt />
@@ -542,7 +538,7 @@ const App: React.FC = () => {
         onSuccess={handleAdminSuccess}
       />
 
-      {/* Floating Admin Button */}
+      {/* Floating Admin Button - Only if Authorized AND IDLE */}
       {isPotentialAdmin(user?.email) && status === AppStatus.IDLE && appMode !== 'ADMIN' && (
           <button 
             onClick={() => setShowAdminVerify(true)}
@@ -553,12 +549,12 @@ const App: React.FC = () => {
           </button>
       )}
 
-      {/* Professor Character */}
+      {/* Professor Character (Chat Trigger) - Only show when IDLE and not in Admin Mode */}
       {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
           <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
       )}
 
-      <nav className={`border-b backdrop-blur-md sticky z-40 bg-black/40 border-white/5 ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
+      <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
                 if (appMode === 'ADMIN') {
@@ -571,18 +567,32 @@ const App: React.FC = () => {
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
-               <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-white">The Professor</span>
+               <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
 
-            {/* Nav Content */}
+            {isFresher && appMode !== 'ADMIN' && (
+                <div className="hidden md:flex flex-col w-48 gap-1 mx-6 items-stretch justify-center" title="Daily Neural Energy">
+                    <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-text-sec font-bold">
+                        <span>Neural Energy</span>
+                        <span className={usagePercentage > 90 ? 'text-red-500' : 'text-accent'}>{Math.round(100 - usagePercentage)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
+                            style={{ width: `${100 - usagePercentage}%` }}
+                        ></div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
                    <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
                
                {showLibrary && (
-                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-gray-400 hover:text-white transition-colors relative group" title="My Library">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-amber-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri transition-colors relative group" title="My Library">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                    </button>
                )}
                
@@ -594,13 +604,13 @@ const App: React.FC = () => {
                        <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
                    </button>
                )}
-               <div className="h-6 w-px bg-white/10 mx-2"></div>
+               <div className="h-6 w-px bg-border-main mx-2"></div>
                <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
                    <div className="text-right hidden sm:block">
-                       <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">{userProfile.alias}</p>
-                       <p className="text-[9px] font-mono text-gray-500 uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
+                       <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
+                       <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
                    </div>
-                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-blue-500 transition-all shadow-lg`}>
+                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg`}>
                        <span className="text-sm">{userProfile.avatarEmoji}</span>
                    </div>
                </button>
@@ -654,7 +664,7 @@ const App: React.FC = () => {
          {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
-                 <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-white rounded-full animate-spin"></div></div>}>
+                 <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
@@ -669,7 +679,7 @@ const App: React.FC = () => {
              <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center animate-bounce-subtle">
                  <div className="text-4xl mb-4">⚠️</div>
                  <h3 className="text-xl font-bold text-red-500 mb-2">System Failure</h3>
-                 <p className="text-gray-400 mb-6">{errorMsg || "An unknown error occurred."}</p>
+                 <p className="text-text-sec mb-6">{errorMsg || "An unknown error occurred."}</p>
                  <button onClick={() => setStatus(AppStatus.IDLE)} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold uppercase text-xs hover:bg-red-500 transition-colors">Reboot System</button>
              </div>
          )}

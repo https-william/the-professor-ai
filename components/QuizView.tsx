@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { QuizState, QuizQuestion, Difficulty, DuelState } from '../types';
 import { simplifyExplanation, generateSuddenDeathQuestion } from '../services/geminiService';
@@ -222,3 +221,5 @@ export const QuizView: React.FC<QuizViewProps> = ({
     </div>
   );
 };
+
+export default QuizView;

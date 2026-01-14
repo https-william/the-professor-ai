@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { QuizState, QuizQuestion } from '../types';
 
@@ -203,3 +202,5 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
     </div>
   );
 };
+
+export default FlashcardView;

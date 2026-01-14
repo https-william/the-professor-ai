@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase, getAllData, toggleBanUser, deleteUserAccount, adminUpdateUser } from '../services/supabase';
 import { UserProfile, SystemLog } from '../types';
@@ -166,3 +165,5 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     </div>
   );
 };
+
+export default AdminDashboard;

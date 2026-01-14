@@ -1,45 +1,55 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from "react";
 
 interface Props {
-  children?: ReactNode;
+  children: ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
-    hasError: false
+    hasError: false,
+    error: null,
   };
 
-  static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  render() {
+  public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 text-center">
-            <div className="max-w-md bg-[#0a0a0c] border border-red-900/30 p-8 rounded-2xl shadow-2xl">
-                <div className="text-4xl mb-4">💥</div>
-                <h1 className="text-xl font-bold text-white mb-2">Critical System Failure</h1>
-                <p className="text-gray-400 text-sm mb-6">
-                    The Professor encountered an unrecoverable anomaly. 
-                    {this.state.error?.message && <span className="block mt-2 font-mono text-red-400 text-xs bg-black/50 p-2 rounded">{this.state.error.message}</span>}
-                </p>
-                <button 
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-colors"
-                >
-                    Hard Reboot
-                </button>
+        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center font-mono">
+          <div className="max-w-md w-full bg-[#0a0a0a] border border-red-900/50 rounded-2xl p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)]">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h1 className="text-xl font-bold text-red-500 mb-2 uppercase tracking-widest">System Critical Failure</h1>
+            <p className="text-xs text-gray-500 mb-6 border-b border-red-900/30 pb-4">
+              The Neural Link encountered a fatal exception.
+            </p>
+            
+            <div className="bg-black/50 p-4 rounded-lg text-left mb-6 overflow-x-auto border border-white/5">
+                <code className="text-[10px] text-red-400 whitespace-pre-wrap">
+                    {this.state.error?.message || "Unknown Error"}
+                </code>
             </div>
+
+            <button
+              onClick={() => {
+                  this.setState({ hasError: false });
+                  window.location.href = '/';
+              }}
+              className="w-full py-3 bg-red-600 hover:bg-red-500 text-black font-bold uppercase text-xs rounded-lg transition-colors shadow-lg"
+            >
+              Reboot System
+            </button>
+          </div>
         </div>
       );
     }
