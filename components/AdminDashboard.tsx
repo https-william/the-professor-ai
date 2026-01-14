@@ -1,18 +1,17 @@
+
 import React, { useEffect, useState } from 'react';
-import { supabase, getAllData, toggleBanUser, deleteUserAccount, adminUpdateUser } from '../services/supabase';
-import { UserProfile, SystemLog } from '../types';
+import { getAllData, toggleBanUser, deleteUserAccount } from '../services/supabase';
 
 interface AdminDashboardProps {
     onExit?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'USERS' | 'LOGS' | 'BROADCAST' | 'SHARES'>('USERS');
+  const [activeTab, setActiveTab] = useState<'USERS' | 'LOGS' | 'SHARES'>('USERS');
   const [users, setUsers] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [shares, setShares] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   
   // Stats
   const [stats, setStats] = useState({ totalUsers: 0, totalQuizzes: 0, activeNow: 0 });
@@ -81,7 +80,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-            {['USERS', 'LOGS', 'BROADCAST', 'SHARES'].map(tab => (
+            {['USERS', 'LOGS', 'SHARES'].map(tab => (
                 <button 
                     key={tab} 
                     onClick={() => setActiveTab(tab as any)}
@@ -165,5 +164,3 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     </div>
   );
 };
-
-export default AdminDashboard;

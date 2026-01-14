@@ -282,6 +282,109 @@ export const submitSuddenDeathAnswer = async (duelId: string, userId: string, is
     await supabase.from('duels').update(updateData).eq('id', duelId);
 };
 
+// --- THE HUB (SUPABASE REALTIME) ---
+
+const MOCK_HUB_KEY = 'mock_hub_rooms';
+
+export const createHubRoom = async (hostAlias: string, modules: ProfessorSection[]): Promise<string> => {
+    try {
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        // Try creating in Supabase
+        const { data, error } = await supabase.from('hubs').insert({
+            code,
+            host: hostAlias,
+            modules,
+            participants: [hostAlias]
+        }).select('id').single();
+
+        if (error) throw error;
+        return data.id;
+    } catch (e: any) {
+        // Mock Fallback
+        console.warn("Using Mock Hub (DB Error)", e);
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const id = Date.now().toString();
+        const room = { id, code, host: hostAlias, modules, participants: [hostAlias], messages: [] };
+        const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+        existing.push(room);
+        localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
+        return id;
+    }
+};
+
+export const joinHubRoom = async (code: string, userAlias: string): Promise<string> => {
+    try {
+        const { data: hubs, error } = await supabase.from('hubs').select('*').eq('code', code.toUpperCase());
+        if (error || !hubs || hubs.length === 0) throw new Error("Room not found.");
+        const room = hubs[0];
+        
+        const participants = room.participants || [];
+        if (!participants.includes(userAlias)) {
+            await supabase.from('hubs').update({ participants: [...participants, userAlias] }).eq('id', room.id);
+        }
+        return room.id;
+    } catch (e: any) {
+        // Mock Fallback
+        const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+        const room = existing.find((r: any) => r.code === code);
+        if (room) {
+            if (!room.participants.includes(userAlias)) {
+                room.participants.push(userAlias);
+                localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
+            }
+            return room.id;
+        }
+        throw e;
+    }
+};
+
+export const sendHubMessage = async (roomId: string, sender: string, content: string, type: 'text' | 'audio' = 'text') => {
+    try {
+        const { error } = await supabase.from('hub_messages').insert({
+            hub_id: roomId,
+            sender,
+            content,
+            type
+        });
+        if (error) throw error;
+    } catch (e) {
+        // Mock
+        const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
+        const idx = existing.findIndex((r: any) => r.id === roomId);
+        if (idx !== -1) {
+            existing[idx].messages = existing[idx].messages || [];
+            existing[idx].messages.push({
+                id: Date.now().toString(),
+                sender, content, type, timestamp: Date.now()
+            });
+            localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
+        }
+    }
+};
+
+export const subscribeToHubMessages = (roomId: string, onUpdate: (msgs: any[]) => void) => {
+    // Initial Fetch
+    supabase.from('hub_messages').select('*').eq('hub_id', roomId).order('created_at', { ascending: true })
+        .then(({ data }) => {
+            if (data) onUpdate(data);
+        });
+
+    const channel = supabase.channel(`hub:${roomId}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hub_messages', filter: `hub_id=eq.${roomId}` }, (payload) => {
+            // Re-fetch all or append (simplest is append, but for consistency we might re-fetch if order matters heavily)
+            // Ideally we just append
+            // For now, let's just re-trigger a fetch to be safe on order, or pass the new msg
+            // But the UI expects an array of messages.
+            supabase.from('hub_messages').select('*').eq('hub_id', roomId).order('created_at', { ascending: true })
+                .then(({ data }) => {
+                    if (data) onUpdate(data);
+                });
+        })
+        .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+};
+
 // --- ADMIN OPS ---
 
 export const getAllData = async (table: string) => {

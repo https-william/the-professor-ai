@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const currentUser = session.user;
         
-        // Basic user structure
+        // Basic user structure with undefined onboarding status initially
         const baseUser: ExtendedUser = {
             uid: currentUser.id,
             email: currentUser.email || null,
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: currentUser.user_metadata?.avatar_url,
             plan: 'Fresher',
             role: 'student',
-            hasCompletedOnboarding: false,
+            hasCompletedOnboarding: undefined, // undefined until verified
             profile: { xp: 500 }
         };
 
@@ -93,14 +93,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 email: currentUser.email,
                 role: 'student',
                 plan: 'Fresher',
-                xp: 500
+                xp: 500,
+                has_completed_onboarding: false
             };
             await supabase.from('profiles').insert([newProfile]);
-            setUser(baseUser);
+            setUser({ ...baseUser, hasCompletedOnboarding: false });
         }
       } catch (err) {
           console.error("Session processing error:", err);
-          // Fallback to basic session if DB fails
+          // Fallback
           setUser({
               uid: session.user.id,
               email: session.user.email,
@@ -108,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               photoURL: null,
               plan: 'Fresher',
               role: 'student',
-              hasCompletedOnboarding: false,
+              hasCompletedOnboarding: false, // Default to false if DB fails
               profile: { xp: 500 }
           });
       } finally {
@@ -129,7 +130,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 2. Listen for changes (SignIn, SignOut, Auto-Refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        processSession(session);
+        // Only re-process if we don't have a user or user ID changed
+        setUser(prev => {
+            if (prev?.uid === session.user.id) return prev;
+            processSession(session);
+            return prev;
+        });
       } else {
         setUser(null);
         setLoading(false);

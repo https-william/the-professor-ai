@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { QuizState, QuizQuestion, Difficulty, DuelState } from '../types';
-import { simplifyExplanation, generateSuddenDeathQuestion } from '../services/geminiService';
+import { simplifyExplanation, generateSuddenDeathQuestion, generateWittyFeedback } from '../services/geminiService';
 import { subscribeToDuel, activateSuddenDeath, submitSuddenDeathAnswer } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,16 +23,6 @@ const safeParseJSON = (str: string | undefined | null, fallback: any = []) => {
     } catch (e) {
         return fallback;
     }
-};
-
-const getWittyFeedback = (score: number, total: number) => {
-    const percentage = (score / total) * 100;
-    
-    if (percentage === 100) return ["God Tier. I have nothing left to teach you.", "Absolute perfection.", "Flawless victory."];
-    if (percentage >= 80) return ["Impressive. Most impressive.", "You might actually pass this course.", "Solid performance."];
-    if (percentage >= 50) return ["Mediocre. But acceptable.", "C's get degrees.", "You know enough to be dangerous."];
-    if (percentage >= 20) return ["My grandmother could guess better.", "Are you even trying?", "Pathetic. Go study."];
-    return ["I have no words.", "Did you sleep through the lecture?", "This score is a crime."];
 };
 
 export const QuizView: React.FC<QuizViewProps> = ({ 
@@ -58,6 +49,9 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [multiSelectAnswers, setMultiSelectAnswers] = useState<string[]>([]);
   const [simplifiedExplanations, setSimplifiedExplanations] = useState<Record<number, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
+  
+  // Witty Feedback
+  const [aiFeedback, setAiFeedback] = useState("Calculating...");
 
   const lastStrikeTime = useRef<number>(0);
 
@@ -71,6 +65,12 @@ export const QuizView: React.FC<QuizViewProps> = ({
       if (q.type === 'Fill in the Gap') setTextAnswer(savedAnswer || '');
       else if (q.type === 'Select All That Apply') setMultiSelectAnswers(safeParseJSON(savedAnswer, []));
   }, [internalIndex, userAnswers, questions]);
+
+  useEffect(() => {
+      if (isSubmitted) {
+          generateWittyFeedback(score, questions.length).then(setAiFeedback);
+      }
+  }, [isSubmitted, score, questions.length]);
 
   useEffect(() => {
       if (isSubmitted && duelId) {
@@ -159,22 +159,67 @@ export const QuizView: React.FC<QuizViewProps> = ({
   };
 
   if (isSubmitted) {
-    const feedbacks = getWittyFeedback(score, total);
-    const feedback = feedbacks[Math.floor(Math.random() * feedbacks.length)];
-
     if (duelData?.status === 'SUDDEN_DEATH_ACTIVE' && !suddenDeathSubmitted && duelData.suddenDeathQuestion) {
         return <div className="fixed inset-0 z-50 bg-red-950/90 flex items-center justify-center">SUDDEN DEATH</div>; 
     }
 
     return (
-      <div className="max-w-5xl mx-auto pb-20 px-4 animate-fade-in">
-        <div className="flex justify-between items-center mb-8">
+      <div className="max-w-5xl mx-auto pb-24 px-4 animate-fade-in custom-scrollbar">
+        <div className="flex justify-between items-center mb-8 sticky top-0 bg-black/80 backdrop-blur-md py-4 z-20">
            <h2 className="text-xl font-bold text-white">Exam Results</h2>
            <button onClick={onReset} className="px-6 py-2 bg-white text-black rounded-full font-bold uppercase text-xs hover:bg-gray-200">Exit Session</button>
         </div>
-        <div className="glass-panel rounded-3xl p-8 flex flex-col items-center justify-center text-center">
+        
+        {/* Score Card */}
+        <div className="glass-panel rounded-3xl p-8 flex flex-col items-center justify-center text-center mb-10">
             <h1 className="text-8xl font-serif font-bold mb-4 text-white">{score}/{total}</h1>
-            <div className="bg-white/10 px-4 py-2 rounded-full text-xs font-mono text-blue-300 font-bold uppercase">{getXPFeedback(score)}</div>
+            <div className="bg-white/10 px-4 py-2 rounded-full text-xs font-mono text-blue-300 font-bold uppercase mb-6">{getXPFeedback(score)}</div>
+            
+            <div className="max-w-md mx-auto bg-black/40 border border-white/10 p-6 rounded-2xl relative">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                    Professor's Verdict
+                </div>
+                <p className="text-gray-300 italic text-sm leading-relaxed">
+                    "{aiFeedback}"
+                </p>
+            </div>
+        </div>
+
+        {/* Detailed Review Section */}
+        <div className="space-y-4">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Question Analysis</h3>
+            {questions.map((q, idx) => {
+                const userAnswer = userAnswers[q.id];
+                const isCorrect = userAnswer === q.correct_answer;
+                
+                return (
+                    <div key={q.id} className={`p-6 rounded-2xl border ${isCorrect ? 'bg-green-900/10 border-green-500/30' : 'bg-red-900/10 border-red-500/30'}`}>
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase">Question {idx + 1}</span>
+                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${isCorrect ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}>
+                                {isCorrect ? 'Correct' : 'Missed'}
+                            </span>
+                        </div>
+                        <h4 className="text-white font-medium mb-4">{q.question}</h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                                <span className="text-[9px] text-gray-500 uppercase block mb-1">Your Answer</span>
+                                <span className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>{userAnswer || "Skipped"}</span>
+                            </div>
+                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                                <span className="text-[9px] text-gray-500 uppercase block mb-1">Correct Answer</span>
+                                <span className="text-sm text-green-400">{q.correct_answer}</span>
+                            </div>
+                        </div>
+                        
+                        <div className="bg-white/5 p-4 rounded-xl text-sm text-gray-400 leading-relaxed border-l-2 border-white/10">
+                            <span className="text-[9px] text-gray-500 uppercase font-bold block mb-1">Professor's Note</span>
+                            {q.explanation}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
       </div>
     );

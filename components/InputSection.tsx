@@ -24,13 +24,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
   onProcess, 
   isLoading, 
   appMode, 
-  setAppMode, 
   defaultConfig, 
   userProfile,
   onShowSubscription,
   onDuelStart,
   onDuelJoin,
-  onHubEnter
 }) => {
   const [textInput, setTextInput] = useState('');
   const [chatInput, setChatInput] = useState('');
@@ -51,7 +49,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [timerDuration, setTimerDuration] = useState<TimerDuration>('Limitless');
   const [personality, setPersonality] = useState<AIPersonality>(userProfile.defaultPersonality || 'Academic');
   const [analogyDomain, setAnalogyDomain] = useState<AnalogyDomain>('General');
-  const [mood, setMood] = useState<UserMood>('Neutral');
   
   const [useOracle, setUseOracle] = useState(false);
 
@@ -134,7 +131,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   const getFullConfig = (): QuizConfig => ({ 
-      difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle, mood
+      difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle, mood: 'Neutral'
   });
 
   const executeGeneration = async (finalMode: AppMode, overrideContent?: string, overrideName?: string) => {
@@ -231,64 +228,13 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
   );
 
-  const TogglePill = ({ label, active, onClick, icon }: any) => (
-      <button 
-        onClick={onClick}
-        className={`shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
-            active 
-            ? 'bg-amber-900/40 border-amber-500 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
-            : 'bg-white/5 border-white/10 text-gray-500 hover:text-gray-300 hover:bg-white/10'
-        }`}
-      >
-          <span>{icon}</span>
-          <span>{label}</span>
-      </button>
-  );
-
-  // SVG Mood Shapes
-  const MoodSelector = () => {
-      const moods: { id: UserMood, shape: React.ReactNode }[] = [
-          { id: 'Neutral', shape: <div className="w-3 h-3 rounded-full border-2 border-current"></div> },
-          { id: 'Focused', shape: <div className="w-3 h-3 border-2 border-current rotate-45 bg-current"></div> },
-          { id: 'Anxious', shape: <div className="w-3 h-3 border-b-2 border-current animate-pulse"></div> },
-          { id: 'Confident', shape: <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[10px] border-b-current"></div> },
-          { id: 'Tired', shape: <div className="w-3 h-1 bg-current rounded-full opacity-50"></div> },
-          { id: 'Chaos', shape: <div className="w-3 h-3 relative"><div className="absolute inset-0 border-2 border-current rotate-12"></div><div className="absolute inset-0 border-2 border-current -rotate-12"></div></div> }
-      ];
-
-      return (
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
-              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mr-2 shrink-0">State:</span>
-              {moods.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => setMood(m.id)}
-                    className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${mood === m.id ? 'bg-blue-900/40 border-blue-500 text-blue-400' : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'}`}
-                  >
-                      {m.shape}
-                      <span>{m.id}</span>
-                  </button>
-              ))}
-          </div>
-      );
-  };
-
   return (
     <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
       
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
 
-      {/* Unified Tab Switcher */}
-      <div id="mode-switch-target" className="flex justify-center items-center mb-6 shrink-0">
-        <div className="relative bg-[#0a0a0a] backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 flex w-full max-w-2xl shadow-2xl">
-          <button onClick={() => setAppMode('EXAM')} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl ${appMode === 'EXAM' ? 'bg-blue-900/50 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Exam</button>
-          <button onClick={() => setAppMode('PROFESSOR')} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl ${appMode === 'PROFESSOR' ? 'bg-amber-900/50 text-amber-100 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Study</button>
-          <button onClick={() => { setAppMode('HUB'); onHubEnter(); }} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl ${appMode === 'HUB' ? 'bg-green-900/50 text-green-400 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Hub</button>
-          <button onClick={() => { setShowDuelCreate(true); }} className={`relative z-10 flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl hover:text-purple-400 text-gray-500`}>Arena</button>
-        </div>
-      </div>
-
+      {/* Main Panel */}
       <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : appMode === 'HUB' ? 'border-green-500/10' : 'border-blue-500/10'}`}>
         
         {/* EXAM VIEW */}
@@ -305,23 +251,22 @@ export const InputSection: React.FC<InputSectionProps> = ({
                           <ConfigPill label="Count" value={questionCount} setter={(v: string) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
                       </div>
 
-                      {/* Oracle Toggle with SVG */}
+                      {/* Oracle Toggle - OMINOUS */}
                       <div className="flex-shrink-0">
                           {isExcellentia ? (
-                              <TogglePill 
-                                label="The Oracle" 
-                                active={useOracle} 
-                                onClick={() => setUseOracle(!useOracle)} 
-                                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>} 
-                              />
+                              <button 
+                                onClick={() => setUseOracle(!useOracle)}
+                                className={`shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-white/5 border-white/10 text-gray-500 hover:text-white'}`}
+                              >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                  <span>The Oracle</span>
+                              </button>
                           ) : (
                               <div onClick={onShowSubscription}>
-                                  <TogglePill 
-                                    label="The Oracle" 
-                                    active={false} 
-                                    onClick={()=>{}} 
-                                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>} 
-                                  />
+                                  <button className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border bg-white/5 border-white/10 text-gray-600 cursor-not-allowed">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                    <span>Oracle Locked</span>
+                                  </button>
                               </div>
                           )}
                       </div>
@@ -397,11 +342,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
             {/* ACTION GRID */}
             <div className="p-6 border-t border-white/10 bg-[#0a0a0a] shrink-0">
-               <MoodSelector />
                <button 
                  onClick={() => executeGeneration('EXAM')} 
                  disabled={isLoading} 
-                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${isLimitReached ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20 disabled:opacity-50'}`}
+                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-depth ${isLimitReached ? 'bg-red-900 border-red-500' : 'btn-depth-blue'}`}
                >
                   {isLoading || ingestionStatus ? (
                       <>
@@ -411,7 +355,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   ) : isLimitReached ? (
                       <>
                         Daily Limit Reached (Unlock)
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                       </>
                   ) : (
                       <>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface AboutModalProps {
@@ -15,7 +16,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
       <div className="relative bg-[#18181b] w-full max-w-2xl rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade">
         <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-black/20">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <span className="text-blue-500">About</span> ExamPrep Agent
+            <span className="text-blue-500">System</span> Overview
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">✕</button>
         </div>
@@ -23,50 +24,50 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         <div className="overflow-y-auto p-6 space-y-6 custom-scrollbar text-gray-300 leading-relaxed">
           <div className="bg-blue-900/10 p-4 rounded-xl border border-blue-500/20">
             <p className="font-medium text-blue-200">
-              ExamPrep Agent is an AI-powered study companion designed to transform passive reading into active learning.
+              The Professor is an AI-powered academic accelerator designed to transform passive reading into active mastery.
             </p>
           </div>
 
           <section>
-            <h3 className="text-lg font-bold text-white mb-2">How it Works</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Operational Protocols</h3>
             <ul className="list-disc pl-5 space-y-2 marker:text-blue-500">
               <li>
-                <strong className="text-gray-200">Upload & Analyze:</strong> Upload your PDF lecture notes or paste raw text. The AI analyzes the content to extract key concepts.
+                <strong className="text-gray-200">Ingestion:</strong> Drag and drop PDFs, DOCXs, or ZIPs. The Neural Engine extracts concepts instantly.
               </li>
               <li>
-                <strong className="text-gray-200">Exam Mode:</strong> Generate interactive quizzes with adjustable difficulty (from Easy to Nightmare). Features include a timer, flagging questions, and detailed explanations for every answer.
+                <strong className="text-gray-200">Exam Mode:</strong> Generate interactive quizzes. Features include <span className="text-red-400">Nightmare Difficulty</span>, focus tracking, and detailed grading.
               </li>
               <li>
-                <strong className="text-gray-200">Professor Mode:</strong> Switch to a learning interface where the AI acts as a tutor. It breaks down topics using the <span className="text-amber-500">Feynman Technique</span>, simplifying complex ideas with analogies from Sports, Gaming, or Pop Culture.
+                <strong className="text-gray-200">Professor Mode:</strong> Activates the Feynman Tutor. Complex topics are simplified using analogies from your favorite domains (Sports, Gaming, etc.).
               </li>
             </ul>
           </section>
 
           <section>
-            <h3 className="text-lg font-bold text-white mb-2">Key Features</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Core Modules</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
-                <div className="text-orange-400 font-bold text-xs uppercase mb-1">Nightmare Difficulty</div>
-                <p className="text-sm">Tests deep understanding with edge-case questions and tricky distractors.</p>
+                <div className="text-orange-400 font-bold text-xs uppercase mb-1">The Arena</div>
+                <p className="text-sm">Multiplayer competitive exams. Wager XP against peers.</p>
               </div>
               <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
                 <div className="text-amber-400 font-bold text-xs uppercase mb-1">Feynman Learning</div>
-                <p className="text-sm">Learn by simplification and creative analogies tailored to your interests.</p>
+                <p className="text-sm">Learn by simplification. If you can't explain it simply, you don't understand it.</p>
               </div>
               <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
-                <div className="text-blue-400 font-bold text-xs uppercase mb-1">Smart History</div>
-                <p className="text-sm">Auto-saves your sessions so you can revisit past exams or lessons anytime.</p>
+                <div className="text-blue-400 font-bold text-xs uppercase mb-1">Neural History</div>
+                <p className="text-sm">Auto-saves sessions. Revisit past exams or lectures anytime.</p>
               </div>
               <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
-                <div className="text-purple-400 font-bold text-xs uppercase mb-1">Secure & Private</div>
-                <p className="text-sm">Your API key is used directly with Google Gemini and is never stored on our servers.</p>
+                <div className="text-purple-400 font-bold text-xs uppercase mb-1">Data Privacy</div>
+                <p className="text-sm">Your documents are processed in memory and typically not stored persistently.</p>
               </div>
             </div>
           </section>
 
           <section>
              <p className="text-xs text-gray-500 text-center pt-4 border-t border-gray-800">
-               Built with React, Tailwind CSS, and Google Gemini.
+               Engine: Google Gemini Pro 1.5 & Flash. Stack: React/Supabase.
              </p>
           </section>
         </div>
@@ -76,7 +77,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
              onClick={onClose} 
              className="px-8 py-2 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition-colors"
            >
-             Got it
+             Acknowledge
            </button>
         </div>
       </div>

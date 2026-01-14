@@ -19,7 +19,7 @@ export const AuthPage: React.FC = () => {
       const interval = setInterval(() => {
           setAuthStatusText(stages[i % stages.length]);
           i++;
-      }, 1200); // Slowed down to 1.2s for better UX
+      }, 1200); 
       return () => clearInterval(interval);
   }, [isAuthenticating]);
 

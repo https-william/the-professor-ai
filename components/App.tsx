@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -22,6 +21,7 @@ import { NotificationBell } from './NotificationBell';
 import { AdminVerifyModal } from './AdminVerifyModal';
 import { SharedView } from './SharedView';
 import { ProfessorCharacter } from './ProfessorCharacter';
+import { ArenaView } from './ArenaView';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useAuth } from '../contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
@@ -30,14 +30,13 @@ import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem,
 import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/supabase';
 import { processFile } from '../services/fileService';
 
-// Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./QuizView'));
-const ProfessorView = React.lazy(() => import('./ProfessorView'));
-const ChatView = React.lazy(() => import('./ChatView'));
-const FlashcardView = React.lazy(() => import('./FlashcardView'));
-const AdminDashboard = React.lazy(() => import('./AdminDashboard'));
-const TheHub = React.lazy(() => import('./TheHub'));
-const ArenaView = React.lazy(() => import('./ArenaView'));
+// Lazy Load Heavy Components - Using named exports for better type safety and support for modules without default export
+const QuizView = React.lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
+const ProfessorView = React.lazy(() => import('./ProfessorView').then(module => ({ default: module.ProfessorView })));
+const ChatView = React.lazy(() => import('./ChatView').then(module => ({ default: module.ChatView })));
+const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => ({ default: module.FlashcardView })));
+const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
 
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
@@ -46,6 +45,42 @@ const ADMIN_EMAILS = [
     'professoradmin@gmail.com',
     'vexis.automations@gmail.com'
 ];
+
+const FloatingDock: React.FC<{ mode: AppMode, setMode: (m: AppMode) => void, onHub: () => void, isDuelActive: boolean, onDuel: () => void }> = ({ mode, setMode, onHub, isDuelActive, onDuel }) => {
+    return (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-end gap-2 px-3 pb-3 pt-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl transition-all hover:scale-105 hover:bg-black/60">
+            <button 
+                onClick={() => setMode('EXAM')}
+                className={`relative group p-3 rounded-xl transition-all duration-300 ${mode === 'EXAM' ? 'bg-blue-600 -translate-y-4 scale-110 shadow-lg shadow-blue-900/50' : 'bg-white/5 hover:bg-white/10'}`}
+                title="Exam Mode"
+            >
+                <span className="text-xl">📝</span>
+                {mode === 'EXAM' && <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>}
+            </button>
+            <button 
+                onClick={() => setMode('PROFESSOR')}
+                className={`relative group p-3 rounded-xl transition-all duration-300 ${mode === 'PROFESSOR' ? 'bg-amber-600 -translate-y-4 scale-110 shadow-lg shadow-amber-900/50' : 'bg-white/5 hover:bg-white/10'}`}
+                title="Study Room"
+            >
+                <span className="text-xl">🎓</span>
+            </button>
+            <button 
+                onClick={() => { setMode('HUB'); onHub(); }}
+                className={`relative group p-3 rounded-xl transition-all duration-300 ${mode === 'HUB' ? 'bg-green-600 -translate-y-4 scale-110 shadow-lg shadow-green-900/50' : 'bg-white/5 hover:bg-white/10'}`}
+                title="The Hub"
+            >
+                <span className="text-xl">📡</span>
+            </button>
+            <button 
+                onClick={() => { if(isDuelActive) setMode('DUEL'); else onDuel(); }}
+                className={`relative group p-3 rounded-xl transition-all duration-300 ${mode === 'DUEL' ? 'bg-purple-600 -translate-y-4 scale-110 shadow-lg shadow-purple-900/50' : 'bg-white/5 hover:bg-white/10'}`}
+                title="Arena"
+            >
+                <span className="text-xl">⚔️</span>
+            </button>
+        </div>
+    );
+};
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -105,6 +140,9 @@ const AppContent: React.FC = () => {
   const QUIZ_LIMIT = isFresher ? 1 : 100;
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / QUIZ_LIMIT) * 100, 100);
 
+  // Level Calc: Floor(Sqrt(XP) * 0.2) -> 500 XP = Lvl 4. 2500 XP = Lvl 10.
+  const currentLevel = Math.max(1, Math.floor(Math.sqrt(userProfile.xp || 0) * 0.2));
+
   useEffect(() => {
     const handleHashChange = () => {
         const hash = window.location.hash;
@@ -121,12 +159,7 @@ const AppContent: React.FC = () => {
   }, []);
 
   const navigate = (view: ViewState, url: string) => {
-      try {
-        // Attempt to update URL, but catch security errors in sandboxed environments
-        window.history.pushState({}, '', url);
-      } catch (e) {
-        console.warn("Navigation URL update failed (visual only, app state will persist):", e);
-      }
+      window.history.pushState({}, '', url);
       setCurrentView(view);
   };
 
@@ -422,6 +455,7 @@ const AppContent: React.FC = () => {
           const { duelId, code } = await initDuelLobby(user.uid, userProfile.alias || 'Host', data.wager, processed.content, config);
           setDuelReadyData({ id: duelId, code, isHost: true });
           setStatus(AppStatus.IDLE);
+          setAppMode('DUEL');
           generateQuizFromText(processed.content, config, userProfile).then(async (questions) => {
               if (questions && questions.length > 0) await updateDuelWithQuestions(duelId, questions);
           }).catch(err => console.error("Background Gen Error", err));
@@ -437,6 +471,7 @@ const AppContent: React.FC = () => {
       try {
           const duelId = await joinDuelByCode(code, user.uid, userProfile.alias || 'Challenger');
           setDuelReadyData({ id: duelId, code, isHost: false });
+          setAppMode('DUEL');
       } catch (e: any) {
           alert(e.message || "Could not join arena.");
       }
@@ -517,10 +552,9 @@ const AppContent: React.FC = () => {
   if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => navigate('AUTH', '/login')} onPricing={() => navigate('PRICING', '/pricing')} />;
 
   const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
-  const hideFABs = appMode === 'EXAM' && !quizState.isSubmitted;
 
   return (
-    <div className={`min-h-screen text-text-pri bg-core selection:bg-accent/30 overflow-x-hidden relative transition-colors duration-1000 font-sans`}>
+    <div className={`min-h-screen text-text-pri bg-core selection:bg-accent/30 overflow-x-hidden relative transition-colors duration-1000 font-sans pb-24`}>
       <AmbientBackground theme='Deep Space' />
       <CountdownTimer />
       <PWAPrompt />
@@ -533,34 +567,41 @@ const AppContent: React.FC = () => {
         userEmail={user?.email || undefined}
       />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
-      {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
+      {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} statusText={status === AppStatus.PROCESSING_FILE ? "ANALYZING ARENA DATA..." : undefined} />}
       {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
       
-      {/* Admin Verify Modal */}
       <AdminVerifyModal 
         isOpen={showAdminVerify} 
         onClose={() => setShowAdminVerify(false)} 
         onSuccess={handleAdminSuccess}
       />
 
-      {/* Floating Admin Button - Only if Authorized AND IDLE */}
-      {isPotentialAdmin(user?.email) && status === AppStatus.IDLE && appMode !== 'ADMIN' && (
-          <button 
-            onClick={() => setShowAdminVerify(true)}
-            className="fixed bottom-6 left-6 z-50 w-12 h-12 bg-red-900/80 border border-red-500/50 rounded-full flex items-center justify-center text-red-400 hover:text-white hover:bg-red-600 hover:scale-110 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] backdrop-blur-md animate-pulse-slow group"
-            title="Dean's Office"
-          >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-          </button>
+      {/* Floating Dock - Replaces Main Nav */}
+      {status !== AppStatus.ERROR && appMode !== 'ADMIN' && (
+          <FloatingDock 
+            mode={appMode} 
+            setMode={setAppMode} 
+            onHub={() => { setStatus(AppStatus.READY); }}
+            isDuelActive={!!activeDuelId}
+            onDuel={() => setAppMode('DUEL')}
+          />
       )}
 
-      {/* Professor Character (Chat Trigger) - Only show when IDLE and not in Admin Mode */}
+      {/* Professor Character (Chat Trigger) */}
       {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
-          <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
+          <div className="fixed bottom-24 right-6 z-40">
+             <ProfessorCharacter onClick={() => { 
+                 setChatState({ messages: [], fileContext: '', fileName: 'General Assistant' }); 
+                 setAppMode('CHAT'); 
+                 setStatus(AppStatus.READY); 
+             }} />
+          </div>
       )}
 
+      {/* CLEAN HEADER */}
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            {/* Logo */}
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
                 if (appMode === 'ADMIN') {
                     setAppMode('EXAM');
@@ -575,21 +616,7 @@ const AppContent: React.FC = () => {
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
 
-            {isFresher && appMode !== 'ADMIN' && (
-                <div className="hidden md:flex flex-col w-48 gap-1 mx-6 items-stretch justify-center" title="Daily Neural Energy">
-                    <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-text-sec font-bold">
-                        <span>Neural Energy</span>
-                        <span className={usagePercentage > 90 ? 'text-red-500' : 'text-accent'}>{Math.round(100 - usagePercentage)}%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
-                            style={{ width: `${100 - usagePercentage}%` }}
-                        ></div>
-                    </div>
-                </div>
-            )}
-
+            {/* Right Controls */}
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
                    <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
@@ -613,7 +640,7 @@ const AppContent: React.FC = () => {
                <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
                    <div className="text-right hidden sm:block">
                        <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
-                       <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
+                       <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {currentLevel}</p>
                    </div>
                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg`}>
                        <span className="text-sm">{userProfile.avatarEmoji}</span>

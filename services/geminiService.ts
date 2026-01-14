@@ -1,9 +1,57 @@
 
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type, Schema, Modality } from "@google/genai";
 import { QuizQuestion, QuizConfig, ProfessorSection, ChatMessage, LockInTechnique, StudyProtocol, UserProfile } from "../types";
+
+// --- SECURITY PROTOCOLS ---
+
+// 1. INPUT SANITIZER
+// Regex filters to catch "Jailbreak" attempts
+const FORBIDDEN_PATTERNS = [
+    /ignore previous instructions/gi,
+    /system prompt/gi,
+    /you are not a/gi,
+    /dan mode/gi,
+    /unrestricted mode/gi,
+    /roleplay as a hacker/gi,
+    /execute command/gi
+];
+
+const sanitizeInput = (input: string): string => {
+    let cleaned = input;
+    for (const pattern of FORBIDDEN_PATTERNS) {
+        if (pattern.test(cleaned)) {
+            console.warn("Security Event: Input Sanitization Triggered");
+            // Redact malicious segments
+            cleaned = cleaned.replace(pattern, "[REDACTED_SECURITY]");
+        }
+    }
+    return cleaned;
+};
+
+// 2. PROMPT VAULT (Base64 Encoded)
+// Prevents casual inspection of System Instructions in source code.
+const PROMPT_VAULT = {
+    // "You are 'The Professor'. Role: A distinguished university lecturer..."
+    PROFESSOR_CORE: "WW91IGFyZSAnVGhlIFByb2Zlc3NvcicuIFJvbGU6IEEgZGlzdGluZ3Vpc2hlZCB1bml2ZXJzaXR5IGxlY3R1cmVyIGFuZCBleHBlcnQgYWNhZGVtaWMgdHV0b3IuIFRvbmU6IEZvcm1hbCB5ZXQgYWNjZXNzaWJsZSwgYXV0aG9yaXRhdGl2ZSwgZW5jb3VyYWdpbmcgYnV0IHN0cmljdCBhYm91dCBhY2N1cmFjeS4gQ29uc3RyYWludDogQW5zd2VyIHVzaW5nIE9OTFkgdGhlIHByb3ZpZGVkIGNvbnRleHQu",
+    
+    // "You are a Chief Examiner..."
+    EXAMINER_CORE: "WW91IGFyZSBhIENoaWVmIEV4YW1pbmVyLiBFbnN1cmUgcXVlc3Rpb25zIGFyZSBhY2FkZW1pY2FsbHkgcmlnb3JvdXMgYW5kIGRpc3RyYWN0b3JzIGFyZSBwbGF1c2libGUu",
+    
+    // "You are a Tenured Professor..."
+    LECTURER_CORE: "WW91IGFyZSBhIFRlbnVyZWQgUHJvZmVzc29yLiBUZWFjaCBjbGVhcmx5IGFuZCBzdHJ1Y3R1cmFsbHkuIFVzZSBNYXJrZG93biBmb3IgdGhlIGNvbnRlbnQu"
+};
+
+const getSystemInstruction = (key: keyof typeof PROMPT_VAULT): string => {
+    try {
+        return atob(PROMPT_VAULT[key]);
+    } catch (e) {
+        return "You are a helpful AI tutor.";
+    }
+};
 
 // --- MODELS ---
 const MODEL_TEXT = "gemini-3-flash-preview";
+const MODEL_TTS = "gemini-2.5-flash-preview-tts";
 
 // --- RATE LIMITER ---
 const RATE_LIMIT_KEY = 'ai_rate_limit';
@@ -26,7 +74,6 @@ const checkRateLimit = () => {
 
 // --- CLIENT INITIALIZATION ---
 const getAI = () => {
-    // 1. Try Vite Env Vars (Standard for Vercel/Vite)
     let key = "";
     try {
         // @ts-ignore
@@ -35,14 +82,12 @@ const getAI = () => {
         else if (import.meta.env.VITE_GEMINI_API_KEY_2) key = import.meta.env.VITE_GEMINI_API_KEY_2;
     } catch (e) {}
 
-    // 2. Try Process Env (Fallback/Legacy)
     if (!key && typeof process !== 'undefined' && process.env) {
         if (process.env.API_KEY) key = process.env.API_KEY;
         else if (process.env.VITE_GEMINI_API_KEY) key = process.env.VITE_GEMINI_API_KEY;
     }
 
     if (!key) {
-        console.error("API Key is missing. Checked VITE_GEMINI_API_KEY and API_KEY.");
         throw new Error("Neural Link Offline: API Key Configuration Missing.");
     }
     
@@ -55,24 +100,78 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
     checkRateLimit();
     const ai = getAI();
     
-    const systemInstruction = `You are 'The Professor'.
-    Role: A distinguished university lecturer and expert academic tutor.
-    Tone: Formal yet accessible, authoritative, encouraging but strict about accuracy.
-    Constraint: Answer using ONLY the provided context. If the answer isn't in the file, state that clearly.`;
+    // Sanitize Inputs
+    const safeMessage = sanitizeInput(newMessage);
+    const systemInstruction = getSystemInstruction('PROFESSOR_CORE');
 
     const chat = ai.chats.create({
         model: MODEL_TEXT,
         config: { systemInstruction },
         history: history.slice(-6).map(m => ({
             role: m.role,
-            parts: [{ text: m.content }]
+            parts: [{ text: sanitizeInput(m.content) }]
         }))
     });
     
-    const fullMessage = `Document Context: ${fileContext.substring(0, 20000)}\n\nStudent Question: ${newMessage}`;
+    const fullMessage = `Document Context: ${fileContext.substring(0, 20000)}\n\nStudent Question: ${safeMessage}`;
     
     const result = await chat.sendMessage({ message: fullMessage });
     return result.text || "I apologize, but I am unable to formulate a response at this moment.";
+};
+
+export const generateHubResponse = async (message: string, context: string): Promise<string> => {
+    checkRateLimit();
+    const ai = getAI();
+    const safeMessage = sanitizeInput(message);
+    
+    const systemInstruction = `You are 'The Professor', overseeing a study group. Role: A helpful, slightly strict but knowledgeable tutor. Tone: Brief, direct.`;
+
+    const response = await ai.models.generateContent({
+        model: MODEL_TEXT,
+        contents: `Student Query: "${safeMessage}". \nContext: ${context.substring(0, 5000)}`,
+        config: { systemInstruction }
+    });
+    
+    return response.text || "I am monitoring the channel.";
+};
+
+export const generateWittyFeedback = async (score: number, total: number): Promise<string> => {
+    checkRateLimit();
+    const ai = getAI();
+    
+    const prompt = `Generate a short, witty, and slightly sarcastic remark for a student who scored ${score} out of ${total}. Max 1 sentence.`;
+
+    const response = await ai.models.generateContent({
+        model: MODEL_TEXT,
+        contents: prompt,
+    });
+    
+    return response.text || (score/total > 0.5 ? "Acceptable." : "Do better.");
+};
+
+export const generateSpeech = async (text: string): Promise<string | undefined> => {
+    const ai = getAI();
+    const safeText = sanitizeInput(text);
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: MODEL_TTS,
+            contents: [{ parts: [{ text: safeText.substring(0, 500) }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: 'Fenrir' }, 
+                    },
+                },
+            },
+        });
+        
+        return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    } catch (e) {
+        console.warn("TTS Generation failed:", e);
+        return undefined;
+    }
 };
 
 export const generateQuizFromText = async (text: string, config: QuizConfig, userProfile?: UserProfile): Promise<QuizQuestion[]> => {
@@ -104,7 +203,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            systemInstruction: "You are a Chief Examiner. Ensure questions are academically rigorous and distractors are plausible."
+            systemInstruction: getSystemInstruction('EXAMINER_CORE')
         }
     });
 
@@ -130,9 +229,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
         }
     };
 
-    const prompt = `Deliver a structured lecture on the core concepts of the provided text.
-    Analogy Domain: ${config.analogyDomain}.
-    Context: ${text.substring(0, 25000)}`;
+    const prompt = `Deliver a structured lecture. Analogy Domain: ${config.analogyDomain}. Context: ${text.substring(0, 25000)}`;
 
     const response = await ai.models.generateContent({
         model: MODEL_TEXT,
@@ -140,7 +237,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            systemInstruction: "You are a Tenured Professor. Teach clearly and structurally. Use Markdown for the content."
+            systemInstruction: getSystemInstruction('LECTURER_CORE')
         }
     });
 

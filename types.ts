@@ -229,3 +229,18 @@ export interface DriveFile {
   mimeType: string;
   size?: number;
 }
+
+export interface HubMessage {
+    id: string;
+    sender: string;
+    content: string;
+    timestamp: any;
+    isAi?: boolean;
+}
+
+export interface HubMaterial {
+    id: string;
+    title: string;
+    content: string;
+    addedBy: string;
+}

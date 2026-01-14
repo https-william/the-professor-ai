@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
-import { createHubRoom, joinHubRoom, subscribeToHubMessages, sendHubMessage } from '../services/firebase';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { UserProfile, HubMessage, HubMaterial } from '../types';
+import { createHubRoom, joinHubRoom, subscribeToHubMessages, sendHubMessage } from '../services/supabase';
+import { generateHubResponse } from '../services/geminiService';
 
 interface TheHubProps {
     user: UserProfile;
@@ -10,29 +12,42 @@ interface TheHubProps {
 export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [mode, setMode] = useState<'LOBBY' | 'ROOM'>('LOBBY');
     const [roomCode, setRoomCode] = useState('');
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<HubMessage[]>([]);
+    const [materials, setMaterials] = useState<HubMaterial[]>([]);
     const [participants, setParticipants] = useState<string[]>([user.alias || 'You']);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [roomId, setRoomId] = useState('');
+    
+    // Consensus State
+    const [agreements, setAgreements] = useState<string[]>([]);
+    const [hasAgreed, setHasAgreed] = useState(false);
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (mode === 'ROOM' && roomId) {
             const unsub = subscribeToHubMessages(roomId, (msgs) => {
                 setMessages(msgs);
             });
+            // Simulate Material Sync (Placeholder for DB)
+            setMaterials([
+                { id: '1', title: 'Session Brief.txt', content: 'Focus on Quantum Mechanics.', addedBy: 'Host' }
+            ]);
             return () => unsub();
         }
     }, [mode, roomId]);
 
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
     const handleCreate = async () => {
         setLoading(true);
         try {
-            // Using placeholder modules for now
             const id = await createHubRoom(user.alias || 'Host', []);
             setRoomId(id);
             setMode('ROOM');
-            // In real flow, code is returned or fetched
             setRoomCode("HUB-" + Math.floor(1000 + Math.random() * 9000)); 
         } catch (e) {
             console.error(e);
@@ -59,8 +74,38 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
 
     const handleSendMessage = async () => {
         if (!input.trim() || !roomId) return;
-        await sendHubMessage(roomId, user.alias || 'You', input);
+        
+        const msgText = input;
         setInput('');
+        
+        await sendHubMessage(roomId, user.alias || 'You', msgText);
+
+        // AI Interception
+        if (msgText.toLowerCase().includes('@professor')) {
+            // Optimistic UI for "Thinking"
+            const context = materials.map(m => m.content).join('\n');
+            generateHubResponse(msgText, context).then((response) => {
+                sendHubMessage(roomId, 'The Professor', response, 'text'); 
+            });
+        }
+    };
+
+    const handleToggleAgreement = () => {
+        if (hasAgreed) {
+            setAgreements(prev => prev.filter(p => p !== user.alias));
+            setHasAgreed(false);
+        } else {
+            setAgreements(prev => [...prev, user.alias || 'You']);
+            setHasAgreed(true);
+        }
+    };
+
+    const handleAddMaterial = () => {
+        const text = prompt("Paste material content:");
+        if (text) {
+            const newMat = { id: Date.now().toString(), title: `Note ${materials.length + 1}`, content: text, addedBy: user.alias || 'You' };
+            setMaterials(prev => [...prev, newMat]);
+        }
     };
 
     const handleCopy = () => {
@@ -81,7 +126,11 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
 
     if (mode === 'LOBBY') {
         return (
-            <div className="max-w-4xl mx-auto h-[70vh] flex flex-col justify-center items-center p-6 text-center animate-fade-in">
+            <div className="max-w-4xl mx-auto h-[70vh] flex flex-col justify-center items-center p-6 text-center animate-fade-in relative">
+                <button onClick={onExit} className="absolute top-0 right-0 px-4 py-2 text-gray-500 hover:text-white text-xs uppercase font-bold tracking-widest">
+                    Exit Hub
+                </button>
+
                 <div className="mb-10">
                     <div className="w-24 h-24 bg-green-900/20 rounded-3xl border border-green-500/20 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(34,197,94,0.15)] relative">
                         <div className="absolute inset-0 border border-green-500/10 rounded-3xl animate-pulse"></div>
@@ -126,6 +175,8 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
         );
     }
 
+    const consensusPercent = Math.round((agreements.length / Math.max(1, participants.length)) * 100);
+
     return (
         <div className="fixed inset-0 bg-[#0c0c0c] z-50 flex flex-col animate-fade-in">
             {/* Header */}
@@ -145,6 +196,18 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                         ))}
                     </div>
                 </div>
+                
+                {/* Consensus Bar */}
+                <div className="hidden md:flex flex-col w-48 mr-4">
+                    <div className="flex justify-between text-[9px] uppercase font-bold text-gray-500 mb-1">
+                        <span>Group Consensus</span>
+                        <span>{consensusPercent}%</span>
+                    </div>
+                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${consensusPercent}%` }}></div>
+                    </div>
+                </div>
+
                 <button onClick={onExit} className="px-4 py-2 bg-red-900/20 text-red-500 rounded-lg text-xs font-bold uppercase hover:bg-red-900/40 transition-colors border border-red-900/30">Disconnect</button>
             </div>
 
@@ -153,17 +216,24 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                 <div className="w-full max-w-sm border-r border-white/10 flex flex-col bg-[#0a0a0a]">
                     <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
                         <div className="text-center text-gray-600 text-[10px] uppercase tracking-widest mt-4">Session Started</div>
-                        {messages.map((m, i) => (
-                            <div key={i} className={`flex flex-col ${m.sender === (user.alias || 'You') ? 'items-end' : 'items-start'} animate-slide-in`}>
-                                <span className="text-[10px] text-gray-500 mb-1 ml-1">{m.sender}</span>
-                                <span className={`px-3 py-2 rounded-xl text-sm max-w-[85%] ${m.sender === (user.alias || 'You') ? 'bg-green-900/20 text-green-100 border border-green-500/20' : 'bg-white/5 text-gray-300 border border-white/5'}`}>{m.content || m.text}</span>
-                            </div>
-                        ))}
+                        {messages.map((m, i) => {
+                            const isMe = m.sender === (user.alias || 'You');
+                            const isProf = m.sender === 'The Professor';
+                            return (
+                                <div key={i} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-slide-in`}>
+                                    <span className={`text-[10px] mb-1 ml-1 ${isProf ? 'text-amber-500 font-bold' : 'text-gray-500'}`}>{m.sender}</span>
+                                    <span className={`px-3 py-2 rounded-xl text-sm max-w-[85%] ${isProf ? 'bg-amber-900/20 border border-amber-500/30 text-amber-100 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : isMe ? 'bg-green-900/20 text-green-100 border border-green-500/20' : 'bg-white/5 text-gray-300 border border-white/5'}`}>
+                                        {m.content}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
                     </div>
                     <div className="p-3 border-t border-white/10 bg-[#0f0f10]">
                         <input 
                             className="w-full bg-[#151515] rounded-lg px-4 py-3 text-white outline-none focus:ring-1 focus:ring-green-500/50 transition-all text-sm placeholder-gray-600" 
-                            placeholder="Type a message..." 
+                            placeholder="Type @Professor for AI help..." 
                             value={input}
                             onChange={e => setInput(e.target.value)}
                             onKeyDown={e => {
@@ -173,17 +243,47 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                     </div>
                 </div>
                 
-                {/* Main Workspace Placeholder */}
-                <div className="flex-1 bg-[#121212] flex flex-col items-center justify-center text-gray-600 p-8">
-                    <div className="w-16 h-16 border-2 border-dashed border-gray-700 rounded-xl flex items-center justify-center mb-4">
-                        <span className="text-2xl">📝</span>
+                {/* Main Workspace (Shared Material) */}
+                <div className="flex-1 bg-[#121212] flex flex-col p-6 relative">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                            <span className="text-2xl">📂</span> Shared Intel
+                        </h2>
+                        <button onClick={handleAddMaterial} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold uppercase text-white">+ Add Text Note</button>
                     </div>
-                    <p className="text-sm font-medium">Shared Whiteboard Active</p>
-                    <p className="text-xs mt-2 opacity-50">Real-time canvas visualization is initializing...</p>
+
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start overflow-y-auto">
+                        {materials.map(mat => (
+                            <div key={mat.id} className="bg-[#1a1a1a] border border-white/5 p-4 rounded-xl hover:border-white/20 transition-all group">
+                                <div className="flex justify-between mb-2">
+                                    <h4 className="font-bold text-gray-300 text-sm truncate">{mat.title}</h4>
+                                    <span className="text-[10px] text-gray-600">{mat.addedBy}</span>
+                                </div>
+                                <p className="text-xs text-gray-500 line-clamp-4">{mat.content}</p>
+                            </div>
+                        ))}
+                        {materials.length === 0 && (
+                            <div className="col-span-full flex flex-col items-center justify-center h-64 text-gray-600">
+                                <div className="text-4xl mb-4 opacity-30">📁</div>
+                                <p className="text-sm">No materials uploaded.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="mt-6 border-t border-white/5 pt-4 flex justify-between items-center">
+                        <div className="text-xs text-gray-500">
+                            {agreements.length}/{participants.length} Ready to Proceed
+                        </div>
+                        <button 
+                            onClick={handleToggleAgreement}
+                            className={`px-8 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all shadow-lg ${hasAgreed ? 'bg-green-600 text-white shadow-green-500/20' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                        >
+                            {hasAgreed ? 'Confirmed ✓' : 'Click to Confirm'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
-
-export default TheHub;
