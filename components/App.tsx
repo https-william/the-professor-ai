@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -21,7 +22,6 @@ import { NotificationBell } from './NotificationBell';
 import { AdminVerifyModal } from './AdminVerifyModal';
 import { SharedView } from './SharedView';
 import { ProfessorCharacter } from './ProfessorCharacter';
-import { ArenaView } from './ArenaView';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useAuth } from '../contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
@@ -37,6 +37,7 @@ const ChatView = React.lazy(() => import('./ChatView'));
 const FlashcardView = React.lazy(() => import('./FlashcardView'));
 const AdminDashboard = React.lazy(() => import('./AdminDashboard'));
 const TheHub = React.lazy(() => import('./TheHub'));
+const ArenaView = React.lazy(() => import('./ArenaView'));
 
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
@@ -120,7 +121,12 @@ const AppContent: React.FC = () => {
   }, []);
 
   const navigate = (view: ViewState, url: string) => {
-      window.history.pushState({}, '', url);
+      try {
+        // Attempt to update URL, but catch security errors in sandboxed environments
+        window.history.pushState({}, '', url);
+      } catch (e) {
+        console.warn("Navigation URL update failed (visual only, app state will persist):", e);
+      }
       setCurrentView(view);
   };
 
@@ -664,10 +670,10 @@ const AppContent: React.FC = () => {
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
-                    {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index) => handleQuizAction('INDEX', { index })} />}
-                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
+                    {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
+                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
+                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}

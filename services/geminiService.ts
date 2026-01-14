@@ -2,12 +2,7 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { QuizQuestion, QuizConfig, ProfessorSection, ChatMessage, LockInTechnique, StudyProtocol, UserProfile } from "../types";
 
-// --- INITIALIZATION ---
-// Strictly use process.env.API_KEY as per guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 // --- MODELS ---
-// Using gemini-3-flash-preview for optimal speed/quality balance on text tasks.
 const MODEL_TEXT = "gemini-3-flash-preview";
 
 // --- RATE LIMITER ---
@@ -29,17 +24,41 @@ const checkRateLimit = () => {
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(bucket));
 };
 
+// --- CLIENT INITIALIZATION ---
+const getAI = () => {
+    // 1. Try Vite Env Vars (Standard for Vercel/Vite)
+    let key = "";
+    try {
+        // @ts-ignore
+        if (import.meta.env.VITE_GEMINI_API_KEY) key = import.meta.env.VITE_GEMINI_API_KEY;
+        // @ts-ignore
+        else if (import.meta.env.VITE_GEMINI_API_KEY_2) key = import.meta.env.VITE_GEMINI_API_KEY_2;
+    } catch (e) {}
+
+    // 2. Try Process Env (Fallback/Legacy)
+    if (!key && typeof process !== 'undefined' && process.env) {
+        if (process.env.API_KEY) key = process.env.API_KEY;
+        else if (process.env.VITE_GEMINI_API_KEY) key = process.env.VITE_GEMINI_API_KEY;
+    }
+
+    if (!key) {
+        console.error("API Key is missing. Checked VITE_GEMINI_API_KEY and API_KEY.");
+        throw new Error("Neural Link Offline: API Key Configuration Missing.");
+    }
+    
+    return new GoogleGenAI({ apiKey: key });
+};
+
 // --- API FUNCTIONS ---
 
 export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string): Promise<string> => {
     checkRateLimit();
+    const ai = getAI();
     
-    // Updated Persona: Traditional University Lecturer
     const systemInstruction = `You are 'The Professor'.
     Role: A distinguished university lecturer and expert academic tutor.
-    Tone: Formal yet accessible, authoritative, encouraging but strict about accuracy. Think "Old University Library" vibes.
-    Constraint: Answer using ONLY the provided context. If the answer isn't in the file, state that clearly and professionally.
-    Constraint: Do not use slang. Maintain academic rigor.`;
+    Tone: Formal yet accessible, authoritative, encouraging but strict about accuracy.
+    Constraint: Answer using ONLY the provided context. If the answer isn't in the file, state that clearly.`;
 
     const chat = ai.chats.create({
         model: MODEL_TEXT,
@@ -53,11 +72,12 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
     const fullMessage = `Document Context: ${fileContext.substring(0, 20000)}\n\nStudent Question: ${newMessage}`;
     
     const result = await chat.sendMessage({ message: fullMessage });
-    return result.text || "I apologize, but I am unable to formulate a response at this moment. Please rephrase.";
+    return result.text || "I apologize, but I am unable to formulate a response at this moment.";
 };
 
 export const generateQuizFromText = async (text: string, config: QuizConfig, userProfile?: UserProfile): Promise<QuizQuestion[]> => {
     checkRateLimit();
+    const ai = getAI();
 
     const schema: Schema = {
         type: Type.ARRAY,
@@ -84,7 +104,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            systemInstruction: "You are a Chief Examiner. Ensure questions are academically rigorous and distractors are plausible. Output strictly valid JSON."
+            systemInstruction: "You are a Chief Examiner. Ensure questions are academically rigorous and distractors are plausible."
         }
     });
 
@@ -94,6 +114,7 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
 export const generateProfessorContent = async (text: string, config: QuizConfig): Promise<ProfessorSection[]> => {
     checkRateLimit();
+    const ai = getAI();
 
     const schema: Schema = {
         type: Type.ARRAY,
@@ -119,7 +140,7 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            systemInstruction: "You are a Tenured Professor. Teach clearly and structurally. Use Markdown for the content. Provide a unique analogy for each section to aid understanding."
+            systemInstruction: "You are a Tenured Professor. Teach clearly and structurally. Use Markdown for the content."
         }
     });
 
@@ -129,13 +150,14 @@ export const generateProfessorContent = async (text: string, config: QuizConfig)
 
 export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'ELA', customInstruction?: string): Promise<string> => {
     checkRateLimit();
+    const ai = getAI();
     const prompt = `${customInstruction || ''} Simplify this concept: ${explanation}`;
     
     const response = await ai.models.generateContent({
         model: MODEL_TEXT,
         contents: prompt,
         config: {
-            systemInstruction: type === 'ELI5' ? "Explain this as if to a young student. Use simple language but remain accurate." : "Summarize in exactly 5 words."
+            systemInstruction: type === 'ELI5' ? "Explain this as if to a young student." : "Summarize in exactly 5 words."
         }
     });
 
@@ -144,9 +166,10 @@ export const simplifyExplanation = async (explanation: string, type: 'ELI5' | 'E
 
 export const generateSummary = async (text: string): Promise<string> => {
     checkRateLimit();
+    const ai = getAI();
     const response = await ai.models.generateContent({
         model: MODEL_TEXT,
-        contents: `Provide an executive summary of this text in under 300 words using Markdown. Focus on the central thesis and supporting arguments.\n\n${text.substring(0, 15000)}`,
+        contents: `Provide an executive summary of this text in under 300 words using Markdown.\n\n${text.substring(0, 15000)}`,
         config: { systemInstruction: "You are a Research Assistant." }
     });
     return response.text || "Summary unavailable.";
@@ -155,6 +178,7 @@ export const generateSummary = async (text: string): Promise<string> => {
 export const generateStudyProtocol = async (content: string, technique: LockInTechnique): Promise<StudyProtocol> => {
     if (technique === 'STANDARD') return { step: 'READ', survey: '', questions: [] };
     checkRateLimit();
+    const ai = getAI();
 
     const schema: Schema = {
         type: Type.OBJECT,
@@ -171,7 +195,7 @@ export const generateStudyProtocol = async (content: string, technique: LockInTe
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            systemInstruction: "You are a Pedagogy Expert. Create a structured learning plan."
+            systemInstruction: "You are a Pedagogy Expert."
         }
     });
 
@@ -181,6 +205,7 @@ export const generateStudyProtocol = async (content: string, technique: LockInTe
 
 export const generateSuddenDeathQuestion = async (text: string): Promise<QuizQuestion> => {
     checkRateLimit();
+    const ai = getAI();
 
     const schema: Schema = {
         type: Type.OBJECT,
@@ -199,7 +224,7 @@ export const generateSuddenDeathQuestion = async (text: string): Promise<QuizQue
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            systemInstruction: "You are the Final Exam Proctor. The question must be rigorously difficult but solvable from the text. Distractors must be highly plausible."
+            systemInstruction: "You are the Final Exam Proctor. The question must be rigorously difficult."
         }
     });
 

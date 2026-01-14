@@ -55,3 +55,5 @@ export const ArenaView: React.FC<ArenaViewProps> = ({ user, onExit }) => {
         </div>
     );
 };
+
+export default ArenaView;

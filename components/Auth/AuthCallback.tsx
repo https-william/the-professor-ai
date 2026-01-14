@@ -45,7 +45,12 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onError }
             if (data.session) {
                 setStatus('Access Granted.');
                 // 4. Clean the URL so we don't loop
-                window.history.replaceState(null, '', window.location.pathname);
+                try {
+                    window.history.replaceState(null, '', window.location.pathname);
+                } catch(e) {
+                    console.warn("Could not clear hash from URL (likely due to sandbox environment).", e);
+                }
+                
                 // 5. Trigger success (App will reload user state)
                 setTimeout(() => onSuccess(), 500);
             } else {
