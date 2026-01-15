@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UserProfile, HubMessage, HubMaterial } from '../types';
+import { UserProfile, HubMessage, ProfessorSection } from '../types';
 import { createHubRoom, joinHubRoom, subscribeToHubMessages, sendHubMessage } from '../services/supabase';
-import { generateHubResponse } from '../services/geminiService';
+import { generateHubResponse, generateProfessorContent } from '../services/geminiService';
+import { processFile } from '../services/fileService';
+import { ProfessorView } from './ProfessorView';
 
 interface TheHubProps {
     user: UserProfile;
@@ -13,27 +15,25 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [mode, setMode] = useState<'LOBBY' | 'ROOM'>('LOBBY');
     const [roomCode, setRoomCode] = useState('');
     const [messages, setMessages] = useState<HubMessage[]>([]);
-    const [materials, setMaterials] = useState<HubMaterial[]>([]);
-    const [participants, setParticipants] = useState<string[]>([user.alias || 'You']);
+    
+    // Core State for the "Slides"
+    const [hubSections, setHubSections] = useState<ProfessorSection[]>([]);
+    const [isLoadingSlides, setIsLoadingSlides] = useState(false);
+    
+    const [participants, setParticipants] = useState<string[]>([user.alias || 'You', 'The Professor']);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [roomId, setRoomId] = useState('');
+    const [showMentions, setShowMentions] = useState(false);
     
-    // Consensus State
-    const [agreements, setAgreements] = useState<string[]>([]);
-    const [hasAgreed, setHasAgreed] = useState(false);
-
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (mode === 'ROOM' && roomId) {
             const unsub = subscribeToHubMessages(roomId, (msgs) => {
                 setMessages(msgs);
             });
-            // Simulate Material Sync (Placeholder for DB)
-            setMaterials([
-                { id: '1', title: 'Session Brief.txt', content: 'Focus on Quantum Mechanics.', addedBy: 'Host' }
-            ]);
             return () => unsub();
         }
     }, [mode, roomId]);
@@ -77,34 +77,61 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
         
         const msgText = input;
         setInput('');
+        setShowMentions(false);
         
         await sendHubMessage(roomId, user.alias || 'You', msgText);
 
         // AI Interception
         if (msgText.toLowerCase().includes('@professor')) {
-            // Optimistic UI for "Thinking"
-            const context = materials.map(m => m.content).join('\n');
+            const context = hubSections.map(s => s.content).join('\n') || "No documents uploaded yet.";
             generateHubResponse(msgText, context).then((response) => {
                 sendHubMessage(roomId, 'The Professor', response, 'text'); 
             });
         }
     };
 
-    const handleToggleAgreement = () => {
-        if (hasAgreed) {
-            setAgreements(prev => prev.filter(p => p !== user.alias));
-            setHasAgreed(false);
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setInput(val);
+        if (val.endsWith('@')) {
+            setShowMentions(true);
         } else {
-            setAgreements(prev => [...prev, user.alias || 'You']);
-            setHasAgreed(true);
+            setShowMentions(false);
         }
     };
 
-    const handleAddMaterial = () => {
-        const text = prompt("Paste material content:");
-        if (text) {
-            const newMat = { id: Date.now().toString(), title: `Note ${materials.length + 1}`, content: text, addedBy: user.alias || 'You' };
-            setMaterials(prev => [...prev, newMat]);
+    const handleMentionClick = (name: string) => {
+        setInput(prev => prev + name + ' ');
+        setShowMentions(false);
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setIsLoadingSlides(true);
+            try {
+                const file = e.target.files[0];
+                const processed = await processFile(file);
+                
+                // Generate Slides
+                const sections = await generateProfessorContent(processed.content, { 
+                    difficulty: 'Medium', 
+                    questionType: 'Mixed', 
+                    questionCount: 5, 
+                    timerDuration: 'Limitless', 
+                    personality: 'Academic', 
+                    analogyDomain: 'General' 
+                });
+                
+                setHubSections(sections);
+                
+                // Announce upload
+                await sendHubMessage(roomId, 'System', `${user.alias} uploaded ${file.name}. Materials generated.`);
+
+            } catch (err: any) {
+                alert("Failed to process file: " + err.message);
+            } finally {
+                setIsLoadingSlides(false);
+            }
         }
     };
 
@@ -175,8 +202,6 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
         );
     }
 
-    const consensusPercent = Math.round((agreements.length / Math.max(1, participants.length)) * 100);
-
     return (
         <div className="fixed inset-0 bg-[#0c0c0c] z-50 flex flex-col animate-fade-in">
             {/* Header */}
@@ -189,40 +214,63 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                         </div>
                     </div>
-                    <div className="h-8 w-px bg-white/10"></div>
-                    <div className="flex -space-x-2">
-                        {participants.map((p, i) => (
-                            <div key={i} className="w-8 h-8 rounded-full bg-gray-700 border-2 border-black flex items-center justify-center text-[10px] text-white font-bold cursor-default hover:z-10 transition-transform hover:scale-110" title={p}>{p.charAt(0)}</div>
-                        ))}
-                    </div>
                 </div>
                 
-                {/* Consensus Bar */}
-                <div className="hidden md:flex flex-col w-48 mr-4">
-                    <div className="flex justify-between text-[9px] uppercase font-bold text-gray-500 mb-1">
-                        <span>Group Consensus</span>
-                        <span>{consensusPercent}%</span>
-                    </div>
-                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${consensusPercent}%` }}></div>
-                    </div>
-                </div>
-
                 <button onClick={onExit} className="px-4 py-2 bg-red-900/20 text-red-500 rounded-lg text-xs font-bold uppercase hover:bg-red-900/40 transition-colors border border-red-900/30">Disconnect</button>
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-                {/* Chat Panel */}
-                <div className="w-full max-w-sm border-r border-white/10 flex flex-col bg-[#0a0a0a]">
-                    <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
-                        <div className="text-center text-gray-600 text-[10px] uppercase tracking-widest mt-4">Session Started</div>
+                
+                {/* Main Workspace (Slides) - LEFT/CENTER */}
+                <div className="flex-1 bg-[#121212] flex flex-col relative overflow-hidden">
+                    {isLoadingSlides ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-green-500">
+                            <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <span className="font-mono text-xs uppercase tracking-widest animate-pulse">Generating Study Material...</span>
+                        </div>
+                    ) : hubSections.length > 0 ? (
+                        <div className="h-full overflow-y-auto p-6">
+                            <ProfessorView 
+                                state={{ sections: hubSections }} 
+                                onExit={() => {}} 
+                                timeRemaining={null} 
+                            />
+                        </div>
+                    ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+                            <div className="text-4xl mb-4 opacity-30">📂</div>
+                            <p className="text-sm mb-4">No materials loaded.</p>
+                            <button 
+                                onClick={() => fileInputRef.current?.click()} 
+                                className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white font-bold text-xs uppercase"
+                            >
+                                Upload Document
+                            </button>
+                            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept=".pdf,.docx,.txt" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Chat Panel - RIGHT SIDE */}
+                <div className="w-full max-w-sm border-l border-white/10 flex flex-col bg-[#0a0a0a]">
+                    <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar relative">
                         {messages.map((m, i) => {
                             const isMe = m.sender === (user.alias || 'You');
                             const isProf = m.sender === 'The Professor';
+                            const isSystem = m.sender === 'System';
+                            
+                            if (isSystem) {
+                                return (
+                                    <div key={i} className="flex justify-center my-2">
+                                        <span className="text-[10px] text-gray-500 font-mono uppercase bg-white/5 px-2 py-1 rounded">{m.content}</span>
+                                    </div>
+                                );
+                            }
+
                             return (
                                 <div key={i} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-slide-in`}>
                                     <span className={`text-[10px] mb-1 ml-1 ${isProf ? 'text-amber-500 font-bold' : 'text-gray-500'}`}>{m.sender}</span>
-                                    <span className={`px-3 py-2 rounded-xl text-sm max-w-[85%] ${isProf ? 'bg-amber-900/20 border border-amber-500/30 text-amber-100 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : isMe ? 'bg-green-900/20 text-green-100 border border-green-500/20' : 'bg-white/5 text-gray-300 border border-white/5'}`}>
+                                    <span className={`px-3 py-2 rounded-xl text-sm max-w-[90%] ${isProf ? 'bg-amber-900/20 border border-amber-500/30 text-amber-100 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : isMe ? 'bg-green-900/20 text-green-100 border border-green-500/20' : 'bg-white/5 text-gray-300 border border-white/5'}`}>
                                         {m.content}
                                     </span>
                                 </div>
@@ -230,60 +278,38 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                         })}
                         <div ref={messagesEndRef} />
                     </div>
+                    
+                    {/* Mentions Popover */}
+                    {showMentions && (
+                        <div className="bg-[#1a1a1a] border-t border-white/10 p-2 max-h-32 overflow-y-auto">
+                            {participants.map(p => (
+                                <button 
+                                    key={p} 
+                                    className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/10 rounded flex items-center gap-2"
+                                    onClick={() => handleMentionClick(p)}
+                                >
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="p-3 border-t border-white/10 bg-[#0f0f10]">
                         <input 
                             className="w-full bg-[#151515] rounded-lg px-4 py-3 text-white outline-none focus:ring-1 focus:ring-green-500/50 transition-all text-sm placeholder-gray-600" 
-                            placeholder="Type @Professor for AI help..." 
+                            placeholder="Type @..." 
                             value={input}
-                            onChange={e => setInput(e.target.value)}
+                            onChange={handleInputChange}
                             onKeyDown={e => {
                                 if (e.key === 'Enter') handleSendMessage();
                             }}
                         />
                     </div>
                 </div>
-                
-                {/* Main Workspace (Shared Material) */}
-                <div className="flex-1 bg-[#121212] flex flex-col p-6 relative">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <span className="text-2xl">📂</span> Shared Intel
-                        </h2>
-                        <button onClick={handleAddMaterial} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold uppercase text-white">+ Add Text Note</button>
-                    </div>
-
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start overflow-y-auto">
-                        {materials.map(mat => (
-                            <div key={mat.id} className="bg-[#1a1a1a] border border-white/5 p-4 rounded-xl hover:border-white/20 transition-all group">
-                                <div className="flex justify-between mb-2">
-                                    <h4 className="font-bold text-gray-300 text-sm truncate">{mat.title}</h4>
-                                    <span className="text-[10px] text-gray-600">{mat.addedBy}</span>
-                                </div>
-                                <p className="text-xs text-gray-500 line-clamp-4">{mat.content}</p>
-                            </div>
-                        ))}
-                        {materials.length === 0 && (
-                            <div className="col-span-full flex flex-col items-center justify-center h-64 text-gray-600">
-                                <div className="text-4xl mb-4 opacity-30">📁</div>
-                                <p className="text-sm">No materials uploaded.</p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className="mt-6 border-t border-white/5 pt-4 flex justify-between items-center">
-                        <div className="text-xs text-gray-500">
-                            {agreements.length}/{participants.length} Ready to Proceed
-                        </div>
-                        <button 
-                            onClick={handleToggleAgreement}
-                            className={`px-8 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all shadow-lg ${hasAgreed ? 'bg-green-600 text-white shadow-green-500/20' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
-                        >
-                            {hasAgreed ? 'Confirmed ✓' : 'Click to Confirm'}
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     );
 };
+
+export default TheHub;

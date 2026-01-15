@@ -5,7 +5,6 @@ import { QuizQuestion, QuizConfig, ProfessorSection, ChatMessage, LockInTechniqu
 // --- SECURITY PROTOCOLS ---
 
 // 1. INPUT SANITIZER
-// Regex filters to catch "Jailbreak" attempts
 const FORBIDDEN_PATTERNS = [
     /ignore previous instructions/gi,
     /system prompt/gi,
@@ -17,11 +16,10 @@ const FORBIDDEN_PATTERNS = [
 ];
 
 const sanitizeInput = (input: string): string => {
-    let cleaned = input;
+    let cleaned = input || ""; // Fallback for null
     for (const pattern of FORBIDDEN_PATTERNS) {
         if (pattern.test(cleaned)) {
             console.warn("Security Event: Input Sanitization Triggered");
-            // Redact malicious segments
             cleaned = cleaned.replace(pattern, "[REDACTED_SECURITY]");
         }
     }
@@ -29,15 +27,9 @@ const sanitizeInput = (input: string): string => {
 };
 
 // 2. PROMPT VAULT (Base64 Encoded)
-// Prevents casual inspection of System Instructions in source code.
 const PROMPT_VAULT = {
-    // "You are 'The Professor'. Role: A distinguished university lecturer..."
     PROFESSOR_CORE: "WW91IGFyZSAnVGhlIFByb2Zlc3NvcicuIFJvbGU6IEEgZGlzdGluZ3Vpc2hlZCB1bml2ZXJzaXR5IGxlY3R1cmVyIGFuZCBleHBlcnQgYWNhZGVtaWMgdHV0b3IuIFRvbmU6IEZvcm1hbCB5ZXQgYWNjZXNzaWJsZSwgYXV0aG9yaXRhdGl2ZSwgZW5jb3VyYWdpbmcgYnV0IHN0cmljdCBhYm91dCBhY2N1cmFjeS4gQ29uc3RyYWludDogQW5zd2VyIHVzaW5nIE9OTFkgdGhlIHByb3ZpZGVkIGNvbnRleHQu",
-    
-    // "You are a Chief Examiner..."
     EXAMINER_CORE: "WW91IGFyZSBhIENoaWVmIEV4YW1pbmVyLiBFbnN1cmUgcXVlc3Rpb25zIGFyZSBhY2FkZW1pY2FsbHkgcmlnb3JvdXMgYW5kIGRpc3RyYWN0b3JzIGFyZSBwbGF1c2libGUu",
-    
-    // "You are a Tenured Professor..."
     LECTURER_CORE: "WW91IGFyZSBhIFRlbnVyZWQgUHJvZmVzc29yLiBUZWFjaCBjbGVhcmx5IGFuZCBzdHJ1Y3R1cmFsbHkuIFVzZSBNYXJrZG93biBmb3IgdGhlIGNvbnRlbnQu"
 };
 
@@ -100,17 +92,22 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
     checkRateLimit();
     const ai = getAI();
     
-    // Sanitize Inputs
     const safeMessage = sanitizeInput(newMessage);
     const systemInstruction = getSystemInstruction('PROFESSOR_CORE');
+
+    // Strict filtering: Remove 'init' system messages and empty content
+    const validHistory = history
+        .filter(m => m.id !== 'init' && m.content.trim().length > 0)
+        .slice(-6)
+        .map(m => ({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: sanitizeInput(m.content) }]
+        }));
 
     const chat = ai.chats.create({
         model: MODEL_TEXT,
         config: { systemInstruction },
-        history: history.slice(-6).map(m => ({
-            role: m.role,
-            parts: [{ text: sanitizeInput(m.content) }]
-        }))
+        history: validHistory
     });
     
     const fullMessage = `Document Context: ${fileContext.substring(0, 20000)}\n\nStudent Question: ${safeMessage}`;

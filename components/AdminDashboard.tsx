@@ -164,3 +164,5 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     </div>
   );
 };
+
+export default AdminDashboard;

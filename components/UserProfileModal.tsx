@@ -4,6 +4,7 @@ import { UserProfile, HistoryItem, QuizState } from '../types';
 import { queueAction } from '../services/syncService';
 import { useAuth } from '../contexts/AuthContext';
 import { loadHistory } from '../services/storageService';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ declare global {
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess }) => {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
@@ -191,33 +193,33 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-[#0a0a0c] w-full max-w-3xl rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade">
+      <div className="relative bg-panel w-full max-w-3xl rounded-[2rem] border border-border-main shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade text-text-pri">
         
         {/* Header - Dossier Style */}
-        <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center shrink-0">
+        <div className="p-6 border-b border-border-main bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
               </div>
               <div>
-                  <h3 className="font-bold text-white text-lg tracking-tight font-serif">Student Dossier</h3>
-                  <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">ID: {editedProfile.alias || 'UNKNOWN'}</p>
+                  <h3 className="font-bold text-lg tracking-tight font-serif">Student Dossier</h3>
+                  <p className="text-[10px] text-text-sec font-mono uppercase tracking-widest">ID: {editedProfile.alias || 'UNKNOWN'}</p>
               </div>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">✕</button>
+          <button onClick={onClose} className="text-text-sec hover:text-text-pri transition-colors">✕</button>
         </div>
 
-        <div className="overflow-y-auto p-8 space-y-10 custom-scrollbar bg-[#0a0a0c]">
+        <div className="overflow-y-auto p-8 space-y-10 custom-scrollbar">
             
             {/* Identity Block */}
             <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
-               <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${editedProfile.avatarGradient} flex items-center justify-center shadow-2xl ring-4 ring-black/50 border border-white/10 shrink-0`}>
+               <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${editedProfile.avatarGradient} flex items-center justify-center shadow-2xl ring-4 ring-black/10 border border-white/10 shrink-0`}>
                    {/* Abstract Geometric Avatar instead of Emoji */}
                    <div className="w-16 h-16 bg-white/20 rotate-45 transform skew-x-12 rounded-xl backdrop-blur-sm border border-white/40"></div>
                </div>
                <div className="text-center sm:text-left flex-1 w-full">
                    <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
-                       <h2 className="text-3xl font-bold text-white font-serif">{editedProfile.alias || 'Anonymous'}</h2>
+                       <h2 className="text-3xl font-bold font-serif">{editedProfile.alias || 'Anonymous'}</h2>
                        <div className="flex gap-2">
                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${editedProfile.subscriptionTier === 'Excellentia' ? 'bg-amber-900/20 text-amber-500 border-amber-500/20' : 'bg-blue-900/20 text-blue-400 border-blue-500/20'}`}>
                                {editedProfile.subscriptionTier}
@@ -231,21 +233,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                    </div>
                    
                    <div className="grid grid-cols-2 gap-4 mt-6">
-                       <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                           <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">XP Level</span>
-                           <span className="text-xl text-white font-mono">{Math.floor((profile.xp || 0)/100)}</span>
-                           <span className="text-[10px] text-gray-600 block mt-1">{(profile.xp || 0)} Total XP</span>
+                       <div className="bg-white/5 p-3 rounded-xl border border-border-main">
+                           <span className="text-[10px] text-text-sec uppercase font-bold block mb-1">XP Level</span>
+                           <span className="text-xl font-mono">{Math.floor((profile.xp || 0)/100)}</span>
+                           <span className="text-[10px] text-text-sec block mt-1">{(profile.xp || 0)} Total XP</span>
                        </div>
-                       <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                           <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Streak</span>
+                       <div className="bg-white/5 p-3 rounded-xl border border-border-main">
+                           <span className="text-[10px] text-text-sec uppercase font-bold block mb-1">Streak</span>
                            <span className="text-xl text-amber-500 font-mono">{profile.streak} Days</span>
-                           <span className="text-[10px] text-gray-600 block mt-1">Keep it up</span>
+                           <span className="text-[10px] text-text-sec block mt-1">Keep it up</span>
                        </div>
                    </div>
                    
                    <button 
                      onClick={generateTranscript}
-                     className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold uppercase tracking-widest border border-white/10 flex items-center justify-center gap-2"
+                     className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 text-text-pri rounded-lg text-xs font-bold uppercase tracking-widest border border-border-main flex items-center justify-center gap-2"
                    >
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                        Download Official Transcript
@@ -253,30 +255,52 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                </div>
             </div>
 
-            {/* Achievements - Progress Logic */}
+            {/* Interface Settings (Theme) */}
             <div>
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-white/5 pb-2">Service Records & Medals</h4>
+                <h4 className="text-xs font-bold text-text-sec uppercase tracking-widest mb-4 border-b border-border-main pb-2">Interface Protocol</h4>
+                <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-border-main">
+                    <div>
+                        <span className="font-bold text-sm block mb-1">System Visuals</span>
+                        <span className="text-xs text-text-sec">Override neural interface appearance.</span>
+                    </div>
+                    <div className="flex bg-black/20 p-1 rounded-lg border border-white/5">
+                        <button 
+                            onClick={() => setTheme('Dark')}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Dark' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            Deep Space
+                        </button>
+                        <button 
+                            onClick={() => setTheme('Light')}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Light' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            Academic Air
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Achievements */}
+            <div>
+                <h4 className="text-xs font-bold text-text-sec uppercase tracking-widest mb-4 border-b border-border-main pb-2">Service Records</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {achievements.map(ach => {
                         const isUnlocked = ach.progress >= ach.total;
                         const percent = (ach.progress / ach.total) * 100;
                         
                         return (
-                            <div key={ach.id} className={`relative p-4 rounded-xl border transition-all duration-300 group overflow-hidden ${isUnlocked ? `${ach.color} bg-opacity-20` : 'bg-black border-white/5 opacity-70 grayscale'}`}>
-                                {isUnlocked && <div className={`absolute -inset-1 rounded-xl blur opacity-20 group-hover:opacity-40 transition-opacity ${ach.color.split(' ')[0]}`}></div>}
-                                
+                            <div key={ach.id} className={`relative p-4 rounded-xl border transition-all duration-300 group overflow-hidden ${isUnlocked ? `${ach.color} bg-opacity-20` : 'bg-black/40 border-border-main opacity-70 grayscale'}`}>
                                 <div className="relative z-10 flex flex-col items-center text-center h-full">
                                     <div className={`text-4xl mb-3 transform transition-transform group-hover:scale-110 drop-shadow-md`}>
                                         {ach.icon}
                                     </div>
-                                    <h5 className={`font-bold text-xs uppercase tracking-wider mb-1 ${isUnlocked ? 'text-white' : 'text-gray-500'}`}>
+                                    <h5 className={`font-bold text-xs uppercase tracking-wider mb-1 ${isUnlocked ? 'text-text-pri' : 'text-text-sec'}`}>
                                         {ach.name}
                                     </h5>
-                                    <p className="text-[10px] text-gray-400 leading-tight mb-3">
+                                    <p className="text-[10px] text-text-sec leading-tight mb-3">
                                         {ach.desc}
                                     </p>
                                     
-                                    {/* Progress Bar */}
                                     <div className="w-full bg-black/50 h-1.5 rounded-full overflow-hidden border border-white/5 mt-auto">
                                         <div 
                                             className={`h-full transition-all duration-1000 ${isUnlocked ? 'bg-green-500' : 'bg-blue-500'}`}
@@ -291,46 +315,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                 </div>
             </div>
 
-            {/* Editable Fields */}
-            <div>
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-white/5 pb-2">Academic Data</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Institution</label>
-                        <input type="text" value={editedProfile.school} onChange={e => setEditedProfile({...editedProfile, school: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none transition-colors" placeholder="University..." />
-                    </div>
-                    <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Level</label>
-                        <input type="text" value={editedProfile.academicLevel} onChange={e => setEditedProfile({...editedProfile, academicLevel: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none transition-colors" placeholder="Year 2..." />
-                    </div>
-                    <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Country</label>
-                        <input type="text" value={editedProfile.country} onChange={e => setEditedProfile({...editedProfile, country: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none transition-colors" placeholder="Country..." />
-                    </div>
-                    <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Focus Weakness</label>
-                        <input type="text" value={editedProfile.weaknessFocus} onChange={e => setEditedProfile({...editedProfile, weaknessFocus: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none transition-colors" placeholder="e.g. Calculus Integration" />
-                    </div>
-                </div>
-            </div>
-
             {/* Danger Zone */}
-            <div className="pt-6 border-t border-white/5">
+            <div className="pt-6 border-t border-border-main">
                 <button onClick={onLogout} className="w-full py-4 bg-red-900/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-900/20 transition-all">
                     Terminals Logout
                 </button>
             </div>
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-black/40 flex justify-between items-center shrink-0">
+        <div className="p-6 border-t border-border-main bg-white/5 flex justify-between items-center shrink-0">
            <button 
              onClick={onRequestAdminAccess}
-             className="text-[7px] font-bold uppercase tracking-widest text-gray-800 hover:text-red-900 transition-colors"
+             className="text-[7px] font-bold uppercase tracking-widest text-text-sec hover:text-red-900 transition-colors"
            >
              Authorized Personnel Login
            </button>
            
-           <button onClick={handleSave} className="px-8 py-3 bg-white text-black rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors shadow-lg">Save Updates</button>
+           <button onClick={handleSave} className="px-8 py-3 bg-text-pri text-core rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-colors shadow-lg">Save Updates</button>
         </div>
       </div>
     </div>

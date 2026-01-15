@@ -40,6 +40,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [internalIndex, setInternalIndex] = useState(currentQuestionIndex || 0);
   const [timeLeft, setTimeLeft] = useState<number | null>(initialTime);
   const [strikes, setStrikes] = useState(focusStrikes || 0);
+  const [showGrid, setShowGrid] = useState(false);
   
   const [duelData, setDuelData] = useState<DuelState | null>(null);
   const [suddenDeathSubmitted, setSuddenDeathSubmitted] = useState(false);
@@ -50,12 +51,11 @@ export const QuizView: React.FC<QuizViewProps> = ({
   const [simplifiedExplanations, setSimplifiedExplanations] = useState<Record<number, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<number | null>(null);
   
-  // Witty Feedback
   const [aiFeedback, setAiFeedback] = useState("Calculating...");
 
   const lastStrikeTime = useRef<number>(0);
 
-  useEffect(() => { setInternalIndex(currentQuestionIndex); }, [currentQuestionIndex]);
+  useEffect(() => { setInternalIndex(currentQuestionIndex || 0); }, [currentQuestionIndex]);
 
   useEffect(() => {
       if (!questions || questions.length === 0) return;
@@ -112,19 +112,22 @@ export const QuizView: React.FC<QuizViewProps> = ({
     return () => clearInterval(timer);
   }, [timeLeft, isSubmitted, onTimeExpired]);
 
+  const handleJumpToQuestion = (idx: number) => {
+      if (currentQ?.type === 'Fill in the Gap') saveTextInput();
+      setInternalIndex(idx);
+      onIndexChange(idx);
+      setShowGrid(false);
+  };
+
   const handleNextQuestion = () => {
       if (internalIndex < questions.length - 1) {
-          const newIdx = internalIndex + 1;
-          setInternalIndex(newIdx);
-          onIndexChange(newIdx);
+          handleJumpToQuestion(internalIndex + 1);
       } else { onSubmit(); }
   };
 
   const handlePrevQuestion = () => {
       if (internalIndex > 0) {
-          const newIdx = internalIndex - 1;
-          setInternalIndex(newIdx);
-          onIndexChange(newIdx);
+          handleJumpToQuestion(internalIndex - 1);
       }
   };
 
@@ -140,15 +143,6 @@ export const QuizView: React.FC<QuizViewProps> = ({
 
   const total = questions.length;
   const getXPFeedback = (score: number) => `+${Math.min(score * 50, 500)} XP Gained`;
-
-  const handleELI5 = async (q: QuizQuestion) => {
-      if (simplifiedExplanations[q.id]) return;
-      setLoadingExplanation(q.id);
-      try {
-          const simplified = await simplifyExplanation(q.explanation, 'ELI5');
-          setSimplifiedExplanations(prev => ({ ...prev, [q.id]: simplified }));
-      } catch (e) {} finally { setLoadingExplanation(null); }
-  };
 
   const saveTextInput = () => { if (textAnswer.trim() && currentQ) onAnswerSelect(currentQ.id, textAnswer.trim()); };
 
@@ -226,21 +220,60 @@ export const QuizView: React.FC<QuizViewProps> = ({
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-full flex flex-col">
+    <div className="max-w-4xl mx-auto h-full flex flex-col relative">
+       {/* Top Bar with Grid Toggle */}
        <div className="glass-panel p-3 sm:p-4 rounded-2xl mb-4 sticky top-4 z-30 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full animate-pulse bg-blue-500"></div>
-             <span className="text-xs font-bold uppercase text-white">{duelId ? 'DUEL IN PROGRESS' : 'LIVE EXAM'}</span>
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full animate-pulse bg-blue-500"></div>
+                 <span className="text-xs font-bold uppercase text-white">{duelId ? 'DUEL IN PROGRESS' : 'LIVE EXAM'}</span>
+             </div>
+             <button 
+                onClick={() => setShowGrid(!showGrid)}
+                className={`p-2 rounded-lg text-xs font-bold uppercase transition-colors ${showGrid ? 'bg-white text-black' : 'bg-white/10 text-gray-300'}`}
+             >
+                 {showGrid ? 'Hide Nav' : 'Show Nav'}
+             </button>
           </div>
           <div className="font-mono text-sm font-bold bg-black/40 px-3 py-1.5 rounded-lg text-white">
              {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2,'0')}` : '∞'}
           </div>
        </div>
 
+       {/* Question Grid Overlay */}
+       {showGrid && (
+           <div className="mb-4 bg-[#111] p-4 rounded-2xl border border-white/10 animate-slide-in">
+               <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                   {questions.map((q, idx) => {
+                       const isAnswered = !!userAnswers[q.id];
+                       const isCurrent = idx === internalIndex;
+                       const isFlagged = flaggedQuestions.includes(q.id);
+                       
+                       return (
+                           <button 
+                               key={q.id}
+                               onClick={() => handleJumpToQuestion(idx)}
+                               className={`w-full aspect-square rounded-lg text-xs font-bold flex items-center justify-center border transition-all ${
+                                   isCurrent ? 'bg-blue-600 border-blue-400 text-white scale-110 shadow-lg z-10' :
+                                   isFlagged ? 'bg-amber-900/50 border-amber-500 text-amber-500' :
+                                   isAnswered ? 'bg-white/10 border-white/20 text-white' :
+                                   'bg-black border-white/5 text-gray-600 hover:bg-white/5'
+                               }`}
+                           >
+                               {idx + 1}
+                           </button>
+                       );
+                   })}
+               </div>
+           </div>
+       )}
+
        <div className="glass-panel rounded-3xl p-5 md:p-10 flex-1 flex flex-col shadow-2xl">
           <div className="flex justify-between items-start mb-6">
               <span className="text-xs font-bold uppercase text-blue-400">Question {internalIndex + 1} / {total}</span>
-              <button onClick={() => onFlagQuestion(currentQ.id)} className="text-gray-500 hover:text-white">Flag</button>
+              <button onClick={() => onFlagQuestion(currentQ.id)} className={`text-xs font-bold uppercase ${flaggedQuestions.includes(currentQ.id) ? 'text-amber-500' : 'text-gray-500 hover:text-white'}`}>
+                  {flaggedQuestions.includes(currentQ.id) ? 'Flagged' : 'Flag'}
+              </button>
           </div>
           <h2 className="text-lg md:text-2xl font-medium mb-8 text-white">{currentQ.question}</h2>
           
