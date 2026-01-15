@@ -9,7 +9,6 @@ interface PlanCheckoutPageProps {
 }
 
 // --- TYPE DEFINITIONS FOR RAW PAYSTACK ---
-// This tells TypeScript exactly what the window object looks like
 declare global {
   interface Window {
     PaystackPop: {
@@ -52,37 +51,31 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
   const handleCheckout = (e: React.FormEvent) => {
       e.preventDefault();
       
-      // 1. Validation
       if (!email || !email.includes('@')) {
           alert("A valid communication channel is required.");
           return;
       }
 
-      // 2. Environment Key Check
       // @ts-ignore
       const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
       
       if (!publicKey) {
-          console.error("Paystack Key Missing. Check Vercel Environment Variables.");
           alert("System Error: Payment Link Not Configured.");
           return;
       }
 
-      // 3. Script Load Check
       if (!window.PaystackPop || typeof window.PaystackPop.setup !== 'function') {
-          alert("Secure Gateway (Paystack) not loaded. Please refresh or disable ad-blockers.");
+          alert("Secure Gateway (Paystack) not loaded. Please refresh.");
           return;
       }
 
       setLoading(true);
 
       try {
-        // 4. MANUAL MODE EXECUTION
-        // Do NOT use 'new PaystackPop()'. Use 'PaystackPop.setup()'.
         const handler = window.PaystackPop.setup({
             key: publicKey,
             email: email,
-            amount: price * 100, // Amount in kobo/cents
+            amount: price * 100, 
             currency: currency,
             ref: 'PRO_' + Math.floor((Math.random() * 1000000000) + 1), 
             metadata: {
@@ -90,135 +83,99 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
                 custom_fields: [{ display_name: "Subscription Tier", variable_name: "tier", value: tier }]
             },
             callback: (response: any) => {
-                // Payment Success
-                console.log("Payment complete", response);
                 onSuccess(tier);
                 alert(`Welcome to the elite. Reference: ${response.reference}`);
                 setLoading(false);
             },
             onClose: () => {
-                // User closed popup
-                console.log("Transaction aborted");
                 setLoading(false);
             }
         });
-
-        // 5. Trigger
         handler.openIframe();
-
       } catch (e) {
           console.error("Paystack Init Error:", e);
-          alert("Secure link failed. Check console for details.");
           setLoading(false);
       }
   };
 
-  const copy = tier === 'Excellentia' ? {
-      title: "Academic God Mode",
-      subtitle: "The unfair advantage.",
-      warning: "WARNING: This plan is not for casual students. It is for those who intend to dominate.",
-      benefits: [
-          "Prophetic Accuracy: The Oracle predicts your exam questions.",
-          "Limitless Power: No quotas. No caps. Pure throughput.",
-          "Priority Processing: You skip the line. Every time.",
-          "Admin Support: Direct line to the Dean's office."
-      ]
-  } : {
-      title: "The Scholar's Edge",
-      subtitle: "Stop struggling. Start flowing.",
-      warning: "FACT: 85% of students waste 2 hours a day just organizing notes. You can fix that right now.",
-      benefits: [
-          "Unlimited Quizzes: Drill until you can't get it wrong.",
-          "Feynman Tutor: Concepts explained so simply, a child would understand.",
-          "War Room Access: Collaborative study hubs.",
-          "10x File Uploads: Process entire semesters in minutes."
-      ]
-  };
+  const isGold = tier === 'Excellentia';
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans">
-        <div className="p-6 border-b border-white/5 flex justify-between items-center">
-            <button onClick={onBack} className="text-gray-500 hover:text-white text-xs uppercase tracking-widest">← Abort Transaction</button>
-            <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Secure Gateway</span>
+    <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans relative overflow-hidden">
+        {/* Background FX */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 pointer-events-none"></div>
+        <div className={`absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[150px] opacity-20 ${isGold ? 'bg-amber-600' : 'bg-blue-600'}`}></div>
+
+        <div className="p-6 flex justify-between items-center z-10">
+            <button onClick={onBack} className="text-gray-500 hover:text-white text-xs uppercase tracking-widest transition-colors flex items-center gap-2">
+                <span>←</span> ABORT TRANSACTION
+            </button>
+            <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/10">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SECURE LINK ESTABLISHED</span>
             </div>
         </div>
 
-        <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full p-6 gap-12 items-center justify-center">
-            <div className="w-full md:w-1/2 space-y-8 animate-slide-in">
-                <div>
-                    <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-4 leading-tight">{copy.title}</h1>
-                    <p className="text-xl text-gray-400 font-light">{copy.subtitle}</p>
-                </div>
-                <div className="bg-red-900/10 border-l-4 border-red-500 p-6 rounded-r-xl">
-                    <p className="text-red-400 font-mono text-xs uppercase tracking-widest mb-2 font-bold">Reality Check</p>
-                    <p className="text-gray-300 text-sm leading-relaxed">{copy.warning}</p>
-                </div>
-                <ul className="space-y-4">
-                    {copy.benefits.map((benefit, i) => (
-                        <li key={i} className="flex items-start gap-4">
-                            <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center text-black font-bold text-xs ${tier === 'Excellentia' ? 'bg-amber-500' : 'bg-blue-500'}`}>✓</div>
-                            <span className="text-gray-300 text-sm">{benefit}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 z-10 relative">
+            
+            <div className="w-full max-w-lg perspective-1000">
+                <div className={`bg-[#0a0a0c] border relative overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 ${isGold ? 'border-amber-500/30 shadow-[0_0_60px_rgba(245,158,11,0.15)]' : 'border-blue-500/30 shadow-[0_0_60px_rgba(59,130,246,0.15)]'}`}>
+                    
+                    {/* Scanner Line */}
+                    <div className={`absolute top-0 left-0 w-full h-1 z-20 ${isGold ? 'bg-amber-500 shadow-[0_0_20px_orange]' : 'bg-blue-500 shadow-[0_0_20px_blue]'} animate-[slideIn_3s_linear_infinite]`}></div>
 
-            <div className="w-full md:w-1/3 bg-[#0f0f10] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden animate-slide-up-fade">
-                <div className={`absolute top-0 left-0 w-full h-1 ${tier === 'Excellentia' ? 'bg-amber-500' : 'bg-blue-500'}`}></div>
-                
-                <div className="flex justify-between items-end mb-8">
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Total Investment</p>
-                        <h2 className="text-4xl font-mono font-bold text-white mt-2">
-                            {currency === 'NGN' ? '₦' : '$'}{price.toLocaleString()}
-                        </h2>
+                    <div className="p-10 relative z-10">
+                        <div className="text-center mb-8">
+                            <div className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-6 border ${isGold ? 'bg-amber-900/10 border-amber-500/20 text-amber-500' : 'bg-blue-900/10 border-blue-500/20 text-blue-500'}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                            </div>
+                            <h1 className="text-4xl font-display font-bold text-white mb-2">{isGold ? 'EXCELLENTIA ACCESS' : 'SCHOLAR PASS'}</h1>
+                            <p className="text-xs text-gray-500 uppercase tracking-[0.3em]">{isGold ? 'UNLIMITED NEURAL ACCESS' : 'STANDARD ACADEMIC LICENSE'}</p>
+                        </div>
+
+                        <div className="flex justify-between items-end mb-8 bg-white/5 p-4 rounded-xl border border-white/5">
+                            <div>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Total Due Now</p>
+                                <p className="text-3xl font-mono font-bold text-white">{currency === 'NGN' ? '₦' : '$'}{price.toLocaleString()}</p>
+                            </div>
+                            <div className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${isGold ? 'bg-amber-500 text-black' : 'bg-blue-600 text-white'}`}>
+                                {isGold ? 'GOLD TIER' : 'STD TIER'}
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleCheckout} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Billing Email</label>
+                                <input 
+                                    type="email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="scholar@university.edu"
+                                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-4 text-white outline-none focus:border-white/30 transition-all font-mono text-sm"
+                                    required
+                                />
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className={`w-full py-5 rounded-xl font-black uppercase text-xs tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isGold ? 'bg-white text-black hover:bg-amber-50' : 'bg-white text-black hover:bg-blue-50'}`}
+                            >
+                                {loading ? 'INITIATING GATEWAY...' : 'CONFIRM PAYMENT'}
+                            </button>
+                        </form>
+                        
+                        <div className="mt-6 flex items-center justify-center gap-4 opacity-40">
+                            <div className="h-3 w-8 bg-gray-500 rounded"></div>
+                            <div className="h-3 w-8 bg-gray-500 rounded"></div>
+                            <div className="h-3 w-8 bg-gray-500 rounded"></div>
+                        </div>
+                        
+                        <p className="text-[10px] text-gray-600 text-center mt-4">
+                            Secured by 256-bit Encryption. Cancel anytime.
+                        </p>
                     </div>
-                    <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-gray-400 uppercase">Monthly</span>
                 </div>
-
-                <form onSubmit={handleCheckout} className="space-y-6">
-                    <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Secure Delivery Address</label>
-                        <input 
-                            type="email" 
-                            required
-                            placeholder="student@university.edu"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-white outline-none focus:border-white/30 transition-colors"
-                        />
-                    </div>
-
-                    <button 
-                        type="submit"
-                        disabled={loading}
-                        className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all relative overflow-hidden flex items-center justify-center gap-2 ${
-                            loading ? 'bg-green-900/20 border border-green-500/30 text-green-400' :
-                            tier === 'Excellentia' 
-                            ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20 hover:scale-[1.02]' 
-                            : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20 hover:scale-[1.02]'
-                        }`}
-                    >
-                        {loading ? (
-                            <>
-                                <div className="absolute inset-0 bg-green-500/10 animate-pulse"></div>
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/20 to-transparent -translate-x-full animate-[shimmer_1s_infinite]"></div>
-                                <span className="relative z-10">Establishing Secure Tunnel...</span>
-                            </>
-                        ) : (
-                            <>
-                                Confirm Upgrade
-                                <span>→</span>
-                            </>
-                        )}
-                    </button>
-                </form>
-
-                <p className="text-center text-[9px] text-gray-600 mt-6 uppercase tracking-widest">
-                    Encrypted via Paystack. Cancel Anytime.
-                </p>
             </div>
         </div>
     </div>

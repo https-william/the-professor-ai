@@ -57,17 +57,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
       
       {/* Seamless Background Mesh */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Light Mode: Soft White/Blue/Violet Mist */}
+          {/* Light Mode: Vibrant Aurora */}
           <div className={`absolute inset-0 transition-opacity duration-1000 ${isDark ? 'opacity-0' : 'opacity-100'}`}>
-              <div className="absolute top-[-20%] right-[-10%] w-[80vw] h-[80vw] rounded-full bg-blue-100/50 blur-[120px]"></div>
-              <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-purple-100/60 blur-[100px]"></div>
-              <div className="absolute top-[40%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-white blur-[80px] mix-blend-overlay"></div>
+              <div className="absolute -top-[10%] -left-[10%] w-[80vw] h-[80vw] rounded-full bg-gradient-to-br from-blue-200 via-sky-100 to-transparent blur-[120px] opacity-80"></div>
+              <div className="absolute top-[20%] right-[-20%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-bl from-purple-200 via-pink-100 to-transparent blur-[100px] opacity-70"></div>
+              <div className="absolute bottom-0 left-[20%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-t from-amber-100 to-transparent blur-[120px] opacity-60"></div>
           </div>
 
-          {/* Dark Mode: Deep Space Orbs - Subtle Movement */}
+          {/* Dark Mode: Deep Nebula */}
           <div className={`absolute inset-0 transition-opacity duration-1000 ${isDark ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full blur-[100px] opacity-20 animate-mesh-drift bg-blue-900"></div>
-              <div className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] rounded-full blur-[120px] opacity-20 animate-mesh-drift bg-indigo-900" style={{ animationDirection: 'reverse', animationDuration: '25s' }}></div>
+              <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full blur-[100px] opacity-40 animate-mesh-drift bg-gradient-to-br from-blue-900 to-violet-900"></div>
+              <div className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] rounded-full blur-[120px] opacity-30 animate-mesh-drift bg-gradient-to-tl from-indigo-900 to-black" style={{ animationDirection: 'reverse', animationDuration: '25s' }}></div>
+              <div className="absolute top-[40%] left-[40%] w-[30vw] h-[30vw] rounded-full blur-[80px] opacity-20 bg-blue-600 mix-blend-screen animate-pulse-slow"></div>
           </div>
       </div>
 
@@ -127,12 +128,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
                         </span>
                     </div>
 
-                    {/* The Hero XYZ - Premium Gradient */}
+                    {/* The Hero XYZ - Premium Gradient with Distinct Underline */}
                     <div className="relative group cursor-default rotate-[2deg] transform transition-transform hover:scale-105 duration-300">
-                        <span className="text-6xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 drop-shadow-2xl filter brightness-110">
+                        <span className="text-6xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 drop-shadow-2xl filter brightness-110 relative z-10">
                             XYZ.
                         </span>
-                        <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-60 blur-sm"></div>
+                        {/* High Visibility Electric Amber Underline */}
+                        <div className="absolute -bottom-1 left-0 w-full h-2 bg-amber-500 rounded-full shadow-[0_0_15px_#f59e0b] opacity-90 blur-[1px]"></div>
                     </div>
                 </div>
              </div>

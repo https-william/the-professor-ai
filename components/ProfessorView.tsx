@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ProfessorState, LockInConfig } from '../types';
 import { MermaidDiagram } from './MermaidDiagram';
 import { KnowledgeGraph } from './KnowledgeGraph';
-import { generateSummary } from '../services/geminiService';
 import { LockInModal } from './LockInModal';
 import { StudyRoom } from './StudyRoom';
 import DOMPurify from 'dompurify';

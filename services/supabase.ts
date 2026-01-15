@@ -20,56 +20,41 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // --- AUTHENTICATION ---
 
 export const signInWithGoogle = async () => {
-    const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
-    
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}` : undefined;
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: redirectTo,
-            queryParams: {
-                access_type: 'offline',
-                prompt: 'consent',
-            },
+            redirectTo,
+            queryParams: { access_type: 'offline', prompt: 'consent' },
         },
     });
     if (error) throw error;
 };
 
 export const registerWithEmail = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-    });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     return data;
 };
 
 export const loginWithEmail = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
 };
 
 export const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error("Logout error", error);
+    await supabase.auth.signOut();
 };
 
 // --- DATABASE (PROFILES) ---
 
 export const saveUserToSupabase = async (userId: string, data: Partial<UserProfile>) => {
-    const payload: any = { ...data };
-    
-    // Check if user exists
     const { data: existing } = await supabase.from('profiles').select('id').eq('id', userId).single();
-    
     if (existing) {
-        await supabase.from('profiles').update(payload).eq('id', userId);
+        await supabase.from('profiles').update(data).eq('id', userId);
     } else {
-        await supabase.from('profiles').insert([{ id: userId, ...payload }]);
+        await supabase.from('profiles').insert([{ id: userId, ...data }]);
     }
 };
 
@@ -85,23 +70,10 @@ export const updateUserPlan = async (userId: string, newPlan: SubscriptionTier) 
 
 export const createShareLink = async (type: 'EXAM' | 'PROFESSOR', title: string, data: any): Promise<string | null> => {
     try {
-        const { data: shareData, error } = await supabase.from('public_shares').insert([{
-            type,
-            title,
-            data
-        }]).select('id').single();
-
-        if (error) {
-            console.error("Share creation failed:", error);
-            // This usually fails due to RLS if not logged in or policy restriction
-            // We return null so the UI can handle it gracefully
-            return null;
-        }
+        const { data: shareData, error } = await supabase.from('public_shares').insert([{ type, title, data }]).select('id').single();
+        if (error) return null;
         return shareData.id;
-    } catch(e) {
-        console.error("Failed to share:", e);
-        return null;
-    }
+    } catch(e) { return null; }
 };
 
 export const getShareData = async (id: string) => {
@@ -110,26 +82,18 @@ export const getShareData = async (id: string) => {
     return data;
 };
 
-// --- DUEL SYSTEM (ARENA) ---
+// --- DUEL SYSTEM (REALTIME) ---
 
 export const initDuelLobby = async (hostId: string, hostName: string, wager: number, content: string, quizConfig: QuizConfig): Promise<{ duelId: string, code: string }> => {
-    const ADJ = ["IRON", "NEON", "CYBER", "VOID", "AZURE", "SOLAR", "LUNAR", "HYPER", "DARK", "SILENT", "CRIMSON", "GOLDEN", "FROZEN", "TOXIC", "RAPID"];
-    const NOUN = ["TIGER", "WOLF", "EAGLE", "STORM", "VORTEX", "CORE", "FLAME", "SHARD", "TITAN", "GHOST", "DRAGON", "PHANTOM", "VIPER", "HAWK", "RAVEN"];
-    
-    // Append 4 random digits to ensure uniqueness
+    const ADJ = ["IRON", "NEON", "CYBER", "VOID", "AZURE"];
+    const NOUN = ["TIGER", "WOLF", "EAGLE", "STORM", "VORTEX"];
     const suffix = Math.floor(1000 + Math.random() * 9000); 
     const code = `${ADJ[Math.floor(Math.random()*ADJ.length)]}-${NOUN[Math.floor(Math.random()*NOUN.length)]}-${suffix}`;
 
     const participants: DuelParticipant[] = [{ id: hostId, name: hostName, status: 'JOINED' }];
     
     const { data, error } = await supabase.from('duels').insert([{
-        code,
-        host_id: hostId,
-        participants, // JSONB
-        wager,
-        content,
-        quiz_config: quizConfig,
-        status: 'INITIALIZING'
+        code, host_id: hostId, participants, wager, content, quiz_config: quizConfig, status: 'INITIALIZING'
     }]).select().single();
 
     if (error) throw error;
@@ -137,100 +101,58 @@ export const initDuelLobby = async (hostId: string, hostName: string, wager: num
 };
 
 export const updateDuelWithQuestions = async (duelId: string, questions: QuizQuestion[]) => {
-    await supabase.from('duels').update({
-        quiz_questions: questions,
-        status: 'WAITING'
-    }).eq('id', duelId);
+    await supabase.from('duels').update({ quiz_questions: questions, status: 'WAITING' }).eq('id', duelId);
 };
 
 export const joinDuelByCode = async (code: string, userId: string, userName: string): Promise<string> => {
-    // 1. Find Duel
-    const { data: duels, error } = await supabase.from('duels')
-        .select('*')
-        .eq('code', code.toUpperCase())
-        .in('status', ['INITIALIZING', 'WAITING']);
-        
-    if (error || !duels || duels.length === 0) throw new Error("Arena not found or active.");
+    const { data: duels, error } = await supabase.from('duels').select('*').eq('code', code.toUpperCase()).in('status', ['INITIALIZING', 'WAITING']);
+    if (error || !duels || duels.length === 0) throw new Error("Arena not found.");
     
     const duel = duels[0];
     const participants = duel.participants as DuelParticipant[];
     
-    // Check if already joined
     if (participants.some(p => p.id === userId)) return duel.id;
-    
-    // Check capacity (Hard limit 30 based on new modal requirement)
     if (participants.length >= 30) throw new Error("Arena is full.");
 
-    // Add participant
     const newParticipant: DuelParticipant = { id: userId, name: userName, status: 'JOINED' };
-    const updatedParticipants = [...participants, newParticipant];
-    
-    await supabase.from('duels').update({ participants: updatedParticipants }).eq('id', duel.id);
+    await supabase.from('duels').update({ participants: [...participants, newParticipant] }).eq('id', duel.id);
     return duel.id;
 };
 
 export const subscribeToDuel = (duelId: string, onUpdate: (data: DuelState) => void) => {
-    const channel = supabase.channel(`duel:${duelId}`)
+    // Initial fetch
+    supabase.from('duels').select('*').eq('id', duelId).single().then(({ data }) => {
+        if (data) onUpdate(mapDuelState(data));
+    });
+
+    const channel = supabase.channel(`duel-${duelId}`)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: `id=eq.${duelId}` }, (payload) => {
-            const d = payload.new;
-            const mapped: DuelState = {
-                id: d.id,
-                code: d.code,
-                hostId: d.host_id,
-                participants: d.participants,
-                wager: d.wager,
-                content: d.content,
-                quizConfig: d.quiz_config,
-                quizQuestions: d.quiz_questions,
-                status: d.status,
-                winnerId: d.winner_id,
-                suddenDeathQuestion: d.sudden_death_question,
-                createdAt: new Date(d.created_at).getTime()
-            };
-            onUpdate(mapped);
+            onUpdate(mapDuelState(payload.new));
         })
         .subscribe();
-
-    supabase.from('duels').select('*').eq('id', duelId).single().then(({ data }) => {
-        if (data) {
-            const mapped: DuelState = {
-                id: data.id,
-                code: data.code,
-                hostId: data.host_id,
-                participants: data.participants,
-                wager: data.wager,
-                content: data.content,
-                quizConfig: data.quiz_config,
-                quizQuestions: data.quiz_questions,
-                status: data.status,
-                winnerId: data.winner_id,
-                suddenDeathQuestion: data.sudden_death_question,
-                createdAt: new Date(data.created_at).getTime()
-            };
-            onUpdate(mapped);
-        }
-    });
 
     return () => { supabase.removeChannel(channel); };
 };
 
+const mapDuelState = (d: any): DuelState => ({
+    id: d.id,
+    code: d.code,
+    hostId: d.host_id,
+    participants: d.participants,
+    wager: d.wager,
+    content: d.content,
+    quizConfig: d.quiz_config,
+    quizQuestions: d.quiz_questions,
+    status: d.status,
+    winnerId: d.winner_id,
+    suddenDeathQuestion: d.sudden_death_question,
+    createdAt: new Date(d.created_at).getTime()
+});
+
 export const getDuel = async (duelId: string): Promise<DuelState | null> => {
     const { data, error } = await supabase.from('duels').select('*').eq('id', duelId).single();
     if (error || !data) return null;
-    return {
-        id: data.id,
-        code: data.code,
-        hostId: data.host_id,
-        participants: data.participants,
-        wager: data.wager,
-        content: data.content,
-        quizConfig: data.quiz_config,
-        quizQuestions: data.quiz_questions,
-        status: data.status,
-        winnerId: data.winner_id,
-        suddenDeathQuestion: data.sudden_death_question,
-        createdAt: new Date(data.created_at).getTime()
-    };
+    return mapDuelState(data);
 };
 
 export const submitDuelScore = async (duelId: string, userId: string, score: number) => {
@@ -245,6 +167,7 @@ export const submitDuelScore = async (duelId: string, userId: string, score: num
     
     if (updatedParticipants.every(p => p.status === 'COMPLETED')) {
         const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
+        // Check for tie
         if (sorted.length > 1 && sorted[0].score === sorted[1].score) {
             updateData.status = 'SUDDEN_DEATH_PENDING';
         } else {
@@ -257,132 +180,107 @@ export const submitDuelScore = async (duelId: string, userId: string, score: num
 };
 
 export const activateSuddenDeath = async (duelId: string, question: QuizQuestion) => {
-    await supabase.from('duels').update({
-        status: 'SUDDEN_DEATH_ACTIVE',
-        sudden_death_question: question
-    }).eq('id', duelId);
+    await supabase.from('duels').update({ status: 'SUDDEN_DEATH_ACTIVE', sudden_death_question: question }).eq('id', duelId);
 };
 
 export const submitSuddenDeathAnswer = async (duelId: string, userId: string, isCorrect: boolean) => {
     const duel = await getDuel(duelId);
     if (!duel) return;
-    
     const updatedParticipants = duel.participants.map(p => 
         p.id === userId ? { ...p, score: isCorrect ? (p.score || 0) + 1 : (p.score || 0), suddenDeathStatus: 'COMPLETED' as const } : p
     );
     
     let updateData: any = { participants: updatedParticipants };
-    
     if (updatedParticipants.every(p => p.suddenDeathStatus === 'COMPLETED')) {
         updateData.status = 'COMPLETED';
         const sorted = [...updatedParticipants].sort((a, b) => (b.score || 0) - (a.score || 0));
         updateData.winner_id = sorted[0].id;
     }
-    
     await supabase.from('duels').update(updateData).eq('id', duelId);
 };
 
-// --- THE HUB (SUPABASE REALTIME) ---
-
-const MOCK_HUB_KEY = 'mock_hub_rooms';
+// --- THE HUB (REALTIME) ---
 
 export const createHubRoom = async (hostAlias: string, modules: ProfessorSection[]): Promise<string> => {
-    try {
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-        // Try creating in Supabase
-        const { data, error } = await supabase.from('hubs').insert({
-            code,
-            host: hostAlias,
-            modules,
-            participants: [hostAlias]
-        }).select('id').single();
-
-        if (error) throw error;
-        return data.id;
-    } catch (e: any) {
-        // Mock Fallback
-        console.warn("Using Mock Hub (DB Error)", e);
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const id = Date.now().toString();
-        const room = { id, code, host: hostAlias, modules, participants: [hostAlias], messages: [] };
-        const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
-        existing.push(room);
-        localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
-        return id;
-    }
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const { data, error } = await supabase.from('hubs').insert({
+        code, host: hostAlias, modules, participants: [hostAlias]
+    }).select('id').single();
+    if (error) throw error;
+    return data.id;
 };
 
 export const joinHubRoom = async (code: string, userAlias: string): Promise<string> => {
-    try {
-        const { data: hubs, error } = await supabase.from('hubs').select('*').eq('code', code.toUpperCase());
-        if (error || !hubs || hubs.length === 0) throw new Error("Room not found.");
-        const room = hubs[0];
-        
-        const participants = room.participants || [];
-        if (!participants.includes(userAlias)) {
-            await supabase.from('hubs').update({ participants: [...participants, userAlias] }).eq('id', room.id);
-        }
-        return room.id;
-    } catch (e: any) {
-        // Mock Fallback
-        const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
-        const room = existing.find((r: any) => r.code === code);
-        if (room) {
-            if (!room.participants.includes(userAlias)) {
-                room.participants.push(userAlias);
-                localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
-            }
-            return room.id;
-        }
-        throw e;
+    const { data: hubs, error } = await supabase.from('hubs').select('*').eq('code', code.toUpperCase());
+    if (error || !hubs || hubs.length === 0) throw new Error("Room not found.");
+    const room = hubs[0];
+    
+    const participants = room.participants || [];
+    if (!participants.includes(userAlias)) {
+        await supabase.from('hubs').update({ participants: [...participants, userAlias] }).eq('id', room.id);
     }
+    return room.id;
 };
 
 export const sendHubMessage = async (roomId: string, sender: string, content: string, type: 'text' | 'audio' = 'text') => {
-    try {
-        const { error } = await supabase.from('hub_messages').insert({
-            hub_id: roomId,
-            sender,
-            content,
-            type
-        });
-        if (error) throw error;
-    } catch (e) {
-        // Mock
-        const existing = JSON.parse(localStorage.getItem(MOCK_HUB_KEY) || '[]');
-        const idx = existing.findIndex((r: any) => r.id === roomId);
-        if (idx !== -1) {
-            existing[idx].messages = existing[idx].messages || [];
-            existing[idx].messages.push({
-                id: Date.now().toString(),
-                sender, content, type, timestamp: Date.now()
-            });
-            localStorage.setItem(MOCK_HUB_KEY, JSON.stringify(existing));
-        }
-    }
+    await supabase.from('hub_messages').insert({ hub_id: roomId, sender, content, type });
 };
 
-export const subscribeToHubMessages = (roomId: string, onUpdate: (msgs: any[]) => void) => {
-    // Initial Fetch
+// Realtime Chat + Typing Indicators + Presence
+export const subscribeToHub = (
+    roomId: string, 
+    userAlias: string,
+    onMessages: (msgs: any[]) => void,
+    onTyping: (users: string[]) => void,
+    onPresence: (users: string[]) => void
+) => {
+    // 1. Load existing messages
     supabase.from('hub_messages').select('*').eq('hub_id', roomId).order('created_at', { ascending: true })
-        .then(({ data }) => {
-            if (data) onUpdate(data);
-        });
+        .then(({ data }) => { if (data) onMessages(data); });
 
-    const channel = supabase.channel(`hub:${roomId}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hub_messages', filter: `hub_id=eq.${roomId}` }, (payload) => {
-            // Re-fetch all or append (simplest is append, but for consistency we might re-fetch if order matters heavily)
-            // Ideally we just append
-            // For now, let's just re-trigger a fetch to be safe on order, or pass the new msg
-            // But the UI expects an array of messages.
-            supabase.from('hub_messages').select('*').eq('hub_id', roomId).order('created_at', { ascending: true })
-                .then(({ data }) => {
-                    if (data) onUpdate(data);
-                });
-        })
-        .subscribe();
+    // 2. Setup Channel
+    const channel = supabase.channel(`hub_room_${roomId}`, {
+        config: { presence: { key: userAlias } }
+    });
 
-    return () => { supabase.removeChannel(channel); };
+    // 3. Listen for new messages
+    channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hub_messages', filter: `hub_id=eq.${roomId}` }, (payload) => {
+        // Optimistic update or refetch? Refetch safer for order.
+        supabase.from('hub_messages').select('*').eq('hub_id', roomId).order('created_at', { ascending: true })
+            .then(({ data }) => { if (data) onMessages(data); });
+    });
+
+    // 4. Listen for Broadcasts (Typing)
+    const typingUsers = new Set<string>();
+    channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.user !== userAlias) {
+            typingUsers.add(payload.user);
+            onTyping(Array.from(typingUsers));
+            // Clear after 3 seconds
+            setTimeout(() => {
+                typingUsers.delete(payload.user);
+                onTyping(Array.from(typingUsers));
+            }, 3000);
+        }
+    });
+
+    // 5. Presence (Who is online)
+    channel.on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const users = Object.keys(state);
+        onPresence(users);
+    });
+
+    channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+            await channel.track({ online_at: new Date().toISOString() });
+        }
+    });
+
+    return {
+        unsubscribe: () => supabase.removeChannel(channel),
+        sendTyping: () => channel.send({ type: 'broadcast', event: 'typing', payload: { user: userAlias } })
+    };
 };
 
 // --- ADMIN OPS ---
@@ -399,8 +297,4 @@ export const deleteUserAccount = async (userId: string) => {
 
 export const toggleBanUser = async (userId: string, currentStatus: boolean) => {
     await supabase.from('profiles').update({ is_banned: !currentStatus }).eq('id', userId);
-};
-
-export const adminUpdateUser = async (userId: string, data: Partial<UserProfile>) => {
-    await supabase.from('profiles').update(data).eq('id', userId);
 };

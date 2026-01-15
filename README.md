@@ -121,5 +121,5 @@ The build artifact includes PWA manifest generation for installation on mobile d
 ---
 
 <div align="center">
-  <small>Built with 🔵 by Vexis Automations.</small>
+  <small>Built by Vexis Automations.</small>
 </div>

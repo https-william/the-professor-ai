@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, ChatState } from '../types';
 import { generateChatResponse } from '../services/geminiService';
@@ -25,10 +26,22 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
 
   useEffect(() => {
     if (chatState.messages.length === 0) {
+      // LOGIC FIX: Check if we actually have a file context or if this is a general session
+      const hasContext = chatState.fileContext && chatState.fileContext.trim().length > 0;
+      const fileName = chatState.fileName || 'your document';
+      
+      let introText = "";
+      
+      if (hasContext) {
+          introText = `I have analyzed ${fileName}. I am ready to answer any questions, verify your understanding, or debate the concepts within.`;
+      } else {
+          introText = "I am The Professor. I am ready to assist you with any academic subject, generate study plans, or explain complex topics. What are we studying today?";
+      }
+
       const initMsg: ChatMessage = {
           id: 'init',
           role: 'model',
-          content: `I have analyzed ${chatState.fileName || 'your document'}. I am ready to answer any questions, verify your understanding, or debate the concepts within. What is on your mind?`,
+          content: introText,
           timestamp: Date.now()
       };
       onUpdate({ ...chatState, messages: [initMsg] });
@@ -61,7 +74,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
     setIsTyping(true);
 
     try {
-      const responseText = await generateChatResponse(newMessages, chatState.fileContext, userMsg.content);
+      const responseText = await generateChatResponse(newMessages, chatState.fileContext || "", userMsg.content);
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
@@ -202,7 +215,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask a follow-up question..."
+                  placeholder={chatState.fileContext ? "Ask about the document..." : "Ask the Professor anything..."}
                   className="flex-1 bg-transparent text-white outline-none text-sm font-medium px-2 py-1 placeholder-gray-600"
               />
 
