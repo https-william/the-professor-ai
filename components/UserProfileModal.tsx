@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, HistoryItem, QuizState } from '../types';
 import { queueAction } from '../services/syncService';
 import { useAuth } from '../contexts/AuthContext';
 import { loadHistory } from '../services/storageService';
 import { useTheme } from '../contexts/ThemeContext';
+import { uploadAvatar } from '../services/supabase';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -28,11 +29,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const { theme, setTheme } = useTheme();
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
       setEditedProfile(profile);
       if (isOpen) {
           setHistory(loadHistory());
+          // Hide dock when open (Handled via z-index in CSS, z-50 is higher than dock)
       }
   }, [profile, isOpen]);
 
@@ -46,6 +50,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       onClose();
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0] && user) {
+          setIsUploading(true);
+          try {
+              const file = e.target.files[0];
+              const publicUrl = await uploadAvatar(file, user.uid);
+              if (publicUrl) {
+                  const updated = { ...editedProfile, photoURL: publicUrl };
+                  setEditedProfile(updated);
+                  // Auto-save just in case
+                  onSave(updated);
+              } else {
+                  alert("Upload failed. Try a smaller image.");
+              }
+          } catch(err) {
+              console.error(err);
+              alert("Error uploading image.");
+          } finally {
+              setIsUploading(false);
+          }
+      }
+  };
+
+  // ... (Keep existing transcript logic) ...
   const calculateGrade = (score: number, total: number) => {
       const pct = (score / total) * 100;
       if (pct >= 90) return { letter: 'A', gpa: 4.0 };
@@ -196,9 +224,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       <div className="relative bg-panel w-full max-w-3xl rounded-[2rem] border border-border-main shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade text-text-pri">
         
         {/* Header - Dossier Style */}
-        <div className="p-6 border-b border-border-main bg-white/5 flex justify-between items-center shrink-0">
+        <div className="p-6 border-b border-border-main bg-black/5 dark:bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-900/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-400 shadow-lg">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-500 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
               </div>
               <div>
@@ -213,10 +241,27 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             
             {/* Identity Block */}
             <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
-               <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${editedProfile.avatarGradient} flex items-center justify-center shadow-2xl ring-4 ring-black/10 border border-white/10 shrink-0`}>
-                   {/* Abstract Geometric Avatar instead of Emoji */}
-                   <div className="w-16 h-16 bg-white/20 rotate-45 transform skew-x-12 rounded-xl backdrop-blur-sm border border-white/40"></div>
+               <div 
+                 onClick={() => fileInputRef.current?.click()}
+                 className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-black/10 border border-border-main shrink-0 cursor-pointer overflow-hidden relative group`}
+                 style={{ 
+                     background: editedProfile.photoURL ? `url(${editedProfile.photoURL}) center/cover` : `linear-gradient(to bottom right, #3b82f6, #06b6d4)` 
+                 }}
+               >
+                   {!editedProfile.photoURL && (
+                       <div className="w-16 h-16 bg-white/20 rotate-45 transform skew-x-12 rounded-xl backdrop-blur-sm border border-white/40"></div>
+                   )}
+                   {/* Upload Overlay */}
+                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                       {isUploading ? (
+                           <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                       ) : (
+                           <span className="text-xs text-white font-bold uppercase">Change</span>
+                       )}
+                   </div>
                </div>
+               <input ref={fileInputRef} type="file" className="hidden" onChange={handleAvatarUpload} accept="image/*" />
+
                <div className="text-center sm:text-left flex-1 w-full">
                    <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
                        <h2 className="text-3xl font-bold font-serif">{editedProfile.alias || 'Anonymous'}</h2>
@@ -233,12 +278,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                    </div>
                    
                    <div className="grid grid-cols-2 gap-4 mt-6">
-                       <div className="bg-white/5 p-3 rounded-xl border border-border-main">
+                       <div className="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-border-main">
                            <span className="text-[10px] text-text-sec uppercase font-bold block mb-1">XP Level</span>
                            <span className="text-xl font-mono">{Math.floor((profile.xp || 0)/100)}</span>
                            <span className="text-[10px] text-text-sec block mt-1">{(profile.xp || 0)} Total XP</span>
                        </div>
-                       <div className="bg-white/5 p-3 rounded-xl border border-border-main">
+                       <div className="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-border-main">
                            <span className="text-[10px] text-text-sec uppercase font-bold block mb-1">Streak</span>
                            <span className="text-xl text-amber-500 font-mono">{profile.streak} Days</span>
                            <span className="text-[10px] text-text-sec block mt-1">Keep it up</span>
@@ -247,7 +292,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                    
                    <button 
                      onClick={generateTranscript}
-                     className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 text-text-pri rounded-lg text-xs font-bold uppercase tracking-widest border border-border-main flex items-center justify-center gap-2"
+                     className="mt-6 w-full py-3 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-pri rounded-lg text-xs font-bold uppercase tracking-widest border border-border-main flex items-center justify-center gap-2"
                    >
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                        Download Official Transcript
@@ -258,21 +303,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             {/* Interface Settings (Theme) */}
             <div>
                 <h4 className="text-xs font-bold text-text-sec uppercase tracking-widest mb-4 border-b border-border-main pb-2">Interface Protocol</h4>
-                <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-border-main">
+                <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-border-main">
                     <div>
                         <span className="font-bold text-sm block mb-1">System Visuals</span>
                         <span className="text-xs text-text-sec">Override neural interface appearance.</span>
                     </div>
-                    <div className="flex bg-black/20 p-1 rounded-lg border border-white/5">
+                    <div className="flex bg-black/10 dark:bg-black/40 p-1 rounded-lg border border-border-main">
                         <button 
                             onClick={() => setTheme('Dark')}
-                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Dark' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Dark' ? 'bg-text-pri text-core shadow-lg' : 'text-text-sec hover:text-text-pri'}`}
                         >
                             Deep Space
                         </button>
                         <button 
                             onClick={() => setTheme('Light')}
-                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Light' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Light' ? 'bg-text-pri text-core shadow-lg' : 'text-text-sec hover:text-text-pri'}`}
                         >
                             Academic Air
                         </button>
@@ -289,7 +334,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                         const percent = (ach.progress / ach.total) * 100;
                         
                         return (
-                            <div key={ach.id} className={`relative p-4 rounded-xl border transition-all duration-300 group overflow-hidden ${isUnlocked ? `${ach.color} bg-opacity-20` : 'bg-black/40 border-border-main opacity-70 grayscale'}`}>
+                            <div key={ach.id} className={`relative p-4 rounded-xl border transition-all duration-300 group overflow-hidden ${isUnlocked ? `${ach.color} bg-opacity-20` : 'bg-black/10 dark:bg-black/40 border-border-main opacity-70 grayscale'}`}>
                                 <div className="relative z-10 flex flex-col items-center text-center h-full">
                                     <div className={`text-4xl mb-3 transform transition-transform group-hover:scale-110 drop-shadow-md`}>
                                         {ach.icon}
@@ -301,7 +346,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                                         {ach.desc}
                                     </p>
                                     
-                                    <div className="w-full bg-black/50 h-1.5 rounded-full overflow-hidden border border-white/5 mt-auto">
+                                    <div className="w-full bg-black/20 h-1.5 rounded-full overflow-hidden border border-border-main mt-auto">
                                         <div 
                                             className={`h-full transition-all duration-1000 ${isUnlocked ? 'bg-green-500' : 'bg-blue-500'}`}
                                             style={{ width: `${percent}%` }}
@@ -317,13 +362,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
             {/* Danger Zone */}
             <div className="pt-6 border-t border-border-main">
-                <button onClick={onLogout} className="w-full py-4 bg-red-900/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-900/20 transition-all">
+                <button onClick={onLogout} className="w-full py-4 bg-red-900/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-900/20 transition-all">
                     Terminals Logout
                 </button>
             </div>
         </div>
 
-        <div className="p-6 border-t border-border-main bg-white/5 flex justify-between items-center shrink-0">
+        <div className="p-6 border-t border-border-main bg-black/5 dark:bg-white/5 flex justify-between items-center shrink-0">
            <button 
              onClick={onRequestAdminAccess}
              className="text-[7px] font-bold uppercase tracking-widest text-text-sec hover:text-red-900 transition-colors"

@@ -66,6 +66,30 @@ export const updateUserPlan = async (userId: string, newPlan: SubscriptionTier) 
     await supabase.from('profiles').update({ plan: newPlan }).eq('id', userId);
 };
 
+// --- STORAGE (AVATARS) ---
+
+export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
+    try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}-${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            throw uploadError;
+        }
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        return data.publicUrl;
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        return null;
+    }
+};
+
 // --- SHARING SYSTEM ---
 
 export const createShareLink = async (type: 'EXAM' | 'PROFESSOR', title: string, data: any): Promise<string | null> => {

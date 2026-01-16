@@ -20,7 +20,7 @@
     <script src="https://js.stripe.com/v3/"></script>
     <script src="https://js.paystack.co/v1/inline.js"></script>
     
-    <!-- Google APIs (For Drive Picker) -->
+    <!-- Google APIs -->
     <script async defer src="https://apis.google.com/js/api.js"></script>
     <script async defer src="https://accounts.google.com/gsi/client.js"></script>
 
@@ -46,23 +46,55 @@
       // PDF Worker
       const PDF_WORKER_SRC = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
       
+      // GLOBAL ERROR BOUNDARY - Prevents Black Screen of Death
+      window.onerror = function(msg, url, line, col, error) {
+        console.error("Global Error Caught:", msg, error);
+        const preloader = document.getElementById('preloader-core');
+        if (preloader) {
+          preloader.innerHTML = `
+            <div style="text-align: center; padding: 2rem; max-width: 400px; border: 1px solid rgba(220, 38, 38, 0.5); background: #050505; border-radius: 1rem; color: #ef4444; font-family: monospace;">
+              <h2 style="font-weight: bold; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 1.2rem;">System Critical Failure</h2>
+              <p style="color: #9ca3af; font-size: 0.8rem; margin-bottom: 1.5rem; line-height: 1.4;">${msg}</p>
+              <button onclick="window.location.reload()" style="background: #ef4444; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em;">Reboot System</button>
+            </div>
+          `;
+          preloader.style.opacity = '1';
+          preloader.style.pointerEvents = 'auto';
+          preloader.style.zIndex = '99999';
+        }
+      };
+
       window.addEventListener('load', function() {
-         // SAFETY TIMEOUT: If React doesn't hydrate within 5 seconds, remove the loader
-         setTimeout(() => {
-             const preloader = document.getElementById('preloader-core');
-             if(preloader) {
-                preloader.style.opacity = '0';
-                preloader.style.pointerEvents = 'none';
-                setTimeout(() => preloader.remove(), 500);
-             }
-         }, 5000);
-         
          if (typeof pdfjsLib !== 'undefined') {
              pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
          }
          if (typeof mermaid !== 'undefined') {
              mermaid.initialize({ startOnLoad: false, theme: 'dark' });
          }
+
+         // SAFE PRELOADER REMOVAL
+         // Only remove the loading screen if React has actually mounted something into #root
+         const checkMount = setInterval(() => {
+             const root = document.getElementById('root');
+             // Check if root has children (React has mounted)
+             if (root && root.childElementCount > 0) {
+                 const preloader = document.getElementById('preloader-core');
+                 if (preloader) {
+                     preloader.style.opacity = '0';
+                     preloader.style.pointerEvents = 'none';
+                     setTimeout(() => preloader.remove(), 500);
+                 }
+                 clearInterval(checkMount);
+             }
+         }, 100);
+
+         // Failsafe: If nothing happens in 8 seconds, log warning but don't force remove (keeps error visible if any)
+         setTimeout(() => {
+             if (document.getElementById('preloader-core')) {
+                 console.warn("React mount timed out - Preloader still active.");
+                 clearInterval(checkMount);
+             }
+         }, 8000);
       });
 
       // Tailwind Config
@@ -90,9 +122,6 @@
               'slide-up-fade': 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
               'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'shimmer': 'shimmer 2.5s linear infinite',
-              'orbit': 'orbit 3s linear infinite',
-              'orbit-reverse': 'orbit-reverse 4s linear infinite',
-              'breathe': 'breathe 3s ease-in-out infinite',
               'liquid-blob': 'liquidBlob 20s infinite alternate',
               'mesh-drift': 'meshDrift 20s ease-in-out infinite alternate',
             },
@@ -101,9 +130,6 @@
               slideIn: { '0%': { transform: 'translateX(30px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
               slideUpFade: { '0%': { opacity: '0', transform: 'translateY(30px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
               shimmer: { '0%': { backgroundPosition: '-200% center' }, '100%': { backgroundPosition: '200% center' } },
-              orbit: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
-              'orbit-reverse': { '0%': { transform: 'rotate(360deg)' }, '100%': { transform: 'rotate(0deg)' } },
-              breathe: { '0%, 100%': { transform: 'scale(1)', opacity: '0.8' }, '50%': { transform: 'scale(1.1)', opacity: '0.4' } },
               liquidBlob: {
                 '0%': { transform: 'translate(0, 0) scale(1)' },
                 '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
@@ -125,25 +151,27 @@
     <style>
       /* SEMANTIC VARIABLES */
       :root {
-        /* Light Mode: "Academic Air" - Clean, Paper-like, Premium */
-        --bg-core: #F0F4F8; 
-        --bg-panel: rgba(255, 255, 255, 0.85);
-        --border-main: rgba(0, 0, 0, 0.08); 
-        --text-pri: #1E293B; /* Slate 800 */
-        --text-sec: #64748B; /* Slate 500 */
-        --accent-solid: #2563EB; /* Royal Blue */
+        /* Light Mode */
+        --bg-core: #F9F9F7; 
+        --bg-panel: rgba(255, 255, 255, 0.75);
+        --border-main: rgba(0, 0, 0, 0.06); 
+        --text-pri: #1C1C1C; 
+        --text-sec: #575757; 
+        --accent-solid: #2563EB; 
         --noise-opacity: 0.03; 
+        --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
       }
 
       .dark {
-        /* Dark Mode: "Deep Space" - High Contrast, Neon */
-        --bg-core: #030712; 
-        --bg-panel: rgba(17, 24, 39, 0.7); 
+        /* Dark Mode */
+        --bg-core: #050505; 
+        --bg-panel: rgba(10, 10, 12, 0.65); 
         --border-main: rgba(255, 255, 255, 0.08);
-        --text-pri: #F8FAFC; 
-        --text-sec: #94A3B8; 
+        --text-pri: #EDEDED; 
+        --text-sec: #888888; 
         --accent-solid: #3B82F6;
         --noise-opacity: 0.05;
+        --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
 
       body { 
@@ -155,7 +183,7 @@
         overflow-x: hidden;
       }
 
-      /* Hide Scrollbar but keep functionality */
+      /* Scrollbar */
       ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 4px; }
@@ -168,54 +196,42 @@
         transition: opacity 0.5s ease;
       }
       
-      /* New macOS Style Glass */
       .glass-panel { 
         background: var(--bg-panel); 
-        backdrop-filter: blur(20px) saturate(180%); 
-        -webkit-backdrop-filter: blur(20px) saturate(180%); 
+        backdrop-filter: blur(16px) saturate(180%); 
+        -webkit-backdrop-filter: blur(16px) saturate(180%); 
         border: 1px solid var(--border-main); 
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: var(--glass-shadow);
         transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
       }
 
-      /* DEPTH BUTTON - "Cluely" Style */
       .btn-depth {
-        background: #111;
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 
-          0 4px 0 rgba(0,0,0,0.5), /* Hard shadow bottom */
-          inset 0 1px 0 rgba(255,255,255,0.1); /* Inner Top Highlight */
-        color: white;
+        background: var(--text-pri);
+        border: 1px solid var(--border-main);
+        color: var(--bg-core);
+        box-shadow: 0 4px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1); 
         transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
       }
-      .btn-depth:hover {
-        transform: translateY(-2px);
-        box-shadow: 
-          0 6px 0 rgba(0,0,0,0.5),
-          inset 0 1px 0 rgba(255,255,255,0.2);
-        filter: brightness(1.2);
+      .dark .btn-depth {
+        background: #111;
+        color: white;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
       }
-      .btn-depth:active {
-        transform: translateY(2px);
-        box-shadow: 
-          0 0 0 rgba(0,0,0,0.5),
-          inset 0 2px 5px rgba(0,0,0,0.3);
-      }
+      .btn-depth:hover { transform: translateY(-2px); filter: brightness(1.1); }
+      .dark .btn-depth:hover { box-shadow: 0 6px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2); }
+      .btn-depth:active { transform: translateY(2px); box-shadow: 0 0 0 rgba(0,0,0,0.2), inset 0 2px 5px rgba(0,0,0,0.1); }
+      .dark .btn-depth:active { box-shadow: 0 0 0 rgba(0,0,0,0.5), inset 0 2px 5px rgba(0,0,0,0.3); }
       
       .btn-depth-blue {
         background: #2563EB;
+        color: white;
         border-color: #3B82F6;
         box-shadow: 0 4px 0 #1e40af, inset 0 1px 0 rgba(255,255,255,0.3);
       }
-      .btn-depth-blue:hover {
-        box-shadow: 0 6px 0 #1e40af, inset 0 1px 0 rgba(255,255,255,0.4);
-      }
-      .btn-depth-blue:active {
-        box-shadow: 0 0 0 #1e40af, inset 0 2px 5px rgba(0,0,0,0.3);
-      }
+      .btn-depth-blue:hover { box-shadow: 0 6px 0 #1e40af, inset 0 1px 0 rgba(255,255,255,0.4); }
+      .btn-depth-blue:active { box-shadow: 0 0 0 #1e40af, inset 0 2px 5px rgba(0,0,0,0.3); }
 
-      /* ORACLE GLOW */
       .oracle-glow {
         box-shadow: 0 0 10px #ef4444, inset 0 0 20px #7f1d1d;
         animation: pulse-glow 3s infinite;
@@ -245,12 +261,13 @@
     "react": "https://esm.sh/react@18.2.0",
     "react/": "https://esm.sh/react@18.2.0/",
     "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react,react-dom",
     "@google/genai": "https://esm.sh/@google/genai@0.12.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
     "dompurify": "https://esm.sh/dompurify@3.0.9",
-    "peerjs": "https://esm.sh/peerjs@1.5.2?bundle"
+    "peerjs": "https://esm.sh/peerjs@1.5.2?bundle",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
@@ -258,10 +275,9 @@
 </head>
   <body>
     <div class="bg-noise"></div>
-    <div id="root">
-      <div id="preloader-core">
-        <div class="loader-spinner"></div>
-      </div>
+    <div id="root"></div>
+    <div id="preloader-core">
+      <div class="loader-spinner"></div>
     </div>
     <div id="printable-content" style="display: none;"></div>
     <script type="module" src="./index.tsx"></script>

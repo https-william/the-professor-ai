@@ -31,12 +31,12 @@ import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelW
 import { processFile } from '../services/fileService';
 
 // Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
-const ProfessorView = React.lazy(() => import('./ProfessorView').then(module => ({ default: module.ProfessorView })));
-const ChatView = React.lazy(() => import('./ChatView').then(module => ({ default: module.ChatView })));
-const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => ({ default: module.FlashcardView })));
-const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub })));
+const QuizView = React.lazy(() => import('./QuizView').then(module => ({ default: module.QuizView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const ProfessorView = React.lazy(() => import('./ProfessorView').then(module => ({ default: module.ProfessorView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const ChatView = React.lazy(() => import('./ChatView').then(module => ({ default: module.ChatView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => ({ default: module.FlashcardView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub }))) as React.LazyExoticComponent<React.ComponentType<any>>;
 
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
@@ -665,10 +665,10 @@ const App: React.FC = () => {
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
-                    {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId, ans) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index) => handleQuizAction('INDEX', { index })} />}
-                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
+                    {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
+                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force) => handleQuizAction('RESET', { force })} />}
+                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}

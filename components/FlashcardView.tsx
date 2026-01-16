@@ -1,17 +1,25 @@
+
 import React, { useState } from 'react';
 import { QuizState, QuizQuestion } from '../types';
+import { generateQuizFromText } from '../services/geminiService';
+import { processFile } from '../services/fileService';
 
 interface FlashcardViewProps {
   quizState: QuizState;
   onExit: (force?: boolean) => void;
+  onGenerate?: (newState: QuizState) => void;
 }
 
-export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit }) => {
+export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit, onGenerate }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [masteredIds, setMasteredIds] = useState<number[]>([]);
   const [reviewIds, setReviewIds] = useState<number[]>([]);
   const [flipped, setFlipped] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'LEFT' | 'RIGHT' | null>(null);
+  
+  // Creation Mode State
+  const [inputText, setInputText] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Guard against missing questions
   const questions = quizState?.questions || [];
@@ -20,16 +28,112 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
   const nextQ = questions[currentIndex + 1];
   const isComplete = questions.length > 0 && currentIndex >= questions.length;
 
-  // CRITICAL GUARD: No questions generated
+  const handleGenerate = async () => {
+      if (!inputText.trim()) return;
+      setIsGenerating(true);
+      try {
+          const generatedQuestions = await generateQuizFromText(inputText, {
+              difficulty: 'Medium',
+              questionType: 'True/False', // Flashcards essentially
+              questionCount: 15,
+              timerDuration: 'Limitless',
+              personality: 'Academic',
+              analogyDomain: 'General'
+          });
+          
+          if (onGenerate) {
+              onGenerate({
+                  questions: generatedQuestions,
+                  userAnswers: {},
+                  flaggedQuestions: [],
+                  isSubmitted: false,
+                  score: 0,
+                  startTime: Date.now(),
+                  timeRemaining: null,
+                  currentQuestionIndex: 0,
+                  focusStrikes: 0
+              });
+          }
+      } catch (e) {
+          alert("Failed to generate deck.");
+      } finally {
+          setIsGenerating(false);
+      }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          setIsGenerating(true);
+          try {
+              const file = e.target.files[0];
+              const processed = await processFile(file);
+              const generatedQuestions = await generateQuizFromText(processed.content, {
+                  difficulty: 'Medium',
+                  questionType: 'True/False',
+                  questionCount: 15,
+                  timerDuration: 'Limitless',
+                  personality: 'Academic',
+                  analogyDomain: 'General'
+              });
+              if (onGenerate) {
+                  onGenerate({
+                      questions: generatedQuestions,
+                      userAnswers: {},
+                      flaggedQuestions: [],
+                      isSubmitted: false,
+                      score: 0,
+                      startTime: Date.now(),
+                      timeRemaining: null,
+                      currentQuestionIndex: 0,
+                      focusStrikes: 0
+                  });
+              }
+          } catch (e) {
+              alert("Failed to process file.");
+          } finally {
+              setIsGenerating(false);
+          }
+      }
+  };
+
+  // CRITICAL GUARD: No questions generated -> Show Creation UI
   if (questions.length === 0) {
       return (
-          <div className="flex flex-col items-center justify-center h-[60vh] text-center p-6">
-              <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center mb-6 border border-red-500/20 text-red-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 max-w-lg mx-auto animate-fade-in">
+              <div className="w-20 h-20 bg-pink-900/20 rounded-full flex items-center justify-center mb-6 border border-pink-500/20 text-pink-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Empty Deck</h3>
-              <p className="text-gray-400 mb-6">No study cards could be generated from this content.</p>
-              <button onClick={() => onExit(true)} className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold uppercase text-xs">Exit</button>
+              <h3 className="text-2xl font-bold text-text-pri mb-2 font-display">Create Flashcard Deck</h3>
+              <p className="text-text-sec mb-8 text-sm">Paste notes or upload a document to generate a study deck instantly.</p>
+              
+              <div className="w-full space-y-4">
+                  <textarea 
+                    className="w-full bg-black/5 dark:bg-white/5 border border-border-main rounded-xl p-4 text-sm outline-none focus:border-pink-500 transition-colors h-32 placeholder-gray-500 text-text-pri"
+                    placeholder="Paste topic content here..."
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                  />
+                  
+                  <div className="flex gap-3">
+                      <button 
+                        onClick={() => document.getElementById('flash-upload')?.click()}
+                        className="flex-1 py-3 border border-border-main hover:bg-white/5 rounded-xl font-bold uppercase text-xs tracking-widest text-text-sec transition-colors"
+                      >
+                          Upload File
+                      </button>
+                      <input id="flash-upload" type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.docx,.txt" />
+                      
+                      <button 
+                        onClick={handleGenerate}
+                        disabled={isGenerating || !inputText.trim()}
+                        className="flex-[2] py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold uppercase text-xs tracking-widest transition-all shadow-lg disabled:opacity-50"
+                      >
+                          {isGenerating ? 'Generating...' : 'Create Deck'}
+                      </button>
+                  </div>
+              </div>
+              
+              <button onClick={() => onExit(true)} className="mt-8 text-text-sec text-xs font-bold uppercase tracking-widest hover:text-text-pri">Cancel</button>
           </div>
       );
   }
@@ -74,20 +178,20 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
       return (
           <div className="max-w-md mx-auto min-h-[60vh] flex flex-col items-center justify-center p-6 text-center animate-fade-in">
               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-text-pri" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Session Complete</h2>
+              <h2 className="text-2xl font-bold text-text-pri mb-2">Session Complete</h2>
               <div className="flex gap-4 text-sm font-mono mb-8">
-                  <span className="text-green-400">{masteredIds.length} Mastered</span>
+                  <span className="text-green-500">{masteredIds.length} Mastered</span>
                   <span className="text-gray-500">|</span>
-                  <span className="text-red-400">{reviewIds.length} To Review</span>
+                  <span className="text-red-500">{reviewIds.length} To Review</span>
               </div>
               
               <div className="flex flex-col gap-3 w-full">
-                  <button onClick={handleRestart} className="w-full py-4 bg-white text-black rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-gray-200 shadow-lg">
+                  <button onClick={handleRestart} className="w-full py-4 bg-text-pri text-core rounded-xl font-bold uppercase text-xs tracking-widest hover:opacity-90 shadow-lg">
                       Restart Session
                   </button>
-                  <button onClick={() => onExit(true)} className="w-full py-4 bg-white/5 text-gray-400 hover:text-white border border-white/10 rounded-xl font-bold uppercase text-xs tracking-widest">
+                  <button onClick={() => onExit(true)} className="w-full py-4 bg-white/5 text-text-sec hover:text-text-pri border border-border-main rounded-xl font-bold uppercase text-xs tracking-widest">
                       Exit
                   </button>
               </div>
@@ -98,10 +202,10 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
   return (
     <div className="max-w-lg mx-auto h-[80vh] flex flex-col relative">
         <div className="flex justify-between items-center py-4 px-4">
-            <button onClick={() => onExit(false)} className="text-gray-500 hover:text-white font-bold text-xs uppercase tracking-widest">
+            <button onClick={() => onExit(false)} className="text-text-sec hover:text-text-pri font-bold text-xs uppercase tracking-widest">
                 Exit
             </button>
-            <div className="text-xs font-mono text-gray-500">
+            <div className="text-xs font-mono text-text-sec">
                 {currentIndex + 1} / {questions.length}
             </div>
         </div>
@@ -109,12 +213,12 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
         <div className="flex-1 relative flex items-center justify-center perspective-1000">
             {/* Background Card (Next Question) */}
             {nextQ && (
-                <div className="absolute inset-4 top-8 bg-[#151518] rounded-3xl border border-white/5 scale-95 opacity-50 translate-y-4"></div>
+                <div className="absolute inset-4 top-8 bg-black/5 dark:bg-[#151518] rounded-3xl border border-border-main scale-95 opacity-50 translate-y-4"></div>
             )}
 
             {/* Active Card */}
             <div 
-                className={`absolute inset-4 bg-[#1a1a1d] rounded-3xl border border-white/10 shadow-2xl flex flex-col transition-all duration-300 cursor-pointer overflow-hidden transform ${
+                className={`absolute inset-4 bg-panel rounded-3xl border border-border-main shadow-2xl flex flex-col transition-all duration-300 cursor-pointer overflow-hidden transform ${
                     swipeDirection === 'LEFT' ? '-translate-x-full rotate-[-15deg] opacity-0' : 
                     swipeDirection === 'RIGHT' ? 'translate-x-full rotate-[15deg] opacity-0' : ''
                 }`}
@@ -139,23 +243,23 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative backface-hidden">
                     {!flipped ? (
                         <div className="animate-fade-in flex flex-col items-center">
-                            <div className="w-12 h-12 bg-blue-900/20 rounded-full flex items-center justify-center mb-6 text-2xl border border-blue-500/20 text-blue-500">
+                            <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 text-2xl border border-blue-500/20 text-blue-500">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>
-                            <h3 className="text-xl md:text-2xl font-medium text-white leading-relaxed select-none">
+                            <h3 className="text-xl md:text-2xl font-medium text-text-pri leading-relaxed select-none">
                                 {currentQ.question}
                             </h3>
-                            <p className="absolute bottom-8 text-[10px] text-gray-600 font-bold uppercase tracking-widest animate-pulse">Tap to Flip</p>
+                            <p className="absolute bottom-8 text-[10px] text-text-sec font-bold uppercase tracking-widest animate-pulse">Tap to Flip</p>
                         </div>
                     ) : (
                         <div className="animate-fade-in flex flex-col items-center w-full">
-                            <div className="w-12 h-12 bg-green-900/20 rounded-full flex items-center justify-center mb-6 text-2xl border border-green-500/20 text-green-500">
+                            <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mb-6 text-2xl border border-green-500/20 text-green-500">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
                             </div>
-                            <h3 className="text-xl font-bold text-green-400 mb-4 select-none">
+                            <h3 className="text-xl font-bold text-green-500 mb-4 select-none">
                                 {currentQ.correct_answer}
                             </h3>
-                            <p className="text-sm text-gray-400 leading-relaxed select-none">
+                            <p className="text-sm text-text-sec leading-relaxed select-none">
                                 {currentQ.explanation}
                             </p>
                         </div>
@@ -169,7 +273,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
             {currentIndex > 0 ? (
                 <button 
                     onClick={handlePrevious}
-                    className="w-12 h-12 rounded-full bg-[#1a1a1d] border border-white/10 text-gray-400 flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
+                    className="w-12 h-12 rounded-full bg-white/5 border border-border-main text-text-sec flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
                     title="Previous Card"
                 >
                     ←
@@ -178,21 +282,21 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit 
 
             <button 
                 onClick={() => handleSwipe('LEFT')}
-                className="w-16 h-16 rounded-full bg-[#1a1a1d] border border-red-500/30 text-red-500 text-2xl flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                className="w-16 h-16 rounded-full bg-white/5 border border-red-500/30 text-red-500 text-2xl flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all active:scale-95"
             >
                 ✕
             </button>
             
             <button 
                 onClick={() => setFlipped(!flipped)}
-                className="px-6 py-3 rounded-full bg-white/5 text-gray-400 text-xs font-bold uppercase hover:bg-white/10 transition-all border border-white/5"
+                className="px-6 py-3 rounded-full bg-white/5 text-text-sec text-xs font-bold uppercase hover:bg-white/10 transition-all border border-border-main"
             >
                 {flipped ? 'Hide' : 'Show'}
             </button>
 
             <button 
                 onClick={() => handleSwipe('RIGHT')}
-                className="w-16 h-16 rounded-full bg-[#1a1a1d] border border-green-500/30 text-green-500 text-2xl flex items-center justify-center shadow-lg hover:bg-green-500 hover:text-white transition-all active:scale-95"
+                className="w-16 h-16 rounded-full bg-white/5 border border-green-500/30 text-green-500 text-2xl flex items-center justify-center shadow-lg hover:bg-green-500 hover:text-white transition-all active:scale-95"
             >
                 ✓
             </button>

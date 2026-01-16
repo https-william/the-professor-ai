@@ -46,31 +46,34 @@ export const Hero: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative text-center py-20 sm:py-24 px-4 z-10 overflow-hidden min-h-[30vh] flex flex-col items-center justify-center">
+    <div className="relative text-center py-20 sm:py-24 px-4 z-10 overflow-visible min-h-[30vh] flex flex-col items-center justify-center">
       
       {/* Parallax Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-visible">
+         {/* Blue Orb - Moves Down */}
          <div 
-           className="absolute top-[10%] left-[10%] w-64 h-64 bg-blue-600/5 rounded-full blur-[80px] will-change-transform opacity-60"
-           style={{ transform: `translateY(${scrollY * 0.2}px)` }}
+           className="absolute top-[5%] left-[15%] w-80 h-80 bg-blue-600/20 rounded-full blur-[100px] will-change-transform opacity-70 mix-blend-screen"
+           style={{ transform: `translateY(${scrollY * 0.4}px)` }}
          ></div>
+         
+         {/* Purple Orb - Moves Up */}
          <div 
-           className="absolute bottom-[20%] right-[10%] w-80 h-80 bg-purple-600/5 rounded-full blur-[100px] will-change-transform opacity-60"
-           style={{ transform: `translateY(-${scrollY * 0.1}px)` }}
+           className="absolute bottom-[10%] right-[15%] w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] will-change-transform opacity-70 mix-blend-screen"
+           style={{ transform: `translateY(-${scrollY * 0.3}px)` }}
          ></div>
       </div>
       
       {/* Main Headline */}
       <div className="relative z-10 mb-4 group cursor-default flex flex-col items-center">
         {/* 'The Professor' - Clean & High End */}
-        <h1 className="text-5xl sm:text-7xl md:text-9xl font-display font-normal tracking-wide text-white drop-shadow-2xl leading-[0.9] px-4 pb-4">
+        <h1 className="text-5xl sm:text-7xl md:text-9xl font-display font-normal tracking-wide text-text-pri drop-shadow-2xl leading-[0.9] px-4 pb-4">
           <DecryptedText text="The Professor" />
         </h1>
       </div>
       
       {/* Subline - Minimal */}
       <div className="max-w-xl mx-auto relative z-10 px-4 animate-slide-up-fade opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
-         <div className="text-sm sm:text-base text-gray-500 font-mono tracking-widest text-center uppercase">
+         <div className="text-sm sm:text-base text-text-sec font-mono tracking-widest text-center uppercase">
             Transforming material into mastery.
          </div>
       </div>

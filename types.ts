@@ -132,7 +132,8 @@ export type AmbientTheme = 'Deep Space';
 export interface UserProfile {
   // Identity
   alias: string;
-  fullName?: string; 
+  fullName?: string;
+  photoURL?: string; 
   age?: string; 
   school?: string; 
   academicLevel?: string; 
