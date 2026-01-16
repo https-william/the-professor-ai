@@ -58,7 +58,7 @@ const App: React.FC = () => {
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
           if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
-          // Reverted checkout direct link to prevent state issues on load
+          // Removed direct checkout route to prevent state race conditions
       }
       return 'LANDING';
   });
