@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { signInWithGoogle, registerWithEmail, loginWithEmail, resendConfirmationEmail, verifyUserOtp } from '../../services/supabase';
 
@@ -30,6 +31,26 @@ export const AuthPage: React.FC = () => {
       return re.test(e);
   };
 
+  const handleAuthError = (err: any) => {
+      setIsAuthenticating(false);
+      const msg = err.message || "Authentication failed.";
+      
+      // Smart Error Handling
+      if (msg.includes("Too many requests") || msg.includes("429")) {
+          setError("Neural Overload: Too many attempts. Please wait 15 minutes before retrying.");
+      } else if (msg.includes("Signups not allowed")) {
+          setError("Enrollment Closed: Contact Administration.");
+      } else if (msg.includes("User already registered")) {
+          setError("Identity already exists in the database. Please log in.");
+          setMode('LOGIN');
+      } else if (msg.includes("Email not confirmed")) {
+          setError("Identity Unverified: Please check your email for the code.");
+          setShowResend(true);
+      } else {
+          setError(msg);
+      }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isAuthenticating) return;
@@ -51,7 +72,7 @@ export const AuthPage: React.FC = () => {
           const result = await registerWithEmail(email, password, fullName || undefined);
           if (result && !result.session) {
               setIsAuthenticating(false);
-              setSuccessMsg("Account Created. Please enter the verification code sent to your email.");
+              setSuccessMsg(`Access Link sent to ${email}. Check your Inbox & Spam.`);
               setMode('VERIFY'); 
               return; 
           }
@@ -59,18 +80,11 @@ export const AuthPage: React.FC = () => {
           await verifyUserOtp(email, otp);
           setIsAuthenticating(false);
           setSuccessMsg("Verification Successful. Logging you in...");
-          // Attempt auto-login or switch to login
           await loginWithEmail(email, password);
           return; 
       }
     } catch (err: any) {
-      setIsAuthenticating(false);
-      const msg = err.message || "Authentication failed.";
-      setError(msg);
-      
-      if (msg.toLowerCase().includes("email not confirmed")) {
-          setShowResend(true);
-      }
+      handleAuthError(err);
     }
   };
 
@@ -78,11 +92,11 @@ export const AuthPage: React.FC = () => {
       if (!email) return;
       try {
           await resendConfirmationEmail(email);
-          setSuccessMsg("Verification code resent. Check your inbox.");
+          setSuccessMsg("Verification signal re-transmitted.");
           setShowResend(false);
           setError(null);
       } catch (e: any) {
-          setError(e.message || "Failed to resend.");
+          handleAuthError(e);
       }
   };
 
@@ -122,7 +136,7 @@ export const AuthPage: React.FC = () => {
          {mode === 'VERIFY' && (
              <div className="mb-6 text-center">
                  <p className="text-xs text-white font-bold uppercase tracking-widest">Verify Identity</p>
-                 <p className="text-[10px] text-gray-500 mt-1">Enter the code sent to {email}</p>
+                 <p className="text-[10px] text-gray-500 mt-1">Enter the 6-digit code sent to {email}</p>
              </div>
          )}
 

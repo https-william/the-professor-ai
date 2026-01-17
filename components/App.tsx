@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -12,6 +13,7 @@ import { AdminLoginPage } from './Auth/AdminLoginPage';
 import { LandingPage } from './LandingPage';
 import { PricingPage } from './PricingPage';
 import { PlanCheckoutPage } from './PlanCheckoutPage';
+import { AuthCallback } from './Auth/AuthCallback';
 import { CountdownTimer } from './CountdownTimer';
 import { AmbientBackground } from './AmbientBackground';
 import { PWAPrompt } from './PWAPrompt';
@@ -54,7 +56,7 @@ const AdminDashboard = lazyRetry(() => import('./AdminDashboard'));
 const TheHub = lazyRetry(() => import('./TheHub'));
 
 // Added missing ViewState type
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK';
 
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
@@ -68,8 +70,14 @@ const App: React.FC = () => {
   
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
+          // 1. Check for Auth Callback (PKCE or Implicit)
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('code')) return 'AUTH_CALLBACK';
+          if (window.location.hash.includes('access_token')) return 'AUTH_CALLBACK';
+
           const path = window.location.pathname.toLowerCase();
           const hash = window.location.hash;
+          
           if (hash.startsWith('#/share/')) return 'SHARED';
           if (path === '/pricing' || path === '/tuition') return 'PRICING';
           if (path === '/login' || path === '/auth') return 'AUTH';
@@ -188,6 +196,7 @@ const App: React.FC = () => {
     if (loading) return; 
     if (currentView === 'SHARED') return;
     if (currentView === 'PRICING') return;
+    if (currentView === 'AUTH_CALLBACK') return; // Stay on callback until resolved
     if (currentView === 'ADMIN_LOGIN' && !user) return;
 
     if (user) {
@@ -519,6 +528,10 @@ const App: React.FC = () => {
       );
   }
   
+  if (currentView === 'AUTH_CALLBACK') {
+      return <AuthCallback onSuccess={() => navigate('APP', '/')} onError={(msg) => { alert(msg); navigate('AUTH', '/login'); }} />;
+  }
+
   if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
   if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => navigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
   
