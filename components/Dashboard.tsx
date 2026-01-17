@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -114,7 +113,7 @@ export const Dashboard: React.FC = () => {
     if (!user) return;
     const localProfile = loadUserProfile() || getDefaultProfile();
     setUserProfile(localProfile);
-    setHistory(loadHistory());
+    loadHistory().then(setHistory);
     
     if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
     
@@ -133,7 +132,7 @@ export const Dashboard: React.FC = () => {
   // Sync History
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
-      const syncHistory = () => {
+      const syncHistory = async () => {
           let dataToSave: any = null;
           let title = '';
           if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
@@ -156,7 +155,7 @@ export const Dashboard: React.FC = () => {
                   summary: history.find(h => h.id === activeHistoryId)?.summary
               };
               saveToHistory(item);
-              setHistory(loadHistory());
+              loadHistory().then(setHistory);
           }
       };
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -206,7 +205,7 @@ export const Dashboard: React.FC = () => {
         saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState });
       }
       
-      setHistory(loadHistory());
+      setHistory(await loadHistory());
       setStatus(AppStatus.READY);
     } catch (err: any) {
       console.error(err);
@@ -277,13 +276,76 @@ export const Dashboard: React.FC = () => {
               setStatus(AppStatus.READY);
               setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
-              saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: `Duel: ${duelState.code}`, data: newState, config: duelState.quizConfig });
-              setHistory(loadHistory());
+              const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: `Duel: ${duelState.code}`, data: newState, config: duelState.quizConfig };
+              await saveToHistory(historyItem);
+              setHistory(await loadHistory());
           } else {
               alert("Host is still preparing materials...");
           }
       }
   };
+
+  const handleGoToCheckout = async (tier: SubscriptionTier) => {
+      if (tier === 'Fresher') {
+          if (confirm("Are you sure you want to downgrade to the Fresher plan? Access to advanced features will be revoked.")) {
+              const updatedProfile = { ...userProfile, subscriptionTier: 'Fresher' as SubscriptionTier };
+              setUserProfile(updatedProfile);
+              saveUserProfile(updatedProfile);
+              if (user) await updateUserPlan(user.uid, 'Fresher');
+              setIsSubscriptionOpen(false);
+              alert("You are now on the Fresher plan.");
+          }
+      } else {
+          setCheckoutTier(tier);
+          setIsSubscriptionOpen(false);
+          navigate('CHECKOUT', `/${tier.toLowerCase()}`);
+      }
+  };
+
+  // --- LOADER ---
+  if (loading) {
+      return (
+          <div className="min-h-screen bg-core flex items-center justify-center relative overflow-hidden transition-colors duration-500">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
+              
+              <div className="flex flex-col items-center gap-6 z-10">
+                  <div className="relative">
+                      <div className="w-16 h-16 border-4 border-border-main rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 border-4 border-t-accent border-l-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
+                      <div className="absolute inset-4 bg-accent rounded-full animate-pulse opacity-20"></div>
+                  </div>
+                  
+                  <div className="text-center">
+                      <p className="text-xs font-mono uppercase tracking-[0.3em] text-accent animate-pulse">
+                          Authenticating Scholar
+                      </p>
+                      <p className="text-[10px] text-text-sec font-mono mt-2">
+                          Retrieving Student Profile...
+                      </p>
+                  </div>
+              </div>
+          </div>
+      );
+  }
+  
+  if (currentView === 'AUTH_CALLBACK') {
+      return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={(msg) => { alert(msg); handleNavigate('AUTH', '/login'); }} />;
+  }
+
+  if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
+  if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => handleNavigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
+  
+  if (currentView === 'PRICING') return <PricingPage onBack={() => handleNavigate('LANDING', '/')} onSelectPlan={(tier) => {
+      localStorage.setItem('pending_plan', tier);
+      handleNavigate('AUTH', '/login');
+  }} />;
+  
+  if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => handleNavigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); handleNavigate('APP', '/'); }} />;
+  if (currentView === 'AUTH' && !user) return <AuthPage />;
+  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => handleNavigate('AUTH', '/login')} onPricing={() => handleNavigate('PRICING', '/pricing')} />;
+
+  const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
+  const hideFABs = appMode === 'EXAM' && !quizState.isSubmitted;
 
   return (
     <div className={`min-h-screen text-text-pri bg-core selection:bg-accent/30 overflow-x-hidden relative transition-colors duration-1000 font-sans pb-32`}>
@@ -291,7 +353,13 @@ export const Dashboard: React.FC = () => {
       <CountdownTimer />
       <PWAPrompt />
       {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={(data) => { setUserProfile({...userProfile, ...data}); setOnboardingStep('COMPLETE'); }} />}
-      <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} currentTier={userProfile.subscriptionTier} onUpgrade={(t) => { setIsSubscriptionOpen(false); navigate(`/checkout/${t}`); }} />
+      <SubscriptionModal 
+        isOpen={isSubscriptionOpen} 
+        onClose={() => setIsSubscriptionOpen(false)} 
+        currentTier={userProfile.subscriptionTier} 
+        onUpgrade={handleGoToCheckout} 
+        userEmail={user?.email || undefined}
+      />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={() => { if(pendingAction) pendingAction(); setShowExitConfirmation(false); setPendingAction(null); }} onCancel={() => setShowExitConfirmation(false)} />
       <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
@@ -340,9 +408,9 @@ export const Dashboard: React.FC = () => {
             setStatus(AppStatus.READY);
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
-      }} onDelete={(id) => {
-            deleteHistoryItem(id);
-            setHistory(loadHistory());
+      }} onDelete={async (id) => {
+            await deleteHistoryItem(id);
+            setHistory(await loadHistory());
             if (activeHistoryId === id) handleQuizAction('RESET');
       }} />
       
@@ -389,3 +457,5 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+
+export default Dashboard;

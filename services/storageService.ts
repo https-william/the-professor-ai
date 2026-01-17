@@ -1,9 +1,9 @@
 
 import { HistoryItem, QuizState, ProfessorState, AppMode, QuizConfig, UserProfile, ChatState } from '../types';
+import { supabase } from './supabase';
 
-const CURRENT_SESSION_KEY = 'exam_prep_current_session';
-const HISTORY_KEY = 'exam_prep_history';
 const USER_PROFILE_KEY = 'exam_prep_user_profile';
+const CURRENT_SESSION_KEY = 'exam_prep_current_session';
 
 interface CurrentSession {
   mode: AppMode;
@@ -12,6 +12,7 @@ interface CurrentSession {
   title: string;
 }
 
+// --- CURRENT SESSION (Keep Local for Speed/Resume) ---
 export const saveCurrentSession = (mode: AppMode, data: QuizState | ProfessorState | ChatState, title: string, config?: QuizConfig) => {
   const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
   const session: CurrentSession = { mode, data, title, config };
@@ -29,112 +30,82 @@ export const clearCurrentSession = () => {
   localStorage.removeItem(`${userId}_${CURRENT_SESSION_KEY}`);
 };
 
-/**
- * Generates a smart, descriptive title for the history item.
- */
-export const generateHistoryTitle = (mode: AppMode, data: QuizState | ProfessorState | ChatState): string => {
-  const clean = (str: string) => str.replace(/[*_#\[\]]/g, '').replace(/\s+/g, ' ').trim();
+// --- HISTORY (Migrated to Supabase) ---
 
-  if (mode === 'EXAM') {
-    const quizData = data as QuizState;
-    if (quizData.questions.length > 0) {
-      const firstQ = quizData.questions[0].question;
-      const cleanQ = clean(firstQ);
-      return cleanQ.length > 45 ? `${cleanQ.substring(0, 45)}...` : cleanQ;
-    }
-    return 'Untitled Exam';
-  } else if (mode === 'PROFESSOR') {
-    const profData = data as ProfessorState;
-    if (profData.sections.length > 0) {
-      const title = profData.sections[0].title;
-      const cleanTitle = clean(title);
-      return `Class: ${cleanTitle}`;
-    }
-    return 'Untitled Class';
-  } else if (mode === 'CHAT') {
-      const chatData = data as ChatState;
-      if (chatData.fileName && chatData.fileName !== 'General Session') return `Chat: ${chatData.fileName}`;
-      
-      // Dynamic title based on first user message if filename is generic
-      if (chatData.messages && chatData.messages.length > 0) {
-          const firstUserMsg = chatData.messages.find(m => m.role === 'user');
-          if (firstUserMsg) {
-              const content = clean(firstUserMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, 'Image'));
-              return content.length > 30 ? content.substring(0, 30) + '...' : content;
-          }
-      }
-      return 'New Conversation';
+export const saveToHistory = async (item: HistoryItem) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+      // Fallback for guests (Local Only)
+      saveToHistoryLocal(item);
+      return;
   }
-  return 'Untitled Session';
+
+  // Upsert to Supabase
+  const { error } = await supabase.from('history').upsert({
+      id: item.id,
+      user_id: user.id,
+      mode: item.mode,
+      title: item.title,
+      data: item.data, // JSONB
+      summary: item.summary,
+      config: item.config,
+      timestamp: new Date(item.timestamp).toISOString()
+  });
+
+  if (error) console.error("Cloud Save Error:", error);
 };
 
-/**
- * Generates a short snippet preview of the session state.
- */
-export const getHistorySnippet = (item: HistoryItem): string => {
-    const clean = (str: string) => str.replace(/[*_#\[\]]/g, '').replace(/\s+/g, ' ').trim();
-
-    if (item.mode === 'CHAT') {
-        const data = item.data as ChatState;
-        if (!data.messages || data.messages.length === 0) return 'No messages yet';
-        
-        // Find last user message or last bot message
-        const lastMsg = data.messages[data.messages.length - 1];
-        if (!lastMsg) return 'Empty';
-
-        const sender = lastMsg.role === 'user' ? 'You' : 'Prof';
-        const rawContent = lastMsg.content.replace(/\[IMAGE_DATA:.*?\]/g, '📷 Image');
-        
-        // Remove JSON artifacts if present
-        let cleanContent = clean(rawContent);
-        if (cleanContent.startsWith('{') || cleanContent.startsWith('[')) cleanContent = "Structured Data";
-
-        return `${sender}: ${cleanContent.substring(0, 40)}${cleanContent.length > 40 ? '...' : ''}`;
-    }
-    if (item.mode === 'EXAM') {
-        const data = item.data as QuizState;
-        const status = data.isSubmitted ? 'Completed' : 'In Progress';
-        return `${data.score}/${data.questions.length} • ${status}`;
-    }
-    if (item.mode === 'DUEL') {
-        const data = item.data as QuizState;
-        const status = data.isSubmitted ? 'Completed' : 'Arena Active';
-        return `Combat • ${status}`;
-    }
-    if (item.mode === 'PROFESSOR') {
-        const data = item.data as ProfessorState;
-        return `${data.sections.length} Sections • Lecture`;
-    }
-    return '';
+const saveToHistoryLocal = (item: HistoryItem) => {
+    const userId = 'guest';
+    const key = `${userId}_exam_prep_history`;
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    const updated = [item, ...existing.filter((i: any) => i.id !== item.id)].slice(0, 10);
+    localStorage.setItem(key, JSON.stringify(updated));
 };
 
-export const saveToHistory = (item: HistoryItem) => {
-  const history = loadHistory();
-  // Check if item with same ID exists, update it instead of adding new
-  const existingIndex = history.findIndex(h => h.id === item.id);
-  let updated;
-  if (existingIndex >= 0) {
-      updated = [...history];
-      updated[existingIndex] = item;
+export const loadHistory = async (): Promise<HistoryItem[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+      const userId = 'guest';
+      return JSON.parse(localStorage.getItem(`${userId}_exam_prep_history`) || '[]');
+  }
+
+  const { data, error } = await supabase
+      .from('history')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(50);
+
+  if (error) {
+      console.error("Cloud Load Error:", error);
+      return [];
+  }
+
+  return data.map((d: any) => ({
+      id: d.id,
+      timestamp: new Date(d.timestamp).getTime(),
+      mode: d.mode as AppMode,
+      title: d.title,
+      data: d.data,
+      summary: d.summary,
+      config: d.config
+  }));
+};
+
+export const deleteHistoryItem = async (id: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+      await supabase.from('history').delete().eq('id', id);
   } else {
-      updated = [item, ...history].slice(0, 50); // Keep last 50 items
+      const userId = 'guest';
+      const key = `${userId}_exam_prep_history`;
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      const updated = existing.filter((i: any) => i.id !== id);
+      localStorage.setItem(key, JSON.stringify(updated));
   }
-  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
-  localStorage.setItem(`${userId}_${HISTORY_KEY}`, JSON.stringify(updated));
 };
 
-export const loadHistory = (): HistoryItem[] => {
-  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
-  const stored = localStorage.getItem(`${userId}_${HISTORY_KEY}`);
-  return stored ? JSON.parse(stored) : [];
-};
-
-export const deleteHistoryItem = (id: string) => {
-  const history = loadHistory();
-  const updated = history.filter(h => h.id !== id);
-  const userId = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}').alias || 'anon';
-  localStorage.setItem(`${userId}_${HISTORY_KEY}`, JSON.stringify(updated));
-};
+// --- USER PROFILE (Synced via AuthContext usually, but helpers here) ---
 
 export const saveUserProfile = (profile: UserProfile) => {
   localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
@@ -161,11 +132,10 @@ export const getDefaultProfile = (): UserProfile => ({
   correctAnswers: 0,
   xp: 500, 
   lastStudyDate: Date.now(),
-  theme: 'Dark', // Enforced Dark
+  theme: 'Dark',
   reducedMotion: false,
   subscriptionTier: 'Fresher',
   role: 'student',
-  // Tracking
   lastGenerationDate: Date.now(),
   dailyQuizzesGenerated: 0,
   dailyFilesUploaded: 0,
@@ -181,13 +151,11 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   
   let updated = { ...profile };
 
-  // Check if days are different
   const isSameDay = (d1: Date, d2: Date) => 
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
-  // Reset daily limits if new day
   if (!isSameDay(now, lastGen)) {
     updated.dailyQuizzesGenerated = 0;
     updated.dailyFilesUploaded = 0;
@@ -197,7 +165,6 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
     updated.lastGenerationDate = Date.now();
   }
 
-  // Streak Logic
   if (isSameDay(now, last)) {
     return updated;
   }
@@ -209,9 +176,8 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
   if (daysDiff <= 1) { 
     updated.streak = (updated.streak || 0) + 1;
   } else {
-    // Check for Freeze
     if (updated.hasStreakFreeze) {
-        updated.hasStreakFreeze = false; // Consume freeze
+        updated.hasStreakFreeze = false;
     } else {
         updated.streak = 1;
     }
@@ -223,13 +189,11 @@ export const updateStreak = (profile: UserProfile): UserProfile => {
 
 export const incrementDailyUsage = (profile: UserProfile, type: 'QUIZ' | 'FILE' | 'IMAGE' | 'DUEL' | 'LOCKIN' = 'QUIZ'): UserProfile => {
   const updated = { ...profile };
-  
   if (type === 'QUIZ') updated.dailyQuizzesGenerated = (profile.dailyQuizzesGenerated || 0) + 1;
   if (type === 'FILE') updated.dailyFilesUploaded = (profile.dailyFilesUploaded || 0) + 1;
   if (type === 'IMAGE') updated.dailyImagesUploaded = (profile.dailyImagesUploaded || 0) + 1;
   if (type === 'DUEL') updated.dailyDuelsJoined = (profile.dailyDuelsJoined || 0) + 1;
   if (type === 'LOCKIN') updated.dailyLockIns = (profile.dailyLockIns || 0) + 1;
-
   saveUserProfile(updated);
   return updated;
 };

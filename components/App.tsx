@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -7,7 +6,7 @@ import { HistorySidebar } from './HistorySidebar';
 import { UserProfileModal } from './UserProfileModal';
 import { AboutModal } from './AboutModal';
 import { SubscriptionModal } from './SubscriptionModal';
-// Removed WelcomeModal import
+import { WelcomeModal } from './Onboarding/WelcomeModal';
 import { AuthPage } from './Auth/AuthPage';
 import { AdminLoginPage } from './Auth/AdminLoginPage';
 import { LandingPage } from './LandingPage';
@@ -67,6 +66,7 @@ const ADMIN_EMAILS = [
 const App: React.FC = () => {
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate(); // Added navigate hook if inside Router context, if not logic is below
   
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
@@ -125,7 +125,6 @@ const App: React.FC = () => {
   const saveTimeoutRef = useRef<any>(null);
 
   const isFresher = userProfile.subscriptionTier === 'Fresher';
-  const QUIZ_LIMIT = isFresher ? 1 : 100;
   const dailyLimit = userProfile.subscriptionTier === 'Scholar' ? 10 : (isFresher ? 1 : 1000);
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / dailyLimit) * 100, 100);
 
@@ -138,22 +137,8 @@ const App: React.FC = () => {
       }
   }, [appMode, theme]);
 
-  useEffect(() => {
-    const handleHashChange = () => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#/share/')) {
-            const id = hash.split('/share/')[1];
-            if (id) {
-                setShareId(id);
-                setCurrentView('SHARED');
-            }
-        }
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  const navigate = (view: ViewState, url: string) => {
+  // View Navigation Logic
+  const handleNavigate = (view: ViewState, url: string) => {
       window.history.pushState({}, '', url);
       setCurrentView(view);
   };
@@ -171,32 +156,12 @@ const App: React.FC = () => {
       return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
-  useEffect(() => {
-    const originalConsoleError = console.error;
-    console.error = (...args) => {
-        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
-            setIsAdBlockActive(true);
-        }
-        originalConsoleError(...args);
-    };
-    window.addEventListener('error', (e) => {
-        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
-    }, true);
-  }, []);
-
-  const isPotentialAdmin = (email: string | null | undefined) => {
-      if (!email) return false;
-      const normalized = email.toLowerCase().trim();
-      return ADMIN_EMAILS.includes(normalized);
-  };
-
-  const isAdmin = isPotentialAdmin(user?.email);
-
+  // Auth State Management
   useEffect(() => {
     if (loading) return; 
     if (currentView === 'SHARED') return;
     if (currentView === 'PRICING') return;
-    if (currentView === 'AUTH_CALLBACK') return; // Stay on callback until resolved
+    if (currentView === 'AUTH_CALLBACK') return;
     if (currentView === 'ADMIN_LOGIN' && !user) return;
 
     if (user) {
@@ -215,39 +180,7 @@ const App: React.FC = () => {
     }
   }, [user, loading, currentView]);
 
-  useEffect(() => {
-      if (status !== AppStatus.READY || !activeHistoryId) return;
-      const syncHistory = () => {
-          let dataToSave: any = null;
-          let title = '';
-          if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
-              dataToSave = quizState;
-              title = history.find(h => h.id === activeHistoryId)?.title || 'Exam';
-          } else if (appMode === 'PROFESSOR') {
-              dataToSave = professorState;
-              title = history.find(h => h.id === activeHistoryId)?.title || 'Class';
-          } else if (appMode === 'CHAT') {
-              dataToSave = chatState;
-              title = chatState.fileName || 'Chat';
-          }
-          if (dataToSave) {
-              const item: HistoryItem = {
-                  id: activeHistoryId,
-                  timestamp: Date.now(),
-                  mode: appMode,
-                  title: title,
-                  data: dataToSave,
-                  summary: history.find(h => h.id === activeHistoryId)?.summary
-              };
-              saveToHistory(item);
-              setHistory(loadHistory());
-          }
-      };
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(syncHistory, 2000);
-      return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
-
+  // Restore Session & Cloud History
   useEffect(() => {
     if (!user) return;
 
@@ -270,7 +203,9 @@ const App: React.FC = () => {
     
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
-    setHistory(loadHistory());
+    
+    // ASYNC HISTORY LOAD
+    loadHistory().then(setHistory);
     
     if (!isAdminUnlocked) {
         const savedSession = loadCurrentSession();
@@ -283,6 +218,48 @@ const App: React.FC = () => {
         }
     }
   }, [user, isAdminUnlocked]);
+
+  // Auto-Save Loop
+  useEffect(() => {
+      if (status !== AppStatus.READY || !activeHistoryId) return;
+      const syncHistory = async () => {
+          let dataToSave: any = null;
+          let title = '';
+          if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
+              dataToSave = quizState;
+              title = history.find(h => h.id === activeHistoryId)?.title || 'Exam';
+          } else if (appMode === 'PROFESSOR') {
+              dataToSave = professorState;
+              title = history.find(h => h.id === activeHistoryId)?.title || 'Class';
+          } else if (appMode === 'CHAT') {
+              dataToSave = chatState;
+              title = chatState.fileName || 'Chat';
+          }
+          if (dataToSave) {
+              const item: HistoryItem = {
+                  id: activeHistoryId,
+                  timestamp: Date.now(),
+                  mode: appMode,
+                  title: title,
+                  data: dataToSave,
+                  summary: history.find(h => h.id === activeHistoryId)?.summary
+              };
+              await saveToHistory(item);
+              // Optimistically update local history state
+              setHistory(prev => [item, ...prev.filter(i => i.id !== item.id)].sort((a,b) => b.timestamp - a.timestamp));
+          }
+      };
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(syncHistory, 3000); // 3s debounce for cloud save
+      return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+  }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
+
+  const isPotentialAdmin = (email: string | null | undefined) => {
+      if (!email) return false;
+      const normalized = email.toLowerCase().trim();
+      return ADMIN_EMAILS.includes(normalized);
+  };
+  const isAdmin = isPotentialAdmin(user?.email);
 
   const handleAdminSuccess = () => {
       setIsAdminUnlocked(true);
@@ -300,31 +277,6 @@ const App: React.FC = () => {
       setAppMode(mode);
   };
 
-  const attemptAction = (action: () => void, force: boolean = false) => {
-      if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
-          setPendingAction(() => action);
-          setShowExitConfirmation(true);
-      } else {
-          action();
-      }
-  };
-
-  const confirmExit = () => {
-      if (pendingAction) pendingAction();
-      setShowExitConfirmation(false);
-      setPendingAction(null);
-  };
-
-  const parseDuration = (duration: string): number | null => {
-      if (duration === 'Limitless') return null;
-      let totalSeconds = 0;
-      const hourMatch = duration.match(/(\d+)h/);
-      if (hourMatch) totalSeconds += parseInt(hourMatch[1]) * 3600;
-      const minMatch = duration.match(/(\d+)m/);
-      if (minMatch) totalSeconds += parseInt(minMatch[1]) * 60;
-      return totalSeconds > 0 ? totalSeconds : null;
-  };
-
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
     try {
       setStatus(AppStatus.GENERATING_CONTENT);
@@ -340,8 +292,8 @@ const App: React.FC = () => {
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: "Chat Session" };
-        saveToHistory(historyItem);
-        setHistory(loadHistory());
+        await saveToHistory(historyItem);
+        setHistory(await loadHistory());
         setActiveHistoryId(historyItem.id);
         return;
       }
@@ -354,7 +306,7 @@ const App: React.FC = () => {
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: "Exam" };
-        saveToHistory(historyItem);
+        await saveToHistory(historyItem);
         setAppMode(mode); 
       } else {
         setStatusText("Designing Lesson Plan...");
@@ -363,9 +315,9 @@ const App: React.FC = () => {
         setProfessorState(newState);
         setQuizState(prev => ({ ...prev, timeRemaining }));
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: "Lecture" };
-        saveToHistory(historyItem);
+        await saveToHistory(historyItem);
       }
-      setHistory(loadHistory());
+      setHistory(await loadHistory());
       const updatedProfile = { ...incrementDailyUsage(userProfile) };
       setUserProfile(updatedProfile);
       saveUserProfile(updatedProfile);
@@ -433,7 +385,31 @@ const App: React.FC = () => {
     }
   };
 
-  const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
+  const attemptAction = (action: () => void, force: boolean = false) => {
+      if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
+          setPendingAction(() => action);
+          setShowExitConfirmation(true);
+      } else {
+          action();
+      }
+  };
+
+  const confirmExit = () => {
+      if (pendingAction) pendingAction();
+      setShowExitConfirmation(false);
+      setPendingAction(null);
+  };
+
+  // Duplicate logic needed for parseDuration inside component or import
+  const parseDuration = (duration: string): number | null => {
+      if (duration === 'Limitless') return null;
+      let totalSeconds = 0;
+      const hourMatch = duration.match(/(\d+)h/);
+      if (hourMatch) totalSeconds += parseInt(hourMatch[1]) * 3600;
+      const minMatch = duration.match(/(\d+)m/);
+      if (minMatch) totalSeconds += parseInt(minMatch[1]) * 60;
+      return totalSeconds > 0 ? totalSeconds : null;
+  };
 
   const handleDuelStart = async (data: { wager: number, file: File }) => {
       if (!user) return;
@@ -477,8 +453,8 @@ const App: React.FC = () => {
               setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
               const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: `Duel: ${duelState.code}`, data: newState, config: duelState.quizConfig };
-              saveToHistory(historyItem);
-              setHistory(loadHistory());
+              await saveToHistory(historyItem);
+              setHistory(await loadHistory());
           } else {
               alert("Host is still preparing materials...");
           }
@@ -498,7 +474,7 @@ const App: React.FC = () => {
       } else {
           setCheckoutTier(tier);
           setIsSubscriptionOpen(false);
-          navigate('CHECKOUT', `/${tier.toLowerCase()}`);
+          handleNavigate('CHECKOUT', `/${tier.toLowerCase()}`);
       }
   };
 
@@ -529,20 +505,20 @@ const App: React.FC = () => {
   }
   
   if (currentView === 'AUTH_CALLBACK') {
-      return <AuthCallback onSuccess={() => navigate('APP', '/')} onError={(msg) => { alert(msg); navigate('AUTH', '/login'); }} />;
+      return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={(msg) => { alert(msg); handleNavigate('AUTH', '/login'); }} />;
   }
 
   if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
-  if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => navigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
+  if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => handleNavigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
   
-  if (currentView === 'PRICING') return <PricingPage onBack={() => navigate('LANDING', '/')} onSelectPlan={(tier) => {
+  if (currentView === 'PRICING') return <PricingPage onBack={() => handleNavigate('LANDING', '/')} onSelectPlan={(tier) => {
       localStorage.setItem('pending_plan', tier);
-      navigate('AUTH', '/login');
+      handleNavigate('AUTH', '/login');
   }} />;
   
-  if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => navigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); navigate('APP', '/'); }} />;
+  if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => handleNavigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); handleNavigate('APP', '/'); }} />;
   if (currentView === 'AUTH' && !user) return <AuthPage />;
-  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => navigate('AUTH', '/login')} onPricing={() => navigate('PRICING', '/pricing')} />;
+  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => handleNavigate('AUTH', '/login')} onPricing={() => handleNavigate('PRICING', '/pricing')} />;
 
   const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
 
@@ -653,9 +629,9 @@ const App: React.FC = () => {
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
         }} 
-        onDelete={(id) => {
-            deleteHistoryItem(id);
-            setHistory(loadHistory());
+        onDelete={async (id) => {
+            await deleteHistoryItem(id);
+            setHistory(await loadHistory());
             if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
         }}
       />
@@ -667,7 +643,7 @@ const App: React.FC = () => {
         profile={userProfile} 
         onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if(user) saveUserToSupabase(user.uid, updated); }} 
         onClearHistory={() => {}} 
-        onLogout={async () => { await logout(); window.location.reload(); }} 
+        onLogout={async () => { await logout(); handleNavigate('LANDING', '/'); }} 
         isAdmin={!!isAdmin} 
         onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }}
         onUpgradeRequest={() => setIsSubscriptionOpen(true)} // Added
@@ -683,7 +659,7 @@ const App: React.FC = () => {
                     onProcess={handleProcess} 
                     isLoading={false} 
                     appMode={appMode} 
-                    setAppMode={setAppMode} 
+                    setAppMode={handleSetAppMode} 
                     defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
                     userProfile={userProfile} 
                     onShowSubscription={() => setIsSubscriptionOpen(true)} 
@@ -701,7 +677,7 @@ const App: React.FC = () => {
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
-                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
+                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={setChatState} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState: QuizState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}

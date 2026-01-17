@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark" style="scroll-behavior: smooth;">
   <head>
@@ -173,13 +174,24 @@
         --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
 
+      /* Scroll Lock Logic */
+      html, body {
+        height: 100%;
+        overflow: hidden; /* Prevent native scroll bounce */
+      }
+
       body { 
         background-color: var(--bg-core); 
         color: var(--text-pri); 
         font-family: 'Inter', sans-serif; 
         margin: 0; 
         transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-x: hidden;
+      }
+
+      #root {
+        height: 100%;
+        overflow-y: auto; /* Handle scrolling within the app container */
+        -webkit-overflow-scrolling: touch;
       }
 
       /* Scrollbar */

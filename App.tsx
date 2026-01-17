@@ -1,42 +1,41 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { Hero } from './Hero';
-import { InputSection } from './InputSection';
-import { LoadingOverlay } from './LoadingOverlay';
-import { HistorySidebar } from './HistorySidebar';
-import { UserProfileModal } from './UserProfileModal';
-import { AboutModal } from './AboutModal';
-import { SubscriptionModal } from './SubscriptionModal';
-import { WelcomeModal } from './Onboarding/WelcomeModal';
-import { AuthPage } from './Auth/AuthPage';
-import { AdminLoginPage } from './Auth/AdminLoginPage';
-import { LandingPage } from './LandingPage';
-import { PricingPage } from './PricingPage';
-import { PlanCheckoutPage } from './PlanCheckoutPage';
-import { CountdownTimer } from './CountdownTimer';
-import { AmbientBackground } from './AmbientBackground';
-import { PWAPrompt } from './PWAPrompt';
-import { DuelReadyModal } from './DuelReadyModal';
-import { ConfirmationModal } from './ConfirmationModal';
-import { NotificationBell } from './NotificationBell';
-import { AdminVerifyModal } from './AdminVerifyModal';
-import { SharedView } from './SharedView';
-import { ProfessorCharacter } from './ProfessorCharacter';
-import { ArenaView } from './ArenaView';
-import { useAuth } from '../contexts/AuthContext';
-import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from '../services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from '../types';
-import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/supabase';
-import { processFile } from '../services/fileService';
+import { Hero } from './components/Hero';
+import { InputSection } from './components/InputSection';
+import { LoadingOverlay } from './components/LoadingOverlay';
+import { HistorySidebar } from './components/HistorySidebar';
+import { UserProfileModal } from './components/UserProfileModal';
+import { AboutModal } from './components/AboutModal';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { WelcomeModal } from './components/Onboarding/WelcomeModal';
+import { AuthPage } from './components/Auth/AuthPage';
+import { AdminLoginPage } from './components/Auth/AdminLoginPage';
+import { LandingPage } from './components/LandingPage';
+import { PricingPage } from './components/PricingPage';
+import { PlanCheckoutPage } from './components/PlanCheckoutPage';
+import { CountdownTimer } from './components/CountdownTimer';
+import { AmbientBackground } from './components/AmbientBackground';
+import { PWAPrompt } from './components/PWAPrompt';
+import { DuelReadyModal } from './components/DuelReadyModal';
+import { ConfirmationModal } from './components/ConfirmationModal';
+import { NotificationBell } from './components/NotificationBell';
+import { AdminVerifyModal } from './components/AdminVerifyModal';
+import { SharedView } from './components/SharedView';
+import { ProfessorCharacter } from './components/ProfessorCharacter';
+import { ArenaView } from './components/ArenaView';
+import { useAuth } from './contexts/AuthContext';
+import { generateQuizFromText, generateProfessorContent } from './services/geminiService';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from './services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from './types';
+import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from './services/supabase';
+import { processFile } from './services/fileService';
 
 // Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./QuizView').then(module => ({ default: module.QuizView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const ProfessorView = React.lazy(() => import('./ProfessorView').then(module => ({ default: module.ProfessorView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const ChatView = React.lazy(() => import('./ChatView').then(module => ({ default: module.ChatView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => ({ default: module.FlashcardView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const QuizView = React.lazy(() => import('./components/QuizView').then(module => ({ default: module.QuizView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const ProfessorView = React.lazy(() => import('./components/ProfessorView').then(module => ({ default: module.ProfessorView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const ChatView = React.lazy(() => import('./components/ChatView').then(module => ({ default: module.ChatView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const FlashcardView = React.lazy(() => import('./components/FlashcardView').then(module => ({ default: module.FlashcardView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+const TheHub = React.lazy(() => import('./components/TheHub').then(module => ({ default: module.TheHub }))) as React.LazyExoticComponent<React.ComponentType<any>>;
 
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
@@ -183,7 +182,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
       if (status !== AppStatus.READY || !activeHistoryId) return;
-      const syncHistory = () => {
+      const syncHistory = async () => {
           let dataToSave: any = null;
           let title = '';
           if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
@@ -205,8 +204,8 @@ const App: React.FC = () => {
                   data: dataToSave,
                   summary: history.find(h => h.id === activeHistoryId)?.summary
               };
-              saveToHistory(item);
-              setHistory(loadHistory());
+              await saveToHistory(item);
+              loadHistory().then(setHistory);
           }
       };
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -239,7 +238,7 @@ const App: React.FC = () => {
     
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile); 
-    setHistory(loadHistory());
+    loadHistory().then(setHistory);
     
     if (!isAdminUnlocked) {
         const savedSession = loadCurrentSession();
@@ -311,8 +310,8 @@ const App: React.FC = () => {
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: "Chat Session" };
-        saveToHistory(historyItem);
-        setHistory(loadHistory());
+        await saveToHistory(historyItem);
+        setHistory(await loadHistory());
         setActiveHistoryId(historyItem.id);
         return;
       }
@@ -325,7 +324,7 @@ const App: React.FC = () => {
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: "Exam" };
-        saveToHistory(historyItem);
+        await saveToHistory(historyItem);
         setAppMode(mode); 
       } else {
         setStatusText("Designing Lesson Plan...");
@@ -334,9 +333,9 @@ const App: React.FC = () => {
         setProfessorState(newState);
         setQuizState(prev => ({ ...prev, timeRemaining }));
         const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: "Lecture" };
-        saveToHistory(historyItem);
+        await saveToHistory(historyItem);
       }
-      setHistory(loadHistory());
+      setHistory(await loadHistory());
       const updatedProfile = { ...incrementDailyUsage(userProfile) };
       setUserProfile(updatedProfile);
       saveUserProfile(updatedProfile);
@@ -448,8 +447,8 @@ const App: React.FC = () => {
               setActiveDuelId(duelReadyData.id);
               setDuelReadyData(null);
               const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'EXAM', title: `Duel: ${duelState.code}`, data: newState, config: duelState.quizConfig };
-              saveToHistory(historyItem);
-              setHistory(loadHistory());
+              await saveToHistory(historyItem);
+              setHistory(await loadHistory());
           } else {
               alert("Host is still preparing materials...");
           }
@@ -632,9 +631,9 @@ const App: React.FC = () => {
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
         }} 
-        onDelete={(id) => {
-            deleteHistoryItem(id);
-            setHistory(loadHistory());
+        onDelete={async (id) => {
+            await deleteHistoryItem(id);
+            setHistory(await loadHistory());
             if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
         }}
       />

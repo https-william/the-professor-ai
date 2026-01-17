@@ -60,7 +60,13 @@ export const AuthPage: React.FC = () => {
     setShowResend(false);
     
     if (mode !== 'VERIFY' && !isValidEmail(email)) { setError("Invalid email address format."); return; }
-    if (mode === 'REGISTER' && password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    
+    // VALIDATION UPDATE: Require Name
+    if (mode === 'REGISTER') {
+        if (!fullName.trim()) { setError("Full Name is required for enrollment."); return; }
+        if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    }
+    
     if (mode === 'VERIFY' && otp.length < 6) { setError("Please enter the 6-digit code."); return; }
 
     setIsAuthenticating(true);
@@ -69,7 +75,7 @@ export const AuthPage: React.FC = () => {
       if (mode === 'LOGIN') {
           await loginWithEmail(email, password);
       } else if (mode === 'REGISTER') {
-          const result = await registerWithEmail(email, password, fullName || undefined);
+          const result = await registerWithEmail(email, password, fullName);
           if (result && !result.session) {
               setIsAuthenticating(false);
               setSuccessMsg(`Access Link sent to ${email}. Check your Inbox & Spam.`);
@@ -143,7 +149,7 @@ export const AuthPage: React.FC = () => {
          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
               {mode === 'REGISTER' && (
-                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name (Optional)" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
+                  <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name (Required)" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
               )}
               
               {mode !== 'VERIFY' ? (

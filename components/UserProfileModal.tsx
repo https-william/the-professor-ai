@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, HistoryItem, QuizState } from '../types';
 import { queueAction } from '../services/syncService';
@@ -36,7 +35,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   useEffect(() => {
       setEditedProfile(profile);
       if (isOpen) {
-          setHistory(loadHistory());
+          loadHistory().then(setHistory);
       }
   }, [profile, isOpen]);
 
