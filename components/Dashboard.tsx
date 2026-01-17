@@ -87,6 +87,7 @@ export const Dashboard: React.FC = () => {
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('');
+  const [isAdBlockActive, setIsAdBlockActive] = useState(false);
   
   const [userProfile, setUserProfile] = useState<UserProfile>(() => loadUserProfile() || getDefaultProfile());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -134,6 +135,19 @@ export const Dashboard: React.FC = () => {
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
+
+  useEffect(() => {
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+        if (args[0] && typeof args[0] === 'object' && args[0].message && args[0].message.includes("ERR_BLOCKED_BY_CLIENT")) {
+            setIsAdBlockActive(true);
+        }
+        originalConsoleError(...args);
+    };
+    window.addEventListener('error', (e) => {
+        if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) setIsAdBlockActive(true);
+    }, true);
+  }, []);
 
   // Auth State Management
   useEffect(() => {
@@ -238,8 +252,21 @@ export const Dashboard: React.FC = () => {
   const handleSetAppMode = (mode: AppMode) => {
       if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
       else if (mode === 'EXAM' && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
+      // Change: Flashcards view handles its own empty state (Creation UI), so always set to READY
+      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY); 
+      else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
       else setStatus(AppStatus.READY);
       setAppMode(mode);
+  };
+
+  const parseDuration = (duration: string): number | null => {
+      if (duration === 'Limitless') return null;
+      let totalSeconds = 0;
+      const hourMatch = duration.match(/(\d+)h/);
+      if (hourMatch) totalSeconds += parseInt(hourMatch[1]) * 3600;
+      const minMatch = duration.match(/(\d+)m/);
+      if (minMatch) totalSeconds += parseInt(minMatch[1]) * 60;
+      return totalSeconds > 0 ? totalSeconds : null;
   };
 
   const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
@@ -257,10 +284,11 @@ export const Dashboard: React.FC = () => {
         return;
       }
 
+      const timeRemaining = parseDuration(config.timerDuration);
       if (mode === 'EXAM' || mode === 'FLASHCARDS') {
         const questions = await generateQuizFromText(file.content, config, userProfile);
         if (!questions || questions.length === 0) throw new Error("Neural Failure: No questions generated.");
-        const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, null, focusStrikes: 0, currentQuestionIndex: 0 };
+        const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
         saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode, title: file.name, data: newState, config });
         setAppMode(mode); 
@@ -297,7 +325,15 @@ export const Dashboard: React.FC = () => {
       let score = 0;
       quizState.questions.forEach(q => { 
           if (q.type === 'Select All That Apply') {
-              // ... same logic
+              const userAnswer = quizState.userAnswers[q.id];
+              const correctAnswer = q.correct_answer;
+              try {
+                  const parsedUser = JSON.parse(userAnswer || '[]');
+                  const parsedCorrect = JSON.parse(correctAnswer || '[]').sort();
+                  if (JSON.stringify(parsedUser.sort()) === JSON.stringify(parsedCorrect)) score++;
+              } catch(e) {}
+          } else if (q.type === 'Fill in the Gap') {
+              if (quizState.userAnswers[q.id]?.toLowerCase().trim() === q.correct_answer?.toLowerCase().trim()) score++;
           } else {
               if (quizState.userAnswers[q.id] === q.correct_answer) score++; 
           }
@@ -323,6 +359,8 @@ export const Dashboard: React.FC = () => {
       else attemptAction(resetLogic);
     }
   };
+
+  const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
 
   const attemptAction = (action: () => void, force: boolean = false) => {
       if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
@@ -465,28 +503,47 @@ export const Dashboard: React.FC = () => {
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
+      {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
 
-      {/* Docks */}
+      {/* Floating Docks */}
       {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && (
           <>
-            <FloatingDock mode={appMode} setMode={handleSetAppMode} onHub={() => setStatus(AppStatus.READY)} isDuelActive={!!activeDuelId} onDuel={() => setAppMode('DUEL')} />
-            <MobileNavBar mode={appMode} setMode={handleSetAppMode} />
+            <FloatingDock 
+                mode={appMode} 
+                setMode={handleSetAppMode} 
+                onHub={() => setStatus(AppStatus.READY)} 
+                isDuelActive={!!activeDuelId} 
+                onDuel={() => setAppMode('DUEL')}
+            />
+            <MobileNavBar 
+                mode={appMode} 
+                setMode={handleSetAppMode} 
+            />
           </>
       )}
 
+      {/* Professor Trigger */}
       {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
           <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
       )}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main top-0`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
+                if (appMode === 'ADMIN') {
+                    setAppMode('EXAM');
+                    setStatus(AppStatus.IDLE); 
+                } else {
+                    handleQuizAction('RESET');
+                }
+            }}>
                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                </div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
-            
+
+            {/* Replaced Linear Bar with Radial Neural Energy */}
             {isFresher && appMode !== 'ADMIN' && (
                 <div className="flex items-center gap-2" title="Daily Neural Energy">
                     <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
@@ -494,36 +551,57 @@ export const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex items-center gap-4">
-               {status === AppStatus.IDLE && <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg></button>}
+            <div className="flex items-center gap-2 sm:gap-4">
+               {appMode === 'ADMIN' && (
+                   <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
+               )}
+               
+               {showLibrary && (
+                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri transition-colors relative group" title="My Library">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                   </button>
+               )}
+               
                <NotificationBell />
-               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
-                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all overflow-hidden relative shadow-lg`}>
-                       {userProfile.photoURL ? (
-                           <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                       ) : (
-                           <span className="text-sm">{userProfile.avatarEmoji}</span>
-                       )}
+               
+               <div className="h-6 w-px bg-border-main mx-2"></div>
+               
+               {/* Enhanced Profile Button (Ring + Icon) */}
+               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group relative">
+                   <div className="text-right hidden sm:block">
+                       <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
+                       <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
+                   </div>
+                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg ring-2 ring-white/10 relative overflow-hidden`}>
+                       <span className="text-sm">{userProfile.avatarEmoji}</span>
                    </div>
                </button>
             </div>
         </div>
       </nav>
 
-      <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} onSelect={(item) => {
-            if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') setQuizState(item.data as QuizState);
-            else if (item.mode === 'PROFESSOR') setProfessorState(item.data as ProfessorState);
-            else if (item.mode === 'CHAT') setChatState(item.data as ChatState);
+      <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} 
+        onSelect={(item) => {
+            if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
+                setQuizState(item.data as QuizState);
+            } else if (item.mode === 'PROFESSOR') {
+                setProfessorState(item.data as ProfessorState);
+            } else if (item.mode === 'CHAT') {
+                setChatState(item.data as ChatState);
+            }
             setAppMode(item.mode);
             setStatus(AppStatus.READY);
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
-      }} onDelete={async (id) => {
+        }} 
+        onDelete={async (id) => {
             await deleteHistoryItem(id);
             setHistory(await loadHistory());
             if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
-      }} />
+        }}
+      />
       
+      {/* Passed Upgrade Handler to Profile Modal */}
       <UserProfileModal 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
@@ -533,39 +611,51 @@ export const Dashboard: React.FC = () => {
         onLogout={async () => { await logout(); handleNavigate('LANDING', '/'); }} 
         isAdmin={!!isAdmin} 
         onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }}
-        onUpgradeRequest={() => setIsSubscriptionOpen(true)}
+        onUpgradeRequest={() => setIsSubscriptionOpen(true)} // Added
       />
+      
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
          {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
              <>
                 <Hero />
-                <InputSection onProcess={handleProcess} isLoading={false} appMode={appMode} setAppMode={handleSetAppMode} defaultConfig={{ difficulty: userProfile.defaultDifficulty }} userProfile={userProfile} onShowSubscription={() => setIsSubscriptionOpen(true)} onOpenProfile={() => setIsProfileOpen(true)} onDuelStart={handleDuelStart} onDuelJoin={handleDuelJoin} onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} />
+                <InputSection 
+                    onProcess={handleProcess} 
+                    isLoading={false} 
+                    appMode={appMode} 
+                    setAppMode={handleSetAppMode} 
+                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
+                    userProfile={userProfile} 
+                    onShowSubscription={() => setIsSubscriptionOpen(true)} 
+                    onOpenProfile={() => setIsProfileOpen(true)} 
+                    onDuelStart={handleDuelStart} 
+                    onDuelJoin={handleDuelJoin} 
+                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} 
+                />
              </>
          )}
-         
          {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
          {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
-         
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
-                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={setChatState} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
+                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
+                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState: QuizState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}
                  </Suspense>
              </div>
          )}
-         
          {status === AppStatus.ERROR && (
-             <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center">
+             <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center animate-bounce-subtle">
+                 <div className="text-4xl mb-4">⚠️</div>
                  <h3 className="text-xl font-bold text-red-500 mb-2">System Failure</h3>
                  <p className="text-text-sec mb-6">{errorMsg || "An unknown error occurred."}</p>
-                 <button onClick={() => setStatus(AppStatus.IDLE)} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold uppercase text-xs">Reboot System</button>
+                 <button onClick={() => setStatus(AppStatus.IDLE)} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold uppercase text-xs hover:bg-red-500 transition-colors">Reboot System</button>
              </div>
          )}
       </main>

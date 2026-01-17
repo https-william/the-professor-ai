@@ -266,9 +266,10 @@ const App: React.FC = () => {
   };
 
   const handleSetAppMode = (mode: AppMode) => {
-      // Smart navigation
       if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
-      else if ((mode === 'EXAM' || mode === 'FLASHCARDS') && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
+      else if (mode === 'EXAM' && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
+      // Change: Flashcards view handles its own empty state (Creation UI), so always set to READY
+      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY); 
       else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
       else setStatus(AppStatus.READY);
       
