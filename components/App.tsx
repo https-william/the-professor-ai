@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -25,6 +24,7 @@ import { ProfessorCharacter } from './ProfessorCharacter';
 import { ArenaView } from './ArenaView';
 import { MobileNavBar } from './MobileNavBar';
 import { FloatingDock } from './FloatingDock'; // Added Dock
+import { RadialProgress } from './RadialProgress'; // Added Radial
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
@@ -32,15 +32,28 @@ import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHist
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from '../types';
 import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/supabase';
 import { processFile } from '../services/fileService';
+import { useNavigate } from 'react-router-dom';
 
-// Lazy Load Heavy Components
-const QuizView = React.lazy(() => import('./QuizView').then(module => ({ default: module.QuizView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const ProfessorView = React.lazy(() => import('./ProfessorView').then(module => ({ default: module.ProfessorView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const ChatView = React.lazy(() => import('./ChatView').then(module => ({ default: module.ChatView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const FlashcardView = React.lazy(() => import('./FlashcardView').then(module => ({ default: module.FlashcardView }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const AdminDashboard = React.lazy(() => import('./AdminDashboard').then(module => ({ default: module.AdminDashboard }))) as React.LazyExoticComponent<React.ComponentType<any>>;
-const TheHub = React.lazy(() => import('./TheHub').then(module => ({ default: module.TheHub }))) as React.LazyExoticComponent<React.ComponentType<any>>;
+// Robust Lazy Loading with Retry
+function lazyRetry(componentImport: () => Promise<any>): React.LazyExoticComponent<React.ComponentType<any>> {
+  return React.lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return await componentImport();
+    }
+  }) as React.LazyExoticComponent<React.ComponentType<any>>;
+}
 
+const QuizView = lazyRetry(() => import('./QuizView'));
+const ProfessorView = lazyRetry(() => import('./ProfessorView'));
+const ChatView = lazyRetry(() => import('./ChatView'));
+const FlashcardView = lazyRetry(() => import('./FlashcardView'));
+const AdminDashboard = lazyRetry(() => import('./AdminDashboard'));
+const TheHub = lazyRetry(() => import('./TheHub'));
+
+// Added missing ViewState type
 type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED';
 
 const ADMIN_EMAILS = [
@@ -83,6 +96,7 @@ const App: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
   
   const [quizState, setQuizState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
   const [professorState, setProfessorState] = useState<ProfessorState>({ sections: [] });
@@ -264,12 +278,11 @@ const App: React.FC = () => {
   const handleAdminSuccess = () => {
       setIsAdminUnlocked(true);
       setAppMode('ADMIN');
-      navigate('APP', '/');
       setStatus(AppStatus.READY);
   };
 
   const handleSetAppMode = (mode: AppMode) => {
-      // Smart navigation: If content exists in the target mode, go to READY, otherwise go to IDLE (Upload screen)
+      // Smart navigation
       if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
       else if ((mode === 'EXAM' || mode === 'FLASHCARDS') && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
       else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
@@ -525,7 +538,7 @@ const App: React.FC = () => {
       <AmbientBackground theme='Deep Space' />
       <CountdownTimer />
       <PWAPrompt />
-      {/* WelcomeModal permanently removed */}
+      
       <SubscriptionModal 
         isOpen={isSubscriptionOpen} 
         onClose={() => setIsSubscriptionOpen(false)} 
@@ -534,33 +547,33 @@ const App: React.FC = () => {
         userEmail={user?.email || undefined}
       />
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
+      <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
       {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
-      
-      {/* Admin Verify Modal */}
-      <AdminVerifyModal 
-        isOpen={showAdminVerify} 
-        onClose={() => setShowAdminVerify(false)} 
-        onSuccess={handleAdminSuccess}
-      />
 
-      {/* Floating Admin Button - Only if Authorized AND IDLE */}
-      {isPotentialAdmin(user?.email) && status === AppStatus.IDLE && appMode !== 'ADMIN' && (
-          <button 
-            onClick={() => setShowAdminVerify(true)}
-            className="fixed bottom-6 left-6 z-50 w-12 h-12 bg-red-900/80 border border-red-500/50 rounded-full flex items-center justify-center text-red-400 hover:text-white hover:bg-red-600 hover:scale-110 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] backdrop-blur-md animate-pulse-slow group"
-            title="Dean's Office"
-          >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-          </button>
+      {/* Floating Docks */}
+      {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && (
+          <>
+            <FloatingDock 
+                mode={appMode} 
+                setMode={handleSetAppMode} 
+                onHub={() => setStatus(AppStatus.READY)} 
+                isDuelActive={!!activeDuelId} 
+                onDuel={() => setAppMode('DUEL')}
+            />
+            <MobileNavBar 
+                mode={appMode} 
+                setMode={handleSetAppMode} 
+            />
+          </>
       )}
 
-      {/* Professor Character (Chat Trigger) - Only show when IDLE and not in Admin Mode */}
+      {/* Professor Trigger */}
       {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
           <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
       )}
 
-      <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main ${isAdBlockActive ? 'top-8' : 'top-0'}`}>
+      <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main top-0`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
                 if (appMode === 'ADMIN') {
@@ -576,18 +589,11 @@ const App: React.FC = () => {
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
 
+            {/* Replaced Linear Bar with Radial Neural Energy */}
             {isFresher && appMode !== 'ADMIN' && (
-                <div className="hidden md:flex flex-col w-48 gap-1 mx-6 items-stretch justify-center" title="Daily Neural Energy">
-                    <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-text-sec font-bold">
-                        <span>Neural Energy</span>
-                        <span className={usagePercentage > 90 ? 'text-red-500' : 'text-accent'}>{Math.round(100 - usagePercentage)}%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 transition-all duration-1000 ease-out" 
-                            style={{ width: `${100 - usagePercentage}%` }}
-                        ></div>
-                    </div>
+                <div className="flex items-center gap-2" title="Daily Neural Energy">
+                    <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-sec hidden md:block">Neural Energy</span>
                 </div>
             )}
 
@@ -604,42 +610,21 @@ const App: React.FC = () => {
                
                <NotificationBell />
                
-               {userProfile.subscriptionTier === 'Fresher' && appMode !== 'ADMIN' && (
-                   <button onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse shadow-lg shadow-amber-900/20">
-                       <span>Upgrade</span>
-                       <span className="bg-white text-orange-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👑</span>
-                   </button>
-               )}
                <div className="h-6 w-px bg-border-main mx-2"></div>
-               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
+               
+               {/* Enhanced Profile Button (Ring + Icon) */}
+               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group relative">
                    <div className="text-right hidden sm:block">
                        <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
                        <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
                    </div>
-                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg`}>
+                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg ring-2 ring-white/10 relative overflow-hidden`}>
                        <span className="text-sm">{userProfile.avatarEmoji}</span>
                    </div>
                </button>
             </div>
         </div>
       </nav>
-
-      {/* Floating Docks - Desktop & Mobile */}
-      {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && (
-          <>
-            <FloatingDock 
-                mode={appMode} 
-                setMode={handleSetAppMode} 
-                onHub={() => setStatus(AppStatus.READY)} 
-                isDuelActive={!!activeDuelId} 
-                onDuel={() => setAppMode('DUEL')}
-            />
-            <MobileNavBar 
-                mode={appMode} 
-                setMode={handleSetAppMode} 
-            />
-          </>
-      )}
 
       <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} 
         onSelect={(item) => {
@@ -661,7 +646,20 @@ const App: React.FC = () => {
             if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
         }}
       />
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToSupabase(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); window.location.reload(); }} isAdmin={!!isAdmin} onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} />
+      
+      {/* Passed Upgrade Handler to Profile Modal */}
+      <UserProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        profile={userProfile} 
+        onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if(user) saveUserToSupabase(user.uid, updated); }} 
+        onClearHistory={() => {}} 
+        onLogout={async () => { await logout(); window.location.reload(); }} 
+        isAdmin={!!isAdmin} 
+        onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }}
+        onUpgradeRequest={() => setIsSubscriptionOpen(true)} // Added
+      />
+      
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
@@ -691,7 +689,7 @@ const App: React.FC = () => {
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} />}
+                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState: QuizState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}

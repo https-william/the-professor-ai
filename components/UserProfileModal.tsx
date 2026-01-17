@@ -16,6 +16,7 @@ interface UserProfileModalProps {
   onLogout: () => void;
   isAdmin?: boolean; 
   onRequestAdminAccess?: () => void;
+  onUpgradeRequest?: () => void; // New prop
 }
 
 declare global {
@@ -24,7 +25,7 @@ declare global {
     }
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess, onUpgradeRequest }) => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
@@ -36,7 +37,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       setEditedProfile(profile);
       if (isOpen) {
           setHistory(loadHistory());
-          // Hide dock when open (Handled via z-index in CSS, z-50 is higher than dock)
       }
   }, [profile, isOpen]);
 
@@ -59,7 +59,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
               if (publicUrl) {
                   const updated = { ...editedProfile, photoURL: publicUrl };
                   setEditedProfile(updated);
-                  // Auto-save just in case
                   onSave(updated);
               } else {
                   alert("Upload failed. Try a smaller image.");
@@ -73,7 +72,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       }
   };
 
-  // ... (Keep existing transcript logic) ...
   const calculateGrade = (score: number, total: number) => {
       const pct = (score / total) * 100;
       if (pct >= 90) return { letter: 'A', gpa: 4.0 };
@@ -92,7 +90,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       
-      // Header
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
       doc.text("OFFICIAL ACADEMIC TRANSCRIPT", 105, 20, { align: "center" });
@@ -105,7 +102,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       
       doc.line(20, 55, 190, 55);
 
-      // Data Processing
       const exams = history.filter(h => h.mode === 'EXAM' && (h.data as QuizState).isSubmitted);
       let totalGPA = 0;
       let totalExams = 0;
@@ -130,7 +126,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
       const finalGPA = totalExams > 0 ? (totalGPA / totalExams).toFixed(2) : "0.00";
 
-      // Table
       doc.autoTable({
           startY: 60,
           head: [['Date', 'Exam Title', 'Score', 'Grade', 'Points']],
@@ -140,14 +135,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           styles: { fontSize: 9 }
       });
 
-      // Summary
       const finalY = (doc as any).lastAutoTable.finalY + 20;
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.text(`Cumulative GPA: ${finalGPA}`, 20, finalY);
       doc.text(`Total Exams Completed: ${totalExams}`, 20, finalY + 7);
       
-      // Footer
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
       doc.text("Certified by The Professor AI Neural Engine.", 105, 280, { align: "center" });
@@ -156,66 +149,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   };
 
   const achievements = [
-      { 
-          id: 'fresh_meat', 
-          name: "Fresh Meat", 
-          desc: "Complete your first exam.", 
-          progress: Math.min((profile.questionsAnswered || 0), 1),
-          total: 1,
-          icon: <div className="w-8 h-8 bg-gray-500 rounded-sm transform rotate-45"></div>,
-          rarity: "Common",
-          color: "bg-gray-800 border-gray-600"
-      },
-      { 
-          id: 'academic_weapon', 
-          name: "Academic Weapon", 
-          desc: "Reach 1,000 XP.", 
-          progress: Math.min((profile.xp || 0), 1000),
-          total: 1000,
-          icon: <div className="w-8 h-8 border-2 border-blue-500 rounded-full flex items-center justify-center"><div className="w-4 h-4 bg-blue-500 rounded-full"></div></div>,
-          rarity: "Rare",
-          color: "bg-blue-900/40 border-blue-500"
-      },
-      { 
-          id: 'no_life', 
-          name: "Touch Grass", 
-          desc: "7 Day Streak.", 
-          progress: Math.min((profile.streak || 0), 7),
-          total: 7,
-          icon: <div className="w-8 h-8 border-2 border-purple-500 transform rotate-12"></div>,
-          rarity: "Epic",
-          color: "bg-purple-900/40 border-purple-500"
-      },
-      { 
-          id: 'veteran', 
-          name: "Veteran", 
-          desc: "Answer 100 Questions.", 
-          progress: Math.min((profile.questionsAnswered || 0), 100),
-          total: 100,
-          icon: <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center"><div className="w-1 h-6 bg-black"></div><div className="w-6 h-1 bg-black absolute"></div></div>,
-          rarity: "Rare",
-          color: "bg-indigo-900/40 border-indigo-500"
-      },
-      { 
-          id: 'einstein', 
-          name: "Einstein", 
-          desc: "Reach 5,000 XP.", 
-          progress: Math.min((profile.xp || 0), 5000),
-          total: 5000,
-          icon: <div className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full shadow-[0_0_15px_orange]"></div>,
-          rarity: "Legendary",
-          color: "bg-amber-900/40 border-amber-500"
-      },
-      { 
-          id: 'sharpshooter', 
-          name: "Sharpshooter", 
-          desc: "Get 50 Correct Answers.", 
-          progress: Math.min((profile.correctAnswers || 0), 50),
-          total: 50,
-          icon: <div className="w-8 h-8 border-2 border-red-500 rounded-full flex items-center justify-center"><div className="w-2 h-2 bg-red-500 rounded-full"></div></div>,
-          rarity: "Epic",
-          color: "bg-red-900/40 border-red-500"
-      }
+      { id: 'fresh_meat', name: "Fresh Meat", desc: "Complete your first exam.", progress: Math.min((profile.questionsAnswered || 0), 1), total: 1, icon: <div className="w-8 h-8 bg-gray-500 rounded-sm transform rotate-45"></div>, rarity: "Common", color: "bg-gray-800 border-gray-600" },
+      { id: 'academic_weapon', name: "Academic Weapon", desc: "Reach 1,000 XP.", progress: Math.min((profile.xp || 0), 1000), total: 1000, icon: <div className="w-8 h-8 border-2 border-blue-500 rounded-full flex items-center justify-center"><div className="w-4 h-4 bg-blue-500 rounded-full"></div></div>, rarity: "Rare", color: "bg-blue-900/40 border-blue-500" },
+      { id: 'no_life', name: "Touch Grass", desc: "7 Day Streak.", progress: Math.min((profile.streak || 0), 7), total: 7, icon: <div className="w-8 h-8 border-2 border-purple-500 transform rotate-12"></div>, rarity: "Epic", color: "bg-purple-900/40 border-purple-500" },
+      { id: 'veteran', name: "Veteran", desc: "Answer 100 Questions.", progress: Math.min((profile.questionsAnswered || 0), 100), total: 100, icon: <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center"><div className="w-1 h-6 bg-black"></div><div className="w-6 h-1 bg-black absolute"></div></div>, rarity: "Rare", color: "bg-indigo-900/40 border-indigo-500" },
+      { id: 'einstein', name: "Einstein", desc: "Reach 5,000 XP.", progress: Math.min((profile.xp || 0), 5000), total: 5000, icon: <div className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full shadow-[0_0_15px_orange]"></div>, rarity: "Legendary", color: "bg-amber-900/40 border-amber-500" },
+      { id: 'sharpshooter', name: "Sharpshooter", desc: "Get 50 Correct Answers.", progress: Math.min((profile.correctAnswers || 0), 50), total: 50, icon: <div className="w-8 h-8 border-2 border-red-500 rounded-full flex items-center justify-center"><div className="w-2 h-2 bg-red-500 rounded-full"></div></div>, rarity: "Epic", color: "bg-red-900/40 border-red-500" }
   ];
 
   return (
@@ -224,7 +163,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       <div className="relative bg-panel w-full max-w-3xl rounded-[2rem] border border-border-main shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade text-text-pri">
         
         {/* Header - Dossier Style */}
-        <div className="p-6 border-b border-border-main bg-black/5 dark:bg-white/5 flex justify-between items-center shrink-0">
+        <div className="p-6 border-b border-border-main bg-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/20 text-blue-500 shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
@@ -243,7 +182,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
                <div 
                  onClick={() => fileInputRef.current?.click()}
-                 className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-black/10 border border-border-main shrink-0 cursor-pointer overflow-hidden relative group`}
+                 className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/10 border border-border-main shrink-0 cursor-pointer overflow-hidden relative group`}
                  style={{ 
                      background: editedProfile.photoURL ? `url(${editedProfile.photoURL}) center/cover` : `linear-gradient(to bottom right, #3b82f6, #06b6d4)` 
                  }}
@@ -251,7 +190,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                    {!editedProfile.photoURL && (
                        <div className="w-16 h-16 bg-white/20 rotate-45 transform skew-x-12 rounded-xl backdrop-blur-sm border border-white/40"></div>
                    )}
-                   {/* Upload Overlay */}
                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                        {isUploading ? (
                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -265,14 +203,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                <div className="text-center sm:text-left flex-1 w-full">
                    <div className="flex flex-col sm:flex-row justify-between items-center mb-2">
                        <h2 className="text-3xl font-bold font-serif">{editedProfile.alias || 'Anonymous'}</h2>
-                       <div className="flex gap-2">
+                       <div className="flex gap-2 items-center">
                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${editedProfile.subscriptionTier === 'Excellentia' ? 'bg-amber-900/20 text-amber-500 border-amber-500/20' : 'bg-blue-900/20 text-blue-400 border-blue-500/20'}`}>
                                {editedProfile.subscriptionTier}
                            </span>
-                           {isAdmin && (
-                               <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border bg-red-900/20 text-red-500 border-red-500/20 animate-pulse">
-                                   DEAN
-                               </span>
+                           {/* Add Upgrade Button Here */}
+                           {editedProfile.subscriptionTier === 'Fresher' && onUpgradeRequest && (
+                               <button 
+                                onClick={onUpgradeRequest}
+                                className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-amber-600 to-orange-600 text-white animate-pulse shadow-lg hover:scale-105 transition-transform"
+                               >
+                                   Upgrade Plan
+                               </button>
                            )}
                        </div>
                    </div>

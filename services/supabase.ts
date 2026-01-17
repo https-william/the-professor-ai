@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, SubscriptionTier, DuelState, QuizQuestion, QuizConfig, DuelParticipant, ProfessorSection } from '../types';
 
@@ -49,6 +48,16 @@ export const registerWithEmail = async (email: string, password: string, fullNam
 
 export const loginWithEmail = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+};
+
+export const verifyUserOtp = async (email: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'signup'
+    });
     if (error) throw error;
     return data;
 };
