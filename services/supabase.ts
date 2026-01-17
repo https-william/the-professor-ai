@@ -31,8 +31,18 @@ export const signInWithGoogle = async () => {
     if (error) throw error;
 };
 
-export const registerWithEmail = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+export const registerWithEmail = async (email: string, password: string, fullName?: string) => {
+    // We pass metadata so the database trigger can use it immediately
+    const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+            data: {
+                full_name: fullName || email.split('@')[0],
+                avatar_url: '',
+            }
+        }
+    });
     if (error) throw error;
     return data;
 };
@@ -41,6 +51,14 @@ export const loginWithEmail = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
+};
+
+export const resendConfirmationEmail = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+    });
+    if (error) throw error;
 };
 
 export const logout = async () => {

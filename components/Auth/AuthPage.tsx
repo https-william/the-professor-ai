@@ -1,16 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { signInWithGoogle, registerWithEmail, loginWithEmail } from '../../services/supabase';
+import { signInWithGoogle, registerWithEmail, loginWithEmail, resendConfirmationEmail } from '../../services/supabase';
 
 export const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState(''); // New field for better signup data
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authStatusText, setAuthStatusText] = useState('CONNECTING...');
+  const [showResend, setShowResend] = useState(false);
 
   useEffect(() => {
       if (!isAuthenticating) return;
@@ -34,6 +36,7 @@ export const AuthPage: React.FC = () => {
     
     setError(null);
     setSuccessMsg(null);
+    setShowResend(false);
     
     if (!isValidEmail(email)) { setError("Invalid email address format."); return; }
     if (mode === 'REGISTER' && password.length < 8) { setError("Password must be at least 8 characters."); return; }
@@ -44,17 +47,37 @@ export const AuthPage: React.FC = () => {
       if (mode === 'LOGIN') {
           await loginWithEmail(email, password);
       } else {
-          const result = await registerWithEmail(email, password);
+          // Pass fullName if available, or undefined
+          const result = await registerWithEmail(email, password, fullName || undefined);
           if (result && !result.session) {
               setIsAuthenticating(false);
               setSuccessMsg("Access Requested. Check your email inbox (Sender: Supabase) to verify your student ID.");
               setMode('LOGIN'); 
+              return; // Stop here
           }
       }
     } catch (err: any) {
       setIsAuthenticating(false);
-      setError(err.message || "Authentication failed.");
+      const msg = err.message || "Authentication failed.";
+      setError(msg);
+      
+      // If email is not confirmed, offer resend
+      if (msg.toLowerCase().includes("email not confirmed")) {
+          setShowResend(true);
+      }
     }
+  };
+
+  const handleResend = async () => {
+      if (!email) return;
+      try {
+          await resendConfirmationEmail(email);
+          setSuccessMsg("Confirmation email resent. Check your spam folder.");
+          setShowResend(false);
+          setError(null);
+      } catch (e: any) {
+          setError(e.message || "Failed to resend.");
+      }
   };
 
   return (
@@ -83,13 +106,16 @@ export const AuthPage: React.FC = () => {
          </div>
 
          <div className="flex border-b border-border-main mb-6 relative">
-            <button onClick={() => { setMode('LOGIN'); setError(null); setSuccessMsg(null); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'LOGIN' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Log In</button>
-            <button onClick={() => { setMode('REGISTER'); setError(null); setSuccessMsg(null); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'REGISTER' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Enroll</button>
+            <button onClick={() => { setMode('LOGIN'); setError(null); setSuccessMsg(null); setShowResend(false); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'LOGIN' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Log In</button>
+            <button onClick={() => { setMode('REGISTER'); setError(null); setSuccessMsg(null); setShowResend(false); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'REGISTER' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Enroll</button>
             <div className={`absolute bottom-0 h-0.5 bg-blue-500 transition-all duration-300 w-1/2 ${mode === 'LOGIN' ? 'left-0' : 'left-1/2'}`}></div>
          </div>
 
          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
+              {mode === 'REGISTER' && (
+                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name (Optional)" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
+              )}
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email Address" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passcode" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
             </div>
@@ -101,6 +127,12 @@ export const AuthPage: React.FC = () => {
             )}
             
             {error && <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-lg text-red-400 text-xs">{error}</div>}
+            
+            {showResend && (
+                <button type="button" onClick={handleResend} className="w-full text-xs text-blue-400 hover:text-blue-300 underline text-center">
+                    Resend Confirmation Email
+                </button>
+            )}
             
             <button type="submit" disabled={isAuthenticating} className={`w-full py-4 rounded-xl font-bold uppercase text-xs transition-all relative overflow-hidden ${isAuthenticating ? 'bg-gray-900 text-blue-400 border border-blue-500/30 cursor-wait' : 'bg-white text-black hover:bg-gray-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.2)]'}`}>
               {isAuthenticating ? (
