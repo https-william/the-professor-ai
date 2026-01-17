@@ -17,13 +17,21 @@ import { AdminVerifyModal } from './AdminVerifyModal';
 import { ProfessorCharacter } from './ProfessorCharacter';
 import { ArenaView } from './ArenaView';
 import { MobileNavBar } from './MobileNavBar';
+import { FloatingDock } from './FloatingDock';
+import { RadialProgress } from './RadialProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
-import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, incrementDailyUsage } from '../services/storageService';
-import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState } from '../types';
-import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore } from '../services/supabase';
+import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, incrementDailyUsage, updateStreak } from '../services/storageService';
+import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from '../types';
+import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/supabase';
 import { processFile } from '../services/fileService';
-import { useNavigate } from 'react-router-dom';
+import { LandingPage } from './LandingPage';
+import { AuthPage } from './Auth/AuthPage';
+import { AdminLoginPage } from './Auth/AdminLoginPage';
+import { PricingPage } from './PricingPage';
+import { PlanCheckoutPage } from './PlanCheckoutPage';
+import { AuthCallback } from './Auth/AuthCallback';
+import { SharedView } from './SharedView';
 
 // Robust Lazy Loading with Retry
 function lazyRetry(componentImport: () => Promise<any>): React.LazyExoticComponent<React.ComponentType<any>> {
@@ -46,38 +54,35 @@ const TheHub = lazyRetry(() => import('./TheHub'));
 
 const ADMIN_EMAILS = ['popoolaariseoluwa@gmail.com', 'professoradmin@gmail.com', 'vexis.automations@gmail.com'];
 
-// Desktop Dock
-const FloatingDock: React.FC<{ mode: AppMode, setMode: (m: AppMode) => void, onHub: () => void, isDuelActive: boolean, onDuel: () => void }> = ({ mode, setMode, onHub, isDuelActive, onDuel }) => {
-    const DockItem = ({ active, onClick, icon, label, colorClass }: any) => (
-        <button 
-            onClick={onClick}
-            className={`relative group flex flex-col items-center justify-center p-3 rounded-2xl transition-all duration-300 ${active ? `${colorClass} -translate-y-4 scale-110 shadow-lg text-white` : 'bg-white/5 hover:bg-white/10 hover:-translate-y-2 text-gray-400'}`}
-        >
-            <div className={`w-6 h-6 ${active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
-                {icon}
-            </div>
-            <span className={`absolute -top-10 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-md whitespace-nowrap transition-opacity duration-200 pointer-events-none ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                {label}
-            </span>
-            {active && <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>}
-        </button>
-    );
-
-    return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] hidden md:flex items-end gap-3 px-4 pb-3 pt-3 bg-black/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl transition-all hover:scale-105 hover:bg-black/90">
-            <DockItem active={mode === 'EXAM'} onClick={() => setMode('EXAM')} label="Exam" colorClass="bg-blue-600 shadow-blue-900/50" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>} />
-            <DockItem active={mode === 'PROFESSOR'} onClick={() => setMode('PROFESSOR')} label="Lecture" colorClass="bg-amber-600 shadow-amber-900/50" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" /></svg>} />
-            <DockItem active={mode === 'FLASHCARDS'} onClick={() => setMode('FLASHCARDS')} label="Cards" colorClass="bg-pink-600 shadow-pink-900/50" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>} />
-            <DockItem active={mode === 'HUB'} onClick={() => { setMode('HUB'); onHub(); }} label="The Hub" colorClass="bg-green-600 shadow-green-900/50" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" /></svg>} />
-            <DockItem active={mode === 'DUEL'} onClick={() => { if(isDuelActive) setMode('DUEL'); else onDuel(); }} label="Arena" colorClass="bg-purple-600 shadow-purple-900/50" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>} />
-        </div>
-    );
-};
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK';
 
 export const Dashboard: React.FC = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, loading } = useAuth();
   
+  const [currentView, setCurrentView] = useState<ViewState>(() => {
+      if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('code')) return 'AUTH_CALLBACK';
+          if (window.location.hash.includes('access_token')) return 'AUTH_CALLBACK';
+
+          const path = window.location.pathname.toLowerCase();
+          const hash = window.location.hash;
+          
+          if (hash.startsWith('#/share/')) return 'SHARED';
+          if (path === '/pricing' || path === '/tuition') return 'PRICING';
+          if (path === '/login' || path === '/auth') return 'AUTH';
+          if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
+      }
+      return 'LANDING';
+  });
+
+  const [shareId, setShareId] = useState<string | null>(() => {
+      if (typeof window !== 'undefined' && window.location.hash.startsWith('#/share/')) {
+          return window.location.hash.split('/share/')[1];
+      }
+      return null;
+  });
+
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -103,16 +108,77 @@ export const Dashboard: React.FC = () => {
   
   const [showAdminVerify, setShowAdminVerify] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(null);
   const saveTimeoutRef = useRef<any>(null);
 
   const isFresher = userProfile.subscriptionTier === 'Fresher';
+  const dailyLimit = userProfile.subscriptionTier === 'Scholar' ? 10 : (isFresher ? 1 : 1000);
+  const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / dailyLimit) * 100, 100);
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
+
+  // View Navigation Logic
+  const handleNavigate = (view: ViewState, url: string) => {
+      window.history.pushState({}, '', url);
+      setCurrentView(view);
+  };
+
+  useEffect(() => {
+      const handlePopState = () => {
+          const path = window.location.pathname.toLowerCase();
+          if (path === '/pricing') setCurrentView('PRICING');
+          else if (path === '/login') setCurrentView('AUTH');
+          else if (path === '/administrator') setCurrentView('ADMIN_LOGIN');
+          else if (user) setCurrentView('APP');
+          else setCurrentView('LANDING');
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+  }, [user]);
+
+  // Auth State Management
+  useEffect(() => {
+    if (loading) return; 
+    if (currentView === 'SHARED') return;
+    if (currentView === 'PRICING') return;
+    if (currentView === 'AUTH_CALLBACK') return;
+    if (currentView === 'ADMIN_LOGIN' && !user) return;
+
+    if (user) {
+        const storedPendingPlan = localStorage.getItem('pending_plan');
+        if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
+            setCheckoutTier(storedPendingPlan as SubscriptionTier);
+            setCurrentView('CHECKOUT');
+            localStorage.removeItem('pending_plan');
+        } else if (currentView !== 'CHECKOUT') {
+            setCurrentView('APP');
+        }
+    } else {
+        if (currentView === 'APP' || currentView === 'CHECKOUT') {
+            setCurrentView('LANDING');
+        }
+    }
+  }, [user, loading, currentView]);
 
   // Restore Session
   useEffect(() => {
     if (!user) return;
     const localProfile = loadUserProfile() || getDefaultProfile();
-    setUserProfile(localProfile);
+    let mergedProfile: UserProfile = { ...localProfile };
+    
+    if (user.profile) {
+        mergedProfile = { 
+            ...mergedProfile, 
+            ...user.profile, 
+            socials: user.profile.socials || mergedProfile.socials, 
+            xp: Math.max(user.profile.xp || 0, mergedProfile.xp || 0)
+        };
+    }
+    
+    if (user.plan) mergedProfile.subscriptionTier = user.plan;
+    mergedProfile = updateStreak(mergedProfile);
+    setUserProfile(mergedProfile);
+    saveUserProfile(mergedProfile);
+    
     loadHistory().then(setHistory);
     
     if (user.hasCompletedOnboarding === false) setOnboardingStep('WELCOME');
@@ -154,7 +220,7 @@ export const Dashboard: React.FC = () => {
                   data: dataToSave,
                   summary: history.find(h => h.id === activeHistoryId)?.summary
               };
-              saveToHistory(item);
+              await saveToHistory(item);
               loadHistory().then(setHistory);
           }
       };
@@ -194,7 +260,7 @@ export const Dashboard: React.FC = () => {
       if (mode === 'EXAM' || mode === 'FLASHCARDS') {
         const questions = await generateQuizFromText(file.content, config, userProfile);
         if (!questions || questions.length === 0) throw new Error("Neural Failure: No questions generated.");
-        const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining: null, focusStrikes: 0, currentQuestionIndex: 0 };
+        const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, null, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
         saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode, title: file.name, data: newState, config });
         setAppMode(mode); 
@@ -206,6 +272,10 @@ export const Dashboard: React.FC = () => {
       }
       
       setHistory(await loadHistory());
+      const updatedProfile = { ...incrementDailyUsage(userProfile) };
+      setUserProfile(updatedProfile);
+      saveUserProfile(updatedProfile);
+      if (user) updateUserUsage(user.uid, updatedProfile.dailyQuizzesGenerated);
       setStatus(AppStatus.READY);
     } catch (err: any) {
       console.error(err);
@@ -219,12 +289,39 @@ export const Dashboard: React.FC = () => {
       setErrorMsg(null);
   };
 
-  const handleQuizAction = (action: string, payload?: any) => {
-      if (action === 'RESET') {
+  const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
+    if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
+    if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
+    if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
+    if (action === 'SUBMIT') {
+      let score = 0;
+      quizState.questions.forEach(q => { 
+          if (q.type === 'Select All That Apply') {
+              // ... same logic
+          } else {
+              if (quizState.userAnswers[q.id] === q.correct_answer) score++; 
+          }
+      });
+      setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (action === 'RESET') {
+      const force = payload?.force === true;
+      const resetLogic = () => {
           clearCurrentSession();
           setStatus(AppStatus.IDLE);
           setQuizState({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
-      }
+          setProfessorState({ sections: [] });
+          setChatState({ messages: [], fileContext: '', fileName: '' });
+          setAppMode('EXAM'); 
+          setActiveHistoryId(null);
+          setErrorMsg(null); 
+          setDuelReadyData(null); 
+          setActiveDuelId(null); 
+      };
+      if (force) resetLogic();
+      else attemptAction(resetLogic);
+    }
   };
 
   const attemptAction = (action: () => void, force: boolean = false) => {
@@ -234,6 +331,12 @@ export const Dashboard: React.FC = () => {
       } else {
           action();
       }
+  };
+
+  const confirmExit = () => {
+      if (pendingAction) pendingAction();
+      setShowExitConfirmation(false);
+      setPendingAction(null);
   };
 
   const handleDuelStart = async (data: { wager: number, file: File }) => {
@@ -298,7 +401,7 @@ export const Dashboard: React.FC = () => {
       } else {
           setCheckoutTier(tier);
           setIsSubscriptionOpen(false);
-          navigate('CHECKOUT', `/${tier.toLowerCase()}`);
+          handleNavigate('CHECKOUT', `/${tier.toLowerCase()}`);
       }
   };
 
@@ -345,7 +448,6 @@ export const Dashboard: React.FC = () => {
   if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => handleNavigate('AUTH', '/login')} onPricing={() => handleNavigate('PRICING', '/pricing')} />;
 
   const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
-  const hideFABs = appMode === 'EXAM' && !quizState.isSubmitted;
 
   return (
     <div className={`min-h-screen text-text-pri bg-core selection:bg-accent/30 overflow-x-hidden relative transition-colors duration-1000 font-sans pb-32`}>
@@ -360,7 +462,7 @@ export const Dashboard: React.FC = () => {
         onUpgrade={handleGoToCheckout} 
         userEmail={user?.email || undefined}
       />
-      <ConfirmationModal isOpen={showExitConfirmation} onConfirm={() => { if(pendingAction) pendingAction(); setShowExitConfirmation(false); setPendingAction(null); }} onCancel={() => setShowExitConfirmation(false)} />
+      <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
 
@@ -384,6 +486,14 @@ export const Dashboard: React.FC = () => {
                </div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
+            
+            {isFresher && appMode !== 'ADMIN' && (
+                <div className="flex items-center gap-2" title="Daily Neural Energy">
+                    <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-sec hidden md:block">Neural Energy</span>
+                </div>
+            )}
+
             <div className="flex items-center gap-4">
                {status === AppStatus.IDLE && <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg></button>}
                <NotificationBell />
@@ -411,10 +521,20 @@ export const Dashboard: React.FC = () => {
       }} onDelete={async (id) => {
             await deleteHistoryItem(id);
             setHistory(await loadHistory());
-            if (activeHistoryId === id) handleQuizAction('RESET');
+            if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
       }} />
       
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} profile={userProfile} onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if(user) saveUserToSupabase(user.uid, updated); }} onClearHistory={() => {}} onLogout={async () => { await logout(); navigate('/'); }} isAdmin={!!isAdmin} onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} />
+      <UserProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        profile={userProfile} 
+        onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if(user) saveUserToSupabase(user.uid, updated); }} 
+        onClearHistory={() => {}} 
+        onLogout={async () => { await logout(); handleNavigate('LANDING', '/'); }} 
+        isAdmin={!!isAdmin} 
+        onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }}
+        onUpgradeRequest={() => setIsSubscriptionOpen(true)}
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
          {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
@@ -430,15 +550,10 @@ export const Dashboard: React.FC = () => {
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
-                    {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [qId]: ans } }))} onFlagQuestion={(qId: any) => setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(qId) ? prev.flaggedQuestions.filter(id => id !== qId) : [...prev.flaggedQuestions, qId] }))} onSubmit={() => {
-                        let score = 0;
-                        quizState.questions.forEach(q => { if (quizState.userAnswers[q.id] === q.correct_answer) score++; });
-                        setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => {}} duelId={activeDuelId} onIndexChange={(idx: any) => setQuizState(prev => ({ ...prev, currentQuestionIndex: idx }))} />}
-                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET')} timeRemaining={null} />}
+                    {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
+                    {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={setChatState} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET')} onGenerate={(newState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
+                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}
@@ -457,5 +572,3 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
-
-export default Dashboard;

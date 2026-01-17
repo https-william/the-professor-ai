@@ -33,7 +33,6 @@ import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHist
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from '../types';
 import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/supabase';
 import { processFile } from '../services/fileService';
-import { useNavigate } from 'react-router-dom';
 
 // Robust Lazy Loading with Retry
 function lazyRetry(componentImport: () => Promise<any>): React.LazyExoticComponent<React.ComponentType<any>> {
@@ -66,7 +65,6 @@ const ADMIN_EMAILS = [
 const App: React.FC = () => {
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
-  const navigate = useNavigate(); // Added navigate hook if inside Router context, if not logic is below
   
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       if (typeof window !== 'undefined') {
@@ -385,6 +383,8 @@ const App: React.FC = () => {
     }
   };
 
+  const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
+
   const attemptAction = (action: () => void, force: boolean = false) => {
       if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
           setPendingAction(() => action);
@@ -677,7 +677,7 @@ const App: React.FC = () => {
                  <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
-                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={setChatState} onExit={() => handleQuizAction('RESET')} />}
+                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState: QuizState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
