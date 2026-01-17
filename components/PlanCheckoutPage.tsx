@@ -8,14 +8,14 @@ interface PlanCheckoutPageProps {
   onSuccess: (tier: SubscriptionTier) => void;
 }
 
-// --- TYPE DEFINITIONS FOR RAW PAYSTACK ---
 declare global {
   interface Window {
     PaystackPop: {
       setup: (options: {
         key: string;
         email: string;
-        amount: number;
+        amount?: number;
+        plan?: string;
         currency?: string;
         ref?: string;
         metadata?: any;
@@ -32,21 +32,42 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState<'NGN' | 'USD'>('USD');
-
-  // Pricing Matrix
-  const PRICES = {
-      Scholar: { NGN: 2900, USD: 4.99 },
-      Excellentia: { NGN: 8500, USD: 14.99 }
-  };
+  const [billingCycle, setBillingCycle] = useState('monthly');
 
   useEffect(() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (tz === 'Africa/Lagos') setCurrency('NGN');
     } catch(e) { setCurrency('USD'); }
+    
+    const pendingCycle = localStorage.getItem('pending_billing_cycle');
+    if (pendingCycle) setBillingCycle(pendingCycle);
   }, []);
 
-  const price = PRICES[tier as keyof typeof PRICES]?.[currency] || 0;
+  // PRICING CONSTANTS
+  const PRICES = {
+      Scholar: { 
+          monthly: { NGN: 2900, USD: 4.99 },
+          annually: { NGN: 29000, USD: 49.99 }
+      },
+      Excellentia: { 
+          monthly: { NGN: 8500, USD: 14.99 },
+          annually: { NGN: 85000, USD: 149.99 }
+      }
+  };
+
+  const getPlanCode = (tier: string, cycle: string) => {
+      // Retrieve Plan Codes from Env or Fallback to null (which means it will use amount)
+      // Note: For recurring billing to work automatically, PLAN CODES are required.
+      // If no plan code is found, it falls back to a one-time charge (amount).
+      
+      const key = `VITE_PAYSTACK_PLAN_${tier.toUpperCase()}_${cycle.toUpperCase()}`;
+      // @ts-ignore
+      return import.meta.env[key] || undefined;
+  };
+
+  // @ts-ignore
+  const price = PRICES[tier]?.[billingCycle]?.[currency] || 0;
 
   const handleCheckout = (e: React.FormEvent) => {
       e.preventDefault();
@@ -64,23 +85,25 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
           return;
       }
 
-      if (!window.PaystackPop || typeof window.PaystackPop.setup !== 'function') {
-          alert("Secure Gateway (Paystack) not loaded. Please refresh.");
-          return;
-      }
-
       setLoading(true);
 
       try {
+        const planCode = getPlanCode(tier, billingCycle);
+        
         const handler = window.PaystackPop.setup({
             key: publicKey,
             email: email,
-            amount: price * 100, 
+            // If plan code exists, use it. If not, use amount * 100
+            ...(planCode ? { plan: planCode } : { amount: price * 100 }),
             currency: currency,
             ref: 'PRO_' + Math.floor((Math.random() * 1000000000) + 1), 
             metadata: {
                 tier: tier,
-                custom_fields: [{ display_name: "Subscription Tier", variable_name: "tier", value: tier }]
+                billing_cycle: billingCycle,
+                custom_fields: [
+                    { display_name: "Subscription Tier", variable_name: "tier", value: tier },
+                    { display_name: "Billing Cycle", variable_name: "cycle", value: billingCycle }
+                ]
             },
             callback: (response: any) => {
                 onSuccess(tier);
@@ -130,7 +153,7 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                             </div>
                             <h1 className="text-4xl font-display font-bold text-white mb-2">{isGold ? 'EXCELLENTIA ACCESS' : 'SCHOLAR PASS'}</h1>
-                            <p className="text-xs text-gray-500 uppercase tracking-[0.3em]">{isGold ? 'UNLIMITED NEURAL ACCESS' : 'STANDARD ACADEMIC LICENSE'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-[0.3em]">{billingCycle} • {isGold ? 'VIP NEURAL ACCESS' : 'STANDARD LICENSE'}</p>
                         </div>
 
                         <div className="flex justify-between items-end mb-8 bg-white/5 p-4 rounded-xl border border-white/5">
@@ -172,7 +195,7 @@ export const PlanCheckoutPage: React.FC<PlanCheckoutPageProps> = ({ tier, onBack
                         </div>
                         
                         <p className="text-[10px] text-gray-600 text-center mt-4">
-                            Secured by 256-bit Encryption. Cancel anytime.
+                            Secured by Paystack. Encrypted Transaction.
                         </p>
                     </div>
                 </div>

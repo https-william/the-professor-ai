@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, ChatState } from '../types';
 import { generateChatResponse } from '../services/geminiService';
+import { CameraScanner } from './CameraScanner'; // Import Camera Scanner
 import DOMPurify from 'dompurify';
 
 interface ChatViewProps {
@@ -21,17 +22,16 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [showCamera, setShowCamera] = useState(false); // Camera State
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (chatState.messages.length === 0) {
-      // LOGIC FIX: Check if we actually have a file context or if this is a general session
       const hasContext = chatState.fileContext && chatState.fileContext.trim().length > 0;
       const fileName = chatState.fileName || 'your document';
       
       let introText = "";
-      
       if (hasContext) {
           introText = `I have analyzed ${fileName}. I am ready to answer any questions, verify your understanding, or debate the concepts within.`;
       } else {
@@ -70,7 +70,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
     const newMessages = [...chatState.messages, userMsg];
     onUpdate({ ...chatState, messages: newMessages });
     
-    setInput('');
+    if (!textOverride) setInput('');
     setIsTyping(true);
 
     try {
@@ -140,8 +140,22 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       recognition.start();
   };
 
+  const handleCameraCapture = (base64: string) => {
+      setShowCamera(false);
+      // Send the image as a special formatted message
+      const msg = `[IMAGE_DATA:${base64}] \n\nPlease analyze this image I just captured.`;
+      handleSend(msg);
+  };
+
   const renderMarkdown = (text: string) => {
-      const sanitized = DOMPurify.sanitize(text);
+      // Handle Image tags specifically for chat view display
+      let processed = text;
+      if (text.includes('[IMAGE_DATA:')) {
+          processed = text.replace(/\[IMAGE_DATA:(.*?)\]/g, '<img src="data:image/jpeg;base64,$1" class="max-w-full rounded-lg border border-white/20 my-2 shadow-lg" alt="Captured Content" />');
+      }
+      
+      const sanitized = DOMPurify.sanitize(processed, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'class', 'alt'] });
+      
       if (window.marked) {
           return { __html: window.marked.parse(sanitized) };
       }
@@ -150,6 +164,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
 
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] max-w-4xl mx-auto relative">
+      
+      {showCamera && (
+          <CameraScanner 
+            onCapture={handleCameraCapture} 
+            onClose={() => setShowCamera(false)} 
+            mode="SOLVE" 
+          />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/5 bg-black/40 backdrop-blur-sm z-10 rounded-t-3xl">
           <div className="flex items-center gap-3">
@@ -219,6 +242,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                   className="flex-1 bg-transparent text-white outline-none text-sm font-medium px-2 py-1 placeholder-gray-600"
               />
 
+              <button
+                onClick={() => setShowCamera(true)}
+                className="p-2.5 rounded-xl transition-all text-gray-400 hover:text-white bg-white/5 hover:bg-white/10"
+                title="Camera Scan"
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </button>
+
               <button 
                 onClick={handleVoiceInput}
                 className={`p-2.5 rounded-xl transition-all ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10'}`}
@@ -238,5 +269,3 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
     </div>
   );
 };
-
-export default ChatView;
