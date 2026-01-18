@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { QuizState, QuizQuestion } from '../types';
+import { QuizState, QuizQuestion, UserProfile } from '../types';
 import { generateQuizFromText } from '../services/geminiService';
 import { processFile } from '../services/fileService';
 
@@ -8,9 +8,11 @@ interface FlashcardViewProps {
   quizState: QuizState;
   onExit: (force?: boolean) => void;
   onGenerate?: (newState: QuizState) => void;
+  userProfile?: UserProfile;
+  onDeductCredits?: (amount: number, reason: string) => Promise<boolean>;
 }
 
-export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit, onGenerate }) => {
+export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit, onGenerate, userProfile, onDeductCredits }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [masteredIds, setMasteredIds] = useState<number[]>([]);
   const [reviewIds, setReviewIds] = useState<number[]>([]);
@@ -30,6 +32,13 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
 
   const handleGenerate = async () => {
       if (!inputText.trim()) return;
+      
+      // --- GATEKEEPER ---
+      if (onDeductCredits) {
+          const success = await onDeductCredits(5, "Flashcard Deck");
+          if (!success) return;
+      }
+
       setIsGenerating(true);
       try {
           const generatedQuestions = await generateQuizFromText(inputText, {
@@ -63,6 +72,13 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
+          
+          // --- GATEKEEPER ---
+          if (onDeductCredits) {
+              const success = await onDeductCredits(5, "Flashcard Deck (File)");
+              if (!success) return;
+          }
+
           setIsGenerating(true);
           try {
               const file = e.target.files[0];
@@ -104,7 +120,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               </div>
               <h3 className="text-2xl font-bold text-text-pri mb-2 font-display">Create Flashcard Deck</h3>
-              <p className="text-text-sec mb-8 text-sm">Paste notes or upload a document to generate a study deck instantly.</p>
+              <p className="text-text-sec mb-8 text-sm">Paste notes or upload a document to generate a study deck instantly. Cost: 5 NT</p>
               
               <div className="w-full space-y-4">
                   <textarea 
@@ -119,7 +135,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                         onClick={() => document.getElementById('flash-upload')?.click()}
                         className="flex-1 py-3 border border-border-main hover:bg-white/5 rounded-xl font-bold uppercase text-xs tracking-widest text-text-sec transition-colors"
                       >
-                          Upload File
+                          Upload File (5 NT)
                       </button>
                       <input id="flash-upload" type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.docx,.txt" />
                       
@@ -128,7 +144,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                         disabled={isGenerating || !inputText.trim()}
                         className="flex-[2] py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold uppercase text-xs tracking-widest transition-all shadow-lg disabled:opacity-50"
                       >
-                          {isGenerating ? 'Generating...' : 'Create Deck'}
+                          {isGenerating ? 'Generating...' : 'Create Deck (5 NT)'}
                       </button>
                   </div>
               </div>

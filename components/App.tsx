@@ -1,4 +1,5 @@
-import React, { useState, useEffect, Suspense, useRef } from 'react';
+
+import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
 import { LoadingOverlay } from './LoadingOverlay';
@@ -24,15 +25,21 @@ import { SharedView } from './SharedView';
 import { ProfessorCharacter } from './ProfessorCharacter';
 import { ArenaView } from './ArenaView';
 import { MobileNavBar } from './MobileNavBar';
-import { FloatingDock } from './FloatingDock'; // Added Dock
-import { RadialProgress } from './RadialProgress'; // Added Radial
+import { FloatingDock } from './FloatingDock';
+import { CreditWallet } from './CreditWallet';
+import { CallOverlay } from './CallOverlay';
+import { RadialProgress } from './RadialProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
 import { saveCurrentSession, loadCurrentSession, clearCurrentSession, saveToHistory, loadHistory, deleteHistoryItem, loadUserProfile, saveUserProfile, getDefaultProfile, updateStreak, incrementDailyUsage } from '../services/storageService';
 import { AppStatus, QuizState, QuizConfig, AppMode, ProfessorState, HistoryItem, UserProfile, ProcessedFile, ChatState, SubscriptionTier } from '../types';
-import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan } from '../services/supabase';
+import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelWithQuestions, joinDuelByCode, getDuel, submitDuelScore, updateUserPlan, deductCredits } from '../services/supabase';
 import { processFile } from '../services/fileService';
+import { getModeCost } from '../services/creditService';
+import { callService } from '../services/callService';
+import { LegalPage } from './LegalPage';
+import { initAnalytics, trackEvent, identifyUser, trackPageView } from '../services/analytics';
 
 // Robust Lazy Loading with Retry
 function lazyRetry(componentImport: () => Promise<any>): React.LazyExoticComponent<React.ComponentType<any>> {
@@ -53,8 +60,7 @@ const FlashcardView = lazyRetry(() => import('./FlashcardView'));
 const AdminDashboard = lazyRetry(() => import('./AdminDashboard'));
 const TheHub = lazyRetry(() => import('./TheHub'));
 
-// Added missing ViewState type
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK' | 'LEGAL';
 
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com', 
@@ -66,30 +72,8 @@ const App: React.FC = () => {
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
   
-  const [currentView, setCurrentView] = useState<ViewState>(() => {
-      if (typeof window !== 'undefined') {
-          // 1. Check for Auth Callback (PKCE or Implicit)
-          const params = new URLSearchParams(window.location.search);
-          if (params.has('code')) return 'AUTH_CALLBACK';
-          if (window.location.hash.includes('access_token')) return 'AUTH_CALLBACK';
-
-          const path = window.location.pathname.toLowerCase();
-          const hash = window.location.hash;
-          
-          if (hash.startsWith('#/share/')) return 'SHARED';
-          if (path === '/pricing' || path === '/tuition') return 'PRICING';
-          if (path === '/login' || path === '/auth') return 'AUTH';
-          if (path === '/administrator' || path.startsWith('/admin')) return 'ADMIN_LOGIN';
-      }
-      return 'LANDING';
-  });
-
-  const [shareId, setShareId] = useState<string | null>(() => {
-      if (typeof window !== 'undefined' && window.location.hash.startsWith('#/share/')) {
-          return window.location.hash.split('/share/')[1];
-      }
-      return null;
-  });
+  const [currentView, setCurrentView] = useState<ViewState>('LANDING'); 
+  const [shareId, setShareId] = useState<string | null>(null);
 
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [appMode, setAppMode] = useState<AppMode>('EXAM');
@@ -122,286 +106,39 @@ const App: React.FC = () => {
   const [checkoutTier, setCheckoutTier] = useState<SubscriptionTier | null>(null);
   const saveTimeoutRef = useRef<any>(null);
 
+  // --- CALL STATES ---
+  const [incomingCall, setIncomingCall] = useState<any>(null);
+  const [activeCallPeerId, setActiveCallPeerId] = useState<string | null>(null);
+
   const isFresher = userProfile.subscriptionTier === 'Fresher';
   const dailyLimit = userProfile.subscriptionTier === 'Scholar' ? 10 : (isFresher ? 1 : 1000);
   const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / dailyLimit) * 100, 100);
 
-  // Admin Mode Force Dark
+  // Initialize Analytics
   useEffect(() => {
-      if (appMode === 'ADMIN') {
-          document.documentElement.classList.add('dark');
-      } else if (theme === 'Light') {
-          document.documentElement.classList.remove('dark');
+      initAnalytics();
+  }, []);
+
+  useEffect(() => {
+      if (user) {
+          identifyUser(user.uid, user.email || undefined);
       }
-  }, [appMode, theme]);
-
-  // View Navigation Logic
-  const handleNavigate = (view: ViewState, url: string) => {
-      window.history.pushState({}, '', url);
-      setCurrentView(view);
-  };
-
-  useEffect(() => {
-      const handlePopState = () => {
-          const path = window.location.pathname.toLowerCase();
-          if (path === '/pricing') setCurrentView('PRICING');
-          else if (path === '/login') setCurrentView('AUTH');
-          else if (path === '/administrator') setCurrentView('ADMIN_LOGIN');
-          else if (user) setCurrentView('APP');
-          else setCurrentView('LANDING');
-      };
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
-  // Auth State Management
+  // Track Page Views
   useEffect(() => {
-    if (loading) return; 
-    if (currentView === 'SHARED') return;
-    if (currentView === 'PRICING') return;
-    if (currentView === 'AUTH_CALLBACK') return;
-    if (currentView === 'ADMIN_LOGIN' && !user) return;
+      trackPageView(`/${currentView.toLowerCase()}`);
+  }, [currentView]);
 
-    if (user) {
-        const storedPendingPlan = localStorage.getItem('pending_plan');
-        if (storedPendingPlan && storedPendingPlan !== 'Fresher') {
-            setCheckoutTier(storedPendingPlan as SubscriptionTier);
-            setCurrentView('CHECKOUT');
-            localStorage.removeItem('pending_plan');
-        } else if (currentView !== 'CHECKOUT') {
-            setCurrentView('APP');
-        }
-    } else {
-        if (currentView === 'APP' || currentView === 'CHECKOUT') {
-            setCurrentView('LANDING');
-        }
-    }
-  }, [user, loading, currentView]);
+  // --- FUNCTIONS ---
 
-  // Restore Session & Cloud History
-  useEffect(() => {
-    if (!user) return;
-
-    const firestoreProfile = user.profile;
-    const localProfile = loadUserProfile() || getDefaultProfile();
-    let mergedProfile: UserProfile = { ...localProfile };
-    
-    if (firestoreProfile) {
-        mergedProfile = { 
-            ...mergedProfile, 
-            ...firestoreProfile, 
-            socials: firestoreProfile.socials || mergedProfile.socials, 
-            xp: Math.max(firestoreProfile.xp || 0, mergedProfile.xp || 0)
-        };
-    }
-    
-    if (user.plan) mergedProfile.subscriptionTier = user.plan;
-    
-    mergedProfile = updateStreak(mergedProfile);
-    
-    setUserProfile(mergedProfile);
-    saveUserProfile(mergedProfile); 
-    
-    // ASYNC HISTORY LOAD
-    loadHistory().then(setHistory);
-    
-    if (!isAdminUnlocked) {
-        const savedSession = loadCurrentSession();
-        if (savedSession) {
-          setAppMode(savedSession.mode);
-          if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
-          else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
-          else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
-          setStatus(AppStatus.READY);
-        }
-    }
-  }, [user, isAdminUnlocked]);
-
-  // Auto-Save Loop
-  useEffect(() => {
-      if (status !== AppStatus.READY || !activeHistoryId) return;
-      const syncHistory = async () => {
-          let dataToSave: any = null;
-          let title = '';
-          if (appMode === 'EXAM' || appMode === 'FLASHCARDS') {
-              dataToSave = quizState;
-              title = history.find(h => h.id === activeHistoryId)?.title || 'Exam';
-          } else if (appMode === 'PROFESSOR') {
-              dataToSave = professorState;
-              title = history.find(h => h.id === activeHistoryId)?.title || 'Class';
-          } else if (appMode === 'CHAT') {
-              dataToSave = chatState;
-              title = chatState.fileName || 'Chat';
-          }
-          if (dataToSave) {
-              const item: HistoryItem = {
-                  id: activeHistoryId,
-                  timestamp: Date.now(),
-                  mode: appMode,
-                  title: title,
-                  data: dataToSave,
-                  summary: history.find(h => h.id === activeHistoryId)?.summary
-              };
-              await saveToHistory(item);
-              // Optimistically update local history state
-              setHistory(prev => [item, ...prev.filter(i => i.id !== item.id)].sort((a,b) => b.timestamp - a.timestamp));
-          }
-      };
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(syncHistory, 3000); // 3s debounce for cloud save
-      return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, [quizState, professorState, chatState, activeHistoryId, status, appMode]);
-
-  const isPotentialAdmin = (email: string | null | undefined) => {
-      if (!email) return false;
-      const normalized = email.toLowerCase().trim();
-      return ADMIN_EMAILS.includes(normalized);
-  };
-  const isAdmin = isPotentialAdmin(user?.email);
-
-  const handleAdminSuccess = () => {
-      setIsAdminUnlocked(true);
-      setAppMode('ADMIN');
-      setStatus(AppStatus.READY);
-  };
-
-  const handleSetAppMode = (mode: AppMode) => {
-      if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
-      else if (mode === 'EXAM' && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
-      // Change: Flashcards view handles its own empty state (Creation UI), so always set to READY
-      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY); 
-      else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
-      else setStatus(AppStatus.READY);
-      
-      setAppMode(mode);
-  };
-
-  const handleProcess = async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
-    try {
-      setStatus(AppStatus.GENERATING_CONTENT);
-      setStatusText("Initializing Neural Link...");
-      setErrorMsg(null);
-
-      setActiveHistoryId(Date.now().toString()); 
-      
-      if (mode === 'CHAT') {
-        setStatusText("Analyzing Context...");
-        const newState: ChatState = { messages: [], fileContext: file.content, fileName: file.name };
-        setChatState(newState);
-        setAppMode('CHAT');
-        setStatus(AppStatus.READY);
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState, summary: "Chat Session" };
-        await saveToHistory(historyItem);
-        setHistory(await loadHistory());
-        setActiveHistoryId(historyItem.id);
-        return;
+  const handleNavigate = useCallback((view: ViewState, url: string) => {
+      if (typeof window !== 'undefined') {
+          window.history.pushState({}, '', url);
       }
+      setCurrentView(view);
+  }, []);
 
-      const timeRemaining = parseDuration(config.timerDuration);
-      if (mode === 'EXAM' || mode === 'FLASHCARDS') {
-        setStatusText("Constructing Materials...");
-        const questions = await generateQuizFromText(file.content, config, userProfile);
-        if (!questions || questions.length === 0) throw new Error("Neural Failure: No questions generated.");
-        const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
-        setQuizState(newState);
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: mode, title: file.name, data: newState, config, summary: "Exam" };
-        await saveToHistory(historyItem);
-        setAppMode(mode); 
-      } else {
-        setStatusText("Designing Lesson Plan...");
-        const sections = await generateProfessorContent(file.content, config);
-        const newState: ProfessorState = { sections };
-        setProfessorState(newState);
-        setQuizState(prev => ({ ...prev, timeRemaining }));
-        const historyItem: HistoryItem = { id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState, summary: "Lecture" };
-        await saveToHistory(historyItem);
-      }
-      setHistory(await loadHistory());
-      const updatedProfile = { ...incrementDailyUsage(userProfile) };
-      setUserProfile(updatedProfile);
-      saveUserProfile(updatedProfile);
-      if (user) updateUserUsage(user.uid, updatedProfile.dailyQuizzesGenerated);
-      setStatus(AppStatus.READY);
-    } catch (err: any) {
-      console.error(err);
-      setStatus(AppStatus.ERROR);
-      setErrorMsg(err.message || "Failed to process content.");
-    }
-  };
-
-  const handleCancelGeneration = () => { setStatus(AppStatus.IDLE); setErrorMsg(null); };
-
-  const handleQuizAction = async (action: 'ANSWER' | 'FLAG' | 'SUBMIT' | 'RESET' | 'INDEX', payload?: any) => {
-    if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
-    if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
-    if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
-    if (action === 'SUBMIT') {
-      let score = 0;
-      quizState.questions.forEach(q => { 
-          if (q.type === 'Select All That Apply') {
-              const userAnswer = quizState.userAnswers[q.id];
-              const correctAnswer = q.correct_answer;
-              try {
-                  const parsedUser = JSON.parse(userAnswer || '[]');
-                  const parsedCorrect = JSON.parse(correctAnswer || '[]').sort();
-                  if (JSON.stringify(parsedUser.sort()) === JSON.stringify(parsedCorrect)) score++;
-              } catch(e) {}
-          } else if (q.type === 'Fill in the Gap') {
-              if (quizState.userAnswers[q.id]?.toLowerCase().trim() === q.correct_answer?.toLowerCase().trim()) score++;
-          } else {
-              if (quizState.userAnswers[q.id] === q.correct_answer) score++; 
-          }
-      });
-      setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
-      const xpGained = score * 50;
-      let newXP = (userProfile.xp || 0) + xpGained;
-      if (newXP > 10000) newXP = 10000;
-      const newProfile = { ...userProfile, questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, correctAnswers: userProfile.correctAnswers + score, xp: newXP };
-      setUserProfile(newProfile);
-      saveUserProfile(newProfile);
-      if (user) {
-          await saveUserToSupabase(user.uid, { xp: newXP });
-          if (activeDuelId) await submitDuelScore(activeDuelId, user.uid, score);
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    if (action === 'RESET') {
-      const force = payload?.force === true;
-      const resetLogic = () => {
-          clearCurrentSession();
-          setStatus(AppStatus.IDLE);
-          setQuizState({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
-          setProfessorState({ sections: [] });
-          setChatState({ messages: [], fileContext: '', fileName: '' });
-          setAppMode('EXAM'); 
-          setActiveHistoryId(null);
-          setErrorMsg(null); 
-          setDuelReadyData(null); 
-          setActiveDuelId(null); 
-      };
-      if (force) resetLogic();
-      else attemptAction(resetLogic);
-    }
-  };
-
-  const handleChatUpdate = (updatedState: ChatState) => { setChatState(updatedState); };
-
-  const attemptAction = (action: () => void, force: boolean = false) => {
-      if (!force && status === AppStatus.READY && ((appMode === 'EXAM' && !quizState.isSubmitted) || (appMode === 'PROFESSOR') || (appMode === 'CHAT') || (appMode === 'FLASHCARDS'))) {
-          setPendingAction(() => action);
-          setShowExitConfirmation(true);
-      } else {
-          action();
-      }
-  };
-
-  const confirmExit = () => {
-      if (pendingAction) pendingAction();
-      setShowExitConfirmation(false);
-      setPendingAction(null);
-  };
-
-  // Duplicate logic needed for parseDuration inside component or import
   const parseDuration = (duration: string): number | null => {
       if (duration === 'Limitless') return null;
       let totalSeconds = 0;
@@ -412,10 +149,35 @@ const App: React.FC = () => {
       return totalSeconds > 0 ? totalSeconds : null;
   };
 
-  const handleDuelStart = async (data: { wager: number, file: File }) => {
+  const handleAdminSuccess = useCallback(() => {
+      setIsAdminUnlocked(true);
+      setAppMode('ADMIN');
+      setStatus(AppStatus.READY);
+  }, []);
+
+  const handleGoToCheckout = useCallback(async (tier: SubscriptionTier) => {
+      if (tier === 'Fresher') {
+          if (confirm("Are you sure you want to downgrade to the Fresher plan? Access to advanced features will be revoked.")) {
+              const updatedProfile = { ...userProfile, subscriptionTier: 'Fresher' as SubscriptionTier };
+              setUserProfile(updatedProfile);
+              saveUserProfile(updatedProfile);
+              if (user) await updateUserPlan(user.uid, 'Fresher');
+              setIsSubscriptionOpen(false);
+              alert("You are now on the Fresher plan.");
+          }
+      } else {
+          setCheckoutTier(tier);
+          trackEvent('checkout_initiated', { tier });
+          setIsSubscriptionOpen(false);
+          handleNavigate('CHECKOUT', `/${tier.toLowerCase()}`);
+      }
+  }, [userProfile, user, handleNavigate]);
+
+  const handleDuelStart = useCallback(async (data: { wager: number, file: File }) => {
       if (!user) return;
       setStatus(AppStatus.PROCESSING_FILE);
       setErrorMsg(null);
+      trackEvent('duel_created', { wager: data.wager });
       try {
           const processed = await processFile(data.file);
           const config: QuizConfig = { difficulty: 'Hard', questionType: 'Mixed', questionCount: 10, timerDuration: 'Limitless', personality: 'Academic', analogyDomain: 'General', useOracle: true, useWeaknessDestroyer: false };
@@ -431,17 +193,203 @@ const App: React.FC = () => {
           setErrorMsg(e.message || "Failed to start duel.");
           setStatus(AppStatus.ERROR);
       }
-  };
+  }, [user, userProfile]);
 
-  const handleDuelJoin = async (code: string) => {
+  const handleDuelJoin = useCallback(async (code: string) => {
       if (!user) return;
+      trackEvent('duel_joined');
       try {
           const duelId = await joinDuelByCode(code, user.uid, userProfile.alias || 'Challenger');
           setDuelReadyData({ id: duelId, code, isHost: false });
       } catch (e: any) {
           alert(e.message || "Could not join arena.");
       }
+  }, [user, userProfile]);
+
+  const handleChatUpdate = useCallback((updatedState: ChatState) => { setChatState(updatedState); }, []);
+
+  // --- INIT LOGIC ---
+  useEffect(() => {
+      if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('code')) setCurrentView('AUTH_CALLBACK');
+          else if (window.location.hash.includes('access_token')) setCurrentView('AUTH_CALLBACK');
+          else if (window.location.pathname === '/login') setCurrentView('AUTH');
+          else if (user) setCurrentView('APP');
+      }
+  }, [user]);
+
+  // --- CALL SERVICE INIT ---
+  useEffect(() => {
+      if (user && userProfile.alias) {
+          // Initialize PeerJS with alias as ID
+          callService.initialize(userProfile.alias).then(() => {
+              callService.onIncomingCall = (call) => {
+                  setIncomingCall(call);
+              };
+          });
+      }
+  }, [user, userProfile.alias]);
+
+  const handleStartCall = (remotePeerId: string) => {
+      callService.getMedia(true, true).then(() => {
+          callService.callUser(remotePeerId);
+          setActiveCallPeerId(remotePeerId);
+      });
   };
+
+  const handleAcceptCall = () => {
+      if (incomingCall) {
+          callService.answerCall(incomingCall);
+          setActiveCallPeerId(incomingCall.peer);
+          setIncomingCall(null);
+      }
+  };
+
+  const handleEndCall = () => {
+      callService.disconnect();
+      setActiveCallPeerId(null);
+      setIncomingCall(null);
+  };
+
+  // Helper for Credit Deduction
+  const handleDeductCredits = async (amount: number, reason: string): Promise<boolean> => {
+      if ((userProfile.credits || 0) < amount) {
+          trackEvent('credits_low', { reason });
+          setIsSubscriptionOpen(true);
+          return false;
+      }
+      const oldCredits = userProfile.credits;
+      const updatedProfile = { ...userProfile, credits: oldCredits - amount };
+      setUserProfile(updatedProfile);
+      saveUserProfile(updatedProfile);
+
+      if (user) {
+          const success = await deductCredits(user.uid, amount, reason);
+          if (!success) {
+              const rollbackProfile = { ...userProfile, credits: oldCredits };
+              setUserProfile(rollbackProfile);
+              saveUserProfile(rollbackProfile);
+              setIsSubscriptionOpen(true);
+              return false;
+          }
+      }
+      return true;
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    const localProfile = loadUserProfile() || getDefaultProfile();
+    let mergedProfile: UserProfile = { ...localProfile };
+    if (user.profile) mergedProfile = { ...mergedProfile, ...user.profile }; 
+    if (user.plan) mergedProfile.subscriptionTier = user.plan;
+    mergedProfile = updateStreak(mergedProfile);
+    setUserProfile(mergedProfile);
+    saveUserProfile(mergedProfile);
+    loadHistory().then(setHistory);
+    if (!isAdminUnlocked) {
+        const savedSession = loadCurrentSession();
+        if (savedSession) {
+          setAppMode(savedSession.mode);
+          if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
+          else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
+          else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
+          setStatus(AppStatus.READY);
+        }
+    }
+  }, [user, isAdminUnlocked]);
+
+  const handleProcess = useCallback(async (file: ProcessedFile, config: QuizConfig, mode: AppMode) => {
+      if (mode === 'EXAM' || mode === 'PROFESSOR' || mode === 'FLASHCARDS') {
+          const cost = getModeCost(mode, config);
+          const success = await handleDeductCredits(cost, `Generated ${mode}`);
+          if (!success) return; 
+      }
+      
+      trackEvent('content_generation_started', { mode, difficulty: config.difficulty });
+      setStatus(AppStatus.GENERATING_CONTENT);
+      setStatusText("Initializing Neural Link...");
+      setErrorMsg(null);
+      setActiveHistoryId(Date.now().toString()); 
+      
+      if (mode === 'CHAT') {
+        const newState: ChatState = { messages: [], fileContext: file.content, fileName: file.name };
+        setChatState(newState);
+        setAppMode('CHAT');
+        setStatus(AppStatus.READY);
+        saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState });
+        return;
+      }
+
+      const timeRemaining = parseDuration(config.timerDuration);
+      if (mode === 'EXAM' || mode === 'FLASHCARDS') {
+        const questions = await generateQuizFromText(file.content, config, userProfile);
+        const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
+        setQuizState(newState);
+        saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode, title: file.name, data: newState, config });
+        setAppMode(mode); 
+      } else {
+        const sections = await generateProfessorContent(file.content, config);
+        const newState: ProfessorState = { sections };
+        setProfessorState(newState);
+        saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState });
+      }
+      setStatus(AppStatus.READY);
+      trackEvent('content_generation_success', { mode });
+  }, [userProfile]);
+
+  const handleSetAppMode = useCallback((mode: AppMode) => {
+      if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
+      else if (mode === 'EXAM' && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
+      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY);
+      else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
+      else setStatus(AppStatus.READY);
+      setAppMode(mode);
+  }, [professorState, quizState, chatState]);
+
+  const handleCancelGeneration = useCallback(() => { setStatus(AppStatus.IDLE); setErrorMsg(null); }, []);
+  
+  const handleQuizAction = useCallback(async (action: any, payload?: any) => {
+      if(action === 'RESET') {
+          clearCurrentSession();
+          setStatus(AppStatus.IDLE);
+          setAppMode('EXAM');
+      }
+      if (action === 'INDEX') setQuizState(prev => ({ ...prev, currentQuestionIndex: payload.index }));
+      if (action === 'ANSWER') setQuizState(prev => ({ ...prev, userAnswers: { ...prev.userAnswers, [payload.qId]: payload.ans } }));
+      if (action === 'FLAG') setQuizState(prev => ({ ...prev, flaggedQuestions: prev.flaggedQuestions.includes(payload) ? prev.flaggedQuestions.filter(id => id !== payload) : [...prev.flaggedQuestions, payload] }));
+      if (action === 'SUBMIT') {
+        let score = 0;
+        quizState.questions.forEach(q => { 
+            if (q.type === 'Select All That Apply') {
+                const userAnswer = quizState.userAnswers[q.id];
+                const correctAnswer = q.correct_answer;
+                try {
+                    const parsedUser = JSON.parse(userAnswer || '[]');
+                    const parsedCorrect = JSON.parse(correctAnswer || '[]').sort();
+                    if (JSON.stringify(parsedUser.sort()) === JSON.stringify(parsedCorrect)) score++;
+                } catch(e) {}
+            } else if (q.type === 'Fill in the Gap') {
+                if (quizState.userAnswers[q.id]?.toLowerCase().trim() === q.correct_answer?.toLowerCase().trim()) score++;
+            } else {
+                if (quizState.userAnswers[q.id] === q.correct_answer) score++; 
+            }
+        });
+        setQuizState(prev => ({ ...prev, isSubmitted: true, score }));
+        trackEvent('exam_submitted', { score, total: quizState.questions.length });
+        const xpGained = score * 50;
+        let newXP = (userProfile.xp || 0) + xpGained;
+        if (newXP > 10000) newXP = 10000;
+        const newProfile = { ...userProfile, questionsAnswered: userProfile.questionsAnswered + quizState.questions.length, correctAnswers: userProfile.correctAnswers + score, xp: newXP };
+        setUserProfile(newProfile);
+        saveUserProfile(newProfile);
+        if (user) {
+            await saveUserToSupabase(user.uid, { xp: newXP });
+            if (activeDuelId) await submitDuelScore(activeDuelId, user.uid, score);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+  }, [quizState, userProfile, user, activeDuelId]);
 
   const handleEnterDuel = async () => {
       if (duelReadyData) {
@@ -462,64 +410,25 @@ const App: React.FC = () => {
       }
   };
 
-  const handleGoToCheckout = async (tier: SubscriptionTier) => {
-      if (tier === 'Fresher') {
-          if (confirm("Are you sure you want to downgrade to the Fresher plan? Access to advanced features will be revoked.")) {
-              const updatedProfile = { ...userProfile, subscriptionTier: 'Fresher' as SubscriptionTier };
-              setUserProfile(updatedProfile);
-              saveUserProfile(updatedProfile);
-              if (user) await updateUserPlan(user.uid, 'Fresher');
-              setIsSubscriptionOpen(false);
-              alert("You are now on the Fresher plan.");
-          }
-      } else {
-          setCheckoutTier(tier);
-          setIsSubscriptionOpen(false);
-          handleNavigate('CHECKOUT', `/${tier.toLowerCase()}`);
-      }
+  const isPotentialAdmin = (email: string | null | undefined) => ADMIN_EMAILS.includes(email?.toLowerCase() || '');
+  const isAdmin = isPotentialAdmin(user?.email);
+
+  const confirmExit = () => {
+      if (pendingAction) pendingAction();
+      setShowExitConfirmation(false);
+      setPendingAction(null);
   };
 
-  // --- LOADER ---
-  if (loading) {
-      return (
-          <div className="min-h-screen bg-core flex items-center justify-center relative overflow-hidden transition-colors duration-500">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
-              
-              <div className="flex flex-col items-center gap-6 z-10">
-                  <div className="relative">
-                      <div className="w-16 h-16 border-4 border-border-main rounded-full animate-spin"></div>
-                      <div className="absolute inset-0 border-4 border-t-accent border-l-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
-                      <div className="absolute inset-4 bg-accent rounded-full animate-pulse opacity-20"></div>
-                  </div>
-                  
-                  <div className="text-center">
-                      <p className="text-xs font-mono uppercase tracking-[0.3em] text-accent animate-pulse">
-                          Authenticating Scholar
-                      </p>
-                      <p className="text-[10px] text-text-sec font-mono mt-2">
-                          Retrieving Student Profile...
-                      </p>
-                  </div>
-              </div>
-          </div>
-      );
-  }
-  
-  if (currentView === 'AUTH_CALLBACK') {
-      return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={(msg) => { alert(msg); handleNavigate('AUTH', '/login'); }} />;
-  }
-
+  // --- RENDER ---
+  if (loading) return <div className="min-h-screen bg-core flex items-center justify-center text-white">Authenticating...</div>;
+  if (currentView === 'AUTH_CALLBACK') return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={(msg) => alert(msg)} />;
   if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
   if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => handleNavigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
-  
-  if (currentView === 'PRICING') return <PricingPage onBack={() => handleNavigate('LANDING', '/')} onSelectPlan={(tier) => {
-      localStorage.setItem('pending_plan', tier);
-      handleNavigate('AUTH', '/login');
-  }} />;
-  
+  if (currentView === 'LEGAL') return <LegalPage onBack={() => user ? handleNavigate('APP', '/') : handleNavigate('LANDING', '/')} />;
+  if (currentView === 'PRICING') return <PricingPage onBack={() => handleNavigate('LANDING', '/')} onSelectPlan={(tier) => { localStorage.setItem('pending_plan', tier); handleNavigate('AUTH', '/login'); }} />;
   if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => handleNavigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); handleNavigate('APP', '/'); }} />;
   if (currentView === 'AUTH' && !user) return <AuthPage />;
-  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => handleNavigate('AUTH', '/login')} onPricing={() => handleNavigate('PRICING', '/pricing')} />;
+  if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => { trackEvent('landing_enter_click'); handleNavigate('AUTH', '/login'); }} onPricing={() => handleNavigate('PRICING', '/pricing')} onLegal={() => handleNavigate('LEGAL', '/legal')} />;
 
   const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
 
@@ -529,6 +438,16 @@ const App: React.FC = () => {
       <CountdownTimer />
       <PWAPrompt />
       
+      {/* CALL OVERLAYS */}
+      {(activeCallPeerId || incomingCall) && (
+          <CallOverlay 
+            remotePeerId={activeCallPeerId || incomingCall?.peer} 
+            onClose={handleEndCall} 
+            isIncoming={!!incomingCall}
+            onAccept={handleAcceptCall}
+          />
+      )}
+
       <SubscriptionModal 
         isOpen={isSubscriptionOpen} 
         onClose={() => setIsSubscriptionOpen(false)} 
@@ -536,49 +455,26 @@ const App: React.FC = () => {
         onUpgrade={handleGoToCheckout} 
         userEmail={user?.email || undefined}
       />
+      
       <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
       <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
-      {isAdBlockActive && <div className="bg-red-600 text-white font-bold text-center py-2 text-xs uppercase tracking-widest fixed top-0 left-0 w-full z-[100] shadow-xl animate-pulse">⚠️ System Blocked: Disable Ad-Blocker to Save Progress & Access Database</div>}
-
-      {/* Floating Docks */}
+      
+      {/* ... Navigation & Main Content */}
       {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && (
           <>
-            <FloatingDock 
-                mode={appMode} 
-                setMode={handleSetAppMode} 
-                onHub={() => setStatus(AppStatus.READY)} 
-                isDuelActive={!!activeDuelId} 
-                onDuel={() => setAppMode('DUEL')}
-            />
-            <MobileNavBar 
-                mode={appMode} 
-                setMode={handleSetAppMode} 
-            />
+            <FloatingDock mode={appMode} setMode={handleSetAppMode} onHub={() => setStatus(AppStatus.READY)} isDuelActive={!!activeDuelId} onDuel={() => setAppMode('DUEL')} />
+            <MobileNavBar mode={appMode} setMode={handleSetAppMode} />
           </>
-      )}
-
-      {/* Professor Trigger */}
-      {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
-          <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
       )}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main top-0`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
-                if (appMode === 'ADMIN') {
-                    setAppMode('EXAM');
-                    setStatus(AppStatus.IDLE); 
-                } else {
-                    handleQuizAction('RESET');
-                }
-            }}>
-               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-               </div>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleQuizAction('RESET')}>
+               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">⚡</div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
-
+            
             {/* Replaced Linear Bar with Radial Neural Energy */}
             {isFresher && appMode !== 'ADMIN' && (
                 <div className="flex items-center gap-2" title="Daily Neural Energy">
@@ -587,28 +483,21 @@ const App: React.FC = () => {
                 </div>
             )}
 
+            {isFresher && appMode !== 'ADMIN' && (
+                <CreditWallet balance={userProfile.credits || 0} onClick={() => setIsSubscriptionOpen(true)} />
+            )}
+
             <div className="flex items-center gap-2 sm:gap-4">
                {appMode === 'ADMIN' && (
                    <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
-               
-               {showLibrary && (
-                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri transition-colors relative group" title="My Library">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                   </button>
-               )}
-               
+               {showLibrary && <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri">📂</button>}
                <NotificationBell />
-               
-               <div className="h-6 w-px bg-border-main mx-2"></div>
-               
-               {/* Enhanced Profile Button (Ring + Icon) */}
-               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group relative">
+               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
                    <div className="text-right hidden sm:block">
-                       <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
-                       <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
+                       <p className="text-xs font-bold text-text-pri group-hover:text-accent">{userProfile.alias}</p>
                    </div>
-                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg ring-2 ring-white/10 relative overflow-hidden`}>
+                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent shadow-lg`}>
                        <span className="text-sm">{userProfile.avatarEmoji}</span>
                    </div>
                </button>
@@ -616,8 +505,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} 
-        onSelect={(item) => {
+      <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} onSelect={(item) => {
             if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
                 setQuizState(item.data as QuizState);
             } else if (item.mode === 'PROFESSOR') {
@@ -629,15 +517,11 @@ const App: React.FC = () => {
             setStatus(AppStatus.READY);
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
-        }} 
-        onDelete={async (id) => {
+      }} onDelete={async (id) => {
             await deleteHistoryItem(id);
             setHistory(await loadHistory());
             if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
-        }}
-      />
-      
-      {/* Passed Upgrade Handler to Profile Modal */}
+      }} />
       <UserProfileModal 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
@@ -646,52 +530,39 @@ const App: React.FC = () => {
         onClearHistory={() => {}} 
         onLogout={async () => { await logout(); handleNavigate('LANDING', '/'); }} 
         isAdmin={!!isAdmin} 
-        onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }}
-        onUpgradeRequest={() => setIsSubscriptionOpen(true)} // Added
+        onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} 
+        onUpgradeRequest={() => setIsSubscriptionOpen(true)}
+        onLegalRequest={() => { setIsProfileOpen(false); handleNavigate('LEGAL', '/legal'); }}
       />
-      
-      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
          {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
              <>
                 <Hero />
-                <InputSection 
-                    onProcess={handleProcess} 
-                    isLoading={false} 
-                    appMode={appMode} 
-                    setAppMode={handleSetAppMode} 
-                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
-                    userProfile={userProfile} 
-                    onShowSubscription={() => setIsSubscriptionOpen(true)} 
-                    onOpenProfile={() => setIsProfileOpen(true)} 
-                    onDuelStart={handleDuelStart} 
-                    onDuelJoin={handleDuelJoin} 
-                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} 
-                />
+                <InputSection onProcess={handleProcess} isLoading={false} appMode={appMode} setAppMode={handleSetAppMode} defaultConfig={{ difficulty: userProfile.defaultDifficulty }} userProfile={userProfile} onShowSubscription={() => setIsSubscriptionOpen(true)} onOpenProfile={() => setIsProfileOpen(true)} onDuelStart={handleDuelStart} onDuelJoin={handleDuelJoin} onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} />
              </>
          )}
-         {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
-         {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
+         {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
+         {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Thinking..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
-                 <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
+                 <Suspense fallback={<div className="flex justify-center p-20">Loading...</div>}>
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
-                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} />}
-                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState: QuizState) => { setQuizState(newState); setStatus(AppStatus.READY); }} />}
-                    {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} />}
+                    {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} userProfile={userProfile} onDeductCredits={handleDeductCredits} />}
+                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState: QuizState) => { setQuizState(newState); setStatus(AppStatus.READY); }} userProfile={userProfile} onDeductCredits={handleDeductCredits} />}
+                    {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} onStartCall={handleStartCall} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}
                  </Suspense>
              </div>
          )}
          {status === AppStatus.ERROR && (
-             <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center animate-bounce-subtle">
+             <div className="max-w-md mx-auto mt-20 p-8 bg-red-900/10 border border-red-500/20 rounded-3xl text-center">
                  <div className="text-4xl mb-4">⚠️</div>
                  <h3 className="text-xl font-bold text-red-500 mb-2">System Failure</h3>
                  <p className="text-text-sec mb-6">{errorMsg || "An unknown error occurred."}</p>
-                 <button onClick={() => setStatus(AppStatus.IDLE)} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold uppercase text-xs hover:bg-red-500 transition-colors">Reboot System</button>
+                 <button onClick={() => setStatus(AppStatus.IDLE)} className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold uppercase text-xs">Reboot System</button>
              </div>
          )}
       </main>

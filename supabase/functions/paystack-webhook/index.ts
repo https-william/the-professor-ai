@@ -11,7 +11,7 @@ declare const Deno: {
   };
 };
 
-console.log("Paystack Webhook Handler Online")
+console.log("Paystack Webhook Handler Online v2")
 
 serve(async (req) => {
   try {
@@ -64,18 +64,10 @@ serve(async (req) => {
       const { customer, metadata, reference, amount, plan } = event.data
       const email = customer.email
       
-      // Determine Tier from Metadata (Preferred) or Amount
-      let tier = metadata?.tier
-      let cycle = metadata?.billing_cycle || 'monthly'
+      // Check Metadata for Purchase Type
+      const purchaseType = metadata?.type || 'SUBSCRIPTION_UPGRADE';
 
-      // Fallback inference if metadata missing
-      if (!tier) {
-        if (amount >= 800000) tier = 'Excellentia' // >80k kobo
-        else if (amount >= 250000) tier = 'Scholar' // >2.5k kobo
-        else tier = 'Fresher'
-      }
-
-      console.log(`Processing Upgrade: ${email} -> ${tier} (${cycle})`)
+      console.log(`Processing ${purchaseType} for ${email}`)
 
       // A. Find User
       const { data: user, error: userError } = await supabase
@@ -86,47 +78,76 @@ serve(async (req) => {
 
       if (userError || !user) {
         console.error("User not found:", email)
-        // Log orphan payment
         await supabase.from('payment_logs').insert({
           reference,
           amount: amount / 100,
           status: 'orphaned_user_not_found',
           plan_code: plan?.plan_code || 'one-time'
         })
-        return new Response("User not found", { status: 200 }) // Return 200 to satisfy Paystack
+        return new Response("User not found", { status: 200 }) 
       }
 
-      // B. Update Subscription
-      const renewsAt = new Date()
-      if (cycle === 'annually') renewsAt.setFullYear(renewsAt.getFullYear() + 1)
-      else renewsAt.setMonth(renewsAt.getMonth() + 1)
+      // B. BRANCH LOGIC: Credit Purchase vs Subscription
+      if (purchaseType === 'CREDIT_PURCHASE') {
+          const creditsToAdd = metadata?.credits || 0;
+          if (creditsToAdd > 0) {
+              // Call RPC to add credits safely
+              const { error: rpcError } = await supabase.rpc('add_credits', {
+                  p_user_id: user.id,
+                  p_amount: creditsToAdd,
+                  p_type: 'PURCHASE',
+                  p_desc: `Bought ${creditsToAdd} Credits`
+              });
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          subscription_tier: tier,
-          subscription_status: 'active',
-          billing_cycle: cycle,
-          renews_at: renewsAt.toISOString(),
-          paystack_customer_code: customer.customer_code
-        })
-        .eq('id', user.id)
+              if (rpcError) {
+                  console.error("RPC Credit Add Failed:", rpcError);
+                  return new Response("Database Error", { status: 500 });
+              }
+              console.log(`Added ${creditsToAdd} credits to ${email}`);
+          }
+      } else {
+          // SUBSCRIPTION UPGRADE LOGIC
+          let tier = metadata?.tier
+          let cycle = metadata?.billing_cycle || 'monthly'
 
-      if (updateError) {
-        console.error("Failed to update profile:", updateError)
-        return new Response("Database Error", { status: 500 })
+          // Fallback inference if metadata missing (Legacy)
+          if (!tier) {
+            if (amount >= 800000) tier = 'Excellentia'
+            else if (amount >= 250000) tier = 'Scholar'
+            else tier = 'Fresher'
+          }
+
+          const renewsAt = new Date()
+          if (cycle === 'annually') renewsAt.setFullYear(renewsAt.getFullYear() + 1)
+          else renewsAt.setMonth(renewsAt.getMonth() + 1)
+
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+              subscription_tier: tier,
+              subscription_status: 'active',
+              billing_cycle: cycle,
+              renews_at: renewsAt.toISOString(),
+              paystack_customer_code: customer.customer_code
+            })
+            .eq('id', user.id)
+
+          if (updateError) {
+            console.error("Failed to update profile:", updateError)
+            return new Response("Database Error", { status: 500 })
+          }
       }
 
-      // C. Log Payment
+      // C. Log Payment (Common)
       await supabase.from('payment_logs').insert({
         user_id: user.id,
         reference,
         amount: amount / 100,
         status: 'success',
-        plan_code: plan?.plan_code || tier
+        plan_code: plan?.plan_code || purchaseType
       })
 
-      console.log("Upgrade Successful")
+      console.log("Transaction Finalized")
     }
     
     // Handle Subscription Cancellations

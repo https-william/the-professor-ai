@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             plan: 'Fresher',
             role: 'student',
             hasCompletedOnboarding: undefined, // undefined until verified
-            profile: { xp: 500 }
+            profile: { xp: 500, credits: 50 } // Default fallback credits
         };
 
         // Fetch extra profile data
@@ -79,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     school: profile.school,
                     country: profile.country,
                     xp: profile.xp,
+                    credits: profile.credits ?? 50, // Ensure credits are mapped
                     dailyQuizzesGenerated: profile.daily_quizzes_generated,
                     ...profile
                 }
@@ -94,10 +95,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: 'student',
                 plan: 'Fresher',
                 xp: 500,
+                credits: 50, // Welcome Bonus
                 has_completed_onboarding: false
             };
             await supabase.from('profiles').insert([newProfile]);
-            setUser({ ...baseUser, hasCompletedOnboarding: false });
+            setUser({ ...baseUser, hasCompletedOnboarding: false, profile: { ...baseUser.profile, credits: 50 } });
         }
       } catch (err) {
           console.error("Session processing error:", err);
@@ -110,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               plan: 'Fresher',
               role: 'student',
               hasCompletedOnboarding: false, // Default to false if DB fails
-              profile: { xp: 500 }
+              profile: { xp: 500, credits: 0 }
           });
       } finally {
           setLoading(false);

@@ -9,9 +9,10 @@ import { ProfessorView } from './ProfessorView';
 interface TheHubProps {
     user: UserProfile;
     onExit: () => void;
+    onStartCall?: (peerId: string) => void;
 }
 
-export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
+export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => {
     const [mode, setMode] = useState<'LOBBY' | 'ROOM'>('LOBBY');
     const [roomCode, setRoomCode] = useState('');
     const [messages, setMessages] = useState<HubMessage[]>([]);
@@ -149,13 +150,17 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
                     <button onClick={handleCreate} className="p-8 bg-[#0f0f10] border border-white/10 rounded-2xl hover:border-green-500/50 hover:bg-green-900/10 transition-all group text-left relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="text-2xl mb-2 group-hover:scale-110 transition-transform origin-left">📡</div>
+                        <div className="text-2xl mb-2 group-hover:scale-110 transition-transform origin-left text-green-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                        </div>
                         <h3 className="text-xl font-bold text-white mb-1 relative z-10">Create Cell</h3>
                         <p className="text-xs text-gray-500 relative z-10">Host a new session.</p>
                     </button>
                     <div className="p-8 bg-[#0f0f10] border border-white/10 rounded-2xl flex flex-col gap-4 relative overflow-hidden">
                         <div className="text-left relative z-10">
-                            <div className="text-2xl mb-2">🔗</div>
+                            <div className="text-2xl mb-2 text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+                            </div>
                             <h3 className="text-xl font-bold text-white mb-1">Join Cell</h3>
                             <p className="text-xs text-gray-500">Enter access code.</p>
                         </div>
@@ -177,9 +182,22 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                         <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Room Code</span>
                         <span className="text-xl font-mono font-bold text-green-400 tracking-wider">{roomCode || "ACTIVE"}</span>
                     </div>
-                    <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <span className="text-xs text-gray-400">{onlineUsers.length + 1} Online</span>
+                    {/* User List Dropdown / P2P Call Trigger */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-gray-500 uppercase font-bold mr-2 hidden md:block">Active Agents:</span>
+                        {onlineUsers.map(u => (
+                            <button 
+                                key={u} 
+                                onClick={() => onStartCall && onStartCall(u)}
+                                className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 transition-all hover:scale-105 ${u === (user.alias || 'You') ? 'bg-white/10 text-gray-400 cursor-default' : 'bg-green-900/30 text-green-400 border border-green-500/20 hover:bg-green-500 hover:text-white'}`}
+                                disabled={u === (user.alias || 'You')}
+                                title={u === (user.alias || 'You') ? 'You' : `Call ${u}`}
+                            >
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                {u}
+                                {u !== (user.alias || 'You') && <span className="opacity-50 text-[10px]">📞</span>}
+                            </button>
+                        ))}
                     </div>
                 </div>
                 <button onClick={onExit} className="px-4 py-2 bg-red-900/20 text-red-500 rounded-lg text-xs font-bold uppercase hover:bg-red-900/40 transition-colors border border-red-900/30">Disconnect</button>
@@ -198,7 +216,9 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                         </div>
                     ) : (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
-                            <div className="text-4xl mb-4 opacity-30">📂</div>
+                            <div className="text-4xl mb-4 opacity-30">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} className="w-16 h-16"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg>
+                            </div>
                             <p className="text-sm mb-4">No materials loaded.</p>
                             <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white font-bold text-xs uppercase">Upload Document</button>
                             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept=".pdf,.docx,.txt" />
@@ -236,5 +256,3 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
         </div>
     );
 };
-
-export default TheHub;

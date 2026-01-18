@@ -131,6 +131,7 @@ export const getDefaultProfile = (): UserProfile => ({
   questionsAnswered: 0,
   correctAnswers: 0,
   xp: 500, 
+  credits: 50, // Default 50 credits
   lastStudyDate: Date.now(),
   theme: 'Dark',
   reducedMotion: false,

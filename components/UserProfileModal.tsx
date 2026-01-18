@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, HistoryItem, QuizState } from '../types';
 import { queueAction } from '../services/syncService';
@@ -15,7 +16,8 @@ interface UserProfileModalProps {
   onLogout: () => void;
   isAdmin?: boolean; 
   onRequestAdminAccess?: () => void;
-  onUpgradeRequest?: () => void; // New prop
+  onUpgradeRequest?: () => void; 
+  onLegalRequest?: () => void;
 }
 
 declare global {
@@ -24,7 +26,7 @@ declare global {
     }
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess, onUpgradeRequest }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, profile, onSave, onLogout, isAdmin, onRequestAdminAccess, onUpgradeRequest, onLegalRequest }) => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
@@ -241,31 +243,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                </div>
             </div>
 
-            {/* Interface Settings (Theme) */}
-            <div>
-                <h4 className="text-xs font-bold text-text-sec uppercase tracking-widest mb-4 border-b border-border-main pb-2">Interface Protocol</h4>
-                <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-border-main">
-                    <div>
-                        <span className="font-bold text-sm block mb-1">System Visuals</span>
-                        <span className="text-xs text-text-sec">Override neural interface appearance.</span>
-                    </div>
-                    <div className="flex bg-black/10 dark:bg-black/40 p-1 rounded-lg border border-border-main">
-                        <button 
-                            onClick={() => setTheme('Dark')}
-                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Dark' ? 'bg-text-pri text-core shadow-lg' : 'text-text-sec hover:text-text-pri'}`}
-                        >
-                            Deep Space
-                        </button>
-                        <button 
-                            onClick={() => setTheme('Light')}
-                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${theme === 'Light' ? 'bg-text-pri text-core shadow-lg' : 'text-text-sec hover:text-text-pri'}`}
-                        >
-                            Academic Air
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             {/* Achievements */}
             <div>
                 <h4 className="text-xs font-bold text-text-sec uppercase tracking-widest mb-4 border-b border-border-main pb-2">Service Records</h4>
@@ -299,6 +276,28 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Support & Legal */}
+            <div className="grid grid-cols-2 gap-4 border-t border-border-main pt-6">
+                <a 
+                    href="mailto:vexis.automations@gmail.com?subject=The%20Professor%20Support%20Request" 
+                    className="flex flex-col items-center justify-center p-4 bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 transition-colors border border-border-main group"
+                >
+                    <span className="text-xl mb-2 group-hover:scale-110 transition-transform text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                    </span>
+                    <span className="text-xs font-bold text-text-pri uppercase">Contact Support</span>
+                </a>
+                <button 
+                    onClick={onLegalRequest}
+                    className="flex flex-col items-center justify-center p-4 bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 transition-colors border border-border-main group"
+                >
+                    <span className="text-xl mb-2 group-hover:scale-110 transition-transform text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499.106 1.028.589 1.202.64.232 1.337.352 2.031.352.694 0 1.391-.12 2.031-.352.483-.174.711-.703.59-1.202L5.25 4.971Z" /></svg>
+                    </span>
+                    <span className="text-xs font-bold text-text-pri uppercase">Legal & Privacy</span>
+                </button>
             </div>
 
             {/* Danger Zone */}

@@ -161,6 +161,7 @@ export interface UserProfile {
   ambientTheme?: AmbientTheme;
   
   // Gamification & Stats
+  credits: number; // New Economy
   streak: number; 
   hasStreakFreeze?: boolean; // New Inventory Item
   questionsAnswered: number;
@@ -173,8 +174,8 @@ export interface UserProfile {
   role: UserRole;
   isBanned?: boolean; // Security flag
   
-  // Daily Counters
-  lastGenerationDate: number; // Timestamp to reset daily count
+  // Daily Counters (Deprecated - Moving to Credit System)
+  lastGenerationDate: number; 
   dailyQuizzesGenerated: number;
   dailyFilesUploaded: number;
   dailyImagesUploaded: number;

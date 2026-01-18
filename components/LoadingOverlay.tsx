@@ -48,7 +48,6 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type, on
     return () => clearInterval(interval);
   }, [steps]);
 
-  // If the parent passes a specific status text (like from the file uploader), override
   const currentStep = stepIndex < steps.length ? steps[stepIndex] : "Finalizing...";
 
   return (
@@ -58,8 +57,18 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type, on
       <div className="relative w-32 h-32 mb-10">
          <div className={`absolute inset-0 border-4 border-t-transparent rounded-full animate-spin ${isProfessor ? 'border-amber-500' : 'border-blue-500'}`}></div>
          <div className={`absolute inset-4 border-4 border-b-transparent rounded-full animate-spin-reverse opacity-50 ${isProfessor ? 'border-amber-300' : 'border-blue-300'}`}></div>
-         <div className="absolute inset-0 flex items-center justify-center">
-             <span className="text-2xl animate-pulse">{isProfessor ? '🧠' : '⚡'}</span>
+         <div className="absolute inset-0 flex items-center justify-center text-white">
+             {/* Dynamic Center Icon */}
+             {isProfessor ? (
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-12 h-12 animate-pulse text-amber-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+                 </svg>
+             ) : (
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-12 h-12 animate-pulse text-blue-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                 </svg>
+             )}
          </div>
       </div>
 

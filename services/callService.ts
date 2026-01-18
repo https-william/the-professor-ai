@@ -5,7 +5,7 @@ export class CallService {
     private peer: Peer | null = null;
     private myStream: MediaStream | null = null;
     private calls: Map<string, MediaConnection> = new Map();
-    private peerId: string | null = null;
+    public peerId: string | null = null;
 
     // Events
     public onIncomingCall: ((call: MediaConnection) => void) | null = null;
@@ -23,13 +23,14 @@ export class CallService {
             // Clean ID: Remove spaces and special chars
             const cleanId = userId.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
             
-            // Generate a slightly random ID to prevent collisions in same-name test cases
-            // But ideally, it should be deterministic if we want people to call by name
-            // For now, we rely on the caller knowing the ID or broadcasting it via Firebase/Hub
-            const finalId = `${cleanId}_${Math.floor(Math.random() * 10000)}`;
+            // Use a deterministic ID for The Professor demo so users can find each other easier
+            // In prod, this would be just `cleanId`. 
+            // For now, we append a suffix only if collision, but PeerJS throws error on collision.
+            // Let's rely on the Auth ID being unique.
+            const finalId = cleanId;
 
             this.peer = new Peer(finalId, {
-                debug: 2,
+                debug: 1,
             });
 
             this.peer.on('open', (id) => {
@@ -39,20 +40,21 @@ export class CallService {
             });
 
             this.peer.on('call', (call) => {
-                // Handle incoming call
                 console.log("Incoming call from:", call.peer);
                 if (this.onIncomingCall) {
                     this.onIncomingCall(call);
                 } else {
-                    // Auto-answer if no handler (fallback)
-                    if (this.myStream) call.answer(this.myStream);
+                    // Fallback: Reject if no UI handler
+                    call.close();
                 }
-                this.setupCallEvents(call);
             });
 
             this.peer.on('error', (err) => {
-                console.error('PeerJS Error:', err);
-                reject(err);
+                console.warn('PeerJS Error (Non-Fatal):', err.type);
+                if (err.type === 'unavailable-id') {
+                    // ID taken, maybe we are already connected or tab refresh
+                    resolve(finalId);
+                }
             });
         });
     }
@@ -62,6 +64,8 @@ export class CallService {
      */
     async getMedia(video: boolean = false, audio: boolean = true): Promise<MediaStream> {
         try {
+            if (this.myStream) return this.myStream;
+            
             const stream = await navigator.mediaDevices.getUserMedia({ video, audio });
             this.myStream = stream;
             return stream;
@@ -95,7 +99,7 @@ export class CallService {
     }
 
     /**
-     * Toggle Mute
+     * Toggle Audio (Enabled = Unmuted)
      */
     toggleAudio(enabled: boolean) {
         if (this.myStream) {
@@ -104,7 +108,7 @@ export class CallService {
     }
 
     /**
-     * Toggle Video
+     * Toggle Video (Enabled = Visible)
      */
     toggleVideo(enabled: boolean) {
         if (this.myStream) {
@@ -145,10 +149,8 @@ export class CallService {
             this.myStream.getTracks().forEach(track => track.stop());
             this.myStream = null;
         }
-        if (this.peer) {
-            this.peer.destroy();
-            this.peer = null;
-        }
+        // Don't destroy peer ID on hangup, just the calls
+        this.calls.forEach(call => call.close());
         this.calls.clear();
     }
 }

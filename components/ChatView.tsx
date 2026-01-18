@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage, ChatState } from '../types';
+import { ChatMessage, ChatState, UserProfile } from '../types';
 import { generateChatResponse } from '../services/geminiService';
-import { CameraScanner } from './CameraScanner'; // Import Camera Scanner
+import { CameraScanner } from './CameraScanner';
 import DOMPurify from 'dompurify';
 
 interface ChatViewProps {
   chatState: ChatState;
   onUpdate: (state: ChatState) => void;
   onExit: () => void;
+  userProfile?: UserProfile;
+  onDeductCredits?: (amount: number, reason: string) => Promise<boolean>;
 }
 
 declare global {
@@ -18,11 +20,11 @@ declare global {
   }
 }
 
-export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit }) => {
+export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit, userProfile, onDeductCredits }) => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [showCamera, setShowCamera] = useState(false); // Camera State
+  const [showCamera, setShowCamera] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -59,6 +61,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
   const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
     if (!textToSend.trim() || isTyping) return;
+
+    if (onDeductCredits) {
+        const canAfford = await onDeductCredits(1, "Chat Message");
+        if (!canAfford) return; 
+    }
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -142,13 +149,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
 
   const handleCameraCapture = (base64: string) => {
       setShowCamera(false);
-      // Send the image as a special formatted message
       const msg = `[IMAGE_DATA:${base64}] \n\nPlease analyze this image I just captured.`;
       handleSend(msg);
   };
 
   const renderMarkdown = (text: string) => {
-      // Handle Image tags specifically for chat view display
       let processed = text;
       if (text.includes('[IMAGE_DATA:')) {
           processed = text.replace(/\[IMAGE_DATA:(.*?)\]/g, '<img src="data:image/jpeg;base64,$1" class="max-w-full rounded-lg border border-white/20 my-2 shadow-lg" alt="Captured Content" />');
@@ -196,7 +201,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar scroll-smooth">
           {chatState.messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {/* Semantic Color Fix: Use text-text-pri and border-border-main */}
                   <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 relative group ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-panel border border-border-main text-text-pri rounded-tl-sm shadow-sm'}`}>
                       <div className="prose prose-invert prose-sm max-w-none leading-relaxed" dangerouslySetInnerHTML={renderMarkdown(msg.content)} />
                       
@@ -248,22 +252,31 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit 
                 className="p-2.5 rounded-xl transition-all text-text-sec hover:text-text-pri bg-white/5 hover:bg-white/10"
                 title="Camera Scan"
               >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
               </button>
 
               <button 
                 onClick={handleVoiceInput}
                 className={`p-2.5 rounded-xl transition-all ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-text-sec hover:text-text-pri bg-white/5 hover:bg-white/10'}`}
               >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                  {isListening ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.983 5.983 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" /></svg>
+                  ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>
+                  )}
               </button>
 
               <button 
                 onClick={() => handleSend()}
                 disabled={!input.trim() || isTyping}
-                className="p-2.5 bg-amber-600 text-white rounded-xl hover:bg-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className="p-2.5 bg-amber-600 text-white rounded-xl hover:bg-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center gap-1"
               >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                  <span className="text-[10px] font-bold">1</span>
+                  {/* Small Diamond Icon */}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
               </button>
           </div>
       </div>

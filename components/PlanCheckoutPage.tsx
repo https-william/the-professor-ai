@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SubscriptionTier } from '../types';
 
@@ -11,19 +10,7 @@ interface PlanCheckoutPageProps {
 declare global {
   interface Window {
     PaystackPop: {
-      setup: (options: {
-        key: string;
-        email: string;
-        amount?: number;
-        plan?: string;
-        currency?: string;
-        ref?: string;
-        metadata?: any;
-        callback: (response: any) => void;
-        onClose: () => void;
-      }) => {
-        openIframe: () => void;
-      };
+      setup: (options: any) => { openIframe: () => void };
     };
   }
 }

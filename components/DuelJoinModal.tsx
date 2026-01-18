@@ -15,7 +15,6 @@ export const DuelJoinModal: React.FC<DuelJoinModalProps> = ({ onClose, onJoin })
       if (!code.trim()) return;
       setIsLoading(true);
       onJoin(code.trim());
-      // The parent handles closing after logic
   };
 
   return (
@@ -28,8 +27,8 @@ export const DuelJoinModal: React.FC<DuelJoinModalProps> = ({ onClose, onJoin })
             <div className="absolute top-0 left-0 w-full h-1 bg-purple-500/50"></div>
             
             <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-purple-900/20 rounded-2xl border border-purple-500/20 flex items-center justify-center mx-auto mb-4 text-3xl">
-                    ⚔️
+                <div className="w-16 h-16 bg-purple-900/20 rounded-2xl border border-purple-500/20 flex items-center justify-center mx-auto mb-4 text-purple-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" /></svg>
                 </div>
                 <h2 className="text-2xl font-black text-white italic tracking-tight">ENTER THE PIT</h2>
                 <p className="text-purple-400 text-xs mt-2 font-mono uppercase tracking-widest">Input Access Code</p>

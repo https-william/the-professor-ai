@@ -12,7 +12,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ mode, setMode }) => 
     const NavItem = ({ active, onClick, icon, label }: any) => (
         <button 
             onClick={onClick}
-            className={`flex flex-col items-center justify-center flex-1 py-2 transition-all duration-300 ${active ? 'text-white scale-110' : 'text-gray-500 hover:text-gray-300'}`}
+            className={`flex flex-col items-center justify-center flex-1 min-h-[44px] py-2 transition-all duration-300 ${active ? 'text-white scale-110' : 'text-gray-500 hover:text-gray-300'}`}
+            aria-label={label}
         >
             <div className={`mb-1 ${active ? 'animate-bounce-subtle' : ''}`}>
                 {icon}

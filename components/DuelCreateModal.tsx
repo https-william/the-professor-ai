@@ -15,11 +15,8 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Updated Limits: Min 2, Max 30
   const participantLimit = 30;
   
-  const maxWager = Math.min(userXP, 1000);
-
   const handleSubmit = () => {
     if (file && wager <= userXP) {
       setIsLoading(true);
@@ -32,14 +29,12 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-fade-in">
-      {/* Ambient Void Effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[100px] animate-pulse-slow"></div>
       </div>
 
       <div className="relative w-full max-w-lg bg-[#0a0a0c] border border-purple-500/40 rounded-3xl p-8 shadow-[0_0_80px_rgba(168,85,247,0.2)] overflow-hidden">
         
-        {/* Neon Border Top */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
         
         <div className="text-center mb-8 relative">
@@ -94,13 +89,17 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
            >
               {file ? (
                  <div className="flex flex-col items-center animate-fade-in">
-                    <span className="text-3xl mb-3 filter drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">📜</span>
+                    <div className="mb-3 text-purple-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9z" /></svg>
+                    </div>
                     <span className="text-white font-bold text-sm">{file.name}</span>
                     <span className="text-purple-400 text-xs mt-1">Ready for Battle</span>
                  </div>
               ) : (
                  <div className="flex flex-col items-center">
-                    <span className="text-3xl mb-3 text-gray-600 group-hover:text-purple-400 transition-colors">⚔️</span>
+                    <div className="mb-3 text-gray-600 group-hover:text-purple-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    </div>
                     <span className="text-gray-300 text-sm font-bold group-hover:text-white transition-colors">Select Arena Material</span>
                     <span className="text-[10px] text-gray-500 mt-2">All participants will face questions from this file.</span>
                  </div>

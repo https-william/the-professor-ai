@@ -4,6 +4,7 @@ import { ProcessedFile, Difficulty, QuestionType, QuizConfig, TimerDuration, App
 import { processFile } from '../services/fileService';
 import { DuelCreateModal } from './DuelCreateModal';
 import { DuelJoinModal } from './DuelJoinModal';
+import { getModeCost } from '../services/creditService';
 
 interface InputSectionProps {
   onProcess: (processedFile: ProcessedFile, config: QuizConfig, mode: AppMode) => void;
@@ -64,10 +65,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
   
   const MAX_FILE_SIZE = 50 * 1024 * 1024; 
   const FILE_LIMIT_DAILY = isFresher ? 1 : 999;
-  const QUIZ_LIMIT = isFresher ? 1 : 999;
-
-  const canChat = !isFresher; 
-  const isLimitReached = (QUIZ_LIMIT - (userProfile.dailyQuizzesGenerated || 0)) <= 0;
+  
+  const currentCost = getModeCost(appMode, { difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle });
+  const canAfford = (userProfile.credits || 0) >= currentCost;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -134,18 +134,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const executeGeneration = async (finalMode: AppMode, overrideContent?: string, overrideName?: string) => {
     if (isLoading) return;
     
-    if (isLimitReached) {
-        setFileError("Daily limit reached.");
+    if (!canAfford) {
+        setFileError("Insufficient Neural Tokens.");
         onShowSubscription(); 
         return;
     }
     
-    if (finalMode === 'CHAT' && !canChat) {
-        setFileError("Professor Chat is a Scholar feature.");
-        onShowSubscription();
-        return;
-    }
-
     setUploadProgress(0);
 
     try {
@@ -199,7 +193,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
       if (onDuelJoin) onDuelJoin(code);
   }
 
-  // --- COMPONENTS ---
   const ConfigPill = ({ label, value, setter, options, disabled }: any) => (
       <div className="relative group shrink-0 w-full md:w-auto">
           <div className="absolute top-1 left-3 text-[8px] text-text-sec font-bold uppercase tracking-wider pointer-events-none z-10">
@@ -248,7 +241,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                                 className={`shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/5 border-border-main text-text-sec hover:text-text-pri'}`}
                               >
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                  <span>The Oracle</span>
+                                  <span>The Oracle (2x Cost)</span>
                               </button>
                           ) : (
                               <div onClick={onShowSubscription}>
@@ -305,7 +298,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         <div className="w-full p-4 flex flex-wrap gap-2 justify-center">
                             {selectedFiles.map((f, i) => (
                               <div key={i} className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/30">
-                                  <span className="text-lg">📄</span>
+                                  {/* Document Icon */}
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-blue-500">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                  </svg>
                                   <span className="text-xs text-blue-500 truncate max-w-[100px]">{f.name}</span>
                                   <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-blue-400 hover:text-red-400 ml-1">✕</button>
                               </div>
@@ -334,9 +330,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
                <button 
                  onClick={() => executeGeneration('EXAM')} 
                  disabled={isLoading} 
-                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-depth ${isLimitReached ? 'bg-red-900 border-red-500' : 'btn-depth-blue'}`}
+                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-depth ${!canAfford ? 'bg-gray-800 border-gray-600 text-gray-400' : isExcellentia ? 'bg-amber-600 text-white border-amber-500' : 'btn-depth-blue'}`}
                >
-                  {isLoading ? 'Processing...' : 'Generate Exam'}
+                  {isLoading ? 'Processing...' : !canAfford ? `Insufficient Credits (${currentCost} Required)` : `Generate Exam (${currentCost} NT)`}
                </button>
             </div>
         </div>
@@ -356,10 +352,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       />
                       <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1 z-30">
                         <button onClick={() => fileInputRef.current?.click()} className="h-full px-4 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main hidden md:block">
-                            <span className="text-xl">📎</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                            </svg>
                         </button>
                         <button onClick={() => executeGeneration('PROFESSOR')} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
-                            Ask
+                            Ask (15 NT)
                         </button>
                       </div>
                   </div>

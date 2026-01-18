@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { CountdownTimer } from './CountdownTimer';
 import { BrandLogo } from './BrandLogo';
 import { useTheme } from '../contexts/ThemeContext';
+import { LegalModal } from './LegalModal';
 
 interface LandingPageProps {
   onEnter: () => void;
   onPricing: () => void;
+  onLegal?: () => void;
 }
 
 const DecryptedText = ({ text, className = "", delay = 0 }: { text: string, className?: string, delay?: number }) => {
@@ -28,11 +30,40 @@ const DecryptedText = ({ text, className = "", delay = 0 }: { text: string, clas
     return <span className={`font-mono ${className}`}>{displayText}</span>;
 };
 
+// --- SVG ICONS ---
+const Icons = {
+    Brain: (props: any) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+        </svg>
+    ),
+    Swords: (props: any) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="m21 3-6.5 6.5"/><path d="m5 11 6 6"/><path d="m2 19 2 2"/><path d="m9 22 2-2"/>
+        </svg>
+    ),
+    Cap: (props: any) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+    ),
+    Bolt: (props: any) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+    ),
+    DNA: (props: any) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="m17 6-2.5-2.5"/><path d="m14 8-1-1"/><path d="m7 18 2.5 2.5"/><path d="m3.5 14.5.5.5"/><path d="m20 9 .5.5"/><path d="m6.5 12.5 1 1"/><path d="m16.5 10.5 1 1"/><path d="m10 16 1.5 1.5"/>
+        </svg>
+    )
+};
+
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) => {
   const [scrolled, setScrolled] = useState(false);
+  const [showLegal, setShowLegal] = useState(false);
   const { isDark, setTheme } = useTheme();
 
-  // Optimized Scroll Handler using requestAnimationFrame for smoothness
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -52,19 +83,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
       setTheme(isDark ? 'Light' : 'Dark');
   };
 
+  const FeatureCard = ({ icon, title, desc, delay }: any) => (
+      <div className="p-8 rounded-3xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all duration-500 hover:-translate-y-2 group relative overflow-hidden" style={{ animationDelay: delay }}>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="w-12 h-12 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center text-white mb-6 shadow-lg group-hover:scale-110 transition-transform">
+              {icon}
+          </div>
+          <h3 className="text-xl font-bold text-text-pri mb-3 font-display">{title}</h3>
+          <p className="text-sm text-text-sec leading-relaxed">{desc}</p>
+      </div>
+  );
+
   return (
     <div className="min-h-screen bg-core text-text-pri relative overflow-x-hidden font-sans selection:bg-accent/30 transition-colors duration-700">
       
+      <LegalModal isOpen={showLegal} onClose={() => setShowLegal(false)} />
+
       {/* Seamless Background Mesh */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Light Mode: Vibrant Aurora */}
           <div className={`absolute inset-0 transition-opacity duration-1000 ${isDark ? 'opacity-0' : 'opacity-100'}`}>
               <div className="absolute -top-[10%] -left-[10%] w-[80vw] h-[80vw] rounded-full bg-gradient-to-br from-blue-200 via-sky-100 to-transparent blur-[120px] opacity-80"></div>
               <div className="absolute top-[20%] right-[-20%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-bl from-purple-200 via-pink-100 to-transparent blur-[100px] opacity-70"></div>
               <div className="absolute bottom-0 left-[20%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-t from-amber-100 to-transparent blur-[120px] opacity-60"></div>
           </div>
 
-          {/* Dark Mode: Deep Nebula */}
           <div className={`absolute inset-0 transition-opacity duration-1000 ${isDark ? 'opacity-100' : 'opacity-0'}`}>
               <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full blur-[100px] opacity-40 animate-mesh-drift bg-gradient-to-br from-blue-900 to-violet-900"></div>
               <div className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] rounded-full blur-[120px] opacity-30 animate-mesh-drift bg-gradient-to-tl from-indigo-900 to-black" style={{ animationDirection: 'reverse', animationDuration: '25s' }}></div>
@@ -72,7 +114,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
           </div>
       </div>
 
-      {/* Navigation - No Hard Border */}
+      {/* Navigation */}
       <div className="fixed top-0 left-0 right-0 z-50 flex flex-col">
         <CountdownTimer />
         <nav className={`w-full transition-all duration-500 ${scrolled ? 'bg-panel/80 backdrop-blur-xl border-b border-border-main/50 py-3 shadow-sm' : 'bg-transparent border-transparent py-4 sm:py-6'}`}>
@@ -104,7 +146,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
         </nav>
       </div>
 
-      {/* Hero Section - Restored XYZ Pun */}
+      {/* Hero Section */}
       <section className="relative pt-32 sm:pt-48 pb-20 px-4 sm:px-6 min-h-[90vh] flex flex-col justify-center items-center text-center z-10">
         <div className="max-w-5xl mx-auto">
           
@@ -121,19 +163,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
              
              <div className="block sm:inline-block sm:ml-6 mt-4 sm:mt-0">
                 <div className="relative inline-flex items-center justify-center align-middle">
-                    {/* The Crossed Out ABC - Stays Monochromatic */}
                     <div className="relative mr-5 opacity-40 rotate-[-6deg] select-none group-hover:opacity-60 transition-opacity blur-[1px]">
                         <span className="text-4xl sm:text-6xl font-mono text-text-sec font-bold relative inline-block decoration-red-500 line-through decoration-4">
                             ABC
                         </span>
                     </div>
 
-                    {/* The Hero XYZ - Premium Gradient with Distinct Underline */}
                     <div className="relative group cursor-default rotate-[2deg] transform transition-transform hover:scale-105 duration-300">
                         <span className="text-6xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 drop-shadow-2xl filter brightness-110 relative z-10">
                             XYZ.
                         </span>
-                        {/* High Visibility Electric Amber Underline */}
                         <div className="absolute -bottom-1 left-0 w-full h-2 bg-amber-500 rounded-full shadow-[0_0_15px_#f59e0b] opacity-90 blur-[1px]"></div>
                     </div>
                 </div>
@@ -148,7 +187,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
           </div>
 
           <div className="flex flex-col sm:flex-row gap-5 justify-center items-center animate-slide-up-fade" style={{ animationDelay: '0.3s' }}>
-             {/* Liquid Button for CTA */}
              <button onClick={onEnter} className="btn-liquid px-10 py-4 rounded-full font-bold text-xs uppercase tracking-[0.15em] w-full sm:w-auto min-w-[200px]">
                 Start Session
              </button>
@@ -160,99 +198,79 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
         </div>
       </section>
 
-      {/* The Problem / Chaos - Seamlessly integrated (Glass Card) */}
-      <section className="py-24 relative z-10">
-          <div className="max-w-6xl mx-auto px-6">
+      {/* Features Section */}
+      <section id="features" className="py-24 px-6 relative z-10 bg-panel/50 border-t border-b border-border-main backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-16">
+                  <span className="text-accent font-bold text-xs uppercase tracking-[0.2em] mb-4 block">The Architecture</span>
+                  <h2 className="text-4xl md:text-5xl font-display font-medium text-text-pri">Engineered for <span className="italic text-text-sec">Retention</span></h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <FeatureCard 
+                      icon={<Icons.Brain className="w-6 h-6" />}
+                      title="Neural Ingestion" 
+                      desc="Upload PDFs, PPTXs, or messy notes. The Professor extracts the core concepts and builds a knowledge graph in seconds."
+                      delay="0.1s"
+                  />
+                  <FeatureCard 
+                      icon={<Icons.Swords className="w-6 h-6" />} 
+                      title="The Arena" 
+                      desc="Multiplayer academic combat. Wager XP against peers in real-time battles generated from your shared materials."
+                      delay="0.2s"
+                  />
+                  <FeatureCard 
+                      icon={<Icons.Cap className="w-6 h-6" />}
+                      title="Feynman Tutor" 
+                      desc="Confused? The AI explains complex topics using analogies from gaming, sports, or pop culture until you get it."
+                      delay="0.3s"
+                  />
+                  <FeatureCard 
+                      icon={<Icons.Bolt className="w-6 h-6" />}
+                      title="Flash Recall" 
+                      desc="Spaced repetition flashcards generated instantly. Master the definitions before tackling the complex logic."
+                      delay="0.4s"
+                  />
+              </div>
+          </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-32 px-6 relative z-10">
+          <div className="max-w-5xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-                  <div className="order-2 md:order-1">
-                      <div className="glass-panel p-8 rounded-3xl border border-red-500/10 relative overflow-hidden group hover:border-red-500/30">
-                          {/* Subtle "Glitch" Background */}
-                          <div className="absolute inset-0 bg-red-900/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                          
-                          <div className="relative z-10">
-                              <h3 className="text-2xl font-serif font-bold text-text-pri mb-4">The Cramming Crisis</h3>
-                              <p className="text-text-sec leading-relaxed mb-6">
-                                  You have 400 pages of PDF notes. The exam is in 12 hours. 
-                                  Traditional study methods—highlighting, re-reading—are scientifically inefficient.
-                              </p>
-                              
-                              <div className="flex gap-4">
-                                  <div className="p-4 rounded-xl bg-core/50 border border-border-main flex-1 text-center">
-                                      <div className="mb-2 flex justify-center text-text-sec">
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                                      </div>
-                                      <div className="text-[10px] text-text-sec uppercase font-bold tracking-wider">Info Overload</div>
-                                  </div>
-                                  <div className="p-4 rounded-xl bg-core/50 border border-border-main flex-1 text-center">
-                                      <div className="mb-2 flex justify-center text-text-sec">
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                      </div>
-                                      <div className="text-[10px] text-text-sec uppercase font-bold tracking-wider">Zero Time</div>
-                                  </div>
-                              </div>
-                          </div>
+                  <div className="space-y-12">
+                      <div className="relative pl-8 border-l-2 border-border-main group">
+                          <span className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-core border-2 border-text-sec group-hover:border-accent transition-colors"></span>
+                          <h3 className="text-2xl font-bold text-text-pri mb-2">1. Ingest Data</h3>
+                          <p className="text-text-sec">Drag and drop your lecture slides or textbook chapters. We handle the chaos.</p>
+                      </div>
+                      <div className="relative pl-8 border-l-2 border-border-main group">
+                          <span className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-core border-2 border-text-sec group-hover:border-accent transition-colors"></span>
+                          <h3 className="text-2xl font-bold text-text-pri mb-2">2. Configure Protocol</h3>
+                          <p className="text-text-sec">Choose 'Exam Mode' for drilling, 'Professor' for explaining, or 'Arena' for fighting.</p>
+                      </div>
+                      <div className="relative pl-8 border-l-2 border-border-main group">
+                          <span className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-core border-2 border-text-sec group-hover:border-accent transition-colors"></span>
+                          <h3 className="text-2xl font-bold text-text-pri mb-2">3. Achieve Mastery</h3>
+                          <p className="text-text-sec">Receive instant grading, 'Verdict' feedback, and track your XP progression over time.</p>
                       </div>
                   </div>
                   
-                  <div className="order-1 md:order-2 text-center md:text-left">
-                      <h2 className="text-4xl md:text-5xl font-bold font-serif mb-6 text-text-pri">Order from <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">Chaos</span></h2>
-                      <p className="text-lg text-text-sec font-light leading-relaxed">
-                          The Professor doesn't just summarize. It ingests your chaos and outputs pure, crystallized knowledge. 
-                          <br/><br/>
-                          We turn "I hope I pass" into <span className="text-text-pri font-medium">"I am ready."</span>
-                      </p>
+                  <div className="relative aspect-square md:aspect-auto md:h-[500px] bg-panel rounded-3xl border border-border-main shadow-2xl p-8 flex flex-col items-center justify-center text-center overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-tr from-accent/10 to-transparent opacity-50"></div>
+                      <div className="mb-6 transform group-hover:scale-110 transition-transform duration-500 text-text-pri">
+                          <Icons.DNA className="w-24 h-24" />
+                      </div>
+                      <div className="font-mono text-xs text-accent uppercase tracking-widest mb-2">System Ready</div>
+                      <h4 className="text-3xl font-display font-bold text-text-pri">Transform Chaos into Order.</h4>
                   </div>
               </div>
           </div>
       </section>
 
-      {/* Features - Seamless Flow */}
-      <section id="features" className="py-24 relative z-10">
-          <div className="max-w-7xl mx-auto px-6">
-              <div className="text-center mb-16">
-                  <h2 className="text-3xl md:text-4xl font-bold font-serif mb-4 text-text-pri">Complete Academic Suite</h2>
-                  <p className="text-text-sec max-w-2xl mx-auto text-sm tracking-wide">Everything you need to master your coursework.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {/* Feature 1 */}
-                  <div className="p-8 rounded-3xl glass-panel hover:border-accent/30 transition-all group duration-500 hover:shadow-lg">
-                      <div className="text-4xl mb-6 text-accent group-hover:scale-110 transition-transform duration-300 drop-shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 text-text-pri">Practice Exams</h3>
-                      <p className="text-text-sec text-sm leading-relaxed">
-                          Upload your notes and generate instant mock exams. Identify gaps in your knowledge and get grading feedback before the real test.
-                      </p>
-                  </div>
-
-                  {/* Feature 2 */}
-                  <div className="p-8 rounded-3xl glass-panel hover:border-blue-500/30 transition-all group duration-500 hover:shadow-lg">
-                      <div className="text-4xl mb-6 text-blue-500 group-hover:scale-110 transition-transform duration-300 drop-shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 text-text-pri">Intelligent Tutoring</h3>
-                      <p className="text-text-sec text-sm leading-relaxed">
-                          Stuck on a concept? The AI Professor explains complex topics simply, tailored to your learning style (Feynman Technique).
-                      </p>
-                  </div>
-
-                  {/* Feature 3 */}
-                  <div className="p-8 rounded-3xl glass-panel hover:border-purple-500/30 transition-all group duration-500 hover:shadow-lg">
-                      <div className="text-4xl mb-6 text-purple-500 group-hover:scale-110 transition-transform duration-300 drop-shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 text-text-pri">Collaborative Hub</h3>
-                      <p className="text-text-sec text-sm leading-relaxed">
-                          Create study rooms and invite friends. Share notes, chat, and learn together in synchronized sessions.
-                      </p>
-                  </div>
-              </div>
-          </div>
-      </section>
-      
-      {/* Footer - Seamless (No Top Border) */}
-      <footer className="py-12 bg-transparent text-center text-text-sec text-xs relative z-10">
+      {/* Footer */}
+      <footer className="py-12 bg-transparent text-center text-text-sec text-xs relative z-10 border-t border-border-main/30">
          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
              <div className="flex items-center gap-2">
                  <div className="w-6 h-6 grayscale opacity-50">
@@ -261,14 +279,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
                  <span className="font-bold text-text-sec">The Professor</span>
              </div>
              
-             <div className="flex flex-col items-center md:items-end gap-1">
+             <div className="flex flex-col items-center md:items-end gap-2">
+                 <div className="flex gap-4 mb-2">
+                     <button onClick={() => setShowLegal(true)} className="hover:text-text-pri transition-colors">Legal & Terms</button>
+                     <a href="mailto:vexis.automations@gmail.com" className="hover:text-text-pri transition-colors">Support</a>
+                 </div>
                  <p className="font-mono uppercase tracking-widest text-accent/50">Copyright The Professor</p>
                  <p className="opacity-50">A sub system of Vexis Automations.</p>
-                 <div className="flex gap-4 mt-2">
-                     <a href="mailto:vexis.automations@gmail.com" className="hover:text-text-pri transition-colors">Support Email</a>
-                     <span className="text-border-main">|</span>
-                     <span className="hover:text-text-pri transition-colors cursor-default">+234 707 170 3030 (Telegram)</span>
-                 </div>
              </div>
          </div>
       </footer>

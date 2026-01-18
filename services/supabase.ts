@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, SubscriptionTier, DuelState, QuizQuestion, QuizConfig, DuelParticipant, ProfessorSection } from '../types';
 
@@ -74,7 +75,7 @@ export const logout = async () => {
     await supabase.auth.signOut();
 };
 
-// --- DATABASE (PROFILES) ---
+// --- DATABASE (PROFILES & CREDITS) ---
 
 export const saveUserToSupabase = async (userId: string, data: Partial<UserProfile>) => {
     const { data: existing } = await supabase.from('profiles').select('id').eq('id', userId).single();
@@ -91,6 +92,60 @@ export const updateUserUsage = async (userId: string, usage: number) => {
 
 export const updateUserPlan = async (userId: string, newPlan: SubscriptionTier) => {
     await supabase.from('profiles').update({ plan: newPlan }).eq('id', userId);
+};
+
+/**
+ * Attempt to deduct credits from the user's account using a secure RPC function.
+ * @returns true if successful, false if insufficient funds
+ */
+export const deductCredits = async (userId: string, amount: number, description: string): Promise<boolean> => {
+    const { data, error } = await supabase.rpc('deduct_credits', { 
+        p_user_id: userId, 
+        p_amount: amount, 
+        p_desc: description 
+    });
+    
+    if (error) {
+        console.error("Credit Deduction Failed:", error);
+        return false;
+    }
+    return data as boolean;
+};
+
+// --- BILLING & SUBSCRIPTIONS ---
+
+export const cancelSubscription = async (userId: string) => {
+    // In a real Paystack integration, this would call an Edge Function to hit Paystack API
+    // For now, we update the local status so the UI reflects "Cancelling..."
+    const { error } = await supabase.from('profiles').update({ 
+        subscription_status: 'cancelled_pending' 
+    }).eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+};
+
+export const getPaymentHistory = async (userId: string) => {
+    const { data, error } = await supabase
+        .from('payment_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+    if (error) return [];
+    return data;
+};
+
+export const getCreditHistory = async (userId: string) => {
+    const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+        
+    if (error) return [];
+    return data;
 };
 
 // --- STORAGE (AVATARS) ---

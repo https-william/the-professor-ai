@@ -49,6 +49,13 @@ out
 *.env
 *.env.*
 
+# Local SSL Certificates (Required for Camera/Mic testing on Localhost)
+*.pem
+*.crt
+*.key
+localhost.pem
+localhost-key.pem
+
 # Supabase
 supabase/.branches
 supabase/.temp
