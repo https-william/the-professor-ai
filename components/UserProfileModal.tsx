@@ -161,7 +161,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-panel w-full max-w-3xl rounded-[2rem] border border-border-main shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up-fade text-text-pri">
+      <div className="relative bg-panel w-full max-w-3xl rounded-[2rem] border border-border-main shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-text-pri">
         
         {/* Header - Dossier Style */}
         <div className="p-6 border-b border-border-main bg-white/5 flex justify-between items-center shrink-0">

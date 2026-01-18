@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import React, { ErrorInfo, ReactNode } from "react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -15,15 +15,20 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     error: null,
   };
 
-  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  public render() {
+  handleReset = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.href = '/';
+  };
+
+  render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center font-mono">
@@ -41,10 +46,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             </div>
 
             <button
-              onClick={() => {
-                  this.setState({ hasError: false, error: null });
-                  window.location.href = '/';
-              }}
+              onClick={this.handleReset}
               className="w-full py-3 bg-red-600 hover:bg-red-500 text-black font-bold uppercase text-xs rounded-lg transition-colors shadow-lg"
             >
               Reboot System

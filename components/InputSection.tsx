@@ -157,7 +157,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
          }
       }
 
-      if (finalMode === 'PROFESSOR' && !overrideContent) {
+      if ((finalMode === 'PROFESSOR' || finalMode === 'CHAT') && !overrideContent) {
          if (chatInput.trim()) fullContent += `\n\nUser Context/Question: ${chatInput}`;
          if (!fullContent.trim()) { setFileError("Please ask a question or upload a file."); return; }
       } else if (!overrideContent) {
@@ -174,7 +174,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
       }, getFullConfig(), finalMode);
       
       setChatInput('');
-      if (finalMode === 'PROFESSOR') setSelectedFiles([]);
+      if (finalMode === 'PROFESSOR' || finalMode === 'CHAT') setSelectedFiles([]);
       
     } catch (err: any) {
       setFileError(err.message);
@@ -192,6 +192,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const handleDuelJoinSubmit = (code: string) => {
       if (onDuelJoin) onDuelJoin(code);
   }
+
+  const handleOracleClick = () => {
+      if (isExcellentia) {
+          setUseOracle(!useOracle);
+      } else {
+          onShowSubscription();
+      }
+  };
 
   const ConfigPill = ({ label, value, setter, options, disabled }: any) => (
       <div className="relative group shrink-0 w-1/2 md:w-auto p-1">
@@ -233,23 +241,18 @@ export const InputSection: React.FC<InputSectionProps> = ({
                           <ConfigPill label="Count" value={questionCount} setter={(v: string) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
                       </div>
 
-                      {/* Oracle Toggle */}
+                      {/* Oracle Toggle - Text shows 'The Oracle' but triggers subscription if locked */}
                       <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
-                          {isExcellentia ? (
-                              <button 
-                                onClick={() => setUseOracle(!useOracle)}
-                                className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/5 border-border-main text-text-sec hover:text-text-pri'}`}
-                              >
-                                  <span>The Oracle (2x Cost)</span>
-                              </button>
-                          ) : (
-                              <div onClick={onShowSubscription}>
-                                  <button className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border bg-amber-900/10 border-amber-500/30 text-amber-600 hover:bg-amber-900/20 transition-all cursor-pointer">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" /></svg>
-                                    <span>Excellentia Feature</span>
-                                  </button>
-                              </div>
-                          )}
+                          <button 
+                            onClick={handleOracleClick}
+                            className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/5 border-border-main text-text-sec hover:text-text-pri'}`}
+                          >
+                              {/* Display Lock Icon if not excellentia */}
+                              {!isExcellentia && (
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-amber-500"><path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" /></svg>
+                              )}
+                              <span>The Oracle {isExcellentia ? '(2x Cost)' : ''}</span>
+                          </button>
                       </div>
                   </div>
               </div>
@@ -334,7 +337,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
         </div>
 
         {/* Other Modes (Chat/Hub) Input */}
-        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-core z-20 ${appMode === 'PROFESSOR' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-core z-20 ${(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-display font-normal text-text-pri mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
                   <div className="relative">
@@ -342,7 +345,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         type="text" 
                         value={chatInput} 
                         onChange={(e) => setChatInput(e.target.value)} 
-                        onKeyDown={(e) => e.key === 'Enter' && executeGeneration('PROFESSOR')}
+                        onKeyDown={(e) => e.key === 'Enter' && executeGeneration(appMode)}
                         className="w-full bg-panel border border-border-main rounded-2xl pl-6 pr-12 md:pr-48 py-6 text-text-pri outline-none focus:border-amber-500 placeholder-text-sec text-lg shadow-xl transition-all" 
                         placeholder="Ask a question..." 
                       />
@@ -350,7 +353,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         <button onClick={() => fileInputRef.current?.click()} className="h-full px-4 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main hidden md:block">
                             📎
                         </button>
-                        <button onClick={() => executeGeneration('PROFESSOR')} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
+                        <button onClick={() => executeGeneration(appMode)} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
                             Ask (15 NT)
                         </button>
                       </div>

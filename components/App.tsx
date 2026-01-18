@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -7,7 +8,6 @@ import { UserProfileModal } from './UserProfileModal';
 import { AboutModal } from './AboutModal';
 import { SubscriptionModal } from './SubscriptionModal';
 import { WelcomeModal } from './Onboarding/WelcomeModal';
-import { FeatureTourModal } from './Onboarding/FeatureTourModal';
 import { AuthPage } from './Auth/AuthPage';
 import { AdminLoginPage } from './Auth/AdminLoginPage';
 import { LandingPage } from './LandingPage';
@@ -28,6 +28,7 @@ import { MobileNavBar } from './MobileNavBar';
 import { FloatingDock } from './FloatingDock';
 import { CreditWallet } from './CreditWallet';
 import { CallOverlay } from './CallOverlay';
+import { RadialProgress } from './RadialProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
@@ -86,8 +87,8 @@ const App: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   
-  // Onboarding Flow
-  const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME' | 'TOUR'>('COMPLETE');
+  // Simplified Onboarding State (Boolean check instead of multi-step string)
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Isolated States
   const [quizState, setQuizState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
@@ -114,6 +115,9 @@ const App: React.FC = () => {
   const [activeCallPeerId, setActiveCallPeerId] = useState<string | null>(null);
 
   const isFresher = userProfile.subscriptionTier === 'Fresher';
+  const dailyLimit = userProfile.subscriptionTier === 'Scholar' ? 10 : (isFresher ? 1 : 1000);
+  const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / dailyLimit) * 100, 100);
+  
   const isPotentialAdmin = (email: string | null | undefined): boolean => {
     return ADMIN_EMAILS.includes(email?.toLowerCase() || '');
   };
@@ -289,21 +293,30 @@ const App: React.FC = () => {
     const localProfile = loadUserProfile() || getDefaultProfile();
     let mergedProfile: UserProfile = { ...localProfile };
     
+    // Sync critical identity data from Auth User to Profile state
     if (user.profile) {
         mergedProfile = { 
             ...mergedProfile, 
             ...user.profile, 
+            // Explicitly sync the alias if the auth one is valid and local is default
+            alias: (user.profile.alias && user.profile.alias !== 'Guest Scholar') ? user.profile.alias : (mergedProfile.alias || user.displayName || 'Scholar'),
             socials: user.profile.socials || mergedProfile.socials, 
             xp: Math.max(user.profile.xp || 0, mergedProfile.xp || 0)
         };
+    } else if (user.displayName) {
+        // Fallback if user.profile is not fully populated but we have displayName
+        if (!mergedProfile.alias || mergedProfile.alias === 'Guest Scholar') {
+            mergedProfile.alias = user.displayName;
+        }
     }
     
     // Sync Subscription
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
     
-    // Sync Onboarding status from DB/Auth Context
-    if (user.hasCompletedOnboarding !== undefined) {
-        mergedProfile.hasCompletedOnboarding = user.hasCompletedOnboarding;
+    // Logic: Only show onboarding if Explicitly FALSE in DB or LocalStorage
+    // This prevents it from showing if it's undefined (during loading)
+    if (user.hasCompletedOnboarding === true) {
+        mergedProfile.hasCompletedOnboarding = true;
     }
 
     mergedProfile = updateStreak(mergedProfile);
@@ -312,9 +325,11 @@ const App: React.FC = () => {
     
     loadHistory().then(setHistory);
     
-    // If not completed onboarding in DB, trigger it
-    if (!mergedProfile.hasCompletedOnboarding) {
-        setOnboardingStep('WELCOME');
+    // Final Check for Onboarding Visibility
+    if (mergedProfile.hasCompletedOnboarding === false) {
+        setShowOnboarding(true);
+    } else {
+        setShowOnboarding(false);
     }
 
     if (!isAdminUnlocked) {
@@ -385,13 +400,21 @@ const App: React.FC = () => {
   const handleCancelGeneration = useCallback(() => { setStatus(AppStatus.IDLE); setErrorMsg(null); }, []);
   
   const handleSetAppMode = useCallback((mode: AppMode) => {
-      if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
-      else if (mode === 'EXAM' && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
-      // Change: Flashcards view handles its own empty state (Creation UI), so always set to READY
-      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY); 
-      else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
-      else setStatus(AppStatus.READY);
       setAppMode(mode);
+      // Logic Fix: For these modes, we want to immediately switch to their view (Lobby/Deck Creator)
+      // instead of showing the InputSection idle state.
+      if (mode === 'FLASHCARDS' || mode === 'HUB' || mode === 'DUEL') {
+          setStatus(AppStatus.READY);
+      } else if (mode === 'CHAT') {
+          if (chatState.messages.length > 0) setStatus(AppStatus.READY);
+          else setStatus(AppStatus.IDLE); // Show "Class is in session" input
+      } else if (mode === 'PROFESSOR') {
+          if (professorState.sections.length > 0) setStatus(AppStatus.READY);
+          else setStatus(AppStatus.IDLE); // Show "Class is in session" input
+      } else if (mode === 'EXAM') {
+          if (quizState.questions.length > 0) setStatus(AppStatus.READY);
+          else setStatus(AppStatus.IDLE); // Show standard upload input
+      }
   }, [professorState, quizState, chatState, flashcardState]);
 
   const handleQuizAction = useCallback(async (action: any, payload?: any) => {
@@ -480,18 +503,16 @@ const App: React.FC = () => {
       <CountdownTimer />
       <PWAPrompt />
       
-      {/* Onboarding Modals */}
-      {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={(data) => { 
+      {/* Consolidated Onboarding (One Time) */}
+      {showOnboarding && <WelcomeModal onComplete={(data) => { 
             const updatedProfile = {...userProfile, ...data, hasCompletedOnboarding: true};
             setUserProfile(updatedProfile); 
+            setShowOnboarding(false);
             if (user) {
                 saveUserToSupabase(user.uid, { ...data, has_completed_onboarding: true });
             }
-            setOnboardingStep('TOUR'); 
       }} />}
       
-      {onboardingStep === 'TOUR' && <FeatureTourModal onComplete={() => setOnboardingStep('COMPLETE')} />}
-
       {/* CALL OVERLAYS */}
       {(activeCallPeerId || incomingCall) && (
           <CallOverlay 
@@ -531,6 +552,11 @@ const App: React.FC = () => {
           </>
       )}
 
+      {/* Professor Trigger */}
+      {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
+          <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
+      )}
+
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main top-0`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
@@ -548,6 +574,13 @@ const App: React.FC = () => {
             </div>
 
             {/* Credits Display */}
+            {isFresher && appMode !== 'ADMIN' && (
+                <div className="flex items-center gap-2" title="Daily Neural Energy">
+                    <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-sec hidden md:block">Neural Energy</span>
+                </div>
+            )}
+
             {isFresher && appMode !== 'ADMIN' && (
                 <CreditWallet balance={userProfile.credits || 0} onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex" />
             )}
