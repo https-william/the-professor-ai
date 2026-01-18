@@ -16,29 +16,27 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
     const [mode, setMode] = useState<'LOBBY' | 'ROOM'>('LOBBY');
     const [roomCode, setRoomCode] = useState('');
     const [messages, setMessages] = useState<HubMessage[]>([]);
-    
-    // Core State for the "Slides"
     const [hubSections, setHubSections] = useState<ProfessorSection[]>([]);
     const [isLoadingSlides, setIsLoadingSlides] = useState(false);
-    
-    // Realtime States
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
     const [typingUsers, setTypingUsers] = useState<string[]>([]);
-    const subscriptionRef = useRef<any>(null);
-    
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [roomId, setRoomId] = useState('');
-    const [motivation, setMotivation] = useState('');
+    const [motivation, setMotivation] = useState('Syncing Neural Network...');
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const subscriptionRef = useRef<any>(null);
 
-    // Lonely Lobby Logic
     useEffect(() => {
+        let mounted = true;
         if (mode === 'LOBBY') {
-            generateMotivation().then(setMotivation);
+            generateMotivation()
+                .then(m => { if(mounted) setMotivation(m); })
+                .catch(() => { if(mounted) setMotivation("Focus. Execute. Succeed."); });
         }
+        return () => { mounted = false; };
     }, [mode]);
 
     useEffect(() => {
@@ -103,13 +101,6 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
         }
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInput(e.target.value);
-        if (subscriptionRef.current) {
-            subscriptionRef.current.sendTyping();
-        }
-    };
-
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setIsLoadingSlides(true);
@@ -137,36 +128,40 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
 
     if (mode === 'LOBBY') {
         return (
-            <div className="max-w-4xl mx-auto h-[70vh] flex flex-col justify-center items-center p-6 text-center animate-fade-in relative">
-                <button onClick={onExit} className="absolute top-0 right-0 px-4 py-2 text-gray-500 hover:text-white text-xs uppercase font-bold tracking-widest">Exit Hub</button>
-                <div className="mb-10">
-                    <div className="w-24 h-24 bg-green-900/20 rounded-3xl border border-green-500/20 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(34,197,94,0.15)] relative">
-                        <div className="absolute inset-0 border border-green-500/10 rounded-3xl animate-pulse"></div>
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] p-6 text-center animate-fade-in relative">
+                <button onClick={onExit} className="absolute top-4 right-4 text-gray-500 hover:text-white text-xs uppercase font-bold tracking-widest">Exit</button>
+                
+                <div className="mb-10 w-full max-w-md">
+                    <div className="w-24 h-24 bg-green-900/20 rounded-3xl border border-green-500/20 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(34,197,94,0.15)] animate-float">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                     </div>
-                    <h1 className="text-4xl font-display font-bold text-white mb-3">The Hub</h1>
-                    <p className="text-green-400/80 text-sm font-mono uppercase tracking-widest mb-6 animate-pulse">"{motivation || 'Synchronizing...'}"</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-                    <button onClick={handleCreate} className="p-8 bg-[#0f0f10] border border-white/10 rounded-2xl hover:border-green-500/50 hover:bg-green-900/10 transition-all group text-left relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="text-2xl mb-2 group-hover:scale-110 transition-transform origin-left text-green-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-1 relative z-10">Create Cell</h3>
-                        <p className="text-xs text-gray-500 relative z-10">Host a new session.</p>
-                    </button>
-                    <div className="p-8 bg-[#0f0f10] border border-white/10 rounded-2xl flex flex-col gap-4 relative overflow-hidden">
-                        <div className="text-left relative z-10">
-                            <div className="text-2xl mb-2 text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-1">Join Cell</h3>
-                            <p className="text-xs text-gray-500">Enter access code.</p>
-                        </div>
-                        <div className="flex gap-2 relative z-10">
-                            <input type="text" placeholder="CODE" className="bg-black/50 border border-white/20 rounded-lg px-3 py-2 text-center font-mono uppercase text-white w-full outline-none focus:border-green-500 transition-colors" onChange={(e) => setRoomCode(e.target.value.toUpperCase())} value={roomCode} />
-                            <button onClick={handleJoin} disabled={!roomCode} className="px-4 bg-white text-black font-bold rounded-lg uppercase text-xs hover:bg-gray-200 disabled:opacity-50">Go</button>
+                    <h1 className="text-4xl font-bold text-white mb-4">The Hub</h1>
+                    <p className="text-green-400 text-sm font-mono uppercase tracking-widest mb-8 h-6">{motivation}</p>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                        <button 
+                            onClick={handleCreate} 
+                            disabled={loading}
+                            className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-green-500/50 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-3 group"
+                        >
+                            {loading ? 'Initializing...' : 'Create New Cell'}
+                        </button>
+                        
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="ENTER CODE" 
+                                className="bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-center font-mono uppercase text-white w-full outline-none focus:border-green-500 transition-colors" 
+                                onChange={(e) => setRoomCode(e.target.value.toUpperCase())} 
+                                value={roomCode} 
+                            />
+                            <button 
+                                onClick={handleJoin} 
+                                disabled={!roomCode || loading} 
+                                className="px-6 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl uppercase text-xs transition-colors disabled:opacity-50"
+                            >
+                                Join
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -181,23 +176,6 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
                     <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity" onClick={handleCopy}>
                         <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Room Code</span>
                         <span className="text-xl font-mono font-bold text-green-400 tracking-wider">{roomCode || "ACTIVE"}</span>
-                    </div>
-                    {/* User List Dropdown / P2P Call Trigger */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-500 uppercase font-bold mr-2 hidden md:block">Active Agents:</span>
-                        {onlineUsers.map(u => (
-                            <button 
-                                key={u} 
-                                onClick={() => onStartCall && onStartCall(u)}
-                                className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 transition-all hover:scale-105 ${u === (user.alias || 'You') ? 'bg-white/10 text-gray-400 cursor-default' : 'bg-green-900/30 text-green-400 border border-green-500/20 hover:bg-green-500 hover:text-white'}`}
-                                disabled={u === (user.alias || 'You')}
-                                title={u === (user.alias || 'You') ? 'You' : `Call ${u}`}
-                            >
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                                {u}
-                                {u !== (user.alias || 'You') && <span className="opacity-50 text-[10px]">📞</span>}
-                            </button>
-                        ))}
                     </div>
                 </div>
                 <button onClick={onExit} className="px-4 py-2 bg-red-900/20 text-red-500 rounded-lg text-xs font-bold uppercase hover:bg-red-900/40 transition-colors border border-red-900/30">Disconnect</button>
@@ -228,28 +206,16 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
 
                 <div className="w-full max-w-sm border-l border-white/10 flex flex-col bg-[#0a0a0a]">
                     <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar relative">
-                        {messages.map((m, i) => {
-                            const isMe = m.sender === (user.alias || 'You');
-                            const isProf = m.sender === 'The Professor';
-                            const isSystem = m.sender === 'System';
-                            if (isSystem) return <div key={i} className="flex justify-center my-2"><span className="text-[10px] text-gray-500 font-mono uppercase bg-white/5 px-2 py-1 rounded">{m.content}</span></div>;
-                            return (
-                                <div key={i} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-slide-in`}>
-                                    <span className={`text-[10px] mb-1 ml-1 ${isProf ? 'text-amber-500 font-bold' : 'text-gray-500'}`}>{m.sender}</span>
-                                    <span className={`px-3 py-2 rounded-xl text-sm max-w-[90%] ${isProf ? 'bg-amber-900/20 border border-amber-500/30 text-amber-100' : isMe ? 'bg-green-900/20 text-green-100 border border-green-500/20' : 'bg-white/5 text-gray-300 border border-white/5'}`}>{m.content}</span>
-                                </div>
-                            );
-                        })}
-                        {typingUsers.length > 0 && (
-                            <div className="flex items-center gap-2 text-[10px] text-gray-500 px-4">
-                                <div className="flex gap-1"><div className="w-1 h-1 bg-gray-500 rounded-full animate-bounce"></div><div className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div><div className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div></div>
-                                <span>{typingUsers.join(', ')} is typing...</span>
+                        {messages.map((m, i) => (
+                            <div key={i} className={`flex flex-col ${m.sender === (user.alias || 'You') ? 'items-end' : 'items-start'} animate-slide-in`}>
+                                <span className="text-[10px] mb-1 ml-1 text-gray-500">{m.sender}</span>
+                                <span className="px-3 py-2 rounded-xl text-sm max-w-[90%] bg-white/5 text-gray-300 border border-white/5">{m.content}</span>
                             </div>
-                        )}
+                        ))}
                         <div ref={messagesEndRef} />
                     </div>
                     <div className="p-3 border-t border-white/10 bg-[#0f0f10]">
-                        <input className="w-full bg-[#151515] rounded-lg px-4 py-3 text-white outline-none focus:ring-1 focus:ring-green-500/50 transition-all text-sm placeholder-gray-600" placeholder="Message..." value={input} onChange={handleInputChange} onKeyDown={e => { if (e.key === 'Enter') handleSendMessage(); }} />
+                        <input className="w-full bg-[#151515] rounded-lg px-4 py-3 text-white outline-none focus:ring-1 focus:ring-green-500/50 transition-all text-sm placeholder-gray-600" placeholder="Message..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSendMessage(); }} />
                     </div>
                 </div>
             </div>

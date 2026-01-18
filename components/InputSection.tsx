@@ -194,8 +194,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   }
 
   const ConfigPill = ({ label, value, setter, options, disabled }: any) => (
-      <div className="relative group shrink-0 w-full md:w-auto">
-          <div className="absolute top-1 left-3 text-[8px] text-text-sec font-bold uppercase tracking-wider pointer-events-none z-10">
+      <div className="relative group shrink-0 w-1/2 md:w-auto p-1">
+          <div className="absolute top-2 left-3 text-[8px] text-text-sec font-bold uppercase tracking-wider pointer-events-none z-10">
               {label}
           </div>
           <select 
@@ -206,12 +206,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
           >
               {options.map((opt: string) => <option key={opt} value={opt} className="bg-core text-text-pri">{opt}</option>)}
           </select>
-          <div className="pointer-events-none absolute right-2.5 bottom-2.5 text-xs text-text-sec">▼</div>
+          <div className="pointer-events-none absolute right-3 bottom-3 text-xs text-text-sec">▼</div>
       </div>
   );
 
   return (
-    <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-20">
+    <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-24 md:mb-20">
       
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
@@ -225,8 +225,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
             {/* CONTROL DECK */}
             <div id="exam-config-target" className="border-b border-border-main bg-panel z-20 flex-shrink-0 backdrop-blur-md p-4">
               <div className="flex flex-col gap-3">
-                  <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                      <div className="flex flex-wrap gap-2 w-full">
+                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                      <div className="flex flex-wrap w-full md:w-auto -m-1">
                           <ConfigPill label="Difficulty" value={difficulty} setter={setDifficulty} options={["Easy", "Medium", "Hard", isExcellentia ? "Nightmare" : "Nightmare (Locked)"]} disabled={difficulty === 'Nightmare' && !isExcellentia} />
                           <ConfigPill label="Question Type" value={questionType} setter={setQuestionType} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
                           <ConfigPill label="Timer" value={timerDuration} setter={setTimerDuration} options={["Limitless", "5m", "10m", "30m", "1h"]} />
@@ -234,19 +234,17 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       </div>
 
                       {/* Oracle Toggle */}
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
                           {isExcellentia ? (
                               <button 
                                 onClick={() => setUseOracle(!useOracle)}
-                                className={`shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/5 border-border-main text-text-sec hover:text-text-pri'}`}
+                                className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/5 border-border-main text-text-sec hover:text-text-pri'}`}
                               >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                   <span>The Oracle (2x Cost)</span>
                               </button>
                           ) : (
                               <div onClick={onShowSubscription}>
-                                  <button className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border bg-black/5 border-border-main text-text-sec cursor-not-allowed">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                  <button className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border bg-black/5 border-border-main text-text-sec cursor-not-allowed">
                                     <span>Oracle Locked</span>
                                   </button>
                               </div>
@@ -257,12 +255,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
 
             {/* Main Upload Area */}
-            <div id="upload-zone-target" className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-transparent custom-scrollbar min-h-[300px]">
+            <div id="upload-zone-target" className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-transparent custom-scrollbar min-h-[250px]">
                
                <div className="flex-1 flex flex-col gap-6">
                   {/* TEXT AREA */}
                   <div className="relative group">
-                      <div className="absolute top-3 left-3 text-[10px] font-bold text-text-sec uppercase tracking-widest bg-panel px-2 rounded border border-border-main">
+                      <div className="absolute top-3 left-3 text-[10px] font-bold text-text-sec uppercase tracking-widest bg-panel px-2 rounded border border-border-main pointer-events-none">
                           Input Source Text
                       </div>
                       <textarea 
@@ -298,10 +296,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         <div className="w-full p-4 flex flex-wrap gap-2 justify-center">
                             {selectedFiles.map((f, i) => (
                               <div key={i} className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/30">
-                                  {/* Document Icon */}
-                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-blue-500">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                                  </svg>
                                   <span className="text-xs text-blue-500 truncate max-w-[100px]">{f.name}</span>
                                   <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-blue-400 hover:text-red-400 ml-1">✕</button>
                               </div>
@@ -311,14 +305,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
                             </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center gap-3 p-6">
-                           <div className="p-4 bg-white rounded-full mb-1 group-hover:scale-110 transition-transform shadow-sm">
-                               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-text-sec group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                           </div>
-                           <div className="text-center">
-                               <p className="text-text-pri font-bold text-sm uppercase tracking-wide">Click to Upload</p>
-                               <p className="text-text-sec text-xs mt-1">PDF, DOCX, PPTX, TXT, IMAGES</p>
-                           </div>
+                        <div className="flex flex-col items-center gap-3 p-6 text-center">
+                           <p className="text-text-pri font-bold text-sm uppercase tracking-wide">Tap to Upload</p>
+                           <p className="text-text-sec text-[10px]">PDF, DOCX, PPTX, TXT, IMAGES</p>
                         </div>
                       )}
                   </div>
@@ -326,18 +315,24 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
 
             {/* ACTION GRID */}
-            <div className="p-6 border-t border-border-main bg-black/5 dark:bg-[#0a0a0a] shrink-0">
+            <div className="p-4 sm:p-6 border-t border-border-main bg-black/5 dark:bg-[#0a0a0a] shrink-0">
                <button 
                  onClick={() => executeGeneration('EXAM')} 
                  disabled={isLoading} 
-                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-depth ${!canAfford ? 'bg-gray-800 border-gray-600 text-gray-400' : isExcellentia ? 'bg-amber-600 text-white border-amber-500' : 'btn-depth-blue'}`}
+                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-glass ${!canAfford ? 'opacity-50 cursor-not-allowed' : isExcellentia ? 'bg-amber-600/20' : 'bg-blue-600/20'}`}
                >
-                  {isLoading ? 'Processing...' : !canAfford ? `Insufficient Credits (${currentCost} Required)` : `Generate Exam (${currentCost} NT)`}
+                  {isLoading ? (
+                      <span className="animate-pulse">Processing...</span>
+                  ) : !canAfford ? (
+                      `Insufficient Credits (${currentCost} Required)`
+                  ) : (
+                      `Generate Exam (${currentCost} NT)`
+                  )}
                </button>
             </div>
         </div>
 
-        {/* Other Modes (Chat/Hub) Input - Simplified fallback */}
+        {/* Other Modes (Chat/Hub) Input */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-core z-20 ${appMode === 'PROFESSOR' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-display font-normal text-text-pri mb-6 animate-slide-up-fade">Class is in session.</h3>
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
@@ -352,9 +347,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       />
                       <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1 z-30">
                         <button onClick={() => fileInputRef.current?.click()} className="h-full px-4 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main hidden md:block">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                            </svg>
+                            📎
                         </button>
                         <button onClick={() => executeGeneration('PROFESSOR')} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
                             Ask (15 NT)

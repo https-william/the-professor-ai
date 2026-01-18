@@ -8,6 +8,7 @@ import { UserProfileModal } from './UserProfileModal';
 import { AboutModal } from './AboutModal';
 import { SubscriptionModal } from './SubscriptionModal';
 import { WelcomeModal } from './Onboarding/WelcomeModal';
+import { FeatureTourModal } from './Onboarding/FeatureTourModal';
 import { AuthPage } from './Auth/AuthPage';
 import { AdminLoginPage } from './Auth/AdminLoginPage';
 import { LandingPage } from './LandingPage';
@@ -86,9 +87,13 @@ const App: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME'>('COMPLETE');
   
+  // Onboarding Flow
+  const [onboardingStep, setOnboardingStep] = useState<'COMPLETE' | 'WELCOME' | 'TOUR'>('COMPLETE');
+  
+  // Isolated States
   const [quizState, setQuizState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
+  const [flashcardState, setFlashcardState] = useState<QuizState>({ questions: [], userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: null, timeRemaining: null, currentQuestionIndex: 0 });
   const [professorState, setProfessorState] = useState<ProfessorState>({ sections: [] });
   const [chatState, setChatState] = useState<ChatState>({ messages: [], fileContext: '', fileName: '' });
   
@@ -287,11 +292,21 @@ const App: React.FC = () => {
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile);
     loadHistory().then(setHistory);
+    
+    // Check Onboarding
+    if (user.hasCompletedOnboarding === false) {
+        setOnboardingStep('WELCOME');
+    } else if (!userProfile.hasCompletedOnboarding) {
+        // Double check local logic if backend failed
+        setOnboardingStep('WELCOME');
+    }
+
     if (!isAdminUnlocked) {
         const savedSession = loadCurrentSession();
         if (savedSession) {
           setAppMode(savedSession.mode);
-          if (savedSession.mode === 'EXAM' || savedSession.mode === 'FLASHCARDS') setQuizState(savedSession.data as QuizState);
+          if (savedSession.mode === 'EXAM') setQuizState(savedSession.data as QuizState);
+          else if (savedSession.mode === 'FLASHCARDS') setFlashcardState(savedSession.data as QuizState);
           else if (savedSession.mode === 'PROFESSOR') setProfessorState(savedSession.data as ProfessorState);
           else if (savedSession.mode === 'CHAT') setChatState(savedSession.data as ChatState);
           setStatus(AppStatus.READY);
@@ -318,22 +333,31 @@ const App: React.FC = () => {
         setAppMode('CHAT');
         setStatus(AppStatus.READY);
         saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'CHAT', title: file.name, data: newState });
+        setHistory(await loadHistory());
         return;
       }
 
       const timeRemaining = parseDuration(config.timerDuration);
-      if (mode === 'EXAM' || mode === 'FLASHCARDS') {
+      if (mode === 'EXAM') {
         const questions = await generateQuizFromText(file.content, config, userProfile);
         const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
         setQuizState(newState);
         saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode, title: file.name, data: newState, config });
-        setAppMode(mode); 
+        setAppMode('EXAM'); 
+      } else if (mode === 'FLASHCARDS') {
+        const questions = await generateQuizFromText(file.content, config, userProfile);
+        const newState: QuizState = { questions, userAnswers: {}, flaggedQuestions: [], isSubmitted: false, score: 0, startTime: Date.now(), timeRemaining, focusStrikes: 0, currentQuestionIndex: 0 };
+        setFlashcardState(newState);
+        saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode, title: file.name, data: newState, config });
+        setAppMode('FLASHCARDS');
       } else {
         const sections = await generateProfessorContent(file.content, config);
         const newState: ProfessorState = { sections };
         setProfessorState(newState);
         saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'PROFESSOR', title: file.name, data: newState });
       }
+      
+      setHistory(await loadHistory());
       setStatus(AppStatus.READY);
       trackEvent('content_generation_success', { mode });
   }, [userProfile]);
@@ -341,11 +365,11 @@ const App: React.FC = () => {
   const handleSetAppMode = useCallback((mode: AppMode) => {
       if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
       else if (mode === 'EXAM' && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
-      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY);
+      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY); // Flashcards has self-contained creator, let it be ready
       else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
       else setStatus(AppStatus.READY);
       setAppMode(mode);
-  }, [professorState, quizState, chatState]);
+  }, [professorState, quizState, flashcardState, chatState]);
 
   const handleCancelGeneration = useCallback(() => { setStatus(AppStatus.IDLE); setErrorMsg(null); }, []);
   
@@ -361,6 +385,7 @@ const App: React.FC = () => {
       if (action === 'SUBMIT') {
         let score = 0;
         quizState.questions.forEach(q => { 
+            // Scoring Logic
             if (q.type === 'Select All That Apply') {
                 const userAnswer = quizState.userAnswers[q.id];
                 const correctAnswer = q.correct_answer;
@@ -438,6 +463,10 @@ const App: React.FC = () => {
       <CountdownTimer />
       <PWAPrompt />
       
+      {/* Onboarding Modals */}
+      {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={(data) => { setUserProfile({...userProfile, ...data, hasCompletedOnboarding: true}); saveUserToSupabase(user!.uid, { hasCompletedOnboarding: true }); setOnboardingStep('TOUR'); }} />}
+      {onboardingStep === 'TOUR' && <FeatureTourModal onComplete={() => setOnboardingStep('COMPLETE')} />}
+
       {/* CALL OVERLAYS */}
       {(activeCallPeerId || incomingCall) && (
           <CallOverlay 
@@ -475,16 +504,16 @@ const App: React.FC = () => {
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
             
-            {/* Replaced Linear Bar with Radial Neural Energy */}
+            {/* Header Content - Hidden on small screens for cleaner look */}
             {isFresher && appMode !== 'ADMIN' && (
-                <div className="flex items-center gap-2" title="Daily Neural Energy">
+                <div className="hidden md:flex items-center gap-2" title="Daily Neural Energy">
                     <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-text-sec hidden md:block">Neural Energy</span>
                 </div>
             )}
 
             {isFresher && appMode !== 'ADMIN' && (
-                <CreditWallet balance={userProfile.credits || 0} onClick={() => setIsSubscriptionOpen(true)} />
+                <CreditWallet balance={userProfile.credits || 0} onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex" />
             )}
 
             <div className="flex items-center gap-2 sm:gap-4">
@@ -506,8 +535,10 @@ const App: React.FC = () => {
       </nav>
 
       <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} onSelect={(item) => {
-            if (item.mode === 'EXAM' || item.mode === 'FLASHCARDS') {
+            if (item.mode === 'EXAM') {
                 setQuizState(item.data as QuizState);
+            } else if (item.mode === 'FLASHCARDS') {
+                setFlashcardState(item.data as QuizState);
             } else if (item.mode === 'PROFESSOR') {
                 setProfessorState(item.data as ProfessorState);
             } else if (item.mode === 'CHAT') {
@@ -550,7 +581,24 @@ const App: React.FC = () => {
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} userProfile={userProfile} onDeductCredits={handleDeductCredits} />}
-                    {appMode === 'FLASHCARDS' && <FlashcardView quizState={quizState} onExit={(force: any) => handleQuizAction('RESET', { force })} onGenerate={(newState: QuizState) => { setQuizState(newState); setStatus(AppStatus.READY); }} userProfile={userProfile} onDeductCredits={handleDeductCredits} />}
+                    
+                    {/* Separate State for Flashcards */}
+                    {appMode === 'FLASHCARDS' && (
+                        <FlashcardView 
+                            quizState={flashcardState} 
+                            onExit={(force: any) => handleQuizAction('RESET', { force })} 
+                            onGenerate={(newState: QuizState) => { 
+                                setFlashcardState(newState); 
+                                setStatus(AppStatus.READY); 
+                                // Save flashcard generation to history immediately
+                                saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'FLASHCARDS', title: 'New Flashcard Deck', data: newState });
+                                loadHistory().then(setHistory);
+                            }} 
+                            userProfile={userProfile} 
+                            onDeductCredits={handleDeductCredits} 
+                        />
+                    )}
+                    
                     {appMode === 'HUB' && <TheHub user={userProfile} onExit={() => handleQuizAction('RESET')} onStartCall={handleStartCall} />}
                     {appMode === 'DUEL' && <ArenaView user={userProfile} onExit={() => handleQuizAction('RESET')} />}
                     {appMode === 'ADMIN' && <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />}
