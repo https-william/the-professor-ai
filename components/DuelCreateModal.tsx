@@ -10,7 +10,7 @@ interface DuelCreateModalProps {
 }
 
 export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSubmit, userXP, tier = 'Fresher' }) => {
-  const [wager, setWager] = useState(50);
+  // Wager defaults to 0 (Friendly match) to remove confusion between XP and Credits
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -18,12 +18,11 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
   const participantLimit = 30;
   
   const handleSubmit = () => {
-    if (file && wager <= userXP) {
+    if (file) {
       setIsLoading(true);
-      setTimeout(() => {
-          onSubmit(wager, file);
-          onClose();
-      }, 500);
+      // Sending 0 as wager for now
+      onSubmit(0, file);
+      // Do not close immediately, wait for parent to handle success/fail
     }
   };
 
@@ -42,40 +41,16 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
               Capacity: 2 - {participantLimit}
            </div>
            <h2 className="text-4xl font-black text-white font-display mb-2 tracking-tighter italic mix-blend-overlay opacity-90">THE ARENA</h2>
-           <p className="text-purple-400 text-xs uppercase tracking-widest font-mono">Mass Multiplayer Academic Combat</p>
+           <p className="text-purple-400 text-xs uppercase tracking-widest font-mono">Multiplayer Academic Combat</p>
         </div>
 
         <div className="space-y-6">
-           {/* Wager Selection Slider */}
-           <div className="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-colors">
-              <div className="flex justify-between items-center mb-4">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Stake Your XP</label>
-                  <span className="text-purple-400 font-mono text-xs">Balance: {userXP} XP</span>
-              </div>
-              
-              <div className="relative mb-2">
-                  <input 
-                    type="range" 
-                    min="50" 
-                    max="1000" 
-                    step="50" 
-                    value={wager} 
-                    onChange={(e) => setWager(Math.min(parseInt(e.target.value), userXP))}
-                    className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                  />
-              </div>
-              
-              <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-600 font-mono">50 XP</span>
-                  <div className="text-2xl font-black text-white text-center font-mono text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
-                      {wager} XP
-                  </div>
-                  <span className="text-xs text-gray-600 font-mono">1000 XP</span>
-              </div>
-              
-              {userXP < 50 && (
-                  <p className="text-[10px] text-red-400 text-center mt-2">Insufficient XP to duel. Study more to earn wager credits.</p>
-              )}
+           {/* Info Block */}
+           <div className="bg-white/5 p-5 rounded-2xl border border-white/5 text-center">
+              <p className="text-gray-300 text-sm leading-relaxed">
+                  Upload a document. We will generate a <span className="text-purple-400 font-bold">Hard Mode</span> exam.
+                  Share the code. Whoever scores highest wins the glory.
+              </p>
            </div>
 
            {/* File Upload */}
@@ -101,7 +76,7 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                     </div>
                     <span className="text-gray-300 text-sm font-bold group-hover:text-white transition-colors">Select Arena Material</span>
-                    <span className="text-[10px] text-gray-500 mt-2">All participants will face questions from this file.</span>
+                    <span className="text-[10px] text-gray-500 mt-2">PDF, DOCX, TXT supported.</span>
                  </div>
               )}
            </div>
@@ -109,10 +84,10 @@ export const DuelCreateModal: React.FC<DuelCreateModalProps> = ({ onClose, onSub
         </div>
 
         <div className="flex gap-4 mt-8 pt-6 border-t border-white/5">
-           <button onClick={onClose} disabled={isLoading} className="flex-1 py-4 text-gray-500 hover:text-white font-bold uppercase text-xs transition-colors">Retreat</button>
+           <button onClick={onClose} disabled={isLoading} className="flex-1 py-4 text-gray-500 hover:text-white font-bold uppercase text-xs transition-colors">Cancel</button>
            <button 
              onClick={handleSubmit}
-             disabled={!file || isLoading || wager > userXP}
+             disabled={!file || isLoading}
              className="flex-[2] py-4 bg-white text-black hover:bg-purple-50 rounded-xl font-black uppercase text-xs tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(168,85,247,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all relative overflow-hidden"
            >
              {isLoading ? (

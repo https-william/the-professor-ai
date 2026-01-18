@@ -87,7 +87,7 @@ const App: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   
-  // Simplified Onboarding State (Boolean check instead of multi-step string)
+  // Simplified Onboarding State
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Isolated States
@@ -184,22 +184,36 @@ const App: React.FC = () => {
 
   const handleDuelStart = useCallback(async (data: { wager: number, file: File }) => {
       if (!user) return;
+      
+      // Close any modals (handled by component unmounting when status changes)
       setStatus(AppStatus.PROCESSING_FILE);
+      setStatusText("Constructing Arena...");
       setErrorMsg(null);
       trackEvent('duel_created', { wager: data.wager });
+      
       try {
+          // 1. Process File
           const processed = await processFile(data.file);
+          
+          // 2. Init DB Lobby
           const config: QuizConfig = { difficulty: 'Hard', questionType: 'Mixed', questionCount: 10, timerDuration: 'Limitless', personality: 'Academic', analogyDomain: 'General', useOracle: true, useWeaknessDestroyer: false };
-          setStatusText("Initializing Arena...");
+          
+          setStatusText("Securing Server...");
+          // We need to use "try catch" here because RLS might block this if not set up
           const { duelId, code } = await initDuelLobby(user.uid, userProfile.alias || 'Host', data.wager, processed.content, config);
+          
           setDuelReadyData({ id: duelId, code, isHost: true });
           setStatus(AppStatus.IDLE);
+          setAppMode('EXAM'); // Or keep at DUEL until they click "Enter"
+
+          // 3. Generate Questions (Async)
           generateQuizFromText(processed.content, config, userProfile).then(async (questions) => {
               if (questions && questions.length > 0) await updateDuelWithQuestions(duelId, questions);
           }).catch(err => console.error("Background Gen Error", err));
+
       } catch (e: any) {
-          console.error(e);
-          setErrorMsg(e.message || "Failed to start duel.");
+          console.error("Duel Start Error", e);
+          setErrorMsg(e.message || "Failed to start duel. Ensure you have network access.");
           setStatus(AppStatus.ERROR);
       }
   }, [user, userProfile]);
@@ -231,7 +245,6 @@ const App: React.FC = () => {
   // --- CALL SERVICE INIT ---
   useEffect(() => {
       if (user && userProfile.alias) {
-          // Initialize PeerJS with alias as ID
           callService.initialize(userProfile.alias).then(() => {
               callService.onIncomingCall = (call) => {
                   setIncomingCall(call);
@@ -289,32 +302,25 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Merge Auth User Data
     const localProfile = loadUserProfile() || getDefaultProfile();
     let mergedProfile: UserProfile = { ...localProfile };
     
-    // Sync critical identity data from Auth User to Profile state
     if (user.profile) {
         mergedProfile = { 
             ...mergedProfile, 
             ...user.profile, 
-            // Explicitly sync the alias if the auth one is valid and local is default
             alias: (user.profile.alias && user.profile.alias !== 'Guest Scholar') ? user.profile.alias : (mergedProfile.alias || user.displayName || 'Scholar'),
             socials: user.profile.socials || mergedProfile.socials, 
             xp: Math.max(user.profile.xp || 0, mergedProfile.xp || 0)
         };
     } else if (user.displayName) {
-        // Fallback if user.profile is not fully populated but we have displayName
         if (!mergedProfile.alias || mergedProfile.alias === 'Guest Scholar') {
             mergedProfile.alias = user.displayName;
         }
     }
     
-    // Sync Subscription
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
     
-    // Logic: Only show onboarding if Explicitly FALSE in DB or LocalStorage
-    // This prevents it from showing if it's undefined (during loading)
     if (user.hasCompletedOnboarding === true) {
         mergedProfile.hasCompletedOnboarding = true;
     }
@@ -325,7 +331,6 @@ const App: React.FC = () => {
     
     loadHistory().then(setHistory);
     
-    // Final Check for Onboarding Visibility
     if (mergedProfile.hasCompletedOnboarding === false) {
         setShowOnboarding(true);
     } else {
@@ -401,19 +406,17 @@ const App: React.FC = () => {
   
   const handleSetAppMode = useCallback((mode: AppMode) => {
       setAppMode(mode);
-      // Logic Fix: For these modes, we want to immediately switch to their view (Lobby/Deck Creator)
-      // instead of showing the InputSection idle state.
       if (mode === 'FLASHCARDS' || mode === 'HUB' || mode === 'DUEL') {
           setStatus(AppStatus.READY);
       } else if (mode === 'CHAT') {
           if (chatState.messages.length > 0) setStatus(AppStatus.READY);
-          else setStatus(AppStatus.IDLE); // Show "Class is in session" input
+          else setStatus(AppStatus.IDLE);
       } else if (mode === 'PROFESSOR') {
           if (professorState.sections.length > 0) setStatus(AppStatus.READY);
-          else setStatus(AppStatus.IDLE); // Show "Class is in session" input
+          else setStatus(AppStatus.IDLE);
       } else if (mode === 'EXAM') {
           if (quizState.questions.length > 0) setStatus(AppStatus.READY);
-          else setStatus(AppStatus.IDLE); // Show standard upload input
+          else setStatus(AppStatus.IDLE);
       }
   }, [professorState, quizState, chatState, flashcardState]);
 
@@ -503,7 +506,6 @@ const App: React.FC = () => {
       <CountdownTimer />
       <PWAPrompt />
       
-      {/* Consolidated Onboarding (One Time) */}
       {showOnboarding && <WelcomeModal onComplete={(data) => { 
             const updatedProfile = {...userProfile, ...data, hasCompletedOnboarding: true};
             setUserProfile(updatedProfile); 
@@ -513,7 +515,6 @@ const App: React.FC = () => {
             }
       }} />}
       
-      {/* CALL OVERLAYS */}
       {(activeCallPeerId || incomingCall) && (
           <CallOverlay 
             remotePeerId={activeCallPeerId || incomingCall?.peer} 
@@ -535,7 +536,6 @@ const App: React.FC = () => {
       <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
       
-      {/* ... Navigation & Main Content */}
       {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && (
           <>
             <FloatingDock 
@@ -552,7 +552,6 @@ const App: React.FC = () => {
           </>
       )}
 
-      {/* Professor Trigger */}
       {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
           <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
       )}
@@ -573,7 +572,6 @@ const App: React.FC = () => {
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
 
-            {/* Credits Display */}
             {isFresher && appMode !== 'ADMIN' && (
                 <div className="flex items-center gap-2" title="Daily Neural Energy">
                     <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
@@ -600,7 +598,6 @@ const App: React.FC = () => {
                
                <div className="h-6 w-px bg-border-main mx-2"></div>
                
-               {/* Enhanced Profile Button (Ring + Icon) */}
                <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group relative">
                    <div className="text-right hidden sm:block">
                        <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
@@ -637,7 +634,6 @@ const App: React.FC = () => {
         }}
       />
       
-      {/* Passed Upgrade Handler to Profile Modal */}
       <UserProfileModal 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
@@ -681,7 +677,6 @@ const App: React.FC = () => {
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} userProfile={userProfile} onDeductCredits={handleDeductCredits} />}
                     
-                    {/* Separate State for Flashcards */}
                     {appMode === 'FLASHCARDS' && (
                         <FlashcardView 
                             quizState={flashcardState} 
@@ -689,7 +684,6 @@ const App: React.FC = () => {
                             onGenerate={(newState: QuizState) => { 
                                 setFlashcardState(newState); 
                                 setStatus(AppStatus.READY); 
-                                // Save flashcard generation to history immediately
                                 saveToHistory({ id: Date.now().toString(), timestamp: Date.now(), mode: 'FLASHCARDS', title: 'New Flashcard Deck', data: newState });
                                 loadHistory().then(setHistory);
                             }} 

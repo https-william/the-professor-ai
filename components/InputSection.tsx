@@ -218,6 +218,21 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
   );
 
+  // Reusable File List Component
+  const FileList = () => (
+      <div className="w-full flex flex-wrap gap-2 justify-center">
+          {selectedFiles.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/30">
+                <span className="text-xs text-blue-500 truncate max-w-[150px]">{f.name}</span>
+                <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-blue-400 hover:text-red-400 ml-1">✕</button>
+            </div>
+          ))}
+          <div className="w-full text-center mt-1">
+              <span className="text-[10px] text-text-sec uppercase tracking-widest">+ Add More</span>
+          </div>
+      </div>
+  );
+
   return (
     <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-24 md:mb-20">
       
@@ -227,8 +242,20 @@ export const InputSection: React.FC<InputSectionProps> = ({
       {/* Main Panel */}
       <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : appMode === 'HUB' ? 'border-green-500/10' : 'border-border-main'}`}>
         
+        {/* PROGRESS OVERLAY (Visible in ALL Modes) */}
+        {uploadProgress > 0 && uploadProgress < 100 && (
+            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-8 transition-opacity duration-300">
+                <div className="w-full max-w-md h-2 bg-gray-200 dark:bg-gray-900 rounded-full overflow-hidden mb-4 relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 animate-progress" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+                <span className="text-white font-mono text-sm font-bold tracking-widest animate-pulse">
+                    UPLOADING NEURAL DATA... {Math.round(uploadProgress)}%
+                </span>
+            </div>
+        )}
+
         {/* EXAM VIEW */}
-        <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden'}`}>
+        <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden pointer-events-none absolute inset-0'}`}>
             
             {/* CONTROL DECK */}
             <div id="exam-config-target" className="border-b border-border-main bg-panel z-20 flex-shrink-0 backdrop-blur-md p-4">
@@ -241,13 +268,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
                           <ConfigPill label="Count" value={questionCount} setter={(v: string) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
                       </div>
 
-                      {/* Oracle Toggle - Text shows 'The Oracle' but triggers subscription if locked */}
                       <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
                           <button 
                             onClick={handleOracleClick}
                             className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/5 border-border-main text-text-sec hover:text-text-pri'}`}
                           >
-                              {/* Display Lock Icon if not excellentia */}
                               {!isExcellentia && (
                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-amber-500"><path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" /></svg>
                               )}
@@ -287,26 +312,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                      {uploadProgress > 0 && uploadProgress < 100 && (
-                        <div className="absolute inset-0 bg-panel z-20 flex flex-col items-center justify-center p-8 backdrop-blur-md">
-                          <div className="w-full max-w-md h-2 bg-gray-200 dark:bg-gray-900 rounded-full overflow-hidden mb-2 relative">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 animate-progress" style={{ width: `${uploadProgress}%` }}></div>
-                          </div>
-                          <span className="text-text-pri font-mono text-sm font-bold">{Math.round(uploadProgress)}%</span>
-                        </div>
-                      )}
-                      
                       {selectedFiles.length > 0 ? (
-                        <div className="w-full p-4 flex flex-wrap gap-2 justify-center">
-                            {selectedFiles.map((f, i) => (
-                              <div key={i} className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/30">
-                                  <span className="text-xs text-blue-500 truncate max-w-[100px]">{f.name}</span>
-                                  <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-blue-400 hover:text-red-400 ml-1">✕</button>
-                              </div>
-                            ))}
-                            <div className="w-full text-center mt-2">
-                                <span className="text-[10px] text-text-sec uppercase tracking-widest">+ Add More</span>
-                            </div>
+                        <div className="w-full p-4">
+                            <FileList />
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-3 p-6 text-center">
@@ -337,8 +345,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
         </div>
 
         {/* Other Modes (Chat/Hub) Input */}
-        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-core z-20 ${(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-core z-20 transition-opacity duration-300 ${(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
              <h3 className="text-3xl font-display font-normal text-text-pri mb-6 animate-slide-up-fade">Class is in session.</h3>
+             
+             {/* PROFESSOR MODE FILE LIST */}
+             {selectedFiles.length > 0 && (
+                 <div className="w-full max-w-2xl mb-4 animate-slide-up-fade">
+                     <FileList />
+                 </div>
+             )}
+
              <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
                   <div className="relative">
                       <input 
@@ -347,14 +363,21 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         onChange={(e) => setChatInput(e.target.value)} 
                         onKeyDown={(e) => e.key === 'Enter' && executeGeneration(appMode)}
                         className="w-full bg-panel border border-border-main rounded-2xl pl-6 pr-12 md:pr-48 py-6 text-text-pri outline-none focus:border-amber-500 placeholder-text-sec text-lg shadow-xl transition-all" 
-                        placeholder="Ask a question..." 
+                        placeholder="Ask a question or upload notes..." 
                       />
                       <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1 z-30">
-                        <button onClick={() => fileInputRef.current?.click()} className="h-full px-4 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main hidden md:block">
-                            📎
+                        <button 
+                            onClick={() => fileInputRef.current?.click()} 
+                            className="h-full px-4 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main flex items-center justify-center"
+                            title="Attach File"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
                         </button>
-                        <button onClick={() => executeGeneration(appMode)} className="h-10 w-10 md:h-full md:w-auto md:px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg flex items-center justify-center font-bold">
-                            Ask (15 NT)
+                        <button onClick={() => executeGeneration(appMode)} className="hidden md:flex h-10 px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg items-center justify-center font-bold text-xs uppercase tracking-widest">
+                            Ask ({getModeCost(appMode)} NT)
+                        </button>
+                        <button onClick={() => executeGeneration(appMode)} className="md:hidden h-10 w-10 bg-amber-600 rounded-xl text-white hover:bg-amber-500 flex items-center justify-center shadow-lg">
+                            →
                         </button>
                       </div>
                   </div>

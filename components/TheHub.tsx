@@ -62,11 +62,13 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
         setLoading(true);
         try {
             const id = await createHubRoom(user.alias || 'Host', []);
+            if (!id) throw new Error("Failed to retrieve Room ID");
             setRoomId(id);
             setMode('ROOM');
             setRoomCode("HUB-" + Math.floor(1000 + Math.random() * 9000)); 
-        } catch (e) {
-            alert("Hub creation failed.");
+        } catch (e: any) {
+            console.error("Hub Create Error:", e);
+            alert("Hub creation failed. Ensure database permissions are active.");
         } finally {
             setLoading(false);
         }
@@ -77,10 +79,12 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
         setLoading(true);
         try {
             const id = await joinHubRoom(roomCode, user.alias || 'You');
+            if (!id) throw new Error("Room not found");
             setRoomId(id);
             setMode('ROOM');
-        } catch (e) {
-            alert("Could not join room. Check code.");
+        } catch (e: any) {
+            console.error("Hub Join Error:", e);
+            alert("Could not join room. Check code or database connectivity.");
         } finally {
             setLoading(false);
         }
@@ -91,13 +95,17 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
         const msgText = input;
         setInput('');
         
-        await sendHubMessage(roomId, user.alias || 'You', msgText);
+        try {
+            await sendHubMessage(roomId, user.alias || 'You', msgText);
 
-        if (msgText.toLowerCase().includes('@professor')) {
-            const context = hubSections.map(s => s.content).join('\n') || "No documents uploaded yet.";
-            generateHubResponse(msgText, context).then((response) => {
-                sendHubMessage(roomId, 'The Professor', response, 'text'); 
-            });
+            if (msgText.toLowerCase().includes('@professor')) {
+                const context = hubSections.map(s => s.content).join('\n') || "No documents uploaded yet.";
+                generateHubResponse(msgText, context).then((response) => {
+                    sendHubMessage(roomId, 'The Professor', response, 'text'); 
+                });
+            }
+        } catch (e) {
+            console.error("Message Send Failed", e);
         }
     };
 
