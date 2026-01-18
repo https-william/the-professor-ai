@@ -167,10 +167,30 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     }
   ];
 
+  // Updated Credit Packs with Psychological Pricing
   const creditPacks = [
-      { amount: 500, price: currency === 'NGN' ? '₦2,500' : '$3.00', priceRaw: currency === 'NGN' ? 2500 : 3, label: 'The All-Nighter' },
-      { amount: 2000, price: currency === 'NGN' ? '₦8,000' : '$10.00', priceRaw: currency === 'NGN' ? 8000 : 10, label: 'Finals Week', popular: true },
-      { amount: 5000, price: currency === 'NGN' ? '₦16,000' : '$20.00', priceRaw: currency === 'NGN' ? 16000 : 20, label: 'Semester Pack' }
+      { 
+        amount: 300, 
+        price: currency === 'NGN' ? '₦900' : '$1.50', 
+        priceRaw: currency === 'NGN' ? 900 : 1.5, 
+        label: 'The Cram Session',
+        desc: "Emergency top-up."
+      },
+      { 
+        amount: 1000, 
+        price: currency === 'NGN' ? '₦2,500' : '$3.99', 
+        priceRaw: currency === 'NGN' ? 2500 : 3.99, 
+        label: 'Finals Week', 
+        popular: true,
+        desc: "Best for intense study blocks."
+      },
+      { 
+        amount: 2500, 
+        price: currency === 'NGN' ? '₦5,500' : '$8.99', 
+        priceRaw: currency === 'NGN' ? 5500 : 8.99, 
+        label: 'Semester Pack',
+        desc: "Bulk savings for the long haul."
+      }
   ];
 
   return (
@@ -205,7 +225,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                                {pack.popular && <div className="absolute top-0 right-0 bg-amber-500 text-black text-[9px] font-bold uppercase px-3 py-1 rounded-bl-xl">Best Value</div>}
                                <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">💎</div>
                                <h3 className="text-2xl font-black text-white font-mono">{pack.amount} NT</h3>
-                               <p className="text-xs text-gray-400 uppercase tracking-widest mb-6">{pack.label}</p>
+                               <p className="text-xs text-white font-bold uppercase tracking-widest mb-1">{pack.label}</p>
+                               <p className="text-[10px] text-gray-400 mb-6">{pack.desc}</p>
                                <button 
                                 onClick={() => handleBuyCredits(pack)}
                                 disabled={processingPack !== null}
@@ -216,7 +237,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
                            </div>
                        ))}
                    </div>
-                   <p className="text-center text-[10px] text-gray-500 mt-8 uppercase tracking-widest">
+                   
+                   {/* Upsell Message */}
+                   <div className="mt-8 p-4 bg-blue-900/10 border border-blue-500/20 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+                       <div className="text-left">
+                           <h4 className="text-white font-bold text-sm">Need consistent power?</h4>
+                           <p className="text-xs text-gray-400">The Scholar plan gives you <span className="text-blue-400 font-bold">1,500 credits</span> for just <span className="text-white font-bold">{currency === 'NGN' ? '₦2,900' : '$4.99'}</span>. That's 50% more value than packs.</p>
+                       </div>
+                       <button onClick={() => setActiveTab('SUBSCRIPTION')} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider shrink-0">View Plans</button>
+                   </div>
+
+                   <p className="text-center text-[10px] text-gray-500 mt-6 uppercase tracking-widest">
                        1 Credit = 1 Chat Message • 10 Credits = 1 Exam • 15 Credits = 1 Lecture
                    </p>
                </div>

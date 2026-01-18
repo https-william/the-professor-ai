@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
@@ -29,7 +28,6 @@ import { MobileNavBar } from './MobileNavBar';
 import { FloatingDock } from './FloatingDock';
 import { CreditWallet } from './CreditWallet';
 import { CallOverlay } from './CallOverlay';
-import { RadialProgress } from './RadialProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { generateQuizFromText, generateProfessorContent } from '../services/geminiService';
@@ -116,8 +114,10 @@ const App: React.FC = () => {
   const [activeCallPeerId, setActiveCallPeerId] = useState<string | null>(null);
 
   const isFresher = userProfile.subscriptionTier === 'Fresher';
-  const dailyLimit = userProfile.subscriptionTier === 'Scholar' ? 10 : (isFresher ? 1 : 1000);
-  const usagePercentage = Math.min(((userProfile.dailyQuizzesGenerated || 0) / dailyLimit) * 100, 100);
+  const isPotentialAdmin = (email: string | null | undefined): boolean => {
+    return ADMIN_EMAILS.includes(email?.toLowerCase() || '');
+  };
+  const isAdmin = isPotentialAdmin(user?.email);
 
   // Initialize Analytics
   useEffect(() => {
@@ -284,20 +284,36 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
+    
+    // Merge Auth User Data
     const localProfile = loadUserProfile() || getDefaultProfile();
     let mergedProfile: UserProfile = { ...localProfile };
-    if (user.profile) mergedProfile = { ...mergedProfile, ...user.profile }; 
+    
+    if (user.profile) {
+        mergedProfile = { 
+            ...mergedProfile, 
+            ...user.profile, 
+            socials: user.profile.socials || mergedProfile.socials, 
+            xp: Math.max(user.profile.xp || 0, mergedProfile.xp || 0)
+        };
+    }
+    
+    // Sync Subscription
     if (user.plan) mergedProfile.subscriptionTier = user.plan;
+    
+    // Sync Onboarding status from DB/Auth Context
+    if (user.hasCompletedOnboarding !== undefined) {
+        mergedProfile.hasCompletedOnboarding = user.hasCompletedOnboarding;
+    }
+
     mergedProfile = updateStreak(mergedProfile);
     setUserProfile(mergedProfile);
     saveUserProfile(mergedProfile);
+    
     loadHistory().then(setHistory);
     
-    // Check Onboarding
-    if (user.hasCompletedOnboarding === false) {
-        setOnboardingStep('WELCOME');
-    } else if (!userProfile.hasCompletedOnboarding) {
-        // Double check local logic if backend failed
+    // If not completed onboarding in DB, trigger it
+    if (!mergedProfile.hasCompletedOnboarding) {
         setOnboardingStep('WELCOME');
     }
 
@@ -358,21 +374,26 @@ const App: React.FC = () => {
       }
       
       setHistory(await loadHistory());
+      const updatedProfile = { ...incrementDailyUsage(userProfile) };
+      setUserProfile(updatedProfile);
+      saveUserProfile(updatedProfile);
+      if (user) updateUserUsage(user.uid, updatedProfile.dailyQuizzesGenerated);
       setStatus(AppStatus.READY);
       trackEvent('content_generation_success', { mode });
   }, [userProfile]);
 
+  const handleCancelGeneration = useCallback(() => { setStatus(AppStatus.IDLE); setErrorMsg(null); }, []);
+  
   const handleSetAppMode = useCallback((mode: AppMode) => {
       if (mode === 'PROFESSOR' && professorState.sections.length === 0) setStatus(AppStatus.IDLE);
       else if (mode === 'EXAM' && quizState.questions.length === 0) setStatus(AppStatus.IDLE);
-      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY); // Flashcards has self-contained creator, let it be ready
+      // Change: Flashcards view handles its own empty state (Creation UI), so always set to READY
+      else if (mode === 'FLASHCARDS') setStatus(AppStatus.READY); 
       else if (mode === 'CHAT' && chatState.messages.length === 0) setStatus(AppStatus.IDLE);
       else setStatus(AppStatus.READY);
       setAppMode(mode);
-  }, [professorState, quizState, flashcardState, chatState]);
+  }, [professorState, quizState, chatState, flashcardState]);
 
-  const handleCancelGeneration = useCallback(() => { setStatus(AppStatus.IDLE); setErrorMsg(null); }, []);
-  
   const handleQuizAction = useCallback(async (action: any, payload?: any) => {
       if(action === 'RESET') {
           clearCurrentSession();
@@ -385,7 +406,6 @@ const App: React.FC = () => {
       if (action === 'SUBMIT') {
         let score = 0;
         quizState.questions.forEach(q => { 
-            // Scoring Logic
             if (q.type === 'Select All That Apply') {
                 const userAnswer = quizState.userAnswers[q.id];
                 const correctAnswer = q.correct_answer;
@@ -435,9 +455,6 @@ const App: React.FC = () => {
       }
   };
 
-  const isPotentialAdmin = (email: string | null | undefined) => ADMIN_EMAILS.includes(email?.toLowerCase() || '');
-  const isAdmin = isPotentialAdmin(user?.email);
-
   const confirmExit = () => {
       if (pendingAction) pendingAction();
       setShowExitConfirmation(false);
@@ -464,7 +481,15 @@ const App: React.FC = () => {
       <PWAPrompt />
       
       {/* Onboarding Modals */}
-      {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={(data) => { setUserProfile({...userProfile, ...data, hasCompletedOnboarding: true}); saveUserToSupabase(user!.uid, { hasCompletedOnboarding: true }); setOnboardingStep('TOUR'); }} />}
+      {onboardingStep === 'WELCOME' && <WelcomeModal onComplete={(data) => { 
+            const updatedProfile = {...userProfile, ...data, hasCompletedOnboarding: true};
+            setUserProfile(updatedProfile); 
+            if (user) {
+                saveUserToSupabase(user.uid, { ...data, has_completed_onboarding: true });
+            }
+            setOnboardingStep('TOUR'); 
+      }} />}
+      
       {onboardingStep === 'TOUR' && <FeatureTourModal onComplete={() => setOnboardingStep('COMPLETE')} />}
 
       {/* CALL OVERLAYS */}
@@ -492,26 +517,37 @@ const App: React.FC = () => {
       {/* ... Navigation & Main Content */}
       {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && (
           <>
-            <FloatingDock mode={appMode} setMode={handleSetAppMode} onHub={() => setStatus(AppStatus.READY)} isDuelActive={!!activeDuelId} onDuel={() => setAppMode('DUEL')} />
-            <MobileNavBar mode={appMode} setMode={handleSetAppMode} />
+            <FloatingDock 
+                mode={appMode} 
+                setMode={handleSetAppMode} 
+                onHub={() => setStatus(AppStatus.READY)} 
+                isDuelActive={!!activeDuelId} 
+                onDuel={() => setAppMode('DUEL')}
+            />
+            <MobileNavBar 
+                mode={appMode} 
+                setMode={handleSetAppMode} 
+            />
           </>
       )}
 
       <nav className={`border-b backdrop-blur-md sticky z-40 bg-panel border-border-main top-0`}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleQuizAction('RESET')}>
-               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">⚡</div>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { 
+                if (appMode === 'ADMIN') {
+                    setAppMode('EXAM');
+                    setStatus(AppStatus.IDLE); 
+                } else {
+                    handleQuizAction('RESET');
+                }
+            }}>
+               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+               </div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
-            
-            {/* Header Content - Hidden on small screens for cleaner look */}
-            {isFresher && appMode !== 'ADMIN' && (
-                <div className="hidden md:flex items-center gap-2" title="Daily Neural Energy">
-                    <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-sec hidden md:block">Neural Energy</span>
-                </div>
-            )}
 
+            {/* Credits Display */}
             {isFresher && appMode !== 'ADMIN' && (
                 <CreditWallet balance={userProfile.credits || 0} onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex" />
             )}
@@ -520,13 +556,24 @@ const App: React.FC = () => {
                {appMode === 'ADMIN' && (
                    <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
                )}
-               {showLibrary && <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri">📂</button>}
+               
+               {showLibrary && (
+                   <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri transition-colors relative group" title="My Library">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                   </button>
+               )}
+               
                <NotificationBell />
-               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
+               
+               <div className="h-6 w-px bg-border-main mx-2"></div>
+               
+               {/* Enhanced Profile Button (Ring + Icon) */}
+               <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group relative">
                    <div className="text-right hidden sm:block">
-                       <p className="text-xs font-bold text-text-pri group-hover:text-accent">{userProfile.alias}</p>
+                       <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
+                       <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
                    </div>
-                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent shadow-lg`}>
+                   <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg ring-2 ring-white/10 relative overflow-hidden`}>
                        <span className="text-sm">{userProfile.avatarEmoji}</span>
                    </div>
                </button>
@@ -534,7 +581,8 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} onSelect={(item) => {
+      <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history} 
+        onSelect={(item) => {
             if (item.mode === 'EXAM') {
                 setQuizState(item.data as QuizState);
             } else if (item.mode === 'FLASHCARDS') {
@@ -548,11 +596,15 @@ const App: React.FC = () => {
             setStatus(AppStatus.READY);
             setActiveHistoryId(item.id);
             setIsHistoryOpen(false);
-      }} onDelete={async (id) => {
+        }} 
+        onDelete={async (id) => {
             await deleteHistoryItem(id);
             setHistory(await loadHistory());
             if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
-      }} />
+        }}
+      />
+      
+      {/* Passed Upgrade Handler to Profile Modal */}
       <UserProfileModal 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
@@ -561,23 +613,37 @@ const App: React.FC = () => {
         onClearHistory={() => {}} 
         onLogout={async () => { await logout(); handleNavigate('LANDING', '/'); }} 
         isAdmin={!!isAdmin} 
-        onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }} 
+        onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }}
         onUpgradeRequest={() => setIsSubscriptionOpen(true)}
         onLegalRequest={() => { setIsProfileOpen(false); handleNavigate('LEGAL', '/legal'); }}
       />
+      
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 min-h-[calc(100vh-80px)]">
          {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
              <>
                 <Hero />
-                <InputSection onProcess={handleProcess} isLoading={false} appMode={appMode} setAppMode={handleSetAppMode} defaultConfig={{ difficulty: userProfile.defaultDifficulty }} userProfile={userProfile} onShowSubscription={() => setIsSubscriptionOpen(true)} onOpenProfile={() => setIsProfileOpen(true)} onDuelStart={handleDuelStart} onDuelJoin={handleDuelJoin} onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} />
+                <InputSection 
+                    onProcess={handleProcess} 
+                    isLoading={false} 
+                    appMode={appMode} 
+                    setAppMode={handleSetAppMode} 
+                    defaultConfig={{ difficulty: userProfile.defaultDifficulty }} 
+                    userProfile={userProfile} 
+                    onShowSubscription={() => setIsSubscriptionOpen(true)} 
+                    onOpenProfile={() => setIsProfileOpen(true)} 
+                    onDuelStart={handleDuelStart} 
+                    onDuelJoin={handleDuelJoin} 
+                    onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }} 
+                />
              </>
          )}
-         {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
-         {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Thinking..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
+         {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
+         {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
          {status === AppStatus.READY && (
              <div className="animate-slide-up-fade">
-                 <Suspense fallback={<div className="flex justify-center p-20">Loading...</div>}>
+                 <Suspense fallback={<div className="flex justify-center p-20"><div className="w-8 h-8 border-2 border-accent rounded-full animate-spin"></div></div>}>
                     {appMode === 'EXAM' && <QuizView quizState={quizState} onAnswerSelect={(qId: any, ans: any) => handleQuizAction('ANSWER', { qId, ans })} onFlagQuestion={(qId: any) => handleQuizAction('FLAG', qId)} onSubmit={() => handleQuizAction('SUBMIT')} onReset={() => handleQuizAction('RESET')} onTimeExpired={() => handleQuizAction('SUBMIT')} duelId={activeDuelId} onIndexChange={(index: any) => handleQuizAction('INDEX', { index })} />}
                     {appMode === 'PROFESSOR' && <ProfessorView state={professorState} onExit={(force: any) => handleQuizAction('RESET', { force })} timeRemaining={null} />}
                     {appMode === 'CHAT' && <ChatView chatState={chatState} onUpdate={handleChatUpdate} onExit={() => handleQuizAction('RESET')} userProfile={userProfile} onDeductCredits={handleDeductCredits} />}

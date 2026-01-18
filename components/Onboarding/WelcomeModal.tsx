@@ -1,26 +1,45 @@
 
 import React, { useState } from 'react';
 import { UserProfile } from '../../types';
+import { saveUserToSupabase } from '../../services/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface WelcomeModalProps {
   onComplete: (data: Partial<UserProfile>) => void;
 }
 
 export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
+  const { user } = useAuth();
   const [alias, setAlias] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleStart = () => {
-      // Logic for saving state is handled by parent App.tsx via onComplete
-      // This modal just collects the name.
-      if (alias.trim()) {
-          onComplete({ alias });
-      } else {
-          onComplete({ alias: 'Guest Student' });
+  const handleStart = async () => {
+      setIsLoading(true);
+      const finalAlias = alias.trim() || 'Guest Scholar';
+      
+      const updateData = {
+          alias: finalAlias,
+          has_completed_onboarding: true, // DB Field
+          hasCompletedOnboarding: true // Local Field
+      };
+
+      try {
+        if (user) {
+            // Force DB update immediately to prevent modal loop on refresh
+            await saveUserToSupabase(user.uid, updateData);
+        }
+        onComplete(updateData);
+      } catch (error) {
+        console.error("Onboarding Save Failed", error);
+        // Fallback to local state update so user isn't stuck
+        onComplete(updateData);
+      } finally {
+        setIsLoading(false);
       }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-fade-in">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-fade-in">
       <div className="glass-panel border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl relative text-center">
         <div className="mb-6">
             <h2 className="text-3xl font-serif font-bold text-white mb-2">Welcome, Scholar.</h2>
@@ -42,9 +61,10 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
 
             <button
                 onClick={handleStart}
-                className="w-full px-8 py-4 rounded-xl font-bold text-xs uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition-transform hover:scale-[1.02] shadow-lg"
+                disabled={isLoading}
+                className="w-full px-8 py-4 rounded-xl font-bold text-xs uppercase tracking-widest bg-white text-black hover:bg-gray-200 transition-transform hover:scale-[1.02] shadow-lg disabled:opacity-50"
             >
-                Initialize System
+                {isLoading ? 'Initializing...' : 'Initialize System'}
             </button>
             
             <p className="text-[10px] text-gray-600">You can update your profile later.</p>

@@ -46,8 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: currentUser.user_metadata?.avatar_url,
             plan: 'Fresher',
             role: 'student',
-            hasCompletedOnboarding: undefined, // undefined until verified
-            profile: { xp: 500, credits: 50 } // Default fallback credits
+            hasCompletedOnboarding: undefined, 
+            profile: { xp: 500, credits: 50 } 
         };
 
         // Fetch extra profile data
@@ -79,8 +79,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     school: profile.school,
                     country: profile.country,
                     xp: profile.xp,
-                    credits: profile.credits ?? 50, // Ensure credits are mapped
+                    credits: profile.credits ?? 50, 
                     dailyQuizzesGenerated: profile.daily_quizzes_generated,
+                    hasCompletedOnboarding: profile.has_completed_onboarding, // Ensure sync
                     ...profile
                 }
             };
@@ -95,11 +96,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: 'student',
                 plan: 'Fresher',
                 xp: 500,
-                credits: 50, // Welcome Bonus
+                credits: 50, 
                 has_completed_onboarding: false
             };
             await supabase.from('profiles').insert([newProfile]);
-            setUser({ ...baseUser, hasCompletedOnboarding: false, profile: { ...baseUser.profile, credits: 50 } });
+            setUser({ ...baseUser, hasCompletedOnboarding: false, profile: { ...baseUser.profile, credits: 50, hasCompletedOnboarding: false } });
         }
       } catch (err) {
           console.error("Session processing error:", err);
@@ -111,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               photoURL: null,
               plan: 'Fresher',
               role: 'student',
-              hasCompletedOnboarding: false, // Default to false if DB fails
+              hasCompletedOnboarding: false, 
               profile: { xp: 500, credits: 0 }
           });
       } finally {
