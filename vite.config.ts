@@ -66,4 +66,9 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      external: ['posthog-js'],
+    }
+  }
 });

@@ -1,4 +1,5 @@
 
+// @ts-ignore
 import posthog from 'posthog-js';
 
 // Robust Env Getter

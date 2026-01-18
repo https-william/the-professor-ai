@@ -389,7 +389,29 @@ export const subscribeToHub = (
     };
 };
 
-// --- ADMIN OPS ---
+// --- ADMIN OPS (ENHANCED) ---
+
+export const getAdminAnalytics = async () => {
+    // 1. Fetch Profiles Stats
+    const { data: profiles } = await supabase.from('profiles').select('id, plan, credits, created_at, role, is_banned');
+    const totalUsers = profiles?.length || 0;
+    const scholarUsers = profiles?.filter(p => p.plan === 'Scholar').length || 0;
+    const excellentiaUsers = profiles?.filter(p => p.plan === 'Excellentia').length || 0;
+    
+    // 2. Fetch Financials (Mock aggregation from payment_logs)
+    const { data: payments } = await supabase.from('payment_logs').select('amount, status, created_at');
+    const totalRevenue = payments?.filter(p => p.status === 'success').reduce((acc, curr) => acc + (curr.amount || 0), 0) || 0;
+
+    // 3. Fetch recent logs
+    const { data: logs } = await supabase.from('system_logs').select('*').order('created_at', { ascending: false }).limit(20);
+
+    return {
+        users: { total: totalUsers, scholar: scholarUsers, excellentia: excellentiaUsers },
+        financials: { totalRevenue },
+        recentLogs: logs || [],
+        profiles: profiles || []
+    };
+};
 
 export const getAllData = async (table: string) => {
     const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false }).limit(100);
