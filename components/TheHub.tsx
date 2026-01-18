@@ -222,3 +222,5 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit, onStartCall }) => 
         </div>
     );
 };
+
+export default TheHub;

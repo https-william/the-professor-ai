@@ -141,3 +141,5 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
     </div>
   );
 };
+
+export default ProfessorView;
