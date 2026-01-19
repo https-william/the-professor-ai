@@ -19,6 +19,7 @@ declare global {
 
 // Helper for Title Case
 const toTitleCase = (str: string) => {
+  if (!str) return '';
   return str.replace(
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
@@ -65,6 +66,8 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
       setIsReading(false);
       setShareUrl(null); 
       setShareFeedback(null);
+      // Auto scroll to top when slide changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentSectionIdx]);
 
   const toggleVoice = () => {
@@ -137,12 +140,12 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
   };
 
   return (
-    <div className="pb-32 px-4 sm:px-6 relative font-serif flex justify-center">
+    <div className="pb-20 px-4 sm:px-6 relative font-serif flex justify-center">
        
-       <div className="w-full max-w-2xl no-print">
+       <div className="w-full max-w-2xl no-print flex flex-col gap-8">
            
            {/* Top Navigation Bar */}
-           <div className="flex flex-col gap-4 mb-8 pt-4 border-b border-white/10 pb-6 sticky top-0 bg-[#050505]/95 backdrop-blur-xl z-20 transition-all">
+           <div className="flex flex-col gap-4 pt-6 border-b border-white/10 pb-6 sticky top-0 bg-[#050505]/95 backdrop-blur-xl z-20 transition-all">
               <div className="flex items-center justify-between">
                  <div className="flex items-center gap-3">
                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest font-sans">Lecture Hall</h2>
@@ -195,13 +198,13 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 opacity-50"></div>
 
               <div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-8 leading-tight tracking-tight font-display">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-8 leading-tight tracking-tight font-display normal-case">
                       {toTitleCase(section.title)}
                   </h1>
                   
                   {/* Main Content with Optimized Typography */}
                   <div 
-                    className="prose prose-invert prose-lg max-w-none text-gray-300 space-y-6 font-serif leading-loose"
+                    className="prose prose-invert prose-lg max-w-none text-gray-300 space-y-6 font-serif leading-loose normal-case"
                     dangerouslySetInnerHTML={renderContent(section.content)}
                   />
               </div>
@@ -211,34 +214,33 @@ export const ProfessorView: React.FC<ProfessorViewProps> = ({ state, onExit }) =
                  <h4 className="text-amber-500 text-xs font-bold uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
                     <span className="text-lg">💡</span> Feynman Analogy
                  </h4>
-                 <p className="text-amber-100/90 text-lg leading-relaxed italic">"{section.analogy}"</p>
+                 <p className="text-amber-100/90 text-lg leading-relaxed italic normal-case">"{section.analogy}"</p>
               </div>
 
               {/* Key Takeaway Block */}
               <div className="bg-blue-900/10 p-6 rounded-2xl border border-blue-500/20 font-sans">
                   <h4 className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">Core Memory</h4>
-                  <p className="text-white font-medium text-sm leading-relaxed">{section.key_takeaway}</p>
+                  <p className="text-white font-medium text-sm leading-relaxed normal-case">{section.key_takeaway}</p>
               </div>
            </div>
 
-           {/* Sticky Bottom Nav */}
-           <div className="fixed bottom-8 left-0 right-0 px-6 pointer-events-none z-30">
-              <div className="max-w-2xl mx-auto flex gap-4 pointer-events-auto">
+           {/* Static Bottom Navigation */}
+           <div className="flex gap-4">
                  <button 
-                    onClick={() => { window.scrollTo({top: 0, behavior: 'smooth'}); setCurrentSectionIdx(Math.max(0, currentSectionIdx - 1)); }} 
+                    onClick={() => { setCurrentSectionIdx(Math.max(0, currentSectionIdx - 1)); }} 
                     disabled={currentSectionIdx === 0} 
-                    className="flex-1 py-4 rounded-2xl bg-[#1a1a1a] border border-white/10 text-gray-400 font-bold uppercase text-xs hover:bg-[#252525] disabled:opacity-0 transition-all font-sans shadow-lg backdrop-blur-md"
+                    className="flex-1 py-4 rounded-2xl bg-[#1a1a1a] border border-white/10 text-gray-400 font-bold uppercase text-xs hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed transition-all font-sans shadow-lg"
                  >
-                    Previous
+                    Previous Concept
                  </button>
                  <button 
-                    onClick={() => { window.scrollTo({top: 0, behavior: 'smooth'}); if (currentSectionIdx < state.sections.length - 1) setCurrentSectionIdx(currentSectionIdx + 1); else onExit(true); }} 
+                    onClick={() => { if (currentSectionIdx < state.sections.length - 1) setCurrentSectionIdx(currentSectionIdx + 1); else onExit(true); }} 
                     className="flex-[2] py-4 rounded-2xl bg-white text-black font-bold uppercase text-xs shadow-xl hover:bg-gray-200 hover:scale-[1.01] transition-all font-sans"
                  >
                     {currentSectionIdx === state.sections.length - 1 ? 'Finish Class' : 'Next Concept'}
                  </button>
-              </div>
            </div>
+
        </div>
     </div>
   );
