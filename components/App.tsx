@@ -536,7 +536,8 @@ const App: React.FC = () => {
       <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
       {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
       
-      {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && (
+      {/* Hide Dock in Professor Mode (Distraction Free) */}
+      {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && appMode !== 'PROFESSOR' && (
           <>
             <FloatingDock 
                 mode={appMode} 
@@ -571,13 +572,6 @@ const App: React.FC = () => {
                </div>
                <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
             </div>
-
-            {isFresher && appMode !== 'ADMIN' && (
-                <div className="flex items-center gap-2" title="Daily Neural Energy">
-                    <RadialProgress percentage={100 - usagePercentage} size={32} strokeWidth={4} color={usagePercentage > 90 ? 'text-red-500' : 'text-accent'} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-sec hidden md:block">Neural Energy</span>
-                </div>
-            )}
 
             {isFresher && appMode !== 'ADMIN' && (
                 <CreditWallet balance={userProfile.credits || 0} onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex" />
