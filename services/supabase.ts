@@ -455,7 +455,7 @@ export const subscribeToHubWithSignals = (
 
 export const getAdminAnalytics = async () => {
     // 1. Fetch Profiles Stats
-    const { data: profiles } = await supabase.from('profiles').select('id, plan, credits, created_at, role, is_banned');
+    const { data: profiles } = await supabase.from('profiles').select('id, alias, full_name, email, plan, credits, created_at, role, is_banned');
     const totalUsers = profiles?.length || 0;
     const scholarUsers = profiles?.filter(p => p.plan === 'Scholar').length || 0;
     const excellentiaUsers = profiles?.filter(p => p.plan === 'Excellentia').length || 0;
