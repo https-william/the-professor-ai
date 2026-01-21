@@ -47,15 +47,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         plan: 'Fresher',
         role: 'student',
         hasCompletedOnboarding: undefined,
-        profile: { xp: 500, credits: 50 }
+        profile: { xp: 500, credits: 50, hasCompletedOnboarding: false }
       };
 
-      // Fetch extra profile data
-      const { data: profile, error } = await supabase
+      // Optimistic Load: Use metadata first if possible? No, we need profile for bans/credits.
+      // But we can RACE the profile fetch.
+
+      const fetchProfile = supabase
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
         .single();
+
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000));
+
+      // Race: If DB takes > 4s, we load with partial data (Fresher) and fetch in background
+      let profile: any = null;
+      try {
+        const { data } = await Promise.race([fetchProfile, timeout]) as any;
+        profile = data;
+      } catch (e) {
+        console.warn("Profile fetch timed out or failed. Using default.");
+      }
 
       if (profile) {
         if (profile.is_banned) {
@@ -81,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             xp: profile.xp,
             credits: profile.credits ?? 50,
             dailyQuizzesGenerated: profile.daily_quizzes_generated,
-            hasCompletedOnboarding: profile.has_completed_onboarding, // Ensure sync
+            hasCompletedOnboarding: profile.has_completed_onboarding,
             ...profile
           }
         };
@@ -89,18 +102,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveUserProfile(extendedUser.profile as UserProfile);
         setUser(extendedUser);
       } else {
-        // First time user? Create profile
-        const newProfile = {
-          id: currentUser.id,
-          email: currentUser.email,
-          role: 'student',
-          plan: 'Fresher',
-          xp: 500,
-          credits: 50,
-          has_completed_onboarding: false
-        };
-        await supabase.from('profiles').insert([newProfile]);
-        setUser({ ...baseUser, hasCompletedOnboarding: false, profile: { ...baseUser.profile, credits: 50, hasCompletedOnboarding: false } });
+        // Profile doesn't exist OR Timed/Errored out
+        // If it error'd out, we might create a duplicate if we insert? 
+        // Better to just set User to base and let standard logic handle creation later if needed
+        // For now, if no profile found, we create one.
+        if (!profile && !fetchProfile.then) { // Check if we actually tried and got null vs timeout
+          // It was a true 404
+          const newProfile = {
+            id: currentUser.id,
+            email: currentUser.email,
+            role: 'student',
+            plan: 'Fresher',
+            xp: 500,
+            credits: 50,
+            has_completed_onboarding: false
+          };
+          const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
+          if (!insertError) {
+            setUser({ ...baseUser, hasCompletedOnboarding: false });
+          } else {
+            // Fallback if insert fails (maybe it existed and we just timed out?)
+            setUser(baseUser);
+          }
+        } else {
+          // It communicated but timed out, show base user
+          setUser(baseUser);
+        }
       }
     } catch (err) {
       console.error("Session processing error:", err);
@@ -131,13 +158,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // 2. Listen for changes (SignIn, SignOut, Auto-Refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        // Re-process session on any auth change
-        processSession(session);
+        // OPTIMIZATION: Check if we already have this user loaded to avoid re-fetching profile
+        if (user?.uid === session.user.id) return;
+
+        await processSession(session);
       } else {
-        setUser(null);
-        setLoading(false);
+        if (user !== null) {
+          setUser(null);
+          setLoading(false);
+        }
       }
     });
 

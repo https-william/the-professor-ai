@@ -37,7 +37,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     // Initialize Peer Service
     useEffect(() => {
         if (user.alias) {
-            callService.init(
+            callService.initialize(
                 user.alias,
                 (state) => setCallState(state),
                 (callerId, answer) => setIncomingCaller({ id: callerId, answer })

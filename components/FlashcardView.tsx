@@ -126,18 +126,29 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                 <h3 className="text-3xl font-bold text-white mb-2 font-display">Flash Shards</h3>
                 <p className="text-gray-400 mb-8 text-sm">Convert notes into high-velocity recall cards. Cost: 5 NT</p>
 
-                <div className="w-full space-y-4 bg-black/40 border border-white/10 p-6 rounded-3xl backdrop-blur-md">
+                <div className="w-full space-y-4 bg-black/40 border border-white/10 p-6 rounded-3xl backdrop-blur-md relative overflow-hidden">
+                    {/* Loading Overlay */}
+                    {isGenerating && (
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-center p-4">
+                            <div className="w-10 h-10 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin mb-3"></div>
+                            <p className="text-white font-bold text-sm tracking-widest animate-pulse">Forging Knowledge...</p>
+                            <p className="text-gray-500 text-xs mt-1">This may take up to 20 seconds</p>
+                        </div>
+                    )}
+
                     <textarea
                         className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-sm outline-none focus:border-pink-500 transition-colors h-32 placeholder-gray-600 text-white resize-none"
                         placeholder="Paste topic content here..."
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
+                        disabled={isGenerating}
                     />
 
                     <div className="flex gap-3">
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex-1 py-3 border border-white/10 hover:bg-white/5 rounded-xl font-bold uppercase text-[10px] tracking-widest text-gray-400 transition-colors"
+                            disabled={isGenerating}
+                            className="flex-1 py-3 border border-white/10 hover:bg-white/5 rounded-xl font-bold uppercase text-[10px] tracking-widest text-gray-400 transition-colors disabled:opacity-50"
                         >
                             Upload File
                         </button>
@@ -148,7 +159,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                             disabled={isGenerating || !inputText.trim()}
                             className="flex-[2] py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all shadow-lg disabled:opacity-50"
                         >
-                            {isGenerating ? 'Synthesizing...' : 'Generate Deck'}
+                            Generate Deck
                         </button>
                     </div>
                 </div>
