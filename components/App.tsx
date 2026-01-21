@@ -352,10 +352,16 @@ const App: React.FC = () => {
 
         loadHistory().then(setHistory);
 
-        if (mergedProfile.hasCompletedOnboarding === false) {
-            setShowOnboarding(true);
-        } else {
+        // Priority Logic: Check LocalStorage first to avoid waiting for potentially slow DB sync
+        const isLocallyComplete = localStorage.getItem('onboarding_completed') === 'true';
+
+        if (isLocallyComplete || mergedProfile.hasCompletedOnboarding === true) {
             setShowOnboarding(false);
+        } else {
+            // Only show if strictly false (not undefined/null) OR if we are sure it's a new user
+            // But mergedProfile defaults hasCompletedOnboarding to false if it's missing in some paths.
+            // We'll trust the profile.
+            setShowOnboarding(true);
         }
 
         if (!isAdminUnlocked) {
