@@ -42,15 +42,23 @@ import { LegalPage } from './LegalPage';
 import { initAnalytics, trackEvent, identifyUser, trackPageView } from '../services/analytics';
 import { startHydraEngine } from '../services/syncService';
 
-// Robust Lazy Loading with Retry
-function lazyRetry(componentImport: () => Promise<any>): React.LazyExoticComponent<React.ComponentType<any>> {
+function lazyRetry(componentImport: () => Promise<any>, retries = 3): React.LazyExoticComponent<React.ComponentType<any>> {
     return React.lazy(async () => {
-        try {
-            return await componentImport();
-        } catch (error) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return await componentImport();
-        }
+        return new Promise((resolve, reject) => {
+            const attempt = (left: number) => {
+                componentImport()
+                    .then(resolve)
+                    .catch((error) => {
+                        if (left === 0) {
+                            reject(error);
+                            return;
+                        }
+                        console.warn(`Chunk load failed, retrying... (${left} attempts left)`);
+                        setTimeout(() => attempt(left - 1), 1000);
+                    });
+            };
+            attempt(retries);
+        });
     }) as React.LazyExoticComponent<React.ComponentType<any>>;
 }
 
@@ -250,31 +258,39 @@ const App: React.FC = () => {
     // --- CALL SERVICE INIT ---
     useEffect(() => {
         if (user && userProfile.alias) {
-            callService.initialize(userProfile.alias).then(() => {
-                callService.onIncomingCall = (call) => {
-                    setIncomingCall(call);
-                };
-            });
+            try {
+                callService.initialize(
+                    userProfile.alias,
+                    () => { }, // onStateChange - not used currently
+                    (callerId, answer) => {
+                        setIncomingCall({ peer: callerId, answer });
+                    }
+                );
+            } catch (e) {
+                console.error("Call service init failed:", e);
+            }
         }
     }, [user, userProfile.alias]);
 
     const handleStartCall = (remotePeerId: string) => {
-        callService.getMedia(true, true).then(() => {
-            callService.callUser(remotePeerId);
+        try {
+            callService.startCall(remotePeerId);
             setActiveCallPeerId(remotePeerId);
-        });
+        } catch (e) {
+            console.error("Start call failed:", e);
+        }
     };
 
     const handleAcceptCall = () => {
-        if (incomingCall) {
-            callService.answerCall(incomingCall);
+        if (incomingCall && incomingCall.answer) {
+            incomingCall.answer();
             setActiveCallPeerId(incomingCall.peer);
             setIncomingCall(null);
         }
     };
 
     const handleEndCall = () => {
-        callService.disconnect();
+        callService.endCall();
         setActiveCallPeerId(null);
         setIncomingCall(null);
     };

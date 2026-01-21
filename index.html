@@ -49,21 +49,29 @@
 
 
     // GLOBAL ERROR BOUNDARY - Prevents Black Screen of Death
+    // LIFE SUPPORT SYSTEM (PROTOCOL 9)
+    // Catches errors before React mounts and shows a "System Failure" modal.
     window.onerror = function (msg, url, line, col, error) {
       console.error("Global Error Caught:", msg, error);
-      const preloader = document.getElementById('preloader-core');
-      if (preloader) {
-        preloader.innerHTML = `
-            <div style="text-align: center; padding: 2rem; max-width: 400px; border: 1px solid rgba(220, 38, 38, 0.5); background: #050505; border-radius: 1rem; color: #ef4444; font-family: monospace;">
-              <h2 style="font-weight: bold; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 1.2rem;">System Critical Failure</h2>
-              <p style="color: #9ca3af; font-size: 0.8rem; margin-bottom: 1.5rem; line-height: 1.4;">${msg}</p>
-              <button onclick="window.location.reload()" style="background: #ef4444; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em;">Reboot System</button>
+      const errorRoot = document.getElementById('error-root');
+      if (errorRoot) {
+        errorRoot.style.display = 'flex';
+        errorRoot.innerHTML = `
+            <div style="text-align: center; padding: 2rem; max-width: 400px; border: 1px solid rgba(239, 68, 68, 0.3); background: #050505; border-radius: 1rem; color: #ef4444; font-family: monospace; box-shadow: 0 0 50px rgba(220, 38, 38, 0.1);">
+              <h2 style="font-weight: 900; margin-bottom: 1rem; text-transform: uppercase; font-size: 1.2rem; letter-spacing: 0.1em;">System Critical Failure</h2>
+              <p style="color: #9ca3af; font-size: 0.8rem; margin-bottom: 2rem; line-height: 1.6;">${msg}</p>
+              <button onclick="window.location.reload()" style="background: #ef4444; color: white; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; transition: all 0.2s;">Reboot System</button>
             </div>
           `;
-        preloader.style.opacity = '1';
-        preloader.style.pointerEvents = 'auto';
-        preloader.style.zIndex = '99999';
+
+        // Kill preloader if it exists
+        const preloader = document.getElementById('preloader-core');
+        if (preloader) preloader.remove();
       }
+    };
+
+    window.onunhandledrejection = function (event) {
+      window.onerror(event.reason ? event.reason.message : 'Unhandled Promise Rejection', null, null, null, event.reason);
     };
 
     window.addEventListener('load', function () {
@@ -86,10 +94,19 @@
         }
       }, 100);
 
+      // PRELOADER TIMEOUT (PROTOCOL 9)
+      // If React fails to mount within 8 seconds, force manual recovery.
       setTimeout(() => {
-        if (document.getElementById('preloader-core')) {
+        const preloader = document.getElementById('preloader-core');
+        if (preloader && document.getElementById('root').childElementCount === 0) {
           console.warn("React mount timed out - Preloader still active.");
-          clearInterval(checkMount);
+          preloader.innerHTML = `
+            <div style="text-align: center; padding: 2rem; max-width: 400px; color: #fff; font-family: sans-serif;">
+              <h2 style="font-weight: bold; margin-bottom: 0.5rem;">Connection Timeout</h2>
+              <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 1.5rem;">The application is taking longer than usual to load.</p>
+              <button onclick="window.location.reload()" style="background: white; color: black; padding: 0.75rem 1.5rem; border: none; border-radius: 2rem; font-weight: bold; cursor: pointer;">Reload</button>
+            </div>
+          `;
         }
       }, 8000);
     });
@@ -356,6 +373,9 @@
   <div id="root"></div>
   <div id="preloader-core">
     <div class="loader-spinner"></div>
+  </div>
+  <div id="error-root"
+    style="position: fixed; inset: 0; z-index: 100000; display: none; align-items: center; justify-content: center; background: #050505;">
   </div>
   <div id="printable-content" style="display: none;"></div>
   <script type="module" src="./index.tsx"></script>
