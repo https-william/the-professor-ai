@@ -13,7 +13,7 @@
 
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://hzdjctvkrsmtjqhndckk.supabase.co https://cdn.jsdelivr.net; connect-src 'self' https://hzdjctvkrsmtjqhndckk.supabase.co https://generativelanguage.googleapis.com https://openrouter.ai https://*.peerjs.com wss://*.peerjs.com wss://hzdjctvkrsmtjqhndckk.supabase.co; img-src 'self' data: https://hzdjctvkrsmtjqhndckk.supabase.co blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; object-src 'none'; frame-src 'self' https://www.youtube.com;">
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://hzdjctvkrsmtjqhndckk.supabase.co https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://esm.sh https://ga.jspm.io https://js.stripe.com https://js.paystack.co; connect-src 'self' https://hzdjctvkrsmtjqhndckk.supabase.co wss://hzdjctvkrsmtjqhndckk.supabase.co https://generativelanguage.googleapis.com https://openrouter.ai https://*.peerjs.com wss://*.peerjs.com https://esm.sh; img-src 'self' data: https://hzdjctvkrsmtjqhndckk.supabase.co blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; object-src 'none'; frame-src 'self' https://www.youtube.com https://js.stripe.com;">
   <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
   <link rel="apple-touch-icon" href="/logo-pwa.svg">
   <link rel="manifest" href="/manifest.json" />
@@ -334,19 +334,16 @@
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.2.3",
-    "react/": "https://esm.sh/react@19.2.3/",
-    "react-dom": "https://esm.sh/react-dom@19.2.3",
-    "react-dom/client": "https://esm.sh/react-dom@19.2.3/client",
+    "react": "https://esm.sh/react@18.3.1",
+    "react/": "https://esm.sh/react@18.3.1/",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
     "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react,react-dom",
     "@google/genai": "https://esm.sh/@google/genai@0.12.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
     "dompurify": "https://esm.sh/dompurify@3.0.9",
     "peerjs": "https://esm.sh/peerjs@1.5.2?bundle",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0",
     "posthog-js": "https://esm.sh/posthog-js@1.100.0"
   }
 }
