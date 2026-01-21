@@ -26,7 +26,7 @@ class CallService {
 
     constructor() {}
 
-    public init(userId: string, onStateChange: (state: CallState) => void, onIncomingCall: (callerId: string, answer: () => Promise<void>) => void) {
+    public initialize(userId: string, onStateChange: (state: CallState) => void, onIncomingCall: (callerId: string, answer: () => Promise<void>) => void) {
         // Clean up inputs
         const cleanId = userId.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
         
