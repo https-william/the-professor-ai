@@ -1,13 +1,8 @@
 
 import { ProcessedFile } from '../types';
 
-declare global {
-  interface Window {
-    pdfjsLib: any;
-    mammoth: any;
-    JSZip: any;
-  }
-}
+// Global declarations removed as we strictly use modules now
+
 
 // Helper to determine mime type from extension if the blob is generic
 const getMimeFromExtension = (name: string): string => {
@@ -80,13 +75,9 @@ export const processFile = async (file: File, onProgress?: (percent: number) => 
 
 const extractTextFromZip = async (file: File, onProgress: (p: number) => void): Promise<string> => {
     return new Promise(async (resolve, reject) => {
-        if (!window.JSZip) {
-            reject(new Error("ZIP Library failed to load."));
-            return;
-        }
-
         try {
-            const zip = new window.JSZip();
+            const JSZip = (await import('jszip')).default;
+            const zip = new JSZip();
             const content = await zip.loadAsync(file);
             let fullTranscript = `--- ARCHIVE: ${file.name} ---\n\n`;
             
@@ -136,7 +127,8 @@ const extractTextFromZip = async (file: File, onProgress: (p: number) => void): 
             resolve(fullTranscript);
 
         } catch (e) {
-            reject(e);
+            console.error("ZIP Error:", e);
+            reject(new Error("Failed to process ZIP archive."));
         }
     });
 };
@@ -195,105 +187,106 @@ const extractTextFromPdf = async (file: File, onProgress: (p: number) => void): 
 };
 
 const extractTextFromDocx = async (file: File, onProgress: (p: number) => void): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    if (!window.mammoth) {
-      reject(new Error("DOCX Library failed to load."));
-      return;
-    }
-    const reader = new FileReader();
-    
-    reader.onprogress = (event) => {
-       if (event.lengthComputable) {
-         onProgress((event.loaded / event.total) * 80);
-       }
-    };
+  return new Promise(async (resolve, reject) => {
+    try {
+        const mammoth = await import('mammoth');
+        const reader = new FileReader();
+        
+        reader.onprogress = (event) => {
+        if (event.lengthComputable) {
+            onProgress((event.loaded / event.total) * 80);
+        }
+        };
 
-    reader.onload = (event) => {
-      const arrayBuffer = event.target?.result as ArrayBuffer;
-      window.mammoth.extractRawText({ arrayBuffer: arrayBuffer })
-        .then((result: any) => {
-           onProgress(100);
-           resolve(result.value);
-        })
-        .catch((err: any) => reject(err));
-    };
-    reader.onerror = (err) => reject(err);
-    reader.readAsArrayBuffer(file);
+        reader.onload = (event) => {
+        const arrayBuffer = event.target?.result as ArrayBuffer;
+        mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+            .then((result: any) => {
+            onProgress(100);
+            resolve(result.value);
+            })
+            .catch((err: any) => reject(err));
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsArrayBuffer(file);
+    } catch (e) {
+        reject(new Error("Failed to load DOCX engine."));
+    }
   });
 };
 
 const extractTextFromPptx = async (file: File, onProgress: (p: number) => void): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    if (!window.JSZip) {
-      reject(new Error("PPTX Parsing Library (JSZip) failed to load."));
-      return;
+  return new Promise(async (resolve, reject) => {
+    try {
+        const JSZip = (await import('jszip')).default;
+        const reader = new FileReader();
+
+        reader.onprogress = (event) => {
+            if (event.lengthComputable) {
+                onProgress((event.loaded / event.total) * 50);
+            }
+        };
+
+        reader.onload = async (event) => {
+        try {
+            const zip = new JSZip();
+            const content = await zip.loadAsync(event.target?.result);
+            onProgress(70);
+
+            let fullText = "";
+            const slideFiles: any[] = [];
+
+            // Find all slide XML files
+            zip.folder("ppt/slides")?.forEach((relativePath: string, file: any) => {
+            if (relativePath.match(/^slide\d+\.xml$/)) {
+                slideFiles.push({ path: relativePath, file: file });
+            }
+            });
+
+            // Sort slides
+            slideFiles.sort((a, b) => {
+            const numA = parseInt(a.path.match(/slide(\d+)\.xml/)[1]);
+            const numB = parseInt(b.path.match(/slide(\d+)\.xml/)[1]);
+            return numA - numB;
+            });
+
+            // Extract text
+            for (let i = 0; i < slideFiles.length; i++) {
+            const slide = slideFiles[i];
+            const xmlContent = await slide.file.async("string");
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+            
+            const textNodes = xmlDoc.getElementsByTagName("a:t");
+            let slideText = "";
+            for (let j = 0; j < textNodes.length; j++) {
+                slideText += textNodes[j].textContent + " ";
+            }
+            if (slideText.trim()) {
+                fullText += `[Slide]: ${slideText.trim()}\n\n`;
+            }
+            
+            // Map parsing to 70-100%
+            const percentage = 70 + Math.round(((i + 1) / slideFiles.length) * 30);
+            onProgress(percentage);
+            }
+
+            if (fullText.trim().length === 0) {
+                reject(new Error("No text found in presentation."));
+            } else {
+                resolve(fullText);
+            }
+
+        } catch (err) {
+            console.error(err);
+            reject(new Error("Failed to parse PPTX file."));
+        }
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsArrayBuffer(file);
+    } catch(e) {
+        reject(new Error("Failed to load PPTX Engine."));
     }
-
-    const reader = new FileReader();
-
-    reader.onprogress = (event) => {
-       if (event.lengthComputable) {
-         onProgress((event.loaded / event.total) * 50);
-       }
-    };
-
-    reader.onload = async (event) => {
-      try {
-        const zip = new window.JSZip();
-        const content = await zip.loadAsync(event.target?.result);
-        onProgress(70);
-
-        let fullText = "";
-        const slideFiles: any[] = [];
-
-        // Find all slide XML files
-        zip.folder("ppt/slides")?.forEach((relativePath: string, file: any) => {
-          if (relativePath.match(/^slide\d+\.xml$/)) {
-            slideFiles.push({ path: relativePath, file: file });
-          }
-        });
-
-        // Sort slides
-        slideFiles.sort((a, b) => {
-          const numA = parseInt(a.path.match(/slide(\d+)\.xml/)[1]);
-          const numB = parseInt(b.path.match(/slide(\d+)\.xml/)[1]);
-          return numA - numB;
-        });
-
-        // Extract text
-        for (let i = 0; i < slideFiles.length; i++) {
-          const slide = slideFiles[i];
-          const xmlContent = await slide.file.async("string");
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
-          
-          const textNodes = xmlDoc.getElementsByTagName("a:t");
-          let slideText = "";
-          for (let j = 0; j < textNodes.length; j++) {
-             slideText += textNodes[j].textContent + " ";
-          }
-          if (slideText.trim()) {
-            fullText += `[Slide]: ${slideText.trim()}\n\n`;
-          }
-          
-          // Map parsing to 70-100%
-          const percentage = 70 + Math.round(((i + 1) / slideFiles.length) * 30);
-          onProgress(percentage);
-        }
-
-        if (fullText.trim().length === 0) {
-           reject(new Error("No text found in presentation."));
-        } else {
-           resolve(fullText);
-        }
-
-      } catch (err) {
-        console.error(err);
-        reject(new Error("Failed to parse PPTX file."));
-      }
-    };
-    reader.onerror = (err) => reject(err);
-    reader.readAsArrayBuffer(file);
   });
 };
 

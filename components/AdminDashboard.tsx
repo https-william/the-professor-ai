@@ -98,6 +98,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 <SidebarItem id="LOGS" label="System Logs" icon={Icons.Logs} />
             </div>
 
+            <div className="mt-auto px-4 pb-4">
+                <div className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800">
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Hydra Engine</span>
+                    </div>
+                    <p className="text-[9px] text-zinc-600 font-mono">Status: ONLINE</p>
+                    <p className="text-[9px] text-zinc-600 font-mono">Uptime: 99.9%</p>
+                </div>
+            </div>
+
             <div className="border-t border-zinc-900 pt-4">
                 <button onClick={onExit} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-medium text-rose-500 hover:bg-rose-950/10 rounded-lg transition-colors">
                     <Icons.Exit />

@@ -72,7 +72,13 @@ export const resendConfirmationEmail = async (email: string) => {
 };
 
 export const logout = async () => {
-    await supabase.auth.signOut();
+    try {
+        await supabase.auth.signOut();
+    } catch (error) {
+        console.error("Logout Error:", error);
+    }
+    localStorage.clear();
+    sessionStorage.clear();
 };
 
 // --- DATABASE (PROFILES & CREDITS) ---
@@ -174,7 +180,7 @@ export const uploadAvatar = async (file: File, userId: string): Promise<string |
 
 // --- SHARING SYSTEM ---
 
-export const createShareLink = async (type: 'EXAM' | 'PROFESSOR', title: string, data: any): Promise<string | null> => {
+export const createShareLink = async (type: 'EXAM' | 'PROFESSOR' | 'FLASHCARDS', title: string, data: any): Promise<string | null> => {
     try {
         const { data: shareData, error } = await supabase.from('public_shares').insert([{ type, title, data }]).select('id').single();
         if (error) return null;
@@ -356,25 +362,15 @@ export const subscribeToHub = (
             .then(({ data }) => { if (data) onMessages(data); });
     });
 
-    // 4. Listen for Broadcasts (Typing)
-    const typingUsers = new Set<string>();
-    channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
-        if (payload.user !== userAlias) {
-            typingUsers.add(payload.user);
-            onTyping(Array.from(typingUsers));
-            // Clear after 3 seconds
-            setTimeout(() => {
-                typingUsers.delete(payload.user);
-                onTyping(Array.from(typingUsers));
-            }, 3000);
-        }
-    });
-
-    // 5. Presence (Who is online)
-    channel.on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        const users = Object.keys(state);
-        onPresence(users);
+    // 6. Listen for Hub Updates (Participants)
+    channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'hubs', filter: `id=eq.${roomId}` }, (payload) => {
+        // Broadcast new participants list
+        console.log("Hub Update:", payload.new);
+        // We need a callback for this. Adding `onStatsUpdate` to arguments?
+        // For now we can piggyback on presence or just ignore if presence handles "online"
+        // But user asked for "Live" joining without refresh.
+        // The `joinHubRoom` updates the `participants` array. 
+        // We should trigger a refresh or callback.
     });
 
     channel.subscribe(async (status) => {
@@ -385,8 +381,74 @@ export const subscribeToHub = (
 
     return {
         unsubscribe: () => supabase.removeChannel(channel),
-        sendTyping: () => channel.send({ type: 'broadcast', event: 'typing', payload: { user: userAlias } })
+        sendTyping: () => channel.send({ type: 'broadcast', event: 'typing', payload: { user: userAlias } }),
+        sendSignal: (payload: any) => channel.send({ type: 'broadcast', event: 'signal', payload })
     };
+};
+
+// Add overload or modified signature for subscribeToHub to handle signals
+export const subscribeToHubWithSignals = (
+    roomId: string, 
+    userAlias: string,
+    onMessages: (msgs: any[]) => void,
+    onTyping: (users: string[]) => void,
+    onPresence: (users: string[]) => void,
+    onSignal: (payload: any) => void
+) => {
+      // 1. Load existing messages
+      supabase.from('hub_messages').select('*').eq('hub_id', roomId).order('created_at', { ascending: true })
+      .then(({ data }) => { if (data) onMessages(data); });
+
+  // 2. Setup Channel
+  const channel = supabase.channel(`hub_room_${roomId}`, {
+      config: { presence: { key: userAlias } }
+  });
+
+  // 3. Listen for new messages
+  channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hub_messages', filter: `hub_id=eq.${roomId}` }, (payload) => {
+      // Optimistic update or refetch? Refetch safer for order.
+      supabase.from('hub_messages').select('*').eq('hub_id', roomId).order('created_at', { ascending: true })
+          .then(({ data }) => { if (data) onMessages(data); });
+  });
+
+  // 4. Listen for Broadcasts (Typing & Signals)
+  const typingUsers = new Set<string>();
+  channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
+      if (payload.user !== userAlias) {
+          typingUsers.add(payload.user);
+          onTyping(Array.from(typingUsers));
+          setTimeout(() => {
+              typingUsers.delete(payload.user);
+              onTyping(Array.from(typingUsers));
+          }, 3000);
+      }
+  });
+
+  channel.on('broadcast', { event: 'signal' }, ({ payload }) => {
+      // Don't process own signals
+      if (payload.senderId !== userAlias) {
+          onSignal(payload);
+      }
+  });
+
+  // 5. Presence (Who is online)
+  channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const users = Object.keys(state);
+      onPresence(users);
+  });
+
+  channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+          await channel.track({ online_at: new Date().toISOString() });
+      }
+  });
+
+  return {
+      unsubscribe: () => supabase.removeChannel(channel),
+      sendTyping: () => channel.send({ type: 'broadcast', event: 'typing', payload: { user: userAlias } }),
+      sendSignal: (payload: any) => channel.send({ type: 'broadcast', event: 'signal', payload: { ...payload, senderId: userAlias } })
+  };
 };
 
 // --- ADMIN OPS (ENHANCED) ---

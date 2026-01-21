@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
   plugins: [
@@ -24,6 +25,7 @@ export default defineConfig({
         ]
       },
       workbox: {
+        navigateFallback: 'index.html',
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'style' || request.destination === 'script' || request.destination === 'worker',
@@ -64,7 +66,8 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    visualizer({ open: true, filename: 'stats.html', gzipSize: true, brotliSize: true })
   ],
   build: {
     rollupOptions: {

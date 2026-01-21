@@ -128,6 +128,7 @@ export interface QuizConfig {
 export type SubscriptionTier = 'Fresher' | 'Scholar' | 'Excellentia';
 export type UserRole = 'student' | 'admin';
 export type AmbientTheme = 'Deep Space';
+export type AIModelProvider = 'Gemini' | 'DeepSeek' | 'Groq' | 'OpenRouter';
 
 export interface UserProfile {
   // Identity

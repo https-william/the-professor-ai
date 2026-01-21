@@ -1,144 +1,91 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { callService } from '../services/callService';
+import { callService, CallState } from '../services/callService';
 
 interface CallOverlayProps {
-  remotePeerId: string;
-  onClose: () => void;
-  isIncoming?: boolean;
-  onAccept?: () => void;
+    state: CallState;
+    onToggleMic: () => void;
+    onToggleCam: () => void;
+    onEndCall: () => void;
+    localStream: MediaStream | null;
 }
 
-export const CallOverlay: React.FC<CallOverlayProps> = ({ remotePeerId, onClose, isIncoming, onAccept }) => {
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState(isIncoming ? 'INCOMING TRANSMISSION' : 'ESTABLISHING LINK');
-  const [isMinimized, setIsMinimized] = useState(false);
+export const CallOverlay: React.FC<CallOverlayProps> = ({ state, onToggleMic, onToggleCam, onEndCall, localStream }) => {
+    const localRef = useRef<HTMLVideoElement>(null);
+    const remoteRef = useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
-    if (isIncoming) return; // Wait for accept
+    useEffect(() => {
+        if (localRef.current && localStream) localRef.current.srcObject = localStream;
+    }, [localStream]);
 
-    // Handle Local Stream
-    callService.getMedia(true, true).then(stream => {
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-    });
+    useEffect(() => {
+        if (remoteRef.current && state.remoteStream) remoteRef.current.srcObject = state.remoteStream;
+    }, [state.remoteStream]);
 
-    // Handle Remote Stream Events from Service
-    const handleStream = (peerId: string, stream: MediaStream) => {
-        if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = stream;
-            setConnectionStatus('SECURE LINK ACTIVE');
-        }
-    };
+    if (state.status === 'IDLE') return null;
 
-    const handleClose = () => {
-        setConnectionStatus('LINK TERMINATED');
-        setTimeout(onClose, 1000);
-    };
-
-    callService.onStream = handleStream;
-    callService.onPeerClose = handleClose;
-
-    return () => {
-        callService.onStream = null;
-        callService.onPeerClose = null;
-    };
-  }, [isIncoming]);
-
-  const handleAcceptCall = async () => {
-      if (onAccept) {
-          onAccept();
-          setConnectionStatus('CONNECTING...');
-          const stream = await callService.getMedia(true, true);
-          if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-      }
-  };
-
-  const toggleMute = () => {
-      callService.toggleAudio(!isMuted); // Note: Service logic might need inversion depending on implementation, assuming true = enabled
-      setIsMuted(!isMuted);
-  };
-
-  const toggleVideo = () => {
-      callService.toggleVideo(!isVideoOff);
-      setIsVideoOff(!isVideoOff);
-  };
-
-  if (isMinimized) {
-      return (
-          <div 
-            onClick={() => setIsMinimized(false)}
-            className="fixed bottom-24 right-6 z-[100] w-16 h-16 rounded-full bg-green-500 border-2 border-white shadow-[0_0_20px_lime] flex items-center justify-center cursor-pointer animate-pulse"
-          >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-          </div>
-      );
-  }
-
-  return (
-    <div className="fixed top-20 right-6 z-[100] w-80 md:w-96 bg-[#0f0f10]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col transition-all">
-        
-        {/* Header / Status */}
-        <div className="h-10 bg-black/50 border-b border-white/5 flex items-center justify-between px-4">
-            <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${connectionStatus.includes('ACTIVE') ? 'bg-green-500 animate-pulse' : 'bg-amber-500 animate-bounce'}`}></div>
-                <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">{connectionStatus}</span>
+    return (
+        <div className="fixed top-24 right-4 z-50 w-72 bg-[#1a1a1a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-slide-in">
+            {/* Header */}
+            <div className="bg-[#111] p-3 flex justify-between items-center border-b border-white/5">
+                <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${state.status === 'CONNECTED' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`}></div>
+                    <span className="text-xs font-bold text-white uppercase">{state.status === 'CONNECTED' ? 'Linked' : state.status}</span>
+                </div>
+                <div className="text-[10px] text-gray-500 font-mono">SECURE LINE</div>
             </div>
-            <button onClick={() => setIsMinimized(true)} className="text-gray-500 hover:text-white">-</button>
-        </div>
 
-        {/* Video Area */}
-        <div className="relative aspect-video bg-black group">
-            {/* Remote Video */}
-            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-            
-            {/* Incoming Call UI Overlay */}
-            {isIncoming && (
-                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
-                    <div className="w-16 h-16 rounded-full bg-blue-500/20 border border-blue-500 flex items-center justify-center mb-4 animate-ping">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                    </div>
-                    <p className="text-white font-bold text-sm uppercase tracking-widest mb-6">Incoming Transmission</p>
-                    <div className="flex gap-4">
-                        <button onClick={onClose} className="px-6 py-2 bg-red-600 rounded-full text-white font-bold text-xs uppercase hover:bg-red-500">Decline</button>
-                        <button onClick={handleAcceptCall} className="px-6 py-2 bg-green-600 rounded-full text-white font-bold text-xs uppercase hover:bg-green-500 shadow-[0_0_15px_lime]">Accept</button>
-                    </div>
+            {/* Video Area */}
+            <div className="relative aspect-video bg-black group">
+                {state.status === 'CONNECTED' && (
+                    <video ref={remoteRef} autoPlay playsInline className="w-full h-full object-cover" />
+                )}
+
+                {/* Local PIP */}
+                <div className="absolute bottom-2 right-2 w-20 aspect-video bg-gray-900 rounded-lg overflow-hidden border border-white/20 shadow-lg">
+                    <video ref={localRef} autoPlay playsInline muted className="w-full h-full object-cover transform scale-x-[-1]" />
                 </div>
-            )}
 
-            {/* Local Video (PIP) */}
-            {!isIncoming && (
-                <div className="absolute bottom-4 right-4 w-24 h-36 bg-[#1a1a1a] rounded-lg border border-white/20 overflow-hidden shadow-lg">
-                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                </div>
-            )}
-        </div>
+                {/* Status Overlay */}
+                {state.status !== 'CONNECTED' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-2 animate-bounce">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" /></svg>
+                        </div>
+                        <span className="text-xs font-mono uppercase">Signal Search...</span>
+                    </div>
+                )}
+            </div>
 
-        {/* Controls (Only show if active) */}
-        {!isIncoming && (
-            <div className="p-4 flex justify-center gap-4 bg-black/20">
-                <button 
-                    onClick={toggleMute} 
-                    className={`p-3 rounded-full border transition-all ${isMuted ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-white/10 border-transparent text-white hover:bg-white/20'}`}
-                >
-                    {isMuted ? '🔇' : '🎤'}
+            {/* Controls */}
+            <div className="p-4 flex justify-center gap-4 bg-[#111]">
+                <button onClick={onToggleCam} className={`p - 3 rounded - full transition - colors ${state.isVideoEnabled ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-red-500/20 text-red-500'} `}>
+                    📷
                 </button>
-                <button 
-                    onClick={onClose} 
-                    className="p-3 px-6 rounded-full bg-red-600 text-white font-bold uppercase text-xs tracking-wider hover:bg-red-500 shadow-lg"
-                >
-                    End Call
+                <button onClick={onToggleMic} className={`p - 3 rounded - full transition - colors ${state.isAudioEnabled ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-red-500/20 text-red-500'} `}>
+                    🎙️
                 </button>
-                <button 
-                    onClick={toggleVideo} 
-                    className={`p-3 rounded-full border transition-all ${isVideoOff ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-white/10 border-transparent text-white hover:bg-white/20'}`}
-                >
-                    {isVideoOff ? '🚫' : '📷'}
+                <button onClick={onEndCall} className="p-3 rounded-full bg-red-600 text-white hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                    📞
                 </button>
             </div>
-        )}
-    </div>
-  );
+        </div>
+    );
 };
+
+export const IncomingCallModal: React.FC<{ callerId: string, onAccept: () => void, onReject: () => void }> = ({ callerId, onAccept, onReject }) => (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="bg-[#1a1a1a] p-8 rounded-3xl border border-green-500/30 flex flex-col items-center shadow-[0_0_50px_rgba(34,197,94,0.2)]">
+            <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 mb-6 animate-pulse">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 ring-call" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-1">Incoming Signal</h3>
+            <p className="text-gray-400 text-sm mb-8 font-mono">{callerId || "Unknown Agent"}</p>
+
+            <div className="flex gap-4 w-full">
+                <button onClick={onReject} className="flex-1 py-3 bg-red-900/30 border border-red-500/30 text-red-500 rounded-xl font-bold uppercase text-xs hover:bg-red-900/50 transition-colors">Decline</button>
+                <button onClick={onAccept} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold uppercase text-xs hover:bg-green-500 shadow-lg hover:scale-105 transition-all">Accept</button>
+            </div>
+        </div>
+    </div>
+);

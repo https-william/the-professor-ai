@@ -32,15 +32,15 @@ export const clearCurrentSession = () => {
 
 // --- HISTORY (Migrated to Supabase) ---
 
+// --- HISTORY (Migrated to Supabase + Local Backup "The Vault") ---
 export const saveToHistory = async (item: HistoryItem) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-      // Fallback for guests (Local Only)
-      saveToHistoryLocal(item);
-      return;
-  }
+  // 1. Always save to Local Vault (Offline First)
+  saveToHistoryLocal(item);
 
-  // Upsert to Supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // 2. Sync to Cloud
   const { error } = await supabase.from('history').upsert({
       id: item.id,
       user_id: user.id,
@@ -56,53 +56,59 @@ export const saveToHistory = async (item: HistoryItem) => {
 };
 
 const saveToHistoryLocal = (item: HistoryItem) => {
-    const userId = 'guest';
-    const key = `${userId}_exam_prep_history`;
+    // We use a unified key for the vault to allow offline access for any recent user
+    // In a real multi-user shared device scenario, this might need segmentation, but for personal PWA it's fine.
+    const key = `exam_prep_history_vault`; 
     const existing = JSON.parse(localStorage.getItem(key) || '[]');
-    const updated = [item, ...existing.filter((i: any) => i.id !== item.id)].slice(0, 10);
+    // Keep last 50 items locally
+    const updated = [item, ...existing.filter((i: any) => i.id !== item.id)].slice(0, 50);
     localStorage.setItem(key, JSON.stringify(updated));
 };
 
 export const loadHistory = async (): Promise<HistoryItem[]> => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-      const userId = 'guest';
-      return JSON.parse(localStorage.getItem(`${userId}_exam_prep_history`) || '[]');
+  
+  // Strategy: Try Cloud -> Fallback to Vault
+  if (user) {
+      const { data, error } = await supabase
+          .from('history')
+          .select('*')
+          .order('timestamp', { ascending: false })
+          .limit(50);
+
+      if (!error && data) {
+          // Update Vault with fresh Cloud data
+          const mapped = data.map((d: any) => ({
+             id: d.id,
+             timestamp: new Date(d.timestamp).getTime(),
+             mode: d.mode as AppMode,
+             title: d.title,
+             data: d.data,
+             summary: d.summary,
+             config: d.config
+          }));
+          localStorage.setItem(`exam_prep_history_vault`, JSON.stringify(mapped));
+          return mapped;
+      }
   }
 
-  const { data, error } = await supabase
-      .from('history')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(50);
-
-  if (error) {
-      console.error("Cloud Load Error:", error);
-      return [];
-  }
-
-  return data.map((d: any) => ({
-      id: d.id,
-      timestamp: new Date(d.timestamp).getTime(),
-      mode: d.mode as AppMode,
-      title: d.title,
-      data: d.data,
-      summary: d.summary,
-      config: d.config
-  }));
+  // Fallback: Load from Vault
+  console.warn("Cloud unreachable or Guest mode. Loading from Vault.");
+  return JSON.parse(localStorage.getItem(`exam_prep_history_vault`) || '[]');
 };
 
 export const deleteHistoryItem = async (id: string) => {
+  // Delete from Cloud
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
       await supabase.from('history').delete().eq('id', id);
-  } else {
-      const userId = 'guest';
-      const key = `${userId}_exam_prep_history`;
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      const updated = existing.filter((i: any) => i.id !== id);
-      localStorage.setItem(key, JSON.stringify(updated));
   }
+  
+  // Delete from Vault
+  const key = `exam_prep_history_vault`;
+  const existing = JSON.parse(localStorage.getItem(key) || '[]');
+  const updated = existing.filter((i: any) => i.id !== id);
+  localStorage.setItem(key, JSON.stringify(updated));
 };
 
 // --- USER PROFILE (Synced via AuthContext usually, but helpers here) ---

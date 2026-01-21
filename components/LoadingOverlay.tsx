@@ -7,93 +7,56 @@ interface LoadingOverlayProps {
   onCancel?: () => void;
 }
 
-const STEPS_EXAM = [
-    "Establishing Neural Link...",
-    "Scanning Document Structure...",
-    "Extracting Key Concepts...",
-    "Filtering for Relevance...",
-    "Constructing Questions...",
-    "Verifying Answers...",
-    "Calibrating Difficulty...",
-    "Finalizing Exam Paper..."
-];
-
-const STEPS_PROFESSOR = [
-    "Initializing Feynman Protocol...",
-    "Parsing Content...",
-    "Identifying Core Principles...",
-    "Generating Analogies...",
-    "Structuring Lesson Plan...",
-    "Synthesizing Speech Patterns...",
-    "Optimizing for Retention..."
-];
-
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ status, type, onCancel }) => {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [logs, setLogs] = useState<string[]>([]);
-  const isProfessor = type === 'PROFESSOR';
-  const steps = isProfessor ? STEPS_PROFESSOR : STEPS_EXAM;
+  const [pulse, setPulse] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-        setStepIndex(prev => {
-            if (prev < steps.length - 1) {
-                setLogs(l => [...l, `[NEURAL]: ${steps[prev]}`]);
-                return prev + 1;
-            }
-            return prev;
-        });
-    }, 1500);
-
+    const interval = setInterval(() => setPulse(p => !p), 1000);
     return () => clearInterval(interval);
-  }, [steps]);
-
-  const currentStep = stepIndex < steps.length ? steps[stepIndex] : "Finalizing...";
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]/95 backdrop-blur-xl animate-fade-in p-6 font-mono">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]/98 backdrop-blur-xl animate-fade-in p-6 font-sans">
       
       {/* Central Visual */}
-      <div className="relative w-32 h-32 mb-10">
-         <div className={`absolute inset-0 border-4 border-t-transparent rounded-full animate-spin ${isProfessor ? 'border-amber-500' : 'border-blue-500'}`}></div>
-         <div className={`absolute inset-4 border-4 border-b-transparent rounded-full animate-spin-reverse opacity-50 ${isProfessor ? 'border-amber-300' : 'border-blue-300'}`}></div>
-         <div className="absolute inset-0 flex items-center justify-center text-white">
-             {/* Dynamic Center Icon */}
-             {isProfessor ? (
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-12 h-12 animate-pulse text-amber-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+      <div className="relative w-40 h-40 mb-10 flex items-center justify-center">
+         {/* Outer Rings */}
+         <div className="absolute inset-0 border border-white/10 rounded-full scale-110"></div>
+         <div className="absolute inset-0 border border-white/5 rounded-full scale-125"></div>
+         
+         {/* Spinner */}
+         <div className={`absolute inset-0 border-4 border-t-transparent rounded-full animate-spin ${type === 'PROFESSOR' ? 'border-amber-500' : 'border-blue-500'}`}></div>
+         
+         {/* Inner Pulse */}
+         <div className={`w-20 h-20 rounded-full transition-all duration-1000 ${pulse ? 'opacity-80 scale-100' : 'opacity-40 scale-90'} ${type === 'PROFESSOR' ? 'bg-amber-500 blur-xl' : 'bg-blue-500 blur-xl'}`}></div>
+         
+         <div className="absolute inset-0 flex items-center justify-center text-white z-10">
+             {type === 'PROFESSOR' ? (
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-10 h-10">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                  </svg>
              ) : (
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-12 h-12 animate-pulse text-blue-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-10 h-10">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.077-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a16.002 16.002 0 00-4.649 4.763m0 0c-.428-.283-.873-.542-1.332-.772" />
                  </svg>
              )}
          </div>
       </div>
 
-      <div className="w-full max-w-md">
-          <h2 className="text-xl text-white font-bold text-center mb-6 uppercase tracking-widest animate-pulse">
-              {currentStep}
+      <div className="text-center">
+          <h2 className="text-2xl text-white font-bold mb-2 tracking-tight">
+              {type === 'PROFESSOR' ? 'Preparing Lecture' : 'Constructing Exam'}
           </h2>
-
-          {/* Terminal Output */}
-          <div className="bg-black/50 border border-white/10 rounded-xl p-4 h-48 overflow-y-auto custom-scrollbar flex flex-col-reverse shadow-inner">
-              {logs.map((log, i) => (
-                  <div key={i} className="text-[10px] text-green-400 mb-1 font-mono opacity-80">
-                      <span className="opacity-50 mr-2">{new Date().toLocaleTimeString()}</span>
-                      {log}
-                  </div>
-              ))}
-              <div className="text-[10px] text-gray-500 italic mb-2">System Initialized...</div>
-          </div>
+          <p className="text-sm text-gray-400 font-mono uppercase tracking-widest animate-pulse">
+              {status}
+          </p>
       </div>
 
       <button 
         onClick={onCancel}
-        className="mt-8 text-gray-600 text-xs uppercase tracking-widest hover:text-white transition-colors"
+        className="mt-12 text-gray-600 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors border border-white/5 hover:border-white/20 rounded-full px-6 py-2"
       >
-        Cancel Process
+        Cancel
       </button>
     </div>
   );

@@ -210,7 +210,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             value={value} 
             onChange={(e) => setter(e.target.value)} 
             disabled={disabled}
-            className={`appearance-none pl-3 pr-8 pt-5 pb-2 rounded-xl text-xs font-bold uppercase tracking-wide outline-none cursor-pointer transition-all border w-full text-left ${disabled ? 'opacity-50 cursor-not-allowed border-border-main bg-black/5 text-gray-500' : 'bg-black/5 dark:bg-white/5 border-border-main hover:bg-black/10 dark:hover:bg-white/10 text-text-pri'}`}
+            className={`appearance-none pl-3 pr-8 pt-5 pb-2 rounded-xl text-xs font-bold uppercase tracking-wide outline-none cursor-pointer transition-all border w-full text-left shadow-sm ${disabled ? 'opacity-50 cursor-not-allowed border-border-main bg-black/5 text-gray-500' : 'bg-white/5 border-border-main hover:bg-white/10 text-text-pri hover:shadow-md'}`}
           >
               {options.map((opt: string) => <option key={opt} value={opt} className="bg-core text-text-pri">{opt}</option>)}
           </select>
@@ -222,13 +222,13 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const FileList = () => (
       <div className="w-full flex flex-wrap gap-2 justify-center">
           {selectedFiles.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/30">
-                <span className="text-xs text-blue-500 truncate max-w-[150px]">{f.name}</span>
+            <div key={i} className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/30 shadow-sm">
+                <span className="text-xs text-blue-500 truncate max-w-[150px] font-bold">{f.name}</span>
                 <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-blue-400 hover:text-red-400 ml-1">✕</button>
             </div>
           ))}
           <div className="w-full text-center mt-1">
-              <span className="text-[10px] text-text-sec uppercase tracking-widest">+ Add More</span>
+              <span className="text-[10px] text-text-sec uppercase tracking-widest cursor-pointer hover:text-white transition-colors">+ Add More</span>
           </div>
       </div>
   );
@@ -239,17 +239,17 @@ export const InputSection: React.FC<InputSectionProps> = ({
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
       {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
 
-      {/* Main Panel */}
-      <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-2xl ${appMode === 'PROFESSOR' ? 'border-amber-500/10' : appMode === 'HUB' ? 'border-green-500/10' : 'border-border-main'}`}>
+      {/* Main Panel with enhanced Shadow for "3D" effect */}
+      <div className={`glass-panel rounded-3xl relative overflow-hidden flex flex-col flex-grow shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-t border-white/10 ${appMode === 'PROFESSOR' ? 'border-amber-500/20' : appMode === 'HUB' ? 'border-green-500/20' : 'border-blue-500/20'}`}>
         
-        {/* PROGRESS OVERLAY (Visible in ALL Modes) */}
+        {/* PROGRESS OVERLAY */}
         {uploadProgress > 0 && uploadProgress < 100 && (
             <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-8 transition-opacity duration-300">
-                <div className="w-full max-w-md h-2 bg-gray-200 dark:bg-gray-900 rounded-full overflow-hidden mb-4 relative">
+                <div className="w-full max-w-md h-2 bg-gray-900 rounded-full overflow-hidden mb-4 relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 animate-progress" style={{ width: `${uploadProgress}%` }}></div>
                 </div>
                 <span className="text-white font-mono text-sm font-bold tracking-widest animate-pulse">
-                    UPLOADING NEURAL DATA... {Math.round(uploadProgress)}%
+                    INGESTING DATA... {Math.round(uploadProgress)}%
                 </span>
             </div>
         )}
@@ -271,7 +271,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
                           <button 
                             onClick={handleOracleClick}
-                            className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/5 border-border-main text-text-sec hover:text-text-pri'}`}
+                            className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all shadow-md ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/20 border-border-main text-text-sec hover:text-text-pri hover:bg-black/30'}`}
                           >
                               {!isExcellentia && (
                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-amber-500"><path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" /></svg>
@@ -284,7 +284,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
 
             {/* Main Upload Area */}
-            <div id="upload-zone-target" className="flex-grow overflow-y-auto p-4 flex flex-col relative bg-transparent custom-scrollbar min-h-[250px]">
+            <div id="upload-zone-target" className="flex-grow overflow-y-auto p-6 flex flex-col relative bg-transparent custom-scrollbar min-h-[250px]">
                
                <div className="flex-1 flex flex-col gap-6">
                   {/* TEXT AREA */}
@@ -293,7 +293,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                           Input Source Text
                       </div>
                       <textarea 
-                        className="w-full h-32 md:h-40 bg-black/5 dark:bg-[#151515] text-text-pri rounded-2xl p-4 pt-10 border border-border-main outline-none text-sm font-mono placeholder-text-sec resize-none transition-all shadow-inner focus:border-accent" 
+                        className="w-full h-32 md:h-40 bg-black/10 dark:bg-[#151515] text-text-pri rounded-2xl p-4 pt-10 border border-border-main outline-none text-sm font-medium placeholder-text-sec resize-none transition-all shadow-inner focus:border-accent hover:bg-black/20" 
                         placeholder="Paste lecture notes, articles, or topics here..." 
                         value={textInput} 
                         onChange={(e) => setTextInput(e.target.value)} 
@@ -301,25 +301,30 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
 
                   <div className="flex items-center gap-4">
-                      <div className="h-px bg-border-main flex-1"></div>
-                      <span className="text-[10px] font-bold text-text-sec uppercase">OR UPLOAD</span>
-                      <div className="h-px bg-border-main flex-1"></div>
+                      <div className="h-px bg-gradient-to-r from-transparent via-border-main to-transparent flex-1"></div>
+                      <span className="text-[10px] font-bold text-text-sec uppercase">OR</span>
+                      <div className="h-px bg-gradient-to-r from-transparent via-border-main to-transparent flex-1"></div>
                   </div>
 
-                  {/* FILE DROP ZONE */}
+                  {/* HIGH VISIBILITY FILE DROP ZONE */}
                   <div 
-                    className={`border-2 border-dashed rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[160px] bg-black/5 dark:bg-[#0c0c0c] ${dragActive ? 'border-accent bg-accent/10' : 'border-border-main hover:border-accent/50 hover:bg-black/10'}`}
+                    className={`border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[180px] shadow-lg ${dragActive || selectedFiles.length > 0 ? 'border-blue-500 bg-blue-900/10' : 'border-white/10 bg-gradient-to-br from-white/5 to-transparent hover:border-white/30 hover:bg-white/10'}`}
                     onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
                       {selectedFiles.length > 0 ? (
-                        <div className="w-full p-4">
+                        <div className="w-full p-6">
                             <FileList />
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center gap-3 p-6 text-center">
-                           <p className="text-text-pri font-bold text-sm uppercase tracking-wide">Tap to Upload</p>
-                           <p className="text-text-sec text-[10px]">PDF, DOCX, PPTX, TXT, IMAGES</p>
+                        <div className="flex flex-col items-center gap-4 p-6 text-center">
+                           <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform border border-blue-500/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                           </div>
+                           <div>
+                               <p className="text-white font-bold text-lg">Drop Files Here</p>
+                               <p className="text-text-sec text-xs mt-1">PDF, DOCX, PPTX, Images</p>
+                           </div>
                         </div>
                       )}
                   </div>
@@ -327,14 +332,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
 
             {/* ACTION GRID */}
-            <div className="p-4 sm:p-6 border-t border-border-main bg-black/5 dark:bg-[#0a0a0a] shrink-0">
+            <div className="p-4 sm:p-6 border-t border-border-main bg-black/10 shrink-0">
                <button 
                  onClick={() => executeGeneration('EXAM')} 
                  disabled={isLoading} 
-                 className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-glass ${!canAfford ? 'opacity-50 cursor-not-allowed' : isExcellentia ? 'bg-amber-600/20' : 'bg-blue-600/20'}`}
+                 className={`w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-glass hover:scale-[1.01] active:scale-[0.99] shadow-lg ${!canAfford ? 'opacity-50 cursor-not-allowed bg-red-900/20' : isExcellentia ? 'bg-amber-600/30 border-amber-500/30' : 'bg-blue-600/30 border-blue-500/30'}`}
                >
                   {isLoading ? (
-                      <span className="animate-pulse">Processing...</span>
+                      <span className="animate-pulse">Processing Data...</span>
                   ) : !canAfford ? (
                       `Insufficient Credits (${currentCost} Required)`
                   ) : (
@@ -346,11 +351,13 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
         {/* Other Modes (Chat/Hub) Input */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-core z-20 transition-opacity duration-300 ${(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-             <h3 className="text-3xl font-display font-normal text-text-pri mb-6 animate-slide-up-fade">Class is in session.</h3>
+             <div className="text-center mb-8">
+                 <h3 className="text-3xl font-display font-medium text-text-pri mb-2 animate-slide-up-fade">Lecture Hall</h3>
+                 <p className="text-text-sec text-sm">Upload content to begin session.</p>
+             </div>
              
-             {/* PROFESSOR MODE FILE LIST */}
              {selectedFiles.length > 0 && (
-                 <div className="w-full max-w-2xl mb-4 animate-slide-up-fade">
+                 <div className="w-full max-w-2xl mb-6 animate-slide-up-fade">
                      <FileList />
                  </div>
              )}
@@ -362,19 +369,19 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         value={chatInput} 
                         onChange={(e) => setChatInput(e.target.value)} 
                         onKeyDown={(e) => e.key === 'Enter' && executeGeneration(appMode)}
-                        className="w-full bg-panel border border-border-main rounded-2xl pl-6 pr-12 md:pr-48 py-6 text-text-pri outline-none focus:border-amber-500 placeholder-text-sec text-lg shadow-xl transition-all" 
-                        placeholder="Ask a question or upload notes..." 
+                        className="w-full bg-panel border border-border-main rounded-2xl pl-6 pr-16 md:pr-48 py-6 text-text-pri outline-none focus:border-amber-500 placeholder-text-sec text-lg shadow-2xl transition-all" 
+                        placeholder={appMode === 'PROFESSOR' ? "Upload notes to start lecture..." : "Ask a question..."}
                       />
-                      <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1 z-30">
+                      <div className="absolute right-3 top-3 bottom-3 flex items-center gap-2 z-30">
                         <button 
                             onClick={() => fileInputRef.current?.click()} 
-                            className="h-full px-4 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main flex items-center justify-center"
+                            className="h-full w-10 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main flex items-center justify-center"
                             title="Attach File"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
                         </button>
-                        <button onClick={() => executeGeneration(appMode)} className="hidden md:flex h-10 px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg items-center justify-center font-bold text-xs uppercase tracking-widest">
-                            Ask ({getModeCost(appMode)} NT)
+                        <button onClick={() => executeGeneration(appMode)} className="hidden md:flex h-full px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg items-center justify-center font-bold text-xs uppercase tracking-widest">
+                            Start ({getModeCost(appMode)} NT)
                         </button>
                         <button onClick={() => executeGeneration(appMode)} className="md:hidden h-10 w-10 bg-amber-600 rounded-xl text-white hover:bg-amber-500 flex items-center justify-center shadow-lg">
                             →
