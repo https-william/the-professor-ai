@@ -314,6 +314,10 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
     if (!rateLimiter()) throw new Error("Rate limit exceeded. Please wait a moment.");
     return requestQueue.add(async () => {
         const systemPrompt = "You are a Chief Examiner. Create a rigorous yet fair exam. Output ONLY JSON.";
+        const groqPrompt = `Create ${config.questionCount} questions based on this text. Return a JSON array with 'question', 'options' (array), 'correct_answer', and 'explanation'. Text: ${text.substring(0, 15000)}`;
+
+        // --- HYDRA STRATEGY (v3.1 - OpenRouter First) ---
+        // Tier 1: Gemini (Fastest & Highest Quality)
         try {
             const ai = getAI();
             const schema: Schema = {
@@ -343,31 +347,42 @@ export const generateQuizFromText = async (text: string, config: QuizConfig, use
 
             const data = JSON.parse(response.text || '[]');
             return data.map((q: any, i: number) => ({ ...q, id: i + 1, type: config.questionType }));
-        } catch (e) {
-            // Hydra Strategy: Gemini -> DeepSeek R1 -> Groq
-            const groqPrompt = `Create ${config.questionCount} questions based on this text. Return a JSON array with 'question', 'options' (array), 'correct_answer', and 'explanation'. Text: ${text.substring(0, 15000)}`;
+        } catch (e: any) {
+            console.warn("⚠️ Gemini Overload/Offline. Engaging OpenRouter...");
 
+            // Tier 2: OpenRouter (FREE fleet - no billing issues)
             try {
-                console.log("⚠️ Gemini Overload. Re-routing to DeepSeek R1 (Reasoner)...");
-                // Use Reasoner for Complex Tasks (Exams)
-                const jsonStr = await callDeepSeek([
+                const { callOpenRouter } = await import('./openRouterService');
+                const jsonStr = await callOpenRouter([
                     { role: "user", content: groqPrompt }
-                ], systemPrompt, true, true);
-                
-                // DeepSeek might return markdown json block
+                ], systemPrompt, true);
                 const cleaned = jsonStr.replace(/```json/g, '').replace(/```/g, '');
                 const data = JSON.parse(cleaned);
                 const questions = Array.isArray(data) ? data : (data.questions || data.items || []);
                 return questions.map((q: any, i: number) => ({ ...q, id: i + 1, type: config.questionType }));
+            } catch (openRouterError) {
+                console.warn("⚠️ OpenRouter Unavailable. Trying DeepSeek R1...");
+                
+                // Tier 3: DeepSeek (Reasoner)
+                try {
+                    const jsonStr = await callDeepSeek([
+                        { role: "user", content: groqPrompt }
+                    ], systemPrompt, true, true);
+                    const cleaned = jsonStr.replace(/```json/g, '').replace(/```/g, '');
+                    const data = JSON.parse(cleaned);
+                    const questions = Array.isArray(data) ? data : (data.questions || data.items || []);
+                    return questions.map((q: any, i: number) => ({ ...q, id: i + 1, type: config.questionType }));
+                } catch (deepSeekError) {
+                    console.warn("⚠️ DeepSeek Overload. Engaging Groq System...");
 
-            } catch (deepSeekError) {
-                console.log("⚠️ DeepSeek Overload. Engaging Groq System...");
-                const jsonStr = await callGroq([
-                    { role: "user", content: groqPrompt }
-                ], systemPrompt, true);
-                const data = JSON.parse(jsonStr);
-                const questions = Array.isArray(data) ? data : (data.questions || data.items || []);
-                return questions.map((q: any, i: number) => ({ ...q, id: i + 1, type: config.questionType }));
+                    // Tier 4: Groq (Last Resort)
+                    const jsonStr = await callGroq([
+                        { role: "user", content: groqPrompt }
+                    ], systemPrompt, true);
+                    const data = JSON.parse(jsonStr);
+                    const questions = Array.isArray(data) ? data : (data.questions || data.items || []);
+                    return questions.map((q: any, i: number) => ({ ...q, id: i + 1, type: config.questionType }));
+                }
             }
         }
 

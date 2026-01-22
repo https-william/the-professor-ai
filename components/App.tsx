@@ -27,7 +27,7 @@ import { ArenaView } from './ArenaView';
 import { MobileNavBar } from './MobileNavBar';
 import { FloatingDock } from './FloatingDock';
 import { CreditWallet } from './CreditWallet';
-import { CallOverlay } from './CallOverlay';
+import { CallOverlay, IncomingCallModal } from './CallOverlay';
 import { RadialProgress } from './RadialProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -356,13 +356,16 @@ const App: React.FC = () => {
 
         // Priority Logic: Check LocalStorage first to avoid waiting for potentially slow DB sync
         const isLocallyComplete = localStorage.getItem('onboarding_completed') === 'true';
+        // HOTFIX: If user has a real alias, they have definitively completed onboarding at some point.
+        const hasValidAlias = mergedProfile.alias && mergedProfile.alias !== 'Guest Scholar' && mergedProfile.alias.length > 2;
 
-        if (isLocallyComplete || mergedProfile.hasCompletedOnboarding === true) {
+        if (isLocallyComplete || mergedProfile.hasCompletedOnboarding === true || hasValidAlias) {
             setShowOnboarding(false);
+            // Ensure localStorage is synced for future fast-checks
+            if (!isLocallyComplete && (mergedProfile.hasCompletedOnboarding || hasValidAlias)) {
+                localStorage.setItem('onboarding_completed', 'true');
+            }
         } else {
-            // Only show if strictly false (not undefined/null) OR if we are sure it's a new user
-            // But mergedProfile defaults hasCompletedOnboarding to false if it's missing in some paths.
-            // We'll trust the profile.
             setShowOnboarding(true);
         }
 
@@ -563,16 +566,15 @@ const App: React.FC = () => {
                     setUserProfile(updatedProfile);
                     setShowOnboarding(false);
                     if (user) {
-                        saveUserToSupabase(user.uid, { ...data, has_completed_onboarding: true });
+                        saveUserToSupabase(user.uid, { ...data, hasCompletedOnboarding: true });
                     }
                 }} />}
 
-                {(activeCallPeerId || incomingCall) && (
-                    <CallOverlay
-                        remotePeerId={activeCallPeerId || incomingCall?.peer}
-                        onClose={handleEndCall}
-                        isIncoming={!!incomingCall}
+                {incomingCall && (
+                    <IncomingCallModal
+                        callerId={incomingCall.peer}
                         onAccept={handleAcceptCall}
+                        onReject={handleEndCall}
                     />
                 )}
 
