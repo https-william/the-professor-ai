@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { ChatMessage, ChatState, UserProfile } from '../types';
 import { generateChatResponse } from '../services/geminiService';
 import { CameraScanner } from './CameraScanner';
 import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatViewProps {
   chatState: ChatState;
@@ -20,35 +21,57 @@ declare global {
   }
 }
 
+// --- Suggestions ---
+const INITIAL_SUGGESTIONS = [
+  "Summarize key points from the document",
+  "Explain the main concepts simply",
+  "Quiz me on this material"
+];
+
+const FOLLOWUP_SUGGESTIONS = [
+  "Explain that further",
+  "Give me an example"
+];
+
+// --- Custom Loader ---
+const Loader: React.FC = () => (
+  <svg
+    className="w-6 h-6 text-amber-500 animate-spin"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m4.9 4.9 2.9 2.9" className="opacity-30" />
+    <path d="M2 12h4" className="opacity-40" />
+    <path d="m4.9 19.1 2.9-2.9" className="opacity-50" />
+    <path d="M12 18v4" className="opacity-60" />
+    <path d="m16.2 16.2 2.9 2.9" className="opacity-70" />
+    <path d="M18 12h4" className="opacity-80" />
+    <path d="m16.2 7.8 2.9-2.9" className="opacity-90" />
+    <path d="M12 2v4" />
+  </svg>
+);
+
+// --- AI Icon ---
+const AIIcon: React.FC<{ small?: boolean }> = ({ small }) => (
+  <div className={`flex-shrink-0 ${small ? 'w-8 h-8' : 'w-12 h-12'} bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg`}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={`${small ? 'w-4 h-4' : 'w-6 h-6'} text-white`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+    </svg>
+  </div>
+);
+
 export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit, userProfile, onDeductCredits }) => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (chatState.messages.length === 0) {
-      const hasContext = chatState.fileContext && chatState.fileContext.trim().length > 0;
-      const fileName = chatState.fileName || 'your document';
-
-      let introText = "";
-      if (hasContext) {
-        introText = `I have analyzed ${fileName}. I am ready to answer any questions, verify your understanding, or debate the concepts within.`;
-      } else {
-        introText = "I am The Professor. I am ready to assist you with any academic subject, generate study plans, or explain complex topics. What are we studying today?";
-      }
-
-      const initMsg: ChatMessage = {
-        id: 'init',
-        role: 'model',
-        content: introText,
-        timestamp: Date.now()
-      };
-      onUpdate({ ...chatState, messages: [initMsg] });
-    }
-  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -81,7 +104,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit,
     setIsTyping(true);
 
     try {
-      const responseText = await generateChatResponse(newMessages, chatState.fileContext || "", userMsg.content);
+      const responseText = await generateChatResponse(newMessages, chatState.fileContext || "", userMsg.content, userProfile?.subscriptionTier);
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
@@ -101,6 +124,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit,
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    handleSend(suggestion);
   };
 
   const handleToggleSave = (msgId: string) => {
@@ -128,20 +155,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit,
     recognition.lang = 'en-US';
 
     recognition.onstart = () => setIsListening(true);
-
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setInput(prev => prev + (prev ? ' ' : '') + transcript);
     };
-
     recognition.onerror = (event: any) => {
       console.error("Speech error", event.error);
       setIsListening(false);
     };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
+    recognition.onend = () => setIsListening(false);
 
     recognitionRef.current = recognition;
     recognition.start();
@@ -153,28 +175,20 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit,
     handleSend(msg);
   };
 
-  const renderMarkdown = (text: string) => {
-    let processed = text;
-    // Basic image handling (allow specific format)
-    if (text.includes('[IMAGE_DATA:')) {
-      processed = text.replace(/\[IMAGE_DATA:(.*?)\]/g, '<img src="data:image/jpeg;base64,$1" class="max-w-full rounded-lg border border-white/20 my-2 shadow-lg" alt="Captured Content" />');
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-
-    // Sanitize using DOMPurify with strict config
-    const sanitized = DOMPurify.sanitize(processed, {
-      ADD_TAGS: ['img', 'code', 'pre', 'br', 'b', 'i', 'em', 'strong', 'ul', 'li', 'h1', 'h2', 'h3', 'blockquote'],
-      ADD_ATTR: ['src', 'class', 'alt']
-    });
-
-    if (window.marked) {
-      return { __html: window.marked.parse(sanitized) };
-    }
-    return { __html: sanitized };
   };
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-100px)] max-w-4xl mx-auto relative">
+  const hasMessages = chatState.messages.length > 0;
+  const hasContext = chatState.fileContext && chatState.fileContext.trim().length > 0;
+  const placeholder = hasContext ? "Ask about the document..." : "Ask anything…";
 
+  // --- RENDER ---
+  return (
+    <div className="flex flex-col h-[calc(100vh-100px)] max-w-3xl mx-auto relative bg-core rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
       {showCamera && (
         <CameraScanner
           onCapture={handleCameraCapture}
@@ -184,107 +198,170 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit,
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border-main bg-panel backdrop-blur-sm z-10 rounded-t-3xl">
+      <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#0a0a0c]/80 backdrop-blur-md z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-900/20 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-          </div>
+          <AIIcon small />
           <div>
-            <h2 className="font-bold text-text-pri text-sm uppercase tracking-wider">{chatState.fileName || 'Session'}</h2>
+            <h2 className="font-bold text-white text-sm uppercase tracking-wider">The Professor</h2>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-[10px] text-text-sec font-mono uppercase">Online</span>
+              <span className="text-[10px] text-gray-400 font-mono uppercase">Online</span>
             </div>
           </div>
         </div>
-        <button onClick={onExit} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg text-text-sec hover:text-text-pri transition-colors">
+        <button onClick={onExit} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar scroll-smooth">
-        {chatState.messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 relative group ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-panel border border-border-main text-text-pri rounded-tl-sm shadow-sm'}`}>
-              <div className="prose prose-invert prose-sm max-w-none leading-relaxed" dangerouslySetInnerHTML={renderMarkdown(msg.content)} />
+      {/* --- WELCOME VIEW --- */}
+      {!hasMessages ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-500/20 to-orange-500/10 rounded-full flex items-center justify-center mb-4 mx-auto border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)]">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">Ask The Professor</h1>
+            <p className="text-gray-400 text-sm max-w-xs mx-auto">
+              {hasContext ? `I've analyzed your document. Ask me anything about it.` : `I'm ready to help with any subject. What would you like to learn?`}
+            </p>
+          </div>
 
-              {/* Timestamp Footer */}
-              <div className="mt-2 flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                <span className="text-[9px] text-text-sec font-mono uppercase tracking-widest">
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                {msg.role === 'model' && (
-                  <button onClick={() => handleToggleSave(msg.id)} className={`ml-2 ${msg.isSaved ? 'text-amber-500' : 'text-gray-500 hover:text-text-pri'}`}>
-                    {msg.isSaved ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-                    )}
-                  </button>
-                )}
-              </div>
+          {/* Suggestions */}
+          <div className="w-full max-w-md space-y-3 mb-6">
+            {(hasContext ? INITIAL_SUGGESTIONS : ["Explain a complex topic simply", "Help me study for an exam", "Create a study plan for me"]).map((suggestion, i) => (
+              <button
+                key={i}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="w-full p-4 text-left bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-amber-500/30 transition-all text-sm text-gray-200 font-medium group"
+              >
+                <span className="group-hover:text-amber-400 transition-colors">{suggestion}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="w-full max-w-md">
+            <div className="relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-white outline-none focus:border-amber-500/50 transition-colors placeholder-gray-500"
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </button>
             </div>
           </div>
-        ))}
-
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-panel border border-border-main rounded-2xl rounded-tl-sm p-4 flex items-center gap-1">
-              <span className="w-2 h-2 bg-text-sec rounded-full animate-bounce"></span>
-              <span className="w-2 h-2 bg-text-sec rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-              <span className="w-2 h-2 bg-text-sec rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Area */}
-      <div className="p-4 bg-panel backdrop-blur-md border-t border-border-main rounded-b-3xl">
-        <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 p-2 rounded-2xl border border-border-main focus-within:border-amber-500/50 transition-colors shadow-lg">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={chatState.fileContext ? "Ask about the document..." : "Ask the Professor anything..."}
-            className="flex-1 bg-transparent text-text-pri outline-none text-sm font-medium px-2 py-1 placeholder-text-sec"
-          />
-
-          <button
-            onClick={() => setShowCamera(true)}
-            className="p-2.5 rounded-xl transition-all text-text-sec hover:text-text-pri bg-white/5 hover:bg-white/10"
-            title="Camera Scan"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
-          </button>
-
-          <button
-            onClick={handleVoiceInput}
-            className={`p-2.5 rounded-xl transition-all ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-text-sec hover:text-text-pri bg-white/5 hover:bg-white/10'}`}
-          >
-            {isListening ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.983 5.983 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" /></svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>
-            )}
-          </button>
-
-          <button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || isTyping}
-            className="p-2.5 bg-amber-600 text-white rounded-xl hover:bg-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center gap-1"
-          >
-            <span className="text-[10px] font-bold">1</span>
-            {/* Small Diamond Icon */}
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-          </button>
         </div>
-      </div>
+      ) : (
+        /* --- CONVERSATION VIEW --- */
+        <>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" ref={chatScrollerRef}>
+            {chatState.messages.map((msg) => (
+              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-3'}`}>
+                {msg.role === 'model' && <AIIcon small />}
+                <div className={`max-w-[80%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white/5 border border-white/10 text-gray-200 rounded-tl-sm'}`}>
+                  <div className="prose prose-invert prose-sm max-w-none leading-relaxed">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                  {/* Timestamp */}
+                  <div className="mt-2 flex items-center justify-end gap-2 opacity-50">
+                    <span className="text-[9px] font-mono uppercase tracking-widest">
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {msg.role === 'model' && (
+                      <button onClick={() => handleToggleSave(msg.id)} className={`${msg.isSaved ? 'text-amber-500' : 'text-gray-500 hover:text-white'}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill={msg.isSaved ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div className="flex justify-start gap-3">
+                <AIIcon small />
+                <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 flex items-center gap-2">
+                  <Loader />
+                  <span className="text-xs text-gray-400 font-mono uppercase">Thinking...</span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area with Follow-up Suggestions */}
+          <div className="p-4 bg-[#0a0a0c] border-t border-white/10">
+            {/* Follow-up Chips */}
+            <div className="flex gap-2 mb-3 overflow-x-auto pb-2 custom-scrollbar">
+              {FOLLOWUP_SUGGESTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSuggestionClick(s)}
+                  disabled={isTyping}
+                  className="flex-shrink-0 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs text-gray-300 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-400 transition-all disabled:opacity-50"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            {/* Main Input */}
+            <div className="flex items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/10 focus-within:border-amber-500/50 transition-colors">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                rows={1}
+                disabled={isTyping}
+                className="flex-1 bg-transparent text-white outline-none text-sm font-medium px-2 py-1 placeholder-gray-500 resize-none"
+              />
+
+              <button
+                onClick={() => setShowCamera(true)}
+                className="p-2 rounded-lg text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 transition-all"
+                title="Camera Scan"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
+              </button>
+
+              <button
+                onClick={handleVoiceInput}
+                className={`p-2 rounded-lg transition-all ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10'}`}
+              >
+                {isListening ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || isTyping}
+                className="p-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
