@@ -212,7 +212,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     }
 
     return (
-        <div className="fixed inset-0 bg-[#050505] z-50 flex flex-col animate-fade-in font-sans">
+        <div className="fixed inset-0 bg-[#050505] z-[100] flex flex-col animate-fade-in font-sans">
             {/* Call Overlay & Modals */}
             <CallOverlay
                 state={callState}

@@ -80,6 +80,8 @@ const ADMIN_EMAILS = [
 import { HelmetProvider } from 'react-helmet-async';
 import { SEOHead } from './SEOHead';
 
+import { SkeletonDashboard } from './skeletons/SkeletonDashboard';
+
 const App: React.FC = () => {
     const { user, loading } = useAuth();
     const { theme, setTheme } = useTheme();
@@ -525,8 +527,9 @@ const App: React.FC = () => {
         setPendingAction(null);
     };
 
+
     // --- RENDER ---
-    if (loading) return <div className="min-h-screen bg-core flex items-center justify-center text-white">Authenticating...</div>;
+    if (loading) return <SkeletonDashboard />;
     if (currentView === 'AUTH_CALLBACK') return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={(msg) => alert(msg)} />;
     if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
     if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => handleNavigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;

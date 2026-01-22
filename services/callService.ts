@@ -28,7 +28,7 @@ class CallService {
 
     public initialize(userId: string, onStateChange: (state: CallState) => void, onIncomingCall: (callerId: string, answer: () => Promise<void>) => void) {
         // Clean up inputs
-        const cleanId = userId.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        let cleanId = userId.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
         
         console.log("Initializing Peer with ID:", cleanId);
 
@@ -37,36 +37,52 @@ class CallService {
         this.onStateChange = onStateChange;
         this.onIncomingCall = onIncomingCall;
 
-        this.peer = new Peer(cleanId, {
-            debug: 2,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
+        const initPeer = (id: string, retryCount = 0) => {
+            if (retryCount > 3) {
+                this.updateState({ error: "Could not establish connection. Network identity failing." });
+                return;
             }
-        });
 
-        this.peer.on('open', (id) => {
-            console.log('Peer Setup Complete. ID:', id);
-        });
+            const peer = new Peer(id, {
+                debug: 2,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                }
+            });
 
-        this.peer.on('call', (call) => {
-            console.log("Incoming Call from:", call.peer);
-            this.updateState({ status: 'INCOMING', remotePeerId: call.peer });
-            
-            // Trigger UI prompt
-            if (this.onIncomingCall) {
-                this.onIncomingCall(call.peer, async () => {
-                    await this.answerCall(call);
-                });
-            }
-        });
+            peer.on('open', (peerId) => {
+                console.log('Peer Setup Complete. ID:', peerId);
+                this.peer = peer; // Only assign if successful
+            });
 
-        this.peer.on('error', (err) => {
-            console.error("Peer Error:", err);
-            this.updateState({ error: "Connection Error: " + err.type });
-        });
+            peer.on('call', (call) => {
+                console.log("Incoming Call from:", call.peer);
+                this.updateState({ status: 'INCOMING', remotePeerId: call.peer });
+                
+                if (this.onIncomingCall) {
+                    this.onIncomingCall(call.peer, async () => {
+                        await this.answerCall(call);
+                    });
+                }
+            });
+
+            peer.on('error', (err: any) => {
+                console.error("Peer Error:", err);
+                if (err.type === 'unavailable-id') {
+                     console.warn("ID taken, retrying with variation...");
+                     peer.destroy();
+                     const newId = `${cleanId}-${Math.floor(Math.random() * 1000)}`;
+                     initPeer(newId, retryCount + 1);
+                } else {
+                    this.updateState({ error: "Connection Error: " + err.type });
+                }
+            });
+        };
+
+        initPeer(cleanId);
     }
 
     private updateState(partial: Partial<CallState>) {

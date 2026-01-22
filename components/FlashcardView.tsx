@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { LoadingStream } from './ui/LoadingStream';
 import { QuizState, QuizQuestion, UserProfile } from '../types';
 import { generateQuizFromText } from '../services/geminiService';
 import { processFile } from '../services/fileService';
@@ -33,8 +34,12 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
     // Check if we need to show creation mode
     const showCreation = questions.length === 0;
 
+    // --- IMPROVED GENERATION LOGIC ---
+    const [error, setError] = useState<string | null>(null);
+
     const handleGenerate = async () => {
         if (!inputText.trim()) return;
+        setError(null);
 
         // Gatekeeper
         if (onDeductCredits) {
@@ -44,14 +49,18 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
 
         setIsGenerating(true);
         try {
-            const generatedQuestions = await generateQuizFromText(inputText, {
-                difficulty: 'Medium',
-                questionType: 'True/False', // Flashcards essentially
-                questionCount: 15,
-                timerDuration: 'Limitless',
-                personality: 'Academic',
-                analogyDomain: 'General'
-            });
+            // Enforce minimum 2.5s "Forging" animation for UX
+            const [generatedQuestions] = await Promise.all([
+                generateQuizFromText(inputText, {
+                    difficulty: 'Medium',
+                    questionType: 'True/False',
+                    questionCount: 15,
+                    timerDuration: 'Limitless',
+                    personality: 'Academic',
+                    analogyDomain: 'General'
+                }),
+                new Promise(resolve => setTimeout(resolve, 2500))
+            ]);
 
             if (onGenerate) {
                 onGenerate({
@@ -66,8 +75,9 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                     focusStrikes: 0
                 });
             }
-        } catch (e) {
-            alert("Failed to generate deck.");
+        } catch (e: any) {
+            console.error(e);
+            setError(e.message || "The Archives could not be reached. Try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -75,7 +85,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-
+            setError(null);
             if (onDeductCredits) {
                 const success = await onDeductCredits(5, "Flashcard Deck (File)");
                 if (!success) return;
@@ -85,14 +95,20 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
             try {
                 const file = e.target.files[0];
                 const processed = await processFile(file);
-                const generatedQuestions = await generateQuizFromText(processed.content, {
-                    difficulty: 'Medium',
-                    questionType: 'True/False',
-                    questionCount: 15,
-                    timerDuration: 'Limitless',
-                    personality: 'Academic',
-                    analogyDomain: 'General'
-                });
+
+                // Enforce minimum 2.5s wait
+                const [generatedQuestions] = await Promise.all([
+                    generateQuizFromText(processed.content, {
+                        difficulty: 'Medium',
+                        questionType: 'True/False',
+                        questionCount: 15,
+                        timerDuration: 'Limitless',
+                        personality: 'Academic',
+                        analogyDomain: 'General'
+                    }),
+                    new Promise(resolve => setTimeout(resolve, 2500))
+                ]);
+
                 if (onGenerate) {
                     onGenerate({
                         questions: generatedQuestions,
@@ -106,8 +122,8 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                         focusStrikes: 0
                     });
                 }
-            } catch (e) {
-                alert("Failed to process file.");
+            } catch (e: any) {
+                setError("Failed to decipher file: " + (e.message || "Unknown error"));
             } finally {
                 setIsGenerating(false);
             }
@@ -116,7 +132,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
 
     if (showCreation) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 max-w-lg mx-auto animate-fade-in relative">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 max-w-lg mx-auto animate-fade-in relative transition-all">
                 <div className="absolute inset-0 bg-gradient-to-b from-pink-500/10 to-transparent blur-[100px] pointer-events-none"></div>
 
                 <div className="w-20 h-20 bg-gradient-to-br from-pink-600 to-rose-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-pink-900/50 transform rotate-3">
@@ -126,13 +142,20 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                 <h3 className="text-3xl font-bold text-white mb-2 font-display">Flash Shards</h3>
                 <p className="text-gray-400 mb-8 text-sm">Convert notes into high-velocity recall cards. Cost: 5 NT</p>
 
-                <div className="w-full space-y-4 bg-black/40 border border-white/10 p-6 rounded-3xl backdrop-blur-md relative overflow-hidden">
+                {error && (
+                    <div className="w-full bg-red-500/10 border border-red-500/50 p-3 rounded-xl mb-4 text-red-400 text-xs font-bold animate-shake">
+                        {error}
+                    </div>
+                )}
+
+                <div className="w-full space-y-4 bg-black/40 border border-white/10 p-6 rounded-3xl backdrop-blur-md relative overflow-hidden group">
                     {/* Loading Overlay */}
                     {isGenerating && (
-                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-center p-4">
-                            <div className="w-10 h-10 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin mb-3"></div>
-                            <p className="text-white font-bold text-sm tracking-widest animate-pulse">Forging Knowledge...</p>
-                            <p className="text-gray-500 text-xs mt-1">This may take up to 20 seconds</p>
+                        <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-4">
+                            <div className="w-12 h-12 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin mb-4 shadow-[0_0_20px_rgba(236,72,153,0.3)]"></div>
+                            {/* Use LoadingStream for dynamic text */}
+                            <LoadingStream initialText="Forging Knowledge Shards..." />
+                            <p className="text-gray-600 text-[10px] mt-2 font-mono uppercase">Please Wait</p>
                         </div>
                     )}
 
@@ -157,7 +180,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating || !inputText.trim()}
-                            className="flex-[2] py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all shadow-lg disabled:opacity-50"
+                            className="flex-[2] py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all shadow-lg shadow-pink-900/20 disabled:opacity-50 hover:shadow-pink-500/40"
                         >
                             Generate Deck
                         </button>
