@@ -149,6 +149,10 @@
     box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
     color: var(--lg-text);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+
+    /* GPU Acceleration Hints */
+    will-change: transform, opacity;
+    transform: translateZ(0);
 }
 
 .glass-container--rounded {
@@ -452,6 +456,22 @@
     .button--glass:hover::before {
         transform: none;
         opacity: 0.3;
+    }
+}
+
+/* Mobile Performance: Reduce Blur */
+@media (max-width: 768px) {
+    :root {
+        --glass-blur: 12px;
+    }
+
+    .glass-filter {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .glass-container {
+        box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15), 0 0 10px rgba(0, 0, 0, 0.08);
     }
 }
 
