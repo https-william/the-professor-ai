@@ -369,6 +369,40 @@
 </head>
 
 <body>
+  <!-- iOS 26 Liquid Glass SVG Filters -->
+  <svg class="glass-filters" style="position:absolute;width:0;height:0;pointer-events:none;">
+    <defs>
+      <!-- Lens Distortion Filter -->
+      <filter id="lensFilter" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur" />
+        <feColorMatrix type="saturate" values="1.2" in="blur" result="saturated" />
+      </filter>
+
+      <!-- Liquid Glass Displacement Filter -->
+      <filter id="liquid-glass" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" seed="5" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+
+      <!-- Fresnel Reflection Filter -->
+      <filter id="fresnel" x="0%" y="0%" width="100%" height="100%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+        <feOffset in="blur" dx="0" dy="1" result="offsetBlur" />
+        <feComposite in="SourceGraphic" in2="offsetBlur" operator="over" />
+      </filter>
+
+      <!-- Glass Specular Highlight -->
+      <filter id="glass-specular" x="0%" y="0%" width="100%" height="100%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+        <feSpecularLighting in="blur" surfaceScale="5" specularConstant="0.75" specularExponent="20"
+          lighting-color="#fff" result="specular">
+          <fePointLight x="-5000" y="-10000" z="20000" />
+        </feSpecularLighting>
+        <feComposite in="SourceGraphic" in2="specular" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+      </filter>
+    </defs>
+  </svg>
+
   <div class="bg-noise"></div>
   <div id="root"></div>
   <div id="preloader-core">
