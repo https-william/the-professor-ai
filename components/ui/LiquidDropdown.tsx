@@ -10,8 +10,8 @@ interface LiquidDropdownProps {
 
 export const LiquidDropdown: React.FC<LiquidDropdownProps> = ({
     label,
-    value,
-    options,
+    value = "",
+    options = [],
     onChange,
     disabled = false
 }) => {
@@ -56,10 +56,11 @@ export const LiquidDropdown: React.FC<LiquidDropdownProps> = ({
         }
     };
 
-    // Determine display value (might be different from internal value)
-    const displayValue = value.includes('(Locked)')
-        ? value.replace(' (Locked)', '')
-        : value;
+    // Safe string handling
+    const safeValue = String(value || "");
+    const displayValue = safeValue.includes('(Locked)')
+        ? safeValue.replace(' (Locked)', '')
+        : safeValue;
 
     return (
         <div
@@ -75,19 +76,20 @@ export const LiquidDropdown: React.FC<LiquidDropdownProps> = ({
 
             {/* Options Panel */}
             <div className="drop-options">
-                {options.map((option) => {
-                    const isLocked = option.includes('(Locked)');
+                {Array.isArray(options) && options.map((option) => {
+                    const safeOption = String(option || "");
+                    const isLocked = safeOption.includes('(Locked)');
                     const displayOption = isLocked
-                        ? option.replace(' (Locked)', '')
-                        : option;
-                    const isActive = value === option || value === displayOption;
+                        ? safeOption.replace(' (Locked)', '')
+                        : safeOption;
+                    const isActive = safeValue === safeOption || safeValue === displayOption;
 
                     return (
                         <div
-                            key={option}
+                            key={safeOption}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (!isLocked) handleSelect(option);
+                                if (!isLocked) handleSelect(safeOption);
                             }}
                             className={`drop-item ${isActive ? 'active' : ''} ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
                         >
