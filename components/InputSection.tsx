@@ -5,6 +5,7 @@ import { processFile } from '../services/fileService';
 import { DuelCreateModal } from './DuelCreateModal';
 import { DuelJoinModal } from './DuelJoinModal';
 import { getModeCost } from '../services/creditService';
+import { LiquidDropdown } from './ui/LiquidDropdown';
 
 interface InputSectionProps {
   onProcess: (processedFile: ProcessedFile, config: QuizConfig, mode: AppMode) => void;
@@ -261,11 +262,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
           <div id="exam-config-target" className="border-b border-border-main bg-panel z-20 flex-shrink-0 backdrop-blur-md p-4">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex flex-wrap w-full md:w-auto -m-1">
-                  <ConfigPill label="Difficulty" value={difficulty} setter={setDifficulty} options={["Easy", "Medium", "Hard", isExcellentia ? "Nightmare" : "Nightmare (Locked)"]} disabled={difficulty === 'Nightmare' && !isExcellentia} />
-                  <ConfigPill label="Question Type" value={questionType} setter={setQuestionType} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
-                  <ConfigPill label="Timer" value={timerDuration} setter={setTimerDuration} options={["Limitless", "5m", "10m", "30m", "1h"]} />
-                  <ConfigPill label="Count" value={questionCount} setter={(v: string) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
+                <div className="flex flex-wrap w-full md:w-auto gap-2">
+                  <LiquidDropdown label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as Difficulty)} options={["Easy", "Medium", "Hard", isExcellentia ? "Nightmare" : "Nightmare (Locked)"]} disabled={difficulty === 'Nightmare' && !isExcellentia} />
+                  <LiquidDropdown label="Type" value={questionType} onChange={(v) => setQuestionType(v as QuestionType)} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
+                  <LiquidDropdown label="Timer" value={timerDuration} onChange={(v) => setTimerDuration(v as TimerDuration)} options={["Limitless", "5m", "10m", "30m", "1h"]} />
+                  <LiquidDropdown label="Count" value={String(questionCount)} onChange={(v) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
                 </div>
 
                 <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
