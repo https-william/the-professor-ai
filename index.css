@@ -1,0 +1,190 @@
+/* ================================================
+   LIQUID GLASS DESIGN SYSTEM
+   Inspired by Apple's iOS Liquid Glass aesthetic
+   ================================================ */
+
+/* --- CSS Custom Properties --- */
+:root {
+    /* Liquid Glass Core Variables */
+    --glass-frost: 0.08;
+    --glass-saturation: 1.3;
+    --glass-blur: 20px;
+    --glass-border-light: rgba(255, 255, 255, 0.15);
+    --glass-border-dark: rgba(255, 255, 255, 0.08);
+    --glass-shadow-light: 
+        inset 0 0 2px 1px rgba(255, 255, 255, 0.35),
+        inset 0 0 10px 4px rgba(255, 255, 255, 0.15),
+        0 8px 32px rgba(0, 0, 0, 0.1);
+    --glass-shadow-dark:
+        inset 0 0 2px 1px rgba(255, 255, 255, 0.12),
+        inset 0 0 8px 3px rgba(255, 255, 255, 0.06),
+        inset 0 4px 16px rgba(17, 17, 26, 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Liquid Glass Base Class --- */
+.liquid-glass {
+    position: relative;
+    background: hsl(0 0% 100% / var(--glass-frost));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    border: 1px solid var(--glass-border-dark);
+    box-shadow: var(--glass-shadow-dark);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .liquid-glass {
+    background: hsl(0 0% 0% / var(--glass-frost));
+    border-color: var(--glass-border-dark);
+    box-shadow: var(--glass-shadow-dark);
+}
+
+/* Light mode override */
+:root:not(.dark) .liquid-glass {
+    background: hsl(0 0% 100% / 0.6);
+    border-color: var(--glass-border-light);
+    box-shadow: var(--glass-shadow-light);
+}
+
+/* --- Liquid Glass Variants --- */
+
+/* Card variant - for content containers */
+.liquid-glass-card {
+    --glass-frost: 0.06;
+    --glass-blur: 24px;
+    border-radius: 1.5rem;
+}
+
+/* Panel variant - for sidebars and modals */
+.liquid-glass-panel {
+    --glass-frost: 0.12;
+    --glass-blur: 32px;
+    border-radius: 2rem;
+}
+
+/* Button variant */
+.liquid-glass-btn {
+    --glass-frost: 0.1;
+    --glass-blur: 16px;
+    border-radius: 9999px;
+    cursor: pointer;
+}
+
+.liquid-glass-btn:hover {
+    --glass-frost: 0.15;
+    transform: translateY(-1px);
+    box-shadow: 
+        inset 0 0 2px 1px rgba(255, 255, 255, 0.25),
+        inset 0 0 12px 4px rgba(255, 255, 255, 0.12),
+        0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.liquid-glass-btn:active {
+    transform: translateY(1px);
+}
+
+/* Input variant */
+.liquid-glass-input {
+    --glass-frost: 0.05;
+    --glass-blur: 12px;
+    border-radius: 1rem;
+    outline: none;
+}
+
+.liquid-glass-input:focus {
+    border-color: var(--accent-solid);
+    box-shadow: 
+        inset 0 0 2px 1px rgba(59, 130, 246, 0.3),
+        0 0 20px rgba(59, 130, 246, 0.15);
+}
+
+/* Floating variant - for FABs and prominent elements */
+.liquid-glass-float {
+    --glass-frost: 0.15;
+    --glass-blur: 20px;
+    border-radius: 9999px;
+    box-shadow: 
+        inset 0 0 3px 1px rgba(255, 255, 255, 0.2),
+        inset 0 2px 10px rgba(255, 255, 255, 0.1),
+        0 10px 40px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* --- Accent Glow Effects --- */
+.glass-glow-blue {
+    box-shadow: 
+        var(--glass-shadow-dark),
+        0 0 30px rgba(59, 130, 246, 0.2);
+}
+
+.glass-glow-amber {
+    box-shadow: 
+        var(--glass-shadow-dark),
+        0 0 30px rgba(245, 158, 11, 0.2);
+}
+
+.glass-glow-pink {
+    box-shadow: 
+        var(--glass-shadow-dark),
+        0 0 30px rgba(236, 72, 153, 0.2);
+}
+
+/* --- Glass Surface Shine --- */
+.liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 40%,
+        transparent 60%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* --- Custom Scrollbar for Glass Containers --- */
+.liquid-glass ::-webkit-scrollbar {
+    width: 6px;
+    background: transparent;
+}
+
+.liquid-glass ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.liquid-glass ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* --- Animation Utilities --- */
+@keyframes glass-shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+.glass-shimmer {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: glass-shimmer 3s infinite linear;
+}
+
+/* --- Mobile Touch Optimization --- */
+@media (hover: none) {
+    .liquid-glass-btn:hover {
+        transform: none;
+    }
+    
+    .liquid-glass-btn:active {
+        --glass-frost: 0.18;
+        transform: scale(0.98);
+    }
+}

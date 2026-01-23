@@ -188,7 +188,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit,
 
   // --- RENDER ---
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] max-w-3xl mx-auto relative bg-core rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+    <div className="flex flex-col h-[calc(100vh-100px)] max-w-3xl mx-auto relative liquid-glass liquid-glass-panel overflow-hidden shadow-2xl">
       {showCamera && (
         <CameraScanner
           onCapture={handleCameraCapture}
