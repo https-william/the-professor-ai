@@ -239,64 +239,74 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
     };
 
     return (
-        <div className="max-w-md mx-auto h-[80vh] flex flex-col relative px-4">
-            {/* Header */}
-            <div className="flex justify-between items-center py-6">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-white">Deck Active</span>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={handleShare} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-pink-400 hover:text-white transition-colors">
-                        {isSharing ? '...' : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                        )}
-                    </button>
-                    <button onClick={() => onExit(true)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">✕</button>
-                </div>
-            </div>
+        <div className="max-w-md mx-auto h-[80vh] flex flex-col relative px-4 glass-container">
+            {/* Glass Layers */}
+            <div className="glass-filter" />
+            <div className="glass-overlay" />
+            <div className="glass-specular" />
 
-            {/* Card Stack Area */}
-            <div className="flex-1 relative flex items-center justify-center perspective-1000">
-                {/* Background Hints of Cards */}
-                <div className="absolute inset-x-8 top-12 bottom-4 bg-white/5 rounded-[2rem] scale-90 translate-y-4 opacity-50"></div>
-                <div className="absolute inset-x-6 top-10 bottom-6 bg-white/5 rounded-[2rem] scale-95 translate-y-2 opacity-70"></div>
-
-                {/* Active Card */}
-                <div
-                    className={`absolute inset-0 w-full h-full transition-all duration-500 transform-style-3d cursor-pointer ${flipped ? 'rotate-y-180' : ''} ${swipeDirection === 'LEFT' ? '-translate-x-[120%] rotate-[-20deg] opacity-0' : swipeDirection === 'RIGHT' ? 'translate-x-[120%] rotate-[20deg] opacity-0' : ''}`}
-                    onClick={() => setFlipped(!flipped)}
-                >
-                    {/* Front */}
-                    <div className="absolute inset-0 backface-hidden bg-[#121212] border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center shadow-2xl">
-                        <div className="absolute top-6 left-6 text-pink-500/50 text-xs font-mono">Q.{currentIndex + 1}</div>
-                        <h3 className="text-xl md:text-2xl font-medium text-white leading-relaxed select-none">{currentQ.question}</h3>
-                        <p className="absolute bottom-8 text-[10px] text-gray-600 font-bold uppercase tracking-widest">Tap to Flip</p>
+            {/* Content */}
+            <div className="glass-content flex flex-col h-full p-0">
+                {/* Header */}
+                <div className="flex justify-between items-center py-6">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs font-bold uppercase tracking-widest text-white">Deck Active</span>
                     </div>
+                    <div className="flex gap-2">
+                        <button onClick={handleShare} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-pink-400 hover:text-white transition-colors">
+                            {isSharing ? '...' : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                            )}
+                        </button>
+                        <button onClick={() => onExit(true)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">✕</button>
+                    </div>
+                </div>
 
-                    {/* Back */}
-                    <div className="absolute inset-0 backface-hidden bg-[#0a0a0a] border border-pink-500/30 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center shadow-2xl rotate-y-180">
-                        <div className="w-12 h-12 bg-pink-900/20 rounded-full flex items-center justify-center mb-6 text-pink-500 border border-pink-500/20">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                {/* Card Stack Area */}
+                <div className="flex-1 relative flex items-center justify-center perspective-1000">
+                    {/* Background Hints of Cards */}
+                    <div className="absolute inset-x-8 top-12 bottom-4 bg-white/5 rounded-[2rem] scale-90 translate-y-4 opacity-50"></div>
+                    <div className="absolute inset-x-6 top-10 bottom-6 bg-white/5 rounded-[2rem] scale-95 translate-y-2 opacity-70"></div>
+
+                    {/* Active Card */}
+                    <div
+                        className={`absolute inset-0 w-full h-full transition-all duration-500 transform-style-3d cursor-pointer ${flipped ? 'rotate-y-180' : ''} ${swipeDirection === 'LEFT' ? '-translate-x-[120%] rotate-[-20deg] opacity-0' : swipeDirection === 'RIGHT' ? 'translate-x-[120%] rotate-[20deg] opacity-0' : ''}`}
+                        onClick={() => setFlipped(!flipped)}
+                    >
+                        {/* Front */}
+                        <div className="absolute inset-0 backface-hidden bg-[#121212] border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center shadow-2xl">
+                            <div className="absolute top-6 left-6 text-pink-500/50 text-xs font-mono">Q.{currentIndex + 1}</div>
+                            <h3 className="text-xl md:text-2xl font-medium text-white leading-relaxed select-none">{currentQ.question}</h3>
+                            <p className="absolute bottom-8 text-[10px] text-gray-600 font-bold uppercase tracking-widest">Tap to Flip</p>
                         </div>
-                        <h3 className="text-lg font-bold text-white leading-relaxed mb-2 select-none">{currentQ.correct_answer}</h3>
-                        <p className="text-sm text-gray-400 select-none">{currentQ.explanation}</p>
+
+                        {/* Back */}
+                        <div className="absolute inset-0 backface-hidden bg-[#0a0a0a] border border-pink-500/30 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center shadow-2xl rotate-y-180">
+                            <div className="w-12 h-12 bg-pink-900/20 rounded-full flex items-center justify-center mb-6 text-pink-500 border border-pink-500/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                            </div>
+                            <h3 className="text-lg font-bold text-white leading-relaxed mb-2 select-none">{currentQ.correct_answer}</h3>
+                            <p className="text-sm text-gray-400 select-none">{currentQ.explanation}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Controls */}
-            <div className="h-24 flex items-center justify-center gap-8 pb-6">
-                <button onClick={() => handleSwipe('LEFT')} className="p-4 bg-black/40 border border-white/10 rounded-full text-red-500 hover:bg-red-500 hover:text-white transition-all hover:scale-110 active:scale-95 shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-                <div className="text-xs font-mono text-gray-500">{currentIndex + 1} / {questions.length}</div>
-                <button onClick={() => handleSwipe('RIGHT')} className="p-4 bg-black/40 border border-white/10 rounded-full text-green-500 hover:bg-green-500 hover:text-white transition-all hover:scale-110 active:scale-95 shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                </button>
+                {/* Controls */}
+                <div className="h-24 flex items-center justify-center gap-8 pb-6">
+                    <button onClick={() => handleSwipe('LEFT')} className="p-4 bg-black/40 border border-white/10 rounded-full text-red-500 hover:bg-red-500 hover:text-white transition-all hover:scale-110 active:scale-95 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                    <div className="text-xs font-mono text-gray-500">{currentIndex + 1} / {questions.length}</div>
+                    <button onClick={() => handleSwipe('RIGHT')} className="p-4 bg-black/40 border border-white/10 rounded-full text-green-500 hover:bg-green-500 hover:text-white transition-all hover:scale-110 active:scale-95 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    </button>
+                </div>
             </div>
         </div>
+        </div >
     );
 };
 
 export default FlashcardView;
+
