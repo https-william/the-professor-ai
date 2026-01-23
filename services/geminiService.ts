@@ -3,8 +3,8 @@ import { QuizQuestion, QuizConfig, ProfessorSection, ChatMessage, LockInTechniqu
 import { callDeepSeek } from "./deepSeekService";
 import { createRateLimiter } from '../utils/security';
 
-// Rate Limiter: 10 requests per minute
-const rateLimiter = createRateLimiter(10, 60000);
+// Rate Limiter: 60 requests per minute (scaled for 900 users)
+const rateLimiter = createRateLimiter(60, 60000);
 
 // --- SECURITY & QUEUE SYSTEM ---
 
@@ -73,7 +73,7 @@ const callGroq = async (messages: any[], systemPrompt: string, jsonMode: boolean
 class RequestQueue {
     private queue: { task: () => Promise<any>, resolve: Function, reject: Function, tier: SubscriptionTier }[] = [];
     private activeRequests = 0;
-    private CONCURRENCY_LIMIT = 2;
+    private CONCURRENCY_LIMIT = 5; // Scaled for 900 users
     
     async add<T>(task: () => Promise<T>, tier: SubscriptionTier = 'Fresher'): Promise<T> {
         return new Promise((resolve, reject) => {
