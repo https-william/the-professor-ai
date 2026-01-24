@@ -39,6 +39,7 @@ import { processFile } from '../services/fileService';
 import { getModeCost } from '../services/creditService';
 import { callService } from '../services/callService';
 import { LegalPage } from './LegalPage';
+import { NotFound } from './NotFound';
 import { initAnalytics, trackEvent, identifyUser, trackPageView } from '../services/analytics';
 import { startHydraEngine } from '../services/syncService';
 
@@ -46,15 +47,33 @@ function lazyRetry(componentImport: () => Promise<any>, retries = 3): React.Lazy
     return React.lazy(async () => {
         return new Promise((resolve, reject) => {
             const attempt = (left: number) => {
-                componentImport()
+                // Add cache-busting timestamp to force fresh fetch on retry
+                const importWithCacheBust = left < retries
+                    ? () => componentImport().catch(() => {
+                        // Clear module cache and retry with timestamp
+                        const timestamp = Date.now();
+                        return import(/* @vite-ignore */ `${window.location.origin}/assets/chunk-${timestamp}.js`)
+                            .catch(() => componentImport()); // Fallback to original
+                    })
+                    : componentImport;
+
+                importWithCacheBust()
                     .then(resolve)
                     .catch((error) => {
                         if (left === 0) {
-                            reject(error);
+                            console.error('Chunk load failed after all retries:', error);
+                            // Instead of crashing, resolve with a fallback component
+                            resolve({
+                                default: () => {
+                                    window.location.reload();
+                                    return null;
+                                }
+                            });
                             return;
                         }
                         console.warn(`Chunk load failed, retrying... (${left} attempts left)`);
-                        setTimeout(() => attempt(left - 1), 1000);
+                        // Exponential backoff: 1s, 2s, 4s
+                        setTimeout(() => attempt(left - 1), 1000 * Math.pow(2, retries - left));
                     });
             };
             attempt(retries);
@@ -69,7 +88,7 @@ const FlashcardView = lazyRetry(() => import('./FlashcardView'));
 const AdminDashboard = lazyRetry(() => import('./AdminDashboard'));
 const TheHub = lazyRetry(() => import('./TheHub'));
 
-type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK' | 'LEGAL';
+type ViewState = 'LANDING' | 'PRICING' | 'AUTH' | 'ADMIN_LOGIN' | 'APP' | 'CHECKOUT' | 'SHARED' | 'AUTH_CALLBACK' | 'LEGAL' | 'NOT_FOUND';
 
 const ADMIN_EMAILS = [
     'popoolaariseoluwa@gmail.com',
@@ -250,10 +269,42 @@ const App: React.FC = () => {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
+            const pathname = window.location.pathname;
+
+            // Valid paths in the app
+            const validPaths = ['/', '/login', '/pricing', '/legal', '/share', '/admin', '/callback'];
+            const isValidPath = validPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
+
+            // Route handling
             if (params.has('code')) setCurrentView('AUTH_CALLBACK');
             else if (window.location.hash.includes('access_token')) setCurrentView('AUTH_CALLBACK');
-            else if (window.location.pathname === '/login') setCurrentView('AUTH');
-            else if (user) setCurrentView('APP');
+            else if (pathname === '/login') {
+                // If user is logged in but on /login, redirect to app
+                if (user) {
+                    window.history.replaceState({}, '', '/');
+                    setCurrentView('APP');
+                } else {
+                    setCurrentView('AUTH');
+                }
+            }
+            else if (pathname === '/pricing') setCurrentView('PRICING');
+            else if (pathname === '/legal') setCurrentView('LEGAL');
+            else if (pathname.startsWith('/share/')) {
+                const id = pathname.split('/share/')[1];
+                if (id) {
+                    setShareId(id);
+                    setCurrentView('SHARED');
+                }
+            }
+            else if (pathname === '/admin') setCurrentView('ADMIN_LOGIN');
+            else if (pathname === '/' || isValidPath) {
+                if (user) setCurrentView('APP');
+                else setCurrentView('LANDING');
+            }
+            else {
+                // Unknown path - show 404
+                setCurrentView('NOT_FOUND');
+            }
         }
     }, [user]);
 
@@ -541,6 +592,7 @@ const App: React.FC = () => {
     if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => handleNavigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); handleNavigate('APP', '/'); }} />;
     if (currentView === 'AUTH' && !user) return <AuthPage />;
     if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => { trackEvent('landing_enter_click'); handleNavigate('AUTH', '/login'); }} onPricing={() => handleNavigate('PRICING', '/pricing')} onLegal={() => handleNavigate('LEGAL', '/legal')} />;
+    if (currentView === 'NOT_FOUND') return <NotFound onGoHome={() => handleNavigate('LANDING', '/')} />;
 
     const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
 

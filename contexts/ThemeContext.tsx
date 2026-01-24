@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { UserProfile } from '../types';
 
-type Theme = 'Light' | 'Dark' | 'System';
+// Simplified Theme - Dark mode only for The Professor
+// The app is designed exclusively for dark mode with glass effects
+type Theme = 'Dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -11,58 +12,37 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'System',
-  setTheme: () => {},
-  isDark: true,
+  theme: 'Dark',
+  setTheme: () => { },
+  isDark: true, // Always true
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Attempt to load from storage or default to System
-    const saved = localStorage.getItem('app_theme') as Theme;
-    return saved === 'Light' || saved === 'Dark' ? saved : 'System';
-  });
-
-  const [isDark, setIsDark] = useState(true);
+  // Force dark mode - no light theme option
+  const [theme] = useState<Theme>('Dark');
+  const isDark = true; // Always dark
 
   useEffect(() => {
     const root = document.documentElement;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-    const applyTheme = () => {
-      let activeDark = false;
-      if (theme === 'System') {
-        activeDark = mediaQuery.matches;
-      } else {
-        activeDark = theme === 'Dark';
-      }
+    // Always apply dark mode
+    root.classList.add('dark');
+    root.classList.remove('light');
 
-      if (activeDark) {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-      
-      // Update meta theme-color for mobile browsers
-      const metaThemeColor = document.querySelector("meta[name='theme-color']");
-      if (metaThemeColor) {
-          metaThemeColor.setAttribute("content", activeDark ? "#050505" : "#F9F7F2");
-      }
+    // Update meta theme-color for mobile browsers (dark only)
+    const metaThemeColor = document.querySelector("meta[name='theme-color']");
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", "#050505");
+    }
 
-      setIsDark(activeDark);
-    };
+    // Store preference (always dark)
+    localStorage.setItem('app_theme', 'Dark');
+  }, []);
 
-    applyTheme();
-    localStorage.setItem('app_theme', theme);
-
-    // Listen for system changes if in system mode
-    const listener = () => {
-      if (theme === 'System') applyTheme();
-    };
-    mediaQuery.addEventListener('change', listener);
-
-    return () => mediaQuery.removeEventListener('change', listener);
-  }, [theme]);
+  // setTheme is a no-op since we only support dark mode
+  const setTheme = () => {
+    // Dark mode only - ignore theme changes
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, isDark }}>
