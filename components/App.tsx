@@ -234,6 +234,7 @@ const App: React.FC = () => {
         setIsAdminUnlocked(true);
         setAppMode('ADMIN');
         setStatus(AppStatus.READY);
+        setCurrentView('APP');
     }, []);
 
     const handleGoToCheckout = useCallback(async (tier: SubscriptionTier) => {

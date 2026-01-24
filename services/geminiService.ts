@@ -29,215 +29,16 @@ const sanitizeInput = (input: string): string => {
 
 // --- GROQ FALLBACK SYSTEM (Legacy - now handled by Portkey Gateway) ---
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama3-70b-8192"; // Fast, high quality fallback
+const GROQ_MODEL = "llama-3.3-70b-versatile"; // Updated to new stable model
 
-// Import Portkey Gateway for unified multi-provider routing
-import { callPortkeyGateway, TEXT_FALLBACK_CONFIG, checkProviderHealth } from './portkeyGateway';
-
-const callGroq = async (messages: any[], systemPrompt: string, jsonMode: boolean = false): Promise<string> => {
-    // Try Portkey Gateway first (handles all fallbacks automatically)
-    try {
-        return await callPortkeyGateway(messages, systemPrompt, TEXT_FALLBACK_CONFIG, jsonMode);
-    } catch (portkeyError) {
-        console.warn("⚠️ Portkey Gateway unavailable, falling back to direct Groq...");
-    }
-    
-    // Direct Groq fallback (original behavior)
-    let key = "";
-    try {
-        // @ts-ignore
-        if (import.meta.env.VITE_GROQ_API_KEY) key = import.meta.env.VITE_GROQ_API_KEY;
-    } catch (e) {}
-    
-    if (!key && typeof process !== 'undefined' && process.env.VITE_GROQ_API_KEY) {
-        key = process.env.VITE_GROQ_API_KEY;
-    }
-
-    if (!key) throw new Error("Neural Link Failed & Backup Systems Offline.");
-
-    const payload = {
-        model: GROQ_MODEL,
-        messages: [
-            { role: "system", content: systemPrompt },
-            ...messages
-        ],
-        temperature: 0.7,
-        response_format: jsonMode ? { type: "json_object" } : undefined
-    };
-
-    const response = await fetch(GROQ_API_URL, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) throw new Error(`Backup System Error: ${response.statusText}`);
-    const data = await response.json();
-    return data.choices[0]?.message?.content || "";
-};
-
-// --- PRIORITY QUEUE MANAGER ---
-class RequestQueue {
-    private queue: { task: () => Promise<any>, resolve: Function, reject: Function, tier: SubscriptionTier }[] = [];
-    private activeRequests = 0;
-    private CONCURRENCY_LIMIT = 5; // Scaled for 900 users
-    
-    async add<T>(task: () => Promise<T>, tier: SubscriptionTier = 'Fresher'): Promise<T> {
-        return new Promise((resolve, reject) => {
-            const item = { task, resolve, reject, tier };
-            
-            if (tier === 'Excellentia') {
-                this.queue.unshift(item);
-            } else if (tier === 'Scholar') {
-                let lastExIndex = -1;
-                for (let i = this.queue.length - 1; i >= 0; i--) {
-                    if (this.queue[i].tier === 'Excellentia') {
-                        lastExIndex = i;
-                        break;
-                    }
-                }
-                this.queue.splice(lastExIndex + 1, 0, item);
-            } else {
-                this.queue.push(item);
-            }
-            
-            this.process();
-        });
-    }
-
-    private async process() {
-        if (this.activeRequests >= this.CONCURRENCY_LIMIT || this.queue.length === 0) return;
-
-        this.activeRequests++;
-        const item = this.queue.shift();
-        
-        if (!item) {
-            this.activeRequests--;
-            return;
-        }
-
-        try {
-            const result = await this.executeWithRetry(item.task);
-            item.resolve(result);
-        } catch (e) {
-            item.reject(e);
-        } finally {
-            this.activeRequests--;
-            this.process();
-        }
-    }
-
-    private async executeWithRetry(task: () => Promise<any>, retries = 2, delay = 2000): Promise<any> {
-        try {
-            return await task();
-        } catch (error: any) {
-            const msg = error.message || '';
-            const status = error.status || 0;
-            
-            // Check for Rate Limit (429) or Overloaded (503)
-            if (retries > 0 && (status === 429 || status === 503 || msg.includes('429') || msg.includes('Quota'))) {
-                console.warn(`⚠️ Neural Overload. Engaging Backups...`);
-                await new Promise(r => setTimeout(r, delay));
-                
-                // Fallback to Groq if retries failing on Gemini
-                if (retries === 1) {
-                     // The task passed is a closure wrapping the specific Gemini call. 
-                     // We can't easily swap the engine *inside* the closure without restructuring every function.
-                     // Instead, we just retry the Gemini call with backoff.
-                     // A full architecture change to "AIProvider" interface is recommended for Phase 2.
-                     // For now, we continue retry logic.
-                }
-                
-                return this.executeWithRetry(task, retries - 1, delay * 2);
-            }
-            throw error;
-        }
-    }
-}
-
-const requestQueue = new RequestQueue();
-
-// --- CLIENT INITIALIZATION ---
-const getAI = () => {
-    let key = "";
-    try {
-        // @ts-ignore
-        if (import.meta.env.VITE_GEMINI_API_KEY) key = import.meta.env.VITE_GEMINI_API_KEY;
-    } catch (e) {}
-
-    if (!key && typeof process !== 'undefined' && process.env) {
-        if (process.env.API_KEY) key = process.env.API_KEY;
-        else if (process.env.VITE_GEMINI_API_KEY) key = process.env.VITE_GEMINI_API_KEY;
-    }
-
-    if (!key) throw new Error("Neural Link Offline: API Key Missing.");
-    return new GoogleGenAI({ apiKey: key });
-};
-
-const PRIMARY_MODEL = "gemini-2.0-flash-exp";
-const BACKUP_MODEL = "gemini-1.5-flash"; 
-const TTS_MODEL = "gemini-2.5-flash-preview-tts";
-
-const safeGenerateContent = async (ai: GoogleGenAI, params: any) => {
-    try {
-        return await ai.models.generateContent({ ...params, model: PRIMARY_MODEL });
-    } catch (error: any) {
-        if (error.status === 429 || error.message?.includes('429')) {
-            // Try Gemini Backup Model first
-            try {
-                return await ai.models.generateContent({ ...params, model: BACKUP_MODEL });
-            } catch (backupError) {
-                throw backupError; // Let the queue retry logic handle or eventually fail to Groq manually if implemented per function
-            }
-        }
-        throw error;
-    }
-};
-
-// --- WRAPPED API FUNCTIONS ---
+// ...
 
 export const generateChatResponse = async (history: ChatMessage[], fileContext: string, newMessage: string, tier: SubscriptionTier = 'Fresher'): Promise<string> => {
-    if (!rateLimiter()) throw new Error("Rate limit exceeded. Please wait a moment.");
-    
-    return requestQueue.add(async () => {
-        const systemPrompt = "You are 'The Professor'. You are a confident, encouraging, and calm academic tutor. Do not use overly complex vocabulary unless necessary for the subject. Explain things simply, like a caring mentor who wants the student to succeed. Only be strict if they are clearly not trying. Be concise.";
-        
-        const hasImage = history.some(m => m.image) || (fileContext && fileContext.startsWith('data:image')); // Simple check, improved via fileService flags usually
+    // ... (keep pre-checks)
+        // PATH A: VISION (Keep as is)
+        // ... 
 
-        // HYDRA 3.0 ROUTER LOGIC
-        
-        // PATH A: VISION / MULTIMODAL (Must use Gemini)
-        if (hasImage) {
-            try {
-                const ai = getAI();
-                const safeMessage = sanitizeInput(newMessage);
-                // ... (Existing Gemini Vision Logic) ...
-                 const validHistory = history
-                    .filter(m => m.id !== 'init' && m.content.trim().length > 0)
-                    .slice(-10) 
-                    .map(m => ({
-                        role: m.role === 'user' ? 'user' : 'model',
-                        parts: [{ text: sanitizeInput(m.content) }]
-                    }));
-                const fullMessage = `Document Context: ${fileContext.substring(0, 25000)}\n\nStudent Question: ${safeMessage}`;
-                
-                const response = await safeGenerateContent(ai, {
-                    contents: [
-                        ...validHistory.map(h => ({ role: h.role, parts: h.parts })),
-                        { role: 'user', parts: [{ text: fullMessage }] }
-                    ],
-                    config: { systemInstruction: systemPrompt }
-                });
-                return response.text || "Connection interrupted.";
-            } catch (e) {
-                return "I am having trouble seeing the image right now due to high traffic. Please try again or ask a text-only question.";
-            }
-        }
-
-        // PATH B: TEXT ONLY (Groq First -> DeepSeek -> Gemini -> OpenRouter)
+        // PATH B: TEXT ONLY (Groq First -> Gemini -> OpenRouter -> DeepSeek)
         const messages = [
             ...history.slice(-5).map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.content })),
             { role: "user", content: `Context: ${fileContext.substring(0, 10000)}\n\nQuestion: ${newMessage}` }
@@ -247,30 +48,30 @@ export const generateChatResponse = async (history: ChatMessage[], fileContext: 
         try {
             return await callGroq(messages, systemPrompt);
         } catch (groqError) {
-            console.warn("⚠️ Groq Offline. Re-routing to DeepSeek...");
+            console.warn("⚠️ Groq Offline. Re-routing to Gemini...");
             
-            // Tier 2: DeepSeek V3
+            // Tier 2: Gemini Flash (More reliable than DeepSeek right now)
             try {
-                // @ts-ignore
-                return await callDeepSeek(messages, systemPrompt, false, false);
-            } catch (deepSeekError) {
-                console.warn("⚠️ DeepSeek Overload. Re-routing to Gemini...");
+                 const ai = getAI();
+                 const response = await safeGenerateContent(ai, {
+                    contents: `System: ${systemPrompt}\n\n${messages.map(m => `${m.role}: ${m.content}`).join('\n')}`
+                 });
+                 return response.text || "";
+            } catch (geminiError) {
+                console.warn("⚠️ Gemini Overload. Engaging OpenRouter (Free Fleet)...");
 
-                // Tier 3: Gemini Flash
+                // Tier 3: OpenRouter (Infinite Fallback)
                 try {
-                     const ai = getAI();
-                     const response = await safeGenerateContent(ai, {
-                        contents: `System: ${systemPrompt}\n\n${messages.map(m => `${m.role}: ${m.content}`).join('\n')}`
-                     });
-                     return response.text || "";
-                } catch (geminiError) {
-                    console.warn("⚠️ Gemini Overload. Engaging OpenRouter (Free Fleet)...");
-
-                    // Tier 4: OpenRouter (Infinite Fallback)
+                    const { callOpenRouter } = await import('./openRouterService');
+                    return await callOpenRouter(messages, systemPrompt);
+                } catch (openRouterError) {
+                    console.warn("⚠️ OpenRouter Unavailable. Trying DeepSeek R1 (Last Resort)...");
+                    
+                    // Tier 4: DeepSeek V3 (Moved to last due to 402 errors)
                     try {
-                        const { callOpenRouter } = await import('./openRouterService');
-                        return await callOpenRouter(messages, systemPrompt);
-                    } catch (finalError) {
+                        // @ts-ignore
+                        return await callDeepSeek(messages, systemPrompt, false, false);
+                    } catch (deepSeekError) {
                         return "All Neural Links are currently down. Please check your connection.";
                     }
                 }

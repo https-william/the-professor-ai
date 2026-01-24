@@ -28,7 +28,11 @@ class CallService {
 
     public initialize(userId: string, onStateChange: (state: CallState) => void, onIncomingCall: (callerId: string, answer: () => Promise<void>) => void) {
         // Clean up inputs
-        let cleanId = userId.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        // Clean up inputs - Strict sanitization for PeerJS (alphanumeric and dashes only, no double dashes)
+        let cleanId = userId
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with single dash
+            .replace(/^-+|-+$/g, '');   // Trim leading/trailing dashes
         
         console.log("Initializing Peer with ID:", cleanId);
 
