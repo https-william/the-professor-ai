@@ -42,8 +42,6 @@ import { logout, updateUserUsage, saveUserToSupabase, initDuelLobby, updateDuelW
 import { processFile } from '../services/fileService';
 import { getModeCost } from '../services/creditService';
 import { callService } from '../services/callService';
-import { LegalPage } from './LegalPage';
-import { NotFound } from './NotFound';
 import { initAnalytics, trackEvent, identifyUser, trackPageView } from '../services/analytics';
 import { startHydraEngine } from '../services/syncService';
 
