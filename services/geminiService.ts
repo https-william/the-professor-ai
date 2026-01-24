@@ -27,12 +27,22 @@ const sanitizeInput = (input: string): string => {
     return cleaned;
 };
 
-// --- GROQ FALLBACK SYSTEM ---
+// --- GROQ FALLBACK SYSTEM (Legacy - now handled by Portkey Gateway) ---
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama3-70b-8192"; // Fast, high quality fallback
 
+// Import Portkey Gateway for unified multi-provider routing
+import { callPortkeyGateway, TEXT_FALLBACK_CONFIG, checkProviderHealth } from './portkeyGateway';
+
 const callGroq = async (messages: any[], systemPrompt: string, jsonMode: boolean = false): Promise<string> => {
-    // Robust Env Getter for Groq
+    // Try Portkey Gateway first (handles all fallbacks automatically)
+    try {
+        return await callPortkeyGateway(messages, systemPrompt, TEXT_FALLBACK_CONFIG, jsonMode);
+    } catch (portkeyError) {
+        console.warn("⚠️ Portkey Gateway unavailable, falling back to direct Groq...");
+    }
+    
+    // Direct Groq fallback (original behavior)
     let key = "";
     try {
         // @ts-ignore
