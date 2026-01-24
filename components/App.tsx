@@ -584,7 +584,7 @@ const App: React.FC = () => {
 
     // --- RENDER ---
     if (loading) return <SkeletonDashboard />;
-    if (currentView === 'AUTH_CALLBACK') return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={(msg) => alert(msg)} />;
+    if (currentView === 'AUTH_CALLBACK') return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={() => { console.warn('Auth callback failed, redirecting to login'); handleNavigate('AUTH', '/login'); }} />;
     if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
     if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => handleNavigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
     if (currentView === 'LEGAL') return <LegalPage onBack={() => user ? handleNavigate('APP', '/') : handleNavigate('LANDING', '/')} />;
