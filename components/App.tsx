@@ -10,6 +10,10 @@ import { SubscriptionModal } from './SubscriptionModal';
 import { WelcomeModal } from './Onboarding/WelcomeModal';
 import { AuthPage } from './Auth/AuthPage';
 import { AdminLoginPage } from './Auth/AdminLoginPage';
+import { BlogPage } from './Blog/BlogPage';
+import { BlogPost } from './Blog/BlogPost';
+import AdminDashboard from './AdminDashboard';
+import { NotFound } from './NotFound';
 import { LandingPage } from './LandingPage';
 import { PricingPage } from './PricingPage';
 import { PlanCheckoutPage } from './PlanCheckoutPage';
@@ -105,7 +109,43 @@ const App: React.FC = () => {
     const { user, loading } = useAuth();
     const { theme, setTheme } = useTheme();
 
-    const [currentView, setCurrentView] = useState<ViewState>('LANDING');
+    const [currentView, setCurrentView] = useState<ViewState | 'BLOG' | 'BLOG_POST'>('LANDING'); // Extended type locally for now
+    const [blogSlug, setBlogSlug] = useState<string | null>(null);
+
+    // ... (existing state)
+
+    // --- VIEW NAVIGATION LOGIC ---
+    useEffect(() => {
+        const path = window.location.pathname;
+
+        // Blog Routes
+        if (path.startsWith('/blog')) {
+            const slug = path.split('/')[2];
+            if (slug) {
+                setBlogSlug(slug);
+                setCurrentView('BLOG_POST');
+            } else {
+                setCurrentView('BLOG');
+            }
+            return;
+        }
+
+        // ... (existing routing logic)
+    }, []);
+
+    const handleNavigate = (view: ViewState | 'BLOG' | 'BLOG_POST', url: string) => {
+        if (view === 'BLOG_POST' && url.startsWith('/blog/')) {
+            setBlogSlug(url.split('/')[2]);
+        }
+        window.history.pushState({}, '', url);
+        setCurrentView(view);
+    };
+
+    // ... (render logic)
+
+    if (currentView === 'BLOG') return <BlogPage onNavigate={(path) => handleNavigate(path.includes('/blog/') ? 'BLOG_POST' : path === '/blog' ? 'BLOG' : 'LANDING', path)} />;
+    if (currentView === 'BLOG_POST' && blogSlug) return <BlogPost slug={blogSlug} onNavigate={(path) => handleNavigate(path === '/blog' ? 'BLOG' : path === '/' ? 'LANDING' : 'AUTH', path)} />;
+
     const [shareId, setShareId] = useState<string | null>(null);
 
     const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
@@ -587,6 +627,10 @@ const App: React.FC = () => {
     if (currentView === 'AUTH_CALLBACK') return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={() => { console.warn('Auth callback failed, redirecting to login'); handleNavigate('AUTH', '/login'); }} />;
     if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
     if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => handleNavigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;
+
+    // Admin Dashboard Mode
+    if (appMode === 'ADMIN') return <AdminDashboard onExit={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} />;
+
     if (currentView === 'LEGAL') return <LegalPage onBack={() => user ? handleNavigate('APP', '/') : handleNavigate('LANDING', '/')} />;
     if (currentView === 'PRICING') return <PricingPage onBack={() => handleNavigate('LANDING', '/')} onSelectPlan={(tier) => { localStorage.setItem('pending_plan', tier); handleNavigate('AUTH', '/login'); }} />;
     if (currentView === 'CHECKOUT' && checkoutTier) return <PlanCheckoutPage tier={checkoutTier} onBack={() => handleNavigate('APP', '/')} onSuccess={(t) => { setUserProfile({ ...userProfile, subscriptionTier: t }); handleNavigate('APP', '/'); }} />;
