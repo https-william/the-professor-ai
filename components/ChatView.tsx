@@ -371,7 +371,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ chatState, onUpdate, onExit,
         )}
       </div>
     </div>
-    </div >
   );
 };
 
