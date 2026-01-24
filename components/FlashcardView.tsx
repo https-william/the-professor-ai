@@ -304,7 +304,6 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({ quizState, onExit,
                 </div>
             </div>
         </div>
-        </div >
     );
 };
 
