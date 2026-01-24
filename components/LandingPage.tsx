@@ -134,10 +134,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, onPricing }) 
                             </div>
                             <span className="font-bold text-lg tracking-tight font-serif text-text-pri hidden sm:block">The Professor</span>
                         </div>
-                        <div className="flex items-center gap-6">
-                            <button onClick={onPricing} className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-500 hover:text-amber-500 transition-colors hidden sm:block">Tuition</button>
+                        <div className="flex items-center gap-4">
                             <button onClick={onEnter} className="text-xs font-bold uppercase tracking-widest text-text-sec hover:text-text-pri transition-colors">Log In</button>
-                            <button onClick={onEnter} className="bg-text-pri text-core px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-black/10 dark:shadow-white/10">Get Started</button>
+                            <button onClick={onEnter} className="bg-text-pri text-core px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-black/10 dark:shadow-white/10">Get Started Free</button>
                         </div>
                     </div>
                 </nav>

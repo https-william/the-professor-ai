@@ -17,14 +17,13 @@ export const NotificationBell: React.FC = () => {
 
     useEffect(() => {
         const fetchNotifications = async () => {
-            const { data } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(10);
-            
-            // Local fallback if DB offline
-            const defaultNotifs = [
-                { id: '1', title: 'System Update', message: 'The Hub is now live.', timestamp: Date.now(), isRead: false },
-                { id: '2', title: 'Exam Tip', message: 'Try "Explain Like I\'m 5".', timestamp: Date.now() - 86400000, isRead: false }
-            ];
+            const { data } = await supabase
+                .from('notifications')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(10);
 
+            // Only use server notifications - no hardcoded fallbacks
             const remoteNotifs = data ? data.map((n: any) => ({
                 id: n.id,
                 title: n.title,
@@ -33,16 +32,15 @@ export const NotificationBell: React.FC = () => {
                 isRead: false
             })) : [];
 
-            const allNotifs = [...remoteNotifs, ...defaultNotifs];
-            
             // Check local storage for read status
             const readIds = JSON.parse(localStorage.getItem('read_notifications') || '[]');
-            const processed = allNotifs.map(n => ({
+            const processed = remoteNotifs.map(n => ({
                 ...n,
                 isRead: readIds.includes(n.id)
             }));
 
             setNotifications(processed);
+            // Only show unread indicator if there are actual unread notifications
             setHasUnread(processed.some(n => !n.isRead));
         };
 
@@ -51,7 +49,7 @@ export const NotificationBell: React.FC = () => {
 
     const toggleOpen = () => {
         setIsOpen(!isOpen);
-        if (!isOpen) {
+        if (!isOpen && notifications.length > 0) {
             setHasUnread(false);
             // Mark all current as read locally
             const ids = notifications.map(n => n.id);
@@ -64,7 +62,7 @@ export const NotificationBell: React.FC = () => {
         <div className="relative">
             <button onClick={toggleOpen} className="p-2 text-gray-400 hover:text-white transition-colors relative">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
-                {hasUnread && <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-black"></div>}
+                {hasUnread && <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-black animate-pulse"></div>}
             </button>
 
             {isOpen && (
@@ -73,15 +71,27 @@ export const NotificationBell: React.FC = () => {
                         <span className="text-[10px] font-bold uppercase text-gray-500 tracking-widest">Updates</span>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
-                        {notifications.map(n => (
-                            <div key={n.id} className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors ${n.isRead ? 'opacity-60' : 'opacity-100 border-l-2 border-l-amber-500'}`}>
-                                <div className="flex justify-between items-start mb-1">
-                                    <h4 className="text-xs font-bold text-white">{n.title}</h4>
-                                    <span className="text-[9px] text-gray-600">{new Date(n.timestamp).toLocaleDateString()}</span>
+                        {notifications.length === 0 ? (
+                            <div className="p-6 text-center">
+                                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-500/10 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
                                 </div>
-                                <p className="text-xs text-gray-400 leading-relaxed">{n.message}</p>
+                                <p className="text-sm text-gray-400">You're all caught up!</p>
+                                <p className="text-xs text-gray-600 mt-1">No new notifications</p>
                             </div>
-                        ))}
+                        ) : (
+                            notifications.map(n => (
+                                <div key={n.id} className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors ${n.isRead ? 'opacity-60' : 'opacity-100 border-l-2 border-l-blue-500'}`}>
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h4 className="text-xs font-bold text-white">{n.title}</h4>
+                                        <span className="text-[9px] text-gray-600">{new Date(n.timestamp).toLocaleDateString()}</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 leading-relaxed">{n.message}</p>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             )}

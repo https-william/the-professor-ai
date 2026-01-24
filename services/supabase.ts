@@ -118,6 +118,51 @@ export const deductCredits = async (userId: string, amount: number, description:
     return data as boolean;
 };
 
+/**
+ * Get user's current credit balance from server
+ */
+export const getUserCredits = async (userId: string): Promise<number> => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', userId)
+        .single();
+    
+    if (error || !data) return 0;
+    return data.credits || 0;
+};
+
+/**
+ * Subscribe to real-time credit changes for a user
+ */
+export const subscribeToCredits = (
+    userId: string, 
+    onCreditsChange: (newCredits: number) => void
+): (() => void) => {
+    const subscription = supabase
+        .channel(`credits-${userId}`)
+        .on(
+            'postgres_changes',
+            { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'profiles',
+                filter: `id=eq.${userId}`
+            },
+            (payload: any) => {
+                if (payload.new?.credits !== undefined) {
+                    onCreditsChange(payload.new.credits);
+                }
+            }
+        )
+        .subscribe();
+
+    // Return unsubscribe function
+    return () => {
+        supabase.removeChannel(subscription);
+    };
+};
+
 // --- BILLING & SUBSCRIPTIONS ---
 
 export const cancelSubscription = async (userId: string) => {
@@ -487,4 +532,33 @@ export const deleteUserAccount = async (userId: string) => {
 
 export const toggleBanUser = async (userId: string, currentStatus: boolean) => {
     await supabase.from('profiles').update({ is_banned: !currentStatus }).eq('id', userId);
+};
+
+/**
+ * Broadcast a notification to all users (Admin only)
+ * Inserts into notifications table for in-app delivery
+ */
+export const broadcastNotification = async (
+    title: string, 
+    message: string,
+    adminId: string
+): Promise<boolean> => {
+    try {
+        const { error } = await supabase.from('notifications').insert({
+            title,
+            message,
+            broadcast: true,
+            created_by: adminId,
+            created_at: new Date().toISOString()
+        });
+        
+        if (error) {
+            console.error("Broadcast failed:", error);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error("Broadcast error:", e);
+        return false;
+    }
 };

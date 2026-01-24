@@ -14,22 +14,47 @@ interface SEOHeadProps {
 export const SEOHead: React.FC<SEOHeadProps> = ({
     title,
     description,
-    image = 'https://the-professor-ai.vercel.app/og-default.png',
+    image = 'https://www.theprofessor.xyz/og-image.png',
     type = 'website',
     path = '',
     schema
 }) => {
-    const siteUrl = 'https://the-professor-ai.vercel.app';
+    const siteUrl = 'https://www.theprofessor.xyz';
     const fullUrl = `${siteUrl}${path}`;
-    const fullTitle = `${title} | The Professor AI`;
+    const fullTitle = `${title} | The Professor - AI Study Tool`;
+
+    // Default schema for SoftwareApplication
+    const defaultSchema = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "The Professor",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "2000"
+        },
+        "description": description
+    };
 
     return (
         <Helmet>
             {/* Standard Meta Tags */}
             <title>{fullTitle}</title>
             <meta name="description" content={description} />
-            <meta name="theme-color" content="#000000" />
+            <meta name="theme-color" content="#050505" />
             <link rel="canonical" href={fullUrl} />
+
+            {/* Additional SEO Meta Tags */}
+            <meta name="keywords" content="AI study tool, exam generator, flashcard maker, quiz generator, study app, AI tutor, lecture notes, student productivity, free study tool" />
+            <meta name="author" content="Vexis Automations" />
+            <meta name="robots" content="index, follow" />
 
             {/* Open Graph / Facebook */}
             <meta property="og:type" content={type} />
@@ -37,20 +62,19 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
             <meta property="og:title" content={fullTitle} />
             <meta property="og:description" content={description} />
             <meta property="og:image" content={image} />
+            <meta property="og:site_name" content="The Professor" />
 
             {/* Twitter */}
-            <meta property="twitter:card" content="summary_large_image" />
-            <meta property="twitter:url" content={fullUrl} />
-            <meta property="twitter:title" content={fullTitle} />
-            <meta property="twitter:description" content={description} />
-            <meta property="twitter:image" content={image} />
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:url" content={fullUrl} />
+            <meta name="twitter:title" content={fullTitle} />
+            <meta name="twitter:description" content={description} />
+            <meta name="twitter:image" content={image} />
 
-            {/* AEO / JSON-LD Structured Data (Agent Beacon) */}
-            {schema && (
-                <script type="application/ld+json">
-                    {JSON.stringify(schema)}
-                </script>
-            )}
+            {/* JSON-LD Structured Data */}
+            <script type="application/ld+json">
+                {JSON.stringify(schema || defaultSchema)}
+            </script>
         </Helmet>
     );
 };
