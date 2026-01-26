@@ -1,214 +1,224 @@
 
 import React, { useState, useEffect } from 'react';
 import { signInWithGoogle, registerWithEmail, loginWithEmail, resendConfirmationEmail, verifyUserOtp } from '../../services/supabase';
+import { BrandLogo } from '../BrandLogo';
 
 export const AuthPage: React.FC = () => {
-  const [mode, setMode] = useState<'LOGIN' | 'REGISTER' | 'VERIFY'>('LOGIN');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState(''); 
-  const [otp, setOtp] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authStatusText, setAuthStatusText] = useState('CONNECTING...');
-  const [showResend, setShowResend] = useState(false);
+    const [mode, setMode] = useState<'LOGIN' | 'REGISTER' | 'VERIFY'>('LOGIN');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [otp, setOtp] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-      if (!isAuthenticating) return;
-      const stages = ['REVIEWING APPLICATION...', 'CHECKING RECORDS...', 'VERIFYING ID...', 'MATRICULATING...'];
-      let i = 0;
-      const interval = setInterval(() => {
-          setAuthStatusText(stages[i % stages.length]);
-          i++;
-      }, 1200); 
-      return () => clearInterval(interval);
-  }, [isAuthenticating]);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [authStatusText, setAuthStatusText] = useState('CONNECTING...');
+    const [showResend, setShowResend] = useState(false);
 
-  const isValidEmail = (e: string) => {
-      const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-      return re.test(e);
-  };
+    useEffect(() => {
+        if (!isAuthenticating) return;
+        const stages = ['HANDSHAKING...', 'VERIFYING BIOMETRICS...', 'ESTABLISHING LINK...', 'ACCESS GRANTED...'];
+        let i = 0;
+        const interval = setInterval(() => {
+            setAuthStatusText(stages[i % stages.length]);
+            i++;
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [isAuthenticating]);
 
-  const handleAuthError = (err: any) => {
-      setIsAuthenticating(false);
-      const msg = err.message || "Authentication failed.";
-      
-      // Smart Error Handling
-      if (msg.includes("Too many requests") || msg.includes("429")) {
-          setError("Neural Overload: Too many attempts. Please wait 15 minutes before retrying.");
-      } else if (msg.includes("Signups not allowed")) {
-          setError("Enrollment Closed: Contact Administration.");
-      } else if (msg.includes("User already registered")) {
-          setError("Identity already exists in the database. Please log in.");
-          setMode('LOGIN');
-      } else if (msg.includes("Email not confirmed")) {
-          setError("Identity Unverified: Please check your email for the code.");
-          setShowResend(true);
-      } else {
-          setError(msg);
-      }
-  };
+    const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isAuthenticating) return;
-    
-    setError(null);
-    setSuccessMsg(null);
-    setShowResend(false);
-    
-    if (mode !== 'VERIFY' && !isValidEmail(email)) { setError("Invalid email address format."); return; }
-    
-    // VALIDATION UPDATE: Require Name
-    if (mode === 'REGISTER') {
-        if (!fullName.trim()) { setError("Full Name is required for enrollment."); return; }
-        if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    }
-    
-    if (mode === 'VERIFY' && otp.length < 6) { setError("Please enter the 6-digit code."); return; }
+    const handleAuthError = (err: any) => {
+        setIsAuthenticating(false);
+        const msg = err.message || "Authentication failed.";
+        if (msg.includes("Too many requests")) setError("Neural Overload: Please wait before retrying.");
+        else if (msg.includes("User already registered")) { setError("Identity Record Found. Please Access Terminal."); setMode('LOGIN'); }
+        else if (msg.includes("Email not confirmed")) { setError("Identity Unverified."); setShowResend(true); }
+        else setError(msg);
+    };
 
-    setIsAuthenticating(true);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isAuthenticating) return;
+        setError(null);
+        setSuccessMsg(null);
+        setShowResend(false);
 
-    try {
-      if (mode === 'LOGIN') {
-          await loginWithEmail(email, password);
-      } else if (mode === 'REGISTER') {
-          const result = await registerWithEmail(email, password, fullName);
-          if (result && !result.session) {
-              setIsAuthenticating(false);
-              setSuccessMsg(`Access Link sent to ${email}. Check your Inbox & Spam.`);
-              setMode('VERIFY'); 
-              return; 
-          }
-      } else if (mode === 'VERIFY') {
-          await verifyUserOtp(email, otp);
-          setIsAuthenticating(false);
-          setSuccessMsg("Verification Successful. Logging you in...");
-          await loginWithEmail(email, password);
-          return; 
-      }
-    } catch (err: any) {
-      handleAuthError(err);
-    }
-  };
+        if (mode !== 'VERIFY' && !isValidEmail(email)) { setError("Invalid Neural ID (Email)."); return; }
+        if (mode === 'REGISTER' && (!fullName.trim() || password.length < 8)) { setError("Incomplete Protocol: Name required, Password min 8 chars."); return; }
+        if (mode === 'VERIFY' && otp.length < 6) { setError("Invalid Access Code."); return; }
 
-  const handleResend = async () => {
-      if (!email) return;
-      try {
-          await resendConfirmationEmail(email);
-          setSuccessMsg("Verification signal re-transmitted.");
-          setShowResend(false);
-          setError(null);
-      } catch (e: any) {
-          handleAuthError(e);
-      }
-  };
+        setIsAuthenticating(true);
 
-  return (
-    <div className="min-h-screen bg-core flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-         <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] animate-pulse-slow"></div>
-         <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-amber-900/10 rounded-full blur-[100px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
-      </div>
+        try {
+            if (mode === 'LOGIN') {
+                await loginWithEmail(email, password);
+            } else if (mode === 'REGISTER') {
+                const result = await registerWithEmail(email, password, fullName);
+                if (result && !result.session) {
+                    setIsAuthenticating(false);
+                    setSuccessMsg(`Verification Signal sent to ${email}.`);
+                    setMode('VERIFY');
+                    return;
+                }
+            } else if (mode === 'VERIFY') {
+                await verifyUserOtp(email, otp);
+                setIsAuthenticating(false);
+                await loginWithEmail(email, password);
+                return;
+            }
+        } catch (err: any) {
+            handleAuthError(err);
+        }
+    };
 
-      <a href="/" className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
-        <span className="text-gray-400 group-hover:text-white transition-colors">←</span>
-        <span className="text-xs font-bold uppercase tracking-widest text-gray-400 group-hover:text-white transition-colors">Home Page</span>
-      </a>
+    const handleResend = async () => {
+        if (!email) return;
+        try {
+            await resendConfirmationEmail(email);
+            setSuccessMsg("Signal Re-transmitted.");
+            setShowResend(false);
+            setError(null);
+        } catch (e: any) {
+            handleAuthError(e);
+        }
+    };
 
-      <div className="w-full max-w-md bg-panel border border-border-main rounded-3xl p-8 shadow-2xl relative z-10 animate-slide-up-fade">
-         <div className="text-center mb-8 flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-900/20 to-black border border-white/10 flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(59,130,246,0.1)]">
-               <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="12" cy="3" r="1" fill="currentColor"/>
-               </svg>
+    return (
+        <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden font-sans">
+
+            {/* Background Matrix */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
+                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-900/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+                <div className="absolute top-[-100px] left-[-100px] w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
             </div>
-            <h1 className="text-2xl font-serif font-bold text-text-pri">The Professor</h1>
-            <p className="text-xs text-text-sec uppercase tracking-widest mt-2">Academic Access Portal</p>
-         </div>
 
-         {mode !== 'VERIFY' && (
-             <div className="flex border-b border-border-main mb-6 relative">
-                <button onClick={() => { setMode('LOGIN'); setError(null); setSuccessMsg(null); setShowResend(false); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'LOGIN' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Log In</button>
-                <button onClick={() => { setMode('REGISTER'); setError(null); setSuccessMsg(null); setShowResend(false); }} className={`flex-1 pb-3 text-xs font-bold uppercase transition-colors ${mode === 'REGISTER' ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}>Enroll</button>
-                <div className={`absolute bottom-0 h-0.5 bg-blue-500 transition-all duration-300 w-1/2 ${mode === 'LOGIN' ? 'left-0' : 'left-1/2'}`}></div>
-             </div>
-         )}
+            {/* Home Link */}
+            <a href="/" className="absolute top-8 left-8 z-50 flex items-center gap-2 group opacity-50 hover:opacity-100 transition-opacity">
+                <span className="text-cyan-500 text-lg">‹</span>
+                <span className="text-[10px] font-mono text-cyan-500 uppercase tracking-widest">Abort Sequence</span>
+            </a>
 
-         {mode === 'VERIFY' && (
-             <div className="mb-6 text-center">
-                 <p className="text-xs text-white font-bold uppercase tracking-widest">Verify Identity</p>
-                 <p className="text-[10px] text-gray-500 mt-1">Enter the 6-digit code sent to {email}</p>
-             </div>
-         )}
+            {/* Main Glass Panel */}
+            <div className="w-full max-w-md relative z-10 animate-slide-up-fade">
 
-         <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-4">
-              {mode === 'REGISTER' && (
-                  <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name (Required)" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
-              )}
-              
-              {mode !== 'VERIFY' ? (
-                  <>
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email Address" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
-                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passcode" className="w-full bg-black/40 border border-border-main rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 focus:bg-white/5 transition-all placeholder-gray-600" />
-                  </>
-              ) : (
-                  <input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="000000" maxLength={6} className="w-full bg-black/40 border border-blue-500/50 rounded-xl px-4 py-4 text-white outline-none focus:bg-white/5 transition-all text-center text-2xl font-mono tracking-[0.5em] placeholder-gray-700" />
-              )}
-            </div>
-            
-            {successMsg && (
-                <div className="p-3 bg-green-900/20 border border-green-500/20 rounded-lg text-green-400 text-xs flex items-center gap-2">
-                    <span>{successMsg}</span>
-                </div>
-            )}
-            
-            {error && <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-lg text-red-400 text-xs">{error}</div>}
-            
-            {(showResend || mode === 'VERIFY') && (
-                <button type="button" onClick={handleResend} className="w-full text-xs text-blue-400 hover:text-blue-300 underline text-center">
-                    Resend Code
-                </button>
-            )}
-            
-            <button type="submit" disabled={isAuthenticating} className={`w-full py-4 rounded-xl font-bold uppercase text-xs transition-all relative overflow-hidden ${isAuthenticating ? 'bg-gray-900 text-blue-400 border border-blue-500/30 cursor-wait' : 'bg-white text-black hover:bg-gray-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.2)]'}`}>
-              {isAuthenticating ? (
-                  <div className="flex items-center justify-center gap-2 relative z-10">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
-                      <span className="tracking-[0.2em]">{authStatusText}</span>
-                  </div>
-              ) : (mode === 'LOGIN' ? 'Authenticate' : mode === 'REGISTER' ? 'Initialize Record' : 'Confirm Code')}
-            </button>
-         </form>
+                <div className="glass-panel-heavy p-8 md:p-12 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
 
-         {mode !== 'VERIFY' && (
-             <>
-                 <div className="my-8 flex items-center gap-4">
-                    <div className="h-px bg-white/10 flex-1"></div>
-                    <span className="text-[10px] text-gray-500 font-mono uppercase">Or Connect With</span>
-                    <div className="h-px bg-white/10 flex-1"></div>
-                 </div>
+                    {/* Scanner Line */}
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-cyan-400/50 shadow-[0_0_15px_#00F0FF] animate-[float_4s_ease-in-out_infinite] opacity-50"></div>
 
-                 <button onClick={signInWithGoogle} disabled={isAuthenticating} className="w-full bg-[#1a1a1a] hover:bg-[#252525] border border-border-main text-white font-bold text-xs py-3.5 rounded-xl flex items-center justify-center gap-3 transition-all group hover:border-white/20 disabled:opacity-50">
-                    <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-1 group-hover:scale-110 transition-transform">
-                      <svg viewBox="0 0 24 24" className="w-full h-full"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    {/* Header */}
+                    <div className="text-center mb-10">
+                        <div className="w-16 h-16 mx-auto mb-6 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/30 shadow-[0_0_20px_rgba(0,240,255,0.1)]">
+                            <BrandLogo className="w-8 h-8 text-cyan-400" />
+                        </div>
+                        <h1 className="text-3xl font-cinzel font-bold text-white mb-2 tracking-wide">
+                            {mode === 'REGISTER' ? 'Matriculation' : mode === 'VERIFY' ? 'Identity Verification' : 'Access Terminal'}
+                        </h1>
+                        <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+                            {mode === 'REGISTER' ? 'Initiating New Student Protocol' : mode === 'VERIFY' ? 'Awaiting Security Token' : 'Secure Uplink Requested'}
+                        </p>
                     </div>
-                    <span>Continue with Google</span>
-                 </button>
-             </>
-         )}
-         
-         {mode === 'VERIFY' && (
-             <div className="mt-6 text-center">
-                 <button onClick={() => setMode('REGISTER')} className="text-gray-500 hover:text-white text-xs">Back to Registration</button>
-             </div>
-         )}
-      </div>
-    </div>
-  );
+
+                    {/* Mode Toggles */}
+                    {mode !== 'VERIFY' && (
+                        <div className="flex mb-8 bg-black/40 rounded p-1 border border-white/5">
+                            <button
+                                onClick={() => { setMode('LOGIN'); setError(null); }}
+                                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded transition-all ${mode === 'LOGIN' ? 'bg-cyan-900/30 text-cyan-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                            >
+                                Access
+                            </button>
+                            <button
+                                onClick={() => { setMode('REGISTER'); setError(null); }}
+                                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded transition-all ${mode === 'REGISTER' ? 'bg-cyan-900/30 text-cyan-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                            >
+                                Matriculate
+                            </button>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        {mode === 'REGISTER' && (
+                            <div className="group">
+                                <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest mb-1 block group-focus-within:text-cyan-500 transition-colors">Full Designation</label>
+                                <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/10 rounded px-4 py-3 text-white text-sm outline-none focus:border-cyan-500/50 focus:bg-cyan-900/5 transition-all placeholder-gray-700 font-light"
+                                    placeholder="John Doe"
+                                />
+                            </div>
+                        )}
+
+                        {mode !== 'VERIFY' ? (
+                            <>
+                                <div className="group">
+                                    <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest mb-1 block group-focus-within:text-cyan-500 transition-colors">Neural ID (Email)</label>
+                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                                        className="w-full bg-black/50 border border-white/10 rounded px-4 py-3 text-white text-sm outline-none focus:border-cyan-500/50 focus:bg-cyan-900/5 transition-all placeholder-gray-700 font-light"
+                                        placeholder="student@university.edu"
+                                    />
+                                </div>
+                                <div className="group">
+                                    <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest mb-1 block group-focus-within:text-cyan-500 transition-colors">Security Clearance</label>
+                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                                        className="w-full bg-black/50 border border-white/10 rounded px-4 py-3 text-white text-sm outline-none focus:border-cyan-500/50 focus:bg-cyan-900/5 transition-all placeholder-gray-700 font-light"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <div className="group text-center">
+                                <label className="text-[9px] font-mono text-cyan-500 uppercase tracking-widest mb-4 block">Enter 6-Digit Token</label>
+                                <input type="text" value={otp} onChange={e => setOtp(e.target.value)} maxLength={6}
+                                    className="w-full bg-black/50 border border-cyan-500/50 rounded px-4 py-4 text-white text-2xl font-mono text-center outline-none focus:bg-cyan-900/10 transition-all tracking-[0.5em] placeholder-gray-800"
+                                    placeholder="000000"
+                                />
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="p-3 bg-red-900/10 border border-red-500/30 rounded text-red-400 text-[10px] font-mono flex items-start gap-2 animate-pulse">
+                                <span className="text-red-500">⚠</span> {error}
+                            </div>
+                        )}
+
+                        {successMsg && (
+                            <div className="p-3 bg-green-900/10 border border-green-500/30 rounded text-green-400 text-[10px] font-mono flex items-start gap-2">
+                                <span>✓</span> {successMsg}
+                            </div>
+                        )}
+
+                        <button type="submit" disabled={isAuthenticating}
+                            className={`w-full py-4 rounded font-bold uppercase text-xs tracking-[0.2em] transition-all relative overflow-hidden group ${isAuthenticating ? 'bg-cyan-900/20 text-cyan-500 border border-cyan-500/30 cursor-wait' : 'bg-white text-black hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]'}`}
+                        >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                {isAuthenticating && <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-ping"></span>}
+                                {isAuthenticating ? authStatusText : (mode === 'LOGIN' ? 'Establish Link' : mode === 'REGISTER' ? 'Submit Application' : 'Verify & Enter')}
+                            </span>
+                            {!isAuthenticating && <div className="absolute inset-0 bg-cyan-400 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 z-0"></div>}
+                        </button>
+
+                        {(showResend || mode === 'VERIFY') && (
+                            <button type="button" onClick={handleResend} className="w-full text-[10px] font-mono uppercase tracking-widest text-gray-600 hover:text-cyan-400 transition-colors">
+                                Re-transmit Code
+                            </button>
+                        )}
+                    </form>
+
+                    {/* Social Login */}
+                    {mode !== 'VERIFY' && (
+                        <div className="mt-8 pt-6 border-t border-white/5">
+                            <button onClick={signInWithGoogle} disabled={isAuthenticating} className="w-full py-3 border border-white/10 hover:border-white/30 rounded flex items-center justify-center gap-3 transition-colors group bg-black/20 hover:bg-white/5">
+                                <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-white transition-colors">Google Uplink</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+        </div>
+    );
 };

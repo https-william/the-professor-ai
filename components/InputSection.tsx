@@ -33,7 +33,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
 }) => {
   const [textInput, setTextInput] = useState('');
   const [chatInput, setChatInput] = useState('');
-
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -49,7 +48,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [timerDuration, setTimerDuration] = useState<TimerDuration>('Limitless');
   const [personality, setPersonality] = useState<AIPersonality>(userProfile.defaultPersonality || 'Academic');
   const [analogyDomain, setAnalogyDomain] = useState<AnalogyDomain>('General');
-
   const [useOracle, setUseOracle] = useState(false);
 
   useEffect(() => {
@@ -60,20 +58,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
   }, [defaultConfig.difficulty, userProfile.defaultPersonality]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const isFresher = userProfile.subscriptionTier === 'Fresher';
   const isExcellentia = userProfile.subscriptionTier === 'Excellentia';
 
   const MAX_FILE_SIZE = 50 * 1024 * 1024;
   const FILE_LIMIT_DAILY = isFresher ? 1 : 999;
-
   const currentCost = getModeCost(appMode, { difficulty, questionType, questionCount, timerDuration, personality, analogyDomain, useOracle });
   const canAfford = (userProfile.credits || 0) >= currentCost;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      addFiles(Array.from(e.target.files));
-    }
+    if (e.target.files) addFiles(Array.from(e.target.files));
   };
 
   const addFiles = (files: File[]) => {
@@ -82,16 +76,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
     let errorMsg = null;
 
     if ((userProfile.dailyFilesUploaded || 0) + files.length > FILE_LIMIT_DAILY) {
-      setFileError("Daily file limit reached. Unlock unlimited uploads.");
+      setFileError("Daily Limit Reached. Authorization Required.");
     }
 
     for (const f of files) {
       if (!validExtensions.some(ext => f.name.toLowerCase().endsWith(ext))) {
-        errorMsg = "Skipped unsupported file formats.";
+        errorMsg = "Invalid Format Detected.";
         continue;
       }
       if (f.size > MAX_FILE_SIZE) {
-        errorMsg = "Skipped files larger than 50MB.";
+        errorMsg = "File Exceeds Neural Capacity (50MB).";
         continue;
       }
       validFiles.push(f);
@@ -99,7 +93,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
     if (errorMsg) setFileError(errorMsg);
     if (selectedFiles.length + validFiles.length > 10 && !isExcellentia) {
-      setFileError("Maximum 10 files per batch.");
+      setFileError("Batch Size Limit. Upgrade for Unlimited Ingestion.");
       return;
     }
 
@@ -119,9 +113,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files) {
-      addFiles(Array.from(e.dataTransfer.files));
-    }
+    if (e.dataTransfer.files) addFiles(Array.from(e.dataTransfer.files));
   };
 
   const removeFile = (index: number) => {
@@ -134,7 +126,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   const executeGeneration = async (finalMode: AppMode, overrideContent?: string, overrideName?: string) => {
     if (isLoading) return;
-
     if (!canAfford) {
       setFileError("Insufficient Neural Tokens.");
       onShowSubscription();
@@ -151,22 +142,22 @@ export const InputSection: React.FC<InputSectionProps> = ({
         for (let i = 0; i < selectedFiles.length; i++) {
           const processed = await processFile(selectedFiles[i], (p) => setUploadProgress(15 + (p * 0.85)));
           if (processed.type === 'IMAGE') {
-            fullContent += `\n\n--- IMAGE FILE: ${selectedFiles[i].name} ---\n[IMAGE_DATA:${processed.content}]`;
+            fullContent += `\n\n--- IMAGE DATA: ${selectedFiles[i].name} ---\n[IMAGE_DATA:${processed.content}]`;
           } else {
-            fullContent += `\n\n--- FILE: ${selectedFiles[i].name} ---\n${processed.content}`;
+            fullContent += `\n\n--- FILE DATA: ${selectedFiles[i].name} ---\n${processed.content}`;
           }
         }
       }
 
       if ((finalMode === 'PROFESSOR' || finalMode === 'CHAT') && !overrideContent) {
-        if (chatInput.trim()) fullContent += `\n\nUser Context/Question: ${chatInput}`;
-        if (!fullContent.trim()) { setFileError("Please ask a question or upload a file."); return; }
+        if (chatInput.trim()) fullContent += `\n\nUser Context: ${chatInput}`;
+        if (!fullContent.trim()) { setFileError("Input Stream Empty."); return; }
       } else if (!overrideContent) {
         if (textInput.trim()) fullContent += `\n\n${textInput}`;
-        if (!fullContent.trim()) { setFileError("Please upload a file or paste text content."); return; }
+        if (!fullContent.trim()) { setFileError("Input Stream Empty."); return; }
       }
 
-      const name = overrideName || (selectedFiles.length > 0 ? (selectedFiles.length === 1 ? selectedFiles[0].name : 'Multi-File Session') : 'Text Input');
+      const name = overrideName || (selectedFiles.length > 0 ? (selectedFiles.length === 1 ? selectedFiles[0].name : 'Batch Process') : 'Manual Input');
 
       onProcess({
         type: 'TEXT',
@@ -190,10 +181,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
     }
   };
 
-  const handleDuelJoinSubmit = (code: string) => {
-    if (onDuelJoin) onDuelJoin(code);
-  }
-
   const handleOracleClick = () => {
     if (isExcellentia) {
       setUseOracle(!useOracle);
@@ -202,35 +189,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
     }
   };
 
-  const ConfigPill = ({ label, value, setter, options, disabled }: any) => (
-    <div className="relative group shrink-0 w-1/2 md:w-auto p-1">
-      <div className="absolute top-2 left-3 text-[8px] text-text-sec font-bold uppercase tracking-wider pointer-events-none z-10">
-        {label}
-      </div>
-      <select
-        value={value}
-        onChange={(e) => setter(e.target.value)}
-        disabled={disabled}
-        className={`appearance-none pl-3 pr-8 pt-5 pb-2 rounded-xl text-xs font-bold uppercase tracking-wide outline-none cursor-pointer transition-all border w-full text-left shadow-sm ${disabled ? 'opacity-50 cursor-not-allowed border-border-main bg-black/5 text-gray-500' : 'bg-white/5 border-border-main hover:bg-white/10 text-text-pri hover:shadow-md'}`}
-      >
-        {options.map((opt: string) => <option key={opt} value={opt} className="bg-core text-text-pri">{opt}</option>)}
-      </select>
-      <div className="pointer-events-none absolute right-3 bottom-3 text-xs text-text-sec">▼</div>
-    </div>
-  );
-
-  // Reusable File List Component
   const FileList = () => (
     <div className="w-full flex flex-wrap gap-2 justify-center">
       {selectedFiles.map((f, i) => (
-        <div key={i} className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/30 shadow-sm">
-          <span className="text-xs text-blue-500 truncate max-w-[150px] font-bold">{f.name}</span>
-          <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-blue-400 hover:text-red-400 ml-1">✕</button>
+        <div key={i} className="flex items-center gap-2 bg-cyan-900/20 px-3 py-1.5 rounded border border-cyan-500/30">
+          <span className="text-xs text-cyan-400 font-mono truncate max-w-[150px]">{f.name}</span>
+          <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="text-cyan-600 hover:text-red-400 ml-1">✕</button>
         </div>
       ))}
-      <div className="w-full text-center mt-1">
-        <span className="text-[10px] text-text-sec uppercase tracking-widest cursor-pointer hover:text-white transition-colors">+ Add More</span>
-      </div>
     </div>
   );
 
@@ -238,162 +204,131 @@ export const InputSection: React.FC<InputSectionProps> = ({
     <div className="max-w-6xl mx-auto relative z-10 animate-slide-up-fade px-4 sm:px-0 flex flex-col min-h-[500px] mb-24 md:mb-20">
 
       {showDuelCreate && <DuelCreateModal onClose={() => setShowDuelCreate(false)} onSubmit={handleDuelSubmit} userXP={userProfile.xp || 0} tier={userProfile.subscriptionTier} />}
-      {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={handleDuelJoinSubmit} />}
+      {showDuelJoin && <DuelJoinModal onClose={() => setShowDuelJoin(false)} onJoin={(code) => onDuelJoin && onDuelJoin(code)} />}
 
-      {/* Main Panel with Liquid Glass effect */}
-      <div className={`liquid-glass liquid-glass-card relative overflow-hidden flex flex-col flex-grow shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${appMode === 'PROFESSOR' ? 'glass-glow-amber' : appMode === 'HUB' ? 'glass-glow-blue' : ''}`}>
+      <div className="relative glass-panel-heavy rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex flex-col flex-grow">
+
+        {/* Decor: Subtle Borders */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
 
         {/* PROGRESS OVERLAY */}
         {uploadProgress > 0 && uploadProgress < 100 && (
-          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-8 transition-opacity duration-300">
-            <div className="w-full max-w-md h-2 bg-gray-900 rounded-full overflow-hidden mb-4 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 animate-progress" style={{ width: `${uploadProgress}%` }}></div>
+          <div className="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-8 transition-opacity duration-300">
+            <div className="w-full max-w-md h-1 bg-gray-900 mb-4 relative overflow-hidden rounded-full">
+              <div className="absolute inset-0 bg-white animate-[shimmer_1.5s_infinite]" style={{ width: `${uploadProgress}%` }}></div>
             </div>
-            <span className="text-white font-mono text-sm font-bold tracking-widest animate-pulse">
-              INGESTING DATA... {Math.round(uploadProgress)}%
+            <span className="text-gray-400 font-mono text-xs font-bold tracking-widest">
+              ANALYZING MATERIALS... {Math.round(uploadProgress)}%
             </span>
           </div>
         )}
 
-        {/* EXAM VIEW */}
+        {/* EXAM CONFIG & UPLOAD (Mode: EXAM) */}
         <div className={`flex flex-col flex-grow transition-all duration-500 ${appMode === 'EXAM' ? 'opacity-100' : 'hidden pointer-events-none absolute inset-0'}`}>
 
-          {/* CONTROL DECK */}
-          <div id="exam-config-target" className="border-b border-border-main bg-panel z-20 flex-shrink-0 backdrop-blur-md p-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex flex-wrap w-full md:w-auto gap-2">
-                  <LiquidDropdown label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as Difficulty)} options={["Easy", "Medium", "Hard", isExcellentia ? "Nightmare" : "Nightmare (Locked)"]} disabled={difficulty === 'Nightmare' && !isExcellentia} />
-                  <LiquidDropdown label="Type" value={questionType} onChange={(v) => setQuestionType(v as QuestionType)} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
-                  <LiquidDropdown label="Timer" value={timerDuration} onChange={(v) => setTimerDuration(v as TimerDuration)} options={["Limitless", "5m", "10m", "30m", "1h"]} />
-                  <LiquidDropdown label="Count" value={String(questionCount)} onChange={(v) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
-                </div>
-
-                <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
-                  <button
-                    onClick={handleOracleClick}
-                    className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all shadow-md ${useOracle ? 'bg-red-900/20 border-red-500 text-red-500 oracle-glow' : 'bg-black/20 border-border-main text-text-sec hover:text-text-pri hover:bg-black/30'}`}
-                  >
-                    {!isExcellentia && (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-amber-500"><path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" /></svg>
-                    )}
-                    <span>The Oracle {isExcellentia ? '(2x Cost)' : ''}</span>
-                  </button>
-                </div>
+          {/* CONFIG BAR */}
+          <div className="border-b border-white/5 p-4 bg-white/[0.02]">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="flex flex-wrap gap-4 w-full md:w-auto">
+                <LiquidDropdown label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as Difficulty)} options={["Easy", "Medium", "Hard", isExcellentia ? "Nightmare" : "Nightmare (Locked)"]} disabled={difficulty === 'Nightmare' && !isExcellentia} />
+                <LiquidDropdown label="Structure" value={questionType} onChange={(v) => setQuestionType(v as QuestionType)} options={["Multiple Choice", "True/False", "Fill in the Gap", "Mixed"]} />
+                <LiquidDropdown label="Duration" value={timerDuration} onChange={(v) => setTimerDuration(v as TimerDuration)} options={["Limitless", "5m", "10m", "30m", "1h"]} />
+                <LiquidDropdown label="Count" value={String(questionCount)} onChange={(v) => setQuestionCount(parseInt(v))} options={["5", "10", "15", "20", "30"]} />
               </div>
+              <button onClick={handleOracleClick} className={`px-4 py-2 border rounded font-mono text-[10px] uppercase tracking-widest transition-all ${useOracle ? 'border-amber-400 text-amber-100 bg-amber-900/20' : 'border-white/10 text-gray-500 hover:text-white'}`}>
+                {useOracle ? 'Predictive Analysis: ON' : 'Enable Prediction'}
+              </button>
             </div>
           </div>
 
-          {/* Main Upload Area */}
-          <div id="upload-zone-target" className="flex-grow overflow-y-auto p-6 flex flex-col relative bg-transparent custom-scrollbar min-h-[250px]">
+          {/* UPLOAD AREA */}
+          <div className="flex-grow p-8 flex flex-col gap-6">
 
-            <div className="flex-1 flex flex-col gap-6">
-              {/* TEXT AREA */}
-              <div className="relative group">
-                <div className="absolute top-3 left-3 text-[10px] font-bold text-text-sec uppercase tracking-widest bg-panel px-2 rounded border border-border-main pointer-events-none">
-                  Input Source Text
+            {/* Text Ingestion */}
+            <div className="relative group">
+              <div className="absolute top-0 left-0 px-2 py-1 bg-[#050505] -translate-y-1/2 translate-x-4 border border-white/10 text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+                Manual Entry
+              </div>
+              <textarea
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder="Paste notes, lecture transcripts, or articles here..."
+                className="w-full h-32 bg-black/20 border border-white/10 rounded-lg p-4 text-sm font-light text-gray-300 placeholder-gray-700 outline-none focus:border-white/20 focus:bg-black/40 transition-all resize-none font-serif"
+              />
+            </div>
+
+            <div className="text-center">
+              <span className="text-[10px] font-mono text-gray-700 uppercase tracking-widest bg-[#050505] px-2 relative z-10">OR UPLOAD DOCUMENTS</span>
+              <div className="h-px bg-white/5 -mt-2"></div>
+            </div>
+
+            {/* Drag Drop Zone */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
+              className={`flex-grow border border-dashed rounded-lg flex flex-col items-center justify-center p-8 cursor-pointer transition-all duration-500 group relative overflow-hidden ${dragActive || selectedFiles.length > 0 ? 'border-gray-500 bg-white/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
+            >
+              {selectedFiles.length > 0 ? (
+                <FileList />
+              ) : (
+                <div className="text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center mx-auto group-hover:border-gray-400 transition-colors">
+                    <svg className="w-5 h-5 text-gray-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                  </div>
+                  <p className="font-serif italic text-gray-400 text-sm">Upload Source Material</p>
+                  <p className="font-mono text-[10px] text-gray-600">PDF, DOCX, PPTX, Images</p>
                 </div>
-                <textarea
-                  className="w-full h-32 md:h-40 bg-black/10 dark:bg-[#151515] text-text-pri rounded-2xl p-4 pt-10 border border-border-main outline-none text-sm font-medium placeholder-text-sec resize-none transition-all shadow-inner focus:border-accent hover:bg-black/20"
-                  placeholder="Paste lecture notes, articles, or topics here..."
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="h-px bg-gradient-to-r from-transparent via-border-main to-transparent flex-1"></div>
-                <span className="text-[10px] font-bold text-text-sec uppercase">OR</span>
-                <div className="h-px bg-gradient-to-r from-transparent via-border-main to-transparent flex-1"></div>
-              </div>
-
-              {/* HIGH VISIBILITY FILE DROP ZONE */}
-              <div
-                className={`border-2 border-dashed rounded-3xl transition-all cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group min-h-[180px] shadow-lg ${dragActive || selectedFiles.length > 0 ? 'border-blue-500 bg-blue-900/10' : 'border-white/10 bg-gradient-to-br from-white/5 to-transparent hover:border-white/30 hover:bg-white/10'}`}
-                onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {selectedFiles.length > 0 ? (
-                  <div className="w-full p-6">
-                    <FileList />
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-4 p-6 text-center">
-                    <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform border border-blue-500/20">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-lg">Drop Files Here</p>
-                      <p className="text-text-sec text-xs mt-1">PDF, DOCX, PPTX, Images</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
-          {/* ACTION GRID */}
-          <div className="p-4 sm:p-6 border-t border-border-main bg-black/10 shrink-0">
+          <div className="p-6 border-t border-white/5 bg-black/20">
             <button
               onClick={() => executeGeneration('EXAM')}
               disabled={isLoading}
-              className={`w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-glass hover:scale-[1.01] active:scale-[0.99] shadow-lg ${!canAfford ? 'opacity-50 cursor-not-allowed bg-red-900/20' : isExcellentia ? 'bg-amber-600/30 border-amber-500/30' : 'bg-blue-600/30 border-blue-500/30'}`}
+              className={`w-full py-4 rounded font-bold uppercase text-xs tracking-[0.2em] transition-all relative overflow-hidden group ${isLoading || !canAfford ? 'opacity-50 cursor-not-allowed border border-red-900/50 text-red-500' : 'bg-white text-black hover:bg-gray-200'}`}
             >
-              {isLoading ? (
-                <span className="animate-pulse">Processing Data...</span>
-              ) : !canAfford ? (
-                `Insufficient Credits (${currentCost} Required)`
-              ) : (
-                `Generate Exam (${currentCost} NT)`
-              )}
+              {isLoading ? 'GENERATING ASSESSMENT...' : !canAfford ? `INSUFFICIENT FUNDS (${currentCost} REQ)` : `BEGIN EXAMINATION (${currentCost} CREDITS)`}
             </button>
           </div>
         </div>
 
-        {/* Other Modes (Chat/Hub) Input */}
-        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 bg-core z-20 transition-opacity duration-300 ${(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-          <div className="text-center mb-8">
-            <h3 className="text-3xl font-display font-medium text-text-pri mb-2 animate-slide-up-fade">Lecture Hall</h3>
-            <p className="text-text-sec text-sm">Upload content to begin session.</p>
-          </div>
+        {/* CHAT / LECTURE MODE INPUT */}
+        <div className={`absolute inset-0 flex flex-col items-center justify-center p-8 bg-[#050505] z-20 transition-opacity duration-300 ${(appMode === 'PROFESSOR' || appMode === 'CHAT') ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+          <h3 className="font-cinzel font-bold text-2xl text-white mb-8">
+            {appMode === 'PROFESSOR' ? 'The Lecture Hall' : 'Direct Uplink'}
+          </h3>
 
-          {selectedFiles.length > 0 && (
-            <div className="w-full max-w-2xl mb-6 animate-slide-up-fade">
-              <FileList />
-            </div>
-          )}
+          {selectedFiles.length > 0 && <div className="mb-8"><FileList /></div>}
 
-          <div className="w-full max-w-2xl relative group animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
-            <div className="relative">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && executeGeneration(appMode)}
-                className="w-full bg-panel border border-border-main rounded-2xl pl-6 pr-16 md:pr-48 py-6 text-text-pri outline-none focus:border-amber-500 placeholder-text-sec text-lg shadow-2xl transition-all"
-                placeholder={appMode === 'PROFESSOR' ? "Upload notes to start lecture..." : "Ask a question..."}
-              />
-              <div className="absolute right-3 top-3 bottom-3 flex items-center gap-2 z-30">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-full w-10 text-text-sec hover:text-text-pri transition-colors hover:bg-black/5 rounded-xl border border-transparent hover:border-border-main flex items-center justify-center"
-                  title="Attach File"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
-                </button>
-                <button onClick={() => executeGeneration(appMode)} className="hidden md:flex h-full px-6 bg-amber-600 rounded-xl text-white hover:bg-amber-500 transition-colors shadow-lg items-center justify-center font-bold text-xs uppercase tracking-widest">
-                  Start ({getModeCost(appMode)} NT)
-                </button>
-                <button onClick={() => executeGeneration(appMode)} className="md:hidden h-10 w-10 bg-amber-600 rounded-xl text-white hover:bg-amber-500 flex items-center justify-center shadow-lg">
-                  →
-                </button>
-              </div>
+          <div className="w-full max-w-2xl relative">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && executeGeneration(appMode)}
+              placeholder={appMode === 'PROFESSOR' ? "Upload notes to begin lecture..." : "Query the neural network..."}
+              className="w-full bg-black/50 border border-white/20 rounded-none border-b-2 focus:border-b-cyan-500 px-6 py-4 text-lg font-light text-white outline-none placeholder-gray-700 transition-colors"
+            />
+            <div className="absolute right-0 bottom-0 top-0 flex items-center gap-2 pr-2">
+              <button onClick={() => fileInputRef.current?.click()} className="p-2 text-gray-500 hover:text-cyan-400 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+              </button>
+              <button onClick={() => executeGeneration(appMode)} className="px-6 h-10 bg-white/5 border border-white/10 text-white font-mono text-[10px] uppercase tracking-widest hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/50 transition-all">
+                TRANSMIT
+              </button>
             </div>
           </div>
         </div>
+
       </div>
 
-      {fileError && <div className="mt-4 p-4 bg-red-900/20 border border-red-500/20 text-red-400 text-sm text-center rounded-2xl font-bold animate-slide-up-fade">{fileError}</div>}
+      {fileError && (
+        <div className="mt-4 p-4 border border-red-500/50 bg-red-900/10 text-red-500 font-mono text-xs text-center uppercase tracking-widest animate-pulse">
+          ⚠ ERROR: {fileError}
+        </div>
+      )}
+
       <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.doc,.pptx,.txt,.png,.jpg,.jpeg,.webp,.zip" onChange={handleFileChange} />
     </div>
   );

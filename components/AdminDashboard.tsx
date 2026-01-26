@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { getAdminAnalytics, toggleBanUser, deleteUserAccount, deductCredits, broadcastNotification } from '../../services/supabase';
-import { AdminSidebar } from './AdminSidebar';
-import { AdminOverview } from './AdminOverview';
-import { AdminUserTable } from './AdminUserTable';
-import { BlogCMS } from './BlogCMS';
-import { AdminBroadcast } from './AdminBroadcast';
+import { getAdminAnalytics, toggleBanUser, deleteUserAccount, deductCredits, broadcastNotification } from '../services/supabase';
+import { AdminSidebar } from './Admin/AdminSidebar';
+import { AdminOverview } from './Admin/AdminOverview';
+import { AdminUserTable } from './Admin/AdminUserTable';
+import { BlogCMS } from './Admin/BlogCMS';
+import { AdminBroadcast } from './Admin/AdminBroadcast';
 
 interface AdminDashboardProps {
     onExit?: () => void;

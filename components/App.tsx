@@ -12,7 +12,7 @@ import { AuthPage } from './Auth/AuthPage';
 import { AdminLoginPage } from './Auth/AdminLoginPage';
 import { BlogPage } from './Blog/BlogPage';
 import { BlogPost } from './Blog/BlogPost';
-import AdminDashboard from './AdminDashboard';
+import { LegalPage } from './LegalPage';
 import { NotFound } from './NotFound';
 import { LandingPage } from './LandingPage';
 import { PricingPage } from './PricingPage';
@@ -131,18 +131,11 @@ const App: React.FC = () => {
         // ... (existing routing logic)
     }, []);
 
-    const handleNavigate = (view: ViewState | 'BLOG' | 'BLOG_POST', url: string) => {
-        if (view === 'BLOG_POST' && url.startsWith('/blog/')) {
-            setBlogSlug(url.split('/')[2]);
-        }
-        window.history.pushState({}, '', url);
-        setCurrentView(view);
-    };
+
 
     // ... (render logic)
 
-    if (currentView === 'BLOG') return <BlogPage onNavigate={(path) => handleNavigate(path.includes('/blog/') ? 'BLOG_POST' : path === '/blog' ? 'BLOG' : 'LANDING', path)} />;
-    if (currentView === 'BLOG_POST' && blogSlug) return <BlogPost slug={blogSlug} onNavigate={(path) => handleNavigate(path === '/blog' ? 'BLOG' : path === '/' ? 'LANDING' : 'AUTH', path)} />;
+
 
     const [shareId, setShareId] = useState<string | null>(null);
 
@@ -213,7 +206,10 @@ const App: React.FC = () => {
 
     // --- FUNCTIONS ---
 
-    const handleNavigate = useCallback((view: ViewState, url: string) => {
+    const handleNavigate = useCallback((view: ViewState | 'BLOG' | 'BLOG_POST', url: string) => {
+        if (view === 'BLOG_POST' && url.startsWith('/blog/')) {
+            setBlogSlug(url.split('/')[2]);
+        }
         if (typeof window !== 'undefined') {
             window.history.pushState({}, '', url);
         }
@@ -623,6 +619,8 @@ const App: React.FC = () => {
 
     // --- RENDER ---
     if (loading) return <SkeletonDashboard />;
+    if (currentView === 'BLOG') return <BlogPage onNavigate={(path) => handleNavigate(path.includes('/blog/') ? 'BLOG_POST' : path === '/blog' ? 'BLOG' : 'LANDING', path)} />;
+    if (currentView === 'BLOG_POST' && blogSlug) return <BlogPost slug={blogSlug} onNavigate={(path) => handleNavigate(path === '/blog' ? 'BLOG' : path === '/' ? 'LANDING' : 'AUTH', path)} />;
     if (currentView === 'AUTH_CALLBACK') return <AuthCallback onSuccess={() => handleNavigate('APP', '/')} onError={() => { console.warn('Auth callback failed, redirecting to login'); handleNavigate('AUTH', '/login'); }} />;
     if (currentView === 'SHARED' && shareId) return <SharedView shareId={shareId} onNavigateHome={() => window.location.href = '/'} />;
     if (currentView === 'ADMIN_LOGIN') return <AdminLoginPage onBack={() => handleNavigate('LANDING', '/')} onSuccess={handleAdminSuccess} />;

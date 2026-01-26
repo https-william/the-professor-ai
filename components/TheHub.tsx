@@ -26,7 +26,6 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const [roomId, setRoomId] = useState('');
     const [motivation, setMotivation] = useState('Syncing Neural Network...');
 
-    // Call State
     const [callState, setCallState] = useState<CallState>({ status: 'IDLE', isAudioEnabled: true, isVideoEnabled: true });
     const [incomingCaller, setIncomingCaller] = useState<{ id: string, answer: () => Promise<void> } | null>(null);
 
@@ -34,7 +33,6 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const subscriptionRef = useRef<any>(null);
 
-    // Initialize Peer Service
     useEffect(() => {
         if (user.alias) {
             callService.initialize(
@@ -43,11 +41,6 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                 (callerId, answer) => setIncomingCaller({ id: callerId, answer })
             );
         }
-        return () => {
-            // We don't necessarily destroy peer on unmount to allow navigating while calling? 
-            // Ideally yes, but for now let's clean up
-            // callService.endCall(); 
-        };
     }, [user.alias]);
 
     useEffect(() => {
@@ -68,16 +61,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                 (msgs) => setMessages(msgs),
                 (typers) => setTypingUsers(typers),
                 (users) => setOnlineUsers(users),
-                (signal) => {
-                    // Handle WebRTC signals if needed, but PeerJS usually handles this via its own server/socket
-                    // If we were doing manual signaling we'd use this.
-                    // PeerJS uses its own cloud, so we strictly use this for "Intent" if needed or supplementary data.
-                    // For now, PeerJS handles the handshake. 
-                    // Wait, PeerJS needs the remote Peer ID.
-                    // We can use this channel to broadcast "I am PeerID X" if IDs are random.
-                    // But we used `user.alias` as PeerJS ID (cleaned).
-                    // So we know who to call if we know who is online.
-                }
+                (signal) => { }
             );
             return () => {
                 if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
@@ -96,10 +80,9 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
             if (!id) throw new Error("Failed to retrieve Room ID");
             setRoomId(id);
             setMode('ROOM');
-            setRoomCode("HUB-" + Math.floor(1000 + Math.random() * 9000));
+            setRoomCode("NET-" + Math.floor(1000 + Math.random() * 9000));
         } catch (e: any) {
-            console.error("Hub Create Error:", e);
-            alert("Hub creation failed. Permissions error.");
+            alert("Network creation failed. Permissions error.");
         } finally {
             setLoading(false);
         }
@@ -114,8 +97,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
             setRoomId(id);
             setMode('ROOM');
         } catch (e: any) {
-            console.error("Hub Join Error:", e);
-            alert("Could not join room. Check code.");
+            alert("Could not link to node. Check code.");
         } finally {
             setLoading(false);
         }
@@ -128,16 +110,16 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
 
         try {
             await sendHubMessage(roomId, user.alias || 'You', msgText);
-            subscriptionRef.current?.sendTyping(); // Clear typing status? No, typing is whilst typing.
+            subscriptionRef.current?.sendTyping();
 
             if (msgText.toLowerCase().includes('@professor')) {
-                const context = hubSections.map(s => s.content).join('\n') || "No documents uploaded yet.";
+                const context = hubSections.map(s => s.content).join('\n') || "No data stream found.";
                 generateHubResponse(msgText, context).then((response) => {
                     sendHubMessage(roomId, 'The Professor', response, 'text');
                 });
             }
         } catch (e) {
-            console.error("Message Send Failed", e);
+            console.error("Message Blocked", e);
         }
     };
 
@@ -152,9 +134,9 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                     timerDuration: 'Limitless', personality: 'Academic', analogyDomain: 'General'
                 });
                 setHubSections(sections);
-                await sendHubMessage(roomId, 'System', `${user.alias} uploaded ${file.name}. Materials generated.`);
+                await sendHubMessage(roomId, 'System', `DATA UPLINK: ${file.name}. Analysis Complete.`);
             } catch (err: any) {
-                alert("Failed to process file: " + err.message);
+                alert("Upload Failed: " + err.message);
             } finally {
                 setIsLoadingSlides(false);
             }
@@ -168,50 +150,47 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
 
     if (mode === 'LOBBY') {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] p-6 text-center animate-fade-in relative glass-container glass-container--rounded">
-                {/* Glass Layers */}
-                <div className="glass-filter" />
-                <div className="glass-overlay" />
-                <div className="glass-specular" />
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] p-6 text-center animate-slide-up-fade relative font-sans">
+                {/* Background Detail */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+                </div>
 
-                {/* Content */}
-                <div className="glass-content flex flex-col items-center justify-center w-full h-full p-6">
-                    <button onClick={onExit} className="absolute top-4 right-4 text-gray-500 hover:text-white text-xs uppercase font-bold tracking-widest z-20">Exit</button>
+                <div className="glass-panel-heavy p-12 rounded-2xl w-full max-w-lg relative z-10 border-blue-500/20 shadow-2xl">
+                    <button onClick={onExit} className="absolute top-6 right-6 text-[10px] font-mono font-bold text-gray-500 hover:text-white uppercase tracking-widest transition-colors z-20">Disconnect</button>
 
-                    <div className="mb-10 w-full max-w-md relative">
-                        <div className="absolute inset-0 bg-blue-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+                    <div className="w-24 h-24 bg-[#0A0A0C] rounded-full border border-blue-500/30 flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(59,130,246,0.2)] animate-[float_6s_ease-in-out_infinite] relative">
+                        <div className="absolute inset-0 rounded-full border border-blue-500/10 animate-ping"></div>
+                        <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    </div>
 
-                        <div className="w-24 h-24 bg-gradient-to-br from-blue-900/50 to-black rounded-3xl border border-blue-500/20 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(59,130,246,0.15)] animate-float backdrop-blur-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                        </div>
-                        <h1 className="text-4xl font-bold text-white mb-4 font-display">The Hub</h1>
-                        <p className="text-blue-400 text-sm font-mono uppercase tracking-widest mb-8 h-6">{motivation}</p>
+                    <h1 className="text-4xl font-cinzel font-bold text-white mb-2">The Hub</h1>
+                    <p className="text-xs text-blue-400 font-mono uppercase tracking-[0.2em] mb-10 h-4">{motivation}</p>
 
-                        <div className="grid grid-cols-1 gap-4 z-10 relative">
+                    <div className="space-y-4">
+                        <button
+                            onClick={handleCreate}
+                            disabled={loading}
+                            className="w-full py-4 bg-blue-600/10 border border-blue-500/30 hover:bg-blue-600/20 hover:border-blue-500/50 rounded text-blue-400 font-bold uppercase text-xs tracking-widest transition-all"
+                        >
+                            {loading ? 'Initializing Node...' : 'Establish Network Node'}
+                        </button>
+
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="NODE ID"
+                                className="bg-black/50 border border-white/10 rounded px-4 py-3 text-center font-mono uppercase text-white w-full outline-none focus:border-blue-500 transition-colors text-sm"
+                                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                value={roomCode}
+                            />
                             <button
-                                onClick={handleCreate}
-                                disabled={loading}
-                                className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-500/50 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-3 group"
+                                onClick={handleJoin}
+                                disabled={!roomCode || loading}
+                                className="px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded uppercase text-[10px] tracking-widest transition-colors disabled:opacity-50 border border-white/10"
                             >
-                                {loading ? 'Initializing...' : 'Create New Cell'}
+                                Link
                             </button>
-
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="ENTER CODE"
-                                    className="bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-center font-mono uppercase text-white w-full outline-none focus:border-blue-500 transition-colors"
-                                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                                    value={roomCode}
-                                />
-                                <button
-                                    onClick={handleJoin}
-                                    disabled={!roomCode || loading}
-                                    className="px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl uppercase text-xs transition-colors disabled:opacity-50"
-                                >
-                                    Join
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -244,28 +223,31 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
             )}
 
             {/* Header */}
-            <div className="h-16 border-b border-white/5 flex justify-between items-center px-4 md:px-6 bg-[#0a0a0a]/90 backdrop-blur-xl">
-                <div className="flex items-center gap-4">
+            <div className="h-16 border-b border-white/5 flex justify-between items-center px-6 bg-[#0a0a0a]/90 backdrop-blur-xl shrink-0">
+                <div className="flex items-center gap-6">
                     <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { navigator.clipboard.writeText(roomCode); alert("Copied!"); }}>
-                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Secure Link</span>
                         <div className="flex items-center gap-2">
-                            <span className="text-lg font-mono font-bold text-blue-400 tracking-wider">{roomCode || "ACTIVE"}</span>
-                            <div className={`w-2 h-2 rounded-full ${onlineUsers.length > 1 ? 'bg-green-500 animate-pulse' : 'bg-gray-700'}`}></div>
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></span>
+                            <span className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">Secure Uplink</span>
                         </div>
+                        <span className="text-lg font-cinzel font-bold text-white tracking-wider">{roomCode || "ACTIVE"}</span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    {/* Active Users Helper */}
-                    <div className="hidden md:flex -space-x-2 mr-4">
+                <div className="flex items-center gap-4">
+                    {/* Active Nodes */}
+                    <div className="flex -space-x-3 mr-4">
                         {onlineUsers.map((u, i) => (
-                            <div key={i} title={u} className="w-8 h-8 rounded-full bg-gray-800 border-2 border-black flex items-center justify-center text-[10px] text-white font-bold uppercase cursor-pointer hover:scale-110 transition-transform hover:z-10" onClick={() => u !== user.alias && handleStartCall(u)}>
+                            <div key={i} title={u}
+                                className="w-8 h-8 rounded-full bg-[#111] border border-white/10 flex items-center justify-center text-[10px] text-gray-400 font-bold uppercase cursor-pointer hover:border-blue-500 hover:text-blue-500 transition-all hover:z-10"
+                                onClick={() => u !== user.alias && handleStartCall(u)}
+                            >
                                 {u.substring(0, 2)}
                             </div>
                         ))}
                     </div>
 
-                    <button onClick={onExit} className="px-4 py-2 bg-red-900/10 text-red-500 rounded-full text-xs font-bold uppercase hover:bg-red-900/30 transition-colors border border-red-900/20">Disconnect</button>
+                    <button onClick={onExit} className="px-4 py-2 bg-red-900/10 text-red-500 rounded border border-red-900/20 text-[10px] font-bold uppercase tracking-widest hover:bg-red-900/30 transition-colors">Abort</button>
                 </div>
             </div>
 
@@ -274,8 +256,8 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                 <div className="flex-1 bg-[#050505] flex flex-col relative overflow-hidden">
                     {isLoadingSlides ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-blue-400">
-                            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <span className="font-mono text-xs uppercase tracking-widest animate-pulse">Decrypting Materials...</span>
+                            <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                            <span className="font-mono text-xs uppercase tracking-[0.3em] animate-pulse">Decrypting Data Stream...</span>
                         </div>
                     ) : hubSections.length > 0 ? (
                         <div className="h-full overflow-y-auto p-4 md:p-8 custom-scrollbar">
@@ -283,28 +265,33 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                         </div>
                     ) : (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
-                            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 animate-pulse">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                            <div className="w-32 h-32 border border-white/5 rounded-full flex items-center justify-center mb-6 relative">
+                                <div className="absolute inset-0 border border-white/5 rounded-full animate-ping opacity-50"></div>
+                                <svg className="w-10 h-10 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                             </div>
-                            <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">Drop Zone Empty</p>
-                            <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase rounded-xl transition-all shadow-lg hover:shadow-blue-500/20">Upload Intelligence</button>
+                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-gray-500 mb-8">Data Stream Passive</p>
+                            <button onClick={() => fileInputRef.current?.click()} className="px-8 py-3 bg-blue-900/20 border border-blue-500/50 hover:bg-blue-900/40 text-blue-400 font-mono text-[10px] uppercase tracking-widest rounded transition-all">Upload Intelligence</button>
                             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept=".pdf,.docx,.txt" />
                         </div>
                     )}
                 </div>
 
                 {/* Chat & Controls Sidebar */}
-                <div className="w-full max-w-sm border-l border-white/5 flex flex-col bg-[#080808]">
-                    {/* Participant List (Mobile Visible? Maybe hidden on mobile initially, simplified here) */}
+                <div className="w-[400px] border-l border-white/5 flex flex-col bg-[#080808]">
+                    <div className="p-3 border-b border-white/5 bg-[#050505]">
+                        <h3 className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">Comms Log</h3>
+                    </div>
 
-                    <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar relative">
+                    <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar bg-[#050505]">
                         {messages.map((m, i) => (
-                            <div key={i} className={`flex flex-col ${m.sender === (user.alias || 'You') ? 'items-end' : 'items-start'} animate-slide-in`}>
+                            <div key={i} className={`flex flex-col ${m.sender === (user.alias || 'You') ? 'items-end' : 'items-start'} animate-fade-in`}>
                                 <div className="flex items-baseline gap-2 mb-1">
-                                    <span className={`text-[9px] font-bold uppercase tracking-wider ${m.sender === 'The Professor' ? 'text-amber-500' : 'text-gray-500'}`}>{m.sender}</span>
-                                    <span className="text-[8px] text-gray-700">{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <span className={`text-[9px] font-mono font-bold uppercase tracking-wider ${m.sender === 'The Professor' ? 'text-amber-500' : 'text-cyan-600'}`}>
+                                        {m.sender === 'The Professor' ? '/// SYS.AI' : `// ${m.sender}`}
+                                    </span>
+                                    <span className="text-[8px] text-gray-800 font-mono">{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
-                                <span className={`px-4 py-3 rounded-2xl text-sm max-w-[90%] leading-relaxed ${m.sender === (user.alias || 'You') ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-[#151515] text-gray-300 border border-white/5 rounded-tl-sm'}`}>
+                                <span className={`px-4 py-3 text-xs leading-relaxed max-w-[90%] border ${m.sender === (user.alias || 'You') ? 'bg-cyan-900/10 text-cyan-400 border-cyan-500/30 rounded-l-xl rounded-tr-xl' : 'bg-[#111] text-gray-400 border-white/10 rounded-r-xl rounded-tl-xl'}`}>
                                     {m.content}
                                 </span>
                             </div>
@@ -313,16 +300,16 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-4 bg-[#0a0a0a] border-t border-white/5">
+                    <div className="p-4 bg-[#080808] border-t border-white/5">
                         {typingUsers.length > 0 && (
-                            <div className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mb-2 animate-pulse pl-1">
-                                {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} transmitting...
+                            <div className="text-[9px] text-cyan-500 font-mono uppercase tracking-widest mb-2 animate-pulse pl-1">
+                                {typingUsers.join(', ')} transmitting...
                             </div>
                         )}
-                        <div className="relative">
+                        <div className="relative group">
                             <input
-                                className="w-full bg-[#111] rounded-xl pl-4 pr-12 py-3 text-white outline-none focus:ring-1 focus:ring-blue-500/50 transition-all text-sm placeholder-gray-600 font-medium"
-                                placeholder="Broadcast message..."
+                                className="w-full bg-[#050505] border border-white/10 rounded-lg pl-4 pr-12 py-4 text-white outline-none focus:border-cyan-500/50 transition-all text-sm placeholder-gray-700 font-mono"
+                                placeholder="> Broadcast..."
                                 value={input}
                                 onChange={(e) => {
                                     setInput(e.target.value);
@@ -333,9 +320,9 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
                             <button
                                 onClick={handleSendMessage}
                                 disabled={!input.trim()}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-0"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-cyan-900/20 text-cyan-500 rounded hover:bg-cyan-900/40 transition-colors disabled:opacity-0"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                             </button>
                         </div>
                     </div>
