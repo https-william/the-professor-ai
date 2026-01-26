@@ -32,7 +32,7 @@
 
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline';">
+    content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob:; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline';">
   <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="apple-touch-icon" href="/logo.png">
   <link rel="manifest" href="/manifest.json" />
@@ -47,7 +47,6 @@
   <script async defer src="https://apis.google.com/js/api.js"></script>
   <script async defer src="https://accounts.google.com/gsi/client.js"></script>
 
-  <!-- PDF & Math Libs -->
   <!-- PDF & Math Libs -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -374,26 +373,6 @@
     }
   </style>
 
-  <!-- ES Module Shims -->
-  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
-
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react/": "https://esm.sh/react@18.3.1/",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
-    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react,react-dom",
-    "@google/genai": "https://esm.sh/@google/genai@0.12.0",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
-    "dompurify": "https://esm.sh/dompurify@3.0.9",
-    "peerjs": "https://esm.sh/peerjs@1.5.2?bundle",
-    "posthog-js": "https://esm.sh/posthog-js@1.100.0"
-  }
-}
-</script>
   <link rel="stylesheet" href="/index.css">
 </head>
 
@@ -441,7 +420,6 @@
     style="position: fixed; inset: 0; z-index: 100000; display: none; align-items: center; justify-content: center; background: #050505;">
   </div>
   <div id="printable-content" style="display: none;"></div>
-  <script type="module" src="./index.tsx"></script>
   <script type="module" src="/index.tsx"></script>
 </body>
 
