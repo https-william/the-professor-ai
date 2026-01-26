@@ -70,8 +70,6 @@ export default defineConfig({
     visualizer({ open: true, filename: 'stats.html', gzipSize: true, brotliSize: true })
   ],
   build: {
-    rollupOptions: {
-      external: ['posthog-js'],
-    }
+    // Standard build options
   }
 });
