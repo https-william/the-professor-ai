@@ -150,10 +150,10 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
 
     if (mode === 'LOBBY') {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] p-6 text-center animate-slide-up-fade relative font-sans">
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center animate-slide-up-fade relative font-sans">
                 {/* Background Detail */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-900/10 rounded-full blur-[80px] animate-pulse-slow"></div>
                 </div>
 
                 <div className="glass-panel-heavy p-12 rounded-2xl w-full max-w-lg relative z-10 border-blue-500/20 shadow-2xl">
@@ -199,7 +199,7 @@ export const TheHub: React.FC<TheHubProps> = ({ user, onExit }) => {
     }
 
     return (
-        <div className="fixed inset-0 bg-[#050505] z-[100] flex flex-col animate-fade-in font-sans">
+        <div className="absolute inset-0 bg-[#050505] z-10 flex flex-col animate-fade-in font-sans">
             {/* Call Overlay & Modals */}
             <CallOverlay
                 state={callState}

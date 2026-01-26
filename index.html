@@ -32,7 +32,7 @@
 
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://hzdjctvkrsmtjqhndckk.supabase.co https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://esm.sh https://ga.jspm.io https://js.stripe.com https://js.paystack.co https://paystack.com blob:; connect-src 'self' https://hzdjctvkrsmtjqhndckk.supabase.co wss://hzdjctvkrsmtjqhndckk.supabase.co https://generativelanguage.googleapis.com https://openrouter.ai https://api.deepseek.com https://api.groq.com https://api.mistral.ai https://*.peerjs.com wss://*.peerjs.com https://0.peerjs.com wss://0.peerjs.com https://esm.sh https://cdn.jsdelivr.net https://ga.jspm.io; img-src 'self' data: https://hzdjctvkrsmtjqhndckk.supabase.co https://www.transparenttextures.com blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://paystack.com https://fonts.cdnfonts.com; font-src 'self' https://fonts.gstatic.com https://fonts.cdnfonts.com https://cdn.jsdelivr.net data:; media-src 'self' blob:; object-src 'none'; frame-src 'self' https://www.youtube.com https://js.stripe.com https://checkout.paystack.com https://accounts.google.com;">
+    content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline';">
   <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="apple-touch-icon" href="/logo.png">
   <link rel="manifest" href="/manifest.json" />
@@ -157,6 +157,8 @@
             'shimmer': 'shimmer 2.5s linear infinite',
             'liquid-blob': 'liquidBlob 20s infinite alternate',
             'mesh-drift': 'meshDrift 20s ease-in-out infinite alternate',
+            'marquee': 'marquee 40s linear infinite',
+            'float': 'float 6s ease-in-out infinite',
           },
           keyframes: {
             fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -172,6 +174,14 @@
             meshDrift: {
               '0%': { transform: 'translate(0, 0) rotate(0deg)' },
               '100%': { transform: 'translate(-20px, -20px) rotate(2deg)' }
+            },
+            marquee: {
+              '0%': { transform: 'translateX(0%)' },
+              '100%': { transform: 'translateX(-100%)' }
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' }
             }
           },
         },

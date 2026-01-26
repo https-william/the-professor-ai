@@ -1,5 +1,5 @@
-
-import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
+import { GlassWindow } from './ui/GlassWindow';
+import { Dock } from './ui/Dock';
 import { Hero } from './Hero';
 import { InputSection } from './InputSection';
 import { LoadingOverlay } from './LoadingOverlay';
@@ -618,6 +618,11 @@ const App: React.FC = () => {
 
 
     // --- RENDER ---
+    // --- GLASS OS STATE ---
+    const [activeApp, setActiveApp] = useState<'TERMINAL' | 'EXAM' | 'LIBRARY' | 'PROFILE'>('TERMINAL');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    // --- RENDER ---
     if (loading) return <SkeletonDashboard />;
     if (currentView === 'BLOG') return <BlogPage onNavigate={(path) => handleNavigate(path.includes('/blog/') ? 'BLOG_POST' : path === '/blog' ? 'BLOG' : 'LANDING', path)} />;
     if (currentView === 'BLOG_POST' && blogSlug) return <BlogPost slug={blogSlug} onNavigate={(path) => handleNavigate(path === '/blog' ? 'BLOG' : path === '/' ? 'LANDING' : 'AUTH', path)} />;
@@ -635,41 +640,24 @@ const App: React.FC = () => {
     if (currentView === 'LANDING' && !user) return <LandingPage onEnter={() => { trackEvent('landing_enter_click'); handleNavigate('AUTH', '/login'); }} onPricing={() => handleNavigate('PRICING', '/pricing')} onLegal={() => handleNavigate('LEGAL', '/legal')} />;
     if (currentView === 'NOT_FOUND') return <NotFound onGoHome={() => handleNavigate('LANDING', '/')} />;
 
-    const showLibrary = status === AppStatus.IDLE && appMode !== 'ADMIN';
-
     return (
         <HelmetProvider>
-            <div className={`min-h-screen text-text-pri bg-core selection:bg-accent/30 overflow-x-hidden relative transition-colors duration-1000 font-sans pb-32`}>
+            <div className={`min-h-screen text-text-pri bg-core selection:bg-accent/30 overflow-hidden relative font-sans`}>
                 <SEOHead
-                    title="AI Study Assistant"
-                    description="The Professor AI - Your personal academic tutor."
-                    schema={{
-                        "@context": "https://schema.org",
-                        "@type": "SoftwareApplication",
-                        "name": "The Professor AI",
-                        "applicationCategory": "EducationalApplication"
-                    }}
+                    title="The Professor | GlassOS"
+                    description="Your AI Academic Operating System."
                 />
                 <AmbientBackground theme='Deep Space' />
                 <CountdownTimer />
                 <PWAPrompt />
 
+                {/* --- OS LAYER: MODALS --- */}
                 {showOnboarding && <WelcomeModal onComplete={(data) => {
-                    const updatedProfile = { ...userProfile, ...data, hasCompletedOnboarding: true };
-                    setUserProfile(updatedProfile);
+                    const updated = { ...userProfile, ...data, hasCompletedOnboarding: true };
+                    setUserProfile(updated);
                     setShowOnboarding(false);
-                    if (user) {
-                        saveUserToSupabase(user.uid, { ...data, hasCompletedOnboarding: true });
-                    }
+                    if (user) saveUserToSupabase(user.uid, updated);
                 }} />}
-
-                {incomingCall && (
-                    <IncomingCallModal
-                        callerId={incomingCall.peer}
-                        onAccept={handleAcceptCall}
-                        onReject={handleEndCall}
-                    />
-                )}
 
                 <SubscriptionModal
                     isOpen={isSubscriptionOpen}
@@ -679,135 +667,91 @@ const App: React.FC = () => {
                     userEmail={user?.email || undefined}
                 />
 
-                <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
-                <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
-                {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
-
-                {/* Hide Dock in Professor Mode (Distraction Free) */}
-                {status !== AppStatus.ERROR && appMode !== 'ADMIN' && status !== AppStatus.PROCESSING_FILE && status !== AppStatus.GENERATING_CONTENT && appMode !== 'PROFESSOR' && (
-                    <>
-                        <FloatingDock
-                            mode={appMode}
-                            setMode={handleSetAppMode}
-                            onHub={() => setStatus(AppStatus.READY)}
-                            isDuelActive={!!activeDuelId}
-                            onDuel={() => setAppMode('DUEL')}
-                        />
-                        <MobileNavBar
-                            mode={appMode}
-                            setMode={handleSetAppMode}
-                        />
-                    </>
-                )}
-
-                {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
-                    <ProfessorCharacter onClick={() => { setAppMode('CHAT'); setStatus(AppStatus.READY); }} />
-                )}
-
-                <nav className={`border-b backdrop-blur-md fixed w-full z-40 bg-panel border-border-main top-0`}>
-                    <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => {
-                            if (appMode === 'ADMIN') {
-                                setAppMode('EXAM');
-                                setStatus(AppStatus.IDLE);
-                            } else {
-                                handleQuizAction('RESET');
-                            }
-                        }}>
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white border border-white/10 shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
-                            </div>
-                            <span className="font-display font-bold text-lg hidden sm:block tracking-tight text-text-pri">The Professor</span>
-                        </div>
-
-                        {isFresher && appMode !== 'ADMIN' && (
-                            <CreditWallet balance={userProfile.credits || 0} onClick={() => setIsSubscriptionOpen(true)} className="hidden sm:flex" />
-                        )}
-
-                        <div className="flex items-center gap-2 sm:gap-4">
-                            {appMode === 'ADMIN' && (
-                                <button onClick={() => { setAppMode('EXAM'); setStatus(AppStatus.IDLE); }} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-red-900/50 transition-all">Exit Office</button>
-                            )}
-
-                            {showLibrary && (
-                                <button onClick={() => setIsHistoryOpen(true)} className="p-2 text-text-sec hover:text-text-pri transition-colors relative group" title="My Library">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                                </button>
-                            )}
-
-                            <NotificationBell />
-
-                            <div className="h-6 w-px bg-border-main mx-2"></div>
-
-                            <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group relative">
-                                <div className="text-right hidden sm:block">
-                                    <p className="text-xs font-bold text-text-pri group-hover:text-accent transition-colors">{userProfile.alias}</p>
-                                    <p className="text-[9px] font-mono text-text-sec uppercase">Lvl {Math.floor((userProfile.xp || 0) / 100) + 1}</p>
-                                </div>
-                                <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} flex items-center justify-center border-2 border-transparent group-hover:border-accent transition-all shadow-lg ring-2 ring-white/10 relative overflow-hidden`}>
-                                    <span className="text-sm">{userProfile.avatarEmoji}</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                </nav>
-
-                <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} history={history}
-                    onSelect={(item) => {
-                        if (item.mode === 'EXAM') {
-                            setQuizState(item.data as QuizState);
-                        } else if (item.mode === 'FLASHCARDS') {
-                            setFlashcardState(item.data as QuizState);
-                        } else if (item.mode === 'PROFESSOR') {
-                            setProfessorState(item.data as ProfessorState);
-                        } else if (item.mode === 'CHAT') {
-                            setChatState(item.data as ChatState);
-                        }
-                        setAppMode(item.mode);
-                        setStatus(AppStatus.READY);
-                        setActiveHistoryId(item.id);
-                        setIsHistoryOpen(false);
-                    }}
-                    onDelete={async (id) => {
-                        await deleteHistoryItem(id);
-                        setHistory(await loadHistory());
-                        if (activeHistoryId === id) handleQuizAction('RESET', { force: true });
-                    }}
-                />
-
                 <UserProfileModal
                     isOpen={isProfileOpen}
                     onClose={() => setIsProfileOpen(false)}
                     profile={userProfile}
-                    onSave={(updated) => { setUserProfile(updated); saveUserProfile(updated); if (user) saveUserToSupabase(user.uid, updated); }}
-                    onClearHistory={() => { }}
+                    onSave={(u) => { setUserProfile(u); saveUserProfile(u); if (user) saveUserToSupabase(user.uid, u); }}
                     onLogout={async () => { await logout(); handleNavigate('LANDING', '/'); }}
-                    isAdmin={!!isAdmin}
-                    onRequestAdminAccess={() => { setIsProfileOpen(false); setShowAdminVerify(true); }}
+                    isAdmin={isAdmin}
+                    onRequestAdminAccess={() => setShowAdminVerify(true)}
                     onUpgradeRequest={() => setIsSubscriptionOpen(true)}
-                    onLegalRequest={() => { setIsProfileOpen(false); handleNavigate('LEGAL', '/legal'); }}
+                    onLegalRequest={() => handleNavigate('LEGAL', '/legal')}
                 />
 
-                <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+                <ConfirmationModal isOpen={showExitConfirmation} onConfirm={confirmExit} onCancel={() => { setShowExitConfirmation(false); setPendingAction(null); }} />
+                <AdminVerifyModal isOpen={showAdminVerify} onClose={() => setShowAdminVerify(false)} onSuccess={handleAdminSuccess} />
+                {duelReadyData && <DuelReadyModal duelId={duelReadyData.id} initialCode={duelReadyData.code} isHost={duelReadyData.isHost} onEnter={handleEnterDuel} />}
 
-                <main className="max-w-7xl mx-auto px-4 pt-24 pb-8 relative z-10 min-h-[calc(100vh-80px)]">
-                    {status === AppStatus.IDLE && appMode !== 'ADMIN' && (
-                        <>
-                            <Hero />
-                            <InputSection
-                                onProcess={handleProcess}
-                                isLoading={false}
-                                appMode={appMode}
-                                setAppMode={handleSetAppMode}
-                                defaultConfig={{ difficulty: userProfile.defaultDifficulty }}
-                                userProfile={userProfile}
-                                onShowSubscription={() => setIsSubscriptionOpen(true)}
-                                onOpenProfile={() => setIsProfileOpen(true)}
-                                onDuelStart={handleDuelStart}
-                                onDuelJoin={handleDuelJoin}
-                                onHubEnter={() => { setAppMode('HUB'); setStatus(AppStatus.READY); }}
-                            />
-                        </>
+                {/* --- OS LAYER: SYSTEM UI --- */}
+
+                {/* Status Bar */}
+                <div className="fixed top-0 left-0 w-full h-8 bg-black/40 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 z-50 select-none">
+                    <div className="flex items-center gap-4">
+                        <span className="font-display font-bold text-xs tracking-widest text-white">THE PROFESSOR <span className="text-cyan-400">OS</span></span>
+                        <div className="h-3 w-px bg-white/10"></div>
+                        <span className="font-mono text-[10px] text-gray-500">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setIsSubscriptionOpen(true)} className="flex items-center gap-2 group">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="font-mono text-[10px] text-gray-400 group-hover:text-emerald-400 transition-colors uppercase">
+                                {userProfile.credits} CR
+                            </span>
+                        </button>
+                        <button onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2 group">
+                            <span className="font-mono text-[10px] text-gray-400 group-hover:text-white transition-colors uppercase truncate max-w-[100px]">
+                                {userProfile.alias}
+                            </span>
+                            <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${userProfile.avatarGradient} ring-1 ring-white/20`}></div>
+                        </button>
+                    </div>
+                </div>
+
+                {/* --- OS LAYER: WORKSPACE --- */}
+                <main className="absolute inset-0 pt-8 pb-20 overflow-hidden flex items-center justify-center p-4">
+
+                    {/* ERROR BOUNDARY DISPLAY */}
+                    {status === AppStatus.ERROR && (
+                        <div className="glass-window p-8 max-w-lg mx-auto text-center border-red-500/30 z-[100]">
+                            <h2 className="text-xl font-bold text-white mb-2">System Failure</h2>
+                            <p className="text-gray-400 mb-6 font-mono text-xs">{errorMsg}</p>
+                            <button onClick={() => { setStatus(AppStatus.IDLE); setAppMode('EXAM'); }} className="glass-button text-white border-red-500/30">
+                                Reboot
+                            </button>
+                        </div>
+                    )}
+
+                    {/* LOADING OVERLAY */}
+                    {status === AppStatus.GENERATING_CONTENT && (
+                        <LoadingOverlay
+                            status={statusText}
+                            type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'}
+                            onCancel={handleCancelGeneration}
+                        />
+                    )}
+
+                    {/* APP WINDOWS */}
+
+                    {/* 1. TERMINAL (INPUT) */}
+                    {activeApp === 'TERMINAL' && status === AppStatus.IDLE && (
+                        <div className="w-full max-w-4xl h-[600px] animate-slide-up-fade">
+                            <GlassWindow title="Neural_Input_Terminal" icon="⚡" onClose={() => { }}>
+                                <InputSection
+                                    onProcess={handleProcess}
+                                    isLoading={false}
+                                    appMode={appMode}
+                                    setAppMode={handleSetAppMode} // Keeping for internal logic
+                                    defaultConfig={{ difficulty: userProfile.defaultDifficulty || 'Medium' }}
+                                    userProfile={userProfile}
+                                    onShowSubscription={() => setIsSubscriptionOpen(true)}
+                                    // These will be routed to OS actions later
+                                    onOpenProfile={() => setIsProfileOpen(true)}
+                                    onDuelStart={handleDuelStart}
+                                    onDuelJoin={handleDuelJoin}
+                                />
+                            </GlassWindow>
+                        </div>
                     )}
                     {status === AppStatus.PROCESSING_FILE && <LoadingOverlay status="Processing Document..." type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
                     {status === AppStatus.GENERATING_CONTENT && <LoadingOverlay status={statusText || "Generating Content..."} type={appMode === 'PROFESSOR' ? 'PROFESSOR' : 'EXAM'} onCancel={handleCancelGeneration} />}
@@ -849,7 +793,7 @@ const App: React.FC = () => {
                     )}
                 </main>
             </div>
-        </HelmetProvider>
+        </HelmetProvider >
     );
 };
 
