@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Feedback Loop Review - The Professor</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f1218", /* Deep Void base */
+                        "surface-dark": "#1a1f2b",
+                        "glass": "rgba(255, 255, 255, 0.03)",
+                        "glass-border": "rgba(255, 255, 255, 0.08)",
+                        "amethyst": "#9d4edd",
+                        "amethyst-glow": "rgba(157, 78, 221, 0.2)",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "2xl": "2rem", "full": "9999px"},
+                    backdropBlur: {
+                        'xs': '2px',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for the Deep Void theme */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f1218; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3748; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a5568; 
+        }
+
+        .glass-panel {
+            background: rgba(20, 25, 35, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .highlight-amethyst {
+            background-color: rgba(157, 78, 221, 0.15);
+            border-bottom: 2px solid #9d4edd;
+            color: #e9d5ff;
+            padding: 2px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .highlight-amethyst:hover {
+            background-color: rgba(157, 78, 221, 0.3);
+            box-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-white font-display overflow-hidden selection:bg-amethyst selection:text-white">
+<div class="flex h-screen w-full relative">
+<!-- Deep Void Ambient Background Effects -->
+<div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amethyst/10 rounded-full blur-[120px] pointer-events-none"></div>
+<!-- Left Navigation Rail (Slim Glass Strip) -->
+<nav class="hidden md:flex w-20 flex-col items-center py-6 gap-8 glass-panel border-r z-20 h-full shrink-0">
+<div class="size-10 rounded-full bg-gradient-to-br from-primary to-amethyst flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white text-[24px]">school</span>
+</div>
+<div class="flex flex-col gap-6 w-full items-center flex-1">
+<button class="p-3 rounded-xl text-primary bg-primary/10 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+</button>
+<button class="p-3 rounded-xl text-[#90a7cb] hover:text-white hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">folder_open</span>
+</button>
+<button class="p-3 rounded-xl text-[#90a7cb] hover:text-white hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-3 rounded-xl text-[#90a7cb] hover:text-white hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">calendar_month</span>
+</button>
+</div>
+<div class="mt-auto flex flex-col gap-6 items-center">
+<button class="p-3 rounded-xl text-[#90a7cb] hover:text-white hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="size-8 rounded-full bg-cover bg-center ring-2 ring-white/10" data-alt="User profile picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDW_K_rXfLQBKrwVtlKd0LQd47hqpvPmgxm6TDjXkstrMdXYZus2aZrl90t0KneyJyqKZhgWYLsk7UZHhTDAT2pcSJeUkC91HOBbwlBVbcNyf21PjqLZJVJ7h6OHM9ScVxtQBf0TxxafZ4p5iM4loxUGTyD3HIoLeKSFsL04PLM_KaCOEZsz44OBlbkzdybjJ-Rr3M9RX6aCdrrKnAkbaAx9_ks7Z3Pev9u2hjv1aqe5-xOMvO4Lm4t58tEZWLQOsi1modmC_4p9dI');"></div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full relative z-10 min-w-0">
+<!-- Header -->
+<header class="flex items-center justify-between px-6 py-5 border-b border-glass-border glass-panel sticky top-0 z-20">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-[#90a7cb] text-xs font-medium uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+<span>Back to Dashboard</span>
+</div>
+<h1 class="text-xl md:text-2xl font-semibold text-white tracking-tight flex items-center gap-3">
+                        Sociology 101: Social Structures
+                        <span class="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 text-xs font-medium border border-yellow-500/20">Draft</span>
+</h1>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-sm text-[#90a7cb] hidden sm:block">Last edited 10m ago</span>
+<button class="h-9 px-4 rounded-lg bg-[#223149] hover:bg-[#2c3f5e] border border-glass-border text-white text-sm font-medium transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">ios_share</span>
+                        Export
+                    </button>
+<button class="h-9 px-4 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-medium shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check</span>
+                        Done
+                    </button>
+</div>
+</header>
+<!-- Split View Content -->
+<div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+<!-- Left Pane: Editor / Text Draft -->
+<div class="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth relative">
+<div class="max-w-3xl mx-auto pb-20">
+<div class="mb-8 pb-4 border-b border-glass-border">
+<h2 class="text-3xl font-bold text-white mb-2">The Invisible Framework</h2>
+<p class="text-[#90a7cb]">By Alex Student</p>
+</div>
+<div class="prose prose-invert prose-lg max-w-none text-[#d1d5db] leading-relaxed">
+<p class="mb-6">
+                                Social structures are often invisible to the naked eye, yet they dictate the rhythm of our daily lives. From the moment we wake up to the time we go to sleep, our actions are guided by a complex web of institutions, roles, and norms.
+                            </p>
+<p class="mb-6">
+<span class="highlight-amethyst relative group">
+                                    Social structures are good things
+                                    <span class="absolute -top-12 left-1/2 -translate-x-1/2 bg-surface-dark border border-amethyst/30 text-white text-xs px-3 py-1.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 flex items-center gap-1">
+<span class="material-symbols-outlined text-amethyst text-sm">psychology</span>
+                                        Too simplistic. Try "serve a functional purpose".
+                                    </span>
+</span> 
+                                because they provide order. However, this perspective fails to account for the rigid hierarchies that emerge from such order, often disenfranchising marginalized groups.
+                            </p>
+<p class="mb-6">
+                                Consider the educational system. Ideally, it is a meritocracy where effort equates to success. In reality, <span class="highlight-amethyst relative group">
+                                    it is messed up due to funding
+                                    <span class="absolute -top-12 left-1/2 -translate-x-1/2 bg-surface-dark border border-amethyst/30 text-white text-xs px-3 py-1.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 flex items-center gap-1">
+<span class="material-symbols-outlined text-amethyst text-sm">edit</span>
+                                        Informal tone. Suggest "plagued by funding disparities".
+                                    </span>
+</span>
+                                derived from property taxes, which inherently favors wealthy districts. This creates a cycle of poverty that is difficult to break, demonstrating how structure can act as a barrier rather than a bridge.
+                            </p>
+<p class="mb-6">
+                                Furthermore, the institution of marriage has evolved but remains a defining structure. While no longer strictly an economic arrangement, it continues to codify <span class="highlight-amethyst relative group">gender roles that are old</span>.
+                            </p>
+<p class="mb-6 text-[#90a7cb] italic">
+                                [Draft continues...]
+                            </p>
+</div>
+</div>
+</div>
+<!-- Right Pane: Feedback Loop (AI Companion) -->
+<div class="lg:w-[420px] w-full border-t lg:border-t-0 lg:border-l border-glass-border bg-[#10131a]/80 backdrop-blur-md flex flex-col h-[50vh] lg:h-full shrink-0">
+<div class="p-5 border-b border-glass-border flex justify-between items-center bg-white/5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amethyst">auto_awesome</span>
+<span class="font-medium text-white">Professor's Feedback</span>
+</div>
+<span class="text-xs text-[#90a7cb] bg-white/5 px-2 py-1 rounded">AI Model v4.0</span>
+</div>
+<div class="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+<!-- Grade Projection Card -->
+<div class="rounded-2xl p-5 border border-glass-border bg-gradient-to-b from-white/10 to-transparent relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-6xl">analytics</span>
+</div>
+<div class="flex justify-between items-end mb-4 relative z-10">
+<div>
+<p class="text-[#90a7cb] text-xs uppercase tracking-widest font-medium mb-1">Current Grade</p>
+<p class="text-white text-3xl font-bold">B+ <span class="text-lg font-normal text-white/50">(88%)</span></p>
+</div>
+<div class="text-right">
+<p class="text-amethyst text-xs uppercase tracking-widest font-medium mb-1">Potential</p>
+<p class="text-white text-3xl font-bold">A <span class="text-lg font-normal text-white/50">(94%)</span></p>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="relative pt-1">
+<div class="flex mb-2 items-center justify-between">
+<div>
+<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-200 bg-green-500/20 border border-green-500/30">
+                                            +6% Boost Available
+                                        </span>
+</div>
+</div>
+<div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-[#314668]">
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary" style="width:88%"></div>
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-amethyst animate-pulse" style="width:6%"></div>
+</div>
+</div>
+</div>
+<!-- Actionable Insights List -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h3 class="text-white font-medium">Prioritized Improvements</h3>
+<span class="text-xs text-[#90a7cb]">3 items</span>
+</div>
+<!-- Insight Card 1 -->
+<div class="group p-4 rounded-xl border border-glass-border bg-[#1a1f2b] hover:bg-[#232936] transition-all cursor-pointer hover:border-amethyst/30 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-amethyst rounded-l-xl"></div>
+<div class="flex gap-3">
+<div class="mt-0.5 shrink-0 text-amethyst">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-sm font-semibold text-white group-hover:text-amethyst transition-colors">Argument Strength</h4>
+<p class="text-xs text-[#90a7cb] leading-relaxed">
+                                            The phrase "Social structures are good things" lacks academic rigor. Consider discussing their functional purpose instead.
+                                        </p>
+<div class="mt-2 flex gap-2">
+<button class="text-xs bg-amethyst/20 hover:bg-amethyst/40 text-amethyst-200 px-3 py-1.5 rounded-lg border border-amethyst/20 transition-colors">Apply Suggestion</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Insight Card 2 -->
+<div class="group p-4 rounded-xl border border-glass-border bg-[#1a1f2b] hover:bg-[#232936] transition-all cursor-pointer hover:border-primary/30 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl"></div>
+<div class="flex gap-3">
+<div class="mt-0.5 shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">style</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-sm font-semibold text-white group-hover:text-primary transition-colors">Tone &amp; Style</h4>
+<p class="text-xs text-[#90a7cb] leading-relaxed">
+                                            "It is messed up" is too colloquial for a sociology paper. Use more formal language like "inherently flawed".
+                                        </p>
+<div class="mt-2 flex gap-2">
+<button class="text-xs bg-primary/20 hover:bg-primary/40 text-blue-200 px-3 py-1.5 rounded-lg border border-primary/20 transition-colors">Fix Tone</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Insight Card 3 -->
+<div class="group p-4 rounded-xl border border-glass-border bg-[#1a1f2b] hover:bg-[#232936] transition-all cursor-pointer hover:border-yellow-500/30 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500 rounded-l-xl"></div>
+<div class="flex gap-3">
+<div class="mt-0.5 shrink-0 text-yellow-500">
+<span class="material-symbols-outlined text-[20px]">spellcheck</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="text-sm font-semibold text-white group-hover:text-yellow-500 transition-colors">Clarity</h4>
+<p class="text-xs text-[#90a7cb] leading-relaxed">
+                                            "Gender roles that are old" is vague. Try "outdated gender roles" or "archaic expectations".
+                                        </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="p-5 mt-auto border-t border-glass-border bg-white/5 backdrop-blur-xl">
+<button class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amethyst to-primary text-white font-medium text-sm shadow-lg shadow-purple-900/40 hover:shadow-purple-700/50 hover:scale-[1.02] transition-all flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">auto_fix_high</span>
+                            Apply All Improvements (+6%)
+                        </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        // Simple script to toggle highlight tooltips on click for mobile mainly
+        const highlights = document.querySelectorAll('.highlight-amethyst');
+        highlights.forEach(h => {
+            h.addEventListener('click', () => {
+                // In a real app, this would select the corresponding card in the right panel
+                console.log('Highlight clicked');
+            });
+        });
+    </script>
+</body></html>

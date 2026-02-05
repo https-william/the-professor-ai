@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quiz Arena Live</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "secondary": "#10B981", // Emerald Green
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#050B14", // Deep Void
+                        "glass-border": "rgba(255, 255, 255, 0.08)",
+                        "glass-bg": "rgba(16, 23, 35, 0.7)",
+                        "glass-highlight": "rgba(255, 255, 255, 0.03)",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        "neon": "0 0 20px -5px rgba(60, 131, 246, 0.5)",
+                        "neon-green": "0 0 20px -5px rgba(16, 185, 129, 0.5)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for glass panels */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-panel {
+            background: rgba(13, 18, 30, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Animated Void Background */
+        .void-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: 0;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        .timer-circle circle {
+            transition: stroke-dashoffset 1s linear;
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-white font-display min-h-screen overflow-hidden selection:bg-primary/30 selection:text-white">
+<!-- Deep Void Background Elements -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+<div class="void-orb bg-primary/20 w-[600px] h-[600px] -top-20 -left-20"></div>
+<div class="void-orb bg-secondary/10 w-[500px] h-[500px] bottom-0 right-0 animate-[float_25s_infinite_reverse]"></div>
+<div class="void-orb bg-indigo-900/30 w-[800px] h-[800px] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+</div>
+<div class="relative z-10 flex flex-col h-screen">
+<!-- Header -->
+<header class="flex items-center justify-between px-6 py-4 glass-panel border-b border-glass-border">
+<div class="flex items-center gap-4">
+<div class="size-8 rounded-lg bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-neon">
+<span class="material-symbols-outlined text-white text-xl">school</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-sm font-bold tracking-wider uppercase text-white/90">The Professor</h1>
+<span class="text-xs text-white/50">Live Arena // Match #8291</span>
+</div>
+</div>
+<!-- Round Indicator -->
+<div class="hidden md:flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5">
+<span class="text-xs text-white/60 uppercase tracking-widest font-semibold">Round</span>
+<span class="font-mono text-lg font-bold text-white">04<span class="text-white/30">/10</span></span>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden sm:flex items-center justify-center size-9 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/5 text-white/70">
+<span class="material-symbols-outlined text-sm">settings</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-all text-sm font-medium">
+<span class="material-symbols-outlined text-lg">logout</span>
+<span>Forfeit</span>
+</button>
+</div>
+</header>
+<!-- Main Arena Layout -->
+<main class="flex-1 flex flex-col lg:flex-row gap-6 p-4 lg:p-6 overflow-hidden">
+<!-- Left Panel: Live Leaderboard -->
+<aside class="hidden xl:flex flex-col w-72 glass-panel rounded-2xl overflow-hidden shadow-2xl">
+<div class="p-4 border-b border-glass-border flex justify-between items-center bg-white/5">
+<h3 class="text-sm font-bold uppercase tracking-wider text-white/80">Live Ranking</h3>
+<span class="text-xs font-mono text-secondary">LIVE</span>
+</div>
+<div class="flex-1 overflow-y-auto p-2 space-y-1">
+<!-- Rank 1 -->
+<div class="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/10">
+<div class="font-mono text-yellow-400 font-bold w-6 text-center">01</div>
+<div class="bg-center bg-cover rounded-full size-8 border border-white/10" data-alt="Avatar of user Sarah" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDUEw8cjiHKggkCzlgFI_QvkhbwysALaIBcGWNeoMsuWX5wJgoI4lIWX1Nl5OceA3c01asOQId9yttQMTCD7OXlBZ91Bug0_oHpxmyrG5lQXATjhdp96DJA41QJTNP5nk_HFQjIZZGYN9z5-j0HzHMm-F1qTbsbQqBDWyijN5ChdCT1G2GuSDxRr__jugO9EUdlanPzRINdJ7BsMSo1bG-Q0byuOhMl2gb8h6TKxSfB_kfQumK-wxU5GPt5eg9bs5mq9zG_yWL1A7g");'></div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium truncate">Sarah.dev</p>
+</div>
+<div class="font-mono text-sm font-bold text-white/90">2,450</div>
+</div>
+<!-- Rank 2 (You) -->
+<div class="flex items-center gap-3 p-2 rounded-lg bg-primary/20 border border-primary/40 shadow-neon relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="font-mono text-white font-bold w-6 text-center">02</div>
+<div class="bg-center bg-cover rounded-full size-8 border border-primary/50" data-alt="Avatar of current user" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAEtC4HchDgi7eLEFoZ2fejYftKxdjmZ2Jd0jEuUBbMPGyc1KfmzOKcn3SMUqPfVWXa2_hCOd8hqZ7Zew-GFqj14l8rmU8xDcf9tkIyIzqjvv5Q9GM_6Wdkvon_Dy8QenetZHEyxkSZx4D8sRZbf0s62bg5Lw3w1KAtnXX8HXZ8L1tkvotojTEzSpV6bXDhTvFqVy50bXS3-BCxZBbUyLJo7grJqoi_-NfRspzDXYvT0dtJDYOdoi6YFlIGtJWMwrEfWr8Qk1fO0UU");'></div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium truncate text-primary-200">You</p>
+</div>
+<div class="font-mono text-sm font-bold text-white">2,100</div>
+</div>
+<!-- Rank 3 -->
+<div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent">
+<div class="font-mono text-orange-400 font-bold w-6 text-center">03</div>
+<div class="bg-center bg-cover rounded-full size-8 border border-white/10" data-alt="Avatar of user Alex" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC-pDTn6yD3tPUScyzoP-6zBwadWjbp0qTLL7YwA1LuG_DSz-KD061EIXfitQcr2Th_QAXRNeBgXVnYK50Mp17jTc6Wzl9Y3DHM2GiBh-2U_438b3BIA9BCpkCCURM54ZxUJoilwxvvYOhvZ0TPDej6yfIGRA3_HAyDy96rnFy2AwQvLWXydnWb7sUEEN0BaMjPvs6KXjcfSGdL4BOqpX0q_KwDC9bmqsWGbCI79Wy_I52TzeXRZNqLF3uu6yvj09rZaXKjN9oEKz0");'></div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium truncate text-white/70">Alex_JS</p>
+</div>
+<div class="font-mono text-sm font-bold text-white/60">1,890</div>
+</div>
+<!-- Rank 4 -->
+<div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent">
+<div class="font-mono text-white/40 font-bold w-6 text-center">04</div>
+<div class="bg-center bg-cover rounded-full size-8 border border-white/10" data-alt="Avatar of user Marcus" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBfBrLAGXyT_VnqdHci5HmOh5qx0QLcWZKKwlkZ894xnPWWfKmYV9t93ocoSBYJYtdavgCpFyaJM1M1BOK67k_oGGa10qMnUkwAJRj-kciHdEUs_QfdiCTzY2KnV3dEnt1iv1n4sLzQV3L_OQSNshoDa8UVFgb8bhfMmvu8L6mAI2pAGPBqVS-gI5YOxFa47DL1542pl_u290Ojw2fXD_r9OhW3mrB4k632Q5jArFrZzY1mNT7mvTlK05p_dNkw043zTHa7giErk0M");'></div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium truncate text-white/70">Marcus_Code</p>
+</div>
+<div class="font-mono text-sm font-bold text-white/60">1,650</div>
+</div>
+</div>
+</aside>
+<!-- Center Stage: Battle Arena -->
+<section class="flex-1 flex flex-col justify-center relative">
+<!-- Floating Timer (Absolute Center Top) -->
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+<div class="relative size-20 md:size-24 flex items-center justify-center rounded-full bg-[#050B14] shadow-2xl border-4 border-white/5">
+<svg class="absolute top-0 left-0 w-full h-full -rotate-90 timer-circle" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="#1e293b" stroke-width="4"></circle>
+<circle class="drop-shadow-[0_0_8px_rgba(60,131,246,0.8)]" cx="50" cy="50" fill="none" r="45" stroke="#3c83f6" stroke-dasharray="283" stroke-dashoffset="70" stroke-linecap="round" stroke-width="4"></circle>
+</svg>
+<div class="text-center z-10">
+<span class="block font-mono text-2xl md:text-3xl font-bold text-white leading-none">14</span>
+<span class="text-[10px] uppercase tracking-wider text-white/50">SEC</span>
+</div>
+</div>
+</div>
+<!-- Main Question Card -->
+<div class="w-full max-w-3xl mx-auto glass-panel rounded-3xl p-8 md:p-12 relative shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] border border-white/10 flex flex-col gap-8 mt-12 md:mt-0">
+<!-- Decorative corner accents -->
+<div class="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-primary/30 rounded-tl-3xl"></div>
+<div class="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-primary/30 rounded-tr-3xl"></div>
+<div class="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-primary/30 rounded-bl-3xl"></div>
+<div class="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-primary/30 rounded-br-3xl"></div>
+<!-- Question Content -->
+<div class="space-y-6 text-center relative z-10 pt-6">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium tracking-wide">
+<span class="material-symbols-outlined text-sm">code</span>
+                            REACT FRAMEWORK
+                        </div>
+<h2 class="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight drop-shadow-lg">
+                            In React, what is the primary purpose of the <code class="bg-white/10 px-2 py-0.5 rounded font-mono text-primary-300">useEffect</code> hook?
+                        </h2>
+</div>
+<!-- Options Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+<!-- Option A -->
+<label class="group relative flex cursor-pointer">
+<input class="peer sr-only" name="answer" type="radio"/>
+<div class="flex-1 flex items-center p-5 rounded-xl glass-card border border-white/10 hover:border-primary/50 hover:bg-white/5 transition-all duration-300 peer-checked:border-primary peer-checked:bg-primary/20 peer-checked:shadow-neon">
+<div class="size-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white/70 group-hover:text-white group-hover:bg-primary group-hover:border-primary transition-colors peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary">
+                                    A
+                                </div>
+<span class="ml-4 text-base font-medium text-white/80 group-hover:text-white peer-checked:text-white">Managing global state</span>
+</div>
+</label>
+<!-- Option B -->
+<label class="group relative flex cursor-pointer">
+<input class="peer sr-only" name="answer" type="radio"/>
+<div class="flex-1 flex items-center p-5 rounded-xl glass-card border border-white/10 hover:border-primary/50 hover:bg-white/5 transition-all duration-300 peer-checked:border-primary peer-checked:bg-primary/20 peer-checked:shadow-neon">
+<div class="size-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white/70 group-hover:text-white group-hover:bg-primary group-hover:border-primary transition-colors peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary">
+                                    B
+                                </div>
+<span class="ml-4 text-base font-medium text-white/80 group-hover:text-white peer-checked:text-white">Handling side effects</span>
+</div>
+</label>
+<!-- Option C -->
+<label class="group relative flex cursor-pointer">
+<input class="peer sr-only" name="answer" type="radio"/>
+<div class="flex-1 flex items-center p-5 rounded-xl glass-card border border-white/10 hover:border-primary/50 hover:bg-white/5 transition-all duration-300 peer-checked:border-primary peer-checked:bg-primary/20 peer-checked:shadow-neon">
+<div class="size-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white/70 group-hover:text-white group-hover:bg-primary group-hover:border-primary transition-colors peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary">
+                                    C
+                                </div>
+<span class="ml-4 text-base font-medium text-white/80 group-hover:text-white peer-checked:text-white">Routing between pages</span>
+</div>
+</label>
+<!-- Option D -->
+<label class="group relative flex cursor-pointer">
+<input class="peer sr-only" name="answer" type="radio"/>
+<div class="flex-1 flex items-center p-5 rounded-xl glass-card border border-white/10 hover:border-primary/50 hover:bg-white/5 transition-all duration-300 peer-checked:border-primary peer-checked:bg-primary/20 peer-checked:shadow-neon">
+<div class="size-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white/70 group-hover:text-white group-hover:bg-primary group-hover:border-primary transition-colors peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary">
+                                    D
+                                </div>
+<span class="ml-4 text-base font-medium text-white/80 group-hover:text-white peer-checked:text-white">Server-side rendering</span>
+</div>
+</label>
+</div>
+<!-- AI Professor Feedback (Bottom of card) -->
+<div class="mt-4 flex items-start gap-3 p-3 rounded-lg bg-indigo-950/40 border border-indigo-500/20">
+<span class="material-symbols-outlined text-indigo-400">psychology</span>
+<div class="text-sm text-indigo-200">
+<span class="font-bold text-indigo-300">Professor:</span> Remember, "effects" usually happen after rendering. Think about API calls or DOM updates.
+                        </div>
+</div>
+</div>
+<!-- Bottom User HUD -->
+<div class="absolute -bottom-2 md:bottom-4 left-0 right-0 flex justify-center w-full px-4">
+<div class="glass-panel rounded-2xl p-4 flex flex-wrap md:flex-nowrap items-center gap-6 md:gap-8 shadow-2xl border border-white/10 w-full max-w-4xl backdrop-blur-2xl bg-[#0B1120]/80">
+<!-- User Profile -->
+<div class="flex items-center gap-4 flex-shrink-0">
+<div class="relative">
+<div class="size-12 rounded-full bg-cover bg-center border-2 border-primary shadow-neon" data-alt="User Avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDK3D0p97FJqC1JGiQoBYABBdfEaAbcOVGqDyh-E-2Yd0esceTYUHqqVcobwvRFRYZkLwfZEjDo19qYJaOGcsP8bEABnYXHAshlr31z75OFdqXTZ22mHYfJfAKQWFVuIz81ZA3iLPEwHU0rxbSx8MXTifvTbHylfsUbL40WraB98B2Oi0JEGUymJG5mMDLT78BUzXi92O1S9-n9D4tsZJSj-YlLfrmLOZTuYKzG5EEI-BUJQEDuIrRT0rO2BKjjGYgyjQpRVrdq07Q");'></div>
+<div class="absolute -bottom-1 -right-1 bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20">LVL 42</div>
+</div>
+<div>
+<h3 class="font-bold text-white text-sm">Player One</h3>
+<div class="flex items-center gap-2">
+<div class="h-1.5 w-24 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[75%] shadow-neon-green"></div>
+</div>
+<span class="text-[10px] font-mono text-secondary">75% XP</span>
+</div>
+</div>
+</div>
+<!-- Vertical Divider -->
+<div class="hidden md:block w-px h-10 bg-white/10"></div>
+<!-- Stats Grid -->
+<div class="flex gap-6 flex-1 justify-center md:justify-start">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-white/40 tracking-wider font-semibold">Score</span>
+<span class="font-mono text-xl font-bold text-white">1,250</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-white/40 tracking-wider font-semibold">Streak</span>
+<div class="flex items-center gap-1">
+<span class="font-mono text-xl font-bold text-secondary">3x</span>
+<span class="material-symbols-outlined text-secondary text-sm">local_fire_department</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-white/40 tracking-wider font-semibold">Multiplier</span>
+<span class="font-mono text-xl font-bold text-blue-400">1.5x</span>
+</div>
+</div>
+<!-- Action Bar (Power-ups) -->
+<div class="flex items-center gap-3 ml-auto">
+<button class="flex flex-col items-center gap-1 group">
+<div class="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:border-primary/50 group-hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg">lightbulb</span>
+</div>
+<span class="text-[9px] font-bold uppercase tracking-wider text-white/40 group-hover:text-white/80">Hint</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<div class="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-purple-500/20 group-hover:border-purple-500/50 group-hover:text-purple-400 transition-all">
+<span class="font-bold text-sm">50/50</span>
+</div>
+<span class="text-[9px] font-bold uppercase tracking-wider text-white/40 group-hover:text-white/80">Split</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<div class="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:border-cyan-500/50 group-hover:text-cyan-400 transition-all">
+<span class="material-symbols-outlined text-lg">timer_pause</span>
+</div>
+<span class="text-[9px] font-bold uppercase tracking-wider text-white/40 group-hover:text-white/80">Freeze</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

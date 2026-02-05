@@ -1,0 +1,507 @@
+@import "tailwindcss";
+
+/* ============================================
+   THE PROFESSOR - GOOGLE-INSPIRED DESIGN SYSTEM
+   Light mode default with dark mode toggle
+   ============================================ */
+
+@theme inline {
+  /* Typography */
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Radius - Softer, Google-style */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+/* ============================================
+   LIGHT MODE (Default - Google Style)
+   ============================================ */
+
+:root,
+html.light {
+  --background: #FFFFFF;
+  --background-secondary: #FAFAFA;
+  --background-tertiary: #F5F5F5;
+  --foreground: #1F1F1F;
+  --foreground-secondary: #5F6368;
+  --foreground-muted: #9AA0A6;
+
+  /* Cards - Warm off-white */
+  --card: #FFFBF7;
+  --card-hover: #FFF8F2;
+  --card-border: rgba(0, 0, 0, 0.08);
+
+  /* Accent - Electric Teal (The Professor Brand) */
+  /* A unique, high-energy blend of cyan and azure */
+  --accent: #0EA5E9;
+  /* Sky 500 */
+  --accent-light: #38BDF8;
+  /* Sky 400 */
+  --accent-dark: #0284C7;
+  /* Sky 600 */
+  --accent-bg: rgba(14, 165, 233, 0.1);
+
+  /* Secondary - Deep Indigo/Violet (complementary depth) */
+  --secondary: #6366F1;
+  /* Indigo 500 */
+  --secondary-light: #818CF8;
+  --secondary-dark: #4F46E5;
+
+  /* Semantic */
+  --success: #10B981;
+  /* Emerald */
+  --warning: #F59E0B;
+  /* Amber (kept for actual warnings) */
+  --error: #EF4444;
+  /* Red */
+
+  /* Borders & Shadows */
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.3);
+  /* New glow effect */
+
+  /* Scrollbar */
+  --scrollbar-track: #F5F5F5;
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-thumb-hover: #94A3B8;
+}
+
+/* ============================================
+   DARK MODE (Toggle - Deep Void)
+   ============================================ */
+
+html.dark {
+  --background: #0B0E14;
+  /* Slightly blue-tinted void */
+  --background-secondary: #13161C;
+  --background-tertiary: #1E293B;
+  --foreground: #FAFAFA;
+  --foreground-secondary: #94A3B8;
+  --foreground-muted: #64748B;
+
+  /* Cards */
+  --card: rgba(19, 22, 28, 0.8);
+  --card-hover: rgba(30, 41, 59, 0.8);
+  --card-border: rgba(56, 189, 248, 0.1);
+  /* Subtle accent border */
+
+  /* Accent - Electric Teal (The Professor Brand) */
+  --accent: #38BDF8;
+  /* Sky 400 (Brighter for dark mode) */
+  --accent-light: #7DD3FC;
+  /* Sky 300 */
+  --accent-dark: #0EA5E9;
+  /* Sky 500 */
+  --accent-bg: rgba(56, 189, 248, 0.15);
+
+  /* Secondary - Deep Indigo */
+  --secondary: #818CF8;
+  --secondary-light: #A5B4FC;
+  --secondary-dark: #6366F1;
+
+  /* Semantic */
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
+  --info: #38BDF8;
+
+  /* Borders & Shadows */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(56, 189, 248, 0.2);
+  /* Accent tinted hover */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 30px rgba(56, 189, 248, 0.15);
+
+  /* Scrollbar */
+  --scrollbar-track: #0B0E14;
+  --scrollbar-thumb: #1E293B;
+  --scrollbar-thumb-hover: #334155;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ============================================
+   INPUT RESET - Remove all borders from inputs
+   ============================================ */
+
+input,
+textarea,
+select {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Card that contains inputs should not show inner borders */
+.card input,
+.card textarea {
+  border: none !important;
+  background: transparent;
+}
+
+/* ============================================
+   CARD SYSTEM (Google-inspired)
+   ============================================ */
+
+.card {
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  background-color: var(--card-hover);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* Glass effect for dark mode */
+html.dark .card-glass {
+  background-color: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ============================================
+   FROSTED LIQUID GLASS DOCK (macOS-inspired)
+   ============================================ */
+
+.frosted-dock {
+  background: rgba(255, 255, 255, 0.65);
+  /* More transparent to show blur */
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html.dark .frosted-dock {
+  background: rgba(20, 20, 24, 0.65);
+  /* More transparent to show blur */
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.frosted-dock-mobile {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+}
+
+html.dark .frosted-dock-mobile {
+  background: rgba(20, 20, 24, 0.75);
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Dock item states */
+.dock-item {
+  color: var(--foreground-secondary);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dock-item:hover {
+  color: var(--foreground);
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+html.dark .dock-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dock-item-active {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.dock-item-active:hover {
+  background: var(--accent-bg);
+}
+
+/* Safe area for mobile devices with home indicator */
+.safe-area-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ============================================
+   PREMIUM SCROLLBAR
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ============================================
+   FOCUS & SELECTION
+   ============================================ */
+
+/* Focus outline for interactive elements (accessibility) */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* Subtle focus for text inputs - no heavy outline */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+::selection {
+  background: var(--accent-bg);
+  color: var(--foreground);
+}
+
+html.dark ::selection {
+  background: rgba(244, 132, 95, 0.3);
+}
+
+/* ============================================
+   TRANSITIONS
+   ============================================ */
+
+button,
+a,
+input,
+textarea,
+select {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Text Colors */
+.text-primary {
+  color: var(--foreground);
+}
+
+.text-secondary {
+  color: var(--foreground-secondary);
+}
+
+.text-muted {
+  color: var(--foreground-muted);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+/* Background Colors */
+.bg-primary {
+  background-color: var(--background);
+}
+
+.bg-secondary {
+  background-color: var(--background-secondary);
+}
+
+.bg-card {
+  background-color: var(--card);
+}
+
+.bg-accent {
+  background-color: var(--accent);
+}
+
+/* Button Styles */
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+}
+
+.btn-secondary:hover {
+  background-color: var(--background-tertiary);
+  border-color: var(--border-hover);
+}
+
+/* ============================================
+   ANIMATION KEYFRAMES
+   ============================================ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ============================================
+   ORGANIC BLOB SHAPES (Google style)
+   ============================================ */
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.blob-coral {
+  background: var(--accent-light);
+  opacity: 0.3;
+}
+
+.blob-teal {
+  background: var(--secondary-light);
+  opacity: 0.2;
+}
+
+html.dark .blob-coral {
+  opacity: 0.15;
+}
+
+html.dark .blob-teal {
+  opacity: 0.1;
+}
