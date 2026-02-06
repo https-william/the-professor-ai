@@ -78,15 +78,32 @@ export function DemoPlayground() {
                         {/* Flip Card */}
                         <div
                             onClick={() => setIsFlipped(!isFlipped)}
-                            className="relative w-full max-w-md mx-auto h-56 cursor-pointer perspective-1000"
+                            className="relative w-full max-w-md mx-auto h-56 cursor-pointer"
+                            style={{ perspective: "1000px" }}
                         >
-                            <div className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}>
+                            <div
+                                className="relative w-full h-full transition-transform duration-500"
+                                style={{
+                                    transformStyle: "preserve-3d",
+                                    transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)"
+                                }}
+                            >
                                 {/* Front */}
-                                <div className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-br from-[var(--accent)]/10 to-[var(--secondary)]/10 border border-[var(--border)] p-6 flex items-center justify-center">
+                                <div
+                                    className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[var(--accent)]/10 to-[var(--secondary)]/10 border border-[var(--border)] p-6 flex items-center justify-center shadow-lg"
+                                    style={{ backfaceVisibility: "hidden" }}
+                                >
                                     <p className="text-lg font-medium text-[var(--foreground)]">{currentCard?.front}</p>
                                 </div>
+
                                 {/* Back */}
-                                <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-2xl bg-gradient-to-br from-[var(--success)]/10 to-[var(--accent)]/10 border border-[var(--border)] p-6 flex items-center justify-center">
+                                <div
+                                    className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[var(--success)]/10 to-[var(--accent)]/10 border border-[var(--border)] p-6 flex items-center justify-center shadow-lg"
+                                    style={{
+                                        backfaceVisibility: "hidden",
+                                        transform: "rotateY(180deg)"
+                                    }}
+                                >
                                     <p className="text-base text-[var(--foreground)]">{currentCard?.back}</p>
                                 </div>
                             </div>
