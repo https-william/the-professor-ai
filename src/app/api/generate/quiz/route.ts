@@ -1,11 +1,43 @@
 import { NextRequest } from "next/server";
 import { hydraGenerateContent } from "@/lib/ai/hydra";
 import { validateContent, validateCount, validateDifficulty, safeErrorResponse } from "@/lib/validation";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = 'edge';
 
+const COST = 5;
+
 export async function POST(req: NextRequest) {
     try {
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        }
+
+        // Check Credits
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("credits")
+            .eq("id", user.id)
+            .single();
+
+        if (!profile || (profile.credits || 0) < COST) {
+             return new Response(JSON.stringify({ error: "Insufficient credits. Please top up." }), { status: 402 });
+        }
+
+        // Deduct Credits
+        const { error: deductError } = await supabase
+            .from("profiles")
+            .update({ credits: (profile.credits || 0) - COST })
+            .eq("id", user.id);
+            
+        if (deductError) {
+             console.error("Credit deduction failed:", deductError);
+             return new Response(JSON.stringify({ error: "Transaction failed" }), { status: 500 });
+        }
+
         const body = await req.json();
         
         // Validate content with injection protection
@@ -69,6 +101,19 @@ Return ONLY valid JSON (no markdown):
                         const q = parsed.questions[i];
                         controller.enqueue(encoder.encode(`data: {"type":"question","index":${i},"total":${parsed.questions.length},"question":${JSON.stringify(q)}}\n\n`));
                         await new Promise(r => setTimeout(r, 80));
+                    }
+                    
+                    // Save to database for persistence
+                    try {
+                        await supabase.from("generations").insert({
+                            user_id: user.id,
+                            type: "quiz",
+                            title: parsed.title || 'Quiz',
+                            content: { questions: parsed.questions }
+                        });
+                    } catch (dbError) {
+                        console.error("Failed to save quiz to DB:", dbError);
+                        // Don't fail the stream, just log it
                     }
                     
                     controller.enqueue(encoder.encode(`data: {"status":"complete","title":"${parsed.title || 'Quiz'}","count":${parsed.questions.length}}\n\n`));

@@ -140,7 +140,7 @@ export default function ProfessorChatPage() {
         <div className="min-h-screen bg-[#09090B]">
             <Sidebar />
 
-            <main className="ml-[260px] min-h-screen flex flex-col">
+            <main className="lg:ml-[260px] min-h-screen flex flex-col">
                 {/* Header */}
                 <header className="h-16 px-6 flex items-center justify-between border-b border-[#1F1F23] bg-[#09090B]/80 backdrop-blur-xl sticky top-0 z-10">
                     <div className="flex items-center gap-3">

@@ -5,22 +5,30 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import FrostedDock from "@/components/FrostedDock";
 
 export const metadata: Metadata = {
-  title: "The Professor | AI Study Companion",
-  description: "Your personal AI-powered study companion. Upload your syllabus, generate flashcards, predict exam questions, and master any subject.",
+  title: "The Professor | Cheat Codes for Your Degree",
+  description: "Advanced AI study companion for students. Generate flashcards, quizzes, and summaries instantly.",
+  manifest: "/manifest.json",
   keywords: ["AI", "study", "flashcards", "education", "tutor", "exam prep"],
   authors: [{ name: "The Professor" }],
   creator: "The Professor",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Professor AI",
+  },
   openGraph: {
-    title: "The Professor | AI Study Companion",
+    title: "The Professor | Cheat Codes for Your Degree",
     description: "Your personal AI-powered study companion.",
     type: "website",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FFFFFF",
+  themeColor: "#7C3AED",
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

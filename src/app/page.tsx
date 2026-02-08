@@ -389,6 +389,24 @@ export default function LandingPage() {
             <a href="https://twitter.com" target="_blank" rel="noopener" className="hover:text-[var(--foreground)] transition-colors">Twitter</a>
           </div>
         </div>
+        
+        {/* App Store / Google Play Badges */}
+        <div className="max-w-6xl mx-auto mt-10 flex flex-wrap justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+          <button className="h-10 px-4 rounded-lg bg-black border border-white/20 flex items-center gap-2 hover:bg-white/5 transition-all cursor-not-allowed group">
+            <span className="material-symbols-outlined text-white text-xl">apple</span>
+            <div className="text-left leading-none">
+              <div className="text-[9px] uppercase font-bold text-white/50">Coming Soon</div>
+              <div className="text-xs font-bold text-white">App Store</div>
+            </div>
+          </button>
+          <button className="h-10 px-4 rounded-lg bg-black border border-white/20 flex items-center gap-2 hover:bg-white/5 transition-all cursor-not-allowed group">
+            <span className="material-symbols-outlined text-[#3DDC84] text-xl">google_play</span>
+            <div className="text-left leading-none">
+              <div className="text-[9px] uppercase font-bold text-white/50">Coming Soon</div>
+              <div className="text-xs font-bold text-white">Google Play</div>
+            </div>
+          </button>
+        </div>
       </footer>
 
       {/* CSS for animations */}

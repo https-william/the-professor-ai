@@ -22,7 +22,7 @@ export default function HelpPage() {
         <div className="min-h-screen bg-[#09090B]">
             <Sidebar />
 
-            <main className="ml-[260px] min-h-screen">
+            <main className="lg:ml-[260px] min-h-screen">
                 <header className="h-16 px-8 flex items-center border-b border-[#1F1F23] sticky top-0 bg-[#09090B]/80 backdrop-blur-xl z-10">
                     <div className="flex items-center gap-3">
                         <HelpCircle className="w-5 h-5 text-[#6366F1]" />

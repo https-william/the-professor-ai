@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -11,23 +12,19 @@ interface Flashcard {
     back: string;
 }
 
-// Demo flashcards - fallback when no generated content
-const demoFlashcards: Flashcard[] = [
-    { id: "1", front: "What is the mitochondria?", back: "The powerhouse of the cell - it generates most of the cell's ATP energy." },
-    { id: "2", front: "Define photosynthesis", back: "The process by which plants convert light energy into chemical energy (glucose)." },
-    { id: "3", front: "What is the Krebs cycle?", back: "A series of chemical reactions that releases stored energy in cells." },
+const emptyFlashcards: Flashcard[] = [
+    { id: "0", front: "No flashcards found", back: "Go to the Create page to generate some study materials!" }
 ];
 
 function FlashcardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { resolvedTheme, toggleTheme } = useTheme();
-    const [flashcards, setFlashcards] = useState<Flashcard[]>(demoFlashcards);
-    const [title, setTitle] = useState<string>("Flashcards");
+    const [flashcards, setFlashcards] = useState<Flashcard[]>(emptyFlashcards);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
-    const [knownCount, setKnownCount] = useState(0);
-    const [learningCount, setLearningCount] = useState(0);
+    const [title, setTitle] = useState("Flashcards");
+    const [dragActive, setDragActive] = useState(false); // For future drag interactions
 
     // Load generated content from sessionStorage
     useEffect(() => {
@@ -35,10 +32,14 @@ function FlashcardContent() {
             const stored = sessionStorage.getItem("generatedContent");
             if (stored) {
                 const content = JSON.parse(stored);
-                if (content.type === "flashcards" && content.data) {
+                if ((content.type === "flashcards" || content.flashcards) && content.data) {
                     setFlashcards(content.data);
                     setTitle(content.title || "Flashcards");
-                    sessionStorage.removeItem("generatedContent"); // Clear after loading
+                    // Data persistence handled by creating page now
+                } else if (content.flashcards) {
+                    // Handle direct flashcard array if legacy format
+                    setFlashcards(content.flashcards);
+                    setTitle(content.title || "Flashcards");
                 }
             }
         } catch (e) {
@@ -46,144 +47,104 @@ function FlashcardContent() {
         }
     }, []);
 
-    const currentCard = flashcards[currentIndex];
-    const progress = ((currentIndex + 1) / flashcards.length) * 100;
+    const handleNext = () => {
+        setIsFlipped(false);
+        setTimeout(() => {
+            setCurrentIndex((prev) => (prev + 1) % flashcards.length);
+        }, 300);
+    };
 
-    const handleFlip = () => setIsFlipped(!isFlipped);
+    const handlePrev = () => {
+        setIsFlipped(false);
+        setTimeout(() => {
+            setCurrentIndex((prev) => (prev - 1 + flashcards.length) % flashcards.length);
+        }, 300);
+    };
 
-    const handleKnow = () => {
-        setKnownCount(prev => prev + 1);
-        nextCard();
+    const handleFlip = () => {
+        setIsFlipped(!isFlipped);
+    };
+
+    const handleknow = () => {
+        // Todo: track progress
+        handleNext();
     };
 
     const handleLearning = () => {
-        setLearningCount(prev => prev + 1);
-        nextCard();
+        // Todo: track progress
+        handleNext();
     };
 
-    const nextCard = () => {
-        setIsFlipped(false);
-        if (currentIndex < flashcards.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-        }
-    };
-
-    const isComplete = currentIndex === flashcards.length - 1 && (knownCount + learningCount === flashcards.length);
+    const currentCard = flashcards[currentIndex];
 
     return (
         <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-24">
             {/* Header */}
-            <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-6 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
+            <header className="sticky top-0 z-40 h-16 flex items-center justify-between px-6 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-[var(--background-tertiary)] transition-all">
+                    <Link href="/create" className="p-2 rounded-lg hover:bg-[var(--background-tertiary)] transition-all">
                         <span className="material-symbols-outlined text-xl">arrow_back</span>
-                    </button>
+                    </Link>
                     <div>
-                        <h1 className="text-sm font-semibold text-[var(--foreground)]">Flashcards</h1>
-                        <p className="text-[10px] text-[var(--foreground-secondary)]">{flashcards.length} cards</p>
+                        <h1 className="text-base font-medium text-[var(--foreground)]">{title}</h1>
+                        <p className="text-xs text-[var(--foreground-secondary)]">{currentIndex + 1} / {flashcards.length}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={toggleTheme}
-                        className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all"
-                    >
-                        <span className="material-symbols-outlined text-xl">
-                            {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
-                        </span>
+                    <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-[var(--background-tertiary)] transition-all">
+                        <span className="material-symbols-outlined text-xl">{resolvedTheme === 'light' ? 'dark_mode' : 'light_mode'}</span>
                     </button>
                 </div>
             </header>
 
-            {/* Progress Bar */}
-            <div className="h-1 bg-[var(--border)]">
-                <div className="h-full bg-[var(--accent)] transition-all duration-300" style={{ width: `${progress}%` }} />
-            </div>
+            <main className="max-w-2xl mx-auto px-6 py-12 flex flex-col items-center">
+                {/* Progress Bar */}
+                <div className="w-full h-1 bg-[var(--background-tertiary)] rounded-full mb-8 overflow-hidden">
+                    <div
+                        className="h-full bg-[var(--accent)] transition-all duration-300"
+                        style={{ width: `${((currentIndex + 1) / flashcards.length) * 100}%` }}
+                    />
+                </div>
 
-            {/* Main Content */}
-            <main className="max-w-lg mx-auto px-6 py-12">
-                {isComplete ? (
-                    /* Complete State */
-                    <div className="text-center py-12">
-                        <div className="w-20 h-20 rounded-full bg-[var(--success)]/20 flex items-center justify-center mx-auto mb-6">
-                            <span className="material-symbols-outlined text-[var(--success)] text-4xl">check_circle</span>
-                        </div>
-                        <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Session Complete!</h2>
-                        <p className="text-[var(--foreground-secondary)] mb-8">Great work reviewing these cards.</p>
+                {/* Card Container */}
+                <div className="relative w-full aspect-[4/3] perspective-1000 cursor-pointer group" onClick={handleFlip}>
+                    <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
 
-                        <div className="flex justify-center gap-8 mb-8">
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-[var(--success)]">{knownCount}</div>
-                                <div className="text-xs text-[var(--foreground-muted)]">Known</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-[var(--warning)]">{learningCount}</div>
-                                <div className="text-xs text-[var(--foreground-muted)]">Learning</div>
-                            </div>
+                        {/* Front */}
+                        <div className="absolute inset-0 rounded-3xl bg-[var(--card)] border border-[var(--border)] p-8 flex items-center justify-center backface-hidden shadow-xl shadow-[var(--accent)]/5 group-hover:shadow-[var(--accent)]/10 transition-all">
+                            <p className="text-2xl font-medium text-center text-[var(--foreground)] leading-relaxed">{currentCard.front}</p>
+                            <span className="absolute bottom-6 text-xs font-bold uppercase tracking-wider text-[var(--foreground-muted)]">Question</span>
                         </div>
 
-                        <div className="flex gap-3 justify-center">
-                            <button
-                                onClick={() => { setCurrentIndex(0); setIsFlipped(false); setKnownCount(0); setLearningCount(0); }}
-                                className="px-6 py-3 rounded-xl bg-[var(--accent)] text-white font-medium hover:opacity-90 transition-all"
-                            >
-                                Study Again
-                            </button>
-                            <Link href="/history" className="px-6 py-3 rounded-xl bg-[var(--background-tertiary)] text-[var(--foreground)] font-medium hover:bg-[var(--border)] transition-all">
-                                Back to Library
-                            </Link>
+                        {/* Back */}
+                        <div className="absolute inset-0 rounded-3xl bg-[var(--card)] border border-[var(--accent)]/30 p-8 flex items-center justify-center backface-hidden rotate-y-180 shadow-xl shadow-[var(--accent)]/10">
+                            <p className="text-xl text-center text-[var(--foreground)] leading-relaxed">{currentCard.back}</p>
+                            <span className="absolute bottom-6 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Answer</span>
                         </div>
                     </div>
-                ) : (
-                    <>
-                        {/* Card Counter */}
-                        <div className="text-center mb-6">
-                            <span className="text-sm text-[var(--foreground-muted)]">{currentIndex + 1} of {flashcards.length}</span>
-                        </div>
+                </div>
 
-                        {/* Flashcard */}
-                        <div
-                            onClick={handleFlip}
-                            className="relative w-full aspect-[3/2] cursor-pointer perspective-1000"
-                        >
-                            <div className={`absolute inset-0 rounded-3xl card p-8 flex items-center justify-center text-center transition-all duration-500 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-                                {/* Front */}
-                                <div className={`absolute inset-0 rounded-3xl p-8 flex items-center justify-center backface-hidden ${isFlipped ? 'invisible' : ''}`}>
-                                    <p className="text-xl font-medium text-[var(--foreground)]">{currentCard.front}</p>
-                                </div>
-                                {/* Back */}
-                                <div className={`absolute inset-0 rounded-3xl bg-[var(--accent)]/10 p-8 flex items-center justify-center backface-hidden rotate-y-180 ${!isFlipped ? 'invisible' : ''}`}>
-                                    <p className="text-lg text-[var(--foreground-secondary)]">{currentCard.back}</p>
-                                </div>
-                            </div>
-                        </div>
+                <p className="mt-8 text-sm text-[var(--foreground-muted)] animate-pulse">Tap card to flip</p>
 
-                        {/* Tap to flip hint */}
-                        {!isFlipped && (
-                            <p className="text-center text-sm text-[var(--foreground-muted)] mt-4">Tap to flip</p>
-                        )}
+                {/* Controls */}
+                <div className="flex items-center gap-6 mt-12 w-full max-w-sm">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleLearning(); }}
+                        className="flex-1 py-4 rounded-2xl bg-[var(--warning)]/10 text-[var(--warning)] font-bold hover:bg-[var(--warning)]/20 transition-all flex flex-col items-center gap-1"
+                    >
+                        <span className="material-symbols-outlined text-2xl">school</span>
+                        <span className="text-xs">Learning</span>
+                    </button>
 
-                        {/* Action Buttons */}
-                        {isFlipped && (
-                            <div className="flex gap-4 justify-center mt-8">
-                                <button
-                                    onClick={handleLearning}
-                                    className="flex-1 py-4 rounded-2xl bg-[var(--warning)]/10 text-[var(--warning)] font-medium hover:bg-[var(--warning)]/20 transition-all flex items-center justify-center gap-2"
-                                >
-                                    <span className="material-symbols-outlined">school</span>
-                                    Still Learning
-                                </button>
-                                <button
-                                    onClick={handleKnow}
-                                    className="flex-1 py-4 rounded-2xl bg-[var(--success)]/10 text-[var(--success)] font-medium hover:bg-[var(--success)]/20 transition-all flex items-center justify-center gap-2"
-                                >
-                                    <span className="material-symbols-outlined">check</span>
-                                    Know It
-                                </button>
-                            </div>
-                        )}
-                    </>
-                )}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleknow(); }}
+                        className="flex-1 py-4 rounded-2xl bg-[var(--success)]/10 text-[var(--success)] font-bold hover:bg-[var(--success)]/20 transition-all flex flex-col items-center gap-1"
+                    >
+                        <span className="material-symbols-outlined text-2xl">check_circle</span>
+                        <span className="text-xs">I Know It</span>
+                    </button>
+                </div>
+
             </main>
         </div>
     );

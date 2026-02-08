@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
     try {
         const supabase = await createClient();
-        const updates = await req.json();
+        const body = await req.json();
 
         // Get current user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -64,10 +64,22 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // SECURITY: Whitelist allowed fields. BLOCK credits/xp/streak manipulation.
+        const allowedUpdates = {
+            alias: body.alias,
+            avatar_url: body.avatar || body.avatar_url, // Handle both naming conventions
+            // Add other benign fields here if needed (e.g. bio, preferences)
+        };
+
+        // Remove undefined keys
+        Object.keys(allowedUpdates).forEach(key => 
+            (allowedUpdates as any)[key] === undefined && delete (allowedUpdates as any)[key]
+        );
+
         // Update profile
         const { data: profile, error: updateError } = await supabase
             .from("profiles")
-            .update(updates)
+            .update(allowedUpdates)
             .eq("id", user.id)
             .select()
             .single();

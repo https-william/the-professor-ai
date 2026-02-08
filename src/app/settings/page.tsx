@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -44,11 +45,36 @@ export default function SettingsPage() {
         }
     };
 
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener("beforeinstallprompt", handler);
+        return () => window.removeEventListener("beforeinstallprompt", handler);
+    }, []);
+
+    const handleInstall = async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === "accepted") setDeferredPrompt(null);
+        } else {
+            alert("To install, use your browser's menu (e.g. 'Add to Home Screen' or 'Install The Professor').");
+        }
+    };
+
+    const router = useRouter();
+
     const sections = [
         { id: "profile", icon: "person", label: "Profile" },
+        { id: "billing", icon: "account_balance_wallet", label: "Billing & Credits" },
         { id: "notifications", icon: "notifications", label: "Notifications" },
         { id: "preferences", icon: "tune", label: "Preferences" },
         { id: "appearance", icon: "palette", label: "Appearance" },
+        { id: "pwa", icon: "install_mobile", label: "Install App" },
         { id: "danger", icon: "warning", label: "Danger Zone" },
     ];
 
@@ -128,7 +154,13 @@ export default function SettingsPage() {
                             {sections.map((section) => (
                                 <button
                                     key={section.id}
-                                    onClick={() => setActiveSection(section.id)}
+                                    onClick={() => {
+                                        if (section.id === "billing") {
+                                            router.push("/settings/billing");
+                                        } else {
+                                            setActiveSection(section.id);
+                                        }
+                                    }}
                                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all ${activeSection === section.id
                                         ? "bg-[var(--accent-bg)] text-[var(--accent)]"
                                         : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)]"
@@ -325,6 +357,34 @@ export default function SettingsPage() {
                                         ))}
                                     </div>
                                     <p className="text-[10px] text-[var(--foreground-muted)] mt-2">Coming soon</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeSection === "pwa" && (
+                            <div className="space-y-6 animate-fade-in-up">
+                                <div>
+                                    <h2 className="text-lg font-medium text-[var(--foreground)] mb-1">Install App</h2>
+                                    <p className="text-sm text-[var(--foreground-secondary)]">Get the full experience on your device</p>
+                                </div>
+
+                                <div className="card p-8 text-center flex flex-col items-center gap-6">
+                                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-xl shadow-[#6366F1]/20">
+                                        <span className="text-white text-4xl font-bold">P</span>
+                                    </div>
+                                    <div className="max-w-xs mx-auto">
+                                        <h3 className="text-[var(--foreground)] font-semibold mb-2">The Professor Desktop & Mobile</h3>
+                                        <p className="text-xs text-[var(--foreground-secondary)] leading-relaxed">
+                                            Install our Progressive Web App for faster access, offline mode, and a native app experience.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={handleInstall}
+                                        className="px-8 py-3 rounded-xl bg-[var(--accent)] text-white font-bold shadow-lg shadow-[var(--accent)]/20 hover:scale-105 transition-all flex items-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">download</span>
+                                        Install Now
+                                    </button>
                                 </div>
                             </div>
                         )}

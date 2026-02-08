@@ -51,22 +51,50 @@ function ClassContent() {
                 }),
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
+                const data = await response.json();
                 throw new Error(data.error || "Failed to start class");
             }
 
-            const generatedSections: Section[] = data.sections.map((s: any) => ({
-                ...s,
-                completed: false,
-            }));
-
-            setLessonTitle(data.title);
-            setSections(generatedSections);
             setHasStarted(true);
+            setSections([]); // Clear previous
+
+            // Handle SSE streaming
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedSections: Section[] = [];
+
+            if (reader) {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+
+                                if (data.type === 'section') {
+                                    accumulatedSections.push({ ...data.section, completed: false });
+                                    setSections([...accumulatedSections]);
+                                } else if (data.type === 'title') {
+                                    setLessonTitle(data.title);
+                                } else if (data.status === 'error') {
+                                    throw new Error(data.message);
+                                }
+                            } catch (e) {
+                                // Ignore incomplete JSON chunks
+                            }
+                        }
+                    }
+                }
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "An error occurred");
+            setHasStarted(false); // Reset on error so they can try again
         } finally {
             setIsTeaching(false);
         }
@@ -319,8 +347,8 @@ function ClassContent() {
                                         onClick={fetchTip}
                                         disabled={isFetchingTip}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${currentTip
-                                                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-                                                : 'bg-[var(--background-tertiary)] text-[var(--foreground-secondary)] hover:bg-[var(--border)]'
+                                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
+                                            : 'bg-[var(--background-tertiary)] text-[var(--foreground-secondary)] hover:bg-[var(--border)]'
                                             }`}
                                         title="Get a simple explanation"
                                     >
