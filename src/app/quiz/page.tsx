@@ -200,31 +200,31 @@ function QuizContent() {
                 {/* Left: Question Area */}
                 <div className="space-y-6">
                     {/* Status Card (Review Mode Only) */}
-                    status === 'review' && currentIndex === 0 && (
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-[var(--accent)]/10 to-[var(--secondary)]/10 border border-[var(--accent)]/20 mb-6">
-                        <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">
-                            {score === questions.length ? "Professor's Pet! 🎓" :
-                                score > questions.length * 0.7 ? "Solid B+ Energy. 👏" :
-                                    "See me after class. 🍎"}
-                        </h2>
-                        <p className="text-[var(--foreground-secondary)] mb-3">
-                            You scored {score}/{questions.length}. {score > questions.length * 0.7 ? "Review your answers below to hit 100% next time." : "Review the corrections carefully below."}
-                        </p>
-                        {/* AI Professor Remark */}
-                        {loadingRemark ? (
-                            <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] italic">
-                                <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
-                                The Professor is thinking...
-                            </div>
-                        ) : professorRemark && (
-                            <div className="mt-3 p-3 rounded-xl bg-[var(--background)]/50 border-l-4 border-[var(--accent)]">
-                                <p className="text-sm italic text-[var(--foreground-secondary)]">
-                                    <span className="font-semibold text-[var(--accent)]">Professor's Remark:</span> {professorRemark}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                        )}
+                    {status === 'review' && currentIndex === 0 && (
+                        <div className="p-6 rounded-2xl bg-gradient-to-br from-[var(--accent)]/10 to-[var(--secondary)]/10 border border-[var(--accent)]/20 mb-6">
+                            <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">
+                                {score === questions.length ? "Professor's Pet! 🎓" :
+                                    score > questions.length * 0.7 ? "Solid B+ Energy. 👏" :
+                                        "See me after class. 🍎"}
+                            </h2>
+                            <p className="text-[var(--foreground-secondary)] mb-3">
+                                You scored {score}/{questions.length}. {score > questions.length * 0.7 ? "Review your answers below to hit 100% next time." : "Review the corrections carefully below."}
+                            </p>
+                            {/* AI Professor Remark */}
+                            {loadingRemark ? (
+                                <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] italic">
+                                    <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                                    The Professor is thinking...
+                                </div>
+                            ) : professorRemark && (
+                                <div className="mt-3 p-3 rounded-xl bg-[var(--background)]/50 border-l-4 border-[var(--accent)]">
+                                    <p className="text-sm italic text-[var(--foreground-secondary)]">
+                                        <span className="font-semibold text-[var(--accent)]">Professor's Remark:</span> {professorRemark}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Question Card */}
                     <div className="p-6 md:p-8 rounded-3xl card relative overflow-hidden">

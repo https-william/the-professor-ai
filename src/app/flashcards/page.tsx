@@ -111,13 +111,13 @@ function FlashcardContent() {
                     <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
 
                         {/* Front */}
-                        <div className="absolute inset-0 rounded-3xl bg-[var(--card)] border border-[var(--border)] p-8 flex items-center justify-center backface-hidden shadow-xl shadow-[var(--accent)]/5 group-hover:shadow-[var(--accent)]/10 transition-all">
+                        <div className="absolute inset-0 rounded-3xl bg-[var(--card)] border border-[var(--border)] p-8 flex items-center justify-center backface-hidden shadow-xl shadow-[var(--accent)]/5 group-hover:shadow-[var(--accent)]/10 transition-all transform-gpu">
                             <p className="text-2xl font-medium text-center text-[var(--foreground)] leading-relaxed">{currentCard.front}</p>
                             <span className="absolute bottom-6 text-xs font-bold uppercase tracking-wider text-[var(--foreground-muted)]">Question</span>
                         </div>
 
                         {/* Back */}
-                        <div className="absolute inset-0 rounded-3xl bg-[var(--card)] border border-[var(--accent)]/30 p-8 flex items-center justify-center backface-hidden rotate-y-180 shadow-xl shadow-[var(--accent)]/10">
+                        <div className="absolute inset-0 rounded-3xl bg-[var(--card)] border border-[var(--accent)]/30 p-8 flex items-center justify-center backface-hidden rotate-y-180 shadow-xl shadow-[var(--accent)]/10 transform-gpu">
                             <p className="text-xl text-center text-[var(--foreground)] leading-relaxed">{currentCard.back}</p>
                             <span className="absolute bottom-6 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Answer</span>
                         </div>
