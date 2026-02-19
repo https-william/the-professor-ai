@@ -55,6 +55,7 @@ function QuizContent() {
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [professorRemark, setProfessorRemark] = useState<string>('');
     const [loadingRemark, setLoadingRemark] = useState(false);
+    const [showMobilePalette, setShowMobilePalette] = useState(false);
 
     // Timer (10 minutes default)
     const [timeLeft, setTimeLeft] = useState(10 * 60);
@@ -402,8 +403,74 @@ function QuizContent() {
                     </div>
                 </div>
 
+                {/* Mobile Palette FAB + Bottom Sheet */}
+                <div className="lg:hidden">
+                    {/* Floating Action Button */}
+                    {status === 'taking' && (
+                        <button
+                            onClick={() => setShowMobilePalette(!showMobilePalette)}
+                            className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+                        >
+                            <span className="material-symbols-outlined text-2xl">{showMobilePalette ? 'close' : 'grid_view'}</span>
+                        </button>
+                    )}
 
-                {/* Mobile Palette Handler (Bottom Sheet style toggle could go here, for now just hidden on mobile to avoid clutter) */}
+                    {/* Bottom Sheet */}
+                    {showMobilePalette && (
+                        <div className="fixed inset-0 z-30" onClick={() => setShowMobilePalette(false)}>
+                            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+                            <div
+                                className="absolute bottom-0 left-0 right-0 bg-[var(--card)] border-t border-[var(--border)] rounded-t-3xl p-6 pb-8 max-h-[60vh] overflow-y-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
+                                <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined">grid_view</span>
+                                    Question Palette
+                                </h3>
+                                <div className="grid grid-cols-6 gap-2">
+                                    {questions.map((_, idx) => {
+                                        const isActive = currentIndex === idx;
+                                        const isDone = answers[idx] !== undefined;
+                                        const isFlag = flags.has(idx);
+
+                                        let btnClass = "bg-[var(--background-tertiary)] text-[var(--foreground-muted)] hover:bg-[var(--border)]";
+                                        if (isActive) btnClass = "bg-[var(--accent)] text-white shadow-md scale-105";
+                                        else if (isFlag) btnClass = "bg-[var(--warning)]/20 text-[var(--warning)] ring-1 ring-[var(--warning)]";
+                                        else if (isDone) btnClass = "bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-[var(--accent)]/30";
+
+                                        return (
+                                            <button
+                                                key={idx}
+                                                onClick={() => {
+                                                    setCurrentIndex(idx);
+                                                    setShowMobilePalette(false);
+                                                }}
+                                                className={`aspect-square rounded-xl text-xs font-bold transition-all ${btnClass}`}
+                                            >
+                                                {idx + 1}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="mt-4 flex items-center gap-4 text-[10px] text-[var(--foreground-muted)]">
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]/10 ring-1 ring-[var(--accent)]/30"></span>
+                                        Answered
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--warning)]/20 ring-1 ring-[var(--warning)]"></span>
+                                        Flagged
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--background-tertiary)]"></span>
+                                        Unanswered
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </main>
 
             {/* Submit Confirmation Modal */}
