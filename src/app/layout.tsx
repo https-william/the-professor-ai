@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import { UserProvider } from "@/context/UserContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import FrostedDock from "@/components/FrostedDock";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
   title: "The Professor | Cheat Codes for Your Degree",
@@ -43,7 +45,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&family=Outfit:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
         {/* Material Symbols */}
@@ -57,6 +59,7 @@ export default function RootLayout({
           <UserProvider>
             {children}
             <FrostedDock />
+            <ServiceWorkerRegistrar />
           </UserProvider>
         </ThemeProvider>
       </body>

@@ -8,6 +8,7 @@
 @theme inline {
   /* Typography */
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Inter", "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Radius - Softer, Google-style */
@@ -525,4 +526,36 @@ html.dark .blob-teal {
 
 .rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* ============================================
+   INTER HEADINGS
+   ============================================ */
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+}
+
+/* ============================================
+   KATEX MATH RENDERING OVERRIDES
+   ============================================ */
+
+.katex {
+  font-size: 1em !important;
+}
+
+.katex-display-wrapper {
+  display: block;
+  text-align: center;
+  margin: 0.75rem 0;
+}
+
+.katex-display-wrapper .katex {
+  font-size: 1.1em !important;
+}
+
+/* Ensure KaTeX inherits theme colors */
+.katex .mord, .katex .mbin, .katex .mrel,
+.katex .mopen, .katex .mclose, .katex .mpunct {
+  color: inherit;
 }

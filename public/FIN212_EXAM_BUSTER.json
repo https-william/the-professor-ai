@@ -1,0 +1,16 @@
+{
+  "type": "comprehensive",
+  "course": "FIN212",
+  "exam_date": "Feb 9, 2026",
+  "concepts": [
+    { "term": "Positive Leverage", "definition": "ROE > ROA. Occurs when borrowing cost is less than property yield." },
+    { "term": "Secondary Mortgage Market", "definition": "Where existing mortgages are bought and sold (Fannie Mae, Freddie Mac)." },
+    { "term": "Amortization", "definition": "The process of paying off a debt with a fixed repayment schedule in regular installments over time." },
+    { "term": "Equity", "definition": "Market Value - Outstanding Debt." },
+    { "term": "Prepayment Risk", "definition": "The risk that borrowers pay off their loans earlier than expected, reducing interest income for MBS investors." }
+  ],
+  "questions": [
+    { "q": "What is the primary driver of MBS value?", "a": "The underlying cash flows from the pool of individual mortgages." },
+    { "q": "Formula for LTV?", "a": "Loan Amount / Property Value." }
+  ]
+}
