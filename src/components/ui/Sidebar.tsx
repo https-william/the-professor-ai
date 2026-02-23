@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import {
     LayoutDashboard,
     MessageSquare,
-    Swords,
     BookOpen,
     Settings,
     HelpCircle,
@@ -17,7 +16,6 @@ import {
 const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Professor", href: "/professor", icon: MessageSquare },
-    { label: "Arena", href: "/arena", icon: Swords },
     { label: "Library", href: "/library", icon: BookOpen },
 ];
 

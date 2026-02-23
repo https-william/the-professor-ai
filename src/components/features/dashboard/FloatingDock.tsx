@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Swords } from "lucide-react";
+import { Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import Link from "next/link";
@@ -9,7 +9,6 @@ import { usePathname } from "next/navigation";
 
 const apps = [
     { id: "professor", icon: Bot, name: "Professor", path: "/professor" },
-    { id: "arena", icon: Swords, name: "Arena", path: "/arena" },
 ];
 
 export function FloatingDock() {

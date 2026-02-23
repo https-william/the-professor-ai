@@ -1,8 +1,11 @@
 import { NextRequest } from "next/server";
 import { hydraGenerateContent } from "@/lib/ai/hydra";
 import { createClient } from "@/lib/supabase/server";
+import { buildSummaryPrompt } from "@/lib/ai/prompts";
+import { parseSummaryResponse } from "@/lib/ai/schemas";
+import { validateContent } from "@/lib/validation";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
 const COST = 5;
 
@@ -12,10 +15,10 @@ export async function POST(req: NextRequest) {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
-             return new Response(JSON.stringify({ error: "Unauthorized" }), { 
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
                 status: 401,
-                headers: { 'Content-Type': 'application/json' }
-             });
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
         // Check Credits
@@ -26,10 +29,10 @@ export async function POST(req: NextRequest) {
             .single();
 
         if (!profile || (profile.credits || 0) < COST) {
-             return new Response(JSON.stringify({ error: "Insufficient credits. Please top up." }), { 
+            return new Response(JSON.stringify({ error: "Insufficient credits. Please top up." }), {
                 status: 402,
-                headers: { 'Content-Type': 'application/json' }
-             });
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
         // Deduct Credits
@@ -37,66 +40,70 @@ export async function POST(req: NextRequest) {
             .from("profiles")
             .update({ credits: (profile.credits || 0) - COST })
             .eq("id", user.id);
-            
+
         if (deductError) {
-             console.error("Credit deduction failed:", deductError);
-             return new Response(JSON.stringify({ error: "Transaction failed" }), { 
+            console.error("Credit deduction failed:", deductError);
+            return new Response(JSON.stringify({ error: "Transaction failed" }), {
                 status: 500,
-                headers: { 'Content-Type': 'application/json' }
-             });
-        }
-
-        const { content, style = "concise" } = await req.json();
-
-        if (!content || content.trim().length < 50) {
-            return new Response(JSON.stringify({ error: "Please provide more content (minimum 50 characters)" }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
+                headers: { "Content-Type": "application/json" },
             });
         }
 
-        const styleGuide: Record<string, string> = {
-            concise: "Bullet points organized by topic. Be brief but comprehensive.",
-            detailed: "Full paragraphs with explanations. Include context and examples.",
-            study: "Study guide format with key terms, definitions, and review questions."
-        };
+        const body = await req.json();
+        const { style = "concise" } = body;
 
-        const prompt = `You are The Professor. Create a ${style} summary of the following content.
+        const contentResult = validateContent(body.content);
+        if (!contentResult.isValid) {
+            return new Response(JSON.stringify({ error: contentResult.error || "Invalid content" }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+        const content = contentResult.sanitized!;
 
-CONTENT:
-${content.substring(0, 45000)}
+        const prompt = buildSummaryPrompt(
+            content.substring(0, 45_000),
+            style
+        );
 
-STYLE: ${style.toUpperCase()} - ${styleGuide[style] || styleGuide.concise}
+        const responseText = await hydraGenerateContent(prompt, {
+            feature: "summary",
+            jsonMode: false,
+            timeoutMs: 45_000,
+        });
 
-Return a well-organized summary. Use markdown formatting (headers, bullets, bold for key terms).`;
+        const summary = parseSummaryResponse(responseText);
 
-        const responseText = await hydraGenerateContent(prompt, { timeoutMs: 30000 });
+        // Generate a meaningful title from the content
+        const titleSnippet = content.substring(0, 60).trim().replace(/\s+/g, " ");
+        const title = `Summary: ${titleSnippet}${titleSnippet.length < content.length ? "..." : ""}`;
 
-        // PERSISTENCE: Save to database
+        // Save to database
         try {
             await supabase.from("generations").insert({
                 user_id: user.id,
                 type: "summary",
-                title: "Summary: " + (content.substring(0, 30) + "..."),
-                content: { summary: responseText, style }
+                title,
+                content: { summary, style },
             });
         } catch (dbError) {
             console.error("Failed to save generation:", dbError);
         }
 
-        return new Response(JSON.stringify({ 
-            summary: responseText,
+        return new Response(JSON.stringify({
+            summary,
             title: "Summary Generated",
-            style 
+            style,
         }), {
-            headers: { 'Content-Type': 'application/json' }
+            headers: { "Content-Type": "application/json" }
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Failed to generate summary";
         console.error("Summary Error:", error);
-        return new Response(JSON.stringify({ error: error?.message || "Failed to generate summary" }), {
+        return new Response(JSON.stringify({ error: msg }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { "Content-Type": "application/json" },
         });
     }
 }

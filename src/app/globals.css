@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 /* ============================================
-   THE PROFESSOR - GOOGLE-INSPIRED DESIGN SYSTEM
-   Light mode default with dark mode toggle
+   THE PROFESSOR — MIDNIGHT SCHOLAR DESIGN SYSTEM
+   Dark-mode default. Amber gold identity.
+   "A wizard's study at 3 AM."
    ============================================ */
 
 @theme inline {
   /* Typography */
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Inter", "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Fraunces", "Inter", ui-serif, serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Radius - Softer, Google-style */
+  /* Radius — generous, feels substantial */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
@@ -21,114 +22,99 @@
 }
 
 /* ============================================
-   LIGHT MODE (Default - Google Style)
+   DARK MODE — MIDNIGHT SCHOLAR (Default)
+   Volcanic almost-black, amber gold identity
    ============================================ */
 
-:root,
-html.light {
-  --background: #FFFFFF;
-  --background-secondary: #FAFAFA;
-  --background-tertiary: #F5F5F5;
-  --foreground: #1F1F1F;
-  --foreground-secondary: #5F6368;
-  --foreground-muted: #9AA0A6;
+:root {
+  /* Backgrounds — deep volcanic */
+  --background: #08080E;
+  --background-secondary: #0F0F1A;
+  --background-tertiary: #16162A;
 
-  /* Cards - Warm off-white */
-  --card: #FFFBF7;
-  --card-hover: #FFF8F2;
-  --card-border: rgba(0, 0, 0, 0.08);
+  /* Cards */
+  --card: #12121F;
+  --card-hover: #1A1A2E;
+  --card-border: rgba(245, 240, 232, 0.07);
 
-  /* Accent - Electric Teal (The Professor Brand) */
-  /* A unique, high-energy blend of cyan and azure */
-  --accent: #0EA5E9;
-  /* Sky 500 */
-  --accent-light: #38BDF8;
-  /* Sky 400 */
-  --accent-dark: #0284C7;
-  /* Sky 600 */
-  --accent-bg: rgba(14, 165, 233, 0.1);
+  /* Text — warm cream (not cold white) */
+  --foreground: #F5F0E8;
+  --foreground-secondary: #B8B0A0;
+  --foreground-muted: #6B6560;
 
-  /* Secondary - Deep Indigo/Violet (complementary depth) */
+  /* Accent — Amber Gold (THE identity colour) */
+  --accent: #F59E0B;
+  --accent-light: #FCD34D;
+  --accent-dark: #D97706;
+  --accent-bg: rgba(245, 158, 11, 0.12);
+  --accent-glow: rgba(245, 158, 11, 0.2);
+
+  /* Secondary — Electric Indigo */
   --secondary: #6366F1;
-  /* Indigo 500 */
   --secondary-light: #818CF8;
   --secondary-dark: #4F46E5;
+  --secondary-bg: rgba(99, 102, 241, 0.12);
 
   /* Semantic */
   --success: #10B981;
-  /* Emerald */
   --warning: #F59E0B;
-  /* Amber (kept for actual warnings) */
   --error: #EF4444;
-  /* Red */
+  --info: #6366F1;
 
-  /* Borders & Shadows */
-  --border: rgba(0, 0, 0, 0.08);
-  --border-hover: rgba(0, 0, 0, 0.15);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.3);
-  /* New glow effect */
+  /* Borders */
+  --border: rgba(245, 240, 232, 0.08);
+  --border-hover: rgba(245, 158, 11, 0.25);
+
+  /* Shadows — deeper with amber glow option */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 30px rgba(245, 158, 11, 0.15);
+  --shadow-glow-strong: 0 0 50px rgba(245, 158, 11, 0.25);
 
   /* Scrollbar */
-  --scrollbar-track: #F5F5F5;
-  --scrollbar-thumb: #CBD5E1;
-  --scrollbar-thumb-hover: #94A3B8;
+  --scrollbar-track: #0F0F1A;
+  --scrollbar-thumb: #2A2A3E;
+  --scrollbar-thumb-hover: #3A3A50;
 }
 
 /* ============================================
-   DARK MODE (Toggle - Deep Void)
+   LIGHT MODE — preserved for toggle if needed
    ============================================ */
 
-html.dark {
-  --background: #0B0E14;
-  /* Slightly blue-tinted void */
-  --background-secondary: #13161C;
-  --background-tertiary: #1E293B;
-  --foreground: #FAFAFA;
-  --foreground-secondary: #94A3B8;
-  --foreground-muted: #64748B;
-
-  /* Cards */
-  --card: rgba(19, 22, 28, 0.8);
-  --card-hover: rgba(30, 41, 59, 0.8);
-  --card-border: rgba(56, 189, 248, 0.1);
-  /* Subtle accent border */
-
-  /* Accent - Electric Teal (The Professor Brand) */
-  --accent: #38BDF8;
-  /* Sky 400 (Brighter for dark mode) */
-  --accent-light: #7DD3FC;
-  /* Sky 300 */
-  --accent-dark: #0EA5E9;
-  /* Sky 500 */
-  --accent-bg: rgba(56, 189, 248, 0.15);
-
-  /* Secondary - Deep Indigo */
-  --secondary: #818CF8;
-  --secondary-light: #A5B4FC;
-  --secondary-dark: #6366F1;
-
-  /* Semantic */
-  --success: #34D399;
-  --warning: #FBBF24;
-  --error: #F87171;
-  --info: #38BDF8;
-
-  /* Borders & Shadows */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(56, 189, 248, 0.2);
-  /* Accent tinted hover */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 30px rgba(56, 189, 248, 0.15);
-
-  /* Scrollbar */
-  --scrollbar-track: #0B0E14;
-  --scrollbar-thumb: #1E293B;
-  --scrollbar-thumb-hover: #334155;
+html.light {
+  --background: #FAFAF7;
+  --background-secondary: #F5F0E8;
+  --background-tertiary: #EDE8DE;
+  --card: #FFFFFF;
+  --card-hover: #FFF8EE;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --foreground: #1A1208;
+  --foreground-secondary: #5C4E38;
+  --foreground-muted: #9A8C7A;
+  --accent: #D97706;
+  --accent-light: #F59E0B;
+  --accent-dark: #B45309;
+  --accent-bg: rgba(217, 119, 6, 0.1);
+  --accent-glow: rgba(217, 119, 6, 0.15);
+  --secondary: #4F46E5;
+  --secondary-light: #6366F1;
+  --secondary-dark: #3730A3;
+  --secondary-bg: rgba(79, 70, 229, 0.1);
+  --success: #059669;
+  --warning: #D97706;
+  --error: #DC2626;
+  --info: #4F46E5;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(217, 119, 6, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+  --shadow-glow: 0 0 30px rgba(217, 119, 6, 0.12);
+  --shadow-glow-strong: 0 0 50px rgba(217, 119, 6, 0.2);
+  --scrollbar-track: #EDE8DE;
+  --scrollbar-thumb: #C4B89A;
+  --scrollbar-thumb-hover: #A89878;
 }
 
 /* ============================================
@@ -151,8 +137,15 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-optical-sizing: auto;
+}
+
 /* ============================================
-   INPUT RESET - Remove all borders from inputs
+   INPUT RESET
    ============================================ */
 
 input,
@@ -172,7 +165,6 @@ select:focus {
   box-shadow: none !important;
 }
 
-/* Card that contains inputs should not show inner borders */
 .card input,
 .card textarea {
   border: none !important;
@@ -180,7 +172,7 @@ select:focus {
 }
 
 /* ============================================
-   CARD SYSTEM (Google-inspired)
+   CARD SYSTEM — Scholar Cards
    ============================================ */
 
 .card {
@@ -188,7 +180,7 @@ select:focus {
   border: 1px solid var(--card-border);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .card:hover {
@@ -197,58 +189,89 @@ select:focus {
   box-shadow: var(--shadow-md);
 }
 
-/* Glass effect for dark mode */
-html.dark .card-glass {
-  background-color: rgba(24, 24, 27, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* Scholar Card — amber glow on hover */
+.scholar-card {
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.scholar-card:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Glass card */
+.glass-card {
+  background: rgba(18, 18, 31, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(245, 240, 232, 0.07);
+  border-radius: var(--radius-2xl);
+}
+
+html.light .glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 /* ============================================
-   FROSTED LIQUID GLASS DOCK (macOS-inspired)
+   GOLD BADGE
+   ============================================ */
+
+.gold-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 9999px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   FROSTED DOCK — Amber active state
    ============================================ */
 
 .frosted-dock {
-  background: rgba(255, 255, 255, 0.65);
-  /* More transparent to show blur */
+  background: rgba(12, 12, 20, 0.75);
   backdrop-filter: blur(50px) saturate(180%);
   -webkit-backdrop-filter: blur(50px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-html.dark .frosted-dock {
-  background: rgba(20, 20, 24, 0.65);
-  /* More transparent to show blur */
-  backdrop-filter: blur(50px) saturate(180%);
-  -webkit-backdrop-filter: blur(50px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(245, 240, 232, 0.08);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.5),
     0 2px 8px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 rgba(245, 240, 232, 0.05);
+}
+
+html.light .frosted-dock {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .frosted-dock-mobile {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(12, 12, 20, 0.85);
   backdrop-filter: blur(50px) saturate(180%);
   -webkit-backdrop-filter: blur(50px) saturate(180%);
-  border-top: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(245, 240, 232, 0.07);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
 }
 
-html.dark .frosted-dock-mobile {
-  background: rgba(20, 20, 24, 0.75);
-  backdrop-filter: blur(50px) saturate(180%);
-  -webkit-backdrop-filter: blur(50px) saturate(180%);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+html.light .frosted-dock-mobile {
+  background: rgba(255, 255, 255, 0.85);
+  border-top-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
 }
 
-/* Dock item states */
 .dock-item {
   color: var(--foreground-secondary);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -256,26 +279,68 @@ html.dark .frosted-dock-mobile {
 
 .dock-item:hover {
   color: var(--foreground);
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(245, 240, 232, 0.06);
   transform: translateY(-2px);
 }
 
-html.dark .dock-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+html.light .dock-item:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .dock-item-active {
   color: var(--accent);
-  background: var(--accent-bg);
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .dock-item-active:hover {
-  background: var(--accent-bg);
+  background: rgba(245, 158, 11, 0.15);
 }
 
-/* Safe area for mobile devices with home indicator */
 .safe-area-bottom {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #08080E;
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--accent-light), var(--accent));
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-hover);
+  background: rgba(245, 158, 11, 0.05);
+  color: var(--accent);
 }
 
 /* ============================================
@@ -283,8 +348,8 @@ html.dark .dock-item:hover {
    ============================================ */
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -293,7 +358,7 @@ html.dark .dock-item:hover {
 
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -304,7 +369,6 @@ html.dark .dock-item:hover {
    FOCUS & SELECTION
    ============================================ */
 
-/* Focus outline for interactive elements (accessibility) */
 button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible {
@@ -313,7 +377,6 @@ a:focus-visible,
   border-radius: var(--radius-md);
 }
 
-/* Subtle focus for text inputs - no heavy outline */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
@@ -321,102 +384,19 @@ select:focus-visible {
 }
 
 ::selection {
-  background: var(--accent-bg);
+  background: rgba(245, 158, 11, 0.25);
   color: var(--foreground);
-}
-
-html.dark ::selection {
-  background: rgba(244, 132, 95, 0.3);
-}
-
-/* ============================================
-   TRANSITIONS
-   ============================================ */
-
-button,
-a,
-input,
-textarea,
-select {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================
-   UTILITY CLASSES
-   ============================================ */
-
-/* Text Colors */
-.text-primary {
-  color: var(--foreground);
-}
-
-.text-secondary {
-  color: var(--foreground-secondary);
-}
-
-.text-muted {
-  color: var(--foreground-muted);
-}
-
-.text-accent {
-  color: var(--accent);
-}
-
-/* Background Colors */
-.bg-primary {
-  background-color: var(--background);
-}
-
-.bg-secondary {
-  background-color: var(--background-secondary);
-}
-
-.bg-card {
-  background-color: var(--card);
-}
-
-.bg-accent {
-  background-color: var(--accent);
-}
-
-/* Button Styles */
-.btn-primary {
-  background-color: var(--accent);
-  color: white;
-  border-radius: var(--radius-xl);
-  padding: 0.75rem 1.5rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background-color: var(--accent-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-secondary {
-  background-color: transparent;
-  color: var(--foreground);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 0.75rem 1.5rem;
-  font-weight: 500;
-}
-
-.btn-secondary:hover {
-  background-color: var(--background-tertiary);
-  border-color: var(--border-hover);
 }
 
 /* ============================================
    ANIMATION KEYFRAMES
    ============================================ */
 
+/* Fade up — standard entry */
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
 
   to {
@@ -425,6 +405,18 @@ select {
   }
 }
 
+/* Fade in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Soft pulse (breathing glow) */
 @keyframes pulse-soft {
 
   0%,
@@ -433,10 +425,56 @@ select {
   }
 
   50% {
-    opacity: 0.7;
+    opacity: 0.6;
   }
 }
 
+/* Gold glow breathing */
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* Scholar float — slow, deliberate, 7s period */
+@keyframes scholar-float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Blob movement */
+@keyframes blob-move {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(40px, -30px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* Slide in from right */
 @keyframes slide-in-right {
   from {
     opacity: 0;
@@ -449,36 +487,139 @@ select {
   }
 }
 
-@keyframes float {
+/* Scale in */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Waveform bars (podcast player) */
+@keyframes waveform {
 
   0%,
   100% {
-    transform: translateY(0);
+    transform: scaleY(0.4);
   }
 
   50% {
-    transform: translateY(-10px);
+    transform: scaleY(1);
   }
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.4s ease-out;
-}
+/* Shimmer loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
 
-.animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* ============================================
-   ORGANIC BLOB SHAPES (Google style)
+   ANIMATION UTILITY CLASSES
+   ============================================ */
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.5s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-scholar-float {
+  animation: scholar-float 7s ease-in-out infinite;
+}
+
+.animate-blob {
+  animation: blob-move 12s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out both;
+}
+
+.animate-float {
+  animation: scholar-float 7s ease-in-out infinite;
+}
+
+/* Stagger delays for list animations */
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animation-delay-500 {
+  animation-delay: 500ms;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2000ms;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4000ms;
+}
+
+/* ============================================
+   WAVEFORM ANIMATION (Podcast Player)
+   ============================================ */
+
+.waveform-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: waveform var(--delay, 0.6s) ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* ============================================
+   SHIMMER (Loading States)
+   ============================================ */
+
+.shimmer {
+  background: linear-gradient(90deg,
+      var(--card) 0%,
+      var(--background-tertiary) 50%,
+      var(--card) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ============================================
+   AMBIENT BLOBS (Grainient Background)
    ============================================ */
 
 .blob {
@@ -489,26 +630,20 @@ select {
   z-index: 0;
 }
 
+.blob-amber {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+}
+
+.blob-indigo {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+}
+
 .blob-coral {
-  background: var(--accent-light);
-  opacity: 0.3;
-}
-
-.blob-teal {
-  background: var(--secondary-light);
-  opacity: 0.2;
-}
-
-html.dark .blob-coral {
-  opacity: 0.15;
-}
-
-html.dark .blob-teal {
-  opacity: 0.1;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.12) 0%, transparent 70%);
 }
 
 /* ============================================
-   3D TRANSFORM UTILITIES FOR FLASHCARDS
+   3D TRANSFORM UTILITIES (Flashcards)
    ============================================ */
 
 .perspective-1000 {
@@ -529,11 +664,70 @@ html.dark .blob-teal {
 }
 
 /* ============================================
-   INTER HEADINGS
+   TEXT UTILITIES
    ============================================ */
 
-h1, h2, h3 {
-  font-family: var(--font-heading);
+.text-primary {
+  color: var(--foreground);
+}
+
+.text-secondary {
+  color: var(--foreground-secondary);
+}
+
+.text-muted {
+  color: var(--foreground-muted);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.text-gold {
+  color: var(--accent);
+}
+
+.bg-primary {
+  background-color: var(--background);
+}
+
+.bg-secondary {
+  background-color: var(--background-secondary);
+}
+
+.bg-card {
+  background-color: var(--card);
+}
+
+.bg-accent {
+  background-color: var(--accent-bg);
+}
+
+/* Gradient text */
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--accent-light), var(--accent), var(--accent-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-indigo {
+  background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   BORDER UTILITIES
+   ============================================ */
+
+.border-accent {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.border-dim {
+  border-color: var(--border);
 }
 
 /* ============================================
@@ -554,8 +748,11 @@ h1, h2, h3 {
   font-size: 1.1em !important;
 }
 
-/* Ensure KaTeX inherits theme colors */
-.katex .mord, .katex .mbin, .katex .mrel,
-.katex .mopen, .katex .mclose, .katex .mpunct {
+.katex .mord,
+.katex .mbin,
+.katex .mrel,
+.katex .mopen,
+.katex .mclose,
+.katex .mpunct {
   color: inherit;
 }

@@ -4,157 +4,274 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { GlassCard, Grainient } from "@/components/ui/VisualEffects";
 import BrandLogo from "@/components/ui/BrandLogo";
+
+const TOOLS = [
+    { icon: "style", label: "Flashcards", href: "/create?tool=flashcards", color: "var(--accent)", bg: "rgba(245,158,11,0.1)" },
+    { icon: "quiz", label: "Quiz", href: "/create?tool=quiz", color: "var(--secondary)", bg: "rgba(99,102,241,0.1)" },
+    { icon: "mic", label: "Podcast", href: "/create?tool=podcast", color: "#10B981", bg: "rgba(16,185,129,0.1)" },
+    { icon: "summarize", label: "Summary", href: "/create?tool=summary", color: "#6366F1", bg: "rgba(99,102,241,0.1)" },
+    { icon: "account_tree", label: "Mind Map", href: "/create?tool=mindmap", color: "#F97316", bg: "rgba(249,115,22,0.1)" },
+    { icon: "school", label: "Ask Prof", href: "/professor", color: "var(--accent)", bg: "rgba(245,158,11,0.1)" },
+];
+
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 5) return "Still up,";
+    if (hour < 12) return "Good morning,";
+    if (hour < 17) return "Good afternoon,";
+    if (hour < 21) return "Good evening,";
+    return "Late night grind,";
+}
 
 export default function DashboardPage() {
     const { user } = useUser();
     const { resolvedTheme, toggleTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
+    const [examDate, setExamDate] = useState("");
+    const [savedExam, setSavedExam] = useState<{ date: string; name: string } | null>(null);
+    const [examName, setExamName] = useState("");
+    const [editingExam, setEditingExam] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        try {
+            const stored = localStorage.getItem("exam_countdown");
+            if (stored) setSavedExam(JSON.parse(stored));
+        } catch { }
     }, []);
+
+    function saveExam() {
+        if (!examDate) return;
+        const exam = { date: examDate, name: examName || "Exam" };
+        localStorage.setItem("exam_countdown", JSON.stringify(exam));
+        setSavedExam(exam);
+        setEditingExam(false);
+        setExamDate("");
+        setExamName("");
+    }
+
+    function clearExam() {
+        localStorage.removeItem("exam_countdown");
+        setSavedExam(null);
+    }
+
+    function getDaysUntil(dateStr: string) {
+        const diff = new Date(dateStr).getTime() - Date.now();
+        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    }
 
     if (!mounted) {
         return (
             <div className="min-h-screen bg-[var(--background)] p-8">
-                <div className="max-w-4xl mx-auto space-y-6">
-                    <Skeleton className="h-14 w-full rounded-2xl" />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Skeleton className="h-32 rounded-2xl" />
-                        <Skeleton className="h-32 rounded-2xl" />
-                        <Skeleton className="h-32 rounded-2xl" />
+                <div className="max-w-5xl mx-auto space-y-6">
+                    <div className="h-14 w-64 rounded-2xl shimmer" />
+                    <div className="grid grid-cols-3 gap-4">
+                        {[0, 1, 2].map(i => <div key={i} className="h-32 rounded-2xl shimmer" />)}
                     </div>
                 </div>
             </div>
         );
     }
 
+    const days = savedExam ? getDaysUntil(savedExam.date) : null;
+    const urgency = days !== null
+        ? days <= 2 ? "danger" : days <= 5 ? "warning" : "calm"
+        : null;
+
+    const urgencyColor = urgency === "danger" ? "#EF4444"
+        : urgency === "warning" ? "var(--accent)"
+            : "#10B981";
+
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-24 relative overflow-hidden">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
             <Grainient className="fixed inset-0 opacity-30 z-0 pointer-events-none" />
 
             <div className="relative z-10">
                 {/* Header */}
-                <header className="sticky top-0 z-40 h-16 flex items-center justify-between px-6 bg-[var(--background)]/60 backdrop-blur-xl border-b border-[var(--border)]">
+                <header className="sticky top-0 z-40 h-16 flex items-center justify-between px-6 bg-[var(--background)]/70 backdrop-blur-xl border-b border-[var(--border)]">
                     <div className="flex items-center gap-3">
                         <BrandLogo size="sm" />
-                        <span className="text-sm font-bold text-[var(--foreground)] tracking-wide">THE PROFESSOR</span>
+                        <span className="text-sm font-bold tracking-widest text-[var(--foreground-muted)] uppercase">The Professor</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={toggleTheme}
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 transition-all"
+                            title="Toggle theme"
                         >
                             <span className="material-symbols-outlined text-xl">
                                 {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
                             </span>
                         </button>
                         <Link
-                            href="/settings"
-                            className="px-4 py-2 rounded-full bg-[var(--accent)] text-white text-xs font-bold shadow-[var(--shadow-glow)] hover:shadow-lg hover:scale-105 transition-all flex items-center gap-1.5"
+                            href="/settings/billing"
+                            className="btn-primary text-xs px-4 py-2 flex items-center gap-1"
                         >
-                            UPGRADE
+                            Upgrade
                             <span className="material-symbols-outlined text-sm">bolt</span>
                         </Link>
                     </div>
                 </header>
 
-                {/* Main Content */}
-                <main className="max-w-5xl mx-auto px-6 py-10">
+                <main className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+
                     {/* Greeting */}
-                    <div className="mb-10 animate-fade-in-up">
-                        <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
-                            Welcome back, {user.name}
+                    <div className="animate-fade-in-up">
+                        <p className="text-[var(--foreground-muted)] text-sm font-medium tracking-wide uppercase mb-1">
+                            {getGreeting()}
+                        </p>
+                        <h1 className="font-heading text-4xl md:text-5xl font-bold text-[var(--foreground)] leading-tight">
+                            {user.name}
                         </h1>
-                        <p className="text-[var(--foreground-secondary)]">
-                            Your second brain is online and ready.
+                        <p className="text-[var(--foreground-secondary)] mt-2 text-base">
+                            Your AI study engine is ready. What are we tackling today?
                         </p>
                     </div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                        {/* Study Streak */}
-                        <GlassCard className="p-6 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity transform group-hover:scale-110">
-                                <span className="text-4xl">🔥</span>
-                            </div>
-                            <div className="relative z-10">
-                                <span className="text-xs font-bold text-[var(--foreground-muted)] uppercase tracking-wider">Study Streak</span>
-                                <div className="text-4xl font-black text-[var(--accent)] mt-2">{user.streak}</div>
-                                <p className="text-xs text-[var(--foreground-secondary)] mt-1 font-medium">days in a row</p>
-                            </div>
-                        </GlassCard>
-
-                        {/* Study Time */}
-                        <GlassCard className="p-6 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4">
-                                <span className="material-symbols-outlined text-4xl text-[var(--secondary)]/50 group-hover:text-[var(--secondary)] transition-colors">schedule</span>
-                            </div>
-                            <div className="relative z-10">
-                                <span className="text-xs font-bold text-[var(--foreground-muted)] uppercase tracking-wider">Activity</span>
-                                <div className="text-4xl font-black text-[var(--secondary)] mt-2">0h</div>
-                                <p className="text-xs text-[var(--foreground-secondary)] mt-1 font-medium">this week</p>
-                            </div>
-                        </GlassCard>
-
-                        {/* Arena Rank */}
-                        <Link href="/arena" className="block h-full">
-                            <GlassCard className="p-6 h-full relative overflow-hidden group hover:border-[var(--warning)]/50 transition-all cursor-pointer">
-                                <div className="absolute top-0 right-0 p-4">
-                                    <span className="material-symbols-outlined text-4xl text-[var(--warning)]/50 group-hover:text-[var(--warning)] animate-pulse-soft">emoji_events</span>
+                    {/* Exam Countdown Widget */}
+                    <div className="animate-fade-in-up animation-delay-100">
+                        {savedExam && !editingExam ? (
+                            <GlassCard className="p-6 border border-[var(--border)]" style={{ borderColor: `${urgencyColor}30` } as React.CSSProperties}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-[var(--foreground-muted)] mb-1">
+                                            Exam Countdown
+                                        </p>
+                                        <p className="text-[var(--foreground-secondary)] text-sm">{savedExam.name}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="font-heading text-5xl font-bold" style={{ color: urgencyColor }}>
+                                            {days !== null && days > 0 ? days : days === 0 ? "🔥" : "⏰"}
+                                        </div>
+                                        <p className="text-xs text-[var(--foreground-muted)] mt-1">
+                                            {days !== null && days > 0 ? "days left" : days === 0 ? "TODAY" : "PASSED"}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="relative z-10">
-                                    <span className="text-xs font-bold text-[var(--foreground-muted)] uppercase tracking-wider">Arena Rank</span>
-                                    <div className="text-4xl font-black text-[var(--foreground)] mt-2">--</div>
-                                    <p className="text-xs text-[var(--warning)] mt-1 font-bold group-hover:translate-x-1 transition-transform">Enter the Arena →</p>
+                                {urgency === "danger" && (
+                                    <div className="mt-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold">
+                                        🚨 Panic mode activated. Focus on high-yield topics only.
+                                    </div>
+                                )}
+                                {urgency === "warning" && (
+                                    <div className="mt-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+                                        ⚡ Crunch time. Review flashcards and do a practice quiz today.
+                                    </div>
+                                )}
+                                <div className="flex gap-2 mt-4">
+                                    <button onClick={() => setEditingExam(true)} className="text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
+                                        Edit
+                                    </button>
+                                    <span className="text-[var(--border)]">·</span>
+                                    <button onClick={clearExam} className="text-xs text-[var(--foreground-muted)] hover:text-red-400 transition-colors">
+                                        Clear
+                                    </button>
                                 </div>
+                            </GlassCard>
+                        ) : (
+                            <GlassCard className="p-6">
+                                <p className="text-xs font-bold uppercase tracking-widest text-[var(--foreground-muted)] mb-3">
+                                    📅 Set Exam Countdown
+                                </p>
+                                <div className="flex flex-wrap gap-3">
+                                    <input
+                                        type="text"
+                                        placeholder="Exam name (e.g. Chemistry Finals)"
+                                        value={examName}
+                                        onChange={e => setExamName(e.target.value)}
+                                        className="flex-1 min-w-[180px] bg-[var(--background-secondary)] text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] rounded-xl px-4 py-2.5 text-sm border border-[var(--border)] focus:border-[var(--accent)] transition-colors"
+                                        style={{ outline: "none", boxShadow: "none" }}
+                                    />
+                                    <input
+                                        type="date"
+                                        value={examDate}
+                                        onChange={e => setExamDate(e.target.value)}
+                                        className="bg-[var(--background-secondary)] text-[var(--foreground)] rounded-xl px-4 py-2.5 text-sm border border-[var(--border)] focus:border-[var(--accent)] transition-colors"
+                                        style={{ outline: "none", boxShadow: "none" }}
+                                    />
+                                    <button
+                                        onClick={saveExam}
+                                        disabled={!examDate}
+                                        className="btn-primary text-sm px-5 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        Set Countdown
+                                    </button>
+                                </div>
+                            </GlassCard>
+                        )}
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="grid grid-cols-3 gap-4 animate-fade-in-up animation-delay-200">
+                        <GlassCard className="p-5 text-center">
+                            <div className="text-3xl font-heading font-bold text-[var(--accent)]">{user.streak ?? 0}</div>
+                            <div className="text-xs text-[var(--foreground-muted)] mt-1 uppercase tracking-wider">Day Streak</div>
+                        </GlassCard>
+                        <GlassCard className="p-5 text-center">
+                            <div className="text-3xl font-heading font-bold text-[var(--secondary)]">{user.credits ?? 0}</div>
+                            <div className="text-xs text-[var(--foreground-muted)] mt-1 uppercase tracking-wider">Credits</div>
+                        </GlassCard>
+                        <Link href="/history" className="block">
+                            <GlassCard className="p-5 text-center h-full hover:border-[var(--accent)]/30 transition-all cursor-pointer group">
+                                <div className="text-3xl font-heading font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">→</div>
+                                <div className="text-xs text-[var(--foreground-muted)] mt-1 uppercase tracking-wider">Library</div>
                             </GlassCard>
                         </Link>
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-                        <div className="space-y-4">
-                            <h2 className="text-lg font-bold text-[var(--foreground)]">Create New</h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Link href="/create" className="group">
-                                    <GlassCard className="p-4 text-center hover:bg-[var(--accent)]/10 transition-colors h-full flex flex-col items-center justify-center gap-2">
-                                        <div className="w-10 h-10 rounded-full bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] group-hover:scale-110 transition-transform">
-                                            <span className="material-symbols-outlined">add_circle</span>
+                    {/* Study Tools Grid */}
+                    <div className="animate-fade-in-up animation-delay-300">
+                        <h2 className="font-heading text-xl font-semibold text-[var(--foreground)] mb-4">
+                            Start Studying
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {TOOLS.map((tool, i) => (
+                                <Link key={tool.label} href={tool.href}>
+                                    <GlassCard
+                                        className="p-5 group hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+                                        style={{ animationDelay: `${i * 50}ms` }}
+                                    >
+                                        <div
+                                            className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+                                            style={{ background: tool.bg, color: tool.color }}
+                                        >
+                                            <span className="material-symbols-outlined text-2xl">{tool.icon}</span>
                                         </div>
-                                        <span className="text-sm font-semibold">Upload Material</span>
+                                        <div className="font-semibold text-[var(--foreground)] text-sm">{tool.label}</div>
+                                        <div className="text-xs text-[var(--foreground-muted)] mt-0.5">Generate now →</div>
                                     </GlassCard>
                                 </Link>
-                                <Link href="/class" className="group">
-                                    <GlassCard className="p-4 text-center hover:bg-[var(--secondary)]/10 transition-colors h-full flex flex-col items-center justify-center gap-2">
-                                        <div className="w-10 h-10 rounded-full bg-[var(--secondary)]/10 flex items-center justify-center text-[var(--secondary)] group-hover:scale-110 transition-transform">
-                                            <span className="material-symbols-outlined">school</span>
-                                        </div>
-                                        <span className="text-sm font-semibold">Start Class</span>
-                                    </GlassCard>
-                                </Link>
-                            </div>
+                            ))}
                         </div>
+                    </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-bold text-[var(--foreground)]">Recent</h2>
-                                <Link href="/history" className="text-xs font-bold text-[var(--accent)] hover:underline">VIEW ALL</Link>
-                            </div>
-                            <GlassCard className="p-8 text-center flex flex-col items-center justify-center min-h-[140px]">
-                                <div className="w-12 h-12 rounded-full bg-[var(--background-tertiary)] flex items-center justify-center text-[var(--foreground-muted)] mb-3">
-                                    <span className="material-symbols-outlined">history</span>
-                                </div>
-                                <p className="text-sm text-[var(--foreground-secondary)]">No recent history</p>
-                            </GlassCard>
+                    {/* Recent activity placeholder */}
+                    <div className="animate-fade-in-up animation-delay-400">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="font-heading text-xl font-semibold text-[var(--foreground)]">Recent Sessions</h2>
+                            <Link href="/history" className="text-xs font-bold text-[var(--accent)] hover:underline uppercase tracking-wide">
+                                View All
+                            </Link>
                         </div>
+                        <GlassCard className="p-10 flex flex-col items-center justify-center text-center gap-3">
+                            <div
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                                style={{ background: "rgba(245,158,11,0.08)" }}
+                            >
+                                <span className="material-symbols-outlined text-3xl text-[var(--accent)]/60">auto_awesome</span>
+                            </div>
+                            <p className="text-[var(--foreground-secondary)] text-sm">
+                                Your generated sessions will appear here
+                            </p>
+                            <Link href="/create" className="btn-primary text-sm px-6 py-2.5 mt-1">
+                                Create Your First Session
+                            </Link>
+                        </GlassCard>
                     </div>
                 </main>
             </div>
         </div>
     );
 }
-

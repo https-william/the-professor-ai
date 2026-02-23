@@ -5,6 +5,8 @@ import { UserProvider } from "@/context/UserContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import FrostedDock from "@/components/FrostedDock";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "The Professor | Cheat Codes for Your Degree",
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#7C3AED",
+  themeColor: "#F59E0B",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -39,13 +41,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Preload fonts for faster loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&family=Outfit:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap"
           rel="stylesheet"
         />
         {/* Material Symbols */}
@@ -60,6 +62,8 @@ export default function RootLayout({
             {children}
             <FrostedDock />
             <ServiceWorkerRegistrar />
+            <Analytics />
+            <SpeedInsights />
           </UserProvider>
         </ThemeProvider>
       </body>

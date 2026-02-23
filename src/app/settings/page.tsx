@@ -17,7 +17,6 @@ export default function SettingsPage() {
         notifications: true,
         studyReminders: true,
         weeklyDigest: true,
-        arenaAlerts: false,
         language: "English",
         timezone: "UTC+1",
         studyGoal: 30,
@@ -254,13 +253,6 @@ export default function SettingsPage() {
                                             <p className="text-xs text-[var(--foreground-secondary)]">Summary of your weekly progress</p>
                                         </div>
                                         <Toggle enabled={settings.weeklyDigest} onChange={() => setSettings({ ...settings, weeklyDigest: !settings.weeklyDigest })} />
-                                    </div>
-                                    <div className="flex items-center justify-between p-5">
-                                        <div>
-                                            <h3 className="text-[var(--foreground)] font-medium mb-0.5">Arena Alerts</h3>
-                                            <p className="text-xs text-[var(--foreground-secondary)]">New battles and challenges</p>
-                                        </div>
-                                        <Toggle enabled={settings.arenaAlerts} onChange={() => setSettings({ ...settings, arenaAlerts: !settings.arenaAlerts })} />
                                     </div>
                                 </div>
                             </div>

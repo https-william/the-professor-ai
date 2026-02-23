@@ -26,6 +26,13 @@ export default function PodcastPage() {
 
     const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    // Guards against the onend callback firing after speechSynthesis.cancel()
+    const isPlayingRef = useRef(false);
+    const currentSegmentRef = useRef(0);
+
+    // Keep refs in sync with state
+    useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+    useEffect(() => { currentSegmentRef.current = currentSegment; }, [currentSegment]);
 
     // Load generated content from sessionStorage
     useEffect(() => {
@@ -36,17 +43,16 @@ export default function PodcastPage() {
                 if (parsed.type === "podcast") {
                     setTitle(parsed.title || "Study Cast");
 
-                    // Normalize data to segments array
                     let segs: Segment[] = [];
                     if (Array.isArray(parsed.data)) {
-                        segs = parsed.data.map((s: any) => ({
-                            speaker: s.speaker || s.role || "Host",
-                            text: s.text || s.content || s.line || String(s),
+                        segs = parsed.data.map((s: Record<string, unknown>) => ({
+                            speaker: String(s.speaker || s.role || "Host"),
+                            text: String(s.text || s.content || s.line || s),
                         }));
                     } else if (parsed.data?.script) {
-                        segs = parsed.data.script.map((s: any) => ({
-                            speaker: s.speaker || "Host",
-                            text: s.text || s.line || String(s),
+                        segs = parsed.data.script.map((s: Record<string, unknown>) => ({
+                            speaker: String(s.speaker || "Host"),
+                            text: String(s.text || s.line || s),
                         }));
                     } else if (parsed.data?.segments) {
                         segs = parsed.data.segments;
@@ -75,12 +81,8 @@ export default function PodcastPage() {
     // Pick two distinct voices for speakers
     const getVoice = useCallback((speaker: string): SpeechSynthesisVoice | null => {
         if (voices.length === 0) return null;
-
-        // Try to find English voices
         const enVoices = voices.filter(v => v.lang.startsWith("en"));
         const pool = enVoices.length >= 2 ? enVoices : voices;
-
-        // Use different voices for different speakers
         const speakerNames = [...new Set(segments.map(s => s.speaker))];
         const idx = speakerNames.indexOf(speaker);
         return pool[idx % pool.length] || pool[0];
@@ -94,90 +96,159 @@ export default function PodcastPage() {
         }
     }, [currentSegment]);
 
-    // Speak a segment
-    const speakSegment = useCallback((index: number) => {
+    // ─── Core playback ────────────────────────────────────────────────────────
+    const speakSegment = useCallback((index: number, currentSpeed: number) => {
         if (index >= segments.length) {
+            // Podcast finished naturally
             setIsPlaying(false);
+            isPlayingRef.current = false;
             setCurrentSegment(0);
+            currentSegmentRef.current = 0;
             return;
         }
 
         speechSynthesis.cancel();
+
         const seg = segments[index];
         const utt = new SpeechSynthesisUtterance(seg.text);
-        utt.rate = speed;
+        utt.rate = currentSpeed;
         utt.pitch = seg.speaker.toLowerCase().includes("host") || seg.speaker === "A" ? 1.0 : 0.9;
 
         const voice = getVoice(seg.speaker);
         if (voice) utt.voice = voice;
 
         utt.onend = () => {
+            // CRITICAL: Only advance if we are still supposed to be playing.
+            // This prevents the chain from continuing after cancel() is called.
+            if (!isPlayingRef.current) return;
+
             const next = index + 1;
             setCurrentSegment(next);
+            currentSegmentRef.current = next;
+
             if (next < segments.length) {
-                // Small pause between speakers
-                setTimeout(() => speakSegment(next), 400);
+                setTimeout(() => {
+                    if (isPlayingRef.current) speakSegment(next, currentSpeed);
+                }, 350);
             } else {
                 setIsPlaying(false);
+                isPlayingRef.current = false;
+                setCurrentSegment(0);
+                currentSegmentRef.current = 0;
             }
         };
 
-        utt.onerror = () => {
+        utt.onerror = (e) => {
+            // "interrupted" fires on cancel() — not a real error
+            if (e.error === "interrupted" || e.error === "canceled") return;
             setIsPlaying(false);
+            isPlayingRef.current = false;
         };
 
         utteranceRef.current = utt;
         speechSynthesis.speak(utt);
-    }, [segments, speed, getVoice]);
+    }, [segments, getVoice]);
+
+    // ─── Controls ─────────────────────────────────────────────────────────────
+    const stopPlayback = useCallback(() => {
+        isPlayingRef.current = false;
+        setIsPlaying(false);
+        speechSynthesis.cancel();
+        utteranceRef.current = null;
+    }, []);
 
     const handlePlay = () => {
         if (isPlaying) {
-            speechSynthesis.cancel();
-            setIsPlaying(false);
+            stopPlayback();
         } else {
+            isPlayingRef.current = true;
             setIsPlaying(true);
-            speakSegment(currentSegment);
+            speakSegment(currentSegmentRef.current, speed);
         }
     };
 
+    const handleRestart = () => {
+        stopPlayback();
+        setCurrentSegment(0);
+        currentSegmentRef.current = 0;
+        // Small delay to let cancel() propagate
+        setTimeout(() => {
+            isPlayingRef.current = true;
+            setIsPlaying(true);
+            speakSegment(0, speed);
+        }, 100);
+    };
+
     const handleSkipForward = () => {
-        speechSynthesis.cancel();
-        const next = Math.min(currentSegment + 1, segments.length - 1);
+        const next = Math.min(currentSegmentRef.current + 1, segments.length - 1);
+        stopPlayback();
         setCurrentSegment(next);
-        if (isPlaying) speakSegment(next);
+        currentSegmentRef.current = next;
+        if (isPlaying) {
+            setTimeout(() => {
+                isPlayingRef.current = true;
+                setIsPlaying(true);
+                speakSegment(next, speed);
+            }, 100);
+        }
     };
 
     const handleSkipBack = () => {
-        speechSynthesis.cancel();
-        const prev = Math.max(currentSegment - 1, 0);
+        const prev = Math.max(currentSegmentRef.current - 1, 0);
+        stopPlayback();
         setCurrentSegment(prev);
-        if (isPlaying) speakSegment(prev);
+        currentSegmentRef.current = prev;
+        if (isPlaying) {
+            setTimeout(() => {
+                isPlayingRef.current = true;
+                setIsPlaying(true);
+                speakSegment(prev, speed);
+            }, 100);
+        }
     };
 
     const handleSegmentClick = (index: number) => {
-        speechSynthesis.cancel();
+        stopPlayback();
         setCurrentSegment(index);
-        setIsPlaying(true);
-        speakSegment(index);
+        currentSegmentRef.current = index;
+        setTimeout(() => {
+            isPlayingRef.current = true;
+            setIsPlaying(true);
+            speakSegment(index, speed);
+        }, 100);
     };
 
     const cycleSpeed = () => {
         const speeds = [0.75, 1, 1.25, 1.5, 2];
         const idx = speeds.indexOf(speed);
-        setSpeed(speeds[(idx + 1) % speeds.length]);
+        const nextSpeed = speeds[(idx + 1) % speeds.length];
+        setSpeed(nextSpeed);
+
+        // If playing, restart the current segment at the new speed
+        if (isPlayingRef.current) {
+            stopPlayback();
+            setTimeout(() => {
+                isPlayingRef.current = true;
+                setIsPlaying(true);
+                speakSegment(currentSegmentRef.current, nextSpeed);
+            }, 100);
+        }
     };
 
     // Clean up on unmount
     useEffect(() => {
-        return () => { speechSynthesis.cancel(); };
+        return () => {
+            isPlayingRef.current = false;
+            speechSynthesis.cancel();
+        };
     }, []);
 
-    const progress = segments.length > 0 ? ((currentSegment) / segments.length) * 100 : 0;
+    const progress = segments.length > 0 ? (currentSegment / segments.length) * 100 : 0;
 
-    // Unique speakers for color assignment
     const uniqueSpeakers = [...new Set(segments.map(s => s.speaker))];
     const speakerColors = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B"];
 
+    // ─── Empty state ──────────────────────────────────────────────────────────
     if (!loaded) {
         return (
             <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex items-center justify-center pb-24">
@@ -200,6 +271,7 @@ export default function PodcastPage() {
         );
     }
 
+    // ─── Player ───────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-36">
             {/* Header */}
@@ -243,17 +315,17 @@ export default function PodcastPage() {
                             data-seg={i}
                             onClick={() => handleSegmentClick(i)}
                             className={`w-full text-left p-4 rounded-xl transition-all duration-200 border ${isActive
-                                    ? 'bg-[var(--accent)]/5 border-[var(--accent)]/30 shadow-md'
-                                    : isPast
-                                        ? 'bg-[var(--background-tertiary)]/50 border-transparent opacity-60'
-                                        : 'bg-[var(--card)] border-[var(--border)] hover:border-[var(--accent)]/20 hover:shadow-sm'
+                                ? "bg-[var(--accent)]/5 border-[var(--accent)]/30 shadow-md"
+                                : isPast
+                                    ? "bg-[var(--background-tertiary)]/50 border-transparent opacity-60"
+                                    : "bg-[var(--card)] border-[var(--border)] hover:border-[var(--accent)]/20 hover:shadow-sm"
                                 }`}
                         >
                             <div className="flex items-start gap-3">
-                                {/* Speaker indicator */}
+                                {/* Speaker avatar */}
                                 <div className="flex flex-col items-center pt-1 shrink-0">
                                     <div
-                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${isActive ? 'animate-pulse' : ''}`}
+                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${isActive && isPlaying ? "animate-pulse" : ""}`}
                                         style={{ backgroundColor: color }}
                                     >
                                         {seg.speaker.charAt(0).toUpperCase()}
@@ -265,12 +337,12 @@ export default function PodcastPage() {
                                     <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color }}>
                                         {seg.speaker}
                                     </span>
-                                    <p className={`text-sm leading-relaxed ${isActive ? 'text-[var(--foreground)]' : 'text-[var(--foreground-secondary)]'}`}>
+                                    <p className={`text-sm leading-relaxed ${isActive ? "text-[var(--foreground)]" : "text-[var(--foreground-secondary)]"}`}>
                                         {seg.text}
                                     </p>
                                 </div>
 
-                                {/* Active indicator */}
+                                {/* Audio bars indicator */}
                                 {isActive && isPlaying && (
                                     <div className="shrink-0 flex items-center gap-0.5 pt-2">
                                         {[1, 2, 3].map(bar => (
@@ -297,7 +369,7 @@ export default function PodcastPage() {
                     {/* Progress bar */}
                     <div className="w-full h-1 bg-[var(--border)] rounded-full mb-3 overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all duration-300"
+                            className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all duration-500"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -307,33 +379,52 @@ export default function PodcastPage() {
                         <button
                             onClick={cycleSpeed}
                             className="w-10 h-10 rounded-lg bg-[var(--background-tertiary)] flex items-center justify-center text-xs font-bold text-[var(--foreground-secondary)] hover:bg-[var(--border)] transition-all"
+                            title="Change playback speed"
                         >
                             {speed}x
                         </button>
 
                         {/* Main controls */}
-                        <div className="flex items-center gap-3">
-                            <button onClick={handleSkipBack} className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all">
+                        <div className="flex items-center gap-2">
+                            {/* Restart button */}
+                            <button
+                                onClick={handleRestart}
+                                className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all"
+                                title="Restart from beginning"
+                            >
+                                <span className="material-symbols-outlined text-xl">replay</span>
+                            </button>
+
+                            <button
+                                onClick={handleSkipBack}
+                                className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all"
+                                title="Previous segment"
+                            >
                                 <span className="material-symbols-outlined text-xl">skip_previous</span>
                             </button>
 
                             <button
                                 onClick={handlePlay}
                                 className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white flex items-center justify-center shadow-lg shadow-red-500/30 hover:scale-105 active:scale-95 transition-transform"
+                                title={isPlaying ? "Pause" : "Play"}
                             >
                                 <span className="material-symbols-outlined text-2xl">
                                     {isPlaying ? "pause" : "play_arrow"}
                                 </span>
                             </button>
 
-                            <button onClick={handleSkipForward} className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all">
+                            <button
+                                onClick={handleSkipForward}
+                                className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all"
+                                title="Next segment"
+                            >
                                 <span className="material-symbols-outlined text-xl">skip_next</span>
                             </button>
                         </div>
 
                         {/* Segment counter */}
                         <span className="text-[10px] text-[var(--foreground-muted)] font-medium tabular-nums w-10 text-center">
-                            {currentSegment + 1}/{segments.length}
+                            {Math.min(currentSegment + 1, segments.length)}/{segments.length}
                         </span>
                     </div>
                 </div>

@@ -1,48 +1,87 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hydraGenerateContent } from "@/lib/ai/hydra";
+import { validateContent } from "@/lib/validation";
+import { createClient } from "@/lib/supabase/server";
+import { buildMindMapPrompt } from "@/lib/ai/prompts";
+import { parseMindMapResponse } from "@/lib/ai/schemas";
 
-export const runtime = 'edge';
+export const runtime = "edge";
+
+const COST = 5;
 
 export async function POST(req: NextRequest) {
     try {
-        const { content } = await req.json();
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        if (!content || content.trim().length < 50) {
-            return NextResponse.json({ error: "Please provide more content" }, { status: 400 });
+        if (authError || !user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const prompt = `Create a hierarchical mind map from the following content.
+        // Check Credits
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("credits")
+            .eq("id", user.id)
+            .single();
 
-CONTENT:
-${content.substring(0, 35000)}
+        if (!profile || (profile.credits || 0) < COST) {
+            return NextResponse.json({ error: "Insufficient credits. Please top up." }, { status: 402 });
+        }
 
-Return ONLY valid JSON (no markdown):
-{
-  "title": "Central topic",
-  "nodes": [
-    {
-      "id": "1",
-      "label": "Main branch 1",
-      "children": [
-        {"id": "1.1", "label": "Sub-topic"},
-        {"id": "1.2", "label": "Sub-topic"}
-      ]
-    }
-  ]
-}`;
+        // Deduct Credits
+        const { error: deductError } = await supabase
+            .from("profiles")
+            .update({ credits: (profile.credits || 0) - COST })
+            .eq("id", user.id);
 
-        const responseText = await hydraGenerateContent(prompt, { timeoutMs: 30000 });
-        
-        const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const parsed = JSON.parse(cleaned);
+        if (deductError) {
+            console.error("Credit deduction failed:", deductError);
+            return NextResponse.json({ error: "Transaction failed" }, { status: 500 });
+        }
 
-        return NextResponse.json({ 
-            mindmap: parsed,
-            title: parsed.title
+        const body = await req.json();
+
+        const contentResult = validateContent(body.content);
+        if (!contentResult.isValid) {
+            return NextResponse.json({ error: contentResult.error || "Invalid content" }, { status: 400 });
+        }
+        const content = contentResult.sanitized!;
+
+        const prompt = buildMindMapPrompt(content.substring(0, 35_000));
+
+        const responseText = await hydraGenerateContent(prompt, {
+            feature: "mindmap",
+            jsonMode: true,
+            timeoutMs: 45_000,
         });
 
-    } catch (error: any) {
+        // Zod validation — catches the "raw JSON dumps to user" bug
+        const parsed = parseMindMapResponse(responseText);
+
+        // Save to database
+        try {
+            await supabase.from("generations").insert({
+                user_id: user.id,
+                type: "mindmap",
+                title: `Mind Map: ${parsed.topic}`,
+                content: { topic: parsed.topic, branches: parsed.branches },
+            });
+        } catch (dbError) {
+            console.error("Failed to save mindmap:", dbError);
+        }
+
+        return NextResponse.json({
+            mindmap: {
+                topic: parsed.topic,
+                branches: parsed.branches,
+            },
+            title: parsed.topic,
+        });
+
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Failed to generate mind map";
         console.error("Mindmap Error:", error);
-        return NextResponse.json({ error: error?.message || "Failed to generate mindmap" }, { status: 500 });
+        return NextResponse.json({ error: msg }, { status: 500 });
     }
 }

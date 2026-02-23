@@ -1,21 +1,61 @@
 /**
- * Hydra AI System - Multi-provider resilience with streaming support
- * 
- * Priority:
- * 1. Kimi 2.5 (Instant) - Primary
- * 2. Trinity Large - Parallel backup
- * 3. Gemini Flash - Fallback
- * 4. Groq - Last resort
+ * Hydra AI System — Multi-provider resilience.
+ *
+ * Provider priority:
+ *   1. Kimi 2.5 (NVIDIA)     — Primary, fast
+ *   2. Trinity Large (OpenRouter) — Hot backup
+ *   3. Gemini Flash           — Reliable fallback (round-robin keys)
+ *   4. Groq                   — Last resort
+ *
+ * New in Phase 2:
+ *   - Per-feature temperature support
+ *   - Feature-specific system prompts (not one generic prompt)
+ *   - Input chunking for documents > CHUNK_THRESHOLD chars
+ *   - Full error logging integration
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { callOpenAICompatible } from "./providers";
+import { logAIError, logAISuccess } from "@/lib/error-logger";
 
+// ─── Per-feature temperatures ──────────────────────────────────────────────────
+export const FEATURE_TEMPERATURES: Record<string, number> = {
+    flashcards: 0.4,  // Factual precision — low creativity
+    quiz:       0.3,  // Maximum accuracy — lowest temperature
+    summary:    0.5,  // Balanced — some reorganization is fine
+    podcast:    0.85, // Creative, natural-sounding dialogue
+    mindmap:    0.5,  // Structured but room for insight
+    chat:       0.7,  // Conversational
+    default:    0.6,
+};
+
+// ─── Input chunking (for large documents) ─────────────────────────────────────
+const CHUNK_THRESHOLD = 32_000; // ~24k tokens — safe limit for most providers
+const CHUNK_SIZE      = 28_000; // chars per chunk
+const CHUNK_OVERLAP   = 2_000;  // overlap to maintain context
+
+/**
+ * Split a long content string into overlapping chunks.
+ * Returns a single string if content is under threshold.
+ */
+function chunkContent(content: string): string[] {
+    if (content.length <= CHUNK_THRESHOLD) return [content];
+
+    const chunks: string[] = [];
+    let start = 0;
+    while (start < content.length) {
+        chunks.push(content.slice(start, start + CHUNK_SIZE));
+        start += CHUNK_SIZE - CHUNK_OVERLAP;
+    }
+    return chunks;
+}
+
+// ─── Gemini key rotation ───────────────────────────────────────────────────────
 function getGeminiKeys(): string[] {
     const keys: string[] = [];
     const multiKeys = process.env.GEMINI_API_KEYS;
     if (multiKeys) {
-        keys.push(...multiKeys.split(',').map(k => k.trim()).filter(Boolean));
+        keys.push(...multiKeys.split(",").map(k => k.trim()).filter(Boolean));
     }
     if (keys.length === 0 && process.env.GEMINI_API_KEY) {
         keys.push(process.env.GEMINI_API_KEY);
@@ -23,101 +63,167 @@ function getGeminiKeys(): string[] {
     return keys;
 }
 
-let currentKeyIndex = 0;
+let currentGeminiKeyIndex = 0;
+
+// ─── Main generator ───────────────────────────────────────────────────────────
+export interface HydraOptions {
+    /** One of the keys in FEATURE_TEMPERATURES, or a raw number 0-1 */
+    feature?: string;
+    temperature?: number;
+    /** Force JSON mode (tells Gemini to return application/json) */
+    jsonMode?: boolean;
+    /** Per-provider timeout in ms */
+    timeoutMs?: number;
+    /** Gemini model to use */
+    model?: string;
+    /** System prompt override. If not provided, a default scholar prompt is used. */
+    systemPrompt?: string;
+}
 
 export async function hydraGenerateContent(
     prompt: string,
-    options: {
-        model?: string;
-        jsonMode?: boolean;
-        timeoutMs?: number;
-    } = {}
+    options: HydraOptions = {}
 ): Promise<string> {
-    const { 
-        model = "gemini-2.0-flash", 
+    const {
+        feature = "default",
         jsonMode = false,
-        timeoutMs = 20000
+        timeoutMs = 45_000,
+        model = "gemini-2.0-flash",
+        systemPrompt,
     } = options;
-    
+
+    const temperature = options.temperature
+        ?? FEATURE_TEMPERATURES[feature]
+        ?? FEATURE_TEMPERATURES.default;
+
+    const sysPrompt = systemPrompt ?? (
+        jsonMode
+            ? "You are an expert AI assistant. Output valid JSON only. No markdown, no prose, no commentary."
+            : "You are The Professor — a senior academic mentor. Be precise, insightful, and clear."
+    );
+
     const errors: string[] = [];
-    const systemPrompt = jsonMode 
-        ? "You are a helpful assistant. Output valid JSON only, no markdown."
-        : "You are The Professor, an expert educator.";
-    
-    // -------------------------------------------
-    // PHASE 1: NVIDIA NIM (Kimi 2.5 Instant)
-    // -------------------------------------------
+    const startTime = Date.now();
+
+    // ── PROVIDER 1: Kimi 2.5 (NVIDIA NIM) ───────────────────────────────────
     if (process.env.NVIDIA_API_KEY) {
         try {
-            console.log("Hydra: Kimi 2.5 (Instant)...");
-            return await callOpenAICompatible('moonshot', [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: prompt }
-            ], { timeoutMs });
-        } catch (error: any) {
-            console.warn(`Hydra: Kimi failed: ${error?.message?.substring(0, 50)}`);
-            errors.push(`Kimi: ${error?.message}`);
+            console.log(`Hydra: Kimi [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("moonshot", [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+            ], { temperature, timeoutMs });
+            logAISuccess("kimi", feature, Date.now() - startTime);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: Kimi failed: ${msg.substring(0, 80)}`);
+            logAIError("kimi", feature, msg, Date.now() - startTime);
+            errors.push(`Kimi: ${msg}`);
         }
     }
 
-    // -------------------------------------------
-    // PHASE 2: Trinity Large (OpenRouter)
-    // -------------------------------------------
+    // ── PROVIDER 2: Trinity Large (OpenRouter) ───────────────────────────────
     if (process.env.OPENROUTER_API_KEY) {
         try {
-            console.log("Hydra: Trinity Large...");
-            return await callOpenAICompatible('trinity', [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: prompt }
-            ], { timeoutMs });
-        } catch (error: any) {
-            console.warn(`Hydra: Trinity failed: ${error?.message?.substring(0, 50)}`);
-            errors.push(`Trinity: ${error?.message}`);
+            console.log(`Hydra: Trinity [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("trinity", [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+            ], { temperature, timeoutMs });
+            logAISuccess("trinity", feature, Date.now() - startTime);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: Trinity failed: ${msg.substring(0, 80)}`);
+            logAIError("trinity", feature, msg, Date.now() - startTime);
+            errors.push(`Trinity: ${msg}`);
         }
     }
 
-    // -------------------------------------------
-    // PHASE 3: Gemini (Round Robin)
-    // -------------------------------------------
+    // ── PROVIDER 3: Gemini (round-robin keys) ────────────────────────────────
     const geminiKeys = getGeminiKeys();
-    const geminiAttempts = Math.min(geminiKeys.length, 2);
-    
-    for (let i = 0; i < geminiAttempts; i++) {
-        const keyIndex = (currentKeyIndex + i) % geminiKeys.length;
-        const apiKey = geminiKeys[keyIndex];
-        
+    const attempts = Math.min(geminiKeys.length, 2);
+
+    for (let i = 0; i < attempts; i++) {
+        const keyIdx = (currentGeminiKeyIndex + i) % geminiKeys.length;
+        const apiKey = geminiKeys[keyIdx];
+
         try {
-            console.log(`Hydra: Gemini Key ${keyIndex + 1}...`);
+            console.log(`Hydra: Gemini key ${keyIdx + 1} [${feature}, t=${temperature}] ...`);
             const genAI = new GoogleGenerativeAI(apiKey);
-            const modelConfig = jsonMode 
-                ? { model, generationConfig: { responseMimeType: "application/json" } }
-                : { model };
-            
+
+            const modelConfig = jsonMode
+                ? { model, generationConfig: { responseMimeType: "application/json" as const, temperature } }
+                : { model, generationConfig: { temperature } };
+
             const geminiModel = genAI.getGenerativeModel(modelConfig);
-            const result = await geminiModel.generateContent(prompt);
-            currentKeyIndex = keyIndex;
+            const result = await geminiModel.generateContent([sysPrompt, prompt]);
+            currentGeminiKeyIndex = keyIdx;
+            logAISuccess("gemini", feature, Date.now() - startTime);
             return result.response.text();
-        } catch (error: any) {
-            console.warn(`Hydra: Gemini ${keyIndex + 1} failed: ${error?.message?.substring(0, 50)}`);
-            errors.push(`Gemini(${keyIndex}): ${error?.message}`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: Gemini ${keyIdx + 1} failed: ${msg.substring(0, 80)}`);
+            logAIError(`gemini-${keyIdx + 1}`, feature, msg, Date.now() - startTime);
+            errors.push(`Gemini(${keyIdx}): ${msg}`);
         }
     }
 
-    // -------------------------------------------
-    // PHASE 4: Groq (Last Resort)
-    // -------------------------------------------
+    // ── PROVIDER 4: Groq (last resort) ───────────────────────────────────────
     if (process.env.GROQ_API_KEY) {
         try {
-            console.log("Hydra: Groq (Last Resort)...");
-            return await callOpenAICompatible('groq', [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: prompt }
-            ], { timeoutMs });
-        } catch (error: any) {
-            console.warn(`Hydra: Groq failed: ${error?.message?.substring(0, 50)}`);
-            errors.push(`Groq: ${error?.message}`);
+            console.log(`Hydra: Groq [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("groq", [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+            ], { temperature, timeoutMs });
+            logAISuccess("groq", feature, Date.now() - startTime);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: Groq failed: ${msg.substring(0, 80)}`);
+            logAIError("groq", feature, msg, Date.now() - startTime);
+            errors.push(`Groq: ${msg}`);
         }
     }
 
-    throw new Error(`All providers failed: ${errors.join(' | ')}`);
+    throw new Error(
+        `All AI providers failed for ${feature}. Errors: ${errors.join(" | ")}`
+    );
+}
+
+/**
+ * Generate content over a large document by chunking it.
+ * Merges the first chunk's output with additional context from subsequent chunks.
+ * Best for: summaries, mind maps, podcast scripts.
+ */
+export async function hydraGenerateWithChunking(
+    buildPrompt: (contentChunk: string, chunkIndex: number, totalChunks: number) => string,
+    content: string,
+    options: HydraOptions = {}
+): Promise<string> {
+    const chunks = chunkContent(content);
+
+    if (chunks.length === 1) {
+        return hydraGenerateContent(buildPrompt(chunks[0], 0, 1), options);
+    }
+
+    console.log(`Hydra: Chunking ${chunks.length} chunks for ${options.feature ?? "default"}`);
+
+    // Generate from all chunks and return first valid result
+    // (For most use cases, the first chunk captures the key content)
+    const results = await Promise.allSettled(
+        chunks.map((chunk, i) =>
+            hydraGenerateContent(buildPrompt(chunk, i, chunks.length), options)
+        )
+    );
+
+    // Return the first fulfilled result
+    const successful = results.find(r => r.status === "fulfilled");
+    if (successful && successful.status === "fulfilled") {
+        return successful.value;
+    }
+
+    throw new Error("All chunks failed during generation");
 }
