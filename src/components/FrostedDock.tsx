@@ -8,6 +8,7 @@ const navItems = [
     { icon: "dashboard", label: "Home", href: "/dashboard" },
     { icon: "school", label: "Class", href: "/class" },
     { icon: "auto_awesome", label: "Create", href: "/create" },
+    { icon: "psychology", label: "Professor", href: "/professor" },
     { icon: "history", label: "Library", href: "/history" },
 ];
 

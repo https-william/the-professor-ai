@@ -1,326 +1,720 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTheme } from "@/context/ThemeContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Sidebar } from "@/components/ui/Sidebar";
-import { Send, Paperclip, FileText, Loader2, CheckCircle, XCircle, Bot, User } from "lucide-react";
 
-interface Message {
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp?: Date;
+// ─── Types ──────────────────────────────────────────────────────
+interface ProfessorQuestion {
+    question: string;
+    modelAnswer: string;
+    difficulty: "foundational" | "conceptual" | "analytical";
+    keyTerms: string[];
 }
 
-export default function ProfessorChatPage() {
+interface AnswerResult {
+    questionIndex: number;
+    question: string;
+    studentAnswer: string;
+    grade: "correct" | "partial" | "incorrect";
+    score: number;
+    feedback: string;
+    correction: string;
+}
+
+interface FinalReport {
+    closingStatement: string;
+    reviewTopics: string[];
+    performanceLevel: "excellent" | "good" | "needs-work" | "poor";
+}
+
+type Phase = "setup" | "examining" | "evaluating" | "results";
+
+const MAX_CHARS = 50_000;
+
+const difficultyColors: Record<string, string> = {
+    foundational: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+    conceptual: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+    analytical: "bg-rose-500/15 text-rose-400 border-rose-500/20",
+};
+
+const gradeConfig: Record<string, { icon: string; color: string; bg: string; label: string }> = {
+    correct: { icon: "check_circle", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Correct" },
+    partial: { icon: "change_circle", color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20", label: "Partial" },
+    incorrect: { icon: "cancel", color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/20", label: "Incorrect" },
+};
+
+// ─── Main Component ─────────────────────────────────────────────
+function ProfessorExamContent() {
     const searchParams = useSearchParams();
-    const initialQuery = searchParams.get('initial');
+    const { resolvedTheme, toggleTheme } = useTheme();
 
-    const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'parsing' | 'success' | 'error'>('idle');
-    const [currentFileName, setCurrentFileName] = useState<string>("");
-    const [messages, setMessages] = useState<Message[]>([
-        { role: "assistant", content: "Hello! I'm The Professor, your AI study assistant. What would you like to learn about today?", timestamp: new Date() }
-    ]);
-    const [input, setInput] = useState("");
+    // State
+    const [phase, setPhase] = useState<Phase>("setup");
+    const [content, setContent] = useState("");
+    const [questions, setQuestions] = useState<ProfessorQuestion[]>([]);
+    const [topic, setTopic] = useState("");
+    const [currentQIndex, setCurrentQIndex] = useState(0);
+    const [answer, setAnswer] = useState("");
+    const [results, setResults] = useState<AnswerResult[]>([]);
+    const [report, setReport] = useState<FinalReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const isSubmittingRef = useRef(false);
+    const [loadingMessage, setLoadingMessage] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [questionCount, setQuestionCount] = useState(7);
+    const [dragActive, setDragActive] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const answerRef = useRef<HTMLTextAreaElement>(null);
 
+    // Load content from sessionStorage if coming from Create page
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
-
-    useEffect(() => {
-        if (initialQuery) {
-            handleSend(initialQuery);
-        }
+        try {
+            const stored = sessionStorage.getItem("professorContent");
+            if (stored) {
+                setContent(stored);
+                sessionStorage.removeItem("professorContent");
+            }
+        } catch { /* ignore */ }
     }, []);
 
-    const handleFileUpload = async (files: FileList | null) => {
-        if (!files || files.length === 0) return;
+    // Auto-focus answer input when examining
+    useEffect(() => {
+        if (phase === "examining" && answerRef.current) {
+            answerRef.current.focus();
+        }
+    }, [phase, currentQIndex]);
 
-        const fileArray = Array.from(files);
-        let successCount = 0;
-        let failCount = 0;
+    // ─── File Upload ────────────────────────────────────────────
+    const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-        setCurrentFileName(fileArray.length === 1 ? fileArray[0].name : `${fileArray.length} files`);
-        setUploadStatus('uploading');
-
-        const uploadFile = async (file: File) => {
+        if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+            const text = await file.text();
+            setContent(prev => prev + (prev ? "\n\n" : "") + text.substring(0, MAX_CHARS));
+        } else {
             const formData = new FormData();
             formData.append("file", file);
-
             try {
-                const response = await fetch("/api/library/ingest", {
-                    method: "POST",
-                    body: formData,
-                });
-
-                if (!response.ok) throw new Error("Upload failed");
-                successCount++;
+                const res = await fetch("/api/parse", { method: "POST", body: formData });
+                if (res.ok) {
+                    const data = await res.json();
+                    setContent(prev => prev + (prev ? "\n\n" : "") + (data.text || "").substring(0, MAX_CHARS));
+                } else {
+                    setError("Failed to parse file.");
+                }
             } catch {
-                failCount++;
+                setError("Failed to parse file.");
             }
-        };
-
-        try {
-            setTimeout(() => { if (uploadStatus !== 'idle') setUploadStatus('parsing'); }, 800);
-            await Promise.all(fileArray.map(uploadFile));
-
-            if (failCount > 0 && successCount === 0) {
-                setUploadStatus('error');
-            } else {
-                setUploadStatus('success');
-                setCurrentFileName(failCount > 0 ? `${successCount} uploaded, ${failCount} failed` : "Upload complete");
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        } catch {
-            setUploadStatus('error');
-        } finally {
-            setUploadStatus('idle');
-            setCurrentFileName("");
         }
-    };
+        e.target.value = "";
+    }, []);
 
-    const handleSend = async (text: string = input) => {
-        if (!text.trim() || isSubmittingRef.current) return;
-
-        isSubmittingRef.current = true;
+    // ─── Generate Questions ─────────────────────────────────────
+    const startExam = async () => {
+        if (content.trim().length < 50) return;
         setIsLoading(true);
-
-        const userMsg: Message = { role: 'user', content: text, timestamp: new Date() };
-        setMessages(prev => [...prev, userMsg]);
-        setInput("");
+        setLoadingMessage("The Professor is preparing your exam...");
+        setError(null);
 
         try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: [...messages, userMsg] }),
+            const res = await fetch("/api/professor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "generate", content, count: questionCount }),
             });
 
-            if (!response.ok) throw new Error("Connection failed");
-            if (!response.body) return;
-
-            let currentResponse = "";
-            let isFirstChunk = true;
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                currentResponse += chunk;
-
-                if (isFirstChunk) {
-                    setMessages(prev => [...prev, { role: 'assistant', content: currentResponse, timestamp: new Date() }]);
-                    isFirstChunk = false;
-                } else {
-                    setMessages(prev => {
-                        const newMsgs = [...prev];
-                        newMsgs[newMsgs.length - 1] = { role: 'assistant', content: currentResponse, timestamp: new Date() };
-                        return newMsgs;
-                    });
-                }
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Failed to generate questions");
             }
-        } catch (error: any) {
-            setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message || "Connection failed"}`, timestamp: new Date() }]);
+
+            const data = await res.json();
+            setQuestions(data.questions || []);
+            setTopic(data.topic || "Exam");
+            setCurrentQIndex(0);
+            setResults([]);
+            setPhase("examining");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Something went wrong");
         } finally {
             setIsLoading(false);
-            isSubmittingRef.current = false;
+            setLoadingMessage("");
         }
     };
 
-    return (
-        <div className="min-h-screen bg-[#09090B]">
-            <Sidebar />
+    // ─── Submit Answer ──────────────────────────────────────────
+    const submitAnswer = async () => {
+        if (!answer.trim() || isLoading) return;
 
-            <main className="lg:ml-[260px] min-h-screen flex flex-col">
-                {/* Header */}
-                <header className="h-16 px-6 flex items-center justify-between border-b border-[#1F1F23] bg-[#09090B]/80 backdrop-blur-xl sticky top-0 z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
-                            <Bot className="w-4 h-4 text-white" />
+        const q = questions[currentQIndex];
+        setIsLoading(true);
+        setLoadingMessage("The Professor is evaluating...");
+        setPhase("evaluating");
+
+        try {
+            const res = await fetch("/api/professor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "evaluate",
+                    question: q.question,
+                    modelAnswer: q.modelAnswer,
+                    studentAnswer: answer,
+                    keyTerms: q.keyTerms,
+                }),
+            });
+
+            if (!res.ok) throw new Error("Evaluation failed");
+
+            const evaluation = await res.json();
+            const newResult: AnswerResult = {
+                questionIndex: currentQIndex,
+                question: q.question,
+                studentAnswer: answer,
+                grade: evaluation.grade,
+                score: evaluation.score,
+                feedback: evaluation.feedback,
+                correction: evaluation.correction,
+            };
+
+            setResults(prev => [...prev, newResult]);
+            setAnswer("");
+
+            // Check if exam is complete
+            if (currentQIndex >= questions.length - 1) {
+                await generateReport([...results, newResult]);
+            } else {
+                setCurrentQIndex(prev => prev + 1);
+                setPhase("examining");
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Evaluation failed");
+            setPhase("examining");
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage("");
+        }
+    };
+
+    // ─── Generate Report ────────────────────────────────────────
+    const generateReport = async (allResults: AnswerResult[]) => {
+        setLoadingMessage("The Professor is preparing your score...");
+
+        try {
+            const res = await fetch("/api/professor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "report",
+                    topic,
+                    results: allResults.map(r => ({
+                        question: r.question,
+                        grade: r.grade,
+                        score: r.score,
+                    })),
+                }),
+            });
+
+            if (!res.ok) throw new Error("Report generation failed");
+
+            const reportData = await res.json();
+            setReport(reportData);
+            setPhase("results");
+        } catch {
+            // Fallback: show results without AI report
+            setReport({
+                closingStatement: "Exam complete. Review your answers below.",
+                reviewTopics: [],
+                performanceLevel: "good",
+            });
+            setPhase("results");
+        }
+    };
+
+    // ─── Computed ───────────────────────────────────────────────
+    const totalScore = results.reduce((sum, r) => sum + r.score, 0);
+    const maxScore = questions.length;
+    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+    const performanceEmoji: Record<string, string> = {
+        excellent: "🏆",
+        good: "✅",
+        "needs-work": "📚",
+        poor: "💪",
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(e.type === "dragenter" || e.type === "dragover");
+    };
+
+    const resetExam = () => {
+        setPhase("setup");
+        setContent("");
+        setQuestions([]);
+        setResults([]);
+        setReport(null);
+        setCurrentQIndex(0);
+        setAnswer("");
+        setError(null);
+    };
+
+    // ─── RENDER ─────────────────────────────────────────────────
+    return (
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-24">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute w-[500px] h-[500px] top-[-10%] left-[20%] rounded-full bg-[#6366F1]/5 blur-3xl" />
+                <div className="absolute w-[400px] h-[400px] bottom-[20%] right-[-5%] rounded-full bg-[#8B5CF6]/5 blur-3xl" />
+            </div>
+
+            {/* Header */}
+            <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-5 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
+                <div className="flex items-center gap-2.5">
+                    {phase !== "setup" && (
+                        <button
+                            onClick={resetExam}
+                            className="p-1.5 -ml-1 rounded-lg hover:bg-[var(--background-tertiary)] transition-all"
+                        >
+                            <span className="material-symbols-outlined text-lg">arrow_back</span>
+                        </button>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#6366F1]/20">
+                            <span className="material-symbols-outlined text-white text-base">school</span>
                         </div>
                         <div>
-                            <span className="text-[14px] font-semibold text-white">The Professor</span>
-                            <div className="flex items-center gap-2">
-                                <div className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-[#6366F1] animate-pulse' : 'bg-[#22C55E]'}`} />
-                                <span className="text-[11px] text-[#71717A]">{isLoading ? 'Thinking...' : 'Online'}</span>
-                            </div>
+                            <h1 className="text-sm font-semibold text-[var(--foreground)]">The Professor</h1>
+                            <p className="text-[10px] text-[var(--foreground-muted)]">
+                                {phase === "setup" ? "Oral Examination" :
+                                    phase === "examining" ? `Question ${currentQIndex + 1} of ${questions.length}` :
+                                        phase === "evaluating" ? "Evaluating..." :
+                                            "Exam Results"}
+                            </p>
                         </div>
                     </div>
-                </header>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={toggleTheme} className="p-1.5 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all">
+                        <span className="material-symbols-outlined text-lg">{resolvedTheme === "light" ? "dark_mode" : "light_mode"}</span>
+                    </button>
+                </div>
+            </header>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-6 py-8">
-                    <div className="max-w-3xl mx-auto space-y-6">
-                        <AnimatePresence>
-                            {messages.map((msg, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                    className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+            <main className="max-w-3xl mx-auto px-5 py-6 relative z-10">
+
+                {/* ═══════════════ PHASE: SETUP ═══════════════ */}
+                {phase === "setup" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-5">
+                        {/* Welcome */}
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#6366F1]/10 border border-[#6366F1]/20 mb-4">
+                                <span className="material-symbols-outlined text-[#6366F1] text-sm">psychology</span>
+                                <span className="text-xs font-medium text-[#6366F1]">AI Oral Exam</span>
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] mb-2">
+                                The Professor Asks You
+                            </h2>
+                            <p className="text-sm text-[var(--foreground-secondary)] max-w-md mx-auto">
+                                Paste your study notes below. The Professor will generate targeted questions and evaluate your understanding in real-time.
+                            </p>
+                        </div>
+
+                        {/* Content Input */}
+                        <div
+                            className={`rounded-2xl border-2 transition-all duration-200 ${dragActive ? "border-[#6366F1] bg-[#6366F1]/5" : "border-[var(--border)] bg-[var(--card)]"
+                                }`}
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }}
+                        >
+                            <div className="px-4 pt-3 flex items-center justify-between">
+                                <label className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider">Your Study Material</label>
+                                <span className={`text-[10px] ${content.length > MAX_CHARS * 0.8 ? "text-amber-400" : "text-[var(--foreground-muted)]"}`}>
+                                    {content.length > 0 ? `${content.length.toLocaleString()} chars` : ""}
+                                </span>
+                            </div>
+                            <textarea
+                                ref={textareaRef}
+                                value={content}
+                                onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setContent(e.target.value); }}
+                                placeholder="Paste your lecture notes, textbook chapter, or any study material here..."
+                                className="w-full h-48 px-4 py-3 resize-none bg-transparent text-[var(--foreground)] placeholder-[var(--foreground-muted)]/40 text-sm leading-relaxed focus:outline-none"
+                                autoFocus
+                            />
+                            <div className="px-4 pb-3 flex items-center justify-between border-t border-[var(--border)]">
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex items-center gap-1.5 text-xs text-[var(--foreground-muted)] hover:text-[#6366F1] transition-colors py-1.5"
                                 >
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${msg.role === 'user'
-                                            ? 'bg-[#16161A]'
-                                            : 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6]'
-                                        }`}>
-                                        {msg.role === 'user' ? (
-                                            <User className="w-4 h-4 text-[#A1A1AA]" />
-                                        ) : (
-                                            <Bot className="w-4 h-4 text-white" />
-                                        )}
+                                    <span className="material-symbols-outlined text-base">upload_file</span>
+                                    Upload PDF or TXT
+                                    <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={handleFileUpload} />
+                                </button>
+                                {content.length > 0 && content.length < 50 && (
+                                    <span className="text-[10px] text-amber-400">Need at least 50 characters</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Question Count */}
+                        <div className="p-4 rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                            <label className="text-xs font-semibold text-[var(--foreground)] mb-2.5 block">Number of questions</label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {[5, 7, 10].map((c) => (
+                                    <button
+                                        key={c}
+                                        onClick={() => setQuestionCount(c)}
+                                        className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${questionCount === c
+                                                ? "bg-[#6366F1] text-white shadow-md shadow-[#6366F1]/30"
+                                                : "bg-[var(--background-tertiary)] text-[var(--foreground-muted)] hover:bg-[var(--border)]"
+                                            }`}
+                                    >
+                                        {c} questions
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Start Button */}
+                        <button
+                            onClick={startExam}
+                            disabled={isLoading || content.trim().length < 50}
+                            className={`w-full py-3.5 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2.5 ${isLoading
+                                    ? "bg-[#6366F1]/50 cursor-wait"
+                                    : content.trim().length >= 50
+                                        ? "bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:shadow-xl hover:shadow-[#6366F1]/20 hover:scale-[1.01] active:scale-[0.99]"
+                                        : "bg-[var(--foreground-muted)]/30 cursor-not-allowed"
+                                }`}
+                        >
+                            {isLoading ? (
+                                <>
+                                    <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                                    <span className="text-sm">{loadingMessage}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined text-lg">school</span>
+                                    <span className="text-sm">Begin Oral Exam</span>
+                                </>
+                            )}
+                        </button>
+
+                        {/* Error */}
+                        {error && (
+                            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-sm text-rose-400">
+                                <span className="material-symbols-outlined text-base">error</span>
+                                {error}
+                            </div>
+                        )}
+
+                        {/* How it works */}
+                        <div className="p-4 rounded-xl bg-[#6366F1]/5 border border-[#6366F1]/10">
+                            <p className="text-xs font-medium text-[var(--foreground)] mb-2 flex items-center gap-1.5">
+                                <span className="material-symbols-outlined text-[#6366F1] text-sm">info</span>
+                                How it works
+                            </p>
+                            <ol className="text-[11px] text-[var(--foreground-secondary)] space-y-1 list-decimal list-inside leading-relaxed">
+                                <li>Paste your study material above</li>
+                                <li>The Professor generates targeted questions from YOUR content</li>
+                                <li>Answer each question in your own words</li>
+                                <li>Get instant feedback: correct, partial, or needs review</li>
+                                <li>Receive a final score with personalized study recommendations</li>
+                            </ol>
+                        </div>
+                    </div>
+                )}
+
+                {/* ═══════════════ PHASE: EXAMINING ═══════════════ */}
+                {(phase === "examining" || phase === "evaluating") && questions.length > 0 && (
+                    <div className="animate-in fade-in duration-300 space-y-5">
+                        {/* Progress */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs text-[var(--foreground-muted)]">
+                                <span className="font-medium">{topic}</span>
+                                <span>{currentQIndex + 1} / {questions.length}</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-[var(--background-tertiary)] rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${((currentQIndex + 1) / questions.length) * 100}%` }}
+                                    transition={{ duration: 0.5 }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Score so far */}
+                        {results.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                {results.map((r, i) => (
+                                    <div
+                                        key={i}
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold border ${gradeConfig[r.grade]?.bg || ""}`}
+                                    >
+                                        <span className={`material-symbols-outlined text-sm ${gradeConfig[r.grade]?.color || ""}`}>
+                                            {gradeConfig[r.grade]?.icon || "circle"}
+                                        </span>
                                     </div>
-                                    <div className={`flex-1 ${msg.role === 'user' ? 'text-right' : ''}`}>
-                                        <div className={`inline-block max-w-[85%] rounded-2xl px-5 py-3.5 ${msg.role === 'user'
-                                                ? 'bg-[#6366F1] text-white rounded-tr-md'
-                                                : 'bg-[#0F0F11] border border-[#1F1F23] text-[#E4E4E7] rounded-tl-md'
-                                            }`}>
-                                            <p className="text-[14px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                                ))}
+                                {Array.from({ length: questions.length - results.length }).map((_, i) => (
+                                    <div key={`empty-${i}`} className="w-7 h-7 rounded-lg border border-[var(--border)] bg-[var(--background-tertiary)]" />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Last feedback */}
+                        <AnimatePresence>
+                            {results.length > 0 && phase === "examining" && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className={`p-4 rounded-xl border ${gradeConfig[results[results.length - 1].grade]?.bg || ""}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className={`material-symbols-outlined text-base ${gradeConfig[results[results.length - 1].grade]?.color || ""}`}>
+                                                {gradeConfig[results[results.length - 1].grade]?.icon}
+                                            </span>
+                                            <span className={`text-xs font-bold uppercase ${gradeConfig[results[results.length - 1].grade]?.color || ""}`}>
+                                                {gradeConfig[results[results.length - 1].grade]?.label}
+                                            </span>
                                         </div>
-                                        <div className={`mt-1.5 text-[10px] text-[#52525B] ${msg.role === 'user' ? 'text-right pr-1' : 'pl-1'}`}>
-                                            {msg.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </div>
+                                        <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
+                                            {results[results.length - 1].feedback}
+                                        </p>
+                                        {results[results.length - 1].correction && (
+                                            <p className="mt-2 text-xs text-[var(--foreground-muted)] italic">
+                                                {results[results.length - 1].correction}
+                                            </p>
+                                        )}
                                     </div>
                                 </motion.div>
-                            ))}
+                            )}
                         </AnimatePresence>
 
-                        {isLoading && messages[messages.length - 1]?.role === 'user' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="flex gap-4"
-                            >
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
-                                    <Bot className="w-4 h-4 text-white" />
-                                </div>
-                                <div className="bg-[#0F0F11] border border-[#1F1F23] rounded-2xl rounded-tl-md px-5 py-4">
-                                    <div className="flex items-center gap-1.5">
-                                        <motion.span
-                                            animate={{ opacity: [0.4, 1, 0.4] }}
-                                            transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
-                                            className="w-2 h-2 bg-[#6366F1] rounded-full"
-                                        />
-                                        <motion.span
-                                            animate={{ opacity: [0.4, 1, 0.4] }}
-                                            transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
-                                            className="w-2 h-2 bg-[#6366F1] rounded-full"
-                                        />
-                                        <motion.span
-                                            animate={{ opacity: [0.4, 1, 0.4] }}
-                                            transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
-                                            className="w-2 h-2 bg-[#6366F1] rounded-full"
-                                        />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
-                </div>
-
-                {/* Upload Status */}
-                <AnimatePresence>
-                    {uploadStatus !== 'idle' && (
+                        {/* Question Card */}
                         <motion.div
-                            initial={{ opacity: 0, y: 10 }}
+                            key={currentQIndex}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="px-6 pb-3"
+                            transition={{ duration: 0.4 }}
+                            className="p-6 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-xl shadow-[#6366F1]/5"
                         >
-                            <div className="max-w-3xl mx-auto">
-                                <div className="bg-[#0F0F11] border border-[#1F1F23] rounded-xl px-4 py-3 flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${uploadStatus === 'error' ? 'bg-red-500/10' : 'bg-[#6366F1]/10'}`}>
-                                        {uploadStatus === 'error' ? (
-                                            <XCircle className="w-5 h-5 text-red-400" />
-                                        ) : uploadStatus === 'success' ? (
-                                            <CheckCircle className="w-5 h-5 text-[#22C55E]" />
-                                        ) : (
-                                            <FileText className="w-5 h-5 text-[#6366F1]" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="text-[13px] font-medium text-white">{currentFileName}</div>
-                                        <div className="text-[12px] text-[#71717A] flex items-center gap-2">
-                                            {(uploadStatus === 'uploading' || uploadStatus === 'parsing') && (
-                                                <Loader2 className="w-3 h-3 animate-spin text-[#6366F1]" />
-                                            )}
-                                            <span className="capitalize">{uploadStatus}...</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="flex items-center justify-between mb-4">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${difficultyColors[questions[currentQIndex].difficulty] || difficultyColors.foundational}`}>
+                                    {questions[currentQIndex].difficulty}
+                                </span>
+                                <span className="text-[10px] text-[var(--foreground-muted)]">Q{currentQIndex + 1}</span>
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
 
-                {/* Input */}
-                <div className="px-6 py-5 border-t border-[#1F1F23] bg-[#09090B]">
-                    <div className="max-w-3xl mx-auto flex gap-3">
-                        <div className="relative">
-                            <input
-                                type="file"
-                                multiple
-                                accept=".pdf,.txt,.md,.pptx,.docx,.csv"
-                                className="hidden"
-                                id="file-upload"
-                                onChange={(e) => handleFileUpload(e.target.files)}
-                                disabled={isLoading || uploadStatus !== 'idle'}
-                            />
-                            <motion.label
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                htmlFor="file-upload"
-                                className={`flex items-center justify-center w-11 h-11 rounded-lg bg-[#0F0F11] border border-[#1F1F23] hover:border-[#2A2A2F] cursor-pointer transition-colors ${isLoading || uploadStatus !== 'idle' ? 'opacity-50 pointer-events-none' : ''}`}
-                            >
-                                <Paperclip className="w-[18px] h-[18px] text-[#71717A]" />
-                            </motion.label>
-                        </div>
+                            <div className="flex gap-3 mb-5">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center flex-shrink-0">
+                                    <span className="material-symbols-outlined text-white text-base">school</span>
+                                </div>
+                                <p className="text-base font-medium text-[var(--foreground)] leading-relaxed pt-1">
+                                    {questions[currentQIndex].question}
+                                </p>
+                            </div>
 
-                        <div className="flex-1 flex items-center bg-[#0F0F11] border border-[#1F1F23] rounded-lg focus-within:border-[#6366F1]/50 focus-within:ring-1 focus-within:ring-[#6366F1]/20 transition-all">
-                            <Input
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Ask anything about your studies..."
-                                className="border-none bg-transparent focus-visible:ring-0 h-11 text-[14px] text-white placeholder:text-[#52525B]"
+                            {/* Answer Input */}
+                            <textarea
+                                ref={answerRef}
+                                value={answer}
+                                onChange={(e) => setAnswer(e.target.value)}
+                                placeholder="Type your answer here... Explain in your own words."
+                                className="w-full h-32 p-4 rounded-xl bg-[var(--background)] border border-[var(--border)] focus:border-[#6366F1]/50 focus:ring-1 focus:ring-[#6366F1]/20 text-sm text-[var(--foreground)] placeholder-[var(--foreground-muted)]/40 resize-none transition-all focus:outline-none"
+                                disabled={phase === "evaluating"}
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                    if (e.key === "Enter" && e.ctrlKey) {
                                         e.preventDefault();
-                                        handleSend();
+                                        submitAnswer();
                                     }
                                 }}
-                                disabled={isLoading || uploadStatus !== 'idle'}
                             />
+
+                            <div className="flex items-center justify-between mt-3">
+                                <span className="text-[10px] text-[var(--foreground-muted)]">Ctrl + Enter to submit</span>
+                                <button
+                                    onClick={submitAnswer}
+                                    disabled={!answer.trim() || phase === "evaluating"}
+                                    className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all flex items-center gap-2 ${phase === "evaluating"
+                                            ? "bg-[#6366F1]/50 cursor-wait"
+                                            : answer.trim()
+                                                ? "bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:shadow-lg hover:shadow-[#6366F1]/20 active:scale-[0.98]"
+                                                : "bg-[var(--foreground-muted)]/30 cursor-not-allowed"
+                                        }`}
+                                >
+                                    {phase === "evaluating" ? (
+                                        <>
+                                            <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                                            Evaluating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-sm">send</span>
+                                            Submit Answer
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+
+                        {/* Skip */}
+                        {phase === "examining" && (
+                            <button
+                                onClick={() => {
+                                    const skipResult: AnswerResult = {
+                                        questionIndex: currentQIndex,
+                                        question: questions[currentQIndex].question,
+                                        studentAnswer: "(skipped)",
+                                        grade: "incorrect",
+                                        score: 0,
+                                        feedback: "Question skipped.",
+                                        correction: questions[currentQIndex].modelAnswer,
+                                    };
+                                    const newResults = [...results, skipResult];
+                                    setResults(newResults);
+                                    setAnswer("");
+                                    if (currentQIndex >= questions.length - 1) {
+                                        generateReport(newResults);
+                                    } else {
+                                        setCurrentQIndex(prev => prev + 1);
+                                    }
+                                }}
+                                className="w-full py-2 text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                            >
+                                Skip this question →
+                            </button>
+                        )}
+
+                        {/* Error */}
+                        {error && (
+                            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-sm text-rose-400">
+                                <span className="material-symbols-outlined text-base">error</span>
+                                {error}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══════════════ PHASE: RESULTS ═══════════════ */}
+                {phase === "results" && (
+                    <div className="animate-in fade-in zoom-in-95 duration-500 space-y-5">
+                        {/* Score Hero */}
+                        <div className="text-center py-6">
+                            <div className="text-5xl mb-3">
+                                {performanceEmoji[report?.performanceLevel || "good"]}
+                            </div>
+                            <div className="relative inline-flex items-center justify-center w-28 h-28 mb-4">
+                                <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border)" strokeWidth="6" />
+                                    <motion.circle
+                                        cx="50" cy="50" r="42" fill="none"
+                                        stroke={percentage >= 80 ? "#22C55E" : percentage >= 50 ? "#F59E0B" : "#EF4444"}
+                                        strokeWidth="6"
+                                        strokeLinecap="round"
+                                        strokeDasharray={`${2 * Math.PI * 42}`}
+                                        initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
+                                        animate={{ strokeDashoffset: 2 * Math.PI * 42 * (1 - percentage / 100) }}
+                                        transition={{ duration: 1.5, ease: "easeOut" }}
+                                    />
+                                </svg>
+                                <div className="absolute">
+                                    <span className="text-3xl font-black text-[var(--foreground)]">{percentage}%</span>
+                                </div>
+                            </div>
+                            <h2 className="text-xl font-bold text-[var(--foreground)] mb-1">
+                                {totalScore}/{maxScore} Correct
+                            </h2>
+                            <p className="text-xs text-[var(--foreground-muted)]">{topic} — Oral Examination</p>
                         </div>
 
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                onClick={() => handleSend()}
-                                disabled={isLoading || uploadStatus !== 'idle' || !input.trim()}
-                                className="h-11 w-11 bg-[#6366F1] hover:bg-[#818CF8] disabled:opacity-40 disabled:cursor-not-allowed rounded-lg shadow-lg shadow-[#6366F1]/20"
-                            >
-                                {isLoading ? (
-                                    <Loader2 className="w-[18px] h-[18px] animate-spin" />
-                                ) : (
-                                    <Send className="w-[18px] h-[18px]" />
+                        {/* Professor's Closing */}
+                        {report && (
+                            <div className="p-5 rounded-2xl bg-[#6366F1]/5 border border-[#6366F1]/15">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-white text-sm">school</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-[#6366F1] uppercase">The Professor&apos;s Remarks</span>
+                                </div>
+                                <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed italic">
+                                    &ldquo;{report.closingStatement}&rdquo;
+                                </p>
+                                {report.reviewTopics.length > 0 && (
+                                    <div className="mt-3 pt-3 border-t border-[#6366F1]/10">
+                                        <p className="text-[10px] font-bold uppercase text-[var(--foreground-muted)] mb-1.5">Recommended Review</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {report.reviewTopics.map((t, i) => (
+                                                <span key={i} className="px-2.5 py-1 rounded-lg bg-[#6366F1]/10 text-[#6366F1] text-[11px] font-medium border border-[#6366F1]/20">
+                                                    {t}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
-                            </Button>
-                        </motion.div>
+                            </div>
+                        )}
+
+                        {/* Detailed Results */}
+                        <div className="space-y-3">
+                            <h3 className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider">Question Breakdown</h3>
+                            {results.map((r, i) => (
+                                <div key={i} className={`p-4 rounded-xl border ${gradeConfig[r.grade]?.bg || ""}`}>
+                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                        <p className="text-sm font-medium text-[var(--foreground)] flex-1">{r.question}</p>
+                                        <span className={`material-symbols-outlined text-lg flex-shrink-0 ${gradeConfig[r.grade]?.color || ""}`}>
+                                            {gradeConfig[r.grade]?.icon}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-[var(--foreground-secondary)] mb-1">
+                                        <strong className="text-[var(--foreground-muted)]">Your answer:</strong> {r.studentAnswer}
+                                    </p>
+                                    <p className="text-xs text-[var(--foreground-secondary)] italic">{r.feedback}</p>
+                                    {r.correction && (
+                                        <p className="text-xs text-[var(--foreground-muted)] mt-1 pt-1 border-t border-[var(--border)]/50">
+                                            💡 {r.correction}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="space-y-2.5">
+                            <button
+                                onClick={resetExam}
+                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white font-bold hover:shadow-xl hover:shadow-[#6366F1]/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <span className="material-symbols-outlined text-lg">refresh</span>
+                                Try Again
+                            </button>
+                            <button
+                                onClick={() => window.location.href = "/create"}
+                                className="w-full py-2.5 rounded-xl border border-[var(--border)] text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all flex items-center justify-center gap-2"
+                            >
+                                <span className="material-symbols-outlined text-base">add</span>
+                                Create Study Materials
+                            </button>
+                        </div>
                     </div>
-                    <div className="max-w-3xl mx-auto mt-2 text-center">
-                        <span className="text-[11px] text-[#52525B]">Press Enter to send • Attach PDFs, docs, or notes for context</span>
-                    </div>
-                </div>
+                )}
             </main>
         </div>
+    );
+}
+
+export default function ProfessorPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen bg-[var(--background)] items-center justify-center text-[var(--foreground-muted)]">Loading...</div>}>
+            <ProfessorExamContent />
+        </Suspense>
     );
 }

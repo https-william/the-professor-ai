@@ -4,10 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { buildSummaryPrompt } from "@/lib/ai/prompts";
 import { parseSummaryResponse } from "@/lib/ai/schemas";
 import { validateContent } from "@/lib/validation";
+import { getCredits, deductCredits } from "@/lib/credits";
 
 export const runtime = "edge";
 
-const COST = 5;
+const COST = 2;
 
 export async function POST(req: NextRequest) {
     try {
@@ -21,28 +22,16 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Check Credits
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("credits")
-            .eq("id", user.id)
-            .single();
-
-        if (!profile || (profile.credits || 0) < COST) {
+        const balance = await getCredits(supabase, user.id);
+        if (balance < COST) {
             return new Response(JSON.stringify({ error: "Insufficient credits. Please top up." }), {
                 status: 402,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        // Deduct Credits
-        const { error: deductError } = await supabase
-            .from("profiles")
-            .update({ credits: (profile.credits || 0) - COST })
-            .eq("id", user.id);
-
-        if (deductError) {
-            console.error("Credit deduction failed:", deductError);
+        const ok = await deductCredits(supabase, user.id, balance, COST);
+        if (!ok) {
             return new Response(JSON.stringify({ error: "Transaction failed" }), {
                 status: 500,
                 headers: { "Content-Type": "application/json" },
@@ -63,7 +52,8 @@ export async function POST(req: NextRequest) {
 
         const prompt = buildSummaryPrompt(
             content.substring(0, 45_000),
-            style
+            style,
+            body.explainStyle
         );
 
         const responseText = await hydraGenerateContent(prompt, {

@@ -4,10 +4,11 @@ import { validateContent, validateCount, validateDifficulty, safeErrorResponse }
 import { createClient } from "@/lib/supabase/server";
 import { buildFlashcardsPrompt } from "@/lib/ai/prompts";
 import { parseFlashcardsResponse } from "@/lib/ai/schemas";
+import { getCredits, deductCredits } from "@/lib/credits";
 
 export const runtime = "edge";
 
-const COST = 5;
+const COST = 1;
 
 export async function POST(req: NextRequest) {
     try {
@@ -18,25 +19,15 @@ export async function POST(req: NextRequest) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
         }
 
-        // Check Credits
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("credits")
-            .eq("id", user.id)
-            .single();
-
-        if (!profile || (profile.credits || 0) < COST) {
+        // Check & auto-initialise credits
+        const balance = await getCredits(supabase, user.id);
+        if (balance < COST) {
             return new Response(JSON.stringify({ error: "Insufficient credits. Please top up." }), { status: 402 });
         }
 
-        // Deduct Credits immediately (Optimistic)
-        const { error: deductError } = await supabase
-            .from("profiles")
-            .update({ credits: (profile.credits || 0) - COST })
-            .eq("id", user.id);
-
-        if (deductError) {
-            console.error("Credit deduction failed:", deductError);
+        // Deduct credits
+        const ok = await deductCredits(supabase, user.id, balance, COST);
+        if (!ok) {
             return new Response(JSON.stringify({ error: "Transaction failed. Please try again." }), { status: 500 });
         }
 
@@ -54,7 +45,8 @@ export async function POST(req: NextRequest) {
         const prompt = buildFlashcardsPrompt(
             content.substring(0, 40_000),
             count,
-            difficulty
+            difficulty,
+            body.explainStyle
         );
 
         const encoder = new TextEncoder();

@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
+import { useUser } from "@/context/UserContext";
+import ShareCard from "@/components/ShareCard";
 
 interface Question {
     id?: string;
@@ -56,6 +58,8 @@ function QuizContent() {
     const [professorRemark, setProfessorRemark] = useState<string>('');
     const [loadingRemark, setLoadingRemark] = useState(false);
     const [showMobilePalette, setShowMobilePalette] = useState(false);
+    const [isShareOpen, setIsShareOpen] = useState(false);
+    const { user } = useUser();
 
     // Timer (10 minutes default)
     const [timeLeft, setTimeLeft] = useState(10 * 60);
@@ -189,8 +193,17 @@ function QuizContent() {
                 )}
 
                 {status === 'review' && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--success)]/10 text-[var(--success)] font-bold">
-                        <span>{Math.round((score / questions.length) * 100)}%</span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsShareOpen(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20 transition-all text-xs font-bold"
+                        >
+                            <span className="material-symbols-outlined text-sm">share</span>
+                            Share
+                        </button>
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--success)]/10 text-[var(--success)] font-bold">
+                            <span>{Math.round((score / questions.length) * 100)}%</span>
+                        </div>
                     </div>
                 )}
             </header>
@@ -514,6 +527,17 @@ function QuizContent() {
                     </div>
                 </div>
             )}
+
+            <ShareCard
+                isOpen={isShareOpen}
+                onClose={() => setIsShareOpen(false)}
+                data={{
+                    title: title,
+                    count: `${score}/${questions.length}`,
+                    type: "Quiz Score",
+                    user: user.name
+                }}
+            />
         </div>
     );
 }

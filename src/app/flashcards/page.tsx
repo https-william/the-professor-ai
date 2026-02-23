@@ -5,6 +5,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
+import { useUser } from "@/context/UserContext";
+import ShareCard from "@/components/ShareCard";
 
 interface Flashcard {
     id?: string;
@@ -24,7 +26,9 @@ function FlashcardContent() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [title, setTitle] = useState("Flashcards");
-    const [dragActive, setDragActive] = useState(false); // For future drag interactions
+    const [dragActive, setDragActive] = useState(false);
+    const [isShareOpen, setIsShareOpen] = useState(false);
+    const { user } = useUser();
 
     // Load generated content from sessionStorage
     useEffect(() => {
@@ -91,6 +95,13 @@ function FlashcardContent() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setIsShareOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20 transition-all text-xs font-bold"
+                    >
+                        <span className="material-symbols-outlined text-sm">share</span>
+                        Share
+                    </button>
                     <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-[var(--background-tertiary)] transition-all">
                         <span className="material-symbols-outlined text-xl">{resolvedTheme === 'light' ? 'dark_mode' : 'light_mode'}</span>
                     </button>
@@ -145,6 +156,16 @@ function FlashcardContent() {
                     </button>
                 </div>
 
+                <ShareCard
+                    isOpen={isShareOpen}
+                    onClose={() => setIsShareOpen(false)}
+                    data={{
+                        title: title,
+                        count: flashcards.length,
+                        type: "Flashcards",
+                        user: user.name
+                    }}
+                />
             </main>
         </div>
     );

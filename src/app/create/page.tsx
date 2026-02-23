@@ -18,6 +18,7 @@ const creatorTypes = [
         color: "#F4845F",
         gradient: "from-[#F4845F] to-[#FF6B9D]",
         apiEndpoint: "/api/generate/flashcards",
+        cost: 1,
     },
     {
         id: "quiz",
@@ -29,6 +30,7 @@ const creatorTypes = [
         gradient: "from-[#69B7A4] to-[#4ECDC4]",
         popular: true,
         apiEndpoint: "/api/generate/quiz",
+        cost: 2,
     },
     {
         id: "summary",
@@ -39,6 +41,7 @@ const creatorTypes = [
         color: "#A78BFA",
         gradient: "from-[#A78BFA] to-[#8B5CF6]",
         apiEndpoint: "/api/generate/summary",
+        cost: 2,
     },
     {
         id: "podcast",
@@ -49,6 +52,7 @@ const creatorTypes = [
         color: "#EF4444",
         gradient: "from-[#EF4444] to-[#B91C1C]",
         apiEndpoint: "/api/generate/podcast",
+        cost: 3,
     },
     {
         id: "mindmap",
@@ -59,6 +63,7 @@ const creatorTypes = [
         color: "#FB923C",
         gradient: "from-[#FB923C] to-[#F97316]",
         apiEndpoint: "/api/generate/mindmap",
+        cost: 2,
     },
 ];
 
@@ -108,6 +113,7 @@ export default function CreatePage() {
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
     const [summaryStyle, setSummaryStyle] = useState<"concise" | "detailed" | "study">("concise");
     const [podcastStyle, setPodcastStyle] = useState<"educational" | "casual" | "debate">("educational");
+    const [explainStyle, setExplainStyle] = useState<"academic" | "simple" | "pidgin">("academic");
 
     // ─── Computed ───────────────────────────────────────────────
     const selectedCreator = creatorTypes.find(c => c.id === selectedType);
@@ -165,6 +171,7 @@ export default function CreatePage() {
                     difficulty,
                     style: selectedType === "summary" ? summaryStyle :
                         selectedType === "podcast" ? podcastStyle : undefined,
+                    explainStyle,
                 }),
             });
 
@@ -502,6 +509,33 @@ export default function CreatePage() {
                             </div>
                         )}
 
+                        {/* Explain Style */}
+                        <div className="p-4 rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                            <label className="text-xs font-semibold text-[var(--foreground)] mb-2.5 block flex items-center gap-1.5">
+                                <span className="material-symbols-outlined text-sm text-[var(--accent)]">translate</span>
+                                Style & Language
+                            </label>
+                            <div className="flex bg-[var(--background-tertiary)] p-1 rounded-xl gap-1">
+                                {[
+                                    { id: "academic", label: "Academic", icon: "school" },
+                                    { id: "simple", label: "Simple", icon: "auto_stories" },
+                                    { id: "pidgin", label: "Pidgin", icon: "forum" },
+                                ].map((s) => (
+                                    <button
+                                        key={s.id}
+                                        onClick={() => setExplainStyle(s.id as any)}
+                                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${explainStyle === s.id
+                                                ? "bg-[var(--card)] text-[var(--accent)] shadow-sm border border-[var(--border)]"
+                                                : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-base">{s.icon}</span>
+                                        {s.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Generate Button */}
                         <button
                             onClick={handleGenerate}
@@ -529,7 +563,7 @@ export default function CreatePage() {
                         {/* Cost hint */}
                         {!isGenerating && canGenerate && (
                             <p className="text-center text-[10px] text-[var(--foreground-muted)]">
-                                Costs 1 credit · You have {user.credits} remaining
+                                Costs {selectedCreator?.cost ?? 1} credit{(selectedCreator?.cost ?? 1) > 1 ? "s" : ""} · You have {user.credits} remaining
                             </p>
                         )}
 

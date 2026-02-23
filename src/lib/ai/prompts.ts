@@ -9,11 +9,26 @@
 // ─── Shared JSON enforcement suffix ───────────────────────────────────────────
 const JSON_ONLY = `\n\nCRITICAL: Return ONLY valid JSON. No markdown fences, no prose, no commentary before or after. The first character of your response must be "{" and the last must be "}".`;
 
+// ─── Explain Style: language register injection ──────────────────────────────
+export type ExplainStyle = "academic" | "simple" | "pidgin";
+
+const EXPLAIN_STYLE_INSTRUCTIONS: Record<ExplainStyle, string> = {
+    academic: "Use precise academic terminology appropriate for university-level study.",
+    simple: "Explain everything as if talking to a smart 16-year-old. Avoid jargon. Use analogies and everyday language. When a technical term is unavoidable, define it in parentheses.",
+    pidgin: "Explain using Nigerian Pidgin English where it makes concepts clearer, but keep technical terms in standard English.",
+};
+
+function explainBlock(style?: ExplainStyle): string {
+    if (!style || style === "academic") return "";
+    return `\nLANGUAGE STYLE: ${EXPLAIN_STYLE_INSTRUCTIONS[style]}\n`;
+}
+
 // ─── Flashcards ───────────────────────────────────────────────────────────────
 export function buildFlashcardsPrompt(
     content: string,
     count: number,
-    difficulty: string
+    difficulty: string,
+    explainStyle?: ExplainStyle
 ): string {
     const difficultyInstruction: Record<string, string> = {
         easy: "Create basic recall questions. Test key definitions and core facts. Each answer should be 1-2 sentences. A student who read the material once should get most right.",
@@ -28,7 +43,7 @@ Your task: Generate exactly ${count} flashcards from the content below.
 
 DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstruction[difficulty] || difficultyInstruction.medium}
-
+${explainBlock(explainStyle)}
 CONTENT:
 ${content}
 
@@ -57,7 +72,8 @@ Return JSON with this exact shape:${JSON_ONLY}
 export function buildQuizPrompt(
     content: string,
     count: number,
-    difficulty: string
+    difficulty: string,
+    explainStyle?: ExplainStyle
 ): string {
     const difficultyInstruction: Record<string, string> = {
         easy: "Basic recall. All correct answers are explicitly stated in the content. Distractors are clearly wrong to anyone who read it.",
@@ -72,7 +88,7 @@ Your task: Generate exactly ${count} multiple-choice questions from the content 
 
 DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstruction[difficulty] || difficultyInstruction.medium}
-
+${explainBlock(explainStyle)}
 CONTENT:
 ${content}
 
@@ -101,7 +117,7 @@ Return JSON with this exact shape:${JSON_ONLY}
 }
 
 // ─── Podcast ──────────────────────────────────────────────────────────────────
-export function buildPodcastPrompt(content: string, style: string): string {
+export function buildPodcastPrompt(content: string, style: string, explainStyle?: ExplainStyle): string {
     const styleInstruction: Record<string, string> = {
         educational: "Professor A (Dr. Alex) is enthusiastic and uses vivid analogies. Professor B (Dr. Blake) is precise, occasionally skeptical, asks sharp follow-up questions. Tone: engaging lecture-style but conversational.",
         casual: "Two friends (Alex and Blake) who happen to be studying the same subject. Natural language, jokes are welcome, tangents are fine as long as they loop back. Tone: breezy, like a commute conversation.",
@@ -112,7 +128,7 @@ export function buildPodcastPrompt(content: string, style: string): string {
 
 STYLE: ${style.toUpperCase()}
 ${styleInstruction[style] || styleInstruction.educational}
-
+${explainBlock(explainStyle)}
 CONTENT TO COVER:
 ${content}
 
@@ -139,7 +155,7 @@ Return JSON with this exact shape:${JSON_ONLY}
 }
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
-export function buildSummaryPrompt(content: string, style: string): string {
+export function buildSummaryPrompt(content: string, style: string, explainStyle?: ExplainStyle): string {
     const styleInstruction: Record<string, string> = {
         concise: "Produce a tight, exam-focused summary. Use bullet hierarchies. Bold every key term on first use. No introductory filler — start with the most important concept. Students should be able to revise from this in 10 minutes.",
         detailed: "Produce a comprehensive study guide. Use H2 headings for major concepts, H3 for sub-concepts. Include context, mechanisms, and real-world applications. Aim for completeness over brevity.",
@@ -152,7 +168,7 @@ Your task: Summarize the following content for exam preparation.
 
 STYLE: ${style.toUpperCase()}
 ${styleInstruction[style] || styleInstruction.concise}
-
+${explainBlock(explainStyle)}
 CONTENT:
 ${content}
 
@@ -168,14 +184,14 @@ Write the summary now in markdown format. Return plain markdown, not JSON.`;
 }
 
 // ─── Mind Map ─────────────────────────────────────────────────────────────────
-export function buildMindMapPrompt(content: string): string {
+export function buildMindMapPrompt(content: string, explainStyle?: ExplainStyle): string {
     return `You are an expert at structuring knowledge into hierarchical mind maps that reveal the true architecture of a subject.
 
 Your task: Analyze the content below and create a mind map structure with exactly this hierarchy:
 - 1 root node (the central topic)
 - 4-7 branch nodes (major concepts) connected to the root
 - 2-5 leaf nodes per branch (specific details, examples, facts)
-
+${explainBlock(explainStyle)}
 CONTENT:
 ${content}
 
