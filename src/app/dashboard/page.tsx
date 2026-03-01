@@ -6,6 +6,22 @@ import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
 import { GlassCard, Grainient } from "@/components/ui/VisualEffects";
 import BrandLogo from "@/components/ui/BrandLogo";
+import { createClient } from "@/lib/supabase/client";
+
+interface RecentItem {
+    id: string;
+    title: string;
+    type: "flashcards" | "quiz" | "summary" | "podcast" | "mindmap";
+    createdAt: string;
+}
+
+const typeConfig = {
+    flashcards: { icon: "style", color: "text-[var(--accent)]", bg: "bg-[var(--accent)]/10" },
+    quiz: { icon: "quiz", color: "text-[var(--secondary)]", bg: "bg-[var(--secondary)]/10" },
+    summary: { icon: "summarize", color: "text-blue-500", bg: "bg-blue-500/10" },
+    podcast: { icon: "mic", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    mindmap: { icon: "hub", color: "text-orange-500", bg: "bg-orange-500/10" },
+};
 
 const TOOLS = [
     { icon: "style", label: "Flashcards", href: "/create?tool=flashcards", color: "var(--accent)", bg: "rgba(245,158,11,0.1)" },
@@ -33,6 +49,9 @@ export default function DashboardPage() {
     const [savedExam, setSavedExam] = useState<{ date: string; name: string } | null>(null);
     const [examName, setExamName] = useState("");
     const [editingExam, setEditingExam] = useState(false);
+    const [recentSessions, setRecentSessions] = useState<RecentItem[]>([]);
+    const [loadingSessions, setLoadingSessions] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
         setMounted(true);
@@ -41,6 +60,33 @@ export default function DashboardPage() {
             if (stored) setSavedExam(JSON.parse(stored));
         } catch { }
     }, []);
+
+    useEffect(() => {
+        if (!user?.id) return;
+
+        async function fetchRecent() {
+            setLoadingSessions(true);
+            const { data, error } = await supabase
+                .from("generations")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: false })
+                .limit(3);
+
+            if (!error && data) {
+                const formatted = data.map((item: any) => ({
+                    id: item.id,
+                    title: item.title || "Untitled",
+                    type: item.type === "lecture" ? "podcast" : item.type,
+                    createdAt: new Date(item.created_at).toLocaleDateString(),
+                }));
+                setRecentSessions(formatted);
+            }
+            setLoadingSessions(false);
+        }
+
+        fetchRecent();
+    }, [user?.id]);
 
     function saveExam() {
         if (!examDate) return;
@@ -90,12 +136,12 @@ export default function DashboardPage() {
 
             <div className="relative z-10">
                 {/* Header */}
-                <header className="sticky top-0 z-40 h-16 flex items-center justify-between px-6 bg-[var(--background)]/70 backdrop-blur-xl border-b border-[var(--border)]">
-                    <div className="flex items-center gap-3">
+                <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-4 sm:px-6 bg-[var(--background)]/70 backdrop-blur-xl border-b border-[var(--border)]">
+                    <div className="flex items-center gap-2.5">
                         <BrandLogo size="sm" />
-                        <span className="text-sm font-bold tracking-widest text-[var(--foreground-muted)] uppercase">The Professor</span>
+                        <span className="text-xs font-bold tracking-widest text-[var(--foreground-muted)] uppercase hidden sm:block">The Professor</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <button
                             onClick={toggleTheme}
                             className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 transition-all"
@@ -105,17 +151,18 @@ export default function DashboardPage() {
                                 {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
                             </span>
                         </button>
+                        {/* Upgrade — text on desktop, icon-only on mobile */}
                         <Link
                             href="/settings/billing"
-                            className="btn-primary text-xs px-4 py-2 flex items-center gap-1"
+                            className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-[var(--accent)] text-[#08080E] text-xs font-black hover:opacity-90 transition-all shadow-sm"
                         >
-                            Upgrade
                             <span className="material-symbols-outlined text-sm">bolt</span>
+                            <span className="hidden sm:inline">Upgrade</span>
                         </Link>
                     </div>
                 </header>
 
-                <main className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+                <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 sm:space-y-10">
 
                     {/* Greeting */}
                     <div className="animate-fade-in-up">
@@ -247,7 +294,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Recent activity placeholder */}
+                    {/* Recent activity */}
                     <div className="animate-fade-in-up animation-delay-400">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="font-heading text-xl font-semibold text-[var(--foreground)]">Recent Sessions</h2>
@@ -255,20 +302,49 @@ export default function DashboardPage() {
                                 View All
                             </Link>
                         </div>
-                        <GlassCard className="p-10 flex flex-col items-center justify-center text-center gap-3">
-                            <div
-                                className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                                style={{ background: "rgba(245,158,11,0.08)" }}
-                            >
-                                <span className="material-symbols-outlined text-3xl text-[var(--accent)]/60">auto_awesome</span>
+
+                        {loadingSessions ? (
+                            <GlassCard className="p-6">
+                                <div className="h-12 rounded-xl shimmer mb-2" />
+                                <div className="h-12 rounded-xl shimmer" />
+                            </GlassCard>
+                        ) : recentSessions.length > 0 ? (
+                            <div className="grid gap-3">
+                                {recentSessions.map((session) => {
+                                    const config = typeConfig[session.type] || typeConfig.flashcards;
+                                    return (
+                                        <Link key={session.id} href="/history">
+                                            <GlassCard className="p-4 flex items-center justify-between hover:border-[var(--accent)]/30 transition-all cursor-pointer group">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${config.bg} ${config.color}`}>
+                                                        <span className="material-symbols-outlined text-xl">{config.icon}</span>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-sm text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">{session.title}</h3>
+                                                        <p className="text-xs text-[var(--foreground-muted)] capitalize">{session.type} · {session.createdAt}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="material-symbols-outlined text-[var(--foreground-muted)] group-hover:text-[var(--accent)] transition-colors">chevron_right</span>
+                                            </GlassCard>
+                                        </Link>
+                                    );
+                                })}
                             </div>
-                            <p className="text-[var(--foreground-secondary)] text-sm">
-                                Your generated sessions will appear here
-                            </p>
-                            <Link href="/create" className="btn-primary text-sm px-6 py-2.5 mt-1">
-                                Create Your First Session
-                            </Link>
-                        </GlassCard>
+                        ) : (
+                            <GlassCard className="p-10 flex flex-col items-center justify-center text-center gap-3">
+                                <div
+                                    className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--accent)]/10"
+                                >
+                                    <span className="material-symbols-outlined text-3xl text-[var(--accent)]/60">auto_awesome</span>
+                                </div>
+                                <p className="text-[var(--foreground-secondary)] text-sm">
+                                    Your generated sessions will appear here
+                                </p>
+                                <Link href="/create" className="btn-primary text-sm px-6 py-2.5 mt-1">
+                                    Create Your First Session
+                                </Link>
+                            </GlassCard>
+                        )}
                     </div>
                 </main>
             </div>

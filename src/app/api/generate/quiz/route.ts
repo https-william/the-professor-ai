@@ -6,8 +6,6 @@ import { buildQuizPrompt } from "@/lib/ai/prompts";
 import { parseQuizResponse } from "@/lib/ai/schemas";
 import { getCredits, deductCredits } from "@/lib/credits";
 
-export const runtime = "edge";
-
 const COST = 2;
 
 export async function POST(req: NextRequest) {

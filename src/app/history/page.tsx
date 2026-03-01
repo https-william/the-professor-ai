@@ -2,61 +2,102 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { createClient } from "@/lib/supabase/client";
 
 interface HistoryItem {
     id: string;
     title: string;
-    type: "flashcards" | "quiz" | "summary" | "lecture" | "mindmap";
+    type: "flashcards" | "quiz" | "summary" | "podcast" | "mindmap";
     count: number;
-    subject: string;
     createdAt: string;
     preview?: string;
+    content?: any;
 }
 
 const typeConfig = {
     flashcards: { icon: "style", label: "Flashcards", color: "accent" },
     quiz: { icon: "quiz", label: "Quiz", color: "secondary" },
     summary: { icon: "summarize", label: "Summary", color: "warning" },
-    lecture: { icon: "mic", label: "Lecture", color: "info" },
+    podcast: { icon: "mic", label: "Podcast", color: "info" },
     mindmap: { icon: "hub", label: "Mind Map", color: "success" },
 };
-
-const initialHistory: HistoryItem[] = [
-    { id: "1", title: "Cell Division & Mitosis", type: "flashcards", count: 24, subject: "Biology", createdAt: "2h ago", preview: "Mitosis is the process of cell division..." },
-    { id: "2", title: "Newton's Laws Practice", type: "quiz", count: 15, subject: "Physics", createdAt: "5h ago", preview: "Test your knowledge on Newton's three laws" },
-    { id: "3", title: "Organic Chemistry Basics", type: "summary", count: 3, subject: "Chemistry", createdAt: "1d ago", preview: "Key concepts: functional groups, bonding..." },
-    { id: "4", title: "Thermodynamics Lecture", type: "lecture", count: 45, subject: "Physics", createdAt: "2d ago", preview: "Understanding heat transfer and energy" },
-    { id: "5", title: "DNA Replication Map", type: "mindmap", count: 12, subject: "Biology", createdAt: "3d ago", preview: "Visual connections between replication steps" },
-    { id: "6", title: "Chemical Bonding", type: "flashcards", count: 36, subject: "Chemistry", createdAt: "4d ago", preview: "Ionic, covalent, and metallic bonds" },
-];
 
 const filters = [
     { id: "all", label: "All", icon: "apps" },
     { id: "flashcards", label: "Flashcards", icon: "style" },
     { id: "quiz", label: "Quizzes", icon: "quiz" },
     { id: "summary", label: "Summaries", icon: "summarize" },
-    { id: "lecture", label: "Lectures", icon: "mic" },
+    { id: "podcast", label: "Podcasts", icon: "mic" },
     { id: "mindmap", label: "Mind Maps", icon: "hub" },
 ];
 
 export default function HistoryPage() {
     const { user } = useUser();
     const { resolvedTheme, toggleTheme } = useTheme();
+    const router = useRouter();
     const [activeFilter, setActiveFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [showSearch, setShowSearch] = useState(false);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setHistory(initialHistory);
+        if (!user?.id) return;
+
+        async function fetchHistory() {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from("generations")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error("Failed to fetch history:", error);
+            } else if (data) {
+                const formatted = data.map((item: any): HistoryItem => {
+                    let count = 0;
+                    let preview = "Study material";
+
+                    if (item.type === "flashcards" && item.content?.flashcards) {
+                        count = item.content.flashcards.length;
+                        preview = item.content.flashcards[0]?.front || preview;
+                    } else if (item.type === "quiz" && item.content?.questions) {
+                        count = item.content.questions.length;
+                        preview = item.content.questions[0]?.question || preview;
+                    } else if (item.type === "summary" && item.content?.summary) {
+                        count = 1;
+                        preview = item.content.summary.substring(0, 100) + "...";
+                    } else if (item.type === "mindmap" && item.content?.branches) {
+                        count = item.content.branches.length;
+                        preview = item.content.branches[0]?.name || preview;
+                    } else if (item.type === "podcast" && item.content?.summary) {
+                        count = 1;
+                        preview = item.content.summary;
+                    }
+
+                    return {
+                        id: item.id,
+                        title: item.title || "Untitled",
+                        type: item.type === "lecture" ? "podcast" : item.type,
+                        count,
+                        createdAt: new Date(item.created_at).toLocaleDateString(),
+                        preview,
+                        content: item.content
+                    };
+                });
+                setHistory(formatted);
+            }
             setLoading(false);
-        }, 600);
-        return () => clearTimeout(timer);
-    }, []);
+        }
+
+        fetchHistory();
+    }, [user?.id]);
 
     const filteredHistory = history
         .filter(item =>
@@ -64,9 +105,31 @@ export default function HistoryPage() {
             item.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
-    const handleDelete = (e: React.MouseEvent, id: string) => {
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         setHistory(prev => prev.filter(item => item.id !== id));
+        const { error } = await supabase.from("generations").delete().eq("id", id);
+        if (error) console.error("Failed to delete generation:", error);
+    };
+
+    const handleOpen = (item: HistoryItem) => {
+        if (!item.content) return;
+        if (item.type === "flashcards") {
+            sessionStorage.setItem("generatedContent", JSON.stringify({ type: "flashcards", data: item.content.flashcards, title: item.title }));
+            router.push("/flashcards");
+        } else if (item.type === "quiz") {
+            sessionStorage.setItem("quiz_data", JSON.stringify(item.content));
+            router.push("/quiz");
+        } else if (item.type === "podcast") {
+            sessionStorage.setItem("podcastData", JSON.stringify({ podcast: { script: item.content?.data?.script || [], title: item.title }, title: item.title }));
+            router.push("/podcast");
+        } else if (item.type === "summary") {
+            sessionStorage.setItem("summaryData", JSON.stringify({ summary: item.content.summary, title: item.title }));
+            router.push("/create?view=summary");
+        } else if (item.type === "mindmap") {
+            sessionStorage.setItem("mindmapData", JSON.stringify(item.content));
+            router.push("/create?view=mindmap");
+        }
     };
 
     return (
@@ -78,49 +141,55 @@ export default function HistoryPage() {
             </div>
 
             {/* Header */}
-            <header className="sticky top-0 z-40 h-16 flex items-center justify-between px-6 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--accent)]/20 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[var(--accent)] text-xl">history</span>
+            <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-4 sm:px-6 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[var(--accent)]/20 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[var(--accent)] text-lg">history</span>
                     </div>
                     <div>
-                        <h1 className="text-base font-medium text-[var(--foreground)]">History</h1>
-                        <p className="text-xs text-[var(--foreground-secondary)]">
-                            {loading ? "Loading..." : `${filteredHistory.length} generated items`}
+                        <h1 className="text-sm font-semibold text-[var(--foreground)]">History</h1>
+                        <p className="text-[10px] text-[var(--foreground-secondary)] hidden sm:block">
+                            {loading ? "Loading..." : `${filteredHistory.length} items`}
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    {/* Theme Toggle */}
-                    <button
-                        onClick={toggleTheme}
-                        className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all"
-                        title={resolvedTheme === "light" ? "Switch to dark" : "Switch to light"}
-                    >
-                        <span className="material-symbols-outlined text-xl">
-                            {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
-                        </span>
-                    </button>
-
-                    {/* Search */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                    {/* Search — full on desktop, icon-toggle on mobile */}
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[var(--foreground-muted)] text-lg">search</span>
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search history..."
-                            className="w-64 pl-10 pr-4 py-2.5 bg-[var(--card)] rounded-xl text-sm text-[var(--foreground)] placeholder-[var(--foreground-muted)]"
-                        />
+                        {showSearch ? (
+                            <div className="flex items-center gap-1">
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search..."
+                                    className="w-40 sm:w-52 pl-3 pr-3 py-2 bg-[var(--card)] rounded-xl text-xs text-[var(--foreground)] placeholder-[var(--foreground-muted)] border border-[var(--border)] focus:outline-none"
+                                />
+                                <button onClick={() => { setShowSearch(false); setSearchQuery(""); }} className="p-1.5 rounded-lg hover:bg-[var(--background-tertiary)] transition-all">
+                                    <span className="material-symbols-outlined text-base">close</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <button onClick={() => setShowSearch(true)} className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all">
+                                <span className="material-symbols-outlined text-lg">search</span>
+                            </button>
+                        )}
                     </div>
 
-                    {/* New Button */}
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all hidden sm:flex"
+                    >
+                        <span className="material-symbols-outlined text-lg">{resolvedTheme === "light" ? "dark_mode" : "light_mode"}</span>
+                    </button>
+
                     <Link
                         href="/create"
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-dark)] transition-all shadow-md"
+                        className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-2 rounded-xl bg-[var(--accent)] text-[#08080E] text-xs font-bold hover:bg-[var(--accent-dark)] transition-all shadow-sm"
                     >
-                        <span className="material-symbols-outlined text-lg">add</span>
-                        Create
+                        <span className="material-symbols-outlined text-base">add</span>
+                        <span className="hidden sm:inline">Create</span>
                     </Link>
                 </div>
             </header>
@@ -157,8 +226,9 @@ export default function HistoryPage() {
                             return (
                                 <div
                                     key={item.id}
+                                    onClick={() => handleOpen(item)}
                                     style={{ animationDelay: `${index * 50}ms` }}
-                                    className="group relative p-5 rounded-2xl card cursor-pointer animate-fade-in-up"
+                                    className="group relative p-5 rounded-2xl card cursor-pointer animate-fade-in-up hover:border-[var(--accent)]/30 transition-all"
                                 >
                                     {/* Delete Button */}
                                     <button
@@ -185,11 +255,11 @@ export default function HistoryPage() {
 
                                     {/* Footer */}
                                     <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
-                                        <span className="text-[10px] text-[var(--foreground-muted)]">{item.subject} · {item.createdAt}</span>
-                                        <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[var(--accent)] hover:bg-[var(--accent-bg)] transition-all">
+                                        <span className="text-[10px] text-[var(--foreground-muted)]">{item.createdAt}</span>
+                                        <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[var(--accent)] group-hover:bg-[var(--accent)]/10 transition-all">
                                             <span className="material-symbols-outlined text-sm">open_in_new</span>
                                             Open
-                                        </button>
+                                        </span>
                                     </div>
                                 </div>
                             );

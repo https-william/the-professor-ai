@@ -6,8 +6,6 @@ import { buildFlashcardsPrompt } from "@/lib/ai/prompts";
 import { parseFlashcardsResponse } from "@/lib/ai/schemas";
 import { getCredits, deductCredits } from "@/lib/credits";
 
-export const runtime = "edge";
-
 const COST = 1;
 
 export async function POST(req: NextRequest) {

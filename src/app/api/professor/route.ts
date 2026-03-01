@@ -8,8 +8,6 @@ import {
 } from "@/lib/ai/professor-prompt";
 import { parseAIJson } from "@/lib/ai/schemas";
 
-export const runtime = "edge";
-
 /**
  * POST /api/professor
  *

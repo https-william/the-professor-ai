@@ -6,8 +6,6 @@ import { parsePodcastResponse } from "@/lib/ai/schemas";
 import { validateContent } from "@/lib/validation";
 import { getCredits, deductCredits } from "@/lib/credits";
 
-export const runtime = "edge";
-
 const COST = 3; // Podcast costs slightly more (longer output)
 
 export async function POST(req: NextRequest) {

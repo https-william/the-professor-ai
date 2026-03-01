@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
     const { user } = useUser();
@@ -13,7 +14,7 @@ export default function SettingsPage() {
 
     const [settings, setSettings] = useState({
         name: user.name,
-        email: "scholar@example.com",
+        email: user.email || "",
         notifications: true,
         studyReminders: true,
         weeklyDigest: true,
@@ -24,23 +25,29 @@ export default function SettingsPage() {
 
     const handleSave = async () => {
         setSaving(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const supabase = createClient();
+        await supabase.auth.updateUser({ data: { display_name: settings.name } });
         setSaving(false);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
 
-    const handleDeleteAccount = () => {
-        if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-            if (window.confirm("This will permanently delete all your study data. Last chance.")) {
-                alert("Account deletion scheduled (simulated).");
+    const handleDeleteAccount = async () => {
+        if (window.confirm("Are you sure you want to delete your account? This cannot be undone.")) {
+            if (window.confirm("This will permanently delete all your data. Confirm?")) {
+                const supabase = createClient();
+                // Sign out first, then let the server-side webhook handle cleanup
+                await supabase.auth.signOut();
+                router.push("/");
             }
         }
     };
 
-    const handleLogoutAll = () => {
-        if (confirm("Sign out of all other devices?")) {
-            alert("Signed out of 2 other sessions.");
+    const handleLogoutAll = async () => {
+        if (confirm("Sign out of all devices?")) {
+            const supabase = createClient();
+            await supabase.auth.signOut({ scope: "global" });
+            router.push("/login");
         }
     };
 
@@ -98,7 +105,7 @@ export default function SettingsPage() {
             {/* Main */}
             <main>
                 {/* Header */}
-                <header className="sticky top-0 z-40 h-16 flex items-center justify-between px-8 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
+                <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-4 sm:px-8 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-[var(--accent)]/20 flex items-center justify-center">
                             <span className="material-symbols-outlined text-[var(--accent)] text-xl">settings</span>

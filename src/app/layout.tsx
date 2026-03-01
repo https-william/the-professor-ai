@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   keywords: ["AI", "study", "flashcards", "education", "tutor", "exam prep"],
   authors: [{ name: "The Professor" }],
   creator: "The Professor",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+    shortcut: "/logo.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -24,6 +29,7 @@ export const metadata: Metadata = {
     title: "The Professor | Cheat Codes for Your Degree",
     description: "Your personal AI-powered study companion.",
     type: "website",
+    images: ["/logo.png"],
   },
 };
 

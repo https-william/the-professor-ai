@@ -6,8 +6,6 @@ import { parseSummaryResponse } from "@/lib/ai/schemas";
 import { validateContent } from "@/lib/validation";
 import { getCredits, deductCredits } from "@/lib/credits";
 
-export const runtime = "edge";
-
 const COST = 2;
 
 export async function POST(req: NextRequest) {

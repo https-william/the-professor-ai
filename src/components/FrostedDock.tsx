@@ -9,10 +9,10 @@ const navItems = [
     { icon: "school", label: "Class", href: "/class" },
     { icon: "auto_awesome", label: "Create", href: "/create" },
     { icon: "psychology", label: "Professor", href: "/professor" },
-    { icon: "history", label: "Library", href: "/history" },
+    { icon: "history", label: "History", href: "/history" },
 ];
 
-const hiddenPaths = ["/", "/login", "/signup"];
+const hiddenPaths = ["/", "/login", "/signup", "/library", "/podcast"];
 
 export default function FrostedDock() {
     const pathname = usePathname();

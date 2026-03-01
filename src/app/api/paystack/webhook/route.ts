@@ -32,9 +32,22 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: "No user_id" }, { status: 400 });
             }
 
-            // Calculate credits: 100 kobo (1 NGN) = 1 Credit
-            // Paystack amount is in kobo
-            const creditsToAdd = Math.floor(amount / 100);
+            // Plan-to-Credits Mapping
+            const PLAN_CREDITS: Record<string, number> = {
+                "student": 500,
+                "scholar": 1200,
+                "professor": 3000
+            };
+
+            const planId = metadata?.plan;
+            let creditsToAdd = 0;
+
+            if (planId && PLAN_CREDITS[planId]) {
+                creditsToAdd = PLAN_CREDITS[planId];
+            } else {
+                // Fallback for simple top-ups: 100 kobo (1 NGN) = 1 Credit
+                creditsToAdd = Math.floor(amount / 100);
+            }
 
             // Use admin client to bypass RLS and update credits
             const supabase = createAdminClient();
