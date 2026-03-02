@@ -1,0 +1,73 @@
+{
+    "packageId": "xyz.theprofessor.app",
+    "host": "theprofessor.xyz",
+    "name": "The Professor AI",
+    "launcherName": "Professor",
+    "display": "standalone",
+    "orientation": "default",
+    "themeColor": "#7C3AED",
+    "themeColorDark": "#7C3AED",
+    "navigationColor": "#08080E",
+    "navigationColorDark": "#08080E",
+    "navigationDividerColor": "#08080E",
+    "navigationDividerColorDark": "#08080E",
+    "backgroundColor": "#08080E",
+    "enableNotifications": false,
+    "startUrl": "/dashboard",
+    "iconUrl": "https://theprofessor.xyz/icon-512.png",
+    "maskableIconUrl": "https://theprofessor.xyz/icon-512.png",
+    "monochromeIconUrl": "https://theprofessor.xyz/icon-512.png",
+    "splashScreenFadeOutDuration": 300,
+    "signingKey": {
+        "path": "./professor-keystore.jks",
+        "alias": "professor"
+    },
+    "appVersionCode": 1,
+    "appVersionName": "1.0.0",
+    "shortcuts": [
+        {
+            "name": "Create Flashcards",
+            "short_name": "Flashcards",
+            "url": "/create?tool=flashcards",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Study Quiz",
+            "short_name": "Quiz",
+            "url": "/create?tool=quiz",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "generatorApp": "bubblewrap-cli",
+    "webManifestUrl": "https://theprofessor.xyz/manifest.webmanifest",
+    "fallbackType": "customtabs",
+    "features": {
+        "locationDelegation": {
+            "enabled": false
+        },
+        "playBilling": {
+            "enabled": false
+        }
+    },
+    "alphaDependencies": {
+        "enabled": false
+    },
+    "enableSiteSettingsShortcut": true,
+    "isChromeOSOnly": false,
+    "isMetaQuest": false,
+    "fullScopeUrl": "https://theprofessor.xyz/",
+    "minSdkVersion": 21,
+    "fingerprints": [],
+    "additionalTrustedOrigins": [],
+    "retainedBundles": []
+}

@@ -1,0 +1,112 @@
+name: Build Android APK (TWA)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:   # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Install Android Build Tools
+        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34"
+
+      # Restore keystore from secret (or generate on first run)
+      - name: Set up signing keystore
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > professor-keystore.jks
+            echo "Using existing keystore from secrets"
+          else
+            # Generate a new keystore (first-time setup)
+            keytool -genkeypair \
+              -keystore professor-keystore.jks \
+              -alias professor \
+              -keyalg RSA -keysize 2048 \
+              -validity 9125 \
+              -storepass theprofessor2024 \
+              -keypass theprofessor2024 \
+              -dname "CN=The Professor AI, OU=Engineering, O=The Professor, L=Lagos, S=Lagos, C=NG"
+            echo "Generated new keystore"
+            
+            # Print fingerprint so we can add to assetlinks.json
+            echo "=== SHA-256 FINGERPRINT (add to assetlinks.json) ==="
+            keytool -list -v -keystore professor-keystore.jks -alias professor \
+              -storepass theprofessor2024 2>/dev/null | grep "SHA256:"
+          fi
+
+      - name: Build TWA APK
+        env:
+          BUBBLEWRAP_SKIP_CONFIRMATION: "true"
+        run: |
+          # Use our pre-configured twa-manifest.json
+          bubblewrap build \
+            --skipPwaValidation \
+            --manifest ./twa-manifest.json \
+            -- \
+            --ks professor-keystore.jks \
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD || 'theprofessor2024' }} \
+            --ks-key-alias professor \
+            --key-pass pass:${{ secrets.KEY_PASSWORD || 'theprofessor2024' }}
+        continue-on-error: false
+
+      - name: Find APK
+        run: |
+          find . -name "*.apk" -not -path "*/node_modules/*" 2>/dev/null
+          ls -la app/build/outputs/apk/ 2>/dev/null || true
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-professor-android
+          path: |
+            **/*.apk
+            !node_modules/**
+          retention-days: 90
+
+      - name: Create GitHub Release (on tag push)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '**/*.apk'
+          name: "The Professor AI ${{ github.ref_name }}"
+          body: |
+            ## The Professor AI - Android App ${{ github.ref_name }}
+            
+            ### 📲 Install Instructions
+            1. Download `the-professor-release.apk` below
+            2. On your Android phone: **Settings → Security → Allow unknown sources** (or "Install unknown apps")
+            3. Open the downloaded APK and tap Install
+            4. Done! Find "Professor" in your app drawer 🎓
+            
+            ### Requirements
+            - Android 5.0+ (API 21)
+            - Internet connection required
+          draft: false
+          prerelease: false
