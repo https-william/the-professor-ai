@@ -4,12 +4,12 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:   # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,94 +19,145 @@ jobs:
         with:
           node-version: '20'
 
+      # Java 17 installed here — bubblewrap will use this, not download its own
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
-
+      # Android command-line tools + build tools
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept Android SDK licenses
-        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+      - name: Install Android Build Tools & Platform
+        run: |
+          sdkmanager "build-tools;34.0.0" "platforms;android-34" --sdk_root=$ANDROID_SDK_ROOT
+          echo "y" | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
 
-      - name: Install Android Build Tools
-        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34"
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
 
-      # Restore keystore from secret (or generate on first run)
-      - name: Set up signing keystore
+      # Generate keystore for signing (or restore from secret)
+      - name: Generate signing keystore
         run: |
           if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > professor-keystore.jks
-            echo "Using existing keystore from secrets"
+            echo "✅ Restored keystore from GitHub Secrets"
           else
-            # Generate a new keystore (first-time setup)
             keytool -genkeypair \
               -keystore professor-keystore.jks \
               -alias professor \
               -keyalg RSA -keysize 2048 \
               -validity 9125 \
-              -storepass theprofessor2024 \
-              -keypass theprofessor2024 \
-              -dname "CN=The Professor AI, OU=Engineering, O=The Professor, L=Lagos, S=Lagos, C=NG"
-            echo "Generated new keystore"
-            
-            # Print fingerprint so we can add to assetlinks.json
-            echo "=== SHA-256 FINGERPRINT (add to assetlinks.json) ==="
-            keytool -list -v -keystore professor-keystore.jks -alias professor \
-              -storepass theprofessor2024 2>/dev/null | grep "SHA256:"
+              -storepass professor2024x \
+              -keypass professor2024x \
+              -dname "CN=The Professor AI, OU=Engineering, O=The Professor, L=Lagos, ST=Lagos, C=NG" \
+              -noprompt
+            echo "✅ Generated new keystore"
           fi
 
+          # Print SHA-256 fingerprint to the build log
+          echo ""
+          echo "======================================================"
+          echo "⬇️  COPY THIS SHA-256 FINGERPRINT → add to Vercel env"
+          echo "======================================================"
+          keytool -list -v \
+            -keystore professor-keystore.jks \
+            -alias professor \
+            -storepass professor2024x 2>/dev/null | grep "SHA256"
+          echo "======================================================"
+
+      # Configure bubblewrap SDK paths so it doesn't prompt us about JDK/SDK
+      - name: Configure Bubblewrap SDK paths
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json << EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_SDK_ROOT"
+          }
+          EOF
+          echo "Bubblewrap config written:"
+          cat ~/.bubblewrap/config.json
+
+      # Build the APK — stdin piped with "n" as failsafe for any remaining prompts
       - name: Build TWA APK
         env:
-          BUBBLEWRAP_SKIP_CONFIRMATION: "true"
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
         run: |
-          # Use our pre-configured twa-manifest.json
-          bubblewrap build \
-            --skipPwaValidation \
-            --manifest ./twa-manifest.json \
-            -- \
-            --ks professor-keystore.jks \
-            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD || 'theprofessor2024' }} \
-            --ks-key-alias professor \
-            --key-pass pass:${{ secrets.KEY_PASSWORD || 'theprofessor2024' }}
-        continue-on-error: false
+          echo "Java: $(java -version 2>&1 | head -1)"
+          echo "JAVA_HOME: $JAVA_HOME"
+          echo "ANDROID_HOME: $ANDROID_HOME"
 
-      - name: Find APK
+          # Pre-configure bubblewrap to use our keystore
+          # Update twa-manifest.json keystore path to absolute
+          node -e "
+            const fs = require('fs');
+            const m = JSON.parse(fs.readFileSync('twa-manifest.json'));
+            m.signingKey.path = '$(pwd)/professor-keystore.jks';
+            fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
+            console.log('✅ twa-manifest.json updated with absolute keystore path');
+          "
+
+          # Pipe "n" answers to handle any remaining interactive prompts
+          # bubblewrap reads twa-manifest.json automatically
+          printf "n\nn\nn\n" | bubblewrap build --skipPwaValidation 2>&1
+
+      - name: Find generated APK
         run: |
+          echo "Looking for APK files..."
           find . -name "*.apk" -not -path "*/node_modules/*" 2>/dev/null
-          ls -la app/build/outputs/apk/ 2>/dev/null || true
+          ls -lah app/build/outputs/apk/release/ 2>/dev/null || \
+          ls -lah app/build/outputs/apk/ 2>/dev/null || \
+          echo "APK directory not found, searching..."
+          find . -name "*.apk" 2>/dev/null
 
-      - name: Upload APK artifact
+      - name: Rename APK for release
+        run: |
+          APK_PATH=$(find . -name "*.apk" -not -path "*/node_modules/*" | head -1)
+          if [ -n "$APK_PATH" ]; then
+            cp "$APK_PATH" the-professor-v${{ github.ref_name }}.apk
+            echo "✅ APK ready: the-professor-v${{ github.ref_name }}.apk"
+            ls -lah the-professor-*.apk
+          else
+            echo "❌ No APK found!"
+            exit 1
+          fi
+
+      - name: Upload APK as GitHub artifact
         uses: actions/upload-artifact@v4
         with:
-          name: the-professor-android
-          path: |
-            **/*.apk
-            !node_modules/**
+          name: the-professor-android-${{ github.ref_name }}
+          path: the-professor-*.apk
           retention-days: 90
 
-      - name: Create GitHub Release (on tag push)
+      - name: Create GitHub Release with APK
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: '**/*.apk'
+          files: the-professor-*.apk
           name: "The Professor AI ${{ github.ref_name }}"
           body: |
-            ## The Professor AI - Android App ${{ github.ref_name }}
-            
-            ### 📲 Install Instructions
-            1. Download `the-professor-release.apk` below
-            2. On your Android phone: **Settings → Security → Allow unknown sources** (or "Install unknown apps")
-            3. Open the downloaded APK and tap Install
-            4. Done! Find "Professor" in your app drawer 🎓
-            
+            ## 📱 The Professor AI — Android App ${{ github.ref_name }}
+
+            > **Cheat codes for your degree, now in your pocket.**
+
+            ### ⬇️ Install Instructions (Android)
+            1. Tap `the-professor-${{ github.ref_name }}.apk` below to download
+            2. On your phone: **Settings → Security → Install unknown apps**
+               (enable for your browser/Files app)
+            3. Open the downloaded file → **Install**
+            4. Find **"Professor"** in your app drawer 🎓
+
             ### Requirements
-            - Android 5.0+ (API 21)
-            - Internet connection required
+            - Android 5.0 (Lollipop) or higher
+            - ~5MB storage
+
+            ### iOS
+            Open **theprofessor.xyz/download** in Safari and tap
+            **Share → Add to Home Screen** for the best experience.
           draft: false
           prerelease: false
