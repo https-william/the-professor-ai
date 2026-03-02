@@ -81,30 +81,37 @@ jobs:
           echo "Bubblewrap config written:"
           cat ~/.bubblewrap/config.json
 
-      # Build the APK — stdin piped with "n" as failsafe for any remaining prompts
+      # Build the APK — pipe all expected interactive answers via stdin
       - name: Build TWA APK
         env:
           JAVA_HOME: ${{ env.JAVA_HOME }}
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
         run: |
           echo "Java: $(java -version 2>&1 | head -1)"
           echo "JAVA_HOME: $JAVA_HOME"
           echo "ANDROID_HOME: $ANDROID_HOME"
 
-          # Pre-configure bubblewrap to use our keystore
+          # Use secret passwords if set, otherwise fall back to default
+          KSPASS=${KEYSTORE_PASS:-professor2024x}
+          KPASS=${KEY_PASS:-professor2024x}
+
           # Update twa-manifest.json keystore path to absolute
           node -e "
             const fs = require('fs');
             const m = JSON.parse(fs.readFileSync('twa-manifest.json'));
             m.signingKey.path = '$(pwd)/professor-keystore.jks';
             fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
-            console.log('✅ twa-manifest.json updated with absolute keystore path');
+            console.log('twa-manifest.json updated with absolute keystore path');
           "
 
-          # Pipe "n" answers to handle any remaining interactive prompts
-          # bubblewrap reads twa-manifest.json automatically
-          printf "n\nn\nn\n" | bubblewrap build --skipPwaValidation 2>&1
+          # Pipe all interactive answers in order:
+          #   1. Keystore password
+          #   2. Key password (usually same as keystore)
+          # bubblewrap reads twa-manifest.json automatically from cwd
+          printf "${KSPASS}\n${KPASS}\n" | bubblewrap build --skipPwaValidation 2>&1
 
       - name: Find generated APK
         run: |
