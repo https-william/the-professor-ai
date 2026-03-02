@@ -24,30 +24,7 @@
     },
     "appVersionCode": 1,
     "appVersionName": "1.0.0",
-    "shortcuts": [
-        {
-            "name": "Create Flashcards",
-            "short_name": "Flashcards",
-            "url": "/create?tool=flashcards",
-            "icons": [
-                {
-                    "src": "/icon-192.png",
-                    "sizes": "192x192"
-                }
-            ]
-        },
-        {
-            "name": "Study Quiz",
-            "short_name": "Quiz",
-            "url": "/create?tool=quiz",
-            "icons": [
-                {
-                    "src": "/icon-192.png",
-                    "sizes": "192x192"
-                }
-            ]
-        }
-    ],
+    "shortcuts": [],
     "generatorApp": "bubblewrap-cli",
     "webManifestUrl": "https://theprofessor.xyz/manifest.webmanifest",
     "fallbackType": "customtabs",
