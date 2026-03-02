@@ -108,10 +108,11 @@ jobs:
           "
 
           # Pipe all interactive answers in order:
-          #   1. Keystore password
-          #   2. Key password (usually same as keystore)
+          #   1. "regenerate project? (Y/n)" → no  (no checksum file; skip regeneration)
+          #   2. "Password for the Key Store:" → keystore password
+          #   3. "Password for the Key:" → key password
           # bubblewrap reads twa-manifest.json automatically from cwd
-          printf "${KSPASS}\n${KPASS}\n" | bubblewrap build --skipPwaValidation 2>&1
+          printf "no\n${KSPASS}\n${KPASS}\n" | bubblewrap build --skipPwaValidation 2>&1
 
       - name: Find generated APK
         run: |
