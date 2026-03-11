@@ -12,7 +12,6 @@ const typeConfig: Record<string, { icon: string; label: string; badgeCls: string
     flashcards: { icon: "style", label: "Flashcards", badgeCls: "bg-[var(--accent)]/15 text-[var(--accent)]" },
     quiz: { icon: "quiz", label: "Quiz", badgeCls: "bg-[var(--secondary)]/15 text-[var(--secondary)]" },
     summary: { icon: "summarize", label: "Summary", badgeCls: "bg-blue-500/15 text-blue-400" },
-    podcast: { icon: "mic", label: "Podcast", badgeCls: "bg-emerald-500/15 text-emerald-400" },
     mindmap: { icon: "hub", label: "Mind Map", badgeCls: "bg-orange-500/15 text-orange-400" },
 };
 
@@ -21,7 +20,6 @@ const filters = [
     { id: "flashcards", label: "Flashcards", icon: "style" },
     { id: "quiz", label: "Quizzes", icon: "quiz" },
     { id: "summary", label: "Summaries", icon: "summarize" },
-    { id: "podcast", label: "Podcasts", icon: "mic" },
     { id: "mindmap", label: "Mind Maps", icon: "hub" },
 ];
 
@@ -56,12 +54,6 @@ export default function LibraryPage() {
         } else if (item.type === "quiz") {
             sessionStorage.setItem("quiz_data", JSON.stringify(item.content));
             router.push("/quiz");
-        } else if (item.type === "podcast") {
-            sessionStorage.setItem("podcastData", JSON.stringify({
-                podcast: { script: item.content?.data?.script || [], title: item.title },
-                title: item.title,
-            }));
-            router.push("/podcast");
         } else if (item.type === "summary") {
             sessionStorage.setItem("summaryData", JSON.stringify({ summary: item.content?.summary, title: item.title }));
             router.push("/create?view=summary");

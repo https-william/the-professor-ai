@@ -2,13 +2,14 @@
  * Multi-Provider AI Configuration
  * 
  * Priority Order:
- * 1. Kimi 2.5 (NVIDIA) - Primary, Instant mode for speed
- * 2. Trinity Large (OpenRouter) - Parallel backup
- * 3. Gemini Flash - Fallback
- * 4. Groq - Last resort
+ * 1. OpenAI (GPT-4o-mini) - Primary, fastest & most reliable
+ * 2. Kimi 2.5 (NVIDIA) - Secondary
+ * 3. Trinity Large (OpenRouter) - Backup
+ * 4. Gemini Flash - Fallback
+ * 5. Groq - Last resort
  */
 
-export type AIProvider = 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras';
+export type AIProvider = 'openai' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras';
 
 interface ProviderConfig {
     name: string;
@@ -19,19 +20,26 @@ interface ProviderConfig {
 }
 
 export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
+    openai: {
+        name: 'OpenAI GPT-4o-mini',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o-mini',
+        envKey: 'OPENAI_API_KEY',
+        bestFor: 'Primary - Fastest, most reliable, great at JSON',
+    },
     moonshot: {
         name: 'Kimi 2.5 (NVIDIA)',
         baseUrl: 'https://integrate.api.nvidia.com/v1',
         model: 'moonshotai/kimi-k2.5',
         envKey: 'NVIDIA_API_KEY',
-        bestFor: 'Primary - Fast responses (Instant mode)',
+        bestFor: 'Secondary - Fast responses (Instant mode)',
     },
     trinity: {
         name: 'Trinity Large (OpenRouter)',
         baseUrl: 'https://openrouter.ai/api/v1',
         model: 'arcee-ai/arcee-trinity-large-preview',
         envKey: 'OPENROUTER_API_KEY',
-        bestFor: 'Parallel backup - High throughput (32-43 tps)',
+        bestFor: 'Backup - High throughput (32-43 tps)',
     },
     gemini: {
         name: 'Google Gemini',
@@ -85,12 +93,12 @@ export async function callOpenAICompatible(
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 20000);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 15000);
 
     const body: any = {
         model: config.model,
         messages,
-        temperature: options.temperature ?? 0.6, // Recommended for Kimi Instant
+        temperature: options.temperature ?? 0.6,
         max_tokens: options.maxTokens ?? 8192,
         stream: false
     };

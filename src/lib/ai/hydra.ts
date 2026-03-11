@@ -2,16 +2,17 @@
  * Hydra AI System — Multi-provider resilience.
  *
  * Provider priority:
- *   1. Kimi 2.5 (NVIDIA)     — Primary, fast
- *   2. Trinity Large (OpenRouter) — Hot backup
- *   3. Gemini Flash           — Reliable fallback (round-robin keys)
- *   4. Groq                   — Last resort
+ *   1. OpenAI (GPT-4o-mini)    — Primary, fastest & most reliable
+ *   2. Kimi 2.5 (NVIDIA)       — Secondary
+ *   3. Trinity Large (OpenRouter) — Backup
+ *   4. Gemini Flash             — Reliable fallback (round-robin keys)
+ *   5. Groq                     — Last resort
  *
- * New in Phase 2:
+ * Features:
  *   - Per-feature temperature support
- *   - Feature-specific system prompts (not one generic prompt)
+ *   - Feature-specific system prompts
  *   - Input chunking for documents > CHUNK_THRESHOLD chars
- *   - Full error logging integration
+ *   - Full error logging
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -23,7 +24,6 @@ export const FEATURE_TEMPERATURES: Record<string, number> = {
     flashcards: 0.4,  // Factual precision — low creativity
     quiz:       0.3,  // Maximum accuracy — lowest temperature
     summary:    0.5,  // Balanced — some reorganization is fine
-    podcast:    0.85, // Creative, natural-sounding dialogue
     mindmap:    0.5,  // Structured but room for insight
     chat:       0.7,  // Conversational
     default:    0.6,
@@ -87,7 +87,7 @@ export async function hydraGenerateContent(
     const {
         feature = "default",
         jsonMode = false,
-        timeoutMs = 45_000,
+        timeoutMs = 30_000,
         model = "gemini-2.0-flash",
         systemPrompt,
     } = options;
@@ -105,7 +105,25 @@ export async function hydraGenerateContent(
     const errors: string[] = [];
     const startTime = Date.now();
 
-    // ── PROVIDER 1: Kimi 2.5 (NVIDIA NIM) ───────────────────────────────────
+    // ── PROVIDER 1: OpenAI GPT-4o-mini ───────────────────────────────────────
+    if (process.env.OPENAI_API_KEY) {
+        try {
+            console.log(`Hydra: OpenAI [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("openai", [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+            ], { temperature, timeoutMs: Math.min(timeoutMs, 15_000) });
+            logAISuccess("openai", feature, Date.now() - startTime);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: OpenAI failed: ${msg.substring(0, 80)}`);
+            logAIError("openai", feature, msg, Date.now() - startTime);
+            errors.push(`OpenAI: ${msg}`);
+        }
+    }
+
+    // ── PROVIDER 2: Kimi 2.5 (NVIDIA NIM) ───────────────────────────────────
     if (process.env.NVIDIA_API_KEY) {
         try {
             console.log(`Hydra: Kimi [${feature}, t=${temperature}] ...`);
@@ -123,7 +141,7 @@ export async function hydraGenerateContent(
         }
     }
 
-    // ── PROVIDER 2: Trinity Large (OpenRouter) ───────────────────────────────
+    // ── PROVIDER 3: Trinity Large (OpenRouter) ───────────────────────────────
     if (process.env.OPENROUTER_API_KEY) {
         try {
             console.log(`Hydra: Trinity [${feature}, t=${temperature}] ...`);
@@ -141,7 +159,7 @@ export async function hydraGenerateContent(
         }
     }
 
-    // ── PROVIDER 3: Gemini (round-robin keys) ────────────────────────────────
+    // ── PROVIDER 4: Gemini (round-robin keys) ────────────────────────────────
     const geminiKeys = getGeminiKeys();
     const attempts = Math.min(geminiKeys.length, 2);
 
@@ -170,7 +188,7 @@ export async function hydraGenerateContent(
         }
     }
 
-    // ── PROVIDER 4: Groq (last resort) ───────────────────────────────────────
+    // ── PROVIDER 5: Groq (last resort) ───────────────────────────────────────
     if (process.env.GROQ_API_KEY) {
         try {
             console.log(`Hydra: Groq [${feature}, t=${temperature}] ...`);
@@ -196,7 +214,6 @@ export async function hydraGenerateContent(
 /**
  * Generate content over a large document by chunking it.
  * Merges the first chunk's output with additional context from subsequent chunks.
- * Best for: summaries, mind maps, podcast scripts.
  */
 export async function hydraGenerateWithChunking(
     buildPrompt: (contentChunk: string, chunkIndex: number, totalChunks: number) => string,
@@ -212,14 +229,12 @@ export async function hydraGenerateWithChunking(
     console.log(`Hydra: Chunking ${chunks.length} chunks for ${options.feature ?? "default"}`);
 
     // Generate from all chunks and return first valid result
-    // (For most use cases, the first chunk captures the key content)
     const results = await Promise.allSettled(
         chunks.map((chunk, i) =>
             hydraGenerateContent(buildPrompt(chunk, i, chunks.length), options)
         )
     );
 
-    // Return the first fulfilled result
     const successful = results.find(r => r.status === "fulfilled");
     if (successful && successful.status === "fulfilled") {
         return successful.value;

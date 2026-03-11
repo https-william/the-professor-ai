@@ -44,17 +44,6 @@ const creatorTypes = [
         cost: 2,
     },
     {
-        id: "podcast",
-        label: "Study Cast",
-        desc: "Listen to a deep dive discussion",
-        longDesc: "Two AI hosts discuss your material in a podcast format. Perfect for learning on the go.",
-        icon: "podcasts",
-        color: "#EF4444",
-        gradient: "from-[#EF4444] to-[#B91C1C]",
-        apiEndpoint: "/api/generate/podcast",
-        cost: 3,
-    },
-    {
         id: "mindmap",
         label: "Mind Map",
         desc: "Visualize how concepts connect",
@@ -86,11 +75,7 @@ const summaryStyles = [
     { id: "detailed", label: "Detailed Notes", icon: "article", desc: "Comprehensive breakdown" },
     { id: "study", label: "Study Guide", icon: "school", desc: "Exam-ready format" },
 ];
-const podcastStyles = [
-    { id: "educational", label: "Educational", desc: "Clear explanations", icon: "school" },
-    { id: "casual", label: "Casual Chat", desc: "Friendly banter", icon: "chat" },
-    { id: "debate", label: "Debate", desc: "Two perspectives", icon: "forum" },
-];
+
 
 export default function CreatePage() {
     const router = useRouter();
@@ -112,7 +97,7 @@ export default function CreatePage() {
     const [itemCount, setItemCount] = useState(10);
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
     const [summaryStyle, setSummaryStyle] = useState<"concise" | "detailed" | "study">("concise");
-    const [podcastStyle, setPodcastStyle] = useState<"educational" | "casual" | "debate">("educational");
+
     const [explainStyle, setExplainStyle] = useState<"academic" | "simple" | "pidgin">("academic");
 
     // ─── Computed ───────────────────────────────────────────────
@@ -169,8 +154,7 @@ export default function CreatePage() {
                     content: inputText,
                     count: itemCount,
                     difficulty,
-                    style: selectedType === "summary" ? summaryStyle :
-                        selectedType === "podcast" ? podcastStyle : undefined,
+                    style: selectedType === "summary" ? summaryStyle : undefined,
                     explainStyle,
                 }),
             });
@@ -211,12 +195,12 @@ export default function CreatePage() {
                 }
             }
 
-            // For non-streaming (podcast) — handle JSON response
+            // For non-streaming — handle JSON response
             if (!result && items.length === 0) {
                 try {
                     const text = await response.clone().text();
                     const json = JSON.parse(text);
-                    setResult({ type: selectedType, title: json.title || "Generated", data: json.podcast || json });
+                    setResult({ type: selectedType, title: json.title || "Generated", data: json });
                 } catch { /* streaming already handled it */ }
             }
         } catch (err) {
@@ -232,7 +216,7 @@ export default function CreatePage() {
         sessionStorage.setItem("generatedContent", JSON.stringify(result));
         if (result.type === "flashcards") router.push("/flashcards");
         else if (result.type === "quiz") router.push("/quiz");
-        else if (result.type === "podcast") router.push("/podcast");
+
     };
 
     const handleDrag = (e: React.DragEvent) => {
@@ -487,27 +471,7 @@ export default function CreatePage() {
                             </div>
                         )}
 
-                        {selectedType === "podcast" && (
-                            <div className="p-4 rounded-xl bg-[var(--card)] border border-[var(--border)]">
-                                <label className="text-xs font-semibold text-[var(--foreground)] mb-2.5 block">Episode style</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {podcastStyles.map((style) => (
-                                        <button
-                                            key={style.id}
-                                            onClick={() => setPodcastStyle(style.id as any)}
-                                            className={`p-3 rounded-lg text-center transition-all border ${podcastStyle === style.id
-                                                ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-                                                : 'border-transparent bg-[var(--background-tertiary)] hover:bg-[var(--border)]'
-                                                }`}
-                                        >
-                                            <span className={`material-symbols-outlined text-lg mb-1 block ${podcastStyle === style.id ? 'text-[var(--accent)]' : 'text-[var(--foreground-muted)]'}`}>{style.icon}</span>
-                                            <span className={`text-xs font-medium ${podcastStyle === style.id ? 'text-[var(--accent)]' : 'text-[var(--foreground)]'}`}>{style.label}</span>
-                                            <p className="text-[9px] text-[var(--foreground-muted)] mt-0.5">{style.desc}</p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+
 
                         {/* Explain Style */}
                         <div className="p-4 rounded-xl bg-[var(--card)] border border-[var(--border)]">

@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 interface RecentItem {
     id: string;
     title: string;
-    type: "flashcards" | "quiz" | "summary" | "podcast" | "mindmap";
+    type: "flashcards" | "quiz" | "summary" | "mindmap";
     createdAt: string;
 }
 
@@ -19,14 +19,12 @@ const typeConfig = {
     flashcards: { icon: "style", color: "text-[var(--accent)]", bg: "bg-[var(--accent)]/10" },
     quiz: { icon: "quiz", color: "text-[var(--secondary)]", bg: "bg-[var(--secondary)]/10" },
     summary: { icon: "summarize", color: "text-blue-500", bg: "bg-blue-500/10" },
-    podcast: { icon: "mic", color: "text-emerald-500", bg: "bg-emerald-500/10" },
     mindmap: { icon: "hub", color: "text-orange-500", bg: "bg-orange-500/10" },
 };
 
 const TOOLS = [
     { icon: "style", label: "Flashcards", href: "/create?tool=flashcards", color: "var(--accent)", bg: "rgba(245,158,11,0.1)" },
     { icon: "quiz", label: "Quiz", href: "/create?tool=quiz", color: "var(--secondary)", bg: "rgba(99,102,241,0.1)" },
-    { icon: "mic", label: "Podcast", href: "/create?tool=podcast", color: "#10B981", bg: "rgba(16,185,129,0.1)" },
     { icon: "summarize", label: "Summary", href: "/create?tool=summary", color: "#6366F1", bg: "rgba(99,102,241,0.1)" },
     { icon: "account_tree", label: "Mind Map", href: "/create?tool=mindmap", color: "#F97316", bg: "rgba(249,115,22,0.1)" },
     { icon: "school", label: "Ask Prof", href: "/professor", color: "var(--accent)", bg: "rgba(245,158,11,0.1)" },
@@ -77,7 +75,7 @@ export default function DashboardPage() {
                 const formatted = data.map((item: any) => ({
                     id: item.id,
                     title: item.title || "Untitled",
-                    type: item.type === "lecture" ? "podcast" : item.type,
+                    type: item.type,
                     createdAt: new Date(item.created_at).toLocaleDateString(),
                 }));
                 setRecentSessions(formatted);

@@ -19,31 +19,30 @@ jobs:
         with:
           node-version: '20'
 
-      # Java 17 installed here — bubblewrap will use this, not download its own
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Android command-line tools + build tools
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android Build Tools & Platform
+      - name: Install Android Build Tools
         run: |
           sdkmanager "build-tools;34.0.0" "platforms;android-34" --sdk_root=$ANDROID_SDK_ROOT
           echo "y" | sdkmanager --licenses --sdk_root=$ANDROID_SDK_ROOT || true
 
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
+      - name: Install Bubblewrap CLI and expect
+        run: |
+          npm install -g @bubblewrap/cli
+          sudo apt-get install -y expect
 
-      # Generate keystore for signing (or restore from secret)
       - name: Generate signing keystore
         run: |
           if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > professor-keystore.jks
-            echo "✅ Restored keystore from GitHub Secrets"
+            echo "Restored keystore from secrets"
           else
             keytool -genkeypair \
               -keystore professor-keystore.jks \
@@ -54,21 +53,14 @@ jobs:
               -keypass professor2024x \
               -dname "CN=The Professor AI, OU=Engineering, O=The Professor, L=Lagos, ST=Lagos, C=NG" \
               -noprompt
-            echo "✅ Generated new keystore"
           fi
-
-          # Print SHA-256 fingerprint to the build log
           echo ""
           echo "======================================================"
-          echo "⬇️  COPY THIS SHA-256 FINGERPRINT → add to Vercel env"
-          echo "======================================================"
-          keytool -list -v \
-            -keystore professor-keystore.jks \
-            -alias professor \
-            -storepass professor2024x 2>/dev/null | grep "SHA256"
+          echo "SHA-256 FINGERPRINT (copy this to Vercel APK_SIGNING_FINGERPRINT):"
+          keytool -list -v -keystore professor-keystore.jks \
+            -alias professor -storepass professor2024x 2>/dev/null | grep "SHA256"
           echo "======================================================"
 
-      # Configure bubblewrap SDK paths so it doesn't prompt us about JDK/SDK
       - name: Configure Bubblewrap SDK paths
         run: |
           mkdir -p ~/.bubblewrap
@@ -78,11 +70,20 @@ jobs:
             "androidSdkPath": "$ANDROID_SDK_ROOT"
           }
           EOF
-          echo "Bubblewrap config written:"
-          cat ~/.bubblewrap/config.json
 
-      # Build the APK — pipe all expected interactive answers via stdin
-      - name: Build TWA APK
+      - name: Update keystore path in twa-manifest.json
+        run: |
+          node -e "
+            const fs = require('fs');
+            const m = JSON.parse(fs.readFileSync('twa-manifest.json'));
+            m.signingKey.path = process.cwd() + '/professor-keystore.jks';
+            fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
+            console.log('keystore path:', m.signingKey.path);
+          "
+
+      # expect creates a real PTY so bubblewrap's inquirer.js password
+      # prompt (which reads /dev/tty, not stdin) gets answered correctly.
+      - name: Build TWA APK using expect
         env:
           JAVA_HOME: ${{ env.JAVA_HOME }}
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
@@ -90,59 +91,46 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASS: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "Java: $(java -version 2>&1 | head -1)"
-          echo "JAVA_HOME: $JAVA_HOME"
-          echo "ANDROID_HOME: $ANDROID_HOME"
+          KSPASS="${KEYSTORE_PASS:-professor2024x}"
+          KPASS="${KEY_PASS:-professor2024x}"
 
-          # Use secret passwords if set, otherwise fall back to default
-          KSPASS=${KEYSTORE_PASS:-professor2024x}
-          KPASS=${KEY_PASS:-professor2024x}
+          # Write the expect script — shell expands $KSPASS/$KPASS into the file
+          cat > /tmp/build.exp << EOF
+          set timeout 600
+          spawn bubblewrap build --skipPwaValidation
+          expect {
+            -re {regenerate.*\(Y/n\)} { send "no\r"; exp_continue }
+            -re {Key Store:}          { send "$KSPASS\r"; exp_continue }
+            -re {the Key:}            { send "$KPASS\r"; exp_continue }
+            timeout                   { puts "TIMEOUT waiting for prompt"; exit 1 }
+            eof
+          }
+          EOF
 
-          # Update twa-manifest.json keystore path to absolute
-          node -e "
-            const fs = require('fs');
-            const m = JSON.parse(fs.readFileSync('twa-manifest.json'));
-            m.signingKey.path = '$(pwd)/professor-keystore.jks';
-            fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
-            console.log('twa-manifest.json updated with absolute keystore path');
-          "
+          expect /tmp/build.exp
 
-          # Pipe all interactive answers in order:
-          #   1. "regenerate project? (Y/n)" → no  (no checksum file; skip regeneration)
-          #   2. "Password for the Key Store:" → keystore password
-          #   3. "Password for the Key:" → key password
-          # bubblewrap reads twa-manifest.json automatically from cwd
-          printf "no\n${KSPASS}\n${KPASS}\n" | bubblewrap build --skipPwaValidation 2>&1
-
-      - name: Find generated APK
-        run: |
-          echo "Looking for APK files..."
-          find . -name "*.apk" -not -path "*/node_modules/*" 2>/dev/null
-          ls -lah app/build/outputs/apk/release/ 2>/dev/null || \
-          ls -lah app/build/outputs/apk/ 2>/dev/null || \
-          echo "APK directory not found, searching..."
-          find . -name "*.apk" 2>/dev/null
-
-      - name: Rename APK for release
+      - name: Find and rename APK
         run: |
           APK_PATH=$(find . -name "*.apk" -not -path "*/node_modules/*" | head -1)
           if [ -n "$APK_PATH" ]; then
-            cp "$APK_PATH" the-professor-v${{ github.ref_name }}.apk
-            echo "✅ APK ready: the-professor-v${{ github.ref_name }}.apk"
+            cp "$APK_PATH" the-professor-${{ github.ref_name }}.apk
+            echo "APK ready:"
             ls -lah the-professor-*.apk
           else
-            echo "❌ No APK found!"
+            echo "No APK found — listing build output:"
+            find . -name "*.apk" 2>/dev/null
+            find . -path "*/build/outputs*" 2>/dev/null
             exit 1
           fi
 
-      - name: Upload APK as GitHub artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: the-professor-android-${{ github.ref_name }}
           path: the-professor-*.apk
           retention-days: 90
 
-      - name: Create GitHub Release with APK
+      - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
@@ -155,17 +143,15 @@ jobs:
 
             ### ⬇️ Install Instructions (Android)
             1. Tap `the-professor-${{ github.ref_name }}.apk` below to download
-            2. On your phone: **Settings → Security → Install unknown apps**
-               (enable for your browser/Files app)
+            2. On your phone: **Settings → Security → Install unknown apps** (enable for your browser)
             3. Open the downloaded file → **Install**
             4. Find **"Professor"** in your app drawer 🎓
 
             ### Requirements
-            - Android 5.0 (Lollipop) or higher
-            - ~5MB storage
+            - Android 5.0+ · ~5MB
 
             ### iOS
-            Open **theprofessor.xyz/download** in Safari and tap
-            **Share → Add to Home Screen** for the best experience.
+            Open **theprofessor.xyz/download** in Safari →
+            Share → Add to Home Screen
           draft: false
           prerelease: false

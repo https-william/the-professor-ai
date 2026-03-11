@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'The Professor AI',
     short_name: 'Professor',
-    description: 'Cheat codes for your degree — AI-powered flashcards, quizzes, podcasts & more.',
+    description: 'Cheat codes for your degree — AI-powered flashcards, quizzes, summaries & more.',
     start_url: '/dashboard',
     scope: '/',
     display: 'standalone',

@@ -22,13 +22,6 @@ const FEATURES = [
     bg: "rgba(99,102,241,0.08)",
   },
   {
-    icon: "mic",
-    title: "AI Podcast",
-    desc: "Two-voice dialogue that explains tricky concepts like a study partner who already read the chapter.",
-    color: "#10B981",
-    bg: "rgba(16,185,129,0.08)",
-  },
-  {
     icon: "summarize",
     title: "Smart Summary",
     desc: "Organized by concept, not page order. Includes common mistakes section so you avoid the classic traps.",
@@ -152,7 +145,7 @@ export default function LandingPage() {
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-[var(--foreground-secondary)] max-w-2xl mx-auto mb-3 leading-relaxed animate-fade-in-up animation-delay-200">
-            Upload your notes. Get flashcards, quizzes, podcasts, and mind maps — all grounded in cognitive science.
+            Upload your notes. Get flashcards, quizzes, summaries, and mind maps — all grounded in cognitive science.
           </p>
           <p className="text-base text-[var(--foreground-muted)] max-w-xl mx-auto mb-12 animate-fade-in-up animation-delay-300">
             Not a chatbot. A study engine that actually read your material.
@@ -325,7 +318,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { step: "01", icon: "upload", title: "Upload Anything", desc: "PDF, DOCX, plain text. Lecture notes, textbook chapters, anything." },
-              { step: "02", icon: "auto_awesome", title: "Pick Your Tool", desc: "Flashcards for retention, quiz for testing, podcast for commutes, mind map for the big picture." },
+              { step: "02", icon: "auto_awesome", title: "Pick Your Tool", desc: "Flashcards for retention, quiz for testing, summary for review, mind map for the big picture." },
               { step: "03", icon: "emoji_events", title: "Actually Learn It", desc: "Study with AI content tuned to your exact material. Walk into your exam confident." },
             ].map((item) => (
               <GlassCard key={item.step} className="p-7 text-center scholar-card group">

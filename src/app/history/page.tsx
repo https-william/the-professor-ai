@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 interface HistoryItem {
     id: string;
     title: string;
-    type: "flashcards" | "quiz" | "summary" | "podcast" | "mindmap";
+    type: "flashcards" | "quiz" | "summary" | "mindmap";
     count: number;
     createdAt: string;
     preview?: string;
@@ -22,7 +22,6 @@ const typeConfig = {
     flashcards: { icon: "style", label: "Flashcards", color: "accent" },
     quiz: { icon: "quiz", label: "Quiz", color: "secondary" },
     summary: { icon: "summarize", label: "Summary", color: "warning" },
-    podcast: { icon: "mic", label: "Podcast", color: "info" },
     mindmap: { icon: "hub", label: "Mind Map", color: "success" },
 };
 
@@ -31,7 +30,6 @@ const filters = [
     { id: "flashcards", label: "Flashcards", icon: "style" },
     { id: "quiz", label: "Quizzes", icon: "quiz" },
     { id: "summary", label: "Summaries", icon: "summarize" },
-    { id: "podcast", label: "Podcasts", icon: "mic" },
     { id: "mindmap", label: "Mind Maps", icon: "hub" },
 ];
 
@@ -120,9 +118,6 @@ export default function HistoryPage() {
         } else if (item.type === "quiz") {
             sessionStorage.setItem("quiz_data", JSON.stringify(item.content));
             router.push("/quiz");
-        } else if (item.type === "podcast") {
-            sessionStorage.setItem("podcastData", JSON.stringify({ podcast: { script: item.content?.data?.script || [], title: item.title }, title: item.title }));
-            router.push("/podcast");
         } else if (item.type === "summary") {
             sessionStorage.setItem("summaryData", JSON.stringify({ summary: item.content.summary, title: item.title }));
             router.push("/create?view=summary");

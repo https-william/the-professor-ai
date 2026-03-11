@@ -12,7 +12,7 @@ const navItems = [
     { icon: "history", label: "History", href: "/history" },
 ];
 
-const hiddenPaths = ["/", "/login", "/signup", "/library", "/podcast"];
+const hiddenPaths = ["/", "/login", "/signup", "/library"];
 
 export default function FrostedDock() {
     const pathname = usePathname();
