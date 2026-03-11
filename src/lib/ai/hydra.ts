@@ -3,10 +3,11 @@
  *
  * Provider priority:
  *   1. GPT4Free (g4f)           — Primary, free multi-provider
- *   2. Kimi 2.5 (NVIDIA)        — Secondary
- *   3. Trinity Large (OpenRouter) — Backup
- *   4. Gemini Flash              — Reliable fallback (round-robin keys)
- *   5. Groq                      — Last resort
+ *   2. OllamaFreeAPI            — Secondary, free open-source models
+ *   3. Kimi 2.5 (NVIDIA)        — Backup fast provider
+ *   4. Trinity Large (OpenRouter) — Next backup
+ *   5. Gemini Flash              — Reliable fallback
+ *   6. Groq                      — Last resort
  *
  * Features:
  *   - Per-feature temperature support
@@ -120,7 +121,31 @@ export async function hydraGenerateContent(
         }
     }
 
-    // ── PROVIDER 2: Kimi 2.5 (NVIDIA NIM) ───────────────────────────────────
+    // ── PROVIDER 2: OllamaFreeAPI ───────────────────────────────────────────
+    if (process.env.OLLAMAFREE_ENABLED === "true") {
+        try {
+            const ollamaModel = AI_PROVIDERS.ollamafree.model;
+            console.log(`Hydra: ollamafree [${ollamaModel}] [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("ollamafree", [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+            ], { temperature, timeoutMs: Math.min(timeoutMs, 20_000) });
+            
+            if (!result || result.trim().length === 0) {
+                throw new Error("ollamafree returned empty response");
+            }
+            
+            logAISuccess("ollamafree", feature, Date.now() - startTime);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: ollamafree failed: ${msg.substring(0, 120)}`);
+            logAIError("ollamafree", feature, msg, Date.now() - startTime);
+            errors.push(`ollamafree: ${msg}`);
+        }
+    }
+
+    // ── PROVIDER 3: Kimi 2.5 (NVIDIA NIM) ───────────────────────────────────
     if (process.env.NVIDIA_API_KEY) {
         try {
             console.log(`Hydra: Kimi [${feature}, t=${temperature}] ...`);

@@ -9,7 +9,7 @@
  * 5. Groq - Last resort
  */
 
-export type AIProvider = 'g4f' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras';
+export type AIProvider = 'g4f' | 'ollamafree' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras';
 
 interface ProviderConfig {
     name: string;
@@ -28,6 +28,14 @@ export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
         model: process.env.G4F_MODEL || 'gpt-4o-mini',
         envKey: 'G4F_ENABLED',
         bestFor: 'Primary - Free multi-provider LLM access',
+        noKeyRequired: true,
+    },
+    ollamafree: {
+        name: 'OllamaFreeAPI',
+        baseUrl: 'https://ollamafree.daif.one/api/v1',
+        model: process.env.OLLAMAFREE_MODEL || 'llama3:8b', // Highly available fast model
+        envKey: 'OLLAMAFREE_ENABLED',
+        bestFor: 'Secondary Primary - Free distributed LLMs',
         noKeyRequired: true,
     },
     moonshot: {
