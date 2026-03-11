@@ -2,11 +2,11 @@
  * Hydra AI System — Multi-provider resilience.
  *
  * Provider priority:
- *   1. OpenAI (GPT-4o-mini)    — Primary, fastest & most reliable
- *   2. Kimi 2.5 (NVIDIA)       — Secondary
+ *   1. GPT4Free (g4f)           — Primary, free multi-provider
+ *   2. Kimi 2.5 (NVIDIA)        — Secondary
  *   3. Trinity Large (OpenRouter) — Backup
- *   4. Gemini Flash             — Reliable fallback (round-robin keys)
- *   5. Groq                     — Last resort
+ *   4. Gemini Flash              — Reliable fallback (round-robin keys)
+ *   5. Groq                      — Last resort
  *
  * Features:
  *   - Per-feature temperature support
@@ -16,7 +16,7 @@
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { callOpenAICompatible } from "./providers";
+import { callOpenAICompatible, AI_PROVIDERS } from "./providers";
 import { logAIError, logAISuccess } from "@/lib/error-logger";
 
 // ─── Per-feature temperatures ──────────────────────────────────────────────────
@@ -34,13 +34,8 @@ const CHUNK_THRESHOLD = 32_000; // ~24k tokens — safe limit for most providers
 const CHUNK_SIZE      = 28_000; // chars per chunk
 const CHUNK_OVERLAP   = 2_000;  // overlap to maintain context
 
-/**
- * Split a long content string into overlapping chunks.
- * Returns a single string if content is under threshold.
- */
 function chunkContent(content: string): string[] {
     if (content.length <= CHUNK_THRESHOLD) return [content];
-
     const chunks: string[] = [];
     let start = 0;
     while (start < content.length) {
@@ -67,16 +62,11 @@ let currentGeminiKeyIndex = 0;
 
 // ─── Main generator ───────────────────────────────────────────────────────────
 export interface HydraOptions {
-    /** One of the keys in FEATURE_TEMPERATURES, or a raw number 0-1 */
     feature?: string;
     temperature?: number;
-    /** Force JSON mode (tells Gemini to return application/json) */
     jsonMode?: boolean;
-    /** Per-provider timeout in ms */
     timeoutMs?: number;
-    /** Gemini model to use */
     model?: string;
-    /** System prompt override. If not provided, a default scholar prompt is used. */
     systemPrompt?: string;
 }
 
@@ -105,21 +95,28 @@ export async function hydraGenerateContent(
     const errors: string[] = [];
     const startTime = Date.now();
 
-    // ── PROVIDER 1: OpenAI GPT-4o-mini ───────────────────────────────────────
-    if (process.env.OPENAI_API_KEY) {
+    // ── PROVIDER 1: GPT4Free ─────────────────────────────────────────────────
+    // g4f runs locally or on EC2 — no API key needed
+    if (process.env.G4F_ENABLED === "true") {
         try {
-            console.log(`Hydra: OpenAI [${feature}, t=${temperature}] ...`);
-            const result = await callOpenAICompatible("openai", [
+            const g4fModel = AI_PROVIDERS.g4f.model;
+            console.log(`Hydra: g4f [${g4fModel}] [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("g4f", [
                 { role: "system", content: sysPrompt },
                 { role: "user",   content: prompt },
-            ], { temperature, timeoutMs: Math.min(timeoutMs, 15_000) });
-            logAISuccess("openai", feature, Date.now() - startTime);
+            ], { temperature, timeoutMs: Math.min(timeoutMs, 20_000) });
+            
+            if (!result || result.trim().length === 0) {
+                throw new Error("g4f returned empty response");
+            }
+            
+            logAISuccess("g4f", feature, Date.now() - startTime);
             return result;
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.warn(`Hydra: OpenAI failed: ${msg.substring(0, 80)}`);
-            logAIError("openai", feature, msg, Date.now() - startTime);
-            errors.push(`OpenAI: ${msg}`);
+            console.warn(`Hydra: g4f failed: ${msg.substring(0, 120)}`);
+            logAIError("g4f", feature, msg, Date.now() - startTime);
+            errors.push(`g4f: ${msg}`);
         }
     }
 
@@ -213,7 +210,6 @@ export async function hydraGenerateContent(
 
 /**
  * Generate content over a large document by chunking it.
- * Merges the first chunk's output with additional context from subsequent chunks.
  */
 export async function hydraGenerateWithChunking(
     buildPrompt: (contentChunk: string, chunkIndex: number, totalChunks: number) => string,
@@ -228,7 +224,6 @@ export async function hydraGenerateWithChunking(
 
     console.log(`Hydra: Chunking ${chunks.length} chunks for ${options.feature ?? "default"}`);
 
-    // Generate from all chunks and return first valid result
     const results = await Promise.allSettled(
         chunks.map((chunk, i) =>
             hydraGenerateContent(buildPrompt(chunk, i, chunks.length), options)

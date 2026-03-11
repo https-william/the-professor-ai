@@ -2,14 +2,14 @@
  * Multi-Provider AI Configuration
  * 
  * Priority Order:
- * 1. OpenAI (GPT-4o-mini) - Primary, fastest & most reliable
+ * 1. GPT4Free (g4f) - Free, multi-provider — uses g4f server or public API
  * 2. Kimi 2.5 (NVIDIA) - Secondary
  * 3. Trinity Large (OpenRouter) - Backup
- * 4. Gemini Flash - Fallback
+ * 4. Gemini Flash - Fallback (round-robin keys)
  * 5. Groq - Last resort
  */
 
-export type AIProvider = 'openai' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras';
+export type AIProvider = 'g4f' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras';
 
 interface ProviderConfig {
     name: string;
@@ -17,15 +17,18 @@ interface ProviderConfig {
     model: string;
     envKey: string;
     bestFor: string;
+    /** If true, skip API key check (g4f doesn't require one) */
+    noKeyRequired?: boolean;
 }
 
 export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
-    openai: {
-        name: 'OpenAI GPT-4o-mini',
-        baseUrl: 'https://api.openai.com/v1',
-        model: 'gpt-4o-mini',
-        envKey: 'OPENAI_API_KEY',
-        bestFor: 'Primary - Fastest, most reliable, great at JSON',
+    g4f: {
+        name: 'GPT4Free',
+        baseUrl: process.env.G4F_API_URL || 'http://localhost:1337/v1',
+        model: process.env.G4F_MODEL || 'gpt-4o-mini',
+        envKey: 'G4F_ENABLED',
+        bestFor: 'Primary - Free multi-provider LLM access',
+        noKeyRequired: true,
     },
     moonshot: {
         name: 'Kimi 2.5 (NVIDIA)',
@@ -65,10 +68,32 @@ export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
 };
 
 /**
- * Check if a provider is configured (has API key)
+ * Strip ad injections / watermarks from g4f free provider responses.
+ * Some providers (like ApiAirforce) append proxy ads to responses.
+ */
+function cleanG4fResponse(content: string): string {
+    // Common known ad patterns injected by free providers
+    const adPatterns = [
+        /\n+Need proxies cheaper than the market\?[\s\S]*$/i,
+        /\n+(?:Visit|Check out|Try)\s+https?:\/\/\S+\s*$/i,
+        /\n+(?:Sponsored|Ad|Advertisement):?\s+[\s\S]*$/i,
+        /\n+---\n+(?:Powered|Generated) by[\s\S]*$/i,
+        /\n+https?:\/\/op\.wtf\s*$/i,
+    ];
+    
+    let cleaned = content;
+    for (const pattern of adPatterns) {
+        cleaned = cleaned.replace(pattern, '');
+    }
+    return cleaned.trim();
+}
+
+/**
+ * Check if a provider is configured (has API key or doesn't need one)
  */
 export function isProviderConfigured(provider: AIProvider): boolean {
     const config = AI_PROVIDERS[provider];
+    if (config.noKeyRequired) return true;
     return !!process.env[config.envKey];
 }
 
@@ -88,7 +113,7 @@ export async function callOpenAICompatible(
     const config = AI_PROVIDERS[provider];
     const apiKey = process.env[config.envKey];
     
-    if (!apiKey) {
+    if (!config.noKeyRequired && !apiKey) {
         throw new Error(`${config.name} API key not configured`);
     }
 
@@ -103,14 +128,19 @@ export async function callOpenAICompatible(
         stream: false
     };
 
-    // OpenRouter requires additional headers
     const headers: Record<string, string> = {
-        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     };
 
+    // Only add auth header if we have a key (g4f doesn't need one)
+    if (apiKey && !config.noKeyRequired) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    // OpenRouter requires additional headers
     if (provider === 'trinity') {
+        headers['Authorization'] = `Bearer ${apiKey}`;
         headers['HTTP-Referer'] = 'https://the-professor.app';
         headers['X-Title'] = 'The Professor';
     }
@@ -129,7 +159,14 @@ export async function callOpenAICompatible(
         }
 
         const data = await response.json();
-        return data.choices[0]?.message?.content || '';
+        let content = data.choices[0]?.message?.content || '';
+        
+        // g4f providers sometimes inject ads/watermarks — strip them
+        if (provider === 'g4f' && content) {
+            content = cleanG4fResponse(content);
+        }
+        
+        return content;
     } finally {
         clearTimeout(timeoutId);
     }
