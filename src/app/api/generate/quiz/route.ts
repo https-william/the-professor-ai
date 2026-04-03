@@ -1,10 +1,9 @@
 import { NextRequest } from "next/server";
-import { hydraGenerateContent } from "@/lib/ai/hydra";
+import { hydraGenerateStream } from "@/lib/ai/hydra";
 import { validateContent, validateCount, validateDifficulty, safeErrorResponse } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/server";
 import { buildQuizPrompt } from "@/lib/ai/prompts";
-import { parseQuizResponse } from "@/lib/ai/schemas";
-import { getCredits, deductCredits } from "@/lib/credits";
+import { getCredits, deductCredits, refundCredits } from "@/lib/credits";
 
 const COST = 2;
 
@@ -31,6 +30,7 @@ export async function POST(req: NextRequest) {
 
         const contentResult = validateContent(body.content);
         if (!contentResult.isValid) {
+            await refundCredits(supabase, user.id, COST);
             return safeErrorResponse(contentResult.error || "Invalid content");
         }
         const content = contentResult.sanitized!;
@@ -45,46 +45,101 @@ export async function POST(req: NextRequest) {
             body.explainStyle
         );
 
+        let aiStream: ReadableStream;
+        try {
+            aiStream = await hydraGenerateStream(prompt, {
+                feature: "quiz",
+                timeoutMs: 60_000,
+            });
+        } catch (aiError) {
+            console.error("Quiz AI Error:", aiError);
+            await refundCredits(supabase, user.id, COST);
+            return new Response(JSON.stringify({ error: "AI generation failed. Credits have been refunded." }), {
+                status: 503,
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+
+        const reader = aiStream.getReader();
+        const decoder = new TextDecoder();
         const encoder = new TextEncoder();
+
         const stream = new ReadableStream({
             async start(controller) {
                 try {
-                    controller.enqueue(encoder.encode(`data: {"status":"generating","message":"Creating ${count} questions (${difficulty})..."}\n\n`));
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: `Creating ${count} questions (${difficulty})...` })}\n\n`));
 
-                    const responseText = await hydraGenerateContent(prompt, {
-                        feature: "quiz",
-                        jsonMode: true,
-                        timeoutMs: 60_000,
-                    });
+                    const generatedQuestions: any[] = [];
+                    let title = "Generated Quiz";
+                    let lineBuffer = "";
 
-                    const parsed = parseQuizResponse(responseText);
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
 
-                    // Stream each question
-                    for (let i = 0; i < parsed.questions.length; i++) {
-                        const q = parsed.questions[i];
-                        controller.enqueue(encoder.encode(`data: {"type":"question","index":${i},"total":${parsed.questions.length},"question":${JSON.stringify(q)}}\n\n`));
-                        await new Promise(r => setTimeout(r, 80));
+                        // Pass the raw SSE chunk to the client
+                        controller.enqueue(value);
+
+                        const chunkStr = decoder.decode(value, { stream: true });
+                        lineBuffer += chunkStr;
+                        
+                        let lineEndIndex;
+                        while ((lineEndIndex = lineBuffer.indexOf('\n')) !== -1) {
+                            const line = lineBuffer.slice(0, lineEndIndex).trim();
+                            lineBuffer = lineBuffer.slice(lineEndIndex + 1);
+
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    if (data.type === 'question' && data.question) {
+                                        generatedQuestions.push(data.question);
+                                    }
+                                } catch (e) {}
+                            }
+                        }
                     }
 
-                    controller.enqueue(encoder.encode(`data: {"status":"complete","title":${JSON.stringify(parsed.title)},"count":${parsed.questions.length}}\n\n`));
+                    // Force strict count adherence (server-side truncation)
+                    const finalQuestions = generatedQuestions.slice(0, count);
 
-                    // Save to database
-                    try {
-                        await supabase.from("generations").insert({
-                            user_id: user.id,
-                            type: "quiz",
-                            title: parsed.title,
-                            content: { questions: parsed.questions },
-                        });
-                    } catch (dbError) {
-                        console.error("Failed to save quiz to DB:", dbError);
+                    // If no questions were generated, refund
+                    if (finalQuestions.length === 0) {
+                        await refundCredits(supabase, user.id, COST);
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: "No questions were generated. Credits refunded." })}\n\n`));
+                    } else {
+                        // Generate a dynamic title from the first question
+                        const topic = finalQuestions[0]?.question?.substring(0, 40) || "Quiz";
+                        const finalTitle = `Quiz: ${topic}${topic.length < (finalQuestions[0]?.question?.length || 0) ? "..." : ""}`;
+
+                        // Save to database
+                        let gId = null;
+                        try {
+                            const { data, error } = await supabase.from("generations").insert({
+                                user_id: user.id,
+                                type: "quiz",
+                                title: finalTitle,
+                                content: { questions: finalQuestions },
+                            }).select("id").single();
+                            if (!error && data) gId = data.id;
+                        } catch (dbError) {
+                            console.error("Failed to save quiz to DB:", dbError);
+                        }
+
+                        // Send the final completion message with the ID
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                            status: "complete", 
+                            id: gId, 
+                            title: finalTitle,
+                            questions: finalQuestions
+                        })}\n\n`));
                     }
 
                     controller.close();
                 } catch (error: unknown) {
+                    console.error("Quiz Stream Parser Error:", error);
+                    await refundCredits(supabase, user.id, COST);
                     const msg = error instanceof Error ? error.message : "Generation failed";
-                    console.error("Quiz Stream Error:", error);
-                    controller.enqueue(encoder.encode(`data: {"status":"error","message":${JSON.stringify(msg)}}\n\n`));
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: msg + " Credits refunded." })}\n\n`));
                     controller.close();
                 }
             }

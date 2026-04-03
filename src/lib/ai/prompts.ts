@@ -39,7 +39,8 @@ export function buildFlashcardsPrompt(
 
     return `You are a study materials architect trained in cognitive science and spaced repetition theory.
 
-Your task: Generate exactly ${count} flashcards from the content below.
+Your task: Generate EXACTLY ${count} flashcards from the content below. 
+CRITICAL: Do NOT generate more or fewer than ${count}. Each extra card is a waste of tokens. Accuracy is your primary metric.
 
 DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstruction[difficulty] || difficultyInstruction.medium}
@@ -55,17 +56,14 @@ FLASHCARD DESIGN RULES:
 5. Mnemonic device: If a concept benefits from one, add it at the end of the back after "💡 Remember:".
 6. Each card must be standalone — a student who only sees this one card should understand the Q&A.
 
-Return JSON with this exact shape:${JSON_ONLY}
-{
-  "title": "A short, descriptive title for this card set (5-8 words)",
-  "flashcards": [
-    {
-      "front": "Conceptual question here",
-      "back": "Concise, insight-first answer. 💡 Remember: mnemonic if applicable.",
-      "topic": "Sub-topic label (1-3 words)"
-    }
-  ]
-}`;
+Return exactly a JSON array of objects with this shape:${JSON_ONLY}
+[
+  {
+    "front": "Conceptual question here",
+    "back": "Concise, insight-first answer. 💡 Remember: mnemonic if applicable.",
+    "topic": "Sub-topic label (1-3 words)"
+  }
+]`;
 }
 
 // ─── Quiz ─────────────────────────────────────────────────────────────────────
@@ -84,7 +82,8 @@ export function buildQuizPrompt(
 
     return `You are an exam writer at a world-class university. You specialize in assessments that accurately discriminate between students who truly understand versus those who merely memorized.
 
-Your task: Generate exactly ${count} multiple-choice questions from the content below.
+Your task: Generate EXACTLY ${count} multiple-choice questions from the content below.
+CRITICAL: Do NOT generate more or fewer than ${count}. Accuracy is your primary metric.
 
 DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstruction[difficulty] || difficultyInstruction.medium}
@@ -101,19 +100,16 @@ QUESTION DESIGN RULES:
 6. explanation: 1-2 sentences explaining WHY the correct answer is right and why the main distractor is wrong.
 7. Cover the full breadth of the content — not just the introduction.
 
-Return JSON with this exact shape:${JSON_ONLY}
-{
-  "title": "Quiz: [Topic] (5-7 words)",
-  "questions": [
-    {
-      "question": "Full question text ending with a question mark?",
-      "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
-      "correctIndex": 2,
-      "explanation": "Option C is correct because... Option A is tempting because...",
-      "topic": "Sub-topic being tested"
-    }
-  ]
-}`;
+Return exactly a JSON array of objects with this shape:${JSON_ONLY}
+[
+  {
+    "question": "Full question text ending with a question mark?",
+    "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
+    "correctIndex": 2,
+    "explanation": "Option C is correct because... Option A is tempting because...",
+    "topic": "Sub-topic being tested"
+  }
+]`;
 }
 
 // ─── Podcast ──────────────────────────────────────────────────────────────────
@@ -142,16 +138,11 @@ PODCAST RULES:
 7. Speaker names must be exactly "Professor A" and "Professor B" (or "Alex" and "Blake" for casual). No other speaker names.
 8. Each line of dialogue should be 2-5 sentences. Not single words, not paragraphs.
 
-Return JSON with this exact shape:${JSON_ONLY}
-{
-  "title": "Episode title (compelling, 6-10 words)",
-  "summary": "One sentence description of what this episode covers",
-  "script": [
-    { "speaker": "Professor A", "text": "Full spoken line here." },
-    { "speaker": "Professor B", "text": "Response here." }
-  ],
-  "keyTakeaway": "The single most important thing a listener should remember."
-}`;
+Return exactly a JSON array of objects with this shape (representing the script lines):${JSON_ONLY}
+[
+  { "speaker": "Professor A", "text": "Full spoken line here." },
+  { "speaker": "Professor B", "text": "Response here." }
+]`;
 }
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
@@ -202,19 +193,16 @@ MIND MAP RULES:
 4. Every node label must be concise: 2-6 words maximum.
 5. Nodes must form a genuine tree — no cross-connections in the JSON.
 
-Return JSON with this exact shape:${JSON_ONLY}
-{
-  "topic": "Central topic name",
-  "branches": [
-    {
-      "label": "Branch concept",
-      "color": "#F59E0B",
-      "children": [
-        { "label": "Specific detail or sub-concept" }
-      ]
-    }
-  ]
-}
+Return JSON with this exact shape (array of branches):${JSON_ONLY}
+[
+  {
+    "label": "Branch concept",
+    "color": "#F59E0B",
+    "children": [
+      { "label": "Specific detail or sub-concept" }
+    ]
+  }
+]
 
 Use this color palette for branches (cycle through as needed):
 ["#F59E0B", "#6366F1", "#10B981", "#EF4444", "#8B5CF6", "#3B82F6", "#F97316"]`;

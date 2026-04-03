@@ -7,6 +7,7 @@ import FrostedDock from "@/components/FrostedDock";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import OnboardingModal from "@/components/features/OnboardingModal";
 
 export const metadata: Metadata = {
   title: "The Professor | Cheat Codes for Your Degree",
@@ -61,11 +62,28 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        {/* Old browser detection — redirect to static fallback */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (typeof CSS === 'undefined' || !CSS.supports || !CSS.supports('width', 'clamp(1px,2vw,3px)')) {
+                  if (window.location.pathname.indexOf('/fallback') === -1) {
+                    window.location.replace('/fallback.html');
+                  }
+                }
+              } catch(e) {
+                window.location.replace('/fallback.html');
+              }
+            `,
+          }}
+        />
       </head>
       <body className="font-sans antialiased transition-colors duration-300">
         <ThemeProvider>
           <UserProvider>
             {children}
+            <OnboardingModal />
             <FrostedDock />
             <ServiceWorkerRegistrar />
             <Analytics />

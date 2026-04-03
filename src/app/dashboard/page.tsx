@@ -1,351 +1,359 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
-import { useTheme } from "@/context/ThemeContext";
-import { GlassCard, Grainient } from "@/components/ui/VisualEffects";
-import BrandLogo from "@/components/ui/BrandLogo";
 import { createClient } from "@/lib/supabase/client";
+import BrandLogo from "@/components/ui/BrandLogo";
+import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
+import { useIngestStore } from "@/store/useIngestStore";
+import { motion, AnimatePresence } from "framer-motion";
+import { Brain, Sparkles, Loader2 } from "lucide-react";
 
-interface RecentItem {
+/* ═══════════════════════════════════════════════════
+   TYPES & HELPERS
+   ═══════════════════════════════════════════════════ */
+interface Thread {
     id: string;
     title: string;
-    type: "flashcards" | "quiz" | "summary" | "mindmap";
-    createdAt: string;
+    updatedAt: Date;
+    type: "chat" | "quiz" | "flashcards" | "summary";
 }
 
-const typeConfig = {
-    flashcards: { icon: "style", color: "text-[var(--accent)]", bg: "bg-[var(--accent)]/10" },
-    quiz: { icon: "quiz", color: "text-[var(--secondary)]", bg: "bg-[var(--secondary)]/10" },
-    summary: { icon: "summarize", color: "text-blue-500", bg: "bg-blue-500/10" },
-    mindmap: { icon: "hub", color: "text-orange-500", bg: "bg-orange-500/10" },
-};
+function getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 5) return "Still at it?";
+    if (hour < 12) return "Good morning,";
+    if (hour < 17) return "Afternoon,";
+    if (hour < 21) return "Evening,";
+    return "Late-night session,";
+}
 
-const TOOLS = [
-    { icon: "style", label: "Flashcards", href: "/create?tool=flashcards", color: "var(--accent)", bg: "rgba(245,158,11,0.1)" },
-    { icon: "quiz", label: "Quiz", href: "/create?tool=quiz", color: "var(--secondary)", bg: "rgba(99,102,241,0.1)" },
-    { icon: "summarize", label: "Summary", href: "/create?tool=summary", color: "#6366F1", bg: "rgba(99,102,241,0.1)" },
-    { icon: "account_tree", label: "Mind Map", href: "/create?tool=mindmap", color: "#F97316", bg: "rgba(249,115,22,0.1)" },
-    { icon: "school", label: "Ask Prof", href: "/professor", color: "var(--accent)", bg: "rgba(245,158,11,0.1)" },
+const SUB_GREETINGS = [
+    "What are we working on today?",
+    "Ready to dive into something?",
+    "Let's get into it.",
+    "Pick up where you left off, or start fresh.",
 ];
 
-function getGreeting() {
-    const hour = new Date().getHours();
-    if (hour < 5) return "Still up,";
-    if (hour < 12) return "Good morning,";
-    if (hour < 17) return "Good afternoon,";
-    if (hour < 21) return "Good evening,";
-    return "Late night grind,";
-}
+const typeIcons: Record<string, { icon: string; color: string }> = {
+    chat: { icon: "chat_bubble", color: "#818CF8" },
+    quiz: { icon: "quiz", color: "#F59E0B" },
+    flashcards: { icon: "style", color: "#10B981" },
+    summary: { icon: "summarize", color: "#6366F1" },
+};
 
-export default function DashboardPage() {
+const SUGGESTIONS = [
+    "Quiz me on my notes",
+    "Make me flashcards from this chapter",
+    "Summarize this for me",
+    "Explain this concept simply",
+];
+
+/* ═══ Claymorphic style helpers ═══ */
+const clay = {
+    card: {
+        background: "rgba(255,255,255,0.025)",
+        borderRadius: "20px",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.04), inset 0 -1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)",
+    } as React.CSSProperties,
+    input: {
+        background: "rgba(255,255,255,0.03)",
+        borderRadius: "16px",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.03), 0 2px 8px rgba(0,0,0,0.2)",
+    } as React.CSSProperties,
+};
+
+/* ═══════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════ */
+export default function HomePage() {
     const { user } = useUser();
-    const { resolvedTheme, toggleTheme } = useTheme();
+    const { isProcessing, openModal } = useIngestStore();
     const [mounted, setMounted] = useState(false);
-    const [examDate, setExamDate] = useState("");
-    const [savedExam, setSavedExam] = useState<{ date: string; name: string } | null>(null);
-    const [examName, setExamName] = useState("");
-    const [editingExam, setEditingExam] = useState(false);
-    const [recentSessions, setRecentSessions] = useState<RecentItem[]>([]);
-    const [loadingSessions, setLoadingSessions] = useState(true);
-    const supabase = createClient();
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [mobileSidebar, setMobileSidebar] = useState(false);
+    const [inputValue, setInputValue] = useState("");
+    const [messages, setMessages] = useState<any[]>([]);
+    const [isTyping, setIsTyping] = useState(false);
+    const [history, setHistory] = useState<any[]>([]);
+    const [loadingHistory, setLoadingHistory] = useState(true);
+    const [activeThread, setActiveThread] = useState<string | null>(null);
+    const [subGreeting] = useState(() => SUB_GREETINGS[Math.floor(Math.random() * SUB_GREETINGS.length)]);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+    useEffect(() => { 
         setMounted(true);
-        try {
-            const stored = localStorage.getItem("exam_countdown");
-            if (stored) setSavedExam(JSON.parse(stored));
-        } catch { }
-    }, []);
+        if (user.id) {
+            const fetchHistory = async () => {
+                const supabase = createClient();
+                const { data, error } = await supabase
+                    .from("generations")
+                    .select("id, title, type, created_at")
+                    .eq("user_id", user.id)
+                    .order("created_at", { ascending: false })
+                    .limit(10);
+                if (!error && data) setHistory(data);
+                setLoadingHistory(false);
+            };
+            fetchHistory();
+        }
+    }, [user.id]);
 
     useEffect(() => {
-        if (!user?.id) return;
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [messages, isTyping]);
 
-        async function fetchRecent() {
-            setLoadingSessions(true);
-            const { data, error } = await supabase
-                .from("generations")
-                .select("*")
-                .eq("user_id", user.id)
-                .order("created_at", { ascending: false })
-                .limit(3);
+    const handleSendMessage = async (text?: string) => {
+        const content = text || inputValue;
+        if (!content.trim() || isTyping) return;
 
-            if (!error && data) {
-                const formatted = data.map((item: any) => ({
-                    id: item.id,
-                    title: item.title || "Untitled",
-                    type: item.type,
-                    createdAt: new Date(item.created_at).toLocaleDateString(),
-                }));
-                setRecentSessions(formatted);
-            }
-            setLoadingSessions(false);
+        const userMsg = { role: "user", content: content.trim() };
+        const newMessages = [...messages, userMsg];
+        
+        setMessages(newMessages);
+        setInputValue("");
+        setIsTyping(true);
+        if (inputRef.current) {
+            inputRef.current.style.height = "auto";
+            inputRef.current.focus();
         }
 
-        fetchRecent();
-    }, [user?.id]);
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messages: newMessages }),
+            });
 
-    function saveExam() {
-        if (!examDate) return;
-        const exam = { date: examDate, name: examName || "Exam" };
-        localStorage.setItem("exam_countdown", JSON.stringify(exam));
-        setSavedExam(exam);
-        setEditingExam(false);
-        setExamDate("");
-        setExamName("");
-    }
+            if (!response.ok) throw new Error("Failed to connect to The Professor");
 
-    function clearExam() {
-        localStorage.removeItem("exam_countdown");
-        setSavedExam(null);
-    }
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let assistantMsg = { role: "assistant", content: "" };
+            
+            setMessages(prev => [...prev, assistantMsg]);
 
-    function getDaysUntil(dateStr: string) {
-        const diff = new Date(dateStr).getTime() - Date.now();
-        return Math.ceil(diff / (1000 * 60 * 60 * 24));
-    }
+            while (true) {
+                const { done, value } = await reader!.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value);
+                assistantMsg.content += chunk;
+                
+                setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    { ...assistantMsg }
+                ]);
+            }
+        } catch (err: any) {
+            console.error("Chat Error:", err);
+            setMessages(prev => [...prev, { role: "assistant", content: "I'm sorry, I encountered an issue while thinking. Please try again." }]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
 
     if (!mounted) {
         return (
-            <div className="min-h-screen bg-[var(--background)] p-8">
-                <div className="max-w-5xl mx-auto space-y-6">
-                    <div className="h-14 w-64 rounded-2xl shimmer" />
-                    <div className="grid grid-cols-3 gap-4">
-                        {[0, 1, 2].map(i => <div key={i} className="h-32 rounded-2xl shimmer" />)}
-                    </div>
-                </div>
+            <div className="h-[100dvh] bg-[#06060B] flex">
+                <div className="w-[280px] bg-[#0A0A14] hidden md:block" />
+                <div className="flex-1" />
             </div>
         );
     }
 
-    const days = savedExam ? getDaysUntil(savedExam.date) : null;
-    const urgency = days !== null
-        ? days <= 2 ? "danger" : days <= 5 ? "warning" : "calm"
-        : null;
-
-    const urgencyColor = urgency === "danger" ? "#EF4444"
-        : urgency === "warning" ? "var(--accent)"
-            : "#10B981";
-
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
-            <Grainient className="fixed inset-0 opacity-30 z-0 pointer-events-none" />
+        <div className="h-[100dvh] bg-[#06060B] text-white/90 flex overflow-hidden">
+            {/* Mobile overlay */}
+            {mobileSidebar && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileSidebar(false)} />
+            )}
 
-            <div className="relative z-10">
-                {/* Header */}
-                <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-4 sm:px-6 bg-[var(--background)]/70 backdrop-blur-xl border-b border-[var(--border)]">
-                    <div className="flex items-center gap-2.5">
-                        <BrandLogo size="sm" />
-                        <span className="text-xs font-bold tracking-widest text-[var(--foreground-muted)] uppercase hidden sm:block">The Professor</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            onClick={toggleTheme}
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 transition-all"
-                            title="Toggle theme"
-                        >
-                            <span className="material-symbols-outlined text-xl">
-                                {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
-                            </span>
+            {/* Sidebar */}
+            <aside
+                className={`
+                    ${mobileSidebar ? "translate-x-0" : "-translate-x-full"}
+                    md:translate-x-0
+                    ${sidebarOpen ? "md:w-[280px]" : "md:w-0 md:overflow-hidden"}
+                    fixed md:relative z-50 md:z-auto
+                    w-[280px] h-full flex-shrink-0
+                    transition-all duration-400 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]
+                    bg-[#0A0A14] border-r border-white/5
+                `}
+            >
+                <div className="flex flex-col h-full p-4">
+                    <div className="flex items-center justify-between mb-8">
+                        <BrandLogo />
+                        <button onClick={() => setSidebarOpen(false)} className="hidden md:block text-white/20 hover:text-white/40">
+                            <span className="material-symbols-outlined text-[18px]">left_panel_close</span>
                         </button>
-                        {/* Upgrade — text on desktop, icon-only on mobile */}
-                        <Link
-                            href="/settings/billing"
-                            className="flex items-center gap-1 px-2.5 sm:px-4 py-2 rounded-xl bg-[var(--accent)] text-[#08080E] text-xs font-black hover:opacity-90 transition-all shadow-sm"
-                        >
-                            <span className="material-symbols-outlined text-sm">bolt</span>
-                            <span className="hidden sm:inline">Upgrade</span>
-                        </Link>
                     </div>
+
+                    <Link href="/create" className="group p-3 rounded-2xl bg-[#F59E0B] text-[#08080E] font-bold flex items-center gap-3 mb-8 transition-transform active:scale-95">
+                        <span className="material-symbols-outlined text-[20px]">add</span>
+                        <span className="text-[14px]">New Study Piece</span>
+                    </Link>
+
+                    <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-4 px-2">Recent Thinking</p>
+                        {loadingHistory ? (
+                            <div className="flex flex-col gap-2 p-2">
+                                {[1, 2, 3].map(n => <div key={n} className="h-10 rounded-xl bg-white/5 animate-pulse" />)}
+                            </div>
+                        ) : history.length > 0 ? (
+                            history.map((item) => (
+                                <Link 
+                                    key={item.id} 
+                                    href={`/${item.type}/${item.id}`}
+                                    className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]" style={{ color: typeIcons[item.type]?.color }}>
+                                        {typeIcons[item.type]?.icon}
+                                    </span>
+                                    <span className="text-[13px] font-medium truncate flex-1 opacity-60 group-hover:opacity-100 transition-opacity">{item.title}</span>
+                                </Link>
+                            ))
+                        ) : (
+                            <p className="p-4 text-[12px] text-white/10 italic text-center">Your knowledge library is empty.</p>
+                        )}
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="flex-1 flex flex-col relative min-w-0">
+                {/* Header */}
+                <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 relative z-20">
+                    <div className="flex items-center gap-2">
+                        {!sidebarOpen && (
+                            <button onClick={() => setSidebarOpen(true)} className="hidden md:block text-white/20 hover:text-white/40 mr-2">
+                                <span className="material-symbols-outlined text-[18px]">left_panel_open</span>
+                            </button>
+                        )}
+                        <button onClick={() => setMobileSidebar(true)} className="md:hidden text-white/40">
+                            <span className="material-symbols-outlined text-[18px]">menu</span>
+                        </button>
+                        <span className="text-[12px] font-semibold text-white/20">{activeThread ? "Conversation" : "New Chat"}</span>
+                    </div>
+
+                    <AnimatePresence>
+                        {isProcessing && (
+                            <motion.button
+                                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                                onClick={openModal}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 transition-all"
+                            >
+                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest hidden sm:inline">Learning...</span>
+                                <Loader2 className="w-3 h-3 text-[#F59E0B] animate-spin" />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
                 </header>
 
-                <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 sm:space-y-10">
-
-                    {/* Greeting */}
-                    <div className="animate-fade-in-up">
-                        <p className="text-[var(--foreground-muted)] text-sm font-medium tracking-wide uppercase mb-1">
-                            {getGreeting()}
-                        </p>
-                        <h1 className="font-heading text-4xl md:text-5xl font-bold text-[var(--foreground)] leading-tight">
-                            {user.name}
-                        </h1>
-                        <p className="text-[var(--foreground-secondary)] mt-2 text-base">
-                            Your AI study engine is ready. What are we tackling today?
-                        </p>
-                    </div>
-
-                    {/* Exam Countdown Widget */}
-                    <div className="animate-fade-in-up animation-delay-100">
-                        {savedExam && !editingExam ? (
-                            <GlassCard className="p-6 border border-[var(--border)]" style={{ borderColor: `${urgencyColor}30` } as React.CSSProperties}>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-bold uppercase tracking-widest text-[var(--foreground-muted)] mb-1">
-                                            Exam Countdown
-                                        </p>
-                                        <p className="text-[var(--foreground-secondary)] text-sm">{savedExam.name}</p>
+                {/* Chat / Welcome View */}
+                <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="w-full max-w-2xl mx-auto flex flex-col items-center px-6">
+                        
+                        {/* Welcome State */}
+                        {messages.length === 0 && (
+                            <div className="flex flex-col items-center">
+                                <div className="relative mb-8">
+                                    <div className="w-16 h-16 rounded-3xl bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center shadow-2xl shadow-[#F59E0B]/5">
+                                        <span className="material-symbols-outlined text-[32px] text-[#F59E0B]">school</span>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="font-heading text-5xl font-bold" style={{ color: urgencyColor }}>
-                                            {days !== null && days > 0 ? days : days === 0 ? "🔥" : "⏰"}
-                                        </div>
-                                        <p className="text-xs text-[var(--foreground-muted)] mt-1">
-                                            {days !== null && days > 0 ? "days left" : days === 0 ? "TODAY" : "PASSED"}
-                                        </p>
-                                    </div>
+                                    <div className="absolute inset-0 -m-1 rounded-[28px] border border-[#F59E0B]/5 animate-pulse" />
                                 </div>
-                                {urgency === "danger" && (
-                                    <div className="mt-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold">
-                                        🚨 Panic mode activated. Focus on high-yield topics only.
-                                    </div>
-                                )}
-                                {urgency === "warning" && (
-                                    <div className="mt-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
-                                        ⚡ Crunch time. Review flashcards and do a practice quiz today.
-                                    </div>
-                                )}
-                                <div className="flex gap-2 mt-4">
-                                    <button onClick={() => setEditingExam(true)} className="text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
-                                        Edit
-                                    </button>
-                                    <span className="text-[var(--border)]">·</span>
-                                    <button onClick={clearExam} className="text-xs text-[var(--foreground-muted)] hover:text-red-400 transition-colors">
-                                        Clear
-                                    </button>
+                                <h1 className="text-[28px] font-bold text-white/90 mb-2 text-center">{getGreeting()} {user.name?.split(" ")[0]}.</h1>
+                                <p className="text-[14px] text-white/30 mb-8 text-center">{subGreeting}</p>
+
+                                <div className="flex flex-wrap gap-2.5 justify-center mb-12">
+                                    {SUGGESTIONS.map((text, i) => (
+                                        <button key={i} onClick={() => handleSendMessage(text)} className="px-5 py-2.5 rounded-2xl bg-white/[0.02] border border-white/5 text-[13px] text-white/40 hover:text-white/70 hover:bg-white/5 transition-all active:scale-95">
+                                            {text}
+                                        </button>
+                                    ))}
                                 </div>
-                            </GlassCard>
-                        ) : (
-                            <GlassCard className="p-6">
-                                <p className="text-xs font-bold uppercase tracking-widest text-[var(--foreground-muted)] mb-3">
-                                    📅 Set Exam Countdown
-                                </p>
-                                <div className="flex flex-wrap gap-3">
-                                    <input
-                                        type="text"
-                                        placeholder="Exam name (e.g. Chemistry Finals)"
-                                        value={examName}
-                                        onChange={e => setExamName(e.target.value)}
-                                        className="flex-1 min-w-[180px] bg-[var(--background-secondary)] text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] rounded-xl px-4 py-2.5 text-sm border border-[var(--border)] focus:border-[var(--accent)] transition-colors"
-                                        style={{ outline: "none", boxShadow: "none" }}
-                                    />
-                                    <input
-                                        type="date"
-                                        value={examDate}
-                                        onChange={e => setExamDate(e.target.value)}
-                                        className="bg-[var(--background-secondary)] text-[var(--foreground)] rounded-xl px-4 py-2.5 text-sm border border-[var(--border)] focus:border-[var(--accent)] transition-colors"
-                                        style={{ outline: "none", boxShadow: "none" }}
-                                    />
-                                    <button
-                                        onClick={saveExam}
-                                        disabled={!examDate}
-                                        className="btn-primary text-sm px-5 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
-                                    >
-                                        Set Countdown
-                                    </button>
-                                </div>
-                            </GlassCard>
-                        )}
-                    </div>
-
-                    {/* Stats Row */}
-                    <div className="grid grid-cols-3 gap-4 animate-fade-in-up animation-delay-200">
-                        <GlassCard className="p-5 text-center">
-                            <div className="text-3xl font-heading font-bold text-[var(--accent)]">{user.streak ?? 0}</div>
-                            <div className="text-xs text-[var(--foreground-muted)] mt-1 uppercase tracking-wider">Day Streak</div>
-                        </GlassCard>
-                        <GlassCard className="p-5 text-center">
-                            <div className="text-3xl font-heading font-bold text-[var(--secondary)]">{user.credits ?? 0}</div>
-                            <div className="text-xs text-[var(--foreground-muted)] mt-1 uppercase tracking-wider">Credits</div>
-                        </GlassCard>
-                        <Link href="/history" className="block">
-                            <GlassCard className="p-5 text-center h-full hover:border-[var(--accent)]/30 transition-all cursor-pointer group">
-                                <div className="text-3xl font-heading font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">→</div>
-                                <div className="text-xs text-[var(--foreground-muted)] mt-1 uppercase tracking-wider">Library</div>
-                            </GlassCard>
-                        </Link>
-                    </div>
-
-                    {/* Study Tools Grid */}
-                    <div className="animate-fade-in-up animation-delay-300">
-                        <h2 className="font-heading text-xl font-semibold text-[var(--foreground)] mb-4">
-                            Start Studying
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {TOOLS.map((tool, i) => (
-                                <Link key={tool.label} href={tool.href}>
-                                    <GlassCard
-                                        className="p-5 group hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-                                        style={{ animationDelay: `${i * 50}ms` }}
-                                    >
-                                        <div
-                                            className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
-                                            style={{ background: tool.bg, color: tool.color }}
-                                        >
-                                            <span className="material-symbols-outlined text-2xl">{tool.icon}</span>
-                                        </div>
-                                        <div className="font-semibold text-[var(--foreground)] text-sm">{tool.label}</div>
-                                        <div className="text-xs text-[var(--foreground-muted)] mt-0.5">Generate now →</div>
-                                    </GlassCard>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Recent activity */}
-                    <div className="animate-fade-in-up animation-delay-400">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="font-heading text-xl font-semibold text-[var(--foreground)]">Recent Sessions</h2>
-                            <Link href="/history" className="text-xs font-bold text-[var(--accent)] hover:underline uppercase tracking-wide">
-                                View All
-                            </Link>
-                        </div>
-
-                        {loadingSessions ? (
-                            <GlassCard className="p-6">
-                                <div className="h-12 rounded-xl shimmer mb-2" />
-                                <div className="h-12 rounded-xl shimmer" />
-                            </GlassCard>
-                        ) : recentSessions.length > 0 ? (
-                            <div className="grid gap-3">
-                                {recentSessions.map((session) => {
-                                    const config = typeConfig[session.type] || typeConfig.flashcards;
-                                    return (
-                                        <Link key={session.id} href="/history">
-                                            <GlassCard className="p-4 flex items-center justify-between hover:border-[var(--accent)]/30 transition-all cursor-pointer group">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${config.bg} ${config.color}`}>
-                                                        <span className="material-symbols-outlined text-xl">{config.icon}</span>
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-semibold text-sm text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">{session.title}</h3>
-                                                        <p className="text-xs text-[var(--foreground-muted)] capitalize">{session.type} · {session.createdAt}</p>
-                                                    </div>
-                                                </div>
-                                                <span className="material-symbols-outlined text-[var(--foreground-muted)] group-hover:text-[var(--accent)] transition-colors">chevron_right</span>
-                                            </GlassCard>
-                                        </Link>
-                                    );
-                                })}
                             </div>
-                        ) : (
-                            <GlassCard className="p-10 flex flex-col items-center justify-center text-center gap-3">
-                                <div
-                                    className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--accent)]/10"
-                                >
-                                    <span className="material-symbols-outlined text-3xl text-[var(--accent)]/60">auto_awesome</span>
-                                </div>
-                                <p className="text-[var(--foreground-secondary)] text-sm">
-                                    Your generated sessions will appear here
-                                </p>
-                                <Link href="/create" className="btn-primary text-sm px-6 py-2.5 mt-1">
-                                    Create Your First Session
-                                </Link>
-                            </GlassCard>
+                        )}
+
+                        {/* Chat Messages */}
+                        {messages.length > 0 && (
+                            <div 
+                                ref={scrollRef}
+                                className="w-full h-full max-h-[60vh] flex flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar mb-8"
+                            >
+                                {messages.map((msg, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                        className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                        {msg.role === 'assistant' && (
+                                            <div className="w-8 h-8 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center shrink-0">
+                                                <span className="material-symbols-outlined text-[18px] text-[#F59E0B]">school</span>
+                                            </div>
+                                        )}
+                                        <div className={`px-4 py-3 rounded-2xl text-[14px] leading-relaxed max-w-[85%] ${msg.role === 'user' ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/10' : 'bg-white/[0.03] border border-white/5 text-white/80'}`}>
+                                            {msg.content}
+                                        </div>
+                                    </motion.div>
+                                ))}
+                                {isTyping && messages[messages.length-1]?.role === 'user' && (
+                                     <div className="flex gap-4 justify-start">
+                                        <div className="w-8 h-8 rounded-xl bg-[#F59E0B]/10 flex items-center justify-center shrink-0">
+                                            <Loader2 className="w-4 h-4 animate-spin text-[#F59E0B]" />
+                                        </div>
+                                        <div className="px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/5">
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-white/20 animate-pulse">Thinking...</span>
+                                        </div>
+                                     </div>
+                                )}
+                            </div>
                         )}
                     </div>
-                </main>
-            </div>
+
+                    {/* Input Area */}
+                    <div className="w-full max-w-2xl mx-auto px-6 pb-12">
+                        <div style={clay.input} className="p-3">
+                            <div className="flex items-end gap-2">
+                                <button onClick={openModal} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 text-white/20 hover:text-white/40 transition-colors">
+                                    <span className="material-symbols-outlined text-[18px]">attach_file</span>
+                                </button>
+                                <textarea
+                                    ref={inputRef}
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                                    placeholder="Talk to The Professor..."
+                                    rows={1}
+                                    className="flex-1 bg-transparent border-none outline-none resize-none py-2 text-[14px] text-white/80 placeholder:text-white/15 max-h-32"
+                                    onInput={(e) => {
+                                        const t = e.target as HTMLTextAreaElement;
+                                        t.style.height = "auto";
+                                        t.style.height = Math.min(t.scrollHeight, 128) + "px";
+                                    }}
+                                />
+                                <button
+                                    onClick={() => handleSendMessage()}
+                                    disabled={!inputValue.trim() || isTyping}
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#F59E0B] text-[#08080E] disabled:opacity-20 transition-all active:scale-90"
+                                >
+                                    {isTyping ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="material-symbols-outlined text-[18px]">arrow_upward</span>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <KnowledgeIngestModal />
         </div>
     );
 }

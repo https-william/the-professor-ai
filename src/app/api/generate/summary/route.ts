@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildSummaryPrompt } from "@/lib/ai/prompts";
 import { parseSummaryResponse } from "@/lib/ai/schemas";
 import { validateContent } from "@/lib/validation";
-import { getCredits, deductCredits } from "@/lib/credits";
+import { getCredits, deductCredits, refundCredits } from "@/lib/credits";
 
 const COST = 2;
 
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
 
         const contentResult = validateContent(body.content);
         if (!contentResult.isValid) {
+            await refundCredits(supabase, user.id, COST);
             return new Response(JSON.stringify({ error: contentResult.error || "Invalid content" }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" },
@@ -67,20 +68,26 @@ export async function POST(req: NextRequest) {
         const title = `Summary: ${titleSnippet}${titleSnippet.length < content.length ? "..." : ""}`;
 
         // Save to database
+        let generationId = null;
         try {
-            await supabase.from("generations").insert({
+            const { data, error } = await supabase.from("generations").insert({
                 user_id: user.id,
                 type: "summary",
                 title,
                 content: { summary, style },
-            });
+            }).select("id").single();
+            
+            if (!error && data) {
+                generationId = data.id;
+            }
         } catch (dbError) {
             console.error("Failed to save generation:", dbError);
         }
 
         return new Response(JSON.stringify({
+            id: generationId,
             summary,
-            title: "Summary Generated",
+            title,
             style,
         }), {
             headers: { "Content-Type": "application/json" }
@@ -89,7 +96,13 @@ export async function POST(req: NextRequest) {
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : "Failed to generate summary";
         console.error("Summary Error:", error);
-        return new Response(JSON.stringify({ error: msg }), {
+        // Refund on AI failure
+        try {
+            const supabase = await createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) await refundCredits(supabase, user.id, COST);
+        } catch (e) { console.error("Refund failed:", e); }
+        return new Response(JSON.stringify({ error: msg + " Credits have been refunded." }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });

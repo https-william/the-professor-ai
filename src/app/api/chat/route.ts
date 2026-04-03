@@ -26,7 +26,13 @@ export async function POST(req: NextRequest) {
 
     // 2. Search Vector Store (RAG)
     const supabase = await createClient();
-    console.log("Supabase Client initialized");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        return NextResponse.json({ error: "Unauthorized. Please log in to use the AI Librarian." }, { status: 401 });
+    }
+
+    console.log("Supabase Client initialized for user:", user.id);
     
     let documents: any[] = [];
     try {
@@ -34,7 +40,8 @@ export async function POST(req: NextRequest) {
         const result = await supabase.rpc('match_documents', {
             query_embedding: queryEmbedding,
             match_threshold: 0.5, 
-            match_count: 5
+            match_count: 5,
+            p_user_id: user.id // Pass the user ID
         });
         
         if (result.error) {

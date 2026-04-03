@@ -72,3 +72,25 @@ export async function deductCredits(
     }
     return true;
 }
+
+/**
+ * Refunds `cost` credits back to the user (on generation failure).
+ */
+export async function refundCredits(
+    supabase: SupabaseClient,
+    userId: string,
+    cost: number
+): Promise<void> {
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("credits")
+        .eq("id", userId)
+        .single();
+
+    const current = profile?.credits ?? 0;
+    await supabase
+        .from("profiles")
+        .update({ credits: current + cost })
+        .eq("id", userId);
+    console.log(`credits: refunded ${cost} to user ${userId}`);
+}

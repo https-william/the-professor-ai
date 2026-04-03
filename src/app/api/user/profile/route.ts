@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
                         streak: 0,
                         xp: 0,
                         credits: 100,
+                        has_onboarded: false,
                     })
                     .select()
                     .single();
@@ -67,8 +68,10 @@ export async function PUT(req: NextRequest) {
         // SECURITY: Whitelist allowed fields. BLOCK credits/xp/streak manipulation.
         const allowedUpdates = {
             alias: body.alias,
-            avatar_url: body.avatar || body.avatar_url, // Handle both naming conventions
-            // Add other benign fields here if needed (e.g. bio, preferences)
+            avatar_url: body.avatar || body.avatar_url,
+            education_level: body.education_level,
+            study_goal: body.study_goal,
+            has_onboarded: body.has_onboarded,
         };
 
         // Remove undefined keys

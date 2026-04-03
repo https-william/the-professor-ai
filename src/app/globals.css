@@ -238,18 +238,34 @@ html.light .glass-card {
 }
 
 /* ============================================
-   FROSTED DOCK — Amber active state
+   FROSTED DOCK — 3D Glass Elevation
    ============================================ */
 
-.frosted-dock {
-  background: rgba(12, 12, 20, 0.75);
-  backdrop-filter: blur(50px) saturate(180%);
-  -webkit-backdrop-filter: blur(50px) saturate(180%);
+/* Deep 3D Glass Panel (Vexis Style 3D Extrusion) */
+.glass-panel {
+  background: rgba(18, 18, 31, 0.55);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(245, 240, 232, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-3xl);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.frosted-dock {
+  background: rgba(12, 12, 20, 0.65);
+  backdrop-filter: blur(48px) saturate(200%);
+  -webkit-backdrop-filter: blur(48px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 2px 8px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(245, 240, 232, 0.05);
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    inset 0 2px 2px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5);
 }
 
 html.light .frosted-dock {
@@ -301,7 +317,7 @@ html.light .dock-item:hover {
 }
 
 /* ============================================
-   BUTTONS
+   BUTTONS (INCLUDING VEXIS 3D GLASS BUTTONS)
    ============================================ */
 
 .btn-primary {
@@ -327,6 +343,46 @@ html.light .dock-item:hover {
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 
+.btn-glass {
+  background: rgba(245, 158, 11, 0.15);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-top: 1px solid rgba(245, 158, 11, 0.6);
+  color: var(--accent);
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    inset 0 2px 2px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 5px rgba(245, 158, 11, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-glass:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 15px 40px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(245, 158, 11, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    inset 0 -2px 5px rgba(245, 158, 11, 0.2);
+}
+
+.btn-glass:active {
+  transform: translateY(1px);
+  box-shadow: 
+    0 5px 15px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
 .btn-secondary {
   background-color: transparent;
   color: var(--foreground);
@@ -341,6 +397,116 @@ html.light .dock-item:hover {
   border-color: var(--border-hover);
   background: rgba(245, 158, 11, 0.05);
   color: var(--accent);
+}
+
+/* ============================================
+   JELLY GLASS BUTTON — Liquid Glassmorphism
+   Elastic spring-bounce, thick inner glow
+   ============================================ */
+
+.btn-jelly {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  border-radius: 1.25rem;
+  background: rgba(245, 158, 11, 0.12);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  border-top: 1.5px solid rgba(245, 158, 11, 0.55);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 12px rgba(245, 158, 11, 0.15),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -3px 6px rgba(245, 158, 11, 0.08);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+}
+
+.btn-jelly::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 50%, rgba(245,158,11,0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-jelly:hover {
+  transform: scale(1.06) translateY(-2px);
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 4px 20px rgba(245, 158, 11, 0.3),
+    0 0 30px rgba(245, 158, 11, 0.15),
+    inset 0 3px 6px rgba(255, 255, 255, 0.25),
+    inset 0 -4px 8px rgba(245, 158, 11, 0.15);
+}
+
+.btn-jelly:hover::before {
+  opacity: 1;
+}
+
+.btn-jelly:active {
+  transform: scale(0.96) translateY(1px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 2px rgba(245, 158, 11, 0.1);
+  transition-duration: 0.15s;
+}
+
+/* Jelly ghost variant — more subtle for secondary actions */
+.btn-jelly-ghost {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--foreground);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+
+.btn-jelly-ghost:hover {
+  transform: scale(1.05) translateY(-2px);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--accent);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(245, 158, 11, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.15),
+    inset 0 -3px 6px rgba(245, 158, 11, 0.05);
+}
+
+.btn-jelly-ghost:active {
+  transform: scale(0.96) translateY(1px);
+  transition-duration: 0.15s;
 }
 
 /* ============================================
@@ -524,6 +690,67 @@ select:focus-visible {
   }
 }
 
+/* ABC floating — lazy elliptical orbit, slightly tilting */
+@keyframes float-abc {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(6px, -10px) rotate(-3deg);
+  }
+  50% {
+    transform: translate(-4px, -6px) rotate(2deg);
+  }
+  75% {
+    transform: translate(-8px, 4px) rotate(-1deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+/* XYZ floating — counter-orbit to ABC, creates a dance */
+@keyframes float-xyz {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-5px, 6px) rotate(2deg);
+  }
+  50% {
+    transform: translate(8px, 3px) rotate(-2deg);
+  }
+  75% {
+    transform: translate(3px, -8px) rotate(1deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+/* Rainbow shimmer sweep — light moves across the gradient */
+@keyframes shimmer-sweep {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.animate-float-abc {
+  animation: float-abc 8s ease-in-out infinite;
+}
+
+.animate-float-xyz {
+  animation: float-xyz 7s ease-in-out infinite;
+}
+
+.animate-shimmer-sweep {
+  background-size: 200% auto;
+  animation: shimmer-sweep 4s linear infinite;
+}
+
 /* ============================================
    ANIMATION UTILITY CLASSES
    ============================================ */
@@ -640,6 +867,83 @@ select:focus-visible {
 
 .blob-coral {
   background: radial-gradient(circle, rgba(239, 68, 68, 0.12) 0%, transparent 70%);
+}
+
+/* ============================================
+   CLAYMORPHISM & NEUMORPHISM
+   Soft, puffy, tactile 3D surfaces
+   ============================================ */
+
+/* Claymorphism — rounded, puffy, colorful depth */
+.clay-card {
+  background: rgba(22, 22, 42, 0.7);
+  border-radius: var(--radius-2xl);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    8px 8px 20px rgba(0, 0, 0, 0.45),
+    -4px -4px 16px rgba(60, 60, 90, 0.12),
+    inset 0 2px 4px rgba(255, 255, 255, 0.06),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.clay-card:hover {
+  box-shadow:
+    10px 10px 28px rgba(0, 0, 0, 0.5),
+    -5px -5px 20px rgba(60, 60, 90, 0.15),
+    inset 0 2px 6px rgba(255, 255, 255, 0.08),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+html.light .clay-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.04);
+  box-shadow:
+    6px 6px 16px rgba(0, 0, 0, 0.08),
+    -4px -4px 12px rgba(255, 255, 255, 0.9),
+    inset 0 1px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Neumorphism — extruded from the background surface */
+.neu-card {
+  background: var(--background-secondary);
+  border-radius: var(--radius-2xl);
+  border: none;
+  box-shadow:
+    6px 6px 18px rgba(0, 0, 0, 0.5),
+    -6px -6px 18px rgba(40, 40, 65, 0.15);
+  transition: all 0.3s ease;
+}
+
+.neu-card:hover {
+  box-shadow:
+    8px 8px 24px rgba(0, 0, 0, 0.55),
+    -8px -8px 24px rgba(40, 40, 65, 0.18);
+}
+
+/* Neumorphism inset — pressed-in / concave */
+.neu-inset {
+  background: var(--background);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    inset 4px 4px 12px rgba(0, 0, 0, 0.5),
+    inset -4px -4px 12px rgba(40, 40, 65, 0.1);
+}
+
+html.light .neu-card {
+  background: var(--background-secondary);
+  box-shadow:
+    6px 6px 18px rgba(0, 0, 0, 0.06),
+    -6px -6px 18px rgba(255, 255, 255, 0.95);
+}
+
+html.light .neu-inset {
+  background: var(--background);
+  box-shadow:
+    inset 4px 4px 10px rgba(0, 0, 0, 0.06),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.9);
 }
 
 /* ============================================

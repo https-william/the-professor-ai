@@ -4,7 +4,7 @@ import { VellumCard } from "./VellumCard";
 import { BookOpen, Trophy, Brain, Target } from "lucide-react";
 
 interface StatItemProps {
-    icon: React.ElementType;
+    icon: any;
     label: string;
     value: string;
 }

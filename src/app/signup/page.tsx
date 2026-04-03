@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
 import BrandLogo from "@/components/ui/BrandLogo";
-import { Grainient } from "@/components/ui/VisualEffects";
-import { DecryptedText } from "@/components/ui/TextEffects";
 
 type Step = 1 | 2;
 
@@ -20,6 +18,7 @@ export default function SignupPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [focusedField, setFocusedField] = useState<string | null>(null);
     const router = useRouter();
     const supabase = createClient();
     const { resolvedTheme, toggleTheme } = useTheme();
@@ -28,30 +27,16 @@ export default function SignupPage() {
         setLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
-            },
+            options: { redirectTo: `${window.location.origin}/auth/callback` },
         });
-        if (error) {
-            setError(error.message);
-            setLoading(false);
-        }
+        if (error) { setError(error.message); setLoading(false); }
     };
 
     const handleStep1 = (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-
-        if (password !== confirmPassword) {
-            setError("Passwords don't match");
-            return;
-        }
-
-        if (password.length < 6) {
-            setError("Password must be at least 6 characters");
-            return;
-        }
-
+        if (password !== confirmPassword) { setError("Passwords don't match"); return; }
+        if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
         setStep(2);
     };
 
@@ -59,119 +44,100 @@ export default function SignupPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
-
         const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    full_name: name,
-                },
-            },
+            email, password,
+            options: { data: { full_name: name } },
         });
-
-        if (error) {
-            setError(error.message);
-            setLoading(false);
-        } else {
-            router.push("/dashboard");
-            router.refresh();
-        }
+        if (error) { setError(error.message); setLoading(false); }
+        else { router.push("/dashboard"); router.refresh(); }
     };
 
+    const inputClass = "w-full px-3.5 py-2.5 rounded-lg text-[14px] text-white/90 placeholder-white/15 outline-none transition-all duration-200";
+    const getInputStyle = (field: string) => ({
+        background: "rgba(255,255,255,0.03)",
+        border: `1px solid ${focusedField === field ? "rgba(129,140,248,0.4)" : "rgba(255,255,255,0.07)"}`,
+        boxShadow: focusedField === field ? "0 0 0 3px rgba(129,140,248,0.08)" : "none",
+    });
+
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex">
-            {/* Left Panel - Illustration */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[var(--secondary)]/10 via-[var(--background)] to-[var(--accent)]/10 items-center justify-center p-12 overflow-hidden">
-                {/* Animated Background */}
-                <Grainient className="absolute inset-0 opacity-60" />
+        <div className="min-h-[100dvh] bg-[#06060B] flex items-center justify-center relative overflow-hidden px-5 py-12">
 
-                <div className="relative z-10 text-center max-w-md">
-                    <BrandLogo size="lg" className="mx-auto mb-8" />
-                    <div className="mb-4">
-                        <DecryptedText
-                            text="Start mastering, not memorizing."
-                            className="text-4xl font-bold text-[var(--foreground)]"
-                            speed={50}
-                        />
-                    </div>
-                    <p className="text-lg text-[var(--foreground-secondary)] mb-8">
-                        Join the students who actually sleep before exams.
-                    </p>
-
-                    {/* Features preview */}
-                    <div className="space-y-4 text-left">
-                        {[
-                            { icon: "style", text: "AI Flashcards that remember what you forget" },
-                            { icon: "quiz", text: "Quizzes that expose what you think you know" },
-                            { icon: "school", text: "Classes so clear, your textbook's jealous" },
-                        ].map((item, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--card)]/80 border border-[var(--border)] backdrop-blur-sm"
-                            >
-                                <span className="material-symbols-outlined text-[var(--accent)]">{item.icon}</span>
-                                <span className="text-sm text-[var(--foreground-secondary)]">{item.text}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            {/* ═══ Living background ═══ */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute w-[min(600px,75vw)] h-[min(600px,75vw)] rounded-full"
+                    style={{ top: "-20%", left: "-10%", background: "radial-gradient(circle, rgba(245,158,11,0.06), transparent 65%)", filter: "blur(60px)" }} />
+                <div className="absolute w-[min(500px,70vw)] h-[min(500px,70vw)] rounded-full"
+                    style={{ bottom: "-15%", right: "-10%", background: "radial-gradient(circle, rgba(99,102,241,0.06), transparent 65%)", filter: "blur(60px)" }} />
             </div>
 
-            {/* Right Panel - Signup Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
-                {/* Theme Toggle */}
-                <button
-                    onClick={toggleTheme}
-                    className="fixed top-6 right-6 w-10 h-10 rounded-xl flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all z-50"
-                >
-                    <span className="material-symbols-outlined text-xl">
-                        {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
-                    </span>
-                </button>
+            {/* Theme toggle */}
+            <button onClick={toggleTheme}
+                className="fixed top-5 right-5 z-50 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                aria-label="Toggle theme">
+                <span className="material-symbols-outlined text-base text-[#8B8690]">
+                    {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
+                </span>
+            </button>
 
-                <div className="w-full max-w-md">
-                    {/* Mobile Logo */}
-                    <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-                        <BrandLogo size="md" />
-                        <span className="text-xl font-semibold text-[var(--foreground)]">The Professor</span>
-                    </div>
+            <div className="relative z-10 w-full max-w-[400px]">
 
-                    {/* Card */}
-                    <div className="p-8 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl">
-                        {/* Progress Indicator */}
-                        <div className="flex items-center gap-2 mb-8">
-                            {[1, 2].map((s) => (
-                                <div key={s} className="flex-1 flex items-center gap-2">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step >= s
-                                        ? "bg-[var(--accent)] text-white"
-                                        : "bg-[var(--background-tertiary)] text-[var(--foreground-muted)]"
-                                        }`}>
-                                        {step > s ? <span className="material-symbols-outlined text-sm">check</span> : s}
-                                    </div>
-                                    {s < 2 && <div className={`flex-1 h-0.5 ${step > 1 ? "bg-[var(--accent)]" : "bg-[var(--border)]"}`} />}
-                                </div>
-                            ))}
+                {/* Logo */}
+                <div className="text-center mb-10">
+                    <BrandLogo size="md" className="mx-auto mb-4" />
+                    <h1 className="font-heading text-[22px] font-semibold text-white/90 tracking-tight">
+                        {step === 1 ? "Create your account" : "One last thing"}
+                    </h1>
+                    <p className="text-sm text-white/35 mt-1">
+                        {step === 1 ? "100 free credits on us" : "What should we call you?"}
+                    </p>
+                </div>
+
+                {/* Step indicator */}
+                <div className="flex items-center gap-2 mb-6">
+                    {[1, 2].map((s) => (
+                        <div key={s} className="flex-1 flex items-center gap-2">
+                            <div
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300"
+                                style={{
+                                    background: step >= s ? "linear-gradient(135deg, #F59E0B, #D97706)" : "rgba(255,255,255,0.04)",
+                                    color: step >= s ? "#08080E" : "rgba(255,255,255,0.2)",
+                                    boxShadow: step >= s ? "0 2px 8px rgba(245,158,11,0.2)" : "none",
+                                }}
+                            >
+                                {step > s ? "✓" : s}
+                            </div>
+                            {s < 2 && (
+                                <div className="flex-1 h-px transition-colors duration-300" style={{
+                                    background: step > 1 ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.06)",
+                                }} />
+                            )}
                         </div>
+                    ))}
+                </div>
 
-                        <div className="text-center mb-6">
-                            <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">
-                                {step === 1 ? "Create your account" : "Almost there!"}
-                            </h2>
-                            <p className="text-sm text-[var(--foreground-secondary)]">
-                                {step === 1 ? "100 free credits waiting for you" : "Just a few more details"}
-                            </p>
-                        </div>
+                {/* ═══ Card ═══ */}
+                <div className="rounded-2xl relative overflow-hidden"
+                    style={{
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.3), 0 20px 60px rgba(0,0,0,0.25)",
+                    }}>
+                    {/* Top edge highlight */}
+                    <div className="absolute top-0 left-0 right-0 h-px" style={{
+                        background: "linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.08) 50%, transparent 90%)",
+                    }} />
 
+                    <div className="p-7">
+
+                        {/* ─── STEP 1 ─── */}
                         {step === 1 && (
                             <>
-                                {/* Google Signup */}
-                                <button
-                                    onClick={handleGoogleSignup}
-                                    disabled={loading}
-                                    className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--background-tertiary)] hover:border-[var(--foreground-muted)] transition-all mb-6"
-                                >
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                {/* Google */}
+                                <button onClick={handleGoogleSignup} disabled={loading}
+                                    className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
+                                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.8)" }}>
+                                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
                                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -180,153 +146,111 @@ export default function SignupPage() {
                                     Sign up with Google
                                 </button>
 
-                                <div className="relative flex items-center gap-4 mb-6">
-                                    <div className="flex-1 h-px bg-[var(--border)]" />
-                                    <span className="text-xs text-[var(--foreground-muted)]">or with email</span>
-                                    <div className="flex-1 h-px bg-[var(--border)]" />
+                                <div className="flex items-center gap-3 my-6">
+                                    <div className="flex-1 h-px bg-white/[0.06]" />
+                                    <span className="text-[11px] text-white/20 uppercase tracking-widest">or</span>
+                                    <div className="flex-1 h-px bg-white/[0.06]" />
                                 </div>
                             </>
                         )}
 
+                        {/* Error */}
                         {error && (
-                            <div className="p-4 rounded-xl bg-[var(--error)]/10 text-[var(--error)] text-sm mb-6 flex items-center gap-2">
-                                <span className="material-symbols-outlined text-lg">error</span>
+                            <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl mb-5 text-sm"
+                                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.12)", color: "#f87171" }}>
+                                <span className="material-symbols-outlined text-base">error</span>
                                 {error}
                             </div>
                         )}
 
-                        {/* Step 1: Email & Password */}
+                        {/* Step 1 Form */}
                         {step === 1 && (
-                            <form onSubmit={handleStep1} className="space-y-5">
+                            <form onSubmit={handleStep1} className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">
-                                        Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        placeholder="you@example.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] transition-all"
-                                    />
+                                    <label htmlFor="s-email" className="block text-[11px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Email</label>
+                                    <input id="s-email" type="email" placeholder="you@university.edu" value={email}
+                                        onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
+                                        onFocus={() => setFocusedField("email")} onBlur={() => setFocusedField(null)}
+                                        className={inputClass} style={getInputStyle("email")} />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">
-                                        Password
-                                    </label>
+                                    <label htmlFor="s-pass" className="block text-[11px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Password</label>
                                     <div className="relative">
-                                        <input
-                                            type={showPassword ? "text" : "password"}
-                                            placeholder="At least 6 characters"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            required
-                                            className="w-full px-4 py-3 pr-12 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] transition-all"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
-                                        >
-                                            <span className="material-symbols-outlined text-xl">
-                                                {showPassword ? "visibility_off" : "visibility"}
-                                            </span>
+                                        <input id="s-pass" type={showPassword ? "text" : "password"} placeholder="At least 6 characters" value={password}
+                                            onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password"
+                                            onFocus={() => setFocusedField("pass")} onBlur={() => setFocusedField(null)}
+                                            className={`${inputClass} pr-10`} style={getInputStyle("pass")} />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors" aria-label="Toggle visibility">
+                                            <span className="material-symbols-outlined text-[18px]">{showPassword ? "visibility_off" : "visibility"}</span>
                                         </button>
                                     </div>
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">
-                                        Confirm Password
-                                    </label>
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="••••••••"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] transition-all"
-                                    />
+                                    <label htmlFor="s-confirm" className="block text-[11px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Confirm</label>
+                                    <input id="s-confirm" type={showPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password"
+                                        onFocus={() => setFocusedField("confirm")} onBlur={() => setFocusedField(null)}
+                                        className={inputClass} style={getInputStyle("confirm")} />
                                 </div>
-
-                                <button
-                                    type="submit"
-                                    className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-dark)] shadow-lg shadow-[var(--accent)]/20 transition-all flex items-center justify-center gap-2"
-                                >
+                                <button type="submit"
+                                    className="w-full py-2.5 rounded-lg font-semibold text-[14px] transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
+                                    style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E", boxShadow: "0 2px 12px rgba(245,158,11,0.2), inset 0 1px 1px rgba(255,255,255,0.15)" }}>
                                     Continue
-                                    <span className="material-symbols-outlined">arrow_forward</span>
+                                    <span className="material-symbols-outlined text-base">arrow_forward</span>
                                 </button>
                             </form>
                         )}
 
-                        {/* Step 2: Name */}
+                        {/* Step 2 Form */}
                         {step === 2 && (
                             <form onSubmit={handleSignup} className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">
-                                        What should we call you?
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Your name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] transition-all"
-                                    />
+                                    <label htmlFor="s-name" className="block text-[11px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Your Name</label>
+                                    <input id="s-name" type="text" placeholder="What should we call you?" value={name}
+                                        onChange={(e) => setName(e.target.value)} required autoComplete="name" autoFocus
+                                        onFocus={() => setFocusedField("name")} onBlur={() => setFocusedField(null)}
+                                        className={inputClass} style={getInputStyle("name")} />
                                 </div>
 
-                                <div className="p-4 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20">
-                                    <p className="text-sm text-[var(--accent)]">
-                                        🎉 You&apos;ll get <strong>100 free credits</strong> to generate flashcards, quizzes, and more!
+                                {/* Credits callout */}
+                                <div className="flex items-start gap-3 px-3.5 py-3 rounded-xl"
+                                    style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.1)" }}>
+                                    <span className="text-lg mt-0.5">🎁</span>
+                                    <p className="text-[13px] text-white/40 leading-relaxed">
+                                        You&apos;ll get <strong className="text-[#F59E0B]">100 free credits</strong> to generate flashcards, quizzes, and more.
                                     </p>
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setStep(1)}
-                                        className="px-4 py-3 rounded-xl bg-[var(--background-tertiary)] text-[var(--foreground)] hover:bg-[var(--border)] transition-colors"
-                                    >
+                                    <button type="button" onClick={() => setStep(1)}
+                                        className="px-4 py-2.5 rounded-lg text-[13px] font-medium text-white/40 transition-all active:scale-[0.98]"
+                                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
                                         Back
                                     </button>
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className={`flex-1 py-3 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2 ${loading
-                                            ? "bg-[var(--accent)]/60 cursor-wait"
-                                            : "bg-[var(--accent)] hover:bg-[var(--accent-dark)] shadow-lg shadow-[var(--accent)]/20"
-                                            }`}
-                                    >
+                                    <button type="submit" disabled={loading}
+                                        className="flex-1 py-2.5 rounded-lg font-semibold text-[14px] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                                        style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E", boxShadow: "0 2px 12px rgba(245,158,11,0.2), inset 0 1px 1px rgba(255,255,255,0.15)" }}>
                                         {loading ? (
-                                            <>
-                                                <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                                                Creating account...
-                                            </>
-                                        ) : (
-                                            "Create Account"
-                                        )}
+                                            <><span className="material-symbols-outlined animate-spin text-base">progress_activity</span>Creating...</>
+                                        ) : "Create Account"}
                                     </button>
                                 </div>
                             </form>
                         )}
 
-                        <p className="mt-8 text-center text-sm text-[var(--foreground-secondary)]">
+                        <p className="text-center text-[13px] text-white/30 mt-6">
                             Already have an account?{" "}
-                            <Link href="/login" className="text-[var(--accent)] font-medium hover:underline">
-                                Sign in
-                            </Link>
+                            <Link href="/login" className="text-[#F59E0B] hover:text-[#FCD34D] font-medium transition-colors">Sign in</Link>
                         </p>
                     </div>
+                </div>
 
-                    {/* Back to home */}
-                    <div className="text-center mt-6">
-                        <Link href="/" className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
-                            ← Back to home
-                        </Link>
-                    </div>
+                <div className="text-center mt-6">
+                    <Link href="/" className="text-[13px] text-white/20 hover:text-white/40 transition-colors inline-flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                        Home
+                    </Link>
                 </div>
             </div>
         </div>

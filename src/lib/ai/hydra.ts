@@ -17,7 +17,7 @@
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { callOpenAICompatible, AI_PROVIDERS } from "./providers";
+import { callOpenAICompatible, callOpenAICompatibleStream, AI_PROVIDERS } from "./providers";
 import { logAIError, logAISuccess } from "@/lib/error-logger";
 
 // ─── Per-feature temperatures ──────────────────────────────────────────────────
@@ -96,32 +96,25 @@ export async function hydraGenerateContent(
     const errors: string[] = [];
     const startTime = Date.now();
 
-    // ── PROVIDER 1: GPT4Free ─────────────────────────────────────────────────
-    // g4f runs locally or on EC2 — no API key needed
-    if (process.env.G4F_ENABLED === "true") {
+    // ── PROVIDER 1: Groq (FREE, fast, reliable) ──────────────────────────────
+    if (process.env.GROQ_API_KEY) {
         try {
-            const g4fModel = AI_PROVIDERS.g4f.model;
-            console.log(`Hydra: g4f [${g4fModel}] [${feature}, t=${temperature}] ...`);
-            const result = await callOpenAICompatible("g4f", [
+            console.log(`Hydra: Groq [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("groq", [
                 { role: "system", content: sysPrompt },
                 { role: "user",   content: prompt },
-            ], { temperature, timeoutMs: Math.min(timeoutMs, 20_000) });
-            
-            if (!result || result.trim().length === 0) {
-                throw new Error("g4f returned empty response");
-            }
-            
-            logAISuccess("g4f", feature, Date.now() - startTime);
+            ], { temperature, timeoutMs });
+            logAISuccess("groq", feature, Date.now() - startTime);
             return result;
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.warn(`Hydra: g4f failed: ${msg.substring(0, 120)}`);
-            logAIError("g4f", feature, msg, Date.now() - startTime);
-            errors.push(`g4f: ${msg}`);
+            console.warn(`Hydra: Groq failed: ${msg.substring(0, 80)}`);
+            logAIError("groq", feature, msg, Date.now() - startTime);
+            errors.push(`Groq: ${msg}`);
         }
     }
 
-    // ── PROVIDER 2: OllamaFreeAPI ───────────────────────────────────────────
+    // ── PROVIDER 2: OllamaFreeAPI (FREE distributed) ─────────────────────────
     if (process.env.OLLAMAFREE_ENABLED === "true") {
         try {
             const ollamaModel = AI_PROVIDERS.ollamafree.model;
@@ -145,43 +138,7 @@ export async function hydraGenerateContent(
         }
     }
 
-    // ── PROVIDER 3: Kimi 2.5 (NVIDIA NIM) ───────────────────────────────────
-    if (process.env.NVIDIA_API_KEY) {
-        try {
-            console.log(`Hydra: Kimi [${feature}, t=${temperature}] ...`);
-            const result = await callOpenAICompatible("moonshot", [
-                { role: "system", content: sysPrompt },
-                { role: "user",   content: prompt },
-            ], { temperature, timeoutMs });
-            logAISuccess("kimi", feature, Date.now() - startTime);
-            return result;
-        } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.warn(`Hydra: Kimi failed: ${msg.substring(0, 80)}`);
-            logAIError("kimi", feature, msg, Date.now() - startTime);
-            errors.push(`Kimi: ${msg}`);
-        }
-    }
-
-    // ── PROVIDER 3: Trinity Large (OpenRouter) ───────────────────────────────
-    if (process.env.OPENROUTER_API_KEY) {
-        try {
-            console.log(`Hydra: Trinity [${feature}, t=${temperature}] ...`);
-            const result = await callOpenAICompatible("trinity", [
-                { role: "system", content: sysPrompt },
-                { role: "user",   content: prompt },
-            ], { temperature, timeoutMs });
-            logAISuccess("trinity", feature, Date.now() - startTime);
-            return result;
-        } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.warn(`Hydra: Trinity failed: ${msg.substring(0, 80)}`);
-            logAIError("trinity", feature, msg, Date.now() - startTime);
-            errors.push(`Trinity: ${msg}`);
-        }
-    }
-
-    // ── PROVIDER 4: Gemini (round-robin keys) ────────────────────────────────
+    // ── PROVIDER 3: Gemini (round-robin keys, may 429) ───────────────────────
     const geminiKeys = getGeminiKeys();
     const attempts = Math.min(geminiKeys.length, 2);
 
@@ -210,21 +167,63 @@ export async function hydraGenerateContent(
         }
     }
 
-    // ── PROVIDER 5: Groq (last resort) ───────────────────────────────────────
-    if (process.env.GROQ_API_KEY) {
+    // ── PROVIDER 4: GPT4Free (local, may not be running) ─────────────────────
+    if (process.env.G4F_ENABLED === "true") {
         try {
-            console.log(`Hydra: Groq [${feature}, t=${temperature}] ...`);
-            const result = await callOpenAICompatible("groq", [
+            const g4fModel = AI_PROVIDERS.g4f.model;
+            console.log(`Hydra: g4f [${g4fModel}] [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("g4f", [
                 { role: "system", content: sysPrompt },
                 { role: "user",   content: prompt },
-            ], { temperature, timeoutMs });
-            logAISuccess("groq", feature, Date.now() - startTime);
+            ], { temperature, timeoutMs: Math.min(timeoutMs, 20_000) });
+            
+            if (!result || result.trim().length === 0) {
+                throw new Error("g4f returned empty response");
+            }
+            
+            logAISuccess("g4f", feature, Date.now() - startTime);
             return result;
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.warn(`Hydra: Groq failed: ${msg.substring(0, 80)}`);
-            logAIError("groq", feature, msg, Date.now() - startTime);
-            errors.push(`Groq: ${msg}`);
+            console.warn(`Hydra: g4f failed: ${msg.substring(0, 120)}`);
+            logAIError("g4f", feature, msg, Date.now() - startTime);
+            errors.push(`g4f: ${msg}`);
+        }
+    }
+
+    // ── PROVIDER 5: Kimi (NVIDIA, often times out) ───────────────────────────
+    if (process.env.NVIDIA_API_KEY) {
+        try {
+            console.log(`Hydra: Kimi [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("moonshot", [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+            ], { temperature, timeoutMs });
+            logAISuccess("kimi", feature, Date.now() - startTime);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: Kimi failed: ${msg.substring(0, 80)}`);
+            logAIError("kimi", feature, msg, Date.now() - startTime);
+            errors.push(`Kimi: ${msg}`);
+        }
+    }
+
+    // ── PROVIDER 6: Trinity / OpenRouter (key may be expired) ────────────────
+    if (process.env.OPENROUTER_API_KEY) {
+        try {
+            console.log(`Hydra: Trinity [${feature}, t=${temperature}] ...`);
+            const result = await callOpenAICompatible("trinity", [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+            ], { temperature, timeoutMs });
+            logAISuccess("trinity", feature, Date.now() - startTime);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`Hydra: Trinity failed: ${msg.substring(0, 80)}`);
+            logAIError("trinity", feature, msg, Date.now() - startTime);
+            errors.push(`Trinity: ${msg}`);
         }
     }
 
@@ -232,6 +231,7 @@ export async function hydraGenerateContent(
         `All AI providers failed for ${feature}. Errors: ${errors.join(" | ")}`
     );
 }
+
 
 /**
  * Generate content over a large document by chunking it.
@@ -261,4 +261,197 @@ export async function hydraGenerateWithChunking(
     }
 
     throw new Error("All chunks failed during generation");
+}
+
+// ─── Stream generator (Server-Sent Events) ────────────────────────────────────
+
+/**
+ * Streams parsed JSON objects (Flashcards, Quizzes) as Server-Sent Events.
+ * It reads standard text streams from OpenAI-compatible endpoints and uses
+ * a bracket-counting parser to yield fully formed objects as soon as they are complete.
+ */
+export async function hydraGenerateStream(
+    prompt: string,
+    options: HydraOptions = {}
+): Promise<ReadableStream> {
+    const {
+        feature = "default",
+        timeoutMs = 45_000,
+        model = "gemini-2.0-flash",
+        systemPrompt,
+    } = options;
+
+    const temperature = options.temperature
+        ?? FEATURE_TEMPERATURES[feature]
+        ?? FEATURE_TEMPERATURES.default;
+
+    // Force the LLM to output a JSON array of objects.
+    const sysPrompt = systemPrompt ?? 
+            "You are an expert AI assistant. Output your response as a JSON array ONLY. Do not use markdown blocks. Ensure the response starts with [ and ends with ].";
+
+    const errors: string[] = [];
+    const startTime = Date.now();
+
+    // Helper to attempt streaming from a provider
+    const tryStreamProvider = async (provider: 'g4f' | 'ollamafree' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras'): Promise<Response | null> => {
+       try {
+           console.log(`Hydra Stream: ${provider} [${feature}, t=${temperature}] ...`);
+           
+           if (provider === 'gemini') {
+               const geminiKeys = getGeminiKeys();
+               if (geminiKeys.length === 0) throw new Error("No Gemini keys");
+               
+               // Try the current key
+               const apiKey = geminiKeys[currentGeminiKeyIndex % geminiKeys.length];
+               const genAI = new GoogleGenerativeAI(apiKey);
+               const geminiModel = genAI.getGenerativeModel({ 
+                   model, 
+                   generationConfig: { temperature } 
+               });
+               
+               const aiResult = await geminiModel.generateContentStream([sysPrompt, prompt]);
+               logAISuccess("gemini", feature + "_stream", Date.now() - startTime);
+               currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % geminiKeys.length;
+               
+               const encoder = new TextEncoder();
+               const stream = new ReadableStream({
+                   async start(controller) {
+                       try {
+                           for await (const chunk of aiResult.stream) {
+                               const text = chunk.text();
+                               if (text) {
+                                  controller.enqueue(encoder.encode(`data: {"choices":[{"delta":{"content": ${JSON.stringify(text)}}}]}\n\n`));
+                               }
+                           }
+                           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                           controller.close();
+                       } catch (e) {
+                           controller.error(e);
+                       }
+                   }
+               });
+               return new Response(stream);
+           }
+           
+           // Standard OpenAI Compatible Flow
+           const res = await callOpenAICompatibleStream(provider, [
+                { role: "system", content: sysPrompt },
+                { role: "user",   content: prompt },
+           ], { temperature, timeoutMs });
+           logAISuccess(provider, feature + "_stream", Date.now() - startTime);
+           return res;
+       } catch (err) {
+           const msg = err instanceof Error ? err.message : String(err);
+           console.warn(`Hydra Stream: ${provider} failed: ${msg.substring(0, 120)}`);
+           logAIError(provider, feature + "_stream", msg, Date.now() - startTime);
+           errors.push(`${provider}: ${msg}`);
+           return null;
+       }
+    };
+
+    let response: Response | null = null;
+
+    // Priority: Working free providers first, dead/flaky ones last
+    if (process.env.GROQ_API_KEY) response = await tryStreamProvider("groq");
+    if (!response && process.env.OLLAMAFREE_ENABLED === "true") response = await tryStreamProvider("ollamafree");
+    if (!response) response = await tryStreamProvider("gemini");
+    if (!response && process.env.G4F_ENABLED === "true") response = await tryStreamProvider("g4f");
+    if (!response && process.env.NVIDIA_API_KEY) response = await tryStreamProvider("moonshot");
+    if (!response && process.env.OPENROUTER_API_KEY) response = await tryStreamProvider("trinity");
+
+    if (!response) {
+        throw new Error(`All providers failed streaming. Errors: ${errors.join(" | ")}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body to stream");
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    return new ReadableStream({
+        async start(controller) {
+            try {
+                let buffer = "";
+                
+                // Helper to yield a fully-formed chunk
+                const yieldItem = (obj: any) => {
+                    if (feature === "flashcards") {
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "flashcard", card: obj })}\n\n`));
+                    } else if (feature === "quiz") {
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "question", question: obj })}\n\n`));
+                    } else {
+                        // Fallback
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "item", data: obj })}\n\n`));
+                    }
+                };
+
+                // lineBuffer prevents parsing incomplete lines when network chunks are fragmented
+                let lineBuffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    lineBuffer += decoder.decode(value, { stream: true });
+                    
+                    let lineEndIndex;
+                    while ((lineEndIndex = lineBuffer.indexOf('\n')) !== -1) {
+                        const line = lineBuffer.slice(0, lineEndIndex).trim();
+                        lineBuffer = lineBuffer.slice(lineEndIndex + 1);
+
+                        if (line.startsWith("data: ") && line !== "data: [DONE]") {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                const content = data.choices?.[0]?.delta?.content || "";
+                                buffer += content;
+                                
+                                // Incremental Bracket Parser
+                                let startIdx = -1;
+                                let braceCount = 0;
+                                let inString = false;
+                                let escape = false;
+
+                                for (let i = 0; i < buffer.length; i++) {
+                                    const char = buffer[i];
+                                    if (escape) { escape = false; continue; }
+                                    if (char === '\\') { escape = true; continue; }
+                                    if (char === '"') { inString = !inString; continue; }
+                                    if (!inString) {
+                                        if (char === '{') {
+                                            if (braceCount === 0) startIdx = i;
+                                            braceCount++;
+                                        } else if (char === '}') {
+                                            braceCount--;
+                                            if (braceCount === 0 && startIdx !== -1) {
+                                                const objStr = buffer.substring(startIdx, i + 1);
+                                                try {
+                                                    const parsedObj = JSON.parse(objStr);
+                                                    yieldItem(parsedObj);
+                                                    // Consume the buffer up to this point
+                                                    buffer = buffer.substring(i + 1);
+                                                    startIdx = -1;
+                                                    i = -1; // reset loop since buffer changed
+                                                } catch (e) {
+                                                    // Not valid yet (e.g. unescaped quotes inside?), keep looking
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                // Ignore partial line parse errors
+                            }
+                        }
+                    }
+                }
+                
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "complete" })}\n\n`));
+                controller.close();
+            } catch (err) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: (err as Error).message })}\n\n`));
+                controller.close();
+            }
+        }
+    });
 }

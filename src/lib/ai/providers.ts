@@ -119,63 +119,170 @@ export async function callOpenAICompatible(
     } = {}
 ): Promise<string> {
     const config = AI_PROVIDERS[provider];
-    const apiKey = process.env[config.envKey];
+    const envValue = process.env[config.envKey] || "";
+    // Support comma-separated API keys for rotation/load-balancing
+    const keys = envValue.includes(",") ? envValue.split(",").map(k => k.trim()).filter(Boolean) : [envValue];
     
-    if (!config.noKeyRequired && !apiKey) {
+    if (!config.noKeyRequired && keys.length === 0 && envValue === "") {
         throw new Error(`${config.name} API key not configured`);
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 15000);
+    const availableKeys = Math.max(1, keys.length);
+    let lastError: Error | null = null;
 
-    const body: any = {
-        model: config.model,
-        messages,
-        temperature: options.temperature ?? 0.6,
-        max_tokens: options.maxTokens ?? 8192,
-        stream: false
-    };
+    for (let i = 0; i < availableKeys; i++) {
+        const apiKey = keys[i] || "";
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 15000);
 
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    };
+        const body: any = {
+            model: config.model,
+            messages,
+            temperature: options.temperature ?? 0.6,
+            max_tokens: options.maxTokens ?? 8192,
+            stream: false
+        };
 
-    // Only add auth header if we have a key (g4f doesn't need one)
-    if (apiKey && !config.noKeyRequired) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-    }
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        };
 
-    // OpenRouter requires additional headers
-    if (provider === 'trinity') {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-        headers['HTTP-Referer'] = 'https://the-professor.app';
-        headers['X-Title'] = 'The Professor';
-    }
-
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-            signal: controller.signal
-        });
-
-        if (!response.ok) {
-            const error = await response.text();
-            throw new Error(`${config.name} API error: ${error.substring(0, 200)}`);
+        if (apiKey && !config.noKeyRequired) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
         }
 
-        const data = await response.json();
-        let content = data.choices[0]?.message?.content || '';
-        
-        // g4f providers sometimes inject ads/watermarks — strip them
-        if (provider === 'g4f' && content) {
-            content = cleanG4fResponse(content);
+        if (provider === 'trinity') {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+            headers['HTTP-Referer'] = 'https://the-professor.app';
+            headers['X-Title'] = 'The Professor';
         }
-        
-        return content;
-    } finally {
-        clearTimeout(timeoutId);
+
+        try {
+            const response = await fetch(`${config.baseUrl}/chat/completions`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                lastError = new Error(`${config.name} API error (Key ${i+1}/${availableKeys}): ${response.status} - ${errorText.substring(0, 150)}`);
+                
+                // Retry on rate limit (429), server errors (500+), or unauthorized (401) if trying another key
+                if (response.status === 429 || response.status >= 500 || response.status === 401) {
+                    console.warn(`[AI Key Rotation] ${provider} key ${i+1} failed with status ${response.status}. Retrying next key...`);
+                    continue; // Loop to next key
+                }
+                
+                throw lastError; // Stop rotation for Bad Request (400)
+            }
+
+            const data = await response.json();
+            let content = data.choices[0]?.message?.content || '';
+            
+            if (provider === 'g4f' && content) {
+                content = cleanG4fResponse(content);
+            }
+            
+            return content;
+        } catch (error: any) {
+            lastError = error;
+            // If it's a network/abort error, retry
+            console.warn(`[AI Key Rotation] ${provider} key ${i+1} threw exception. Retrying... (${error.message})`);
+            continue;
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
+    
+    throw lastError || new Error(`${config.name} API failed on all configured keys.`);
+}
+
+/**
+ * Make OpenAI-compatible API call with Streaming enabled
+ */
+export async function callOpenAICompatibleStream(
+    provider: AIProvider,
+    messages: { role: string; content: string }[],
+    options: { 
+        temperature?: number; 
+        maxTokens?: number;
+        timeoutMs?: number;
+        thinking?: boolean;
+    } = {}
+): Promise<Response> {
+    const config = AI_PROVIDERS[provider];
+    const envValue = process.env[config.envKey] || "";
+    // Support comma-separated API keys for rotation/load-balancing
+    const keys = envValue.includes(",") ? envValue.split(",").map(k => k.trim()).filter(Boolean) : [envValue];
+    
+    if (!config.noKeyRequired && keys.length === 0 && envValue === "") {
+        throw new Error(`${config.name} API key not configured`);
+    }
+
+    const availableKeys = Math.max(1, keys.length);
+    let lastError: Error | null = null;
+
+    for (let i = 0; i < availableKeys; i++) {
+        const apiKey = keys[i] || "";
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 45000);
+
+        const body: any = {
+            model: config.model,
+            messages,
+            temperature: options.temperature ?? 0.6,
+            max_tokens: options.maxTokens ?? 8192,
+            stream: true
+        };
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream',
+        };
+
+        if (apiKey && !config.noKeyRequired) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        if (provider === 'trinity') {
+            headers['HTTP-Referer'] = 'https://the-professor.app';
+            headers['X-Title'] = 'The Professor';
+        }
+
+        try {
+            const response = await fetch(`${config.baseUrl}/chat/completions`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                clearTimeout(timeoutId);
+                const errorText = await response.text();
+                lastError = new Error(`${config.name} API error (Key ${i+1}/${availableKeys}): ${response.status} - ${errorText.substring(0, 150)}`);
+                
+                if (response.status === 429 || response.status >= 500 || response.status === 401) {
+                    console.warn(`[AI Key Rotation Stream] ${provider} key ${i+1} failed with status ${response.status}. Retrying...`);
+                    continue;
+                }
+                throw lastError;
+            }
+
+            // Stream successful, consumer responsible for clearing timeout (handled in caller)
+            return response;
+        } catch (error: any) {
+            clearTimeout(timeoutId);
+            lastError = error;
+            console.warn(`[AI Key Rotation Stream] ${provider} key ${i+1} threw exception. Retrying... (${error.message})`);
+            continue;
+        }
+    }
+    
+    throw lastError || new Error(`${config.name} STREAM API failed on all configured keys.`);
 }

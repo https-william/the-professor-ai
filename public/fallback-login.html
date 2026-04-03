@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — The Professor</title>
+  <meta name="description" content="Sign in to The Professor to continue mastering your studies with AI-powered tools.">
+  <style>
+    /* ═══════════════════════════════════════
+       THE PROFESSOR — LITE AUTH
+       Premium dark UI for older browsers
+       ═══════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ─── Core ─── */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #08080E;
+      color: #F5F0E8;
+      min-height: 100vh;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ─── Typography ─── */
+    h1 { font-size: 28px; font-weight: 700; color: #F5F0E8; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: #B8B0A0; margin-bottom: 28px; }
+
+    /* ─── Card (Claymorphism) ─── */
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(14, 14, 24, 0.95);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 40px 32px;
+      position: relative;
+      -webkit-box-shadow:
+        10px 10px 30px rgba(0,0,0,0.45),
+        -5px -5px 15px rgba(40,40,65,0.08),
+        0 0 0 1px rgba(129,140,248,0.06);
+      box-shadow:
+        10px 10px 30px rgba(0,0,0,0.45),
+        -5px -5px 15px rgba(40,40,65,0.08),
+        0 0 0 1px rgba(129,140,248,0.06);
+    }
+
+    /* Gradient border illusion */
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 25px;
+      background: linear-gradient(135deg, rgba(129,140,248,0.12), rgba(255,255,255,0.03), rgba(245,158,11,0.08));
+      z-index: -1;
+    }
+
+    /* Top accent glow */
+    .auth-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 15%; right: 15%;
+      height: 60px;
+      border-radius: 0 0 50% 50%;
+      background: radial-gradient(ellipse, rgba(129,140,248,0.06), transparent);
+      pointer-events: none;
+    }
+
+    /* ─── Logo ─── */
+    .logo-row {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #F59E0B, #D97706);
+      border-radius: 10px;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      font-size: 18px;
+      -webkit-box-shadow: 0 3px 10px rgba(245,158,11,0.25);
+      box-shadow: 0 3px 10px rgba(245,158,11,0.25);
+    }
+    .logo-text {
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: #6B6560;
+    }
+
+    /* ─── Google Button (Clay) ─── */
+    .btn-google {
+      width: 100%;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(22, 22, 42, 0.7);
+      color: #F5F0E8;
+      font-size: 15px; font-weight: 500;
+      cursor: pointer;
+      -webkit-box-shadow:
+        6px 6px 16px rgba(0,0,0,0.35),
+        -3px -3px 10px rgba(40,40,65,0.08),
+        inset 0 1px 2px rgba(255,255,255,0.04);
+      box-shadow:
+        6px 6px 16px rgba(0,0,0,0.35),
+        -3px -3px 10px rgba(40,40,65,0.08),
+        inset 0 1px 2px rgba(255,255,255,0.04);
+      margin-bottom: 24px;
+      text-decoration: none;
+    }
+    .btn-google:active {
+      -webkit-transform: translateY(1px);
+      transform: translateY(1px);
+    }
+    .btn-google svg { width: 20px; height: 20px; }
+
+    /* ─── Divider ─── */
+    .divider {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .divider-line {
+      -webkit-flex: 1; flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+    }
+    .divider-text {
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #6B6560;
+    }
+
+    /* ─── Labels ─── */
+    label {
+      display: block;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #6B6560;
+      margin-bottom: 8px;
+    }
+
+    /* ─── Inputs (Neumorphic inset) ─── */
+    .input-field {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(8, 8, 14, 0.6);
+      color: #F5F0E8;
+      font-size: 15px;
+      outline: none;
+      -webkit-box-shadow:
+        inset 3px 3px 8px rgba(0,0,0,0.3),
+        inset -2px -2px 6px rgba(40,40,65,0.06);
+      box-shadow:
+        inset 3px 3px 8px rgba(0,0,0,0.3),
+        inset -2px -2px 6px rgba(40,40,65,0.06);
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      margin-bottom: 16px;
+    }
+    .input-field:focus {
+      border-color: rgba(129,140,248,0.3);
+      -webkit-box-shadow:
+        inset 3px 3px 8px rgba(0,0,0,0.3),
+        inset -2px -2px 6px rgba(40,40,65,0.06),
+        0 0 0 3px rgba(129,140,248,0.08);
+      box-shadow:
+        inset 3px 3px 8px rgba(0,0,0,0.3),
+        inset -2px -2px 6px rgba(40,40,65,0.06),
+        0 0 0 3px rgba(129,140,248,0.08);
+    }
+    .input-field::-webkit-input-placeholder { color: rgba(107,101,96,0.6); }
+    .input-field::placeholder { color: rgba(107,101,96,0.6); }
+
+    /* ─── Row (label + forgot) ─── */
+    .label-row {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      -webkit-align-items: center;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .label-row label { margin-bottom: 0; }
+    .forgot {
+      font-size: 12px; color: #F59E0B;
+      text-decoration: none;
+    }
+
+    /* ─── Submit Button (Jelly) ─── */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(245,158,11,0.3);
+      background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.1));
+      color: #FCD34D;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      -webkit-box-shadow:
+        0 4px 16px rgba(245,158,11,0.15),
+        inset 0 1px 2px rgba(255,255,255,0.1),
+        inset 0 -1px 3px rgba(0,0,0,0.2);
+      box-shadow:
+        0 4px 16px rgba(245,158,11,0.15),
+        inset 0 1px 2px rgba(255,255,255,0.1),
+        inset 0 -1px 3px rgba(0,0,0,0.2);
+    }
+    .btn-submit:active {
+      -webkit-transform: translateY(1px);
+      transform: translateY(1px);
+    }
+
+    /* ─── Links ─── */
+    .switch-link {
+      text-align: center;
+      font-size: 14px; color: #B8B0A0;
+      margin-top: 28px;
+    }
+    .switch-link a { color: #F59E0B; text-decoration: none; font-weight: 500; }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #6B6560;
+      text-decoration: none;
+    }
+
+    /* ─── Accessibility: Focus Ring ─── */
+    a:focus, button:focus, input:focus {
+      outline: 2px solid rgba(129,140,248,0.4);
+      outline-offset: 2px;
+    }
+
+    /* ─── Touch targets ─── */
+    button, a, input { min-height: 44px; }
+  </style>
+</head>
+<body>
+
+  <div style="width:100%;">
+    <div class="auth-card">
+      <!-- Logo -->
+      <div class="logo-row">
+        <div class="logo-icon">🎓</div>
+        <span class="logo-text">The Professor</span>
+      </div>
+
+      <h1 style="text-align:center;">Sign in</h1>
+      <p class="subtitle" style="text-align:center;">Continue your learning journey</p>
+
+      <!-- Google -->
+      <button class="btn-google" onclick="alert('Google Sign-In requires a modern browser. Please use Chrome, Safari 16+, or Firefox.')">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
+
+      <!-- Divider -->
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">or</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Form -->
+      <form action="/api/auth/login" method="POST">
+        <label for="email">Email</label>
+        <input class="input-field" type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
+
+        <div class="label-row">
+          <label for="password">Password</label>
+          <a href="/forgot-password" class="forgot">Forgot?</a>
+        </div>
+        <input class="input-field" type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+
+        <button type="submit" class="btn-submit">Sign in →</button>
+      </form>
+
+      <p class="switch-link">
+        New to The Professor? <a href="/fallback-signup.html">Create an account</a>
+      </p>
+    </div>
+
+    <a href="/fallback.html" class="back-link">← Back to home</a>
+  </div>
+
+</body>
+</html>

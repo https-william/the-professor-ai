@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Professor — Master Your Exams</title>
+  <meta name="description" content="Upload your study materials and master any subject with AI-powered flashcards, quizzes, summaries, and exam prep.">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #08080E;
+      color: #F5F0E8;
+      min-height: 100vh;
+      -webkit-text-size-adjust: 100%;
+    }
+    .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+
+    /* Nav */
+    .nav { padding: 16px 20px; display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: center; align-items: center; }
+    .nav-brand { font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,232,0.6); text-decoration: none; }
+    .nav-links a { font-size: 13px; color: rgba(245,240,232,0.5); text-decoration: none; margin-left: 16px; }
+    .nav-links .btn-nav { border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 6px 16px; color: rgba(245,240,232,0.8); }
+
+    /* Hero */
+    .hero { text-align: center; padding: 80px 20px 60px; }
+    .hero h1 { font-size: 36px; font-weight: 700; line-height: 1.15; margin-bottom: 20px; letter-spacing: -0.02em; }
+    .hero .purple { color: #a78bfa; }
+    .hero .rainbow { color: #c084fc; }
+    .hero .sub { font-size: 15px; color: rgba(245,240,232,0.5); line-height: 1.6; margin-bottom: 32px; }
+    .hero .sub strong { color: rgba(245,240,232,0.8); }
+
+    /* Buttons */
+    .btn { display: inline-block; padding: 12px 28px; border-radius: 24px; font-size: 14px; font-weight: 600; text-decoration: none; text-align: center; }
+    .btn-primary { background: #F59E0B; color: #08080E; }
+    .btn-ghost { border: 1px solid rgba(255,255,255,0.15); color: rgba(245,240,232,0.6); background: transparent; margin-left: 8px; }
+    .btn-row { margin-bottom: 16px; }
+
+    /* Cards */
+    .section { padding: 48px 20px; }
+    .section-title { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: rgba(245,240,232,0.4); margin-bottom: 8px; }
+    .section h2 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 32px; letter-spacing: -0.02em; }
+    .card { background: rgba(22,22,42,0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+    .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: rgba(245,240,232,0.5); line-height: 1.5; }
+    .step-num { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(245,240,232,0.3); margin-bottom: 8px; }
+
+    /* CTA */
+    .cta-box { background: rgba(14,14,24,0.9); border: 1px solid rgba(129,140,248,0.15); border-radius: 20px; padding: 40px 24px; text-align: center; margin: 40px 20px; }
+    .cta-box h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+    .cta-box p { font-size: 14px; color: rgba(245,240,232,0.5); margin-bottom: 24px; }
+
+    /* Footer */
+    .footer { text-align: center; padding: 24px 20px; border-top: 1px solid rgba(255,255,255,0.04); }
+    .footer p { font-size: 12px; color: rgba(245,240,232,0.3); }
+
+    /* Trust */
+    .trust { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; -webkit-flex-wrap: wrap; flex-wrap: wrap; gap: 16px; font-size: 12px; color: rgba(245,240,232,0.4); margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-brand">The Professor</a>
+    <div class="nav-links">
+      <a href="/fallback-login.html">Log in</a>
+      <a href="/fallback-signup.html" class="btn-nav">Get Started</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h1>
+      Learning is as<br>
+      <span class="purple">simple as</span> <span class="rainbow">XYZ.</span>
+    </h1>
+    <p class="sub">
+      Stop reading. <strong>Start mastering.</strong><br>
+      Upload materials and dominate your exams.
+    </p>
+    <div class="btn-row">
+      <a href="/fallback-signup.html" class="btn btn-primary">Start Session</a>
+      <a href="#features" class="btn btn-ghost">How It Works</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <p class="section-title">How it works</p>
+    <h2>Three steps to mastery</h2>
+
+    <div class="card">
+      <div class="step-num">Step 01</div>
+      <h3>Upload Anything</h3>
+      <p>PDF, DOCX, plain text — lecture notes, textbook chapters, whatever you have.</p>
+    </div>
+    <div class="card">
+      <div class="step-num">Step 02</div>
+      <h3>Pick Your Weapon</h3>
+      <p>Flashcards, quiz, summary, mind map — choose your study mode.</p>
+    </div>
+    <div class="card">
+      <div class="step-num">Step 03</div>
+      <h3>Master It</h3>
+      <p>AI content tuned to your exact material. Walk in confident.</p>
+    </div>
+  </div>
+
+  <div id="features" class="container section">
+    <p class="section-title">Your arsenal</p>
+    <h2>Four tools. Zero fluff.</h2>
+
+    <div class="card">
+      <h3>Flashcards</h3>
+      <p>Spaced-repetition cards with mnemonic hooks. Built to make concepts stick.</p>
+    </div>
+    <div class="card">
+      <h3>Quiz Engine</h3>
+      <p>Adaptive MCQs with distractors designed to probe real understanding.</p>
+    </div>
+    <div class="card">
+      <h3>Smart Summary</h3>
+      <p>Organized by concept, not page order. Includes common mistakes section.</p>
+    </div>
+    <div class="card">
+      <h3>Oral Exam Prep</h3>
+      <p>Real-time AI viva voce. Practice answering under pressure before the real thing.</p>
+    </div>
+  </div>
+
+  <div class="cta-box">
+    <h2>Your next exam is not optional.</h2>
+    <p>Join students who stopped highlighting and started mastering.</p>
+    <a href="/fallback-signup.html" class="btn btn-primary">Get 100 Free Credits</a>
+    <div class="trust">
+      <span>✓ No credit card</span>
+      <span>⚡ 100 free credits</span>
+      <span>🔒 Your data stays yours</span>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>&copy; 2026 The Professor. Built for students who want to learn.</p>
+  </footer>
+
+</body>
+</html>

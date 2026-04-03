@@ -16,6 +16,7 @@ interface UserState {
     winRate: number;
     isLoading: boolean;
     isAuthenticated: boolean;
+    hasOnboarded: boolean;
 }
 
 interface UserContextType {
@@ -25,6 +26,7 @@ interface UserContextType {
     addCredits: (amount: number) => Promise<boolean>;
     spendCredits: (amount: number) => Promise<boolean>;
     incrementStreak: () => Promise<void>;
+    completeOnboarding: (data: { alias: string, education_level: string, study_goal: string }) => Promise<boolean>;
 }
 
 const defaultUser: UserState = {
@@ -40,6 +42,7 @@ const defaultUser: UserState = {
     winRate: 0,
     isLoading: true,
     isAuthenticated: false,
+    hasOnboarded: true, // Default true to prevent flash, changes to false if DB fetch says so
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -53,7 +56,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session?.user) {
-                setUser({ ...defaultUser, isLoading: false, isAuthenticated: false });
+                setUser({ ...defaultUser, isLoading: false, isAuthenticated: false, hasOnboarded: true });
                 return;
             }
 
@@ -93,10 +96,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 winRate: 0,
                 isLoading: false,
                 isAuthenticated: true, // Still authenticated even if profile fetch failed
+                hasOnboarded: profile ? profile.has_onboarded : true, 
             });
         } catch (error) {
             console.error("Error fetching user:", error);
-            setUser({ ...defaultUser, isLoading: false, isAuthenticated: false });
+            setUser({ ...defaultUser, isLoading: false, isAuthenticated: false, hasOnboarded: true });
         }
     }, [supabase]);
 
@@ -108,7 +112,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             if (session) {
                 refreshUser();
             } else {
-                setUser({ ...defaultUser, isLoading: false, isAuthenticated: false });
+                setUser({ ...defaultUser, isLoading: false, isAuthenticated: false, hasOnboarded: true });
             }
         });
 
@@ -169,8 +173,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const completeOnboarding = async (data: { alias: string, education_level: string, study_goal: string }): Promise<boolean> => {
+        try {
+            const res = await fetch("/api/user/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...data, has_onboarded: true }),
+            });
+            if (res.ok) {
+                setUser((prev) => ({ ...prev, name: data.alias, hasOnboarded: true }));
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error completing onboarding:", error);
+            return false;
+        }
+    };
+
     return (
-        <UserContext.Provider value={{ user, refreshUser, updateUser, addCredits, spendCredits, incrementStreak }}>
+        <UserContext.Provider value={{ user, refreshUser, updateUser, addCredits, spendCredits, incrementStreak, completeOnboarding }}>
             {children}
         </UserContext.Provider>
     );
