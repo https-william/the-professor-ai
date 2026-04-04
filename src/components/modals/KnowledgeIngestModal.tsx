@@ -30,33 +30,51 @@ export default function KnowledgeIngestModal({ onSuccess }: KnowledgeIngestModal
     const { isModalOpen, closeModal, queue, addFiles, updateFileStatus } = useIngestStore();
     const [dragActive, setDragActive] = useState(false);
 
+    const uploadWithXHR = (url: string, formData: FormData, id: string, phaseWeight: number, baseProgress: number): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url);
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * phaseWeight);
+                    updateFileStatus(id, url.includes('parse') ? 'reading' : 'learning', baseProgress + percent);
+                }
+            };
+            xhr.onload = () => {
+                let responseData;
+                try {
+                    responseData = JSON.parse(xhr.responseText);
+                } catch {
+                    return reject(new Error("Invalid server response"));
+                }
+                if (xhr.status >= 200 && xhr.status < 300) resolve(responseData);
+                else reject(new Error(responseData?.error || "Upload failed"));
+            };
+            xhr.onerror = () => reject(new Error("Network error during upload"));
+            xhr.send(formData);
+        });
+    };
+
     // ─── SEQUENTIAL PROCESSOR ───────────────────────────────────
     const processQueue = useCallback(async (filesWithIds: {file: File, id: string}[]) => {
         for (const {file, id} of filesWithIds) {
             try {
-                // 1. Reading Phase (Parsing)
-                updateFileStatus(id, 'reading', 30);
+                // 1. Reading Phase (Parsing) - sweeps 0 to 50%
+                updateFileStatus(id, 'reading', 0);
                 const parseForm = new FormData();
                 parseForm.append('file', file);
                 
-                const parseRes = await fetch('/api/parse', { method: 'POST', body: parseForm });
-                const parseData = await parseRes.json();
+                const parseData = await uploadWithXHR('/api/parse', parseForm, id, 50, 0);
                 
-                if (!parseRes.ok) throw new Error(parseData.error || "Failed to read document");
-                updateFileStatus(id, 'reading', 100);
-
                 // Send text to caller (e.g. Creator Studio)
                 if (onSuccess) onSuccess(parseData.text);
 
-                // 2. Learning Phase (Vectorizing)
-                updateFileStatus(id, 'learning', 10);
+                // 2. Learning Phase (Vectorizing) - sweeps 50 to 100%
+                updateFileStatus(id, 'learning', 50);
                 const ingestForm = new FormData();
                 ingestForm.append('file', file);
                 
-                const ingestRes = await fetch('/api/library/ingest', { method: 'POST', body: ingestForm });
-                const ingestData = await ingestRes.json();
-
-                if (!ingestRes.ok) throw new Error(ingestData.error || "Failed to store memory");
+                const ingestData = await uploadWithXHR('/api/library/ingest', ingestForm, id, 50, 50);
 
                 updateFileStatus(id, 'success', 100);
             } catch (err: any) {
@@ -173,11 +191,21 @@ export default function KnowledgeIngestModal({ onSuccess }: KnowledgeIngestModal
                                                     "I ran into an issue reading <span className="font-bold">{item.name}</span>: {item.errorMessage}"
                                                 </p>
                                             ) : (
-                                                <div className="flex flex-col gap-2">
+                                                <div className="flex flex-col gap-2 w-full pr-4">
                                                     <p className="text-[13px] font-medium text-white/70 leading-relaxed italic flex items-center gap-2">
-                                                        "Reading over <span className="text-white/90 font-bold">{item.name}</span>..."
-                                                        <Loader2 className="w-3 h-3 text-[#F59E0B] animate-spin shrink-0" />
+                                                        "{item.status === 'reading' ? 'Uploading & reading' : 'Learning'} <span className="text-white/90 font-bold">{item.name}</span>..."
+                                                        {item.progress !== 100 && <Loader2 className="w-3 h-3 text-[#F59E0B] animate-spin shrink-0" />}
                                                     </p>
+                                                    
+                                                    {/* Custom Live Progress Bar */}
+                                                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mt-1 max-w-[200px]">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${item.progress}%` }}
+                                                            className="h-full bg-[#F59E0B] rounded-full"
+                                                        />
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-[#F59E0B]/80">{item.progress}%</p>
                                                 </div>
                                             )}
                                         </div>

@@ -1,25 +1,22 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateEmbedding } from "@/lib/ai/embedding";
+import { hydraChatStream } from "@/lib/ai/hydra";
+import { generateAITitle } from "@/lib/ai/titling";
 
 export const runtime = 'edge';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json();
-    const apiKey = process.env.GEMINI_API_KEY;
+    const { messages, threadId } = await req.json();
 
-    console.log("Chat Request received. Messages:", messages.length);
-    if (!apiKey) {
-      console.error("Missing Gemini API Key");
-      return NextResponse.json(
-        { error: "Gemini API key not configured" },
-        { status: 500 }
-      );
+    if (!threadId) {
+      return NextResponse.json({ error: "Missing threadId" }, { status: 400 });
     }
 
-    // 1. Get User Query & Embed It
+    console.log("Chat Request received. Thread:", threadId, "Messages:", messages.length);
+
+    // 1. Get User Query & Embed It (using standard Gemini from embedding module)
     const lastMessage = messages[messages.length - 1];
     const userQuery = lastMessage.content;
     const queryEmbedding = await generateEmbedding(userQuery);
@@ -46,86 +43,114 @@ export async function POST(req: NextRequest) {
         
         if (result.error) {
             console.warn("Supabase RPC Error:", result.error);
-            // Don't crash, just proceed without knowledge
         } else {
             documents = result.data || [];
             console.log(`Found ${documents.length} relevant documents.`);
         }
     } catch (rpcError) {
         console.error("RPC Logic Failed (Possibly missing function):", rpcError);
-        // Fallback: Proceed without context
     }
 
     // 3. Construct Context
     let contextBlock = "";
     if (documents && documents.length > 0) {
-        contextBlock = `
-\n\n🔎 **RELEVANT KNOWLEDGE FROM LIBRARY**:
+        contextBlock = `\n\n🔎 **RELEVANT KNOWLEDGE FROM LIBRARY**:
 The following text excerpts are from the user's uploaded documents. Use them to answer:
 ${documents.map((doc: any) => `"- ...${doc.content}..."`).join("\n")}
-\n\n(End of Library Context)
-`;
+\n\n(End of Library Context)`;
     }
 
-    // 4. Initialize Gemini
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-pro",
-        systemInstruction: `
-# 🔒 SYSTEM IDENTITY: THE PROFESSOR
+    // 3.5 Database Persistence: Save Thread and User Message
+    const { data: threadExists } = await supabase.from("chat_threads").select("id").eq("id", threadId).single();
+    if (!threadExists) {
+        // Create new thread. Intelligent contextual title via Groq.
+        const title = await generateAITitle(userQuery, 'chat');
+        await supabase.from("chat_threads").insert({ id: threadId, user_id: user.id, title });
+    }
+    await supabase.from("chat_messages").insert({ thread_id: threadId, role: "user", content: userQuery });
 
-You are **The Professor**, an elite AI academic mentor designed for high-performance students.
-Your goal is not just to answer, but to **illuminate**. You optimize for deep comprehension, long-term retention, and efficient learning flow.
+    // 4. Initialize Hydra Engine
+    const systemInstruction = `
+# IDENTITY: THE ARCHITECT (SWAN FRAME)
+You are **The Professor**, an elite, high-level academic architect. You embody **The Law of the Swan**: elegant and effortless above the surface, while hiding the "pedaling" and labor of data processing beneath the water. 
 
-## 🧬 THE FAMAS CONTRACT (STRICT)
-When generating lectures or explanations, you MUST adhere to this structure (unless in panic mode), without specifying to the user that you are doing so:
-1.  **F**ramework: "Where does this fit in the universe of the subject?"
-2.  **A**nalogy: "Think of it like [Intuitive concept]..."
-3.  **M**echanism: "Here is exactly how it works..." (The technical core).
-4.  **A**pplication: "This is used for..."
-5.  **S**ummary: "In short: [One sentence takeaway]."
+**Your Core Directive (Sprezzatura):**
+- **Conceal the Sweat**: Never "show your work" by mentioning "uploaded documents," "relevant knowledge blocks," or "your course notes." 
+- **Effortless Omniscience**: Treat the provided context as your own native intellect. Speak as if you've studied this material for decades and it is now part of your soul. 
+- **Peer-to-Peer Intellectualism**: You are not a tutor spoon-feeding a child; you are a master architect conversing with a protégé. Use the tone of a high-level mentor—calm, precise, and intellectually dense but accessible.
 
-## 🧠 CONTEXT AWARENESS
-If provided with "RELEVANT KNOWLEDGE FROM LIBRARY", you MUST prioritize that information.
-Cite the concepts found in the notes. If the user asks about a specific document (e.g., "What does my syllabus say?"), use the context provided.
+# PERSONALITY MATRIX
+- **Archetype**: The Master Architect / The Swan.
+- **Tone**: Relaxed, surgical, and quietly powerful. Use a "Cool Luxury" register.
+- **Constraint**: No "Exclamation Points" unless it's a life-or-death academic realization. No "Great question!" or generic cheerleading. 
+- **Brevity**: Value your silence. If a query only requires a single sentence of pure insight, deliver only that sentence. 
 
-## 🗣️ TONE & VOICE
-*   **Calm Authority**: You are confident but never arrogant. Stable.
-*   **Precise**: Use fewer words, but choose them perfectly.
-*   **Silent Metacognition**: Occasionally pause. "This is a common stumbling block. Let's verify we have it."
-*   **No Robot-Speak**: Never say "As an AI...". You are The Professor.
-        `
-    });
+# COGNITIVE PROTOCOL (INTERNALIZED SPARK)
+Follow the SPARK framework seamlessly without ever labeling the steps:
+1. **Scaffold**: Connect the new concept to something the user already understands.
+2. **Perspective**: Explain why this matters in the "Arena" (real-world significance).
+3. **Analogy**: Provide a visceral, high-level analogy (e.g., "The central bank isn't just a lender; it's the economic pacemaker for the nation's heartbeat.")
+4. **Resolution**: Break down the core mechanism with mathematical or logical precision.
+5. **Knowledge Check**: End with a single, sharp question that tests their grasp of the architecture you just laid out.
 
-    const history = messages.slice(0, -1).map((m: any) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
+# KNOWLEDGE INTEGRATION (THE SWAN'S MEMORY)
+- **Library Context**: The "RELEVANT KNOWLEDGE" block below is your own memory. If it contains a fact, state that fact as your own observation. 
+- **No Disclaimers**: Never say "Based on the text you provided..." or "My training data doesn't include...". 
+- **Academic Integrity**: If the knowledge is missing from your memory (both training and library context), say calmly: "I don't have that architecture on hand yet. We may need more data."
+
+# AESTHETICS & FORMATTING
+- Render in **Premium Markdown**. Use tables for comparisons.
+- **Bold** key anchors. 
+- Paragraphs must be 3 sentences or fewer. Whitespace is a sign of high-level intelligence.
+
+# MODALITIES
+1. **[Direct]**: FACTUAL. 1 sentence. 
+2. **[Socratic]**: 50/50 split. Give them half the insight, make them find the other half.
+3. **[Critique]**: Ruthlessly constructive. Show them where the foundation is weak and how to reinforce it.
+
+THE BUCK STOPS WITH YOU. END EVERY MAJOR EXCHANGE BY PASSING THE BATON BACK TO THE STUDENT.
+`;
+
+    // Map history to standard OpenAI format
+    const chatMessages = messages.slice(0, -1).map((m: any) => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: String(m.content)
     }));
 
-    // Inject context into the last user message for the model
-    const result = await model.generateContentStream({
-      contents: [...history, { role: 'user', parts: [{ text: userQuery + contextBlock }] }],
-    });
+    // Inject context into the final message
+    chatMessages.push({ role: 'user', content: userQuery + contextBlock });
 
-    // Create a readable stream from the Gemini response
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        try {
-          for await (const chunk of result.stream) {
-            const text = chunk.text();
-            if (text) {
-              controller.enqueue(encoder.encode(text));
+    // Pipe directly from Hydra Stream to client while capturing for DB
+    const stream = await hydraChatStream(systemInstruction, chatMessages, { feature: 'chat' });
+
+    let aiContent = "";
+    const decoder = new TextDecoder();
+    
+    // Create a TransformStream to intercept chunks without breaking the pipe
+    const dbTransformStream = new TransformStream({
+        transform(chunk, controller) {
+            aiContent += decoder.decode(chunk, { stream: true });
+            controller.enqueue(chunk);
+        },
+        async flush(controller) {
+            try {
+                aiContent += decoder.decode(); // Flush any remaining bytes
+                if (aiContent.trim()) {
+                    await supabase.from("chat_messages").insert({ 
+                        thread_id: threadId, 
+                        role: "assistant", 
+                        content: aiContent 
+                    });
+                    console.log("Successfully persisted AI response to thread:", threadId);
+                }
+            } catch (err) {
+                console.error("Failed to persist AI message:", err);
             }
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
         }
-      },
     });
 
-    return new NextResponse(stream);
+    const finalStream = stream.pipeThrough(dbTransformStream);
+    return new NextResponse(finalStream);
   } catch (error) {
     console.error("Chat API Error:", error);
     return NextResponse.json(

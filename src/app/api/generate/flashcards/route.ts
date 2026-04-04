@@ -4,6 +4,7 @@ import { validateContent, validateCount, validateDifficulty, safeErrorResponse }
 import { createClient } from "@/lib/supabase/server";
 import { buildFlashcardsPrompt } from "@/lib/ai/prompts";
 import { getCredits, deductCredits, refundCredits } from "@/lib/credits";
+import { generateAITitle } from "@/lib/ai/titling";
 
 const COST = 1;
 
@@ -106,9 +107,8 @@ export async function POST(req: NextRequest) {
                         await refundCredits(supabase, user.id, COST);
                         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: "No flashcards were generated. Credits refunded." })}\n\n`));
                     } else {
-                        // Generate a dynamic title from the first flashcard
-                        const topic = finalCards[0]?.front?.substring(0, 40) || "Flashcards";
-                        const finalTitle = `Cards: ${topic}${topic.length < (finalCards[0]?.front?.length || 0) ? "..." : ""}`;
+                        // Generate a dynamic title via Groq
+                        const finalTitle = await generateAITitle(content, 'flashcards');
                         
                         // Save to database when done
                         let gId = null;

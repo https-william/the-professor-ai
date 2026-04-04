@@ -5,6 +5,7 @@ import { buildSummaryPrompt } from "@/lib/ai/prompts";
 import { parseSummaryResponse } from "@/lib/ai/schemas";
 import { validateContent } from "@/lib/validation";
 import { getCredits, deductCredits, refundCredits } from "@/lib/credits";
+import { generateAITitle } from "@/lib/ai/titling";
 
 const COST = 2;
 
@@ -63,9 +64,8 @@ export async function POST(req: NextRequest) {
 
         const summary = parseSummaryResponse(responseText);
 
-        // Generate a meaningful title from the content
-        const titleSnippet = content.substring(0, 60).trim().replace(/\s+/g, " ");
-        const title = `Summary: ${titleSnippet}${titleSnippet.length < content.length ? "..." : ""}`;
+        // Generate a dynamic title via Groq
+        const title = await generateAITitle(content, 'summary');
 
         // Save to database
         let generationId = null;

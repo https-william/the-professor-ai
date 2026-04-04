@@ -4,6 +4,7 @@ import { validateContent, validateCount, validateDifficulty, safeErrorResponse }
 import { createClient } from "@/lib/supabase/server";
 import { buildQuizPrompt } from "@/lib/ai/prompts";
 import { getCredits, deductCredits, refundCredits } from "@/lib/credits";
+import { generateAITitle } from "@/lib/ai/titling";
 
 const COST = 2;
 
@@ -107,9 +108,8 @@ export async function POST(req: NextRequest) {
                         await refundCredits(supabase, user.id, COST);
                         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: "No questions were generated. Credits refunded." })}\n\n`));
                     } else {
-                        // Generate a dynamic title from the first question
-                        const topic = finalQuestions[0]?.question?.substring(0, 40) || "Quiz";
-                        const finalTitle = `Quiz: ${topic}${topic.length < (finalQuestions[0]?.question?.length || 0) ? "..." : ""}`;
+                        // Generate a dynamic title via Groq
+                        const finalTitle = await generateAITitle(content, 'quiz');
 
                         // Save to database
                         let gId = null;

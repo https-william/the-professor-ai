@@ -455,3 +455,150 @@ export async function hydraGenerateStream(
         }
     });
 }
+
+/**
+ * Streams raw conversational text (Chat Mode) falling back across Providers.
+ * Pipes OpenAI standard SSE streams (Groq, OpenRouter, etc) directly into a raw UTF-8 string buffer for the client.
+ */
+export async function hydraChatStream(
+    systemPrompt: string,
+    messages: { role: string; content: string }[],
+    options: HydraOptions = {}
+): Promise<ReadableStream> {
+    const {
+        feature = "chat",
+        timeoutMs = 45_000,
+        model = "gemini-2.5-flash",
+    } = options;
+
+    const temperature = options.temperature
+        ?? FEATURE_TEMPERATURES[feature]
+        ?? FEATURE_TEMPERATURES.default;
+
+    const errors: string[] = [];
+    const startTime = Date.now();
+
+    const tryStreamProvider = async (provider: 'g4f' | 'ollamafree' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras'): Promise<Response | null> => {
+       try {
+           console.log(`Hydra Chat Stream: ${provider} [t=${temperature}] ...`);
+           
+           if (provider === 'gemini') {
+               const geminiKeys = getGeminiKeys();
+               if (geminiKeys.length === 0) throw new Error("No Gemini keys");
+               
+               const apiKey = geminiKeys[currentGeminiKeyIndex % geminiKeys.length];
+               const genAI = new GoogleGenerativeAI(apiKey);
+               const geminiModel = genAI.getGenerativeModel({ model, generationConfig: { temperature } });
+               
+               const historyForGemini = messages.map(m => ({ 
+                   role: m.role === 'assistant' ? 'model' : 'user', 
+                   parts: [{ text: m.content }] 
+               }));
+
+               const aiResult = await geminiModel.generateContentStream({
+                   contents: [{ role: 'user', parts: [{ text: systemPrompt }] }, ...historyForGemini]
+               });
+               
+               currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % geminiKeys.length;
+               
+               const encoder = new TextEncoder();
+               const stream = new ReadableStream({
+                   async start(controller) {
+                       try {
+                           for await (const chunk of aiResult.stream) {
+                               const text = chunk.text();
+                               if (text) controller.enqueue(encoder.encode(text)); // Raw Stream
+                           }
+                           controller.close();
+                       } catch (e) {
+                           controller.error(e);
+                       }
+                   }
+               });
+               return new Response(stream);
+           }
+           
+           const res = await callOpenAICompatibleStream(provider, [
+                { role: "system", content: systemPrompt },
+                ...messages
+           ], { temperature, timeoutMs });
+           
+           logAISuccess(provider, feature, Date.now() - startTime);
+           return res;
+       } catch (err) {
+           const msg = err instanceof Error ? err.message : String(err);
+           console.warn(`Hydra Chat: ${provider} failed: ${msg.substring(0, 120)}`);
+           errors.push(`${provider}: ${msg}`);
+           return null;
+       }
+    };
+
+    let response: Response | null = null;
+
+    // Rotation Priority Strategy (Chat) -> Groq (Blazing Fast) -> Trinity (OpenRouter) -> Ollama -> Gemini -> G4F
+    if (process.env.GROQ_API_KEY) response = await tryStreamProvider("groq");
+    if (!response && process.env.OPENROUTER_API_KEY) response = await tryStreamProvider("trinity");
+    if (!response && process.env.OLLAMAFREE_ENABLED === "true") response = await tryStreamProvider("ollamafree");
+    if (!response) response = await tryStreamProvider("gemini");
+    if (!response && process.env.G4F_ENABLED === "true") response = await tryStreamProvider("g4f");
+
+    if (!response) {
+        throw new Error(`All providers failed chat stream. Errors: ${errors.join(" | ")}`);
+    }
+
+    // If Gemini served it, we already formatted it natively in tryStreamProvider.
+    // If OpenAI/Groq served it, we must strip the SSE wrapper 'data: {}' and emit raw UTF8 so the frontend doesn't break.
+    const isSSE = response.headers.get("content-type")?.includes("text/event-stream");
+    
+    if (!isSSE) {
+        return response.body as ReadableStream; // Gemini returns native
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body to stream");
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    return new ReadableStream({
+        async start(controller) {
+            try {
+                let buffer = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    let lineEndIndex;
+                    while ((lineEndIndex = buffer.indexOf('\n')) !== -1) {
+                        const line = buffer.slice(0, lineEndIndex).trim();
+                        buffer = buffer.slice(lineEndIndex + 1);
+
+                        if (line.startsWith("data: ") && line !== "data: [DONE]") {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                const contentChunk = data.choices?.[0]?.delta?.content || "";
+                                if (contentChunk) {
+                                    controller.enqueue(encoder.encode(contentChunk));
+                                }
+                            } catch (e) {
+                                // Ignore partial blocks
+                            }
+                        }
+                    }
+                }
+                // Flush remaining
+                if (buffer.trim().startsWith("data: ") && buffer.trim() !== "data: [DONE]") {
+                     try {
+                          const data = JSON.parse(buffer.trim().slice(6));
+                          const contentChunk = data.choices?.[0]?.delta?.content || "";
+                          if (contentChunk) controller.enqueue(encoder.encode(contentChunk));
+                     } catch(e) {}
+                }
+                controller.close();
+            } catch (err) {
+                controller.error(err);
+            }
+        }
+    });
+}

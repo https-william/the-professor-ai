@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useIngestStore } from "@/store/useIngestStore";
 import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
@@ -83,13 +83,23 @@ const difficultyOptions = [
     { id: "nightmare", label: "Nightmare", desc: "Expert-level traps", emoji: "🔴" },
 ];
 
-export default function CreatePage() {
+function CreatorStudio() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user } = useUser();
     const { openModal, isProcessing } = useIngestStore();
 
     // Core state
     const [selectedType, setSelectedType] = useState<string | null>(null);
+
+    // Deep Link Interception
+    useEffect(() => {
+        const tool = searchParams.get('tool');
+        if (tool && ['flashcards', 'quiz', 'summary'].includes(tool)) {
+            setSelectedType(tool);
+        }
+    }, [searchParams]);
+
     const [inputText, setInputText] = useState("");
     const [dragActive, setDragActive] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -415,5 +425,13 @@ export default function CreatePage() {
             
             <KnowledgeIngestModal onSuccess={handleIngestSuccess} />
         </div>
+    );
+}
+
+export default function CreatePage() {
+    return (
+        <Suspense fallback={<div className="h-[100dvh] bg-[#06060B] flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#F59E0B] animate-spin" /></div>}>
+            <CreatorStudio />
+        </Suspense>
     );
 }

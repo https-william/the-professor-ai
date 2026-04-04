@@ -3,7 +3,7 @@ import "./globals.css";
 import "katex/dist/katex.min.css";
 import { UserProvider } from "@/context/UserContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import FrostedDock from "@/components/FrostedDock";
+import Dock from "@/components/ui/Dock";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -84,7 +84,6 @@ export default function RootLayout({
           <UserProvider>
             {children}
             <OnboardingModal />
-            <FrostedDock />
             <ServiceWorkerRegistrar />
             <Analytics />
             <SpeedInsights />
