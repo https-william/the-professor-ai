@@ -56,98 +56,111 @@ export default function BillingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-24">
+        <div className="min-h-screen bg-[#06060B] text-white pb-24">
             {/* Header */}
-            <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-4 sm:px-6 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
+            <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-4 sm:px-6 bg-[#06060B]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-[var(--background-tertiary)] transition-all">
+                    <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-white/5 transition-all">
                         <span className="material-symbols-outlined text-xl">arrow_back</span>
                     </button>
                     <div>
-                        <h1 className="text-sm font-semibold">Billing & Credits</h1>
-                        <p className="text-xs text-[var(--foreground-muted)]">Top up to keep generating</p>
+                        <h1 className="text-sm font-semibold">Academic Endowment</h1>
+                        <p className="text-[10px] text-white/30 uppercase tracking-widest font-black">Credit Management</p>
                     </div>
                 </div>
             </header>
 
-            <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
                 {/* Success Banner */}
                 {successPlan && (
-                    <div className="mb-6 p-4 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/30 flex items-center gap-3">
-                        <span className="material-symbols-outlined text-[var(--success)]">check_circle</span>
-                        <div>
-                            <p className="font-semibold text-[var(--success)] text-sm">{successPlan} unlocked!</p>
-                            <p className="text-xs text-[var(--foreground-secondary)]">Credits have been added to your account.</p>
+                    <div className="mb-8 p-5 rounded-[24px] nm-flat flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-[#10B981]">verified</span>
                         </div>
-                        <button onClick={() => setSuccessPlan(null)} className="ml-auto text-[var(--foreground-muted)]">
+                        <div>
+                            <p className="font-bold text-white/90 text-sm">{successPlan} Endowment Confirmed</p>
+                            <p className="text-[11px] text-white/30">Your academic search capabilities have been expanded.</p>
+                        </div>
+                        <button onClick={() => setSuccessPlan(null)} className="ml-auto text-white/20">
                             <span className="material-symbols-outlined text-base">close</span>
                         </button>
                     </div>
                 )}
 
                 {/* Current Balance */}
-                <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 mb-8 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs text-[var(--foreground-muted)] font-semibold uppercase tracking-wider mb-1">Current Balance</p>
-                        <h2 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[var(--accent)] to-amber-400">
-                            {user.credits} <span className="text-xl text-[var(--foreground)] font-semibold">Credits</span>
+                <div className="nm-flat rounded-[32px] p-8 mb-12 flex items-center justify-between relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none" />
+                    <div className="relative z-10">
+                        <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.4em] mb-3">Available Reserves</p>
+                        <h2 className="text-5xl font-black text-white flex items-baseline gap-3">
+                            {user.credits} <span className="text-xl text-white/20 font-bold tracking-tight">Credits</span>
                         </h2>
                     </div>
-                    <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[var(--accent)] text-2xl">account_balance_wallet</span>
+                    <div className="w-20 h-20 rounded-[28px] nm-inset flex items-center justify-center transition-transform group-hover:scale-105">
+                        <span className="material-symbols-outlined text-[#F59E0B] text-3xl">account_balance_wallet</span>
                     </div>
                 </div>
 
                 {/* Plans */}
-                <h3 className="text-base font-bold mb-4">Top Up Plans</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm font-black uppercase tracking-[0.3em] text-white/40">Endowment Tier Selection</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12">
                     {plans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`relative p-5 rounded-2xl border-2 transition-all ${plan.popular
-                                ? "border-[var(--accent)] bg-[var(--accent)]/5 shadow-lg shadow-[var(--accent)]/10"
-                                : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--foreground-muted)]/40"
-                                }`}
+                            className={`relative p-6 rounded-[32px] transition-all nm-flat flex flex-col ${plan.popular ? 'ring-2 ring-[#F59E0B]/20' : ''}`}
                         >
                             {plan.popular && (
-                                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--accent)] text-[#08080E] text-xs font-black rounded-full uppercase tracking-wider">
-                                    Best Value
+                                <span className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-[#F59E0B] text-[#08080E] text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg">
+                                    Priority Status
                                 </span>
                             )}
-                            <h4 className="text-sm font-bold mb-1">{plan.name}</h4>
-                            <div className="flex items-baseline gap-1 mb-3">
-                                <span className="text-3xl font-black">{plan.credits}</span>
-                                <span className="text-xs text-[var(--foreground-muted)]">credits</span>
+                            <div className="mb-6">
+                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#F59E0B]/80 mb-1">{plan.name}</h4>
+                                <div className="flex items-baseline gap-1.5">
+                                    <span className="text-4xl font-black text-white">{plan.credits}</span>
+                                    <span className="text-xs text-white/20 font-bold uppercase tracking-widest">Units</span>
+                                </div>
+                                <div className="mt-2 p-1.5 rounded-xl nm-inset w-fit">
+                                    <span className="text-sm font-black text-[#F59E0B] px-2">{plan.label}</span>
+                                </div>
                             </div>
-                            <ul className="space-y-1.5 mb-5">
+                            
+                            <ul className="space-y-3 mb-8 flex-1">
                                 {plan.perks.map((perk) => (
-                                    <li key={perk} className="flex items-center gap-2 text-xs text-[var(--foreground-secondary)]">
-                                        <span className="material-symbols-outlined text-[var(--success)] text-sm">check</span>
+                                    <li key={perk} className="flex items-start gap-3 text-[12px] text-white/40 leading-tight">
+                                        <span className="material-symbols-outlined text-[#10B981] text-[14px] mt-0.5">verified</span>
                                         {perk}
                                     </li>
                                 ))}
                             </ul>
+
                             <button
                                 onClick={() => handleTopUp(plan)}
                                 disabled={!!isLoading}
-                                className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${plan.popular
-                                    ? "bg-[var(--accent)] text-[#08080E] hover:opacity-90 shadow-md shadow-[var(--accent)]/20"
-                                    : "bg-[var(--background-tertiary)] text-[var(--foreground)] hover:bg-[var(--border)]"
+                                className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all nm-button flex items-center justify-center gap-3 ${plan.popular
+                                    ? "bg-[#F59E0B] text-[#08080E] hover:shadow-[0_10px_25px_rgba(245,158,11,0.2)]"
+                                    : "text-white/60 hover:text-white"
                                     }`}
                             >
                                 {isLoading === plan.id ? (
-                                    <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
+                                    <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
                                 ) : (
-                                    `Buy for ${plan.label}`
+                                    "Initialize"
                                 )}
                             </button>
                         </div>
                     ))}
                 </div>
 
-                <p className="text-center text-xs text-[var(--foreground-muted)]">
-                    🔒 Payments secured by Paystack · Credits never expire
-                </p>
+                <div className="text-center space-y-2 opacity-30">
+                    <div className="w-12 h-px bg-white/20 mx-auto mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em]">
+                        The Professor \u2014 Institutional Grade Security
+                    </p>
+                </div>
             </main>
         </div>
     );

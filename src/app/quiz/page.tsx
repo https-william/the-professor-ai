@@ -246,10 +246,10 @@ function QuizContent() {
                 })
             });
             const data = await res.json();
-            setProfessorRemark(data.remark || "Well, that happened. 📝");
+            setProfessorRemark(data.remark || "Well, that happened. \uD83D\uDCDD");
         } catch (error) {
             console.error('Failed to get professor remark:', error);
-            setProfessorRemark(percentage >= 70 ? "Not bad! 👍" : "Room for improvement. 📚");
+            setProfessorRemark(percentage >= 70 ? "Not bad! \uD83D\uDC4D" : "Room for improvement. \uD83D\uDCC3");
         }
         setLoadingRemark(false);
 
@@ -267,7 +267,7 @@ function QuizContent() {
     const score = calculateScore();
     const currentQuestion = questions[currentIndex];
 
-    // ═══ GENERATION LOADING SCREEN ═══
+    // \u256C\u256C\u256C GENERATION LOADING SCREEN \u256C\u256C\u256C
     if (isGenerating && questions.length === 0) {
         return (
             <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -329,7 +329,7 @@ function QuizContent() {
         );
     }
 
-    // ═══ ERROR STATE ═══
+    // \u256C\u256C\u256C ERROR STATE \u256C\u256C\u256C
     if (generationError) {
         return (
             <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6">
@@ -350,7 +350,7 @@ function QuizContent() {
         );
     }
 
-    // ═══ EMPTY STATE — Redirect if no quiz loaded ═══
+    // \u256C\u256C\u256C EMPTY STATE \u2014 Redirect if no quiz loaded \u256C\u256C\u256C
     if (questions.length === 0 && !isGenerating) {
         return (
             <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6">
@@ -371,7 +371,7 @@ function QuizContent() {
         );
     }
 
-    // ═══ VERDICT SCREEN ═══
+    // \u256C\u256C\u256C VERDICT SCREEN \u256C\u256C\u256C
     if (status === 'verdict') {
         const percentage = Math.round((score / questions.length) * 100);
         const correct = score;
@@ -388,12 +388,6 @@ function QuizContent() {
             return { label: "F", color: "#EF4444", glow: "rgba(239,68,68,0.3)" };
         };
         const grade = getGrade();
-
-        // Sharing links
-        const resUrl = generationId ? `${window.location.origin}/quiz?id=${generationId}` : window.location.href;
-        const scoreText = `I just scored ${score}/${questions.length} (${percentage}%) on my ${title} assessment with The Professor. 🎓 Progressing toward mastery!`;
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(scoreText)}%20${encodeURIComponent(resUrl)}`;
-        const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(scoreText)}&url=${encodeURIComponent(resUrl)}&hashtags=TheProfessorAI`;
 
         return (
             <div className="min-h-screen bg-[#06060B] text-white relative overflow-hidden">
@@ -417,11 +411,9 @@ function QuizContent() {
                 </header>
 
                 <main className="relative z-10 flex flex-col items-center px-5 pt-8 pb-12 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
-                    {/* THE TRANSCRIPT BOX */}
                     <div className="w-full relative rounded-[40px] p-[1px] mb-10 overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02))" }}>
                         <div className="w-full bg-[#0A0A0F]/95 backdrop-blur-3xl rounded-[39px] p-8 md:p-12 relative">
                             
-                            {/* Letterhead */}
                             <div className="flex flex-col items-center mb-10 text-center">
                                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
                                     <span className="material-symbols-outlined text-2xl text-[var(--accent)]">school</span>
@@ -430,7 +422,6 @@ function QuizContent() {
                                 <h3 className="text-[13px] font-bold text-white/80">Office of Academic Excellence</h3>
                             </div>
 
-                            {/* VERIFIED STAMP - Diagonal overlay */}
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] pointer-events-none opacity-[0.08] select-none">
                                 <div className="border-[8px] border-[#EF4444] rounded-2xl px-12 py-4 flex flex-col items-center">
                                     <span className="text-7xl font-black text-[#EF4444] tracking-[0.2em]">VERIFIED</span>
@@ -438,11 +429,10 @@ function QuizContent() {
                                 </div>
                             </div>
 
-                            {/* Score Display */}
                             <div className="flex flex-col items-center mb-10 relative z-10">
                                 <p className="text-[10px] uppercase tracking-[0.3em] text-white/30 font-bold mb-4">Final Assessment Score</p>
                                 <div className="flex items-baseline gap-2 mb-2">
-                                    <span className="text-8xl font-black tracking-tighter" style={{ color: grade.color, filter: `drop-shadow(0 0 20px ${grade.color}40)` }}>{percentage}</span>
+                                    <span className="text-8xl font-black tracking-tighter" style={{ color: grade.color }}>{percentage}</span>
                                     <span className="text-3xl font-bold text-white/20">%</span>
                                 </div>
                                 <div className="px-5 py-2 rounded-full" style={{ background: `${grade.color}10`, border: `1px solid ${grade.color}20` }}>
@@ -450,7 +440,6 @@ function QuizContent() {
                                 </div>
                             </div>
 
-                            {/* Stats breakdown */}
                             <div className="grid grid-cols-3 gap-4 w-full mb-10 py-6 border-y border-white/5">
                                 <div className="text-center">
                                     <div className="text-2xl font-black text-white mb-1">{correct}</div>
@@ -466,14 +455,12 @@ function QuizContent() {
                                 </div>
                             </div>
 
-                            {/* Professor's Note */}
                             <div className="mb-10 text-center">
                                 <p className="text-sm italic font-serif leading-relaxed text-white/60 px-4">
-                                    &ldquo;{professorRemark || "An excellent demonstration of material mastery. Continue with this same academic rigor."}&rdquo;
+                                    &ldquo;{professorRemark || "An excellent demonstration of material mastery."}&rdquo;
                                 </p>
                             </div>
 
-                            {/* Signature Line */}
                             <div className="flex flex-col items-end pr-4">
                                 <div className="text-2xl font-serif text-[var(--accent)]/60 select-none mb-1 rotate-[-2deg]" style={{ fontFamily: "'Dancing Script', 'Cursive', serif" }}>
                                     The Professor
@@ -484,10 +471,9 @@ function QuizContent() {
                         </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="w-full space-y-4">
                         <button onClick={() => { setStatus('review'); setCurrentIndex(0); }}
-                            className="w-full py-4 rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-[#06060B] hover:bg-white/90 shadow-[0_4px_24px_rgba(255,255,255,0.1)]">
+                            className="w-full py-4 rounded-[20px] font-bold text-sm tracking-wide flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-[#06060B] hover:bg-white/90 shadow-[0_4px_24px_rgba(255,255,255,0.1)]">
                             <span className="material-symbols-outlined text-lg">rate_review</span>
                             Review Answers
                         </button>
@@ -516,14 +502,10 @@ function QuizContent() {
 
     if (!currentQuestion) return null;
 
-    // Derived
-    const isAnswered = answers[currentIndex] !== undefined;
     const isFlagged = flags.has(currentIndex);
 
-    // ═══ MAIN QUIZ UI — Contained Card Layout ═══
     return (
         <div className="min-h-screen bg-[#06060B] text-white">
-            {/* ─── Top Bar ─── */}
             <header className="h-14 flex items-center justify-between px-4 md:px-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center gap-3">
                     <button onClick={() => router.push('/create')} className="p-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/[0.03] transition-all">
@@ -531,12 +513,6 @@ function QuizContent() {
                     </button>
                     <div className="flex items-center gap-2.5">
                         <span className="text-sm font-bold text-white/80">{title}</span>
-                        {isGenerating && (
-                            <span className="flex h-2 w-2 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]"></span>
-                            </span>
-                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -555,15 +531,8 @@ function QuizContent() {
                 </div>
             </header>
 
-            {/* ─── Main Container ─── */}
             <main className="max-w-3xl mx-auto px-4 py-6">
-                {/* Exam Card */}
-                <div className="rounded-2xl overflow-hidden" style={{
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    boxShadow: "0 4px 24px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.04)",
-                }}>
-                    {/* Card Header — Status + Palette */}
+                <div className="rounded-[40px] overflow-hidden nm-flat animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div className="px-5 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
@@ -581,33 +550,42 @@ function QuizContent() {
                             )}
                         </div>
 
-                        {/* Question Palette — Horizontal */}
                         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
                             {questions.map((_, idx) => {
                                 const active = currentIndex === idx;
                                 const done = answers[idx] !== undefined;
                                 const flagged = flags.has(idx);
 
-                                let bg = "rgba(255,255,255,0.04)";
-                                let text = "text-white/25";
-                                let ring = "";
+                                let bg = "transparent";
+                                let text = "text-white/20";
+                                let shadow = "none";
 
                                 if (status === 'review') {
                                     const correct = answers[idx] === questions[idx]?.correctIndex;
                                     if (answers[idx] !== undefined) {
-                                        bg = correct ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)";
+                                        bg = correct ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)";
                                         text = correct ? "text-[#10B981]" : "text-[#EF4444]";
                                     }
                                 } else {
-                                    if (active) { bg = "#3B82F6"; text = "text-white"; }
-                                    else if (flagged) { bg = "rgba(245,158,11,0.15)"; text = "text-[#F59E0B]"; ring = "ring-1 ring-[#F59E0B]/30"; }
-                                    else if (done) { bg = "rgba(59,130,246,0.15)"; text = "text-[#3B82F6]"; }
+                                    if (active) { 
+                                        bg = "var(--background)"; 
+                                        text = "text-white"; 
+                                        shadow = "inset 4px 4px 8px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(255,255,255,0.01)";
+                                    }
+                                    else if (flagged) { 
+                                        bg = "rgba(245,158,11,0.05)"; 
+                                        text = "text-[#F59E0B]"; 
+                                    }
+                                    else if (done) { 
+                                        bg = "rgba(59,130,246,0.05)"; 
+                                        text = "text-[#3B82F6]"; 
+                                    }
                                 }
 
                                 return (
                                     <button key={idx} onClick={() => setCurrentIndex(idx)}
-                                        className={`w-8 h-8 rounded-lg text-[11px] font-bold flex-shrink-0 transition-all ${text} ${ring} ${active ? 'scale-110' : 'hover:scale-105'}`}
-                                        style={{ background: bg }}>
+                                        className={`w-9 h-9 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all ${text} ${active ? 'scale-110' : 'hover:scale-105'}`}
+                                        style={{ background: bg, boxShadow: shadow }}>
                                         {idx + 1}
                                     </button>
                                 );
@@ -615,7 +593,6 @@ function QuizContent() {
                         </div>
                     </div>
 
-                    {/* Question Body */}
                     <div className="px-5 md:px-8 py-6 md:py-8">
                         <div className="flex items-center justify-between mb-6">
                             <span className="text-[11px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-md text-[#3B82F6]"
@@ -628,28 +605,31 @@ function QuizContent() {
                             {currentQuestion.question}
                         </p>
 
-                        {/* Options */}
-                        <div className="space-y-2.5">
+                        <div className="space-y-4">
                             {currentQuestion.options.map((option, idx) => {
                                 const isSelected = answers[currentIndex] === idx;
                                 const isCorrect = currentQuestion.correctIndex === idx;
 
-                                let optStyle: React.CSSProperties = {
-                                    background: "rgba(255,255,255,0.03)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
-                                };
+                                let className = "w-full px-6 py-4.5 rounded-[24px] text-left transition-all duration-300 flex items-center gap-4 group ";
+                                let shadow = "8px 8px 16px rgba(0,0,0,0.4), -4px -4px 12px rgba(255,255,255,0.01)";
 
                                 if (status === 'review') {
                                     if (isCorrect) {
-                                        optStyle = { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" };
+                                        className += "bg-emerald-500/10 border border-emerald-500/20";
+                                        shadow = "none";
                                     } else if (isSelected && !isCorrect) {
-                                        optStyle = { background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" };
+                                        className += "bg-red-500/10 border border-red-500/20";
+                                        shadow = "none";
                                     } else {
-                                        optStyle = { ...optStyle, opacity: 0.4 };
+                                        className += "opacity-40";
+                                        shadow = "none";
                                     }
                                 } else {
                                     if (isSelected) {
-                                        optStyle = { background: "#3B82F6", border: "1px solid #3B82F6" };
+                                        className += "nm-inset text-white";
+                                        shadow = "none";
+                                    } else {
+                                        className += "hover:translate-x-1 hover:bg-white/5";
                                     }
                                 }
 
@@ -657,10 +637,8 @@ function QuizContent() {
                                     <button key={idx}
                                         onClick={() => status === 'taking' && handleAnswer(idx)}
                                         disabled={status === 'review'}
-                                        className={`w-full px-4 py-3.5 rounded-xl text-left transition-all duration-200 flex items-center gap-3 group ${
-                                            status === 'taking' && !isSelected ? 'hover:bg-white/[0.06]' : ''
-                                        }`}
-                                        style={optStyle}>
+                                        className={className}
+                                        style={{ boxShadow: shadow }}>
                                         <span className={`text-[14px] ${
                                             isSelected && status === 'taking' ? 'text-white font-medium' :
                                             status === 'review' && isCorrect ? 'text-[#10B981] font-medium' :
@@ -680,7 +658,6 @@ function QuizContent() {
                             })}
                         </div>
 
-                        {/* Explanation (Review Only) */}
                         {status === 'review' && (
                             <div className="mt-6 p-4 rounded-xl animate-in fade-in slide-in-from-bottom-2"
                                 style={{ background: "rgba(59,130,246,0.05)", borderLeft: "3px solid #3B82F6" }}>
@@ -695,13 +672,12 @@ function QuizContent() {
                         )}
                     </div>
 
-                    {/* Card Footer — Navigation */}
                     <div className="px-5 md:px-8 py-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                         <button
                             onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                             disabled={currentIndex === 0}
-                            className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white/30 hover:text-white/60 disabled:opacity-30 disabled:hover:text-white/30 transition-all"
-                            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                            className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white/30 hover:text-white/60 disabled:opacity-30 disabled:hover:text-white/30 transition-all nm-button"
+                        >
                             Prev
                         </button>
 
@@ -717,16 +693,16 @@ function QuizContent() {
                                 </button>
                             ) : (
                                 <button onClick={() => setStatus('verdict')}
-                                    className="px-6 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-[#F59E0B]"
-                                    style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)" }}>
+                                    className="px-6 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-[#F59E0B] nm-button"
+                                >
                                     View Results
                                 </button>
                             )
                         ) : (
                             <button
                                 onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                                className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider transition-all"
-                                style={{ background: "#3B82F6", color: "white" }}>
+                                className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider transition-all bg-white text-black active:scale-[0.95]"
+                            >
                                 Next
                             </button>
                         )}
@@ -734,39 +710,22 @@ function QuizContent() {
                 </div>
             </main>
 
-            {/* Submit Confirmation Modal */}
             {showSubmitModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
-                    <div className="rounded-2xl p-6 max-w-sm mx-4 animate-in zoom-in-95" style={{
-                        background: "rgba(15,15,25,0.98)", border: "1px solid rgba(255,255,255,0.08)",
-                        boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-                    }}>
-                        <h3 className="text-lg font-bold text-white/90 mb-4">Submit Exam?</h3>
-                        <div className="space-y-2.5 mb-5 text-[13px]">
-                            <p className="flex items-center gap-2 text-white/50">
-                                <span className="material-symbols-outlined text-[#10B981] text-lg">check_circle</span>
-                                <strong className="text-white/70">{Object.keys(answers).length}</strong> answered
-                            </p>
-                            <p className="flex items-center gap-2 text-white/50">
-                                <span className="material-symbols-outlined text-[#F59E0B] text-lg">flag</span>
-                                <strong className="text-white/70">{flags.size}</strong> flagged
-                            </p>
-                            {Object.keys(answers).length < questions.length && (
-                                <p className="flex items-center gap-2 text-[#EF4444]/80">
-                                    <span className="material-symbols-outlined text-lg">error</span>
-                                    <strong>{questions.length - Object.keys(answers).length}</strong> unattempted
-                                </p>
-                            )}
+                    <div className="rounded-[32px] p-8 max-w-sm mx-4 animate-in zoom-in-95 nm-flat text-center">
+                        <div className="w-16 h-16 rounded-full bg-[#F59E0B]/10 flex items-center justify-center mx-auto mb-6">
+                            <span className="material-symbols-outlined text-3xl text-[#F59E0B]">description</span>
                         </div>
-                        <p className="text-[11px] text-white/20 mb-5">You can review answers after submission but cannot change them.</p>
-                        <div className="flex gap-2.5">
+                        <h3 className="text-xl font-bold text-white/90 mb-2">Seal the Exam?</h3>
+                        <p className="text-sm text-white/40 mb-8 leading-relaxed">Your intellectual record will be finalized.</p>
+                        
+                        <div className="flex gap-3">
                             <button onClick={() => setShowSubmitModal(false)}
-                                className="flex-1 py-3 rounded-xl text-[12px] font-bold text-white/40 hover:text-white/60 transition-all"
-                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                                Cancel
+                                className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white/30 hover:text-white/50 transition-all nm-button">
+                                Back
                             </button>
                             <button onClick={confirmSubmit}
-                                className="flex-1 py-3 rounded-xl text-[12px] font-bold transition-all active:scale-[0.97]"
+                                className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-[0.95]"
                                 style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E" }}>
                                 Submit
                             </button>

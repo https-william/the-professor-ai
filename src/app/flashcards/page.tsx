@@ -159,13 +159,12 @@ function FlashcardContent() {
     if (isGenerating && flashcards.length === 0) {
         return (
             <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6 overflow-hidden">
-                <div className="w-20 h-20 relative mb-8">
-                    <div className="absolute inset-0 border-[3px] border-[var(--accent)]/10 rounded-full" />
-                    <div className="absolute inset-0 border-t-[3px] border-[var(--accent)] rounded-full animate-spin shadow-[0_0_15px_var(--accent)]" />
-                    <span className="material-symbols-outlined text-2xl text-[var(--accent)] absolute inset-0 flex items-center justify-center animate-pulse">style</span>
+                <div className="w-24 h-24 relative mb-8 nm-flat rounded-full flex items-center justify-center">
+                    <div className="absolute inset-0 border-t-2 border-[#F59E0B] rounded-full animate-spin shadow-[0_0_15px_rgba(245,158,11,0.2)]" />
+                    <span className="material-symbols-outlined text-2xl text-[#F59E0B] animate-pulse">style</span>
                 </div>
-                <h2 className="text-xl font-bold tracking-tight text-white mb-2">Engraving Flashcards...</h2>
-                <p className="text-white/30 text-[10px] uppercase tracking-[0.4em] font-black italic">Academic Standard Excellence</p>
+                <h2 className="text-xl font-bold tracking-tight text-white/80 mb-2">Engraving Flashcards...</h2>
+                <p className="text-[#F59E0B]/40 text-[10px] uppercase tracking-[0.5em] font-black">Academic Standard Excellence</p>
             </div>
         );
     }
@@ -214,35 +213,47 @@ function FlashcardContent() {
 
                 <div className="relative w-full aspect-[4/3] perspective-1000 cursor-pointer group" onClick={handleFlip}>
                     <div className={`relative w-full h-full transition-all duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-                        <div className="absolute inset-0 rounded-[40px] bg-[#0A0A0F]/80 border border-white/10 p-10 flex items-center justify-center backface-hidden shadow-2xl backdrop-blur-xl group-hover:border-[#F59E0B]/30 transition-all">
-                            <p className="text-3xl font-bold text-center text-white leading-tight tracking-tight">{currentCard.front}</p>
-                            <span className="absolute bottom-10 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#F59E0B]/40">
-                                <span className="material-symbols-outlined text-sm">contact_support</span>
-                                Assessment Item
-                            </span>
+                        {/* Front Side */}
+                        <div className="absolute inset-0 rounded-[40px] nm-flat p-10 flex flex-col items-center justify-center backface-hidden transition-all group-hover:scale-[1.02]">
+                            <p className="text-3xl font-bold text-center text-white/90 leading-tight tracking-tight mb-8">{currentCard.front}</p>
+                            <div className="absolute bottom-10 flex flex-col items-center gap-3">
+                                <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                                     <div className="h-full bg-[#F59E0B]/40 transition-all duration-500" style={{ width: `${((currentIndex + 1) / flashcards.length) * 100}%` }} />
+                                </div>
+                                <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-white/20">
+                                    <span className="material-symbols-outlined text-xs">tap_and_play</span>
+                                    Reveal Knowledge
+                                </span>
+                            </div>
                         </div>
-                        <div className="absolute inset-0 rounded-[40px] bg-[#0A0A0F]/90 border border-[#F59E0B]/30 p-10 flex items-center justify-center backface-hidden rotate-y-180 shadow-2xl backdrop-blur-xl">
-                            <p className="text-2xl font-serif text-center text-white/90 leading-relaxed italic">{currentCard.back}</p>
-                            <span className="absolute bottom-10 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#F59E0B]">
+                        {/* Back Side */}
+                        <div className="absolute inset-0 rounded-[40px] nm-flat p-10 flex items-center justify-center backface-hidden rotate-y-180">
+                            <div className="absolute inset-4 rounded-[32px] nm-inset opacity-50" />
+                            <p className="relative z-10 text-2xl font-serif text-center text-[#F59E0B]/90 leading-relaxed italic px-6">{currentCard.back}</p>
+                            <span className="absolute bottom-10 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] text-[#F59E0B]/40">
                                 <span className="material-symbols-outlined text-sm">verified</span>
-                                Verified Solution
+                                Mastery Proof
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6 mt-16 w-full max-w-sm">
-                    <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all active:scale-90">
-                        <span className="material-symbols-outlined">chevron_left</span>
+                <div className="flex items-center gap-8 mt-16 w-full max-w-sm">
+                    <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} 
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 nm-button">
+                        <span className="material-symbols-outlined text-white/40">chevron_left</span>
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); handleNext(); }} className="flex-1 py-5 rounded-2xl bg-[#F59E0B] text-[#06060B] font-black tracking-widest text-[11px] uppercase shadow-[0_10px_30px_rgba(245,158,11,0.2)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.3)] transition-all active:scale-95">Next Concept</button>
+                    <button onClick={(e) => { e.stopPropagation(); handleNext(); }} 
+                        className="flex-1 py-5 rounded-2xl bg-[#F59E0B] text-[#06060B] font-black tracking-[0.2em] text-[11px] uppercase transition-all active:scale-[0.95] shadow-[0_10px_30px_rgba(245,158,11,0.2)]">
+                        Progress Next
+                    </button>
                 </div>
             </main>
 
             {/* Bottom Proof */}
             <div className="mt-auto py-12 flex flex-col items-center opacity-30">
                 <div className="w-8 h-[1px] bg-white/20 mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-[0.5em]">The Professor — Mastery Certified</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.5em]">The Professor \u2014 Mastery Certified</p>
             </div>
 
             <ShareCard 
