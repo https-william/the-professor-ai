@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /blog/*
+Allow: /library
+Allow: /hub
+Allow: /roadmap
+Allow: /s/*
+Allow: /share/*
+
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /profile
+Disallow: /chat
+Disallow: /api/
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://theprofessor.xyz/sitemap.xml

@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { buildSummaryPrompt } from "@/lib/ai/prompts";
 import { parseSummaryResponse } from "@/lib/ai/schemas";
 import { validateContent } from "@/lib/validation";
-import { getCredits, deductCredits, refundCredits } from "@/lib/credits";
+import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 import { generateAITitle } from "@/lib/ai/titling";
+import { recordActivity } from "@/lib/xp";
 
 const COST = 2;
 
@@ -21,20 +22,13 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        const balance = await getCredits(supabase, user.id);
-        if (balance < COST) {
-            return new Response(JSON.stringify({ error: "Insufficient credits. Please top up." }), {
-                status: 402,
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        const ok = await deductCredits(supabase, user.id, balance, COST);
-        if (!ok) {
-            return new Response(JSON.stringify({ error: "Transaction failed" }), {
-                status: 500,
-                headers: { "Content-Type": "application/json" },
-            });
+        // ── SaaS Guard: Enforce Plan & Credits ──────────────────────
+        const { allowed, reason: guardError } = await canUserGenerate(supabase, user.id, 'summary');
+        if (!allowed) {
+            return new Response(JSON.stringify({ 
+                error: guardError || "You have reached your limit. Please upgrade or purchase credits.",
+                code: "INSUFFICIENT_CREDITS"
+            }), { status: 402, headers: { "Content-Type": "application/json" } });
         }
 
         const body = await req.json();
@@ -42,7 +36,6 @@ export async function POST(req: NextRequest) {
 
         const contentResult = validateContent(body.content);
         if (!contentResult.isValid) {
-            await refundCredits(supabase, user.id, COST);
             return new Response(JSON.stringify({ error: contentResult.error || "Invalid content" }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" },
@@ -67,6 +60,9 @@ export async function POST(req: NextRequest) {
         // Generate a dynamic title via Groq
         const title = await generateAITitle(content, 'summary');
 
+        // Update XP and Streaks
+        const stats = await recordActivity('summary', supabase, user.id);
+
         // Save to database
         let generationId = null;
         try {
@@ -75,6 +71,7 @@ export async function POST(req: NextRequest) {
                 type: "summary",
                 title,
                 content: { summary, style },
+                xp_earned: stats?.xpGained || 0
             }).select("id").single();
             
             if (!error && data) {
@@ -84,11 +81,17 @@ export async function POST(req: NextRequest) {
             console.error("Failed to save generation:", dbError);
         }
 
+        // Deduct credits ONLY after successful completion
+        await deductCredits(supabase, user.id, 'summary');
+
         return new Response(JSON.stringify({
             id: generationId,
             summary,
             title,
             style,
+            xpEarned: stats?.xpGained,
+            newXpTotal: stats?.newXpTotal,
+            newStreak: stats?.newStreak
         }), {
             headers: { "Content-Type": "application/json" }
         });
@@ -96,13 +99,7 @@ export async function POST(req: NextRequest) {
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : "Failed to generate summary";
         console.error("Summary Error:", error);
-        // Refund on AI failure
-        try {
-            const supabase = await createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) await refundCredits(supabase, user.id, COST);
-        } catch (e) { console.error("Refund failed:", e); }
-        return new Response(JSON.stringify({ error: msg + " Credits have been refunded." }), {
+        return new Response(JSON.stringify({ error: msg }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });

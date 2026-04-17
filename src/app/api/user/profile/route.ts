@@ -6,6 +6,20 @@ export const runtime = 'edge';
 export async function GET(req: NextRequest) {
     try {
         const supabase = await createClient();
+        const { searchParams } = new URL(req.url);
+        const usernameQuery = searchParams.get("username");
+
+        // If username query is provided, check for availability
+        if (usernameQuery) {
+            const { data: profile, error } = await supabase
+                .from("profiles")
+                .select("id, username")
+                .eq("username", usernameQuery.toLowerCase().trim())
+                .single();
+            
+            // Return the profile if found (so client can check if it's theirs or not)
+            return NextResponse.json({ profile });
+        }
         
         // Get current user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -29,8 +43,8 @@ export async function GET(req: NextRequest) {
                     .insert({
                         id: user.id,
                         alias: user.email?.split("@")[0] || "Scholar",
-                        streak: 0,
-                        xp: 0,
+                        current_streak: 0,
+                        xp_total: 0,
                         credits: 100,
                         has_onboarded: false,
                     })
@@ -66,8 +80,12 @@ export async function PUT(req: NextRequest) {
         }
 
         // SECURITY: Whitelist allowed fields. BLOCK credits/xp/streak manipulation.
-        const allowedUpdates = {
+        const allowedUpdates: any = {
             alias: body.alias,
+            username: body.username?.toLowerCase().trim(),
+            first_name: body.first_name,
+            last_name: body.last_name,
+            age: body.age,
             avatar_url: body.avatar || body.avatar_url,
             education_level: body.education_level,
             study_goal: body.study_goal,
@@ -76,8 +94,21 @@ export async function PUT(req: NextRequest) {
 
         // Remove undefined keys
         Object.keys(allowedUpdates).forEach(key => 
-            (allowedUpdates as any)[key] === undefined && delete (allowedUpdates as any)[key]
+            allowedUpdates[key] === undefined && delete allowedUpdates[key]
         );
+
+        // Check for username uniqueness if being updated
+        if (allowedUpdates.username) {
+            const { data: existing, error: checkError } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("username", allowedUpdates.username)
+                .single();
+            
+            if (existing && existing.id !== user.id) {
+                return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+            }
+        }
 
         // Update profile
         const { data: profile, error: updateError } = await supabase

@@ -1,9 +1,31 @@
 "use client";
+// Force cache invalidation for theme fluidity audit
+
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
 import BrandLogo from "@/components/ui/BrandLogo";
+import SiteHeader from "@/components/ui/SiteHeader";
+import { InteractiveFlashcards } from "@/components/features/InteractiveFlashcards";
+import { InteractiveQuiz } from "@/components/features/InteractiveQuiz";
+import { InteractiveSummary } from "@/components/features/InteractiveSummary";
+import { 
+  Zap, 
+  Layers, 
+  HelpCircle, 
+  FileText, 
+  ShieldCheck, 
+  Lock,
+  ArrowRight,
+  ChevronDown
+} from "lucide-react";
+import SEOHead, { getOrgSchema, getWebsiteSchema, getWebApplicationSchema } from "@/components/SEOHead";
+import SocialProof from "@/components/landing/SocialProof";
+import PainSection from "@/components/landing/PainSection";
+import Testimonials from "@/components/landing/Testimonials";
+import LandingPricing from "@/components/landing/LandingPricing";
+import FAQ from "@/components/landing/FAQ";
 
 export default function LandingPage() {
   const { resolvedTheme, toggleTheme } = useTheme();
@@ -16,7 +38,11 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] overflow-x-hidden">
+    <main className="relative min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-amber-500/30 overflow-x-hidden">
+      {/* ═══ Advanced AEO/SEO Layer ═══ */}
+      <SEOHead type="Organization" data={getOrgSchema()} />
+      <SEOHead type="WebSite" data={getWebsiteSchema()} />
+      <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
       {/* Subtle ambient radial glow — replaces Grainient */}
       <div className="fixed inset-0 z-0 pointer-events-none" style={{
@@ -26,56 +52,7 @@ export default function LandingPage() {
         background: "radial-gradient(ellipse 60% 40% at 30% 70%, rgba(245,158,11,0.04) 0%, transparent 60%)",
       }} />
 
-      {/* ═══════════════════════════════════════════════
-          NAVIGATION — Floating Jelly Glass Pill
-          Mobile: compact, no theme toggle
-         ═══════════════════════════════════════════════ */}
-      <nav className="fixed top-0 w-full z-50 px-3 md:px-4 py-3 md:py-4">
-        <div
-          className="max-w-5xl mx-auto flex items-center justify-between px-4 md:px-5 py-2 md:py-2.5 rounded-full"
-          style={{
-            background: "rgba(8,8,14,0.75)",
-            backdropFilter: "blur(40px) saturate(180%)",
-            WebkitBackdropFilter: "blur(40px) saturate(180%)",
-            border: "1.5px solid rgba(255,255,255,0.06)",
-            borderTop: "1.5px solid rgba(255,255,255,0.1)",
-            boxShadow: scrollY > 20
-              ? "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)"
-              : "inset 0 1px 1px rgba(255,255,255,0.05)",
-            transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-          }}
-        >
-          {/* Left — Logo */}
-          <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-            <BrandLogo size="sm" />
-            <span className="text-xs md:text-sm font-bold tracking-widest text-[var(--foreground-muted)] uppercase group-hover:text-[var(--foreground)] transition-colors hidden sm:inline">
-              The Professor
-            </span>
-          </Link>
-
-          {/* Right — Actions */}
-          <div className="flex items-center gap-1.5 md:gap-2">
-            {/* Theme toggle — hidden on mobile */}
-            <button
-              onClick={toggleTheme}
-              className="hidden md:flex w-9 h-9 rounded-full items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-xl">
-                {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
-              </span>
-            </button>
-            <Link
-              href="/login"
-              className="px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-medium text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-white/5 transition-all"
-            >
-              Log in
-            </Link>
-            <Link href="/signup" className="btn-jelly text-xs md:text-sm px-4 md:px-5 py-1.5 md:py-2">
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader showLogo={true} />
 
       {/* ═══════════════════════════════════════════════
           HERO — "Learning is as simple as ~~ABC~~ XYZ."
@@ -140,23 +117,18 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* CTA Buttons — stack on mobile */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 animate-fade-in-up animation-delay-300 w-full sm:w-auto">
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up animation-delay-300 w-full sm:w-auto">
           <Link href="/signup" className="btn-jelly text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center group">
             Start Session
-            <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
-              arrow_forward
-            </span>
+            <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-1 transition-transform" />
           </Link>
-          <a href="#how-it-works" className="btn-jelly-ghost text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center">
-            How It Works
-          </a>
         </div>
 
         {/* Scroll indicator — hidden on mobile */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-1 text-[var(--foreground-muted)] animate-bounce z-10">
           <span className="text-xs tracking-widest uppercase font-medium">scroll</span>
-          <span className="material-symbols-outlined text-lg">keyboard_arrow_down</span>
+          <ChevronDown size={20} strokeWidth={1.5} />
         </div>
       </section>
 
@@ -175,56 +147,57 @@ export default function LandingPage() {
           />
 
           {/* Terminal card */}
-          <div className="relative rounded-xl overflow-hidden"
+          <div className="relative rounded-xl overflow-hidden shadow-2xl transition-colors duration-300"
             style={{
-              background: "rgba(12,12,22,0.95)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              boxShadow: "0 25px 80px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4)",
+              background: "var(--background-secondary)",
+              border: "1px solid var(--border)",
+              boxShadow: "var(--shadow-lg), 0 1px 3px rgba(0,0,0,0.05)",
             }}
           >
             {/* macOS title bar */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.05]">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
               <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
               <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
               <div className="w-3 h-3 rounded-full bg-[#28C840]" />
-              <span className="ml-3 text-[11px] text-white/20 font-medium tracking-wide">The Professor — Neural Session</span>
+              <span className="ml-3 text-[11px] text-[var(--foreground-muted)] font-medium tracking-wide">The Professor — Neural Session</span>
             </div>
 
             {/* Terminal content */}
             <div className="p-5 md:p-7 font-mono text-[13px] md:text-sm leading-relaxed space-y-3">
-              <p className="text-white/25">
-                <span className="text-white/40">&gt;</span> Initiating Neural Scan...
+              <p className="opacity-40">
+                <span className="opacity-60">&gt;</span> Initiating Neural Scan...
               </p>
-              <p className="text-[#28C840]/70">
-                <span className="text-white/40">&gt;</span> parsing_vector_space: <span className="text-[#28C840]">100%</span>
+              <p className="text-[var(--success)] opacity-80">
+                <span className="opacity-60">&gt;</span> parsing_vector_space: <span>100%</span>
               </p>
-
-              <div className="h-px bg-white/[0.04] my-4" />
-
+              <div className="h-px bg-[var(--border)] my-4" />
               <p>
-                <span className="text-[#818CF8] font-semibold">user</span>
-                <span className="text-white/15">:</span>{" "}
-                <span className="text-white/50">Explain Quantum Entanglement like I&apos;m 5.</span>
+                <span className="text-[var(--secondary)] font-semibold">user</span>
+                <span className="opacity-20">:</span>{" "}
+                <span className="opacity-70">Explain Quantum Entanglement like I&apos;m 5.</span>
               </p>
-
               <div className="mt-3">
                 <p>
-                  <span className="text-[#F59E0B] font-semibold">professor</span>
-                  <span className="text-white/15">:</span>{" "}
-                  <span className="text-white/60">
-                    Imagine two magic dice. No matter how far apart they are—even across the galaxy—if you roll a 6 on one, the other <span className="text-white/80 font-medium">INSTANTLY</span> shows a 6. They are spooky soulmates.
+                  <span className="text-[var(--accent)] font-semibold">professor</span>
+                  <span className="opacity-20">:</span>{" "}
+                  <span className="opacity-80">
+                    Imagine two magic dice. No matter how far apart they are—even across the galaxy—if you roll a 6 on one, the other <span className="text-[var(--foreground)] font-medium">INSTANTLY</span> shows a 6. They are spooky soulmates.
                   </span>
                 </p>
               </div>
 
               {/* Blinking cursor */}
               <div className="flex items-center gap-0.5 mt-2">
-                <span className="w-2 h-4 bg-[#818CF8] animate-pulse rounded-[1px]" />
+                <span className="w-2 h-4 bg-[var(--secondary)] animate-pulse rounded-[1px]" />
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      <SocialProof />
+      
+      <PainSection />
 
       {/* ═══════════════════════════════════════════════
           HOW IT WORKS — Refined claymorphism + visual flow
@@ -314,12 +287,10 @@ export default function LandingPage() {
                 {/* Connecting arrow — only between cards, desktop only */}
                 {i < 2 && (
                   <div key={`arrow-${i}`} className="hidden md:flex items-center justify-center px-2 pt-20">
-                    <span
-                      className="material-symbols-outlined text-2xl"
+                    <ChevronRight 
+                      className="w-6 h-6"
                       style={{ color: "var(--foreground-muted)", opacity: 0.3 }}
-                    >
-                      chevron_right
-                    </span>
+                    />
                   </div>
                 )}
               </React.Fragment>
@@ -338,7 +309,7 @@ export default function LandingPage() {
               Your arsenal
             </p>
             <h2 className="font-heading text-2xl sm:text-3xl md:text-5xl font-bold text-[var(--foreground)] tracking-tight">
-              Four tools. Zero fluff.
+              Cheat Codes for Your Degree.
             </h2>
           </div>
 
@@ -346,38 +317,10 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5 auto-rows-auto">
 
             {/* ─── FLASHCARDS — wide hero card (spans 7 cols) ─── */}
-            <div className="clay-card md:col-span-7 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[220px] md:min-h-[260px] flex flex-col justify-between">
-              {/* Visual: Stacked cards */}
-              <div className="absolute top-6 right-6 md:top-8 md:right-8 w-[140px] md:w-[180px] h-[100px] md:h-[130px]">
-                {[2, 1, 0].map((i) => (
-                  <div
-                    key={i}
-                    className="absolute rounded-xl border transition-transform duration-500 group-hover:rotate-0"
-                    style={{
-                      width: "100%",
-                      height: "70%",
-                      bottom: `${i * 8}px`,
-                      right: `${i * 6}px`,
-                      transform: `rotate(${(i - 1) * 4}deg)`,
-                      background: i === 0 ? "rgba(245,158,11,0.12)" : "rgba(30,30,52,0.7)",
-                      borderColor: i === 0 ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.06)",
-                      zIndex: 3 - i,
-                    }}
-                  >
-                    {i === 0 && (
-                      <div className="p-3 md:p-4">
-                        <div className="w-2/3 h-1.5 rounded-full bg-white/15 mb-2" />
-                        <div className="w-full h-1 rounded-full bg-white/8 mb-1.5" />
-                        <div className="w-4/5 h-1 rounded-full bg-white/8" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="relative z-10 max-w-[55%] md:max-w-[60%]">
+            <div className="clay-card md:col-span-7 p-6 md:p-8 group cursor-default relative overflow-visible h-[500px] flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="relative z-10 w-full md:w-[45%]">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="material-symbols-outlined text-2xl text-[#F59E0B]">style</span>
+                  <Layers className="w-5 h-5 text-[#F59E0B]" />
                   <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#F59E0B]/70">Most Popular</span>
                 </div>
                 <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
@@ -387,12 +330,16 @@ export default function LandingPage() {
                   Spaced-repetition cards with mnemonic hooks. Not just Q&A — built to make concepts stick.
                 </p>
               </div>
+
+              <div className="relative w-full md:w-[50%] h-full flex flex-col z-20 overflow-visible">
+                <InteractiveFlashcards />
+              </div>
             </div>
 
             {/* ─── QUIZ ENGINE — tall narrow card (spans 5 cols) ─── */}
-            <div className="clay-card md:col-span-5 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[220px] md:min-h-[260px] flex flex-col">
-              <div className="relative z-10 mb-6">
-                <span className="material-symbols-outlined text-2xl text-[#818CF8] mb-3 block">quiz</span>
+            <div className="clay-card md:col-span-5 p-6 md:p-8 group cursor-default relative overflow-visible min-h-[400px] flex flex-col">
+              <div className="relative z-10 mb-5 md:mb-1">
+                <HelpCircle className="w-6 h-6 text-[#818CF8] mb-3 block" />
                 <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
                   Quiz Engine
                 </h3>
@@ -401,45 +348,16 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Visual: MCQ option bubbles */}
-              <div className="mt-auto space-y-2">
-                {["A", "B", "C", "D"].map((letter, i) => (
-                  <div
-                    key={letter}
-                    className="flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all duration-300"
-                    style={{
-                      background: i === 1 ? "rgba(129,140,248,0.12)" : "rgba(30,30,52,0.5)",
-                      border: `1px solid ${i === 1 ? "rgba(129,140,248,0.3)" : "rgba(255,255,255,0.04)"}`,
-                    }}
-                  >
-                    <span
-                      className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                      style={{
-                        background: i === 1 ? "rgba(129,140,248,0.2)" : "rgba(255,255,255,0.04)",
-                        color: i === 1 ? "#818CF8" : "var(--foreground-muted)",
-                      }}
-                    >
-                      {letter}
-                    </span>
-                    <div
-                      className="h-1.5 rounded-full"
-                      style={{
-                        width: `${[60, 85, 45, 70][i]}%`,
-                        background: i === 1 ? "rgba(129,140,248,0.25)" : "rgba(255,255,255,0.06)",
-                      }}
-                    />
-                    {i === 1 && (
-                      <span className="material-symbols-outlined text-sm text-[#818CF8] ml-auto flex-shrink-0">check_circle</span>
-                    )}
-                  </div>
-                ))}
+              {/* Interactive Visual */}
+              <div className="mt-auto md:h-full w-full pointer-events-auto z-20 relative">
+                  <InteractiveQuiz />
               </div>
             </div>
 
-            {/* ─── SMART SUMMARY — wide bottom-left (spans 5 cols) ─── */}
-            <div className="clay-card md:col-span-5 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[200px] md:min-h-[240px] flex flex-col">
-              <div className="relative z-10 mb-5">
-                <span className="material-symbols-outlined text-2xl text-[#6366F1] mb-3 block">summarize</span>
+            {/* ─── SMART SUMMARY — wide bottom-left (spans full width) ─── */}
+            <div className="clay-card md:col-span-12 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[200px] md:min-h-[240px] flex flex-col md:flex-row md:items-center gap-8">
+              <div className="relative z-10 mb-5 md:mb-0 md:w-[45%]">
+                <FileText className="w-6 h-6 text-[#6366F1] mb-3 block" />
                 <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
                   Smart Summary
                 </h3>
@@ -448,64 +366,19 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Visual: Organized text blocks */}
-              <div className="mt-auto space-y-3">
-                {[
-                  { label: "Key Concept", w: "90%" },
-                  { label: "Supporting Detail", w: "75%" },
-                  { label: "Common Mistake", w: "60%" },
-                ].map((line, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
-                    <div
-                      className="w-1 h-5 rounded-full flex-shrink-0"
-                      style={{ background: i === 2 ? "rgba(239,68,68,0.4)" : `rgba(99,102,241,${0.4 - i * 0.1})` }}
-                    />
-                    <div>
-                      <div className="text-[9px] font-bold tracking-wider uppercase mb-0.5"
-                        style={{ color: i === 2 ? "rgba(239,68,68,0.5)" : "rgba(99,102,241,0.5)" }}
-                      >
-                        {line.label}
-                      </div>
-                      <div className="h-1 rounded-full bg-white/8" style={{ width: line.w }} />
-                    </div>
-                  </div>
-                ))}
+              {/* Interactive Visual components */}
+              <div className="mt-auto md:w-1/2 md:ml-auto md:h-full pointer-events-auto z-20 relative overflow-visible">
+                 <InteractiveSummary />
               </div>
             </div>
 
-            {/* ─── ORAL EXAM PREP — wide bottom-right (spans 7 cols) ─── */}
-            <div className="clay-card md:col-span-7 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[200px] md:min-h-[240px] flex flex-col justify-between">
-              <div className="relative z-10 max-w-[65%]">
-                <span className="material-symbols-outlined text-2xl text-[#34D399] mb-3 block">record_voice_over</span>
-                <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
-                  Oral Exam Prep
-                </h3>
-                <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
-                  Real-time AI viva voce. Practice answering under pressure before the real thing.
-                </p>
-              </div>
-
-              {/* Visual: Voice waveform */}
-              <div className="absolute bottom-6 right-6 md:bottom-8 md:right-8 flex items-end gap-[3px] h-16 md:h-20">
-                {Array.from({ length: 24 }).map((_, i) => {
-                  const heights = [30, 50, 35, 70, 45, 85, 60, 40, 75, 55, 90, 42, 65, 38, 80, 50, 35, 72, 48, 88, 55, 40, 68, 45];
-                  return (
-                    <div
-                      key={i}
-                      className="w-[3px] md:w-[3.5px] rounded-full transition-all"
-                      style={{
-                        height: `${heights[i]}%`,
-                        background: `rgba(52,211,153,${0.15 + (heights[i] / 100) * 0.25})`,
-                        animation: `waveform ${0.8 + (i % 5) * 0.15}s ease-in-out ${i * 0.05}s infinite`,
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </div>
       </section>
+
+      <Testimonials />
+      <LandingPricing />
+      <FAQ />
 
       {/* ═══════════════════════════════════════════════
           CTA — Layered Volumetric Depth
@@ -524,9 +397,9 @@ export default function LandingPage() {
           >
             {/* Layer 2: Glass panel — mid depth */}
             <div
-              className="relative rounded-[calc(clamp(1.5rem,3vw,2.5rem)-1px)] overflow-hidden"
+              className="relative rounded-[calc(clamp(1.5rem,3vw,2.5rem)-1px)] overflow-hidden transition-colors duration-300"
               style={{
-                background: "rgba(14,14,24,0.85)",
+                background: "var(--background-secondary)",
                 backdropFilter: "blur(40px) saturate(180%)",
                 WebkitBackdropFilter: "blur(40px) saturate(180%)",
               }}
@@ -550,11 +423,11 @@ export default function LandingPage() {
                 style={{ padding: "clamp(2.5rem, 6vw, 5rem) clamp(1.5rem, 4vw, 4rem)" }}
               >
                 {/* Floating decorative orbs */}
-                <div className="absolute top-8 left-8 w-20 h-20 rounded-full animate-float-abc pointer-events-none opacity-60"
-                  style={{ background: "radial-gradient(circle, rgba(129,140,248,0.08), transparent 70%)" }}
+                <div className="absolute top-8 left-8 w-20 h-20 rounded-full animate-float-abc pointer-events-none"
+                  style={{ background: "var(--secondary-bg)", filter: "blur(40px)" }}
                 />
-                <div className="absolute bottom-12 right-12 w-28 h-28 rounded-full animate-float-xyz pointer-events-none opacity-40"
-                  style={{ background: "radial-gradient(circle, rgba(245,158,11,0.06), transparent 70%)" }}
+                <div className="absolute bottom-12 right-12 w-28 h-28 rounded-full animate-float-xyz pointer-events-none"
+                  style={{ background: "var(--accent-bg)", filter: "blur(40px)" }}
                 />
 
                 <h2
@@ -585,19 +458,19 @@ export default function LandingPage() {
                 </p>
 
                 {/* CTA buttons — clay pills */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center">
                   <Link
                     href="/signup"
-                    className="btn-jelly justify-center group"
-                    style={{ fontSize: "clamp(0.8rem, 1.2vw, 0.95rem)", padding: "clamp(0.75rem, 1.5vw, 1rem) clamp(1.5rem, 3vw, 2.5rem)" }}
+                    className="btn-skeuo-primary justify-center group"
+                    style={{ fontSize: "clamp(0.85rem, 1.25vw, 1rem)", padding: "clamp(0.875rem, 1.5vw, 1.1rem) clamp(1.75rem, 3.5vw, 2.75rem)" }}
                   >
                     Get 100 Free Credits
-                    <span className="material-symbols-outlined group-hover:rotate-12 transition-transform text-lg">bolt</span>
+                    <Zap className="w-[18px] h-[18px] group-hover:rotate-12 transition-transform ml-1" />
                   </Link>
                   <Link
                     href="/login"
-                    className="btn-jelly-ghost justify-center"
-                    style={{ fontSize: "clamp(0.8rem, 1.2vw, 0.95rem)", padding: "clamp(0.75rem, 1.5vw, 1rem) clamp(1.5rem, 3vw, 2.5rem)" }}
+                    className="btn-skeuo justify-center"
+                    style={{ fontSize: "clamp(0.85rem, 1.25vw, 1rem)", padding: "clamp(0.875rem, 1.5vw, 1.1rem) clamp(1.75rem, 3.5vw, 2.75rem)" }}
                   >
                     Already have an account?
                   </Link>
@@ -609,15 +482,15 @@ export default function LandingPage() {
                   style={{ marginTop: "clamp(1.5rem, 3vw, 2.5rem)", fontSize: "clamp(0.7rem, 1vw, 0.8rem)" }}
                 >
                   <span className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[var(--success)]" style={{ fontSize: "14px" }}>verified</span>
+                    <ShieldCheck size={14} strokeWidth={1.5} className="text-[var(--success)]" />
                     No credit card
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[var(--accent)]" style={{ fontSize: "14px" }}>bolt</span>
+                    <Zap size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
                     100 free credits
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[var(--secondary)]" style={{ fontSize: "14px" }}>lock</span>
+                    <Lock size={14} strokeWidth={1.5} className="text-[var(--secondary)]" />
                     Your data stays yours
                   </span>
                 </div>
@@ -635,7 +508,7 @@ export default function LandingPage() {
         <div className="mx-auto mb-8" style={{
           maxWidth: "clamp(200px, 30vw, 400px)",
           height: "1px",
-          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), rgba(129,140,248,0.15), rgba(255,255,255,0.08), transparent)",
+          background: `linear-gradient(90deg, transparent, var(--border), var(--accent-glow), var(--border), transparent)`,
         }} />
 
         <div className="max-w-5xl mx-auto px-5 md:px-6">

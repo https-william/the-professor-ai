@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import crypto from "crypto";
 
 export const runtime = 'nodejs'; // Webhook verification requires nodejs for crypto
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         const event = JSON.parse(body);
 
         if (event.event === "charge.success") {
-            const { metadata, amount } = event.data;
+            const { reference, metadata, amount } = event.data;
             const userId = metadata?.user_id;
 
             if (!userId) {
@@ -32,7 +32,20 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: "No user_id" }, { status: 400 });
             }
 
-            // Plan-to-Credits Mapping
+            // --- 1. IDEMPOTENCY CHECK ---
+            // Check if this transaction was already processed
+            const { data: existingPayment } = await supabaseAdmin
+                .from("payments")
+                .select("status")
+                .eq("reference", reference)
+                .single();
+
+            if (existingPayment?.status === 'success') {
+                console.log(`⚠️ Webhook: Reference ${reference} already processed. Skipping.`);
+                return NextResponse.json({ status: "already_processed" });
+            }
+
+            // --- 2. PLAN TO CREDITS MAPPING ---
             const PLAN_CREDITS: Record<string, number> = {
                 "student": 500,
                 "scholar": 1200,
@@ -40,39 +53,36 @@ export async function POST(req: NextRequest) {
             };
 
             const planId = metadata?.plan;
-            let creditsToAdd = 0;
+            let creditsToAdd = metadata?.credits || 0;
 
-            if (planId && PLAN_CREDITS[planId]) {
+            if (!creditsToAdd && planId && PLAN_CREDITS[planId]) {
                 creditsToAdd = PLAN_CREDITS[planId];
-            } else {
-                // Fallback for simple top-ups: 100 kobo (1 NGN) = 1 Credit
+            } else if (!creditsToAdd) {
+                // Last resort fallback
                 creditsToAdd = Math.floor(amount / 100);
             }
 
-            // Use admin client to bypass RLS and update credits
-            const supabase = createAdminClient();
+            // --- 3. DATABASE UPDATE ---
+            // Update credits and payment status in a pseudo-transaction (non-atomic but robust with status check)
             
-            const { data: currentProfile, error: fetchError } = await supabase
+            // A. Fetch current profile
+            const { data: profile } = await supabaseAdmin
                 .from("profiles")
                 .select("credits")
                 .eq("id", userId)
                 .single();
 
-            if (fetchError) {
-                console.error("Webhook: Failed to fetch profile", fetchError);
-                return NextResponse.json({ error: "Profile fetch failed" }, { status: 500 });
-            }
+            const newCredits = (profile?.credits || 0) + creditsToAdd;
 
-            const newCredits = (currentProfile.credits || 0) + creditsToAdd;
+            // B. Update profiles & payments
+            const [profileResult, paymentResult] = await Promise.all([
+                supabaseAdmin.from("profiles").update({ credits: newCredits }).eq("id", userId),
+                supabaseAdmin.from("payments").update({ status: 'success' }).eq("reference", reference)
+            ]);
 
-            const { error: updateError } = await supabase
-                .from("profiles")
-                .update({ credits: newCredits })
-                .eq("id", userId);
-
-            if (updateError) {
-                console.error("Webhook: Failed to update credits", updateError);
-                return NextResponse.json({ error: "Credit update failed" }, { status: 500 });
+            if (profileResult.error || paymentResult.error) {
+                console.error("Webhook DB Update Error:", { profile: profileResult.error, payment: paymentResult.error });
+                return NextResponse.json({ error: "Database update failed" }, { status: 500 });
             }
 
             console.log(`✅ Webhook: Credited ${creditsToAdd} to user ${userId}. New balance: ${newCredits}`);

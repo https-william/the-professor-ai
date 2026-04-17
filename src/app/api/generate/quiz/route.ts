@@ -3,8 +3,9 @@ import { hydraGenerateStream } from "@/lib/ai/hydra";
 import { validateContent, validateCount, validateDifficulty, safeErrorResponse } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/server";
 import { buildQuizPrompt } from "@/lib/ai/prompts";
-import { getCredits, deductCredits, refundCredits } from "@/lib/credits";
+import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 import { generateAITitle } from "@/lib/ai/titling";
+import { recordActivity } from "@/lib/xp";
 
 const COST = 2;
 
@@ -17,21 +18,19 @@ export async function POST(req: NextRequest) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
         }
 
-        const balance = await getCredits(supabase, user.id);
-        if (balance < COST) {
-            return new Response(JSON.stringify({ error: "Insufficient credits. Please top up." }), { status: 402 });
-        }
-
-        const ok = await deductCredits(supabase, user.id, balance, COST);
-        if (!ok) {
-            return new Response(JSON.stringify({ error: "Transaction failed" }), { status: 500 });
+        // ── SaaS Guard: Enforce Plan & Credits ──────────────────────
+        const { allowed, reason: guardError } = await canUserGenerate(supabase, user.id, 'quiz');
+        if (!allowed) {
+            return new Response(JSON.stringify({ 
+                error: guardError || "You have reached your limit. Please upgrade or purchase credits.",
+                code: "INSUFFICIENT_CREDITS"
+            }), { status: 402, headers: { "Content-Type": "application/json" } });
         }
 
         const body = await req.json();
 
         const contentResult = validateContent(body.content);
         if (!contentResult.isValid) {
-            await refundCredits(supabase, user.id, COST);
             return safeErrorResponse(contentResult.error || "Invalid content");
         }
         const content = contentResult.sanitized!;
@@ -54,8 +53,7 @@ export async function POST(req: NextRequest) {
             });
         } catch (aiError) {
             console.error("Quiz AI Error:", aiError);
-            await refundCredits(supabase, user.id, COST);
-            return new Response(JSON.stringify({ error: "AI generation failed. Credits have been refunded." }), {
+            return new Response(JSON.stringify({ error: "AI generation failed." }), {
                 status: 503,
                 headers: { "Content-Type": "application/json" }
             });
@@ -105,11 +103,13 @@ export async function POST(req: NextRequest) {
 
                     // If no questions were generated, refund
                     if (finalQuestions.length === 0) {
-                        await refundCredits(supabase, user.id, COST);
-                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: "No questions were generated. Credits refunded." })}\n\n`));
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: "No questions were generated." })}\n\n`));
                     } else {
                         // Generate a dynamic title via Groq
                         const finalTitle = await generateAITitle(content, 'quiz');
+
+                        // Update XP and Streaks
+                        const stats = await recordActivity('quiz', supabase, user.id);
 
                         // Save to database
                         let gId = null;
@@ -119,25 +119,31 @@ export async function POST(req: NextRequest) {
                                 type: "quiz",
                                 title: finalTitle,
                                 content: { questions: finalQuestions },
+                                xp_earned: stats?.xpGained || 0
                             }).select("id").single();
                             if (!error && data) gId = data.id;
                         } catch (dbError) {
                             console.error("Failed to save quiz to DB:", dbError);
                         }
 
-                        // Send the final completion message with the ID
+                        // Send the final completion message with the ID and XP
                         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
                             status: "complete", 
                             id: gId, 
                             title: finalTitle,
-                            questions: finalQuestions
+                            questions: finalQuestions,
+                            xpEarned: stats?.xpGained,
+                            newXpTotal: stats?.newXpTotal,
+                            newStreak: stats?.newStreak
                         })}\n\n`));
+
+                        // Deduct credits ONLY after successful completion
+                        await deductCredits(supabase, user.id, 'quiz');
                     }
 
                     controller.close();
                 } catch (error: unknown) {
                     console.error("Quiz Stream Parser Error:", error);
-                    await refundCredits(supabase, user.id, COST);
                     const msg = error instanceof Error ? error.message : "Generation failed";
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", message: msg + " Credits refunded." })}\n\n`));
                     controller.close();

@@ -1,62 +1,121 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useUser } from "@/context/UserContext";
+import SiteHeader from "@/components/ui/SiteHeader";
+import type { AppMode } from "@/components/ui/SiteHeader";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
+import { calculateLevel, getLevelProgress, getLevelTitle } from "@/lib/profiles-client";
 
 /* ═══ Claymorphic Helpers ═══ */
 const clay = {
     card: {
-        background: "rgba(255,255,255,0.025)",
+        background: "var(--card)",
         borderRadius: "24px",
-        border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.04), inset 0 -1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)",
+        border: "1px solid var(--card-border)",
+        boxShadow: "inset 0 1px 1px var(--accent-glow), inset 0 -1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)",
     } as React.CSSProperties,
     pill: {
-        background: "rgba(255,255,255,0.04)",
+        background: "var(--background-secondary)",
         borderRadius: "14px",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05), inset 0 -1px 2px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.15)",
+        boxShadow: "inset 0 1px 1px var(--card-border), inset 0 -1px 2px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.15)",
     } as React.CSSProperties,
 };
 
 /* ═══ Achievements ═══ */
 const ACHIEVEMENTS = [
-    { id: "first_quiz", icon: "quiz", label: "First Steps", desc: "Complete your first quiz", color: "#10B981" },
-    { id: "flash_10", icon: "style", label: "Card Collector", desc: "Generate 10 flashcard sets", color: "#F59E0B" },
-    { id: "streak_3", icon: "local_fire_department", label: "On Fire", desc: "3-day study streak", color: "#EF4444" },
-    { id: "streak_7", icon: "whatshot", label: "Unstoppable", desc: "7-day study streak", color: "#F97316" },
-    { id: "perfect_score", icon: "military_tech", label: "Perfect 10", desc: "Score 100% on any quiz", color: "#818CF8" },
-    { id: "night_owl", icon: "dark_mode", label: "Night Owl", desc: "Study after midnight", color: "#6366F1" },
-    { id: "early_bird", icon: "wb_sunny", label: "Early Bird", desc: "Study before 7am", color: "#FBBF24" },
-    { id: "social", icon: "groups", label: "Team Player", desc: "Join a Hub room", color: "#10B981" },
-    { id: "marathon", icon: "timer", label: "Marathon", desc: "60+ min session", color: "#EC4899" },
-    { id: "centurion", icon: "workspace_premium", label: "Centurion", desc: "Review 100 flashcards", color: "#D97706" },
-    { id: "duel_win", icon: "swords", label: "Victor", desc: "Win your first Duel", color: "#EF4444" },
-    { id: "level_5", icon: "school", label: "Scholar", desc: "Reach Level 5", color: "#8B5CF6" },
+    { id: "first_quiz", icon: "quiz", label: "First Steps", desc: "Complete your first quiz", color: "var(--success)" },
+    { id: "flash_10", icon: "style", label: "Card Collector", desc: "Generate 10 flashcard sets", color: "var(--accent)" },
+    { id: "streak_3", icon: "local_fire_department", label: "On Fire", desc: "3-day study streak", color: "var(--error)" },
+    { id: "streak_7", icon: "whatshot", label: "Unstoppable", desc: "7-day study streak", color: "var(--accent-dark)" },
+    { id: "perfect_score", icon: "military_tech", label: "Perfect 10", desc: "Score 100% on any quiz", color: "var(--secondary)" },
+    { id: "night_owl", icon: "dark_mode", label: "Night Owl", desc: "Study after midnight", color: "var(--secondary-light)" },
+    { id: "early_bird", icon: "wb_sunny", label: "Early Bird", desc: "Study before 7am", color: "var(--accent)" },
+    { id: "social", icon: "groups", label: "Team Player", desc: "Join a Hub room", color: "var(--success)" },
+    { id: "marathon", icon: "timer", label: "Marathon", desc: "60+ min session", color: "var(--secondary)" },
+    { id: "centurion", icon: "workspace_premium", label: "Centurion", desc: "Review 100 flashcards", color: "var(--accent-dark)" },
+    { id: "duel_win", icon: "swords", label: "Victor", desc: "Win your first Duel", color: "var(--error)" },
+    { id: "level_5", icon: "school", label: "Scholar", desc: "Reach Level 5", color: "var(--secondary)" },
 ];
 
 const STATS = [
-    { icon: "bolt", label: "Total XP", key: "xp", color: "#F59E0B" },
-    { icon: "quiz", label: "Quizzes Done", key: "quizzes", color: "#818CF8" },
-    { icon: "style", label: "Cards Reviewed", key: "cards", color: "#10B981" },
-    { icon: "local_fire_department", label: "Best Streak", key: "bestStreak", color: "#EF4444" },
+    { icon: "bolt", label: "Total XP", key: "xp", color: "var(--accent)" },
+    { icon: "quiz", label: "Quizzes Done", key: "quizzes", color: "var(--secondary)" },
+    { icon: "style", label: "Cards Reviewed", key: "cards", color: "var(--success)" },
+    { icon: "local_fire_department", label: "Best Streak", key: "bestStreak", color: "var(--error)" },
 ];
 
 export default function ProfilePage() {
     const { user } = useUser();
+    const router = useRouter();
     const [activeSection, setActiveSection] = useState<"achievements" | "settings">("achievements");
+    const [stats, setStats] = useState({ xp: 0, quizzes: 0, cards: 0, bestStreak: 0 });
+    const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+    const supabase = createClient();
 
-    const unlockedIds = new Set(["first_quiz", "night_owl"]);
-    const stats = { xp: 0, quizzes: 0, cards: 0, bestStreak: user.streak ?? 0 };
-    const level = 1;
+    const level = calculateLevel(user.xp || 0);
+    const levelProgress = getLevelProgress(user.xp || 0);
+    const levelTitle = getLevelTitle(level);
+    const nextLevelXp = Math.pow(level, 2) * 100;
+    const currentLevelXp = Math.pow(level - 1, 2) * 100;
+
+    // Fetch real stats
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (!user.id) return;
+            try {
+                const res = await fetch("/api/user/activity-history");
+                if (res.ok) {
+                    const data = await res.json();
+                    setStats({
+                        xp: data.xp || user.xp || 0,
+                        quizzes: data.stats?.quizzes || 0,
+                        cards: data.stats?.flashcards || 0,
+                        bestStreak: data.streak || user.streak || 0,
+                    });
+
+                    // Determine unlocked achievements based on real data
+                    const unlocked = new Set<string>();
+                    if (data.stats?.quizzes > 0) unlocked.add("first_quiz");
+                    if (data.stats?.flashcards >= 10) unlocked.add("flash_10");
+                    if ((data.streak || 0) >= 3) unlocked.add("streak_3");
+                    if ((data.streak || 0) >= 7) unlocked.add("streak_7");
+                    if (level >= 5) unlocked.add("level_5");
+                    if (user.wins > 0) unlocked.add("duel_win");
+                    // Time-based achievements
+                    const hour = new Date().getHours();
+                    if (hour >= 0 && hour < 5) unlocked.add("night_owl");
+                    if (hour >= 5 && hour < 7) unlocked.add("early_bird");
+                    setUnlockedIds(unlocked);
+                }
+            } catch (err) {
+                console.error("Error fetching profile stats:", err);
+            }
+        };
+        fetchStats();
+    }, [user.id, user.xp, user.streak, user.wins, level]);
+
+    const handleModeChange = (mode: AppMode) => {
+        if (mode === "CHAT") router.push("/dashboard?mode=chat");
+        if (mode === "CREATE") router.push("/dashboard?mode=create");
+        if (mode === "HUB") router.push("/hub");
+    };
 
     return (
-        <div className="min-h-[100dvh] bg-[#06060B] text-white/90 pb-28 relative overflow-hidden">
+        <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
+            <SiteHeader 
+                showLogo={true} 
+                activeMode="HUB" 
+                onModeChange={handleModeChange} 
+            />
 
             {/* Ambient */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute w-[500px] h-[500px] rounded-full animate-pulse"
-                    style={{ top: "-30%", right: "-15%", background: "radial-gradient(circle, rgba(245,158,11,0.05), transparent 60%)", filter: "blur(80px)", animationDuration: "6s" }} />
+                    style={{ top: "-30%", right: "-15%", background: "radial-gradient(circle, var(--accent-glow), transparent 60%)", filter: "blur(80px)", animationDuration: "6s" }} />
             </div>
 
             <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
@@ -65,14 +124,14 @@ export default function ProfilePage() {
                 <div className="relative overflow-hidden mb-8" style={clay.card}>
                     {/* Top edge highlight */}
                     <div className="absolute top-0 left-0 right-0 h-px"
-                        style={{ background: "linear-gradient(90deg, transparent, rgba(245,158,11,0.15), transparent)" }} />
+                        style={{ background: "linear-gradient(90deg, transparent, var(--accent-glow), transparent)" }} />
 
                     {/* Banner with gradient mesh */}
                     <div className="h-24 sm:h-28 relative overflow-hidden" style={{
-                        background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(99,102,241,0.05) 50%, rgba(16,185,129,0.03) 100%)",
+                        background: "linear-gradient(135deg, var(--accent-bg) 0%, var(--secondary-bg) 50%, var(--success)/0.03 100%)",
                     }}>
                         <div className="absolute w-[200px] h-[200px] rounded-full" style={{
-                            top: "-60%", right: "10%", background: "radial-gradient(circle, rgba(245,158,11,0.08), transparent 70%)", filter: "blur(40px)",
+                            top: "-60%", right: "10%", background: "radial-gradient(circle, var(--accent-glow), transparent 70%)", filter: "blur(40px)",
                         }} />
                     </div>
 
@@ -81,25 +140,25 @@ export default function ProfilePage() {
                             {/* Avatar — claymorphic */}
                             <div className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-2xl font-black"
                                 style={{
-                                    background: "linear-gradient(145deg, #F5A623, #D4911A)",
-                                    boxShadow: "inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -2px 6px rgba(0,0,0,0.2), 0 6px 24px rgba(245,158,11,0.35)",
-                                    border: "3px solid #06060B",
-                                    color: "#08080E",
+                                    background: "linear-gradient(145deg, var(--accent), var(--accent-dark))",
+                                    boxShadow: "inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -2px 6px rgba(0,0,0,0.2), 0 6px 24px var(--accent-glow)",
+                                    border: "3px solid var(--background)",
+                                    color: "var(--background)",
                                     borderRadius: "20px",
                                 }}>
                                 {user.avatar || "?"}
                             </div>
 
                             {/* Level badge — claymorphic pill */}
-                            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full"
+                             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full"
                                 style={{
                                     ...clay.pill,
-                                    background: "rgba(245,158,11,0.06)",
-                                    border: "1px solid rgba(245,158,11,0.1)",
+                                    background: "var(--accent-bg)",
+                                    border: "1px solid var(--accent-glow)",
                                 }}>
-                                <span className="material-symbols-outlined text-[13px] text-[#F59E0B]">school</span>
-                                <span className="text-[11px] font-bold text-[#F59E0B]">Level {level}</span>
-                                <span className="text-[11px] text-white/20">· Scholar</span>
+                                <span className="material-symbols-outlined text-[13px] text-[var(--accent)]">school</span>
+                                <span className="text-[11px] font-bold text-[var(--accent)]">Level {level}</span>
+                                <span className="text-[11px] text-[var(--foreground-muted)]">· {levelTitle}</span>
                             </div>
                         </div>
 
@@ -108,17 +167,17 @@ export default function ProfilePage() {
 
                         {/* XP Bar — inset clay */}
                         <div className="mt-5">
-                            <div className="flex items-center justify-between text-[10px] text-white/20 mb-2">
+                            <div className="flex items-center justify-between text-[10px] text-[var(--foreground-muted)] mb-2">
                                 <span className="font-semibold">Next Level</span>
-                                <span className="font-bold text-white/30">{stats.xp} / 500 XP</span>
+                                <span className="font-bold text-[var(--foreground-secondary)]">{stats.xp} / {nextLevelXp} XP</span>
                             </div>
                             <div className="h-2.5 rounded-full overflow-hidden"
-                                style={{ background: "rgba(0,0,0,0.3)", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)" }}>
+                                style={{ background: "var(--background-tertiary)", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4)" }}>
                                 <div className="h-full rounded-full transition-all duration-1000"
                                     style={{
-                                        width: `${Math.max((stats.xp / 500) * 100, 2)}%`,
-                                        background: "linear-gradient(90deg, #F59E0B, #D97706)",
-                                        boxShadow: "0 0 10px rgba(245,158,11,0.4), inset 0 1px 1px rgba(255,255,255,0.2)",
+                                        width: `${Math.max(levelProgress, 2)}%`,
+                                        background: "linear-gradient(90deg, var(--accent), var(--accent-dark))",
+                                        boxShadow: "0 0 10px var(--accent-glow), inset 0 1px 1px rgba(255,255,255,0.2)",
                                     }} />
                             </div>
                         </div>
@@ -148,11 +207,11 @@ export default function ProfilePage() {
                     {(["achievements", "settings"] as const).map((section) => (
                         <button key={section} onClick={() => setActiveSection(section)}
                             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-300 ${
-                                activeSection === section ? "text-white/80" : "text-white/20 hover:text-white/35"
+                                activeSection === section ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)]"
                             }`}
                             style={activeSection === section ? {
-                                background: "rgba(255,255,255,0.05)",
-                                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.2)",
+                                background: "var(--accent-bg)",
+                                boxShadow: "inset 0 1px 1px var(--card-border), 0 2px 6px rgba(0,0,0,0.2)",
                                 borderRadius: "12px",
                             } : {}}>
                             <span className="material-symbols-outlined text-[14px]">
@@ -245,7 +304,10 @@ export default function ProfilePage() {
                         ))}
 
                         {/* Sign Out */}
-                        <button onClick={() => {}}
+                        <button onClick={async () => {
+                             await supabase.auth.signOut();
+                             router.push('/login');
+                         }}
                             className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group mt-4"
                             style={{ ...clay.pill, border: "1px solid rgba(239,68,68,0.06)" }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center"

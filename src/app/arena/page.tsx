@@ -6,7 +6,7 @@ export default function ArenaPage() {
     const router = useRouter();
 
     useEffect(() => {
-        router.replace("/dashboard");
+        router.replace("/hub?s=arena");
     }, [router]);
 
     return null;

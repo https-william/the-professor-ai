@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <!-- Dark background gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0C0C16"/>
+      <stop offset="50%" stop-color="#12121F"/>
+      <stop offset="100%" stop-color="#0C0C16"/>
+    </linearGradient>
+    
+    <!-- Amber accent glow -->
+    <radialGradient id="amberGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Purple accent -->
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.1"/>
+    </linearGradient>
+    
+    <!-- Subtle grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-opacity="0.03" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle grid -->
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  
+  <!-- Ambient glow - top left -->
+  <ellipse cx="200" cy="150" rx="300" ry="200" fill="url(#amberGlow)" opacity="0.6"/>
+  
+  <!-- Ambient glow - bottom right -->
+  <ellipse cx="1000" cy="500" rx="350" ry="250" fill="url(#purpleGrad)" opacity="0.5"/>
+  
+  <!-- Floating geometric shapes - decorative -->
+  <g opacity="0.15">
+    <!-- Top right triangle -->
+    <polygon points="1050,80 1150,120 1050,160" fill="#F59E0B"/>
+    <!-- Bottom left circle -->
+    <circle cx="150" cy="520" r="40" fill="#8B5CF6"/>
+    <!-- Middle diamond -->
+    <polygon points="600,60 650,100 600,140 550,100" fill="#F59E0B" opacity="0.5"/>
+  </g>
+  
+  <!-- Main logo area - center left -->
+  <g transform="translate(120, 180)">
+    <!-- Outer ring -->
+    <circle cx="120" cy="120" r="100" fill="none" stroke="#F59E0B" stroke-width="2" opacity="0.3"/>
+    <!-- Inner ring -->
+    <circle cx="120" cy="120" r="75" fill="none" stroke="#F59E0B" stroke-width="1.5" opacity="0.5"/>
+    
+    <!-- Graduation cap - stylized P shape -->
+    <g transform="translate(70, 50)">
+      <!-- Cap body -->
+      <path d="M 0 70 L 0 20 Q 0 0 25 0 L 75 0 Q 100 0 100 20 L 100 70 L 50 70 L 50 30 L 0 30 Z" fill="#1a1a2e" stroke="#F59E0B" stroke-width="2"/>
+      <!-- Cap top diamond -->
+      <path d="M 30 -15 L 50 0 L 30 15 L 10 0 Z" fill="#F59E0B"/>
+      <!-- Tassel -->
+      <path d="M 85 15 Q 100 40 95 60" stroke="#F59E0B" stroke-width="3" fill="none"/>
+      <circle cx="95" cy="63" r="5" fill="#F59E0B"/>
+    </g>
+    
+    <!-- Neural nodes connecting -->
+    <g opacity="0.4">
+      <circle cx="40" cy="200" r="8" fill="#F59E0B"/>
+      <circle cx="200" cy="180" r="6" fill="#8B5CF6"/>
+      <circle cx="180" cy="250" r="7" fill="#F59E0B"/>
+      <circle cx="60" cy="280" r="5" fill="#8B5CF6"/>
+      <line x1="40" y1="200" x2="120" y2="120" stroke="#F59E0B" stroke-width="1" opacity="0.3"/>
+      <line x1="200" y1="180" x2="120" y2="120" stroke="#8B5CF6" stroke-width="1" opacity="0.3"/>
+      <line x1="180" y1="250" x2="120" y2="120" stroke="#F59E0B" stroke-width="1" opacity="0.3"/>
+      <line x1="60" y1="280" x2="120" y2="120" stroke="#8B5CF6" stroke-width="1" opacity="0.3"/>
+    </g>
+  </g>
+  
+  <!-- Text content - right side -->
+  <g transform="translate(450, 200)">
+    <!-- Main title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="800" fill="white" letter-spacing="-2">
+      The Professor
+    </text>
+    
+    <!-- Tagline -->
+    <text x="5" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#F59E0B" font-weight="500">
+      AI Study Companion
+    </text>
+    
+    <!-- Subtitle with subtle effect -->
+    <text x="5" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="white" opacity="0.6">
+      Generate flashcards, quizzes &amp; roadmaps
+    </text>
+    <text x="5" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="white" opacity="0.6">
+      powered by advanced AI
+    </text>
+  </g>
+  
+  <!-- Feature pills - bottom -->
+  <g transform="translate(450, 400)">
+    <rect x="0" y="0" width="180" height="45" rx="22.5" fill="rgba(245, 158, 11, 0.15)" stroke="#F59E0B" stroke-width="1" stroke-opacity="0.5"/>
+    <text x="90" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#F59E0B" text-anchor="middle">⚡ Flashcards</text>
+    
+    <rect x="200" y="0" width="140" height="45" rx="22.5" fill="rgba(139, 92, 246, 0.15)" stroke="#8B5CF6" stroke-width="1" stroke-opacity="0.5"/>
+    <text x="270" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#8B5CF6" text-anchor="middle">🎯 Quizzes</text>
+    
+    <rect x="360" y="0" width="170" height="45" rx="22.5" fill="rgba(52, 211, 153, 0.15)" stroke="#34d399" stroke-width="1" stroke-opacity="0.5"/>
+    <text x="445" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#34d399" text-anchor="middle">📚 Summaries</text>
+    
+    <rect x="550" y="0" width="170" height="45" rx="22.5" fill="rgba(244, 114, 182, 0.15)" stroke="#f472b6" stroke-width="1" stroke-opacity="0.5"/>
+    <text x="635" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#f472b6" text-anchor="middle">🗺️ Roadmaps</text>
+  </g>
+  
+  <!-- URL footer -->
+  <text x="600" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="white" opacity="0.4" text-anchor="middle">theprofessor.xyz</text>
+</svg>

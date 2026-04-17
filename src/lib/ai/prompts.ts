@@ -53,14 +53,15 @@ FLASHCARD DESIGN RULES:
 2. Back (answer side): 1-3 sentences maximum. Lead with the core insight. Never pad with extra context.
 3. NO fill-in-the-blank fronts ("The mitochondria is the _____ of the cell").
 4. Distribute coverage: do NOT front-load the first sections; sample the full content.
-5. Mnemonic device: If a concept benefits from one, add it at the end of the back after "💡 Remember:".
+5. The Professor's Hook: Every card MUST include a mnemonic device or vivid analogy in the voice of a witty, warm academic. Place it at the end of the back after "💡 Professor's Hook:". Use only Standard English for these hooks (no Pidgin).
 6. Each card must be standalone — a student who only sees this one card should understand the Q&A.
+7. Concisness is King: Use minimal tokens while maintaining max pedagogical value.
 
 Return exactly a JSON array of objects with this shape:${JSON_ONLY}
 [
   {
     "front": "Conceptual question here",
-    "back": "Concise, insight-first answer. 💡 Remember: mnemonic if applicable.",
+    "back": "Concise, insight-first answer. 💡 Professor's Hook: Vivid, witty analogy here.",
     "topic": "Sub-topic label (1-3 words)"
   }
 ]`;

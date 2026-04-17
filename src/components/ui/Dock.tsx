@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useIngestStore } from "@/store/useIngestStore";
+import { MessageCircle, Library, Plus, UserCircle } from "lucide-react";
 
 export default function Dock() {
     const pathname = usePathname();
@@ -37,9 +38,11 @@ export default function Dock() {
                     {isActive("/dashboard") && (
                         <motion.div layoutId="dock-indicator" className="absolute inset-0 bg-[#F59E0B]/20 rounded-2xl z-0" />
                     )}
-                    <span className={`material-symbols-outlined text-[24px] relative z-10 transition-colors ${isActive("/dashboard") ? "text-[#F59E0B]" : "text-white/40 group-hover:text-white/80"}`}>
-                        chat_bubble
-                    </span>
+                    <MessageCircle 
+                        size={24} 
+                        strokeWidth={isActive("/dashboard") ? 2 : 1.5}
+                        className={`relative z-10 transition-colors ${isActive("/dashboard") ? "text-[#F59E0B]" : "text-white/40 group-hover:text-white/80"}`} 
+                    />
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-white/10 backdrop-blur-md rounded-md text-[10px] uppercase font-bold text-white/90 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Chat</div>
                 </Link>
 
@@ -48,9 +51,11 @@ export default function Dock() {
                     {isActive("/library") && (
                         <motion.div layoutId="dock-indicator" className="absolute inset-0 bg-[#F59E0B]/20 rounded-2xl z-0" />
                     )}
-                    <span className={`material-symbols-outlined text-[24px] relative z-10 transition-colors ${isActive("/library") ? "text-[#F59E0B]" : "text-white/40 group-hover:text-white/80"}`}>
-                        auto_stories
-                    </span>
+                    <Library 
+                        size={24} 
+                        strokeWidth={isActive("/library") ? 2 : 1.5}
+                        className={`relative z-10 transition-colors ${isActive("/library") ? "text-[#F59E0B]" : "text-white/40 group-hover:text-white/80"}`} 
+                    />
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-white/10 backdrop-blur-md rounded-md text-[10px] uppercase font-bold text-white/90 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Library</div>
                 </Link>
 
@@ -59,9 +64,7 @@ export default function Dock() {
                     onClick={openModal}
                     className="relative group p-3 mx-1 rounded-[20px] bg-gradient-to-tr from-[#F59E0B] to-[#FCD34D] shadow-lg shadow-[#F59E0B]/20 hover:shadow-[#F59E0B]/40 hover:-translate-y-1 transition-all active:scale-95"
                 >
-                    <span className="material-symbols-outlined text-[24px] text-[#08080E] font-bold">
-                        add
-                    </span>
+                    <Plus size={24} strokeWidth={2.5} className="text-[#08080E]" />
                 </button>
 
                 {/* Profile / Settings */}
@@ -69,9 +72,11 @@ export default function Dock() {
                     {isActive("/profile") && (
                         <motion.div layoutId="dock-indicator" className="absolute inset-0 bg-white/10 rounded-2xl z-0" />
                     )}
-                    <span className={`material-symbols-outlined text-[24px] relative z-10 transition-colors ${isActive("/profile") ? "text-white/90" : "text-white/40 group-hover:text-white/80"}`}>
-                        account_circle
-                    </span>
+                    <UserCircle 
+                        size={24} 
+                        strokeWidth={isActive("/profile") ? 2 : 1.5}
+                        className={`relative z-10 transition-colors ${isActive("/profile") ? "text-white/90" : "text-white/40 group-hover:text-white/80"}`} 
+                    />
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-white/10 backdrop-blur-md rounded-md text-[10px] uppercase font-bold text-white/90 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Profile</div>
                 </Link>
 

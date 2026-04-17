@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
 import BrandLogo from "@/components/ui/BrandLogo";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -16,8 +17,8 @@ export default function LoginPage() {
     const [emailFocused, setEmailFocused] = useState(false);
     const [passFocused, setPassFocused] = useState(false);
     const router = useRouter();
+    const { resolvedTheme } = useTheme();
     const supabase = createClient();
-    const { resolvedTheme, toggleTheme } = useTheme();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,7 +39,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-[#06060B] flex items-center justify-center relative overflow-hidden px-5 py-12">
+        <div className="min-h-[100dvh] bg-[var(--background)] flex items-center justify-center relative overflow-hidden px-5 py-12 transition-colors duration-500">
 
             {/* ═══ Living background ═══ */}
             <div className="fixed inset-0 pointer-events-none">
@@ -63,16 +64,7 @@ export default function LoginPage() {
             </div>
 
             {/* ═══ Theme toggle ═══ */}
-            <button
-                onClick={toggleTheme}
-                className="fixed top-5 right-5 z-50 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
-                aria-label="Toggle theme"
-            >
-                <span className="material-symbols-outlined text-base text-[#8B8690]">
-                    {resolvedTheme === "light" ? "dark_mode" : "light_mode"}
-                </span>
-            </button>
+            <ThemeToggle variant="floating" />
 
             {/* ═══ Center column ═══ */}
             <div className="relative z-10 w-full max-w-[400px]">
@@ -80,24 +72,24 @@ export default function LoginPage() {
                 {/* Logo + brand */}
                 <div className="text-center mb-10">
                     <BrandLogo size="md" className="mx-auto mb-4" />
-                    <h1 className="font-heading text-[22px] font-semibold text-white/90 tracking-tight">
+                    <h1 className="font-heading text-[22px] font-semibold text-[var(--foreground)] tracking-tight">
                         Welcome back
                     </h1>
-                    <p className="text-sm text-white/35 mt-1">Sign in to continue learning</p>
+                    <p className="text-sm text-[var(--foreground-muted)] mt-1">Sign in to continue learning</p>
                 </div>
 
                 {/* ═══ The Card ═══ */}
                 <div
                     className="rounded-2xl relative overflow-hidden"
                     style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.3), 0 20px 60px rgba(0,0,0,0.25)",
+                        background: "var(--background-secondary)",
+                        border: "1px solid var(--border)",
+                        boxShadow: "var(--shadow-lg), inset 0 1px 1px var(--card-border)",
                     }}
                 >
                     {/* Inner glow */}
                     <div className="absolute top-0 left-0 right-0 h-px" style={{
-                        background: "linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.08) 50%, transparent 90%)",
+                        background: "linear-gradient(90deg, transparent 10%, var(--border) 50%, transparent 90%)",
                     }} />
 
                     <div className="p-7">
@@ -108,9 +100,9 @@ export default function LoginPage() {
                             disabled={loading}
                             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
                             style={{
-                                background: "rgba(255,255,255,0.06)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                color: "rgba(255,255,255,0.8)",
+                                background: "var(--background-tertiary)",
+                                border: "1px solid var(--border)",
+                                color: "var(--foreground-secondary)",
                             }}
                         >
                             <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
@@ -124,9 +116,9 @@ export default function LoginPage() {
 
                         {/* Divider */}
                         <div className="flex items-center gap-3 my-6">
-                            <div className="flex-1 h-px bg-white/[0.06]" />
-                            <span className="text-[11px] text-white/20 uppercase tracking-widest">or</span>
-                            <div className="flex-1 h-px bg-white/[0.06]" />
+                            <div className="flex-1 h-px bg-[var(--border)]" />
+                            <span className="text-[11px] text-[var(--foreground-muted)] uppercase tracking-widest">or</span>
+                            <div className="flex-1 h-px bg-[var(--border)]" />
                         </div>
 
                         {/* Error */}
@@ -141,7 +133,7 @@ export default function LoginPage() {
                         <form onSubmit={handleLogin} className="space-y-4">
                             {/* Email */}
                             <div>
-                                <label htmlFor="login-email" className="block text-[11px] font-medium text-white/30 uppercase tracking-wider mb-1.5">
+                                <label htmlFor="login-email" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">
                                     Email
                                 </label>
                                 <input
@@ -166,7 +158,7 @@ export default function LoginPage() {
                             {/* Password */}
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label htmlFor="login-pass" className="text-[11px] font-medium text-white/30 uppercase tracking-wider">
+                                    <label htmlFor="login-pass" className="text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                                         Password
                                     </label>
                                     <Link href="/forgot-password" className="text-[11px] text-[#818CF8] hover:text-[#a5b4fc] transition-colors">
@@ -219,7 +211,7 @@ export default function LoginPage() {
                             </button>
                         </form>
 
-                        <p className="text-center text-[13px] text-white/30 mt-6">
+                        <p className="text-center text-[13px] text-[var(--foreground-muted)] mt-6">
                             New here?{" "}
                             <Link href="/signup" className="text-[#F59E0B] hover:text-[#FCD34D] font-medium transition-colors">
                                 Create an account
@@ -230,7 +222,7 @@ export default function LoginPage() {
 
                 {/* Back link */}
                 <div className="text-center mt-6">
-                    <Link href="/" className="text-[13px] text-white/20 hover:text-white/40 transition-colors inline-flex items-center gap-1">
+                    <Link href="/" className="text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">arrow_back</span>
                         Home
                     </Link>

@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { amount, plan } = await req.json(); // amount in kobo
+        const { amount, plan, credits } = await req.json(); // amount in kobo
 
         if (!amount) {
             return NextResponse.json({ error: "Amount required" }, { status: 400 });
@@ -24,7 +25,8 @@ export async function POST(req: NextRequest) {
             callback_url: `${req.headers.get("origin")}/settings/billing`,
             metadata: {
                 user_id: user.id,
-                plan: plan || "topup"
+                plan: plan || "topup",
+                credits: credits || 0
             }
         };
 
@@ -43,7 +45,25 @@ export async function POST(req: NextRequest) {
             throw new Error(data.message || "Paystack initialization failed");
         }
 
-        return NextResponse.json({ authorization_url: data.data.authorization_url, reference: data.data.reference });
+        // Log the pending payment to our database for tracking
+        const { error: dbError } = await supabaseAdmin.from("payments").insert({
+            reference: data.data.reference,
+            user_id: user.id,
+            amount: amount,
+            credits: credits || 0,
+            status: 'pending',
+            metadata: params.metadata
+        });
+
+        if (dbError) {
+            console.error("Failed to log pending payment:", dbError);
+            // We still proceed since Paystack initialized successfully
+        }
+
+        return NextResponse.json({ 
+            authorization_url: data.data.authorization_url, 
+            reference: data.data.reference 
+        });
 
     } catch (error: any) {
         console.error("Paystack Init Error:", error);

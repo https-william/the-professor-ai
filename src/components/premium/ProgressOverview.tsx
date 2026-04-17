@@ -28,7 +28,7 @@ export function ProgressOverview() {
         { icon: Brain, label: "Synthesized", value: "84%" },
         { icon: BookOpen, label: "Mastered", value: "12" },
         { icon: Trophy, label: "Streak", value: "5 Days" },
-        { icon: Target, label: "Readiness", value: "A-" },
+        { icon: Target, label: "Readiness", value: "A" },
     ];
 
     return (

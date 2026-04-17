@@ -1,8 +1,24 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SHARE_CARD_TEMPLATES } from "@/lib/share-card-templates";
+import { 
+    TEMPLATE_REGISTRY, 
+    renderTemplate, 
+    getTemplatesForType, 
+    ContentType 
+} from "@/lib/templates/share-card-templates";
+import { 
+    Loader2, 
+    X, 
+    Share, 
+    Image as FileImage, 
+    FileText, 
+    Layout, 
+    Focus, 
+    Settings,
+    FileType
+} from "lucide-react";
 
 interface ShareCardProps {
     isOpen: boolean;
@@ -18,11 +34,16 @@ interface ShareCardProps {
 }
 
 export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
-    const [selectedTemplateId, setSelectedTemplateId] = useState(SHARE_CARD_TEMPLATES[0].id);
+    const contentType = (data.type.toLowerCase() === 'quiz' ? 'quiz' : 
+                         data.type.toLowerCase().includes('flash') ? 'flashcard' : 
+                         data.type.toLowerCase().includes('summary') ? 'summary' : 'chat') as ContentType;
+
+    const filteredTemplates = useMemo(() => getTemplatesForType(contentType), [contentType]);
+    const [selectedTemplateId, setSelectedTemplateId] = useState(filteredTemplates[0]?.id || TEMPLATE_REGISTRY[0].id);
     const [isGenerating, setIsGenerating] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const activeTemplate = SHARE_CARD_TEMPLATES.find(t => t.id === selectedTemplateId) || SHARE_CARD_TEMPLATES[0];
+    const activeTemplate = TEMPLATE_REGISTRY.find(t => t.id === selectedTemplateId) || TEMPLATE_REGISTRY[0];
 
     const today = data.date || new Date().toLocaleDateString('en-US', {
         year: 'numeric',
@@ -48,25 +69,16 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
         return lines;
     };
 
-    // Replace placeholders in SVG
+    // Use the new dynamic engine
     const getProcessedSvg = () => {
-        let svg = activeTemplate.svg;
-        svg = svg.replace("<svg ", "<svg style=\"width: 100%; height: 100%;\" ");
-        svg = svg.replace(/<text([^>]*)>{{title}}<\/text>/g, (match, attrs) => {
-            const lines = wrapTextToTspans(data.title, 20);
-            const xMatch = attrs.match(/x="([^"]+)"/);
-            const xVal = xMatch ? xMatch[1] : "540";
-            const dyFirst = lines.length > 2 ? "-0.5em" : "0";
-            const tspanStr = lines.map((line, i) => 
-                `<tspan x="${xVal}" dy="${i === 0 ? dyFirst : '1.2em'}">${line}</tspan>`
-            ).join("");
-            return `<text${attrs}>${tspanStr}</text>`;
+        return renderTemplate(selectedTemplateId, {
+            type: contentType,
+            title: data.title,
+            data: { count: data.count },
+            topics: [], // Topics are extracted in the engine if not provided
+            author: data.user,
+            createdAt: today
         });
-        svg = svg.replace(/{{count}}/g, String(data.count));
-        svg = svg.replace(/{{type}}/g, data.type.toUpperCase());
-        svg = svg.replace(/{{user}}/g, data.user);
-        svg = svg.replace(/{{date}}/g, today);
-        return svg;
     };
 
     const handleDownloadImage = async () => {
@@ -243,7 +255,7 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                     onClick={onClose}
                     className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/5 text-white/40 flex items-center justify-center hover:bg-white/10 transition-all"
                 >
-                    <span className="material-symbols-outlined text-lg">close</span>
+                    <X size={18} strokeWidth={1.5} />
                 </button>
 
                 {/* Left: Preview */}
@@ -261,25 +273,77 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                     <h3 className="text-lg font-bold text-white/90 mb-1">Share Achievement</h3>
                     <p className="text-[11px] text-white/30 mb-6 uppercase tracking-widest font-black">Customize & Export</p>
 
-                    <div className="flex-1 space-y-4 mb-6">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/20">Aesthetic Templates</label>
+                    <div className="flex-1 overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/20">Aesthetic Templates ({filteredTemplates.length})</label>
                         <div className="grid grid-cols-2 gap-2">
-                            {SHARE_CARD_TEMPLATES.map((t) => (
+                            {filteredTemplates.slice(0, 20).map((t) => (
                                 <button
                                     key={t.id}
                                     onClick={() => setSelectedTemplateId(t.id)}
-                                    className={`p-2 rounded-xl border-2 transition-all ${selectedTemplateId === t.id
+                                    className={`p-2 rounded-xl border-2 transition-all text-left group ${selectedTemplateId === t.id
                                         ? "border-[#F59E0B] bg-[#F59E0B]/5"
-                                        : "border-white/5 bg-white/[0.02] opacity-60 grayscale hover:grayscale-0"
+                                        : "border-white/5 bg-white/[0.02] hover:border-white/10"
                                         }`}
                                 >
-                                    <div className="aspect-square bg-white/5 rounded-lg mb-2 overflow-hidden flex items-center justify-center p-2 text-[#F59E0B]">
-                                        <span className="material-symbols-outlined text-[24px]">palette</span>
+                                    <div 
+                                        className="aspect-[1080/1350] w-full rounded-lg mb-2 overflow-hidden flex flex-col items-center justify-center relative border border-white/5"
+                                        style={{ backgroundColor: `${t.previewColor}15` }}
+                                    >
+                                        {/* Abstract Layout Preview */}
+                                        <div className="w-full h-full p-2 opacity-40">
+                                            <div className="w-full h-full flex flex-col gap-1.5">
+                                                {t.layoutId === 'centered' ? (
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <div className="w-4 h-1 bg-white/20 rounded-full"/>
+                                                        <div className="w-8 h-8 rounded-full border border-white/10"/>
+                                                        <div className="w-6 h-1.5 bg-white/10 rounded-full"/>
+                                                    </div>
+                                                ) : t.layoutId === 'magazine' ? (
+                                                    <div className="flex gap-1 h-full">
+                                                        <div className="w-1 h-full bg-white/20"/>
+                                                        <div className="flex-1 flex flex-col gap-1">
+                                                            <div className="w-full h-2 bg-white/10"/>
+                                                            <div className="w-2/3 h-1 bg-white/5"/>
+                                                            <div className="mt-auto w-4 h-4 bg-white/20"/>
+                                                        </div>
+                                                    </div>
+                                                ) : t.layoutId === 'poster' ? (
+                                                    <div className="flex flex-col gap-1 h-full">
+                                                        <div className="w-full h-6 bg-white/10"/>
+                                                        <div className="mt-auto w-full h-4 bg-white/20"/>
+                                                    </div>
+                                                ) : t.layoutId === 'split-vertical' ? (
+                                                    <div className="flex gap-1 h-full">
+                                                        <div className="flex-1 bg-white/5"/>
+                                                        <div className="flex-1 bg-white/10"/>
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid grid-cols-2 gap-1 w-full h-full">
+                                                        <div className="bg-white/5"/><div className="bg-white/10"/>
+                                                        <div className="bg-white/10"/><div className="bg-white/5"/>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            {t.layoutId === 'magazine' ? <FileText size={14} strokeWidth={1.5} style={{ color: t.previewColor }} /> : 
+                                             t.layoutId === 'poster' ? <Layout size={14} strokeWidth={1.5} style={{ color: t.previewColor }} /> : 
+                                             t.layoutId === 'spotlight' ? <Focus size={14} strokeWidth={1.5} style={{ color: t.previewColor }} /> : 
+                                             <Settings size={14} strokeWidth={1.5} style={{ color: t.previewColor }} />}
+                                        </div>
+                                        {selectedTemplateId === t.id && (
+                                            <div className="absolute inset-0 bg-[#F59E0B]/10 animate-pulse" />
+                                        )}
                                     </div>
-                                    <span className="text-[10px] font-bold block text-center truncate text-white/40">{t.name}</span>
+                                    <span className={`text-[9px] font-bold block truncate transition-colors ${selectedTemplateId === t.id ? 'text-[#F59E0B]' : 'text-white/30'}`}>
+                                        {t.label.split(' (')[0]}
+                                    </span>
                                 </button>
                             ))}
                         </div>
+                        {filteredTemplates.length > 20 && (
+                            <p className="text-[9px] text-white/10 text-center italic">Scroll for more styles...</p>
+                        )}
                     </div>
 
                     <div className="space-y-2 mt-auto">
@@ -289,10 +353,10 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                             className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#08080E] font-black text-[13px] shadow-xl shadow-[#F59E0B]/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
                             {isGenerating ? (
-                                <Loader2Icon className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                                 <>
-                                    <span className="material-symbols-outlined text-[20px]">ios_share</span>
+                                    <Share size={20} strokeWidth={1.5} />
                                     Share Achievement
                                 </>
                             )}
@@ -304,14 +368,14 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                                 disabled={isGenerating}
                                 className="py-2.5 rounded-xl border border-white/5 text-white/40 font-bold text-[11px] hover:bg-white/5 transition-all flex items-center justify-center gap-1.5"
                             >
-                                <span className="material-symbols-outlined text-[16px]">image</span>
+                                <FileImage size={16} strokeWidth={1.5} />
                                 PNG
                             </button>
                             <button
                                 onClick={handleExportPDF}
                                 className="py-2.5 rounded-xl border border-white/5 text-white/40 font-bold text-[11px] hover:bg-white/5 transition-all flex items-center justify-center gap-1.5"
                             >
-                                <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                                <FileType size={16} strokeWidth={1.5} />
                                 PDF
                             </button>
                         </div>
@@ -326,23 +390,4 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
             </motion.div>
         </div>
     );
-}
-
-function Loader2Icon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
-    )
 }

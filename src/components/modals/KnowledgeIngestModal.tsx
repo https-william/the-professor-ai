@@ -103,11 +103,10 @@ export default function KnowledgeIngestModal({ onSuccess }: KnowledgeIngestModal
         }
     };
 
-    if (!isModalOpen) return null;
-
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                 {/* Backdrop */}
                 <motion.div 
                     initial={{ opacity: 0 }}
@@ -229,6 +228,7 @@ export default function KnowledgeIngestModal({ onSuccess }: KnowledgeIngestModal
                     </div>
                 </motion.div>
             </div>
+            )}
         </AnimatePresence>
     );
 }

@@ -6,6 +6,7 @@ export const runtime = 'edge';
 /**
  * GET /api/library
  * Fetches all generations (flashcards, quizzes, etc.) for the authenticated user
+ * Optional: ?type=quiz to filter by type
  */
 export async function GET(req: NextRequest) {
     try {
@@ -16,19 +17,27 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Fetch user's generations ordered by most recent first
-        const { data: generations, error: fetchError } = await supabase
+        const { searchParams } = new URL(req.url);
+        const type = searchParams.get("type");
+
+        let query = supabase
             .from("generations")
             .select("*")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false });
+
+        if (type) {
+            query = query.eq("type", type);
+        }
+
+        const { data: generations, error: fetchError } = await query;
 
         if (fetchError) {
             console.error("Library fetch error:", fetchError);
             return NextResponse.json({ error: fetchError.message }, { status: 500 });
         }
 
-        return NextResponse.json({ generations });
+        return NextResponse.json({ success: true, generations });
     } catch (error: any) {
         console.error("Library GET Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

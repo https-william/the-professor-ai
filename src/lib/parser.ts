@@ -13,8 +13,13 @@ const MIN_TEXT_LENGTH = 50; // If we extract less than this, warn user
 // ─── PDF Parsing ──────────────────────────────────────────────────────────────
 async function parsePDF(buffer: Buffer): Promise<string> {
     // Lazy require to avoid edge runtime issues
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require("pdf-parse");
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    let pdfParse = require("pdf-parse");
+    // Handle Next.js Webpack / Edge module mangling
+    if (pdfParse && typeof pdfParse === "object" && "default" in pdfParse) {
+        pdfParse = pdfParse.default;
+    }
+    /* eslint-enable @typescript-eslint/no-require-imports */
 
     let data: { text: string; numpages: number };
     try {

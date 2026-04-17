@@ -1,11 +1,28 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
 import { createClient } from "@/lib/supabase/client";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import Markdown from "@/components/ui/Markdown";
+import SiteHeader from "@/components/ui/SiteHeader";
+import { useToasts } from "@/components/ui/GlobalToasts";
+import EndowmentModal from "@/components/modals/EndowmentModal";
+import { useUser } from "@/context/UserContext";
+import AuthInterceptor from "@/components/ui/AuthInterceptor";
+import { 
+    HelpCircle, 
+    FileText, 
+    AlertCircle, 
+    ChevronLeft, 
+    Share2, 
+    Link, 
+    Printer, 
+    Download, 
+    ChevronsDown, 
+    CheckCircle2 
+} from "lucide-react";
 
 // ── Watermarked export HTML builder ──────────────────────────────────
 function buildExportHTML(title: string, bodyHTML: string) {
@@ -17,8 +34,8 @@ function buildExportHTML(title: string, bodyHTML: string) {
 <title>${title} — The Professor AI</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #06060B; color: #d1d5db; line-height: 1.7; padding: 40px 20px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #08080E; color: #d1d5db; line-height: 1.7; padding: 40px 20px; }
   .page { max-width: 720px; margin: 0 auto; }
   /* Watermark header */
   .wm { display: flex; align-items: center; gap: 12px; padding-bottom: 24px; margin-bottom: 32px; border-bottom: 2px solid #F59E0B33; }
@@ -76,26 +93,71 @@ function buildExportHTML(title: string, bodyHTML: string) {
 }
 
 // ── Markdown Components (reusable) ──────────────────────────────────
-const mdComponents = {
-    h1: ({node, ...props}: any) => <h1 className="text-2xl font-black text-[var(--foreground)] mb-6 mt-2 tracking-tight" {...props} />,
-    h2: ({node, ...props}: any) => <h2 className="text-lg font-bold text-[var(--foreground)] mb-4 mt-8 flex items-center gap-3 border-b border-[var(--border)] pb-2" {...props} />,
-    h3: ({node, ...props}: any) => <h3 className="text-base font-bold text-[var(--foreground)] mb-3 mt-6" {...props} />,
-    h4: ({node, ...props}: any) => <h4 className="text-sm font-bold text-[var(--foreground)] mb-2 mt-4 uppercase tracking-wider" {...props} />,
-    p: ({node, ...props}: any) => <p className="mb-4 leading-relaxed text-sm opacity-90" {...props} />,
-    ul: ({node, ...props}: any) => <ul className="mb-6 space-y-2 list-none" {...props} />,
-    ol: ({node, ...props}: any) => <ol className="mb-6 space-y-3 list-decimal pl-5" {...props} />,
-    li: ({node, ...props}: any) => (
-        <li className="flex gap-3 text-sm items-start" {...props}>
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] mt-2 flex-shrink-0" />
-            <span>{props.children}</span>
-        </li>
-    ),
-    strong: ({node, ...props}: any) => <strong className="font-black text-[var(--foreground)]" {...props} />,
-    code: ({node, ...props}: any) => <code className="px-1.5 py-0.5 rounded bg-white/5 font-mono text-[12px] text-[var(--accent)]" {...props} />,
-    blockquote: ({node, ...props}: any) => (
-        <blockquote className="border-l-2 border-[var(--accent)]/50 pl-4 py-2 my-6 italic text-[var(--foreground-muted)] bg-[var(--accent)]/5 rounded-r-xl" {...props} />
-    ),
-};
+// Moved to src/components/ui/Markdown.tsx
+
+function SummaryCheckpoint({ text, onCorrect }: { text: string; onCorrect: () => void }) {
+    const [isAnswered, setIsAnswered] = useState(false);
+    const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    const [isCorrect, setIsCorrect] = useState(false);
+
+    // Dynamic question generation (client-side simple heuristic)
+    const questionData = useMemo(() => {
+        const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+        const importantSentence = sentences.find(s => s.length > 30 && s.length < 100) || sentences[0];
+        const words = importantSentence.split(" ").filter(w => w.length > 5);
+        const keyword = words[Math.floor(Math.random() * words.length)]?.replace(/[.,!]/g, "") || "this section";
+        
+        return {
+            question: `What was a key focus of this section?`,
+            options: [
+                { text: keyword, correct: true },
+                { text: "General overview", correct: false },
+                { text: "Unrelated details", correct: false }
+            ].sort(() => Math.random() - 0.5)
+        };
+    }, [text]);
+
+    const handleAnswer = (idx: number, correct: boolean) => {
+        if (isAnswered) return;
+        setSelectedOption(idx);
+        setIsCorrect(correct);
+        setIsAnswered(true);
+        if (correct) onCorrect();
+    };
+
+    return (
+        <div className="mt-8 p-6 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--border)] animate-in fade-in zoom-in-95 duration-500">
+            <div className="flex items-center gap-2 mb-4">
+                <HelpCircle size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] opacity-70">Knowledge Check</span>
+            </div>
+            <p className="text-sm font-bold text-[var(--foreground)] mb-4">{questionData.question}</p>
+            <div className="grid gap-2">
+                {questionData.options.map((opt, i) => (
+                    <button
+                        key={i}
+                        onClick={() => handleAnswer(i, opt.correct)}
+                        disabled={isAnswered}
+                        className={`w-full p-4 rounded-xl text-left text-xs font-bold transition-all border ${
+                            isAnswered 
+                                ? opt.correct 
+                                    ? "bg-green-500/20 border-green-500/40 text-green-400" 
+                                    : selectedOption === i 
+                                        ? "bg-red-500/20 border-red-500/40 text-red-400" 
+                                        : "bg-[var(--foreground)]/5 border-[var(--border)] text-[var(--foreground-muted)] opacity-50"
+                                : "bg-[var(--foreground)]/5 border-[var(--border)] text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/10 hover:border-[var(--foreground)]/20"
+                        }`}
+                    >
+                        {opt.text}
+                    </button>
+                ))}
+            </div>
+            {isAnswered && !isCorrect && (
+                <p className="mt-3 text-[10px] text-red-400/60 font-medium animate-in slide-in-from-top-1">Not quite! But let&apos;s move on to keep the flow.</p>
+            )}
+        </div>
+    );
+}
 
 
 function SummaryContent() {
@@ -110,6 +172,11 @@ function SummaryContent() {
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
     const shareMenuRef = useRef<HTMLDivElement>(null);
+    const { addToast } = useToasts();
+    const { user } = useUser();
+    const [isEndowmentOpen, setIsEndowmentOpen] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(1);
+    const [checkpointPassed, setCheckpointPassed] = useState(false);
 
     const LOADING_PHRASES = [
         "Sipping digital espresso...",
@@ -186,6 +253,17 @@ function SummaryContent() {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(params),
                         });
+
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            if (response.status === 402 || errorData.code === "INSUFFICIENT_CREDITS") {
+                                setIsEndowmentOpen(true);
+                                setIsGenerating(false);
+                                return;
+                            }
+                            throw new Error(errorData.error || "Generation failed");
+                        }
+
                         const data = await response.json();
                         const finalSummary = {
                             id: data.id || null,
@@ -194,6 +272,9 @@ function SummaryContent() {
                             title: data.title || params.title || "Academic Summary",
                         };
                         setSummary(finalSummary);
+                        if (data.xpEarned) {
+                            addToast(`Summary created! +${data.xpEarned} XP`, 'xp');
+                        }
                         sessionStorage.setItem("generatedContent", JSON.stringify(finalSummary));
                     } catch (e: any) {
                         console.error("Summary error:", e);
@@ -237,6 +318,13 @@ function SummaryContent() {
     const textSections = summary 
         ? (typeof summary.data === "string" ? summary.data : typeof summary.summary === "string" ? summary.summary : null)
         : null;
+
+    // Calculate chapters using useMemo to avoid re-parsing on every render
+    const chapters = useMemo(() => {
+        if (!textSections) return [];
+        const rawChapters = textSections.split(/\n## /g);
+        return rawChapters.map((c: string, i: number) => (i > 0 ? "## " + c : c));
+    }, [textSections]);
 
     // ── Export Handlers ──────────────────────────────────────────────
 
@@ -315,14 +403,14 @@ function SummaryContent() {
     // ── Loading State ───────────────────────────────────────────────
     if (isGenerating) {
         return (
-            <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
                 <div className="absolute inset-x-0 top-16 flex flex-col items-center opacity-[0.15] pointer-events-none z-0 px-6">
-                    <div className="w-16 h-16 rounded-2xl bg-white/20 animate-pulse mb-6" />
-                    <div className="w-1/3 h-8 rounded-lg bg-white/20 animate-pulse mb-12" />
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--foreground)]/20 animate-pulse mb-6" />
+                    <div className="w-1/3 h-8 rounded-lg bg-[var(--foreground)]/20 animate-pulse mb-12" />
                     <div className="w-full max-w-3xl space-y-6">
-                        <div className="w-full h-32 rounded-3xl bg-white/20 animate-pulse" />
-                        <div className="w-full h-24 rounded-3xl bg-white/20 animate-pulse delay-75" />
-                        <div className="w-full h-40 rounded-3xl bg-white/20 animate-pulse delay-150" />
+                        <div className="w-full h-32 rounded-3xl bg-[var(--foreground)]/20 animate-pulse" />
+                        <div className="w-full h-24 rounded-3xl bg-[var(--foreground)]/20 animate-pulse delay-75" />
+                        <div className="w-full h-40 rounded-3xl bg-[var(--foreground)]/20 animate-pulse delay-150" />
                     </div>
                 </div>
 
@@ -331,21 +419,21 @@ function SummaryContent() {
                 
                 {/* Central Console */}
                 <div className="relative z-10 w-full max-w-md mx-auto animate-in zoom-in-95 duration-700 mt-20">
-                    <div className="p-1 rounded-3xl" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(0,0,0,0) 50%, rgba(139,92,246,0.05))" }}>
-                        <div className="p-8 rounded-[28px] bg-[#08080E]/90 backdrop-blur-2xl border border-white/5 shadow-2xl flex flex-col items-center">
+                    <div className="p-1 rounded-3xl" style={{ background: "linear-gradient(135deg, var(--accent-glow), rgba(0,0,0,0) 50%, var(--accent-glow))" }}>
+                        <div className="p-8 rounded-[28px] bg-[var(--card)]/90 backdrop-blur-2xl border border-[var(--border)] shadow-2xl flex flex-col items-center">
                             
                             <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center relative">
-                                <div className="absolute inset-0 rounded-full border-2 border-[#8B5CF6]/20 border-t-[#8B5CF6] animate-spin" style={{ animationDuration: '1.5s' }} />
-                                <span className="material-symbols-outlined text-xl text-[#8B5CF6] animate-pulse">subject</span>
+                                <div className="absolute inset-0 rounded-full border-2 border-[var(--accent)]/20 border-t-[var(--accent)] animate-spin" style={{ animationDuration: '1.5s' }} />
+                                <FileText size={20} strokeWidth={1.5} className="text-[var(--accent)] animate-pulse" />
                             </div>
                             
                             {/* Simulated Terminal */}
-                            <div className="w-full bg-[#040406] rounded-xl p-5 border border-white/5 mb-5 h-28 relative overflow-hidden flex flex-col justify-end">
-                                <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-[#040406] to-transparent z-10" />
+                            <div className="w-full bg-[var(--background-secondary)] rounded-xl p-5 border border-[var(--border)] mb-5 h-28 relative overflow-hidden flex flex-col justify-end">
+                                <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-[var(--background-secondary)] to-transparent z-10" />
                                 <div className="font-mono text-[11px] flex flex-col gap-2 relative z-0">
-                                    <span className="text-white/30 truncate">&gt; Initializing Semantic Analyzer...</span>
-                                    <span className="text-white/40 truncate">&gt; Condensing document architecture...</span>
-                                    <span className="text-[#8B5CF6] truncate animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <span className="text-[var(--foreground-muted)] truncate">&gt; Analyzing your material...</span>
+                                    <span className="text-[var(--foreground-muted)] truncate">&gt; Building summary structure...</span>
+                                    <span className="text-[var(--accent)] truncate animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <b key={loadingIdx}>&gt; {LOADING_PHRASES[loadingIdx]}</b>
                                         <span className="animate-pulse">_</span>
                                     </span>
@@ -353,8 +441,8 @@ function SummaryContent() {
                             </div>
 
                             {/* Progress Line */}
-                            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#8B5CF6] rounded-full w-full animate-pulse opacity-50" />
+                            <div className="w-full h-1 bg-[var(--border)] rounded-full overflow-hidden">
+                                <div className="h-full bg-[var(--accent)] rounded-full w-full animate-pulse opacity-50" />
                             </div>
                         </div>
                     </div>
@@ -365,15 +453,23 @@ function SummaryContent() {
 
     // ── Error State ─────────────────────────────────────────────────
     if (generationError) {
+        if (generationError.toLowerCase().includes("unauthorized")) {
+            return (
+                <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
+                    <AuthInterceptor />
+                </div>
+            );
+        }
+
         return (
-            <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6">
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{
                     background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)",
                 }}>
-                    <span className="material-symbols-outlined text-3xl text-[#EF4444]">error</span>
+                    <AlertCircle size={30} strokeWidth={1.5} className="text-[#EF4444]" />
                 </div>
-                <h2 className="text-xl font-bold text-white/80 mb-2">Generation Failed</h2>
-                <p className="text-sm text-white/30 mb-8 text-center max-w-xs">{generationError}</p>
+                <h2 className="text-xl font-bold text-[var(--foreground)] mb-2">Generation Failed</h2>
+                <p className="text-sm text-[var(--foreground-muted)] mb-8 text-center max-w-xs">{generationError}</p>
                 <button onClick={() => router.push('/create')} className="px-6 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]" style={{
                     background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E",
                     boxShadow: "0 4px 16px rgba(245,158,11,0.3)",
@@ -390,10 +486,10 @@ function SummaryContent() {
 
     // ── Share Menu Items ────────────────────────────────────────────
     const shareActions = [
-        { icon: "link", label: summary?.id ? "Copy Public Link" : "Copy Text", onClick: handleCopyLink },
-        { icon: "print", label: "Save as PDF", onClick: handleDownloadPDF },
-        { icon: "description", label: "Download .docx", onClick: handleDownloadWord },
-        { icon: "download", label: "Save Offline", onClick: handleDownloadOfflineHTML },
+        { icon: Link, label: summary?.id ? "Copy Public Link" : "Copy Text", onClick: handleCopyLink },
+        { icon: Printer, label: "Save as PDF", onClick: handleDownloadPDF },
+        { icon: FileText, label: "Download .docx", onClick: handleDownloadWord },
+        { icon: Download, label: "Save Offline", onClick: handleDownloadOfflineHTML },
     ];
 
     return (
@@ -411,7 +507,7 @@ function SummaryContent() {
                         onClick={() => router.push("/create")}
                         className="p-2 -ml-2 rounded-xl hover:bg-[var(--background-tertiary)] transition-all"
                     >
-                        <span className="material-symbols-outlined text-xl">arrow_back</span>
+                        <ChevronLeft size={20} strokeWidth={1.5} />
                     </button>
                     <div>
                         <h1 className="text-sm font-bold text-[var(--foreground)] line-clamp-1 max-w-[200px] sm:max-w-none">{summary.title || "Smart Summary"}</h1>
@@ -425,7 +521,7 @@ function SummaryContent() {
                         onClick={() => setIsShareOpen(!isShareOpen)}
                         className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border)] text-[var(--foreground-secondary)] bg-[var(--card)] hover:border-[var(--accent)]/30 hover:text-[var(--accent)] transition-all text-sm font-medium"
                     >
-                        <span className="material-symbols-outlined text-[18px]">ios_share</span>
+                        <Share2 size={18} strokeWidth={1.5} />
                         <span className="hidden sm:inline">Share</span>
                     </button>
 
@@ -441,9 +537,9 @@ function SummaryContent() {
                                     onClick={action.onClick}
                                     className="w-full text-left px-3 py-2.5 text-[13px] text-[var(--foreground-secondary)] hover:bg-[var(--accent)]/8 hover:text-[var(--foreground)] transition-colors flex items-center gap-3"
                                 >
-                                    <span className="material-symbols-outlined text-[16px] opacity-60">{action.icon}</span>
+                                    <action.icon size={16} strokeWidth={1.5} className="opacity-60" />
                                     {action.label}
-                                    {action.icon === "link" && copySuccess && (
+                                    {action.icon === Link && copySuccess && (
                                         <span className="ml-auto text-[10px] text-green-400 font-bold">Copied!</span>
                                     )}
                                 </button>
@@ -464,51 +560,113 @@ function SummaryContent() {
 
                 <div className="space-y-6" id="export-content">
                     {textSections ? (
-                        <div className="p-6 md:p-8 rounded-2xl md:rounded-[32px] bg-[var(--card)]/50 border border-[var(--border)] shadow-2xl shadow-black/10 backdrop-blur-xl relative overflow-hidden">
-                           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--accent)]/5 to-transparent blur-2xl" />
-                           
-                           <article className="max-w-none text-[var(--foreground-secondary)] selection:bg-[var(--accent)]/20 relative z-10">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                                    {textSections}
-                                </ReactMarkdown>
-                           </article>
+                        <div className="relative">
+                            <div className="space-y-8">
+                                {chapters.slice(0, visibleCount).map((chapter: string, idx: number) => (
+                                    <motion.div 
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5 }}
+                                        className="p-6 md:p-8 rounded-2xl md:rounded-[32px] bg-[var(--card)]/50 border border-[var(--border)] shadow-2xl shadow-black/10 backdrop-blur-xl relative overflow-hidden"
+                                    >
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--accent)]/5 to-transparent blur-2xl" />
+                                        <article className="max-w-none text-[var(--foreground-secondary)] selection:bg-[var(--accent)]/20 relative z-10">
+                                            <Markdown>
+                                                {chapter}
+                                            </Markdown>
+                                        </article>
+
+                                        {idx === visibleCount - 1 && visibleCount < chapters.length && !checkpointPassed && (
+                                            <SummaryCheckpoint 
+                                                text={chapter} 
+                                                onCorrect={() => {
+                                                    setCheckpointPassed(true);
+                                                    addToast("Checkpoint cleared! +5 XP", "xp");
+                                                    fetch("/api/user/activity", {
+                                                        method: "POST",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify({ type: "daily_challenge", customXp: 5 })
+                                                    }).catch(() => {});
+                                                }} 
+                                            />
+                                        )}
+                                        
+                                        {idx === visibleCount - 1 && visibleCount < chapters.length && checkpointPassed && (
+                                            <div className="mt-10 pt-8 border-t border-[var(--border)] flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--accent)]/40 mb-4 text-center">Insight Digested • Processing Next Stage {visibleCount}/{chapters.length}</p>
+                                                <button 
+                                                    onClick={() => {
+                                                        setVisibleCount(prev => prev + 1);
+                                                        setCheckpointPassed(false);
+                                                        addToast("Next insight unlocked", "success", "auto_awesome");
+                                                    }}
+                                                    className="px-8 py-4 rounded-2xl bg-white text-[#06060B] font-black text-sm tracking-wide shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-3"
+                                                >
+                                                    <ChevronsDown size={18} strokeWidth={2} />
+                                                    Unlock Next Insight
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {idx === chapters.length - 1 && chapters.length > 1 && (
+                                            <div className="mt-8 pt-6 border-t border-[var(--border)] flex justify-center opacity-20">
+                                                <CheckCircle2 size={14} strokeWidth={1.5} />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest ml-2">Final Insight Reached</span>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </div>
                         </div>
                     ) : (
                         sections.map((section: any, idx: number) => (
                             <div 
                                 key={idx} 
-                                className="group p-8 md:p-10 rounded-[32px] bg-[#0A0A0F]/80 border border-white/5 hover:border-[var(--accent)]/30 transition-all duration-500 relative overflow-hidden"
+                                className="group p-8 md:p-10 rounded-[32px] bg-[var(--card)]/80 border border-[var(--border)] hover:border-[var(--accent)]/30 transition-all duration-500 relative overflow-hidden"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-[var(--foreground)]/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 
                                 {section.heading && (
-                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-4 font-sans tracking-tight">
+                                    <h3 className="text-xl font-bold text-[var(--foreground)] mb-6 flex items-center gap-4 font-sans tracking-tight">
                                         <div className="w-1 h-8 rounded-full bg-gradient-to-b from-[var(--accent)] to-[var(--secondary)]" />
                                         {section.heading}
                                     </h3>
                                 )}
                                 
-                                <div className="max-w-none text-white/70 leading-relaxed font-serif text-[15px]">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                                <div className="max-w-none text-[var(--foreground-secondary)] leading-relaxed font-serif text-[15px]">
+                                    <Markdown>
                                         {section.content || section.text || section.body || JSON.stringify(section)}
-                                    </ReactMarkdown>
+                                    </Markdown>
                                 </div>
-                                <div className="mt-8 pt-6 border-t border-white/5 flex justify-center opacity-20 group-hover:opacity-40 transition-opacity">
-                                    <span className="material-symbols-outlined text-sm">verified</span>
+                                <div className="mt-8 pt-6 border-t border-[var(--border)] flex justify-center opacity-20 group-hover:opacity-40 transition-opacity">
+                                    <CheckCircle2 size={14} strokeWidth={1.5} />
                                 </div>
                             </div>
                         ))
                     )}
                 </div>
             </main>
+
+            <EndowmentModal 
+                isOpen={isEndowmentOpen} 
+                onClose={() => setIsEndowmentOpen(false)}
+                currentCredits={user.credits}
+                requiredCredits={1}
+            />
         </div>
     );
 }
 
 export default function SummaryPage() {
     return (
-        <Suspense fallback={<div className="flex h-screen bg-[#06060B] items-center justify-center text-white/50">Loading...</div>}>
-            <SummaryContent />
-        </Suspense>
+        <div className="h-[100dvh] bg-[var(--background)] overflow-hidden relative">
+            <SiteHeader showLogo />
+            <div className="h-full overflow-y-auto pt-24">
+                <Suspense fallback={<div className="flex h-full bg-[var(--background)] items-center justify-center text-[var(--foreground-muted)]">Loading...</div>}>
+                    <SummaryContent />
+                </Suspense>
+            </div>
+        </div>
     );
 }

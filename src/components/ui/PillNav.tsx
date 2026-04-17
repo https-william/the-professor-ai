@@ -5,7 +5,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface PillNavProps {
-    items: { id: string; label: string; icon?: string }[];
+    items: { id: string; label: string; icon?: any }[];
     activeId: string;
     onSelect: (id: string) => void;
     className?: string;
@@ -31,7 +31,7 @@ export const PillNav = ({ items, activeId, onSelect, className }: PillNavProps) 
                         />
                     )}
                     <span className="flex items-center gap-2">
-                        {item.icon && <span className="material-symbols-outlined text-[18px]">{item.icon}</span>}
+                        {item.icon && <item.icon size={18} strokeWidth={1.5} />}
                         {item.label}
                     </span>
                 </button>

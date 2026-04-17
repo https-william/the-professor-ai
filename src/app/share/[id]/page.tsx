@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 // Mock data service
 const getSharedContent = (id: string) => {
@@ -49,7 +50,7 @@ export default function SharePage() {
     );
 
     return (
-        <div className="min-h-screen bg-[#09090B] text-white overflow-hidden relative">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] overflow-hidden relative transition-colors duration-500">
             {/* Ambient */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-[20%] left-[30%] w-[600px] h-[600px] bg-teal-500/[0.04] rounded-full blur-[150px]" />
@@ -64,10 +65,11 @@ export default function SharePage() {
                     <span className="font-semibold tracking-tight">The Professor</span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Link href="/login" className="text-sm text-zinc-400 hover:text-white transition-colors">Log in</Link>
+                    <ThemeToggle />
+                    <Link href="/login" className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">Log in</Link>
                     <Link
                         href="/signup"
-                        className="px-4 py-2 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200 transition-colors"
+                        className="px-4 py-2 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-sm font-medium hover:opacity-90 transition-colors"
                     >
                         Sign up
                     </Link>
@@ -83,7 +85,7 @@ export default function SharePage() {
                         </div>
                         Shared by {content.author}
                     </div>
-                    <h1 className="text-4xl font-bold mb-4 bg-gradient-to-br from-white to-zinc-500 bg-clip-text text-transparent">
+                    <h1 className="text-4xl font-bold mb-4 bg-gradient-to-br from-[var(--foreground)] to-[var(--foreground-muted)] bg-clip-text text-transparent">
                         {content.title}
                     </h1>
                     <div className="flex items-center justify-center gap-4 text-sm text-zinc-500">
@@ -109,12 +111,12 @@ export default function SharePage() {
                 {/* Content Preview */}
                 <div className="space-y-4 mb-8">
                     {content.preview.map((card: any, i: number) => (
-                        <div key={i} className="p-6 rounded-2xl bg-zinc-900/50 border border-white/[0.06]">
-                            <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-2">Term</p>
-                            <h3 className="text-lg font-medium text-white mb-6">{card.q}</h3>
-                            <div className="h-px w-full bg-white/[0.04] mb-6" />
-                            <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-2">Definition</p>
-                            <p className="text-zinc-300 leading-relaxed">{card.a}</p>
+                        <div key={i} className="p-6 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-sm">
+                            <p className="text-[var(--foreground-muted)] text-xs font-medium uppercase tracking-wider mb-2">Term</p>
+                            <h3 className="text-lg font-medium text-[var(--foreground)] mb-6">{card.q}</h3>
+                            <div className="h-px w-full bg-[var(--border)] mb-6" />
+                            <p className="text-[var(--foreground-muted)] text-xs font-medium uppercase tracking-wider mb-2">Definition</p>
+                            <p className="text-[var(--foreground-secondary)] leading-relaxed">{card.a}</p>
                         </div>
                     ))}
 

@@ -3,6 +3,13 @@
 import { useState } from "react";
 import demoData from "@/data/demo-data.json";
 import { PillNav } from "@/components/ui/PillNav";
+import { 
+    Layers, 
+    HelpCircle, 
+    GraduationCap, 
+    ChevronLeft, 
+    ChevronRight 
+} from "lucide-react";
 
 type DemoTab = "flashcards" | "quiz" | "class";
 
@@ -14,9 +21,9 @@ export function DemoPlayground() {
     const [showResults, setShowResults] = useState(false);
 
     const tabs = [
-        { id: "flashcards", label: "Flashcards", icon: "style" },
-        { id: "quiz", label: "Quiz", icon: "quiz" },
-        { id: "class", label: "Class", icon: "school" },
+        { id: "flashcards", label: "Flashcards", icon: Layers },
+        { id: "quiz", label: "Quiz", icon: HelpCircle },
+        { id: "class", label: "Class", icon: GraduationCap },
     ];
 
     // Flashcard handlers
@@ -113,11 +120,11 @@ export function DemoPlayground() {
 
                         {/* Navigation */}
                         <div className="flex justify-center gap-4">
-                            <button onClick={prevCard} className="p-3 rounded-full bg-[var(--card)] hover:bg-[var(--background-tertiary)] transition-colors">
-                                <span className="material-symbols-outlined">chevron_left</span>
+                            <button onClick={prevCard} className="p-3 rounded-full bg-[var(--card)] hover:bg-[var(--background-tertiary)] transition-colors flex items-center justify-center">
+                                <ChevronLeft size={20} strokeWidth={1.5} />
                             </button>
-                            <button onClick={nextCard} className="p-3 rounded-full bg-[var(--card)] hover:bg-[var(--background-tertiary)] transition-colors">
-                                <span className="material-symbols-outlined">chevron_right</span>
+                            <button onClick={nextCard} className="p-3 rounded-full bg-[var(--card)] hover:bg-[var(--background-tertiary)] transition-colors flex items-center justify-center">
+                                <ChevronRight size={20} strokeWidth={1.5} />
                             </button>
                         </div>
                     </div>

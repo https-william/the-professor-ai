@@ -8,14 +8,63 @@ import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import OnboardingModal from "@/components/features/OnboardingModal";
+import GlobalToasts from "@/components/ui/GlobalToasts";
+import ReactQueryProvider from "@/providers/ReactQueryProvider";
+import GlassRefractionProvider from "@/components/ui/GlassRefractionProvider";
+
+const SITE_URL = "https://theprofessor.xyz";
 
 export const metadata: Metadata = {
-  title: "The Professor | Cheat Codes for Your Degree",
-  description: "Advanced AI study companion for students. Generate flashcards, quizzes, and summaries instantly.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "The Professor | Advanced AI Study Companion",
+    template: "%s | The Professor",
+  },
+  description: "Accelerate your learning with The Professor. Generate high-fidelity flashcards, quizzes, and academic roadmaps instantly using state-of-the-art AI.",
   manifest: "/manifest.json",
-  keywords: ["AI", "study", "flashcards", "education", "tutor", "exam prep"],
+  keywords: [
+    "AI Study Assistant",
+    "Active Recall AI", 
+    "Study Roadmap Generator",
+    "Flashcard AI",
+    "Academic Quiz Bot",
+    "The Professor Study",
+    "AI Tutor",
+    "Online Learning",
+    "Exam Prep",
+    "Spaced Repetition",
+    "Smart Flashcards",
+    "Quiz Maker",
+    "Study Companion",
+    "AI Education",
+    "Student Tools",
+    "Academic Assistant",
+    "Exam Cram",
+    "Learning Platform",
+    "AI Flashcards",
+    "Quiz Generation",
+  ],
   authors: [{ name: "The Professor" }],
   creator: "The Professor",
+  publisher: "The Professor Academy",
+  category: "education",
+  classification: "Web Application",
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-US": "/",
+      "en-GB": "https://theprofessor.xyz/en-gb",
+      "en-AU": "https://theprofessor.xyz/en-au",
+      "en-IN": "https://theprofessor.xyz/en-in",
+      "es-ES": "https://theprofessor.xyz/es",
+      "fr-FR": "https://theprofessor.xyz/fr",
+      "de-DE": "https://theprofessor.xyz/de",
+      "ja-JP": "https://theprofessor.xyz/ja",
+      "pt-BR": "https://theprofessor.xyz/pt-br",
+      "hi-IN": "https://theprofessor.xyz/hi",
+      "zh-CN": "https://theprofessor.xyz/zh",
+    },
+  },
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",
@@ -27,10 +76,47 @@ export const metadata: Metadata = {
     title: "Professor AI",
   },
   openGraph: {
-    title: "The Professor | Cheat Codes for Your Degree",
-    description: "Your personal AI-powered study companion.",
+    title: "The Professor | Advanced AI Study Companion",
+    description: "Your personal AI-powered study companion. Generate flashcards, quizzes, summaries and roadmaps instantly. Cheat codes for your degree.",
+    url: SITE_URL,
+    siteName: "The Professor",
+    locale: "en_US",
+    alternateLocale: ["en_GB", "es_ES", "fr_FR", "de_DE", "ja_JP", "pt_BR", "hi_IN", "zh_CN"],
     type: "website",
-    images: ["/logo.png"],
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "The Professor - AI Study Companion",
+        type: "image/svg+xml",
+      },
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "The Professor Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Professor | Advanced AI Study Companion",
+    description: "Your personal AI-powered study companion. Generate flashcards, quizzes, summaries and roadmaps instantly.",
+    site: "@TheProfessorAI",
+    creator: "@TheProfessorAI",
+    images: ["/og-image.svg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -41,6 +127,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
 };
+
+
 
 export default function RootLayout({
   children,
@@ -57,9 +145,8 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap"
           rel="stylesheet"
         />
-        {/* Material Symbols */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
           rel="stylesheet"
         />
         {/* Old browser detection — redirect to static fallback */}
@@ -80,15 +167,19 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased transition-colors duration-300">
-        <ThemeProvider>
-          <UserProvider>
-            {children}
-            <OnboardingModal />
-            <ServiceWorkerRegistrar />
-            <Analytics />
-            <SpeedInsights />
-          </UserProvider>
-        </ThemeProvider>
+        <ReactQueryProvider>
+          <ThemeProvider>
+            <UserProvider>
+              <GlassRefractionProvider />
+              {children}
+              <OnboardingModal />
+              <GlobalToasts />
+              <ServiceWorkerRegistrar />
+              <Analytics />
+              <SpeedInsights />
+            </UserProvider>
+          </ThemeProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

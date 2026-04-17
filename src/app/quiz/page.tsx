@@ -7,6 +7,28 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import ShareCard from "@/components/ShareCard";
+import SiteHeader from "@/components/ui/SiteHeader";
+import { useToasts } from "@/components/ui/GlobalToasts";
+import EndowmentModal from "@/components/modals/EndowmentModal";
+import SessionComplete from "@/components/features/SessionComplete";
+import DataDustLoader from "@/components/ui/DataDustLoader";
+import AuthInterceptor from "@/components/ui/AuthInterceptor";
+import { 
+    AlertCircle, 
+    HelpCircle, 
+    Share2, 
+    GraduationCap, 
+    Zap, 
+    RotateCcw, 
+    ClipboardList, 
+    X, 
+    Flag, 
+    CheckCircle2, 
+    XCircle, 
+    Lightbulb, 
+    FileText, 
+    Trophy 
+} from "lucide-react";
 
 interface Question {
     id?: string;
@@ -44,7 +66,8 @@ function QuizContent() {
     const [professorRemark, setProfessorRemark] = useState<string>('');
     const [loadingRemark, setLoadingRemark] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
-    const { user } = useUser();
+    const { user, refreshUser } = useUser();
+    const { addToast } = useToasts();
 
     // Generation State
     const [isGenerating, setIsGenerating] = useState(false);
@@ -52,6 +75,11 @@ function QuizContent() {
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [generationId, setGenerationId] = useState<string | null>(null);
     const hasStartedGeneration = useRef(false);
+    const [isEndowmentOpen, setIsEndowmentOpen] = useState(false);
+
+    // Session complete state
+    const [showSessionComplete, setShowSessionComplete] = useState(false);
+    const [sessionStats, setSessionStats] = useState({ xp: 0, streak: 0, incremented: false });
 
     // Timer (10 minutes default)
     const [timeLeft, setTimeLeft] = useState(10 * 60);
@@ -120,7 +148,12 @@ function QuizContent() {
                     });
 
                     if (!response.ok) {
-                        const errData = await response.json().catch(() => ({ error: "Generation failed" }));
+                        const errData = await response.json().catch(() => ({}));
+                        if (response.status === 402 || errData.code === "INSUFFICIENT_CREDITS") {
+                            setIsEndowmentOpen(true);
+                            setIsGenerating(false);
+                            return;
+                        }
                         throw new Error(errData.error || `HTTP ${response.status}`);
                     }
 
@@ -148,6 +181,9 @@ function QuizContent() {
                                     } else if (data.status === "complete") {
                                         setGenerationId(data.id);
                                         setTitle(data.title);
+                                        if (data.xpEarned) {
+                                            addToast(`Quiz created! +${data.xpEarned} XP`, 'xp');
+                                        }
                                         setIsGenerating(false);
                                         sessionStorage.setItem("quiz_data", JSON.stringify(data.content || { questions: acc }));
                                     } else if (data.status === "error") {
@@ -256,6 +292,30 @@ function QuizContent() {
         setStatus('verdict');
         setCurrentIndex(0);
         setIsSubmitting(false);
+
+        // 4. Update XP & Streak
+        try {
+            const actRes = await fetch("/api/user/activity", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "quiz" })
+            });
+            if (actRes.ok) {
+                const { stats } = await actRes.json();
+                setSessionStats({
+                    xp: stats?.xpGained || 10,
+                    streak: stats?.newStreak || user.streak || 0,
+                    incremented: stats?.streakIncremented || false,
+                });
+                if (stats?.xpGained) {
+                    addToast(`Quiz complete! +${stats.xpGained} XP`, 'success', 'history_edu');
+                }
+                refreshUser();
+                setShowSessionComplete(true);
+            }
+        } catch (err) {
+            console.error("Failed to record quiz activity:", err);
+        }
     };
 
     const calculateScore = () => {
@@ -270,76 +330,31 @@ function QuizContent() {
     // \u256C\u256C\u256C GENERATION LOADING SCREEN \u256C\u256C\u256C
     if (isGenerating && questions.length === 0) {
         return (
-            <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                {/* Phantom Skeleton Layout */}
-                <div className="absolute inset-0 flex flex-col p-6 opacity-[0.15] pointer-events-none z-0">
-                    <div className="h-14 w-full border-b border-white/5 flex items-center justify-between mb-8 pb-4">
-                        <div className="flex gap-4 items-center">
-                            <div className="w-8 h-8 rounded-lg bg-white/20 animate-pulse" />
-                            <div className="w-32 h-4 rounded bg-white/20 animate-pulse" />
-                        </div>
-                        <div className="w-16 h-6 rounded bg-white/20 animate-pulse" />
-                    </div>
-                    <div className="max-w-3xl w-full mx-auto space-y-4">
-                        <div className="w-full h-32 rounded-2xl bg-white/20 animate-pulse" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="w-full h-16 rounded-xl bg-white/20 animate-pulse" style={{ animationDelay: '0.1s' }} />
-                            <div className="w-full h-16 rounded-xl bg-white/20 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                            <div className="w-full h-16 rounded-xl bg-white/20 animate-pulse" style={{ animationDelay: '0.3s' }} />
-                            <div className="w-full h-16 rounded-xl bg-white/20 animate-pulse" style={{ animationDelay: '0.4s' }} />
-                        </div>
-                        <div className="w-3/4 h-16 rounded-xl bg-white/20 animate-pulse mx-auto mt-8" style={{ animationDelay: '0.5s' }} />
-                    </div>
-                </div>
-
-                <div className="absolute w-[600px] h-[600px] rounded-full animate-pulse opacity-20 z-0" 
-                     style={{ background: "radial-gradient(circle, rgba(16,185,129,0.1), transparent 60%)", filter: "blur(80px)" }} />
-                
-                {/* Central Console */}
-                <div className="relative z-10 w-full max-w-md mx-auto animate-in zoom-in-95 duration-700">
-                    <div className="p-1 rounded-3xl" style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(0,0,0,0) 50%, rgba(16,185,129,0.05))" }}>
-                        <div className="p-8 rounded-[28px] bg-[#08080E]/90 backdrop-blur-2xl border border-white/5 shadow-2xl flex flex-col items-center">
-                            
-                            <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center relative">
-                                <div className="absolute inset-0 rounded-full border-2 border-[#10B981]/20 border-t-[#10B981] animate-spin" style={{ animationDuration: '1.5s' }} />
-                                <span className="material-symbols-outlined text-xl text-[#10B981] animate-pulse">tips_and_updates</span>
-                            </div>
-                            
-                            {/* Simulated Terminal */}
-                            <div className="w-full bg-[#040406] rounded-xl p-5 border border-white/5 mb-5 h-28 relative overflow-hidden flex flex-col justify-end">
-                                <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-[#040406] to-transparent z-10" />
-                                <div className="font-mono text-[11px] flex flex-col gap-2 relative z-0">
-                                    <span className="text-white/30 truncate">&gt; Initializing Quiz Engine v3.0...</span>
-                                    <span className="text-white/40 truncate">&gt; Ingesting active memory context...</span>
-                                    <span className="text-[#10B981] truncate animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <b key={loadingIdx}>&gt; {LOADING_PHRASES[loadingIdx]}</b>
-                                        <span className="animate-pulse">_</span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Progress Line */}
-                            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#10B981] rounded-full w-full animate-pulse opacity-50" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                <DataDustLoader phrases={LOADING_PHRASES} currentPhraseIndex={loadingIdx} />
             </div>
         );
     }
 
     // \u256C\u256C\u256C ERROR STATE \u256C\u256C\u256C
     if (generationError) {
+        if (generationError.toLowerCase().includes("unauthorized")) {
+            return (
+                <div className="min-h-screen bg-[#06060B] flex flex-col items-center justify-center p-6">
+                    <AuthInterceptor />
+                </div>
+            );
+        }
+
         return (
-            <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6">
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{
                     background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)",
                 }}>
-                    <span className="material-symbols-outlined text-3xl text-[#EF4444]">error</span>
+                    <AlertCircle size={30} strokeWidth={1.5} className="text-[#EF4444]" />
                 </div>
-                <h2 className="text-xl font-bold text-white/80 mb-2">Generation Failed</h2>
-                <p className="text-sm text-white/30 mb-8 text-center max-w-xs">{generationError}</p>
+                <h2 className="text-xl font-bold text-[var(--foreground)] mb-2">Generation Failed</h2>
+                <p className="text-sm text-[var(--foreground-muted)] mb-8 text-center max-w-xs">{generationError}</p>
                 <Link href="/create" className="px-6 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]" style={{
                     background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E",
                     boxShadow: "0 4px 16px rgba(245,158,11,0.3)",
@@ -353,14 +368,14 @@ function QuizContent() {
     // \u256C\u256C\u256C EMPTY STATE \u2014 Redirect if no quiz loaded \u256C\u256C\u256C
     if (questions.length === 0 && !isGenerating) {
         return (
-            <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6">
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{
                     background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
                 }}>
-                    <span className="material-symbols-outlined text-3xl text-[#F59E0B]">quiz</span>
+                    <HelpCircle size={30} strokeWidth={1.5} className="text-[#F59E0B]" />
                 </div>
-                <h2 className="text-xl font-bold text-white/80 mb-2">No Quiz Loaded</h2>
-                <p className="text-sm text-white/30 mb-8 text-center max-w-xs">Head to the Create page to generate a quiz from your study materials.</p>
+                <h2 className="text-xl font-bold text-[var(--foreground)] mb-2">No Quiz Loaded</h2>
+                <p className="text-sm text-[var(--foreground-muted)] mb-8 text-center max-w-xs">Head to the Create page to generate a quiz from your study materials.</p>
                 <Link href="/create" className="px-6 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]" style={{
                     background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E",
                     boxShadow: "0 4px 16px rgba(245,158,11,0.3), inset 0 2px 3px rgba(255,255,255,0.2)",
@@ -390,22 +405,22 @@ function QuizContent() {
         const grade = getGrade();
 
         return (
-            <div className="min-h-screen bg-[#06060B] text-white relative overflow-hidden">
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] relative overflow-hidden">
                 {/* Background effects */}
                 <div className="absolute w-[800px] h-[800px] top-[-10%] right-[-10%] rounded-full bg-[var(--accent)]/5 blur-[120px] pointer-events-none" />
                 <div className="absolute w-[600px] h-[600px] bottom-[-10%] left-[-10%] rounded-full bg-[var(--secondary)]/5 blur-[100px] pointer-events-none" />
 
-                <header className="h-16 border-b border-white/5 bg-[#06060B]/80 backdrop-blur-xl px-4 flex items-center justify-between relative z-50">
+                <header className="h-16 border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-xl px-4 flex items-center justify-between relative z-50">
                     <button 
                         onClick={() => setIsShareOpen(true)}
-                        className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all text-white/40 hover:text-[#F59E0B]"
+                        className="w-12 h-12 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center hover:bg-[var(--foreground)]/10 transition-all text-[var(--foreground-muted)] hover:text-[var(--accent)]"
                         title="Share Achievement"
                     >
-                        <span className="material-symbols-outlined text-[20px]">ios_share</span>
+                        <Share2 size={20} strokeWidth={1.5} />
                     </button>
                     <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/20">Academic Transcript</span>
-                        <span className="text-[12px] font-bold text-white/80">{title}</span>
+                        <span className="text-[10px] font-black tracking-[0.3em] uppercase text-[var(--foreground-muted)] opacity-60">Quiz Results</span>
+                        <span className="text-[12px] font-bold text-[var(--foreground)]">{title}</span>
                     </div>
                     <div className="w-8" /> {/* Spacer */}
                 </header>
@@ -415,11 +430,18 @@ function QuizContent() {
                         <div className="w-full bg-[#0A0A0F]/95 backdrop-blur-3xl rounded-[39px] p-8 md:p-12 relative">
                             
                             <div className="flex flex-col items-center mb-10 text-center">
-                                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-                                    <span className="material-symbols-outlined text-2xl text-[var(--accent)]">school</span>
+                                <div className="w-12 h-12 rounded-xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center mb-4">
+                                    <GraduationCap size={24} strokeWidth={1.5} className="text-[var(--accent)]" />
                                 </div>
-                                <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-white/30 mb-1">The Professor AI</h2>
-                                <h3 className="text-[13px] font-bold text-white/80">Office of Academic Excellence</h3>
+                                <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)] opacity-80 mb-1">The Professor AI</h2>
+                                <h3 className="text-[13px] font-bold text-[var(--foreground)]">Quiz Results</h3>
+
+                                {questions[0]?.explanation?.includes("The correct answer is:") && (
+                                    <div className="mt-4 px-3 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/20 flex items-center gap-2">
+                                        <Zap size={10} strokeWidth={1.5} className="text-[#10B981]" />
+                                        <span className="text-[9px] font-black uppercase text-[#10B981] tracking-widest">Flashcard Match Mode</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] pointer-events-none opacity-[0.08] select-none">
@@ -430,33 +452,33 @@ function QuizContent() {
                             </div>
 
                             <div className="flex flex-col items-center mb-10 relative z-10">
-                                <p className="text-[10px] uppercase tracking-[0.3em] text-white/30 font-bold mb-4">Final Assessment Score</p>
+                                <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--foreground-muted)] font-bold mb-4">Final Assessment Score</p>
                                 <div className="flex items-baseline gap-2 mb-2">
                                     <span className="text-8xl font-black tracking-tighter" style={{ color: grade.color }}>{percentage}</span>
-                                    <span className="text-3xl font-bold text-white/20">%</span>
+                                    <span className="text-3xl font-bold text-[var(--foreground-muted)] opacity-60">%</span>
                                 </div>
                                 <div className="px-5 py-2 rounded-full" style={{ background: `${grade.color}10`, border: `1px solid ${grade.color}20` }}>
                                     <span className="text-[11px] font-black tracking-widest uppercase" style={{ color: grade.color }}>Grade {grade.label}</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-4 w-full mb-10 py-6 border-y border-white/5">
+                            <div className="grid grid-cols-3 gap-4 w-full mb-10 py-6 border-y border-[var(--border)]">
                                 <div className="text-center">
-                                    <div className="text-2xl font-black text-white mb-1">{correct}</div>
-                                    <div className="text-[9px] font-bold uppercase tracking-wider text-white/30">Correct</div>
+                                    <div className="text-2xl font-black text-[var(--foreground)] mb-1">{correct}</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">Correct</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-2xl font-black text-white mb-1">{incorrect}</div>
-                                    <div className="text-[9px] font-bold uppercase tracking-wider text-white/30">Incorrect</div>
+                                    <div className="text-2xl font-black text-[var(--foreground)] mb-1">{incorrect}</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">Incorrect</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-2xl font-black text-white/40 mb-1">{unattempted}</div>
-                                    <div className="text-[9px] font-bold uppercase tracking-wider text-white/20">Skipped</div>
+                                    <div className="text-2xl font-black text-[var(--foreground-muted)] mb-1">{unattempted}</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] opacity-60">Skipped</div>
                                 </div>
                             </div>
 
                             <div className="mb-10 text-center">
-                                <p className="text-sm italic font-serif leading-relaxed text-white/60 px-4">
+                                <p className="text-sm italic font-serif leading-relaxed text-[var(--foreground-muted)] px-4">
                                     &ldquo;{professorRemark || "An excellent demonstration of material mastery."}&rdquo;
                                 </p>
                             </div>
@@ -465,21 +487,50 @@ function QuizContent() {
                                 <div className="text-2xl font-serif text-[var(--accent)]/60 select-none mb-1 rotate-[-2deg]" style={{ fontFamily: "'Dancing Script', 'Cursive', serif" }}>
                                     The Professor
                                 </div>
-                                <div className="w-32 h-px bg-white/10 mb-2" />
-                                <div className="text-[8px] font-black uppercase tracking-[0.3em] text-white/20">Authorized Electronic Signature</div>
+                                <div className="w-32 h-px bg-[var(--foreground)]/10 mb-2" />
+                                <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60">AI-Generated Assessment</div>
                             </div>
                         </div>
                     </div>
 
                     <div className="w-full space-y-4">
+                        {percentage < 100 && (
+                            <button 
+                                onClick={() => {
+                                    const missedIndices = questions
+                                        .map((q, i) => answers[i] !== q.correctIndex ? i : -1)
+                                        .filter(i => i !== -1);
+                                    
+                                    const missedQuestions = missedIndices.map(i => questions[i]);
+                                    
+                                    setQuestions(missedQuestions);
+                                    setAnswers({});
+                                    setFlags(new Set());
+                                    setCurrentIndex(0);
+                                    setStatus('taking');
+                                    setTimeLeft(Math.max(5 * 60, missedQuestions.length * 60)); // 1 min per question, min 5 mins
+                                    addToast("Retrying missed questions...", "info", "refresh");
+                                }}
+                                className="w-full py-4 rounded-[20px] font-bold text-sm tracking-wide flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+                                style={{
+                                    background: "rgba(245,158,11,0.1)",
+                                    border: "1px solid rgba(245,158,11,0.2)",
+                                    color: "#F59E0B"
+                                }}
+                            >
+                                <RotateCcw size={18} strokeWidth={1.5} />
+                                Retry {questions.length - score} Missed Questions
+                            </button>
+                        )}
+
                         <button onClick={() => { setStatus('review'); setCurrentIndex(0); }}
                             className="w-full py-4 rounded-[20px] font-bold text-sm tracking-wide flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-[#06060B] hover:bg-white/90 shadow-[0_4px_24px_rgba(255,255,255,0.1)]">
-                            <span className="material-symbols-outlined text-lg">rate_review</span>
+                            <ClipboardList size={18} strokeWidth={1.5} />
                             Review Answers
                         </button>
 
                         <button onClick={() => router.push('/create')}
-                            className="w-full py-3 text-[11px] font-bold uppercase tracking-widest text-white/20 hover:text-white/40 transition-colors">
+                            className="w-full py-3 text-[11px] font-bold uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
                             Next Assessment
                         </button>
                     </div>
@@ -505,20 +556,20 @@ function QuizContent() {
     const isFlagged = flags.has(currentIndex);
 
     return (
-        <div className="min-h-screen bg-[#06060B] text-white">
-            <header className="h-14 flex items-center justify-between px-4 md:px-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+            <header className="h-14 flex items-center justify-between px-4 md:px-6" style={{ borderBottom: "1px solid var(--border)" }}>
                 <div className="flex items-center gap-3">
-                    <button onClick={() => router.push('/create')} className="p-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/[0.03] transition-all">
-                        <span className="material-symbols-outlined text-xl">close</span>
+                    <button onClick={() => router.push('/create')} className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.03] transition-all">
+                        <X size={20} strokeWidth={1.5} />
                     </button>
                     <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-bold text-white/80">{title}</span>
+                        <span className="text-sm font-bold text-[var(--foreground)]">{title}</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     {status === 'taking' && (
-                        <div className={`px-3 py-1.5 rounded-lg font-mono text-xs font-bold ${timeLeft < 60 ? 'text-[#EF4444] animate-pulse' : 'text-white/40'}`}
-                            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div className={`px-3 py-1.5 rounded-lg font-mono text-xs font-bold ${timeLeft < 60 ? 'text-[#EF4444] animate-pulse' : 'text-[var(--foreground-muted)]'}`}
+                            style={{ background: "var(--foreground-opacity-5, rgba(255,255,255,0.03))", border: "1px solid var(--border)" }}>
                             {formatTime(timeLeft)}
                         </div>
                     )}
@@ -533,18 +584,18 @@ function QuizContent() {
 
             <main className="max-w-3xl mx-auto px-4 py-6">
                 <div className="rounded-[40px] overflow-hidden nm-flat animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="px-5 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div className="px-5 pt-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
-                                <span className="text-[11px] font-bold tracking-[0.1em] uppercase text-white/40">
+                                <span className="text-[11px] font-bold tracking-[0.1em] uppercase text-[var(--foreground-muted)]">
                                     {status === 'taking' ? 'Live Exam' : 'Review Mode'}
                                 </span>
                             </div>
                             {status === 'taking' && (
                                 <button onClick={toggleFlag}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all ${isFlagged ? 'text-[#F59E0B] bg-[#F59E0B]/10' : 'text-white/20 hover:text-white/40'}`}>
-                                    <span className="material-symbols-outlined text-[14px]">flag</span>
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all ${isFlagged ? 'text-[#F59E0B] bg-[#F59E0B]/10' : 'text-[var(--foreground-muted)] opacity-60 hover:opacity-100'}`}>
+                                    <Flag size={14} strokeWidth={1.5} />
                                     Flag
                                 </button>
                             )}
@@ -557,7 +608,7 @@ function QuizContent() {
                                 const flagged = flags.has(idx);
 
                                 let bg = "transparent";
-                                let text = "text-white/20";
+                                let text = "text-[var(--foreground-muted)]";
                                 let shadow = "none";
 
                                 if (status === 'review') {
@@ -569,7 +620,7 @@ function QuizContent() {
                                 } else {
                                     if (active) { 
                                         bg = "var(--background)"; 
-                                        text = "text-white"; 
+                                        text = "text-[var(--foreground)]"; 
                                         shadow = "inset 4px 4px 8px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(255,255,255,0.01)";
                                     }
                                     else if (flagged) { 
@@ -601,7 +652,7 @@ function QuizContent() {
                             </span>
                         </div>
 
-                        <p className="text-[17px] md:text-lg font-medium text-white/85 leading-relaxed mb-8">
+                        <p className="text-[17px] md:text-lg font-medium text-[var(--foreground)] opacity-90 leading-relaxed mb-8">
                             {currentQuestion.question}
                         </p>
 
@@ -626,10 +677,10 @@ function QuizContent() {
                                     }
                                 } else {
                                     if (isSelected) {
-                                        className += "nm-inset text-white";
+                                        className += "nm-inset-bezel text-[var(--foreground)] font-bold";
                                         shadow = "none";
                                     } else {
-                                        className += "hover:translate-x-1 hover:bg-white/5";
+                                        className += "hover:translate-x-1 hover:bg-[var(--foreground)]/5 active:scale-[0.99]";
                                     }
                                 }
 
@@ -640,18 +691,18 @@ function QuizContent() {
                                         className={className}
                                         style={{ boxShadow: shadow }}>
                                         <span className={`text-[14px] ${
-                                            isSelected && status === 'taking' ? 'text-white font-medium' :
+                                            isSelected && status === 'taking' ? 'text-[var(--foreground)] font-medium' :
                                             status === 'review' && isCorrect ? 'text-[#10B981] font-medium' :
                                             status === 'review' && isSelected && !isCorrect ? 'text-[#EF4444]' :
-                                            'text-white/60'
+                                            'text-[var(--foreground-muted)]'
                                         }`}>
                                             {option}
                                         </span>
                                         {status === 'review' && isCorrect && (
-                                            <span className="ml-auto material-symbols-outlined text-[#10B981] text-lg">check_circle</span>
+                                            <CheckCircle2 size={18} strokeWidth={1.5} className="ml-auto text-[#10B981]" />
                                         )}
                                         {status === 'review' && isSelected && !isCorrect && (
-                                            <span className="ml-auto material-symbols-outlined text-[#EF4444] text-lg">cancel</span>
+                                            <XCircle size={18} strokeWidth={1.5} className="ml-auto text-[#EF4444]" />
                                         )}
                                     </button>
                                 );
@@ -662,21 +713,21 @@ function QuizContent() {
                             <div className="mt-6 p-4 rounded-xl animate-in fade-in slide-in-from-bottom-2"
                                 style={{ background: "rgba(59,130,246,0.05)", borderLeft: "3px solid #3B82F6" }}>
                                 <h4 className="text-[12px] font-bold uppercase tracking-wider text-[#3B82F6]/70 mb-1.5 flex items-center gap-1.5">
-                                    <span className="material-symbols-outlined text-sm">lightbulb</span>
+                                    <Lightbulb size={14} strokeWidth={1.5} />
                                     Explanation
                                 </h4>
-                                <p className="text-[13px] text-white/50 leading-relaxed">
+                                <p className="text-[13px] text-[var(--foreground-muted)] leading-relaxed">
                                     {currentQuestion.explanation}
                                 </p>
                             </div>
                         )}
                     </div>
 
-                    <div className="px-5 md:px-8 py-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div className="px-5 md:px-8 py-4 flex items-center justify-between" style={{ borderTop: "1px solid var(--border)" }}>
                         <button
                             onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                             disabled={currentIndex === 0}
-                            className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white/30 hover:text-white/60 disabled:opacity-30 disabled:hover:text-white/30 transition-all nm-button"
+                            className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 disabled:hover:text-[var(--foreground-muted)] transition-all nm-button"
                         >
                             Prev
                         </button>
@@ -714,14 +765,14 @@ function QuizContent() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
                     <div className="rounded-[32px] p-8 max-w-sm mx-4 animate-in zoom-in-95 nm-flat text-center">
                         <div className="w-16 h-16 rounded-full bg-[#F59E0B]/10 flex items-center justify-center mx-auto mb-6">
-                            <span className="material-symbols-outlined text-3xl text-[#F59E0B]">description</span>
+                            <FileText size={30} strokeWidth={1.5} className="text-[#F59E0B]" />
                         </div>
-                        <h3 className="text-xl font-bold text-white/90 mb-2">Seal the Exam?</h3>
-                        <p className="text-sm text-white/40 mb-8 leading-relaxed">Your intellectual record will be finalized.</p>
+                        <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Submit Quiz?</h3>
+                        <p className="text-sm text-[var(--foreground-muted)] mb-8 leading-relaxed">Your answers will be submitted and graded.</p>
                         
                         <div className="flex gap-3">
                             <button onClick={() => setShowSubmitModal(false)}
-                                className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white/30 hover:text-white/50 transition-all nm-button">
+                                className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all nm-button">
                                 Back
                             </button>
                             <button onClick={confirmSubmit}
@@ -736,14 +787,37 @@ function QuizContent() {
 
             <ShareCard isOpen={isShareOpen} onClose={() => setIsShareOpen(false)}
                 data={{ title, count: `${score}/${questions.length}`, type: "Quiz Score", user: user.name }} />
+            
+            <EndowmentModal 
+                isOpen={isEndowmentOpen} 
+                onClose={() => setIsEndowmentOpen(false)}
+                currentCredits={user.credits}
+                requiredCredits={1}
+            />
+
+            <SessionComplete
+                isVisible={showSessionComplete}
+                onDismiss={() => setShowSessionComplete(false)}
+                xpEarned={sessionStats.xp}
+                streak={sessionStats.streak}
+                streakIncremented={sessionStats.incremented}
+                type="quiz"
+                title={title}
+                extraStat={{ label: "Score", value: `${Math.round((score / questions.length) * 100)}%`, icon: Trophy }}
+            />
         </div>
     );
 }
 
 export default function QuizPage() {
     return (
-        <Suspense fallback={<div className="flex h-screen bg-[#06060B] items-center justify-center text-white/30">Loading...</div>}>
-            <QuizContent />
-        </Suspense>
+        <div className="h-[100dvh] bg-[var(--background)] overflow-hidden relative">
+            <SiteHeader showLogo />
+            <div className="h-full overflow-y-auto pt-24">
+                <Suspense fallback={<div className="flex h-full bg-[var(--background)] items-center justify-center text-[var(--foreground-muted)]">Loading...</div>}>
+                    <QuizContent />
+                </Suspense>
+            </div>
+        </div>
     );
 }

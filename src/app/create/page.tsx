@@ -5,28 +5,43 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useIngestStore } from "@/store/useIngestStore";
 import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
-import { Loader2 } from "lucide-react";
+import SiteHeader from "@/components/ui/SiteHeader";
+import { 
+    Loader2, 
+    Layers, 
+    HelpCircle, 
+    FileText, 
+    Map, 
+    MessageSquare, 
+    ChevronLeft, 
+    X, 
+    ChevronRight, 
+    RotateCw, 
+    Upload, 
+    Zap, 
+    AlertTriangle 
+} from "lucide-react";
 
 const MAX_CHARS = 50000;
 
 /* ═══ Claymorphic Helpers ═══ */
 const clay = {
     card: {
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--card-bg, rgba(255,255,255,0.02))",
         borderRadius: "24px",
-        border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.04), inset 0 -1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)",
+        border: "1px solid var(--border, rgba(255,255,255,0.06))",
+        boxShadow: "inset 0 1px 1px var(--glow, rgba(255,255,255,0.04)), 0 4px 16px rgba(0,0,0,0.1)",
     } as React.CSSProperties,
     input: {
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--card-bg, rgba(255,255,255,0.02))",
         borderRadius: "20px",
-        border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.25), inset 0 -1px 1px rgba(255,255,255,0.03), 0 2px 8px rgba(0,0,0,0.2)",
+        border: "1px solid var(--border, rgba(255,255,255,0.06))",
+        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1)",
     } as React.CSSProperties,
     pill: {
-        background: "rgba(255,255,255,0.04)",
+        background: "var(--card-bg, rgba(255,255,255,0.04))",
         borderRadius: "14px",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05), inset 0 -1px 2px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.15)",
+        boxShadow: "inset 0 1px 1px var(--glow, rgba(255,255,255,0.05)), 0 2px 6px rgba(0,0,0,0.1)",
     } as React.CSSProperties,
 };
 
@@ -37,7 +52,7 @@ const creatorTypes = [
         label: "Flashcards",
         desc: "Turn notes into study cards you can flip through",
         longDesc: "AI reads your material and creates question-answer pairs perfect for memorization and active recall.",
-        icon: "style",
+        icon: Layers,
         color: "#F59E0B",
         gradient: "from-[#F59E0B] to-[#D97706]",
         apiEndpoint: "/api/generate/flashcards",
@@ -48,7 +63,7 @@ const creatorTypes = [
         label: "Practice Exam",
         desc: "Predict what might appear on your test",
         longDesc: "Generate realistic exam questions with multiple choice options, just like the real thing.",
-        icon: "quiz",
+        icon: HelpCircle,
         color: "#818CF8",
         gradient: "from-[#818CF8] to-[#6366F1]",
         popular: true,
@@ -60,11 +75,34 @@ const creatorTypes = [
         label: "Smart Summary",
         desc: "Condense pages into key takeaways",
         longDesc: "Get the essence of long readings in bullet points, detailed notes, or a structured study guide.",
-        icon: "summarize",
+        icon: FileText,
         color: "#10B981",
         gradient: "from-[#10B981] to-[#059669]",
         apiEndpoint: "/api/generate/summary",
         cost: 2,
+    },
+    {
+        id: "roadmap",
+        label: "Syllabus Architect",
+        desc: "Convert chaos into a structured learning path",
+        longDesc: "AI analyzes your curriculum and breaks it down into a logical, phased implementation strategy for your degree.",
+        icon: Map,
+        color: "#C084FC",
+        gradient: "from-[#C084FC] to-[#A855F7]",
+        apiEndpoint: "/api/generate/roadmap",
+        cost: 2,
+    },
+    {
+        id: "chat",
+        label: "Professor Chat",
+        desc: "Direct 1-on-1 AI Mentoring",
+        longDesc: "Ask questions, brainstorm ideas, or get complex topics explained simply in real-time.",
+        icon: MessageSquare,
+        color: "#34D399",
+        gradient: "from-[#34D399] to-[#059669]",
+        apiEndpoint: "",
+        cost: 0,
+        directRoute: "/chat"
     },
 ];
 
@@ -95,7 +133,7 @@ function CreatorStudio() {
     // Deep Link Interception
     useEffect(() => {
         const tool = searchParams.get('tool');
-        if (tool && ['flashcards', 'quiz', 'summary'].includes(tool)) {
+        if (tool && ['flashcards', 'quiz', 'summary', 'roadmap'].includes(tool)) {
             setSelectedType(tool);
         }
     }, [searchParams]);
@@ -156,7 +194,7 @@ function CreatorStudio() {
 
     // ─── RENDER ─────────────────────────────────────────────────
     return (
-        <div className="min-h-[100dvh] bg-[#06060B] text-white/90 pb-28 relative overflow-hidden">
+        <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute w-[600px] h-[600px] rounded-full animate-pulse"
@@ -165,31 +203,23 @@ function CreatorStudio() {
                     style={{ bottom: "10%", left: "-5%", background: "radial-gradient(circle, rgba(129,140,248,0.04), transparent 60%)", filter: "blur(70px)", animationDuration: "10s" }} />
             </div>
 
-            {/* Header */}
-            <header className="sticky top-0 z-40 h-16 flex items-center justify-between px-5 sm:px-8 bg-[#06060B] border-b border-white/5 shadow-lg">
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => selectedType ? resetSelection() : router.push('/dashboard')}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-all"
-                    >
-                        <span className="material-symbols-outlined text-lg">
-                            {selectedType ? 'arrow_back' : 'close'}
-                        </span>
-                    </button>
-                    <div>
-                        <h1 className="text-sm font-bold text-white/95">Creator Studio</h1>
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-[#F59E0B]">
-                            {selectedType ? `${selectedCreator?.label}` : 'Select Module'}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ ...clay.pill, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.15)" }}>
-                    <span className="material-symbols-outlined text-[14px] text-[#F59E0B]">toll</span>
-                    <span className="text-[#F59E0B] text-[12px] font-bold">{user.credits || 0}</span>
-                </div>
-            </header>
+            {/* Floating HUD */}
+            <SiteHeader showLogo leftSlot={
+                <button
+                    onClick={() => selectedType ? resetSelection() : router.push('/dashboard')}
+                    className="flex w-10 h-10 rounded-2xl items-center justify-center interactive-glass text-[var(--foreground)]"
+                    style={{
+                        background: "var(--card-bg, rgba(6, 6, 11, 0.7))",
+                        backdropFilter: "blur(20px)",
+                        border: "1px solid var(--border)",
+                        boxShadow: "0 4px 24px rgba(0,0,0,0.1), inset 0 1px 1px var(--glow)",
+                    }}
+                >
+                    {selectedType ? <ChevronLeft size={20} strokeWidth={1.5} /> : <X size={20} strokeWidth={1.5} />}
+                </button>
+            } />
 
-            <main className="max-w-2xl mx-auto px-5 py-8 sm:py-12 relative z-10">
+            <main className="max-w-2xl mx-auto px-5 pt-24 pb-8 sm:pt-20 sm:pb-12 relative z-10">
 
                 {/* ═══════════════════════════════════════════════════
                     VIEW 1: TOOL SELECTION
@@ -198,10 +228,10 @@ function CreatorStudio() {
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Welcome */}
                         <div className="text-center mb-10">
-                            <h2 className="font-heading text-3xl sm:text-[40px] font-bold text-white/95 tracking-tight mb-2 leading-tight">
+                            <h2 className="font-heading text-3xl sm:text-[40px] font-bold text-[var(--foreground)] tracking-tight mb-2 leading-tight">
                                 Prepare to Build
                             </h2>
-                            <p className="text-[13px] text-white/30 max-w-sm mx-auto">
+                            <p className="text-[13px] text-[var(--foreground-muted)] max-w-sm mx-auto">
                                 Feed the AI your raw notes, and it will synthesize them into active learning materials.
                             </p>
                         </div>
@@ -211,7 +241,13 @@ function CreatorStudio() {
                             {creatorTypes.map((creator) => (
                                 <button
                                     key={creator.id}
-                                    onClick={() => setSelectedType(creator.id)}
+                                    onClick={() => {
+                                        if ((creator as any).directRoute) {
+                                            router.push((creator as any).directRoute);
+                                        } else {
+                                            setSelectedType(creator.id);
+                                        }
+                                    }}
                                     className="w-full group relative flex items-center gap-5 p-6 text-left transition-all duration-300"
                                     style={clay.card}
                                     onMouseEnter={(e) => {
@@ -234,13 +270,13 @@ function CreatorStudio() {
                                             boxShadow: `inset 0 2px 3px rgba(255,255,255,0.06), inset 0 -2px 4px rgba(0,0,0,0.2), 0 4px 12px ${creator.color}20`,
                                             border: `1px solid ${creator.color}15`,
                                         }}>
-                                        <span className="material-symbols-outlined text-[26px]" style={{ color: creator.color }}>{creator.icon}</span>
+                                        <creator.icon size={26} strokeWidth={1.5} style={{ color: creator.color }} />
                                     </div>
 
                                     {/* Text */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-heading text-lg font-bold text-white/90">{creator.label}</h3>
+                                            <h3 className="font-heading text-lg font-bold text-[var(--foreground)]">{creator.label}</h3>
                                             {creator.popular && (
                                                 <span className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider"
                                                     style={{ background: `${creator.color}15`, color: creator.color }}>
@@ -248,13 +284,11 @@ function CreatorStudio() {
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-[12px] text-white/30 leading-relaxed">{creator.desc}</p>
+                                        <p className="text-[12px] text-[var(--foreground-muted)] leading-relaxed">{creator.desc}</p>
                                     </div>
 
                                     {/* Arrow */}
-                                    <span className="material-symbols-outlined text-white/10 group-hover:text-white/40 group-hover:translate-x-1 transition-all text-xl shrink-0">
-                                        arrow_forward
-                                    </span>
+                                    <ChevronRight size={20} strokeWidth={1.5} className="text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] group-hover:translate-x-1 transition-all shrink-0" />
                                 </button>
                             ))}
                         </div>
@@ -271,11 +305,11 @@ function CreatorStudio() {
                         <div className="flex items-center gap-4 p-4 rounded-3xl" style={{ ...clay.card, background: "rgba(255,255,255,0.015)" }}>
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                                 style={{ background: `${selectedCreator?.color}15`, boxShadow: `inset 0 1px 2px ${selectedCreator?.color}20` }}>
-                                <span className="material-symbols-outlined text-xl" style={{ color: selectedCreator?.color }}>{selectedCreator?.icon}</span>
+                                {selectedCreator && <selectedCreator.icon size={20} strokeWidth={1.5} style={{ color: selectedCreator?.color }} />}
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-sm font-bold text-white/90">{selectedCreator?.label}</h3>
-                                <p className="text-[11px] text-white/30">{selectedCreator?.desc}</p>
+                                <h3 className="text-sm font-bold text-[var(--foreground)]">{selectedCreator?.label}</h3>
+                                <p className="text-[11px] text-[var(--foreground-muted)]">{selectedCreator?.desc}</p>
                             </div>
                         </div>
 
@@ -293,23 +327,23 @@ function CreatorStudio() {
                             onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }}
                         >
                             <div className="px-5 pt-4 flex items-center justify-between">
-                                <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/20">Source Material</label>
-                                <span className={`text-[10px] font-bold ${charPercentage > 80 ? 'text-[#EF4444]' : 'text-white/15'}`}>
+                                <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-70">Source Material</label>
+                                <span className={`text-[10px] font-bold ${charPercentage > 80 ? 'text-[#EF4444]' : 'text-[var(--foreground-muted)] opacity-60'}`}>
                                     {inputText.length > 0 ? `${inputText.length.toLocaleString()} chars` : ''}
                                 </span>
                             </div>
                             <div className="relative p-5">
                                 {isUploading && (
                                     <div className="absolute inset-0 z-10 bg-[#06060B]/80 backdrop-blur-md flex flex-col items-center justify-center rounded-xl">
-                                        <span className="material-symbols-outlined text-2xl animate-spin text-[#F59E0B] mb-2">sync</span>
-                                        <p className="text-[12px] font-bold text-white/60 uppercase tracking-widest">{uploadStatus}</p>
+                                        <RotateCw size={24} strokeWidth={1.5} className="animate-spin text-[#F59E0B] mb-2" />
+                                        <p className="text-[12px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">{uploadStatus}</p>
                                     </div>
                                 )}
                                 <textarea
                                     value={inputText}
                                     onChange={handleInputChange}
                                     placeholder="Paste lecture notes, syllabus, or raw intelligence here..."
-                                    className="w-full h-48 px-1 py-1 resize-none bg-transparent text-white/80 placeholder:text-white/15 text-[14px] leading-relaxed outline-none"
+                                    className="w-full h-48 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] placeholder:opacity-50 text-[14px] leading-relaxed outline-none"
                                     style={{ scrollbarWidth: "none" }}
                                     autoFocus
                                     disabled={isUploading}
@@ -318,9 +352,9 @@ function CreatorStudio() {
                             <div className="px-5 pb-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.03)" }}>
                                 <button
                                     onClick={handleFileUploadRequest}
-                                    className="flex items-center gap-2 text-[12px] font-semibold text-white/30 hover:text-white/70 transition-colors pt-3"
+                                    className="flex items-center gap-2 text-[12px] font-semibold text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors pt-3"
                                 >
-                                    <span className="material-symbols-outlined text-[15px]">upload_file</span>
+                                    <Upload size={15} strokeWidth={1.5} />
                                     Teach The Professor
                                 </button>
                                 {inputText.length > 0 && inputText.length < 50 && (
@@ -333,7 +367,7 @@ function CreatorStudio() {
                         {(selectedType === "flashcards" || selectedType === "quiz") && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="p-5" style={clay.card}>
-                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/20 mb-3 block">Density / Count</label>
+                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Density / Count</label>
                                     <div className="flex flex-wrap gap-2">
                                         {countOptions.map((count) => (
                                             <button
@@ -345,8 +379,8 @@ function CreatorStudio() {
                                                     color: "#F59E0B", border: "1px solid rgba(245,158,11,0.2)",
                                                     boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1), 0 2px 6px rgba(245,158,11,0.2)"
                                                 } : {
-                                                    background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.3)",
-                                                    border: "1px solid rgba(255,255,255,0.05)"
+                                                    background: "var(--foreground-opacity-5, rgba(255,255,255,0.02))", color: "var(--foreground-muted)",
+                                                    border: "1px solid var(--border)"
                                                 }}
                                             >
                                                 {count}
@@ -355,7 +389,7 @@ function CreatorStudio() {
                                     </div>
                                 </div>
                                 <div className="p-5" style={clay.card}>
-                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/20 mb-3 block">Rigor Level</label>
+                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Rigor Level</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {difficultyOptions.map((opt) => (
                                             <button
@@ -369,10 +403,10 @@ function CreatorStudio() {
                                                 }}
                                             >
                                                 <div className="text-[11px] font-bold flex items-center gap-1.5 mb-1"
-                                                    style={{ color: difficulty === opt.id ? "#F59E0B" : "rgba(255,255,255,0.6)" }}>
+                                                    style={{ color: difficulty === opt.id ? "#F59E0B" : "var(--foreground-muted)" }}>
                                                     <span>{opt.emoji}</span> {opt.label}
                                                 </div>
-                                                <p className="text-[9px] text-white/20 px-1 truncate">{opt.desc}</p>
+                                                <p className="text-[9px] text-[var(--foreground-muted)] opacity-70 px-1 truncate">{opt.desc}</p>
                                             </button>
                                         ))}
                                     </div>
@@ -389,16 +423,17 @@ function CreatorStudio() {
                                     !canGenerate ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.98]'
                                 }`}
                                 style={{
-                                    background: canGenerate ? "linear-gradient(135deg, #F59E0B, #D97706)" : "rgba(255,255,255,0.04)",
-                                    color: canGenerate ? "#08080E" : "rgba(255,255,255,0.2)",
+                                    background: canGenerate ? "linear-gradient(135deg, #F59E0B, #D97706)" : "var(--card)",
+                                    color: canGenerate ? "#08080E" : "var(--foreground-muted)",
                                     boxShadow: canGenerate ? "0 4px 16px rgba(245,158,11,0.3), inset 0 2px 3px rgba(255,255,255,0.2), inset 0 -2px 3px rgba(0,0,0,0.15)" : "none",
+                                    border: canGenerate ? "none" : "1px solid var(--border)"
                                 }}
                             >
                                 <>
                                     {canGenerate && (
                                         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     )}
-                                    <span className="material-symbols-outlined text-[18px]">bolt</span>
+                                    <Zap size={18} strokeWidth={1.5} />
                                     <span className="relative z-10">Initialize Generation (-{selectedCreator?.cost} credit)</span>
                                 </>
                             </button>
@@ -408,7 +443,7 @@ function CreatorStudio() {
                         {setupError && (
                             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20">
                                 <div className="flex items-center gap-2 text-[12px] font-bold text-red-400">
-                                    <span className="material-symbols-outlined text-base">warning</span>
+                                    <AlertTriangle size={16} strokeWidth={1.5} />
                                     {setupError}
                                 </div>
                                 <button
@@ -430,7 +465,7 @@ function CreatorStudio() {
 
 export default function CreatePage() {
     return (
-        <Suspense fallback={<div className="h-[100dvh] bg-[#06060B] flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#F59E0B] animate-spin" /></div>}>
+        <Suspense fallback={<div className="h-[100dvh] bg-[var(--background)] flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#F59E0B] animate-spin" /></div>}>
             <CreatorStudio />
         </Suspense>
     );

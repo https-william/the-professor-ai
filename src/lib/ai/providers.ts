@@ -46,11 +46,11 @@ export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
         bestFor: 'Secondary - Fast responses (Instant mode)',
     },
     trinity: {
-        name: 'Trinity Large (OpenRouter)',
+        name: 'Trinity (OpenRouter Free)',
         baseUrl: 'https://openrouter.ai/api/v1',
-        model: 'arcee-ai/arcee-trinity-large-preview',
+        model: 'google/gemini-flash-1.5-8b', // 100% Free on OpenRouter
         envKey: 'OPENROUTER_API_KEY',
-        bestFor: 'Backup - High throughput (32-43 tps)',
+        bestFor: 'Cost-Effective High Performance',
     },
     gemini: {
         name: 'Google Gemini',
