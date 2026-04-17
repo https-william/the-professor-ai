@@ -18,7 +18,11 @@ import {
   ShieldCheck, 
   Lock,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  ChevronRight,
+  Upload,
+  Sparkles,
+  Trophy
 } from "lucide-react";
 import SEOHead, { getOrgSchema, getWebsiteSchema, getWebApplicationSchema } from "@/components/SEOHead";
 import SocialProof from "@/components/landing/SocialProof";
@@ -218,17 +222,17 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-6 md:gap-0 items-start">
             {[
               {
-                step: "01", icon: "upload", title: "Upload Anything",
+                step: "01", icon: Upload, title: "Upload Anything",
                 desc: "PDF, DOCX, plain text — lecture notes, textbook chapters, whatever you have.",
                 color: "#818CF8", gradient: "from-indigo-500/20 via-indigo-500/5 to-transparent",
               },
               {
-                step: "02", icon: "auto_awesome", title: "Pick Your Weapon",
+                step: "02", icon: Sparkles, title: "Pick Your Weapon",
                 desc: "Flashcards, quiz, summary, mind map — choose your study mode.",
                 color: "#F59E0B", gradient: "from-amber-500/20 via-amber-500/5 to-transparent",
               },
               {
-                step: "03", icon: "emoji_events", title: "Master It",
+                step: "03", icon: Trophy, title: "Master It",
                 desc: "AI content tuned to your exact material. Walk in confident.",
                 color: "#34D399", gradient: "from-emerald-500/20 via-emerald-500/5 to-transparent",
               },
@@ -260,12 +264,12 @@ export default function LandingPage() {
                       boxShadow: `0 4px 20px ${item.color}20, inset 0 1px 2px rgba(255,255,255,0.08), inset 0 -1px 3px rgba(0,0,0,0.2)`,
                     }}
                   >
-                    <span
-                      className="material-symbols-outlined text-2xl md:text-3xl transition-all duration-300"
+                    <item.icon 
+                      size={24} 
+                      strokeWidth={1.5}
+                      className="transition-all duration-300"
                       style={{ color: item.color }}
-                    >
-                      {item.icon}
-                    </span>
+                    />
                   </div>
 
                   {/* Step label */}
