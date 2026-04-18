@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-static";
+
 // Digital Asset Links — proves The Professor Android app owns this domain.
 // The SHA256 fingerprint below MUST match the signing key used to build the APK.
 // After your first GitHub Actions build, grab the SHA256 from the build log
