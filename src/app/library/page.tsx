@@ -280,9 +280,9 @@ export default function LibraryPage() {
                 {/* ═══ Stats — Bento Row ═══ */}
                 <div className="grid grid-cols-3 gap-3 mb-8">
                     {[
-                        { label: "Flashcard Sets", count: flashcardCount, icon: "style", color: "#F59E0B" },
-                        { label: "Quizzes", count: quizCount, icon: "quiz", color: "#818CF8" },
-                        { label: "Summaries", count: summaryCount, icon: "summarize", color: "#6366F1" },
+                        { label: "Flashcard Sets", count: flashcardCount, icon: Layers, color: "#F59E0B" },
+                        { label: "Quizzes", count: quizCount, icon: HelpCircle, color: "#818CF8" },
+                        { label: "Summaries", count: summaryCount, icon: FileText, color: "#6366F1" },
                     ].map((s) => (
                         <div key={s.label} className="text-center p-4 transition-all duration-300 hover:translate-y-[-2px]"
                             style={{ ...clay.card, borderRadius: "18px" }}>
