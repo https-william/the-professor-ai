@@ -2,6 +2,8 @@ name: Release (Tauri 2.0)
 
 on:
   push:
+    branches:
+      - development
     tags:
       - 'v*'
   workflow_dispatch:
