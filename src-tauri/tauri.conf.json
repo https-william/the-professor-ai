@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "The Professor",
+  "version": "0.1.0",
+  "identifier": "com.theprofessor.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devPath": "http://localhost:3000",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../out"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "The Professor",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "transparent": false
+      }
+    ],
+    "deepLinkProtocol": "theprofessor",
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "deep-link": {},
+    "shell": {
+      "open": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "../public/icon-512.png"
+    ],
+    "identifier": "com.theprofessor.app",
+    "publisher": "The Professor Academy",
+    "windows": {
+      "wix": {
+        "language": "en-US"
+      }
+    }
+  }
+}

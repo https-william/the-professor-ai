@@ -1,0 +1,85 @@
+name: Release (Tauri 2.0)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            args: '--target x86_64-pc-windows-msvc'
+          - platform: 'ubuntu-22.04' # Using Ubuntu to build Android APK
+            args: '--target aarch64-linux-android' # Simplified Android target
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || 'aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android' }}
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+          # Install Android prerequisites
+          sudo apt-get install -y openjdk-17-jdk
+
+      - name: Setup Android SDK (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Build Next.js
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FORCE_REMOTE_API: 'true'
+
+      - name: Build Tauri (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: tauri-apps/tauri-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__ # tauri-action replaces this
+          releaseName: 'The Professor v__VERSION__'
+          releaseBody: 'Automated release from GitHub Actions'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Build Tauri (Android)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          # Initialize Android if not already done (Tauri 2.0 specific)
+          npx tauri android init --yes
+          # Build APK
+          npx tauri android build --debug
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Android Artifact (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: professor-android-debug
+          path: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk

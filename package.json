@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.18",
@@ -55,6 +56,7 @@
     "eslint-config-next": "16.1.6",
     "pg": "^8.20.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@tauri-apps/cli": "2.0.0"
   }
 }

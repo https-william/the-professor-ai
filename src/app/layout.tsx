@@ -11,6 +11,7 @@ import OnboardingModal from "@/components/features/OnboardingModal";
 import GlobalToasts from "@/components/ui/GlobalToasts";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import GlassRefractionProvider from "@/components/ui/GlassRefractionProvider";
+import SiteHeader from "@/components/ui/SiteHeader";
 
 const SITE_URL = "https://theprofessor.xyz";
 
@@ -149,6 +150,32 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
           rel="stylesheet"
         />
+        {/* Native API / Auth Bridge — Intercepts relative /api calls in native wrappers */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const PRODUCTION_URL = "https://theprofessor.xyz";
+                const isNative = window.location.protocol === 'tauri:' || 
+                               window.location.protocol === 'asset:' || 
+                               window.location.hostname.includes('tauri') ||
+                               (window.location.hostname === 'localhost' && window.location.port === '');
+                
+                if (isNative) {
+                  const originalFetch = window.fetch;
+                  window.fetch = function(input, init) {
+                    if (typeof input === 'string' && input.startsWith('/api/')) {
+                      input = PRODUCTION_URL + input;
+                    }
+                    return originalFetch(input, init);
+                  };
+                  console.log('Native Bridge Active: Redirecting API calls to ' + PRODUCTION_URL);
+                }
+              })();
+            `,
+          }}
+        />
+
         {/* Old browser detection — redirect to static fallback */}
         <script
           dangerouslySetInnerHTML={{
@@ -166,11 +193,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased transition-colors duration-300">
+      <body className="font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
         <ReactQueryProvider>
           <ThemeProvider>
             <UserProvider>
               <GlassRefractionProvider />
+              <SiteHeader showLogo={true} />
               {children}
               <OnboardingModal />
               <GlobalToasts />

@@ -5,8 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
-import BrandLogo from "@/components/ui/BrandLogo";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import { getRedirectUrl } from "@/lib/api-client";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -33,7 +32,7 @@ export default function LoginPage() {
         setLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: `${window.location.origin}/auth/callback` },
+            options: { redirectTo: getRedirectUrl() },
         });
         if (error) { setError(error.message); setLoading(false); }
     };
