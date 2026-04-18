@@ -74,7 +74,9 @@
 :root {
   /* Backgrounds — deep volcanic */
   --background: #08080E;
+  --background-rgb: 8, 8, 14;
   --background-secondary: #0F0F1A;
+  --background-secondary-rgb: 15, 15, 26;
   --background-tertiary: #16162A;
 
   /* Cards */
@@ -129,7 +131,9 @@
 
 html.light {
   --background: #FFFFFF;
+  --background-rgb: 255, 255, 255;
   --background-secondary: #F9F9F7;
+  --background-secondary-rgb: 249, 249, 247;
   --background-tertiary: #F2F1ED;
   --card: #FFFFFF;
   --card-hover: #FCFAF7;
@@ -409,84 +413,101 @@ html.light .dock-item:hover {
    ============================================ */
 
 .btn-skeuo {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.75rem;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.08), transparent);
+  gap: 0.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
   background-color: var(--background-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  border-bottom: 2.5px solid rgba(0, 0, 0, 0.5);
-  border-radius: 1.25rem; /* Explicitly 2xl-style rounding for puffiness */
-  color: var(--foreground-secondary);
-  font-weight: 700;
-  font-size: 0.875rem;
+  color: var(--foreground);
+  border: 1px solid rgba(255, 255, 255, 0.08); /* Sophisticated thin border */
+  border-bottom: 2.5px solid rgba(0, 0, 0, 0.5); /* 3D Depth */
+  border-radius: 1.25rem !important; /* Force rounding for puffiness */
+  padding: 0.75rem 1.25rem;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 
-    0 12px 24px -10px rgba(0, 0, 0, 0.8),
-    inset 0 1px 1px rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    0 4px 10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.08); /* Inset highlight */
   cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+html.light .btn-skeuo {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 3.5px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 1);
+  color: #12121F;
 }
 
 .btn-skeuo:hover {
-  color: var(--foreground);
-  background-color: var(--card);
-  transform: translateY(-2.5px);
+  transform: translateY(-2px);
+  filter: brightness(1.1);
   box-shadow: 
-    0 18px 32px -8px rgba(0, 0, 0, 0.9),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 0.12);
+}
+
+html.light .btn-skeuo:hover {
+  box-shadow: 
+    0 8px 18px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 1);
 }
 
 .btn-skeuo:active {
-  transform: translateY(1.5px);
-  background-color: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(0, 0, 0, 0.5);
-  border-bottom: 1.5px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.5),
-    inset 0 6px 16px rgba(0, 0, 0, 0.6);
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
   transition-duration: 0.1s;
 }
 
+html.light .btn-skeuo:active {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
 .btn-skeuo-primary {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.75rem;
-  background: linear-gradient(to bottom, var(--accent-light), var(--accent));
-  background-color: var(--accent);
-  border-radius: 1.25rem;
-  color: #000;
+  gap: 0.5rem;
+  background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%);
+  color: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 4px solid var(--accent-dark);
+  border-radius: 1.25rem !important;
   font-weight: 800;
-  font-size: 0.875rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.4);
-  border-bottom: 3px solid rgba(0, 0, 0, 0.45);
+  text-transform: uppercase;
+  padding: 0.75rem 1.5rem;
   box-shadow: 
-    0 12px 30px -10px rgba(245, 158, 11, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3);
-  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-  cursor: pointer;
+    0 6px 20px rgba(245, 158, 11, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html.light .btn-skeuo-primary {
+  background: linear-gradient(180deg, #FBBF24 0%, #F59E0B 100%);
+  border-bottom-color: #B45309;
+  box-shadow: 
+    0 6px 18px rgba(245, 158, 11, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
 .btn-skeuo-primary:hover {
-  background: linear-gradient(to bottom, var(--accent-light), var(--accent-light));
-  transform: translateY(-2.5px) scale(1.02);
+  filter: contrast(1.1) brightness(1.1);
+  transform: translateY(-2px);
   box-shadow: 
-    0 20px 40px -10px rgba(245, 158, 11, 0.5),
-    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    0 10px 25px rgba(245, 158, 11, 0.35),
+    inset 0 1px 3px rgba(255, 255, 255, 0.5);
 }
 
 .btn-skeuo-primary:active {
-  transform: translateY(2px) scale(0.98);
-  border-top: 1.5px solid rgba(0, 0, 0, 0.4);
-  border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 4px 10px rgba(0, 0, 0, 0.3),
-    inset 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -589,35 +610,43 @@ html.light .btn-glass {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.875rem 2rem;
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-  color: var(--accent);
-  border-radius: 1.25rem;
-  background: rgba(245, 158, 11, 0.12);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border: 1.5px solid rgba(245, 158, 11, 0.35);
-  border-top: 1.5px solid rgba(245, 158, 11, 0.55);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    0 2px 12px rgba(245, 158, 11, 0.15),
-    inset 0 2px 4px rgba(255, 255, 255, 0.2),
-    inset 0 -3px 6px rgba(245, 158, 11, 0.08);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 0.8rem 2.2rem;
+  font-weight: 800;
+  color: white;
+  border-radius: 1.5rem !important;
+  background: var(--accent);
+  border: none;
+  box-shadow: 
+    0 10px 20px -5px rgba(245, 158, 11, 0.45),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
   user-select: none;
   overflow: hidden;
 }
 
 html.light .btn-jelly {
-  background: rgba(217, 119, 6, 0.08);
-  border-color: rgba(217, 119, 6, 0.25);
-  border-top-color: rgba(255, 255, 255, 0.8);
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.08),
-    inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  box-shadow: 
+    0 8px 18px -4px rgba(245, 158, 11, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.btn-jelly:hover {
+  transform: scale(1.05) translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 
+    0 15px 25px -5px rgba(245, 158, 11, 0.55),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.btn-jelly:active {
+  transform: scale(0.95) translateY(2px);
+  box-shadow: 
+    0 4px 10px -2px rgba(245, 158, 11, 0.3),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-jelly::before {
@@ -1190,7 +1219,7 @@ html.light .nm-inset-glass {
 /* Claymorphism — rounded, puffy, colorful depth */
 .clay-card, .container-clay {
   background: rgba(22, 22, 42, 0.7);
-  border-radius: var(--radius-2xl);
+  border-radius: 1.5rem !important; /* Force rounded-2xl puffiness */
   border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow:
     0 30px 60px -12px rgba(0, 0, 0, 0.75),
@@ -1217,7 +1246,7 @@ html.light .nm-inset-glass {
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius-2xl);
+  border-radius: 1.5rem !important; /* Force rounded-2xl */
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 1px rgba(255, 255, 255, 0.04);
@@ -1246,7 +1275,7 @@ html.light .clay-card {
 /* Neumorphism — extruded from the background surface */
 .neu-card {
   background: var(--background-secondary);
-  border-radius: var(--radius-2xl);
+  border-radius: 1.5rem !important;
   border: none;
   box-shadow:
     6px 6px 18px rgba(0, 0, 0, 0.5),
@@ -1263,23 +1292,23 @@ html.light .clay-card {
 /* Neumorphism inset — pressed-in / concave */
 .neu-inset {
   background: var(--background);
-  border-radius: var(--radius-xl);
+  border-radius: 1.25rem !important;
   box-shadow:
     inset 4px 4px 12px rgba(0, 0, 0, 0.5),
     inset -4px -4px 12px rgba(40, 40, 65, 0.1);
 }
 
 html.light .neu-card {
-  background: var(--background-secondary);
+  background: #FFFFFF;
   box-shadow:
-    6px 6px 18px rgba(0, 0, 0, 0.06),
+    6px 6px 18px rgba(12, 12, 50, 0.03),
     -6px -6px 18px rgba(255, 255, 255, 0.95);
 }
 
 html.light .neu-inset {
-  background: var(--background);
+  background: #F9F9FB;
   box-shadow:
-    inset 4px 4px 10px rgba(0, 0, 0, 0.06),
+    inset 4px 4px 10px rgba(0, 0, 0, 0.04),
     inset -4px -4px 10px rgba(255, 255, 255, 0.9);
 }
 
@@ -1507,4 +1536,19 @@ html.light .nm-button {
 
 html.light .nm-button:active {
   box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.04), inset -2px -2px 5px rgba(255, 255, 255, 1);
+}
+
+/* ============================================
+   ROUNDING NORMALIZATION 
+   Forces all tactical surfaces to respect the 
+   Midnight Scholar "puffy" aesthetic (1.5rem)
+   Permanently resolves "sharp corner" regressions.
+   ============================================ */
+.clay-card, .glass-panel, .neu-card, .neu-inset {
+  border-radius: 1.5rem !important;
+}
+
+/* Reinforced button rounding for skeuomorphic elements */
+.btn-skeuo, .btn-skeuo-primary, .btn-jelly {
+  border-radius: 1.25rem !important;
 }

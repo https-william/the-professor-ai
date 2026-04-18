@@ -10,7 +10,6 @@ export default async function AdminPage() {
   // Pre-fetch some initial server data if needed
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <SiteHeader showLogo />
       <div className="pt-24 px-4 md:px-8 max-w-7xl mx-auto pb-20">
          <div className="mb-10">
             <h1 className="text-3xl font-black tracking-tight text-[var(--foreground)]">Admin Atrium</h1>

@@ -173,7 +173,7 @@ function XPGauge({ xp }: { xp: number }) {
                 </div>
             </div>
             <div className="min-w-0">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--accent-bg)] border border-[var(--accent)]/15 mb-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/15 mb-2">
                     <GraduationCap size={12} strokeWidth={1.5} className="text-[var(--accent)]" />
                     <span className="text-[10px] font-black text-[var(--accent)] uppercase tracking-wider">{levelTitle}</span>
                 </div>
@@ -561,12 +561,9 @@ export default function DashboardPage() {
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
             <SEOHead type="BreadcrumbList" data={getBreadcrumbSchema([{ name: "Home", url: "/" }, { name: "Dashboard", url: "/dashboard" }])} />
 
-            <SiteHeader showLogo={true} activeMode="DASHBOARD" onModeChange={(mode) => {
-                if (mode === "CHAT") router.push('/chat');
-                if (mode === "CREATE") router.push('/create');
-            }} />
-
-            <div className="w-full max-w-6xl mx-auto px-5 pt-28 pb-24">
+            <div className="w-full max-w-6xl mx-auto px-5 pt-28 pb-24 relative">
+                {/* Header Scroll Sentinel */}
+                <div data-header-sentinel className="absolute top-0 left-0 h-1 w-full pointer-events-none" />
                 
                 {/* Streak Recovery Banner */}
                 {canRecover && (
@@ -648,7 +645,7 @@ export default function DashboardPage() {
                                             <Link 
                                                 href="/review?mode=quick"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-[11px] font-bold text-white/60 flex items-center gap-2"
+                                                className="px-4 py-2 rounded-xl bg-[var(--foreground)]/5 border border-[var(--border)] hover:bg-[var(--foreground)]/10 transition-colors text-[11px] font-bold text-[var(--foreground)]/60 flex items-center gap-2"
                                             >
                                                 <Zap size={16} strokeWidth={1.5} />
                                                 2-Min Blitz

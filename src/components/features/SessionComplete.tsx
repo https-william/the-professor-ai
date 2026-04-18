@@ -11,7 +11,9 @@ import {
     Flame, 
     CheckCircle2, 
     Lightbulb,
-    Trophy as TrophyIcon
+    Trophy as TrophyIcon,
+    Timer,
+    Target
 } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
@@ -22,6 +24,8 @@ const ICON_MAP: Record<string, any> = {
   local_fire_department: Flame,
   check_circle: CheckCircle2,
   tips_and_updates: Lightbulb,
+  timer: Timer,
+  target: Target,
 };
 
 /* ═══════════════════════════════════════════════════

@@ -606,8 +606,7 @@ function FlashcardContent() {
 export default function FlashcardsPage() {
     return (
         <div className="h-[100dvh] bg-[var(--background)] overflow-hidden relative">
-            <SiteHeader showLogo />
-            <div className="h-full overflow-y-auto pt-24 md:pt-0">
+            <div className="h-full overflow-y-auto">
                 <Suspense fallback={<div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-[10px] font-black tracking-[0.4em] text-[var(--foreground-muted)] opacity-60 uppercase">Loading deck...</div>}>
                     <FlashcardContent />
                 </Suspense>

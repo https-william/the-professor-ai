@@ -39,16 +39,16 @@ export default function FAQ() {
           {faqs.map((faq, i) => (
             <div 
               key={i} 
-              className={`rounded-2xl transition-colors ${openIdx === i ? 'bg-white/5 border border-white/10' : 'bg-transparent border border-white/5 hover:bg-white/[0.02]'}`}
+              className={`rounded-2xl transition-colors ${openIdx === i ? 'bg-[var(--background-secondary)] border border-[var(--accent)]/30' : 'bg-transparent border border-[var(--border)] hover:bg-[var(--background-secondary)]/50'}`}
             >
               <button
                 className="w-full text-left px-6 py-5 flex items-center justify-between focus:outline-none"
                 onClick={() => setOpenIdx(openIdx === i ? null : i)}
               >
-                <span className={`font-bold text-sm md:text-base pr-4 ${openIdx === i ? 'text-[var(--accent)]' : 'text-white/80'}`}>
+                <span className={`font-bold text-sm md:text-base pr-4 ${openIdx === i ? 'text-[var(--accent)]' : 'text-[var(--foreground)]/80'}`}>
                   {faq.q}
                 </span>
-                <ChevronDown size={20} strokeWidth={1.5} className={`transition-transform duration-300 ${openIdx === i ? 'rotate-180 text-[var(--accent)]' : 'text-white/40'}`} />
+                <ChevronDown size={20} strokeWidth={1.5} className={`transition-transform duration-300 ${openIdx === i ? 'rotate-180 text-[var(--accent)]' : 'text-[var(--foreground)]/40'}`} />
               </button>
               
               <AnimatePresence>
@@ -60,7 +60,7 @@ export default function FAQ() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-6 pt-0 text-[13px] md:text-sm text-white/50 leading-relaxed">
+                    <div className="px-6 pb-6 pt-0 text-[13px] md:text-sm text-[var(--foreground-secondary)] leading-relaxed">
                       {faq.a}
                     </div>
                   </motion.div>

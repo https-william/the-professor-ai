@@ -10,6 +10,7 @@ import { useTheme } from "@/context/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import DailyChallenges from "@/components/features/DailyChallenges";
 import { useToasts } from "@/components/ui/GlobalToasts";
+import { cn } from "@/lib/utils";
 
 import { 
     Library, 
@@ -25,6 +26,7 @@ import {
 const MODES = [
     { id: "DASHBOARD", color: "#10B981", glow: "rgba(16,185,129,0.35)" },
     { id: "CREATE", color: "#F59E0B", glow: "rgba(245,158,11,0.35)" },
+    { id: "LIBRARY", color: "#10B981", glow: "rgba(16,185,129,0.35)" },
     { id: "HUB", color: "#8B5CF6", glow: "rgba(139,92,246,0.35)" },
 ] as const;
 
@@ -46,16 +48,52 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo = false,
     const [scrollFaded, setScrollFaded] = useState(false);
     const unreadCount = toasts.filter(t => !t.read).length;
 
+    // Paths where the header should NOT be shown (Immersive modes)
+    const isHiddenPath = pathname.startsWith("/chat") || 
+                         pathname.startsWith("/quiz") || 
+                         pathname.startsWith("/flashcards") || 
+                         pathname.startsWith("/review") || 
+                         pathname.startsWith("/create") || 
+                         pathname.startsWith("/arena/");
+
+    if (isHiddenPath) return null;
+
     useEffect(() => {
+        // Fallback for pages that scroll on window
         const handleScroll = () => {
-            setScrollFaded(window.scrollY > 60);
+            if (window.scrollY > 60) setScrollFaded(true);
+            else setScrollFaded(false);
         };
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+
+        // MutationObserver / IntersectionObserver approach for internal scrollers
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // If sentinel is NOT intersecting with the margin, we've scrolled 60px
+                setScrollFaded(!entry.isIntersecting);
+            },
+            { 
+                rootMargin: "60px 0px 0px 0px", // Trigger when sentinel moves more than 60px past the top
+                threshold: 0 
+            }
+        );
+
+        // Try to find a sentinel in the DOM
+        const sentinel = document.querySelector('[data-header-sentinel]');
+        if (sentinel) {
+            observer.observe(sentinel);
+        } else {
+            window.addEventListener("scroll", handleScroll, { passive: true });
+        }
+
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            observer.disconnect();
+        };
+    }, [pathname]); // Re-run on navigation to find new sentinels
 
     const currentMode = activeMode || (() => {
         if (pathname.startsWith("/hub")) return "HUB";
+        if (pathname.startsWith("/library")) return "LIBRARY";
         if (pathname.startsWith("/create") || pathname.startsWith("/flashcards") || pathname.startsWith("/quiz") || pathname.startsWith("/summary")) return "CREATE";
         if (pathname.startsWith("/dashboard")) return "DASHBOARD";
         return "DASHBOARD"; // Fallback cleanly to Dashboard
@@ -70,6 +108,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo = false,
             case "DASHBOARD": router.push("/dashboard"); break;
             case "CHAT": router.push(`/chat${threadId ? `?t=${threadId}` : ""}`); break;
             case "CREATE": router.push(`/create${threadId ? `?t=${threadId}` : ""}`); break;
+            case "LIBRARY": router.push("/library"); break;
             case "HUB": router.push("/hub"); break;
         }
     };
@@ -77,35 +116,63 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo = false,
     const activeConfig = MODES.find(m => m.id === currentMode) || MODES[0];
 
     return (
-        <div className="contents">
-            {/* ═══ LEFT SLOT: Toggle & Logo ═══ */}
-            {(showLogo || leftSlot) && (
-                <div className="fixed top-6 left-4 z-[10001] flex items-center gap-3">
-                    {leftSlot}
+        <motion.header 
+            initial={false}
+            animate={{
+                top: scrollFaded ? "1.25rem" : "0rem",
+                x: "-50%",
+                width: scrollFaded ? "auto" : "100%",
+                paddingBlock: scrollFaded ? "0.5rem" : "1.5rem",
+                backgroundColor: scrollFaded ? "rgba(var(--background-secondary-rgb), 0.8)" : "rgba(var(--background-secondary-rgb), 0)",
+                backdropFilter: scrollFaded ? "blur(32px) saturate(180%)" : "blur(0px) saturate(100%)",
+                borderRadius: scrollFaded ? "9999px" : "0px",
+                borderColor: scrollFaded ? "var(--border)" : "transparent",
+                boxShadow: scrollFaded ? "0 20px 50px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1)" : "none",
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className={cn(
+                "fixed left-1/2 z-[10000] px-4 md:px-8 flex items-center justify-between gap-4 border",
+                !scrollFaded && "border-transparent"
+            )}
+            style={{
+                minWidth: scrollFaded ? "min(95vw, 600px)" : "100%",
+            }}
+        >
+            {/* ═══ BRAND / LEFT ═══ */}
+            <div className="flex items-center gap-3">
+                {pathname.startsWith("/hub") || pathname.startsWith("/dashboard") ? (
                     <button
-                        onClick={() => router.push("/dashboard")}
-                        className="group w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 shadow-lg bg-[var(--background-secondary)]"
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))}
+                        className="flex w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl items-center justify-center interactive-glass transition-all active:scale-90"
                         style={{
-                            backdropFilter: "blur(24px) saturate(2)",
-                            WebkitBackdropFilter: "blur(24px) saturate(2)",
+                            background: "var(--background-secondary)",
+                            backdropFilter: "blur(24px)",
                             border: "1px solid var(--border)",
-                            boxShadow: "var(--shadow-lg), inset 0 1px 1px var(--card-border)",
+                            boxShadow: "var(--shadow-sm), inset 0 1px 1px var(--card-border)",
                         }}
                     >
-                        <BrandLogo size="sm" />
+                        <span className="material-symbols-outlined text-[18px] sm:text-[20px] text-[var(--foreground)]">
+                            menu
+                        </span>
                     </button>
-                </div>
-            )}
+                ) : leftSlot}
+                <Link
+                    href="/"
+                    className="group w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 shadow-lg bg-[var(--background-secondary)] border border-[var(--border)]"
+                >
+                    <BrandLogo size="sm" />
+                </Link>
+                {!scrollFaded && (
+                     <span className="hidden sm:inline-block font-heading font-bold text-[var(--foreground)] tracking-tight">The Professor</span>
+                )}
+            </div>
 
-            {/* ═══ CENTER: Floating 3D Mode Pill - Non-distracting ═══ */}
+            {/* ═══ CENTER NAV / APP ═══ */}
             {pathname !== "/" && !pathname.startsWith("/chat") && !pathname.startsWith("/quiz") && !pathname.startsWith("/flashcards") ? (
                 <div
-                    className="fixed bottom-6 md:top-6 md:bottom-auto left-1/2 -translate-x-1/2 z-[9999] flex items-center rounded-full p-1 bg-[var(--background-tertiary)]/80"
+                    className="flex items-center rounded-full p-1 bg-[var(--background-tertiary)]/80 border border-[var(--border)]"
                     style={{
-                        backdropFilter: "blur(32px) saturate(2)",
-                        WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-                        border: "1px solid var(--border)",
-                        boxShadow: `var(--shadow-lg), 0 12px 40px ${activeConfig.glow}`,
+                        boxShadow: `var(--shadow-sm), 0 12px 40px ${activeConfig.glow}`,
                     }}
                 >
                     {MODES.map(({ id, color, glow }) => (
@@ -127,58 +194,39 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo = false,
                                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                 />
                             )}
-                            <span className="relative z-10 drop-shadow-lg">{id}</span>
+                            <span className="relative z-10 drop-shadow-lg lowercase capitalize">{id.toLowerCase()}</span>
                         </button>
                     ))}
                 </div>
-            ) : (
-                <div className="fixed top-6 right-16 z-[9999] flex items-center gap-2">
-                    <Link
-                        href="/library"
-                        className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl text-[11px] font-bold text-[var(--foreground-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-bg)] transition-all bg-[var(--background-secondary)]/60 backdrop-blur-xl border border-[var(--border)] shadow-xl"
-                    >
-                        <Library size={14} strokeWidth={1.5} className="flex items-center justify-center overflow-hidden" />
-                        <span>Library</span>
-                    </Link>
-                    <Link
+            ) : pathname === "/" ? (
+                /* ═══ CENTER NAV / LANDING (Hidden when scrolled for cleaner look, or kept) ═══ */
+                <div className="hidden md:flex items-center gap-2">
+                     <Link
                         href="/blog"
-                        className="hidden lg:inline-flex px-3 py-2 rounded-2xl text-[11px] font-bold text-[var(--foreground-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-bg)] transition-all bg-[var(--background-secondary)]/60 backdrop-blur-xl border border-[var(--border)] shadow-xl"
+                        className="btn-skeuo px-4 py-2 text-[11px] font-bold text-[var(--foreground-muted)] hover:text-[var(--accent)] flex items-center gap-2"
                     >
-                        <BookOpen size={14} strokeWidth={1.5} className="flex items-center justify-center overflow-hidden" />
-                    </Link>
-                    <Link
-                        href="/login"
-                        className="px-4 py-2 sm:px-6 sm:py-2.5 rounded-2xl bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#08080E] text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#F59E0B]/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    >
-                        Login
+                        <BookOpen size={14} strokeWidth={1.5} />
+                        <span>Blog</span>
                     </Link>
                 </div>
-            )}
+            ) : null}
 
-            {/* ═══ RIGHT: Floating Stat Badges ═══ */}
-            <div
-                className={`fixed top-6 right-4 z-[9998] flex items-center gap-2 transition-opacity duration-500 ${
-                    scrollFaded ? "opacity-50" : "opacity-100"
-                }`}
-            >
+            {/* ═══ STATS / TOGGLE / RIGHT ═══ */}
+            <div className="flex items-center gap-2">
                 {pathname !== "/" && (
-                    <>
-                        <div
-                            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[var(--background-secondary)]/70 backdrop-blur-md border border-[var(--border)]"
-                        >
-                            <Zap size={16} strokeWidth={1.5} className="text-[var(--accent)] flex items-center justify-center overflow-hidden" />
+                    <div className="flex items-center gap-2 mr-2">
+                        <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[var(--background-secondary)]/70 backdrop-blur-md border border-[var(--border)] shadow-inner">
+                            <Zap size={16} strokeWidth={1.5} className="text-[var(--accent)]" />
                             <span className="text-[12px] font-bold text-[var(--foreground)]">{user?.xp || 0}</span>
                         </div>
-                        <div
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[var(--background-secondary)]/70 backdrop-blur-md border border-[var(--border)]"
-                        >
-                            <Flame size={16} strokeWidth={1.5} className="text-[var(--error)] flex items-center justify-center overflow-hidden" />
+                        <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[var(--background-secondary)]/70 backdrop-blur-md border border-[var(--border)] shadow-inner">
+                            <Flame size={16} strokeWidth={1.5} className="text-[var(--error)]" />
                             <span className="text-[12px] font-bold text-[var(--foreground)]">{user?.streak || 0}</span>
                         </div>
                         <DailyChallenges />
                         <button
                             onClick={() => setToastsOpen(true)}
-                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--background-secondary)]/70 backdrop-blur-md border border-[var(--border)] relative transition-all hover:bg-[var(--accent-bg)] shadow-[var(--shadow-sm)]"
+                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--background-secondary)]/70 backdrop-blur-md border border-[var(--border)] relative transition-all hover:bg-[var(--accent-bg)] shadow-inner"
                         >
                             <Bell size={16} strokeWidth={1.5} className="text-[var(--foreground)]" />
                             {unreadCount > 0 && (
@@ -190,11 +238,20 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo = false,
                                 </span>
                             )}
                         </button>
-                    </>
+                    </div>
+                )}
+                
+                {pathname === "/" && (
+                     <Link
+                        href="/login"
+                        className="btn-skeuo-primary px-6 py-2.5 text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all mr-2"
+                    >
+                        Login
+                    </Link>
                 )}
 
                 <ThemeToggle />
             </div>
-        </div>
+        </motion.header>
     );
 }

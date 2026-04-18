@@ -41,7 +41,7 @@ export const InteractiveSummary = () => {
                         )}
                     >
                         {!isRefining && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--foreground)]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                         )}
 
                         <span className="relative z-10 flex items-center gap-2">

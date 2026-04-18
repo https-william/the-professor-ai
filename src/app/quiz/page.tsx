@@ -803,7 +803,7 @@ function QuizContent() {
                 streakIncremented={sessionStats.incremented}
                 type="quiz"
                 title={title}
-                extraStat={{ label: "Score", value: `${Math.round((score / questions.length) * 100)}%`, icon: Trophy }}
+                extraStat={{ label: "Score", value: `${Math.round((score / questions.length) * 100)}%`, icon: "emoji_events" }}
             />
         </div>
     );

@@ -106,11 +106,8 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
-            <SiteHeader 
-                showLogo={true} 
-                activeMode="HUB" 
-                onModeChange={handleModeChange} 
-            />
+            <div className="pt-20"> {/* Unified spacing for global header */}
+            </div>
 
             {/* Ambient */}
             <div className="fixed inset-0 pointer-events-none z-0">

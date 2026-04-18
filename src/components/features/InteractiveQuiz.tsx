@@ -48,7 +48,7 @@ export const InteractiveQuiz = () => {
                             )}
                         >
                             {/* Inner Bevel for unselected */}
-                            {selected !== i && <div className="absolute inset-x-0 top-0 h-px bg-white/5 pointer-events-none" />}
+                            {selected !== i && <div className="absolute inset-x-0 top-0 h-px bg-[var(--foreground)]/5 pointer-events-none" />}
                             {opt}
                         </button>
                     ))}

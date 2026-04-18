@@ -245,64 +245,7 @@ function RoadmapContent() {
                 }
             `}</style>
             
-            {/* Header */}
-            <header className="fixed top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-6 bg-[#06060B]/80 backdrop-blur-xl border-b border-white/5 no-print">
-                <div className="flex items-center gap-6">
-                    <button onClick={() => router.push('/create')} className="w-10 h-10 rounded-xl nm-flat flex items-center justify-center hover:nm-inset transition-all">
-                        <ChevronLeft size={20} strokeWidth={1.5} className="text-white/40" />
-                    </button>
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl nm-flat flex items-center justify-center text-purple-500">
-                            <GraduationCap size={20} strokeWidth={1.5} />
-                        </div>
-                        <div>
-                            <h1 className="text-sm font-black truncate max-w-[200px] uppercase tracking-wider">{roadmap.title}</h1>
-                            <p className="text-[10px] text-purple-500 font-black uppercase tracking-[0.2em]">Strategy Architecture</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="hidden sm:flex items-center gap-3 px-4 py-2 rounded-xl nm-inset-bezel bg-black/20 mr-2">
-                         <Zap size={16} strokeWidth={1.5} className="text-purple-500" />
-                         <span className="text-[12px] font-black">{user?.xp || 0}</span>
-                    </div>
-
-                    <div className="relative">
-                        <button 
-                            onClick={() => setIsShareOpen(!isShareOpen)}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl nm-flat hover:nm-inset transition-all text-xs font-black uppercase tracking-widest bg-purple-600/10 text-purple-400 border border-purple-500/20"
-                        >
-                            <Share size={16} strokeWidth={1.5} />
-                            <span className="hidden sm:inline">Export</span>
-                        </button>
-
-                        {isShareOpen && (
-                            <div className="absolute right-0 mt-3 w-56 rounded-[28px] nm-flat border border-white/5 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                 <button 
-                                    onClick={handleCopyLink}
-                                    className="w-full text-left px-4 py-3 rounded-2xl hover:bg-white/5 flex items-center justify-between transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <LinkIcon size={18} strokeWidth={1.5} className="text-purple-400" />
-                                        <span className="text-[11px] font-bold text-white/60">Copy URL</span>
-                                    </div>
-                                    {copySuccess && <span className="text-[9px] text-green-400 font-black">COPIED</span>}
-                                </button>
-                                <button 
-                                    onClick={() => window.print()}
-                                    className="w-full text-left px-4 py-3 rounded-2xl hover:bg-white/5 flex items-center gap-3 transition-colors underline decoration-purple-500/30"
-                                >
-                                    <FileDown size={18} strokeWidth={1.5} className="text-purple-400" />
-                                    <span className="text-[11px] font-bold text-white/60">Export Syllabus</span>
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </header>
-
-            <main className="max-w-4xl mx-auto px-6 pt-32 pb-12 print:pt-0">
+            <main className="relative z-10 max-w-5xl mx-auto px-6 pt-32 sm:pt-40">
                 <div className="mb-16 print:mb-8">
                     <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 mb-4 block print:text-black/40">Architectural Thesis</span>
                     <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight print:text-black">{roadmap.title}</h2>

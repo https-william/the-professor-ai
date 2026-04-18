@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { WifiOff, Signal, Download } from "lucide-react";
+import { WifiOff, Signal, Download, Zap } from "lucide-react";
 
 type NetworkStatus = "online" | "offline" | "slow";
 

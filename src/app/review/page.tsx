@@ -256,8 +256,6 @@ export default function ReviewPage() {
 
     return (
         <div className="h-[100dvh] bg-[#06060B] overflow-hidden relative flex flex-col">
-            <SiteHeader showLogo />
-
             {/* Progress Bar */}
             <div className="w-full h-1 bg-white/5 relative z-20">
                 <motion.div
@@ -441,7 +439,7 @@ export default function ReviewPage() {
                 streakIncremented={sessionStats.incremented}
                 type="flashcards"
                 title="Daily Review"
-                extraStat={{ label: "Cards Reviewed", value: String(reviewedCount), icon: Layers }}
+                extraStat={{ label: "Cards Reviewed", value: String(reviewedCount), icon: "style" }}
                 continueHref="/dashboard"
             />
         </div>

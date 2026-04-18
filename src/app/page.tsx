@@ -42,27 +42,29 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-amber-500/30 overflow-x-hidden">
-      {/* ═══ Advanced AEO/SEO Layer ═══ */}
-      <SEOHead type="Organization" data={getOrgSchema()} />
-      <SEOHead type="WebSite" data={getWebsiteSchema()} />
-      <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
+    <>
+      <main className="relative min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-amber-500/30 overflow-x-hidden">
+        {/* ═══ Advanced AEO/SEO Layer ═══ */}
+        <SEOHead type="Organization" data={getOrgSchema()} />
+        <SEOHead type="WebSite" data={getWebsiteSchema()} />
+        <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
-      {/* Subtle ambient radial glow — replaces Grainient */}
-      <div className="fixed inset-0 z-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse 80% 50% at 50% 30%, rgba(99,102,241,0.06) 0%, transparent 70%)",
-      }} />
-      <div className="fixed inset-0 z-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse 60% 40% at 30% 70%, rgba(245,158,11,0.04) 0%, transparent 60%)",
-      }} />
-
-      <SiteHeader showLogo={true} />
+        {/* Subtle ambient radial glow — replaces Grainient */}
+        <div className="fixed inset-0 z-0 pointer-events-none" style={{
+          background: "radial-gradient(ellipse 80% 50% at 50% 30%, rgba(99,102,241,0.06) 0%, transparent 70%)",
+        }} />
+        <div className="fixed inset-0 z-0 pointer-events-none" style={{
+          background: "radial-gradient(ellipse 60% 40% at 30% 70%, rgba(245,158,11,0.04) 0%, transparent 60%)",
+        }} />
 
       {/* ═══════════════════════════════════════════════
           HERO — "Learning is as simple as ~~ABC~~ XYZ."
           Floating dance + shimmer sweep
          ═══════════════════════════════════════════════ */}
       <section className="relative flex flex-col items-center justify-center min-h-screen px-5 pt-24 md:pt-28 pb-16 md:pb-20 z-10">
+        {/* Header Scroll Sentinel */}
+        <div data-header-sentinel className="absolute top-0 left-0 h-1 w-full pointer-events-none" />
+        
         {/* Headline */}
         <h1 className="text-center leading-[1.08] mb-6 md:mb-8 animate-fade-in-up">
           {/* Line 1: "Learning is as" */}
@@ -122,10 +124,15 @@ export default function LandingPage() {
         </div>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up animation-delay-300 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-fade-in-up animation-delay-300 w-full sm:w-auto">
           <Link href="/signup" className="btn-jelly text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center group">
             Start Session
             <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
+          
+          <Link href="/blog" className="btn-skeuo text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center flex items-center gap-2 text-[var(--foreground)]/80 hover:text-[var(--foreground)] transition-colors">
+            Read Blog
+            <Sparkles size={18} strokeWidth={1.5} className="text-[var(--accent)]" />
           </Link>
         </div>
 
@@ -293,6 +300,7 @@ export default function LandingPage() {
                   <div key={`arrow-${i}`} className="hidden md:flex items-center justify-center px-2 pt-20">
                     <ChevronRight 
                       className="w-6 h-6"
+                      strokeWidth={1.5}
                       style={{ color: "var(--foreground-muted)", opacity: 0.3 }}
                     />
                   </div>
@@ -324,7 +332,7 @@ export default function LandingPage() {
             <div className="clay-card md:col-span-7 p-6 md:p-8 group cursor-default relative overflow-visible h-[500px] flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="relative z-10 w-full md:w-[45%]">
                 <div className="flex items-center gap-2 mb-3">
-                  <Layers className="w-5 h-5 text-[#F59E0B]" />
+                  <Layers className="w-5 h-5 text-[#F59E0B]" strokeWidth={1.5} />
                   <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#F59E0B]/70">Most Popular</span>
                 </div>
                 <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
@@ -343,7 +351,7 @@ export default function LandingPage() {
             {/* ─── QUIZ ENGINE — tall narrow card (spans 5 cols) ─── */}
             <div className="clay-card md:col-span-5 p-6 md:p-8 group cursor-default relative overflow-visible min-h-[400px] flex flex-col">
               <div className="relative z-10 mb-5 md:mb-1">
-                <HelpCircle className="w-6 h-6 text-[#818CF8] mb-3 block" />
+                <HelpCircle className="w-6 h-6 text-[#818CF8] mb-3 block" strokeWidth={1.5} />
                 <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
                   Quiz Engine
                 </h3>
@@ -361,7 +369,7 @@ export default function LandingPage() {
             {/* ─── SMART SUMMARY — wide bottom-left (spans full width) ─── */}
             <div className="clay-card md:col-span-12 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[200px] md:min-h-[240px] flex flex-col md:flex-row md:items-center gap-8">
               <div className="relative z-10 mb-5 md:mb-0 md:w-[45%]">
-                <FileText className="w-6 h-6 text-[#6366F1] mb-3 block" />
+                <FileText className="w-6 h-6 text-[#6366F1] mb-3 block" strokeWidth={1.5} />
                 <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
                   Smart Summary
                 </h3>
@@ -469,7 +477,7 @@ export default function LandingPage() {
                     style={{ fontSize: "clamp(0.85rem, 1.25vw, 1rem)", padding: "clamp(0.875rem, 1.5vw, 1.1rem) clamp(1.75rem, 3.5vw, 2.75rem)" }}
                   >
                     Get 100 Free Credits
-                    <Zap className="w-[18px] h-[18px] group-hover:rotate-12 transition-transform ml-1" />
+                    <Zap className="w-[18px] h-[18px] group-hover:rotate-12 transition-transform ml-1" strokeWidth={1.5} />
                   </Link>
                   <Link
                     href="/login"
@@ -550,6 +558,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </main>
+      </main>
+    </>
   );
 }

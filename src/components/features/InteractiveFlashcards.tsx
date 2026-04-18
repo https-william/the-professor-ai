@@ -68,15 +68,15 @@ export const InteractiveFlashcards = () => {
               {/* Front Side */}
               <div className={cn(
                 "absolute inset-0 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center backface-hidden",
-                "bg-[var(--card)]/40 backdrop-blur-3xl border border-white/20 shadow-2xl overflow-hidden",
-                "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-white/10 before:to-transparent before:pointer-events-none"
+                "bg-[var(--card)]/40 backdrop-blur-3xl border border-[var(--foreground)]/10 shadow-2xl overflow-hidden",
+                "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-[var(--foreground)]/10 before:to-transparent before:pointer-events-none"
               )}>
                 {/* Refraction Streak */}
                 <motion.div 
                   initial={{ x: "-150%", skewX: -45 }}
                   animate={{ x: "150%" }}
                   transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
-                  className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+                  className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent pointer-events-none"
                 />
 
                 <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 mb-6 shadow-inner relative z-10">
@@ -112,9 +112,9 @@ export const InteractiveFlashcards = () => {
                    
                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent" />
                    
-                   <div className="space-y-1.5 text-left bg-black/20 p-4 md:p-5 rounded-2xl border border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                   <div className="space-y-1.5 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden">
                       {/* Sub-bevel for extra depth */}
-                      <div className="absolute inset-x-0 top-0 h-px bg-white/5" />
+                      <div className="absolute inset-x-0 top-0 h-px bg-[var(--foreground)]/5" />
                       
                       <div className="flex items-center gap-2 mb-1">
                          <div className="w-5 h-5 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20">
@@ -135,14 +135,14 @@ export const InteractiveFlashcards = () => {
 
       <div className="flex items-center gap-4 mt-8">
         <button onClick={handlePrev} className="btn-skeuo w-12 h-12 flex items-center justify-center group active:scale-95">
-          <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+          <ChevronLeft size={20} strokeWidth={1.5} className="group-hover:-translate-x-0.5 transition-transform" />
         </button>
         <div className="px-5 py-2.5 rounded-2xl bg-[var(--background)]/40 border border-[var(--border)] shadow-inner flex flex-col items-center min-w-[130px] backdrop-blur-md">
           <span className="text-[7px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-0.5 opacity-60">Memory Slate</span>
           <span className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">Active Review</span>
         </div>
         <button onClick={handleNext} className="btn-skeuo w-12 h-12 flex items-center justify-center group active:scale-95">
-          <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+          <ChevronRight size={20} strokeWidth={1.5} className="group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>
     </div>

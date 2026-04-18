@@ -75,13 +75,13 @@ export default function LandingPricing() {
               
               <Link 
                 href="/signup" 
-                className={`w-full py-4 flex items-center justify-center rounded-xl font-bold text-sm transition-all active:scale-[0.98] ${
+                className={`w-full py-4 flex items-center justify-center font-black uppercase tracking-widest text-[11px] transition-all ${
                   plan.popular 
-                  ? 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-lg' 
-                  : 'bg-white/5 text-white hover:bg-white/10'
+                  ? 'btn-skeuo-primary' 
+                  : 'btn-skeuo'
                 }`}
               >
-                Get {plan.credits} Credits
+                Get {plan.credits} Units
               </Link>
             </div>
           ))}

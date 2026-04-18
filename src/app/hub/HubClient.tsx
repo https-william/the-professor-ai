@@ -88,6 +88,21 @@ export default function HubClient() {
         }
     }, []);
 
+    useEffect(() => {
+        const handleToggleSidebar = () => {
+            if (typeof window !== 'undefined') {
+                if (window.innerWidth < 768) {
+                    setMobileSidebarOpen(prev => !prev);
+                } else {
+                    setSidebarOpen(prev => !prev);
+                }
+            }
+        };
+
+        window.addEventListener('toggle-sidebar', handleToggleSidebar);
+        return () => window.removeEventListener('toggle-sidebar', handleToggleSidebar);
+    }, []);
+
     // Fetch public rooms when lobby section is active
     useEffect(() => {
         if (activeSection === "lobby" && !currentRoomId) {
@@ -249,40 +264,6 @@ export default function HubClient() {
 
     return (
         <div className="h-[100dvh] bg-[var(--background)] text-[var(--foreground)] flex flex-col overflow-hidden">
-            <SiteHeader 
-                activeMode="HUB" 
-                onModeChange={(mode: AppMode) => {
-                    if (mode === "CHAT") router.push("/dashboard?mode=chat");
-                    if (mode === "CREATE") router.push("/dashboard?mode=create");
-                    if (mode === "HUB") router.push("/hub");
-                }} 
-                showLogo={true}
-                leftSlot={
-                    <button
-                        onClick={() => {
-                            if (typeof window !== 'undefined') {
-                                if (window.innerWidth < 768) {
-                                    setMobileSidebarOpen(!mobileSidebarOpen);
-                                } else {
-                                    setSidebarOpen(!sidebarOpen);
-                                }
-                            }
-                        }}
-                        className="flex w-10 h-10 rounded-2xl items-center justify-center interactive-glass transition-all active:scale-90"
-                         style={{
-                            background: "var(--background-secondary)",
-                            backdropFilter: "blur(24px)",
-                            border: "1px solid var(--border)",
-                            boxShadow: "var(--shadow-lg), inset 0 1px 1px var(--card-border)",
-                        }}
-                    >
-                        <span className="material-symbols-outlined text-[20px] text-[var(--foreground)]">
-                            {sidebarOpen ? 'menu_open' : 'menu'}
-                        </span>
-                    </button>
-                }
-            />
-
             <div className="flex-1 flex overflow-hidden pt-24 md:pt-16">
                 <AnimatePresence>
                     {mobileSidebarOpen && (
@@ -348,6 +329,8 @@ export default function HubClient() {
                 </aside>
 
                 <main className="flex-1 relative overflow-y-auto custom-scrollbar bg-[var(--background)] p-8">
+                    {/* Header Scroll Sentinel */}
+                    <div data-header-sentinel className="absolute top-0 left-0 h-1 w-full pointer-events-none" />
                     <AnimatePresence mode="wait">
                         {/* ═══ LOBBY SECTION ═══ */}
                         {activeSection === "lobby" && (
