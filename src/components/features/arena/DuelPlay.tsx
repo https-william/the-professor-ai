@@ -146,7 +146,7 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
 
             // Wait for opponent or redirect with timeout
             submitTimeoutRef.current = setTimeout(() => {
-                router.push(`/arena/${duelId}/results`);
+                router.push(`/arena/results?id=${duelId}`);
             }, 120000);
         } catch (error) {
             console.error("Submit error:", error);

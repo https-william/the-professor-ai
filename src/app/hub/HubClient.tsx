@@ -199,12 +199,12 @@ export default function HubClient() {
         setArenaLoading(true);
         setJoinError(null);
 
-        try {
+                try {
             const res = await fetch(`/api/arena?code=${joinDuelCode}`);
             const data = await res.json();
 
             if (data.success) {
-                router.push(`/arena/${data.duel.id}`);
+                router.push(`/arena?id=${data.duel.id}`);
             } else {
                 setJoinError(data.error || "Failed to join duel");
             }
@@ -226,7 +226,7 @@ export default function HubClient() {
             const data = await res.json();
 
             if (data.success) {
-                router.push(`/arena/${data.duel.id}`);
+                router.push(`/arena?id=${data.duel.id}`);
             }
         } catch (error) {
             console.error("Create duel error:", error);
@@ -498,7 +498,7 @@ export default function HubClient() {
                                             {arenaDuels.map(duel => (
                                                 <Link
                                                     key={duel.id}
-                                                    href={`/arena/${duel.id}`}
+                                                    href={`/arena?id=${duel.id}`}
                                                     className="flex items-center gap-4 p-4 rounded-xl bg-[var(--card)] border border-[var(--border)] hover:bg-[var(--card-hover)] transition-all"
                                                 >
                                                     <div className="w-10 h-10 rounded-xl bg-[var(--error)]/10 flex items-center justify-center">

@@ -1,6 +1,9 @@
+export const dynamic = 'force-static';
+export const revalidate = false;
+
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-static";
+
 
 // Digital Asset Links — proves The Professor Android app owns this domain.
 // The SHA256 fingerprint below MUST match the signing key used to build the APK.

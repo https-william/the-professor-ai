@@ -1,6 +1,9 @@
+export const dynamic = 'force-static';
+export const revalidate = false;
+
 import { MetadataRoute } from 'next';
 
-export const dynamic = 'force-static';
+
 import { blogPosts } from '@/lib/blog/posts';
 
 export default function sitemap(): MetadataRoute.Sitemap {

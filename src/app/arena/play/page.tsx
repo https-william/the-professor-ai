@@ -2,16 +2,16 @@ export const dynamic = 'force-static';
 export const revalidate = false;
 
 import { Suspense } from "react";
-import ArenaClient from "./ArenaClient";
+import PlayClient from "./PlayClient";
 
-export default function ArenaPage() {
+export default function ArenaPlayPage() {
     return (
         <Suspense fallback={
             <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[var(--error)] border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#EF4444] border-t-transparent rounded-full animate-spin" />
             </div>
         }>
-            <ArenaClient />
+            <PlayClient />
         </Suspense>
     );
 }

@@ -74,7 +74,7 @@ export default function DuelLobby({
             setCountdown(prev => {
                 if (prev === null || prev <= 1) {
                     clearInterval(timer);
-                    router.push(`/arena/${duelId}/play`);
+                    router.push(`/arena/play?id=${duelId}`);
                     return null;
                 }
                 return prev - 1;
@@ -106,13 +106,13 @@ export default function DuelLobby({
             // Check if duel started
             if (newData.status === 'IN_PROGRESS') {
                 onDuelStart?.();
-                router.push(`/arena/${duelId}/play`);
+                router.push(`/arena/play?id=${duelId}`);
             }
 
             // Check if duel completed
             if (newData.status === 'COMPLETED') {
                 onDuelEnd?.();
-                router.push(`/arena/${duelId}/results`);
+                router.push(`/arena/results?id=${duelId}`);
             }
 
             // Check if duel cancelled
