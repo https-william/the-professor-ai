@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "edge";
+export const dynamic = "force-static";
 
 /**
  * Auto-Quiz: Convert flashcards into multiple-choice questions.

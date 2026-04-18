@@ -4,9 +4,9 @@ import { hydraGenerateContent } from "@/lib/ai/hydra";
 import { recordActivity } from "@/lib/xp";
 import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 
-export const runtime = 'edge';
+export const dynamic = "force-static";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
     console.log("[Roadmap API] Starting...");
     try {
         const { title, context } = await req.json();

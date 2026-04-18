@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { hydraGenerateContent } from "@/lib/ai/hydra";
 
-export const runtime = 'edge';
+export const dynamic = "force-static";
 // Enable edge caching or timeout rules if needed
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
     try {
         const supabase = await createClient();
         const { data: { user }, error: authError } = await supabase.auth.getUser();

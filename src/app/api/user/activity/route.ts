@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { recordActivity } from "@/lib/xp";
 
-export async function POST(req: Request) {
+export const dynamic = "force-static";
+
+export async function POST(req: NextRequest) {
     try {
         const { type, customXp } = await req.json();
 

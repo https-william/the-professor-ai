@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseDocument } from "@/lib/parser";
 import { logParserError, logParserSuccess } from "@/lib/error-logger";
 
+export const dynamic = "force-static";
+
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
