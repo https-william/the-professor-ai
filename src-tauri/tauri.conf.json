@@ -31,11 +31,13 @@
           "theprofessor"
         ]
       },
-      "mobile": {
-        "schemes": [
-          "theprofessor"
-        ]
-      }
+      "mobile": [
+        {
+          "schemes": [
+            "theprofessor"
+          ]
+        }
+      ]
     },
     "shell": {
       "open": true

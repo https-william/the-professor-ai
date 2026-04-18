@@ -100,7 +100,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           # Initialize Android (Tauri 2.0 specific)
-          npx tauri android init --yes
+          npx tauri android init --ci
           # Build APK
           npx tauri android build --debug
         env:
