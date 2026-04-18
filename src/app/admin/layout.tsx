@@ -1,36 +1,41 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+"use client";
 
-export default async function AdminLayout({
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
-  if (error || !session) {
-    redirect("/login");
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient();
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    }
+    checkAuth();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-[var(--accent)] border-t-transparent animate-spin" />
+      </div>
+    );
   }
-
-  // TODO: Add database role check here if roles are implemented
-  // For now, only the designated superuser or users listed in an env var should bypass.
-  // const adminEmails = (process.env.ADMIN_EMAILS || "").split(",");
-  // if (!adminEmails.includes(session.user.email || "")) {
-  //   redirect("/dashboard");
-  // }
-  
-  // Since we don't have a secure environment var set right now, we'll allow access
-  // if you're locally developing, or just pass them through the gate if they are verified.
-  
-  // Ideally, add a specific admin verification check:
-  // if (session.user.email !== "your@manager.email") {
-  //     redirect("/dashboard")
-  // }
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-[var(--accent)] selection:text-white">
-      {/* Admin specific wrapper overrides */}
       {children}
     </div>
   );

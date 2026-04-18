@@ -1,13 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
 interface SharedGenerationClientProps {
-    generation: {
+    generation?: {
         title: string;
         type: string;
         content: any;
@@ -15,8 +17,49 @@ interface SharedGenerationClientProps {
     };
 }
 
-export default function SharedGenerationClient({ generation }: SharedGenerationClientProps) {
+export default function SharedGenerationClient({ generation: initialGeneration }: SharedGenerationClientProps) {
+    const searchParams = useSearchParams();
+    const [generation, setGeneration] = useState<any>(initialGeneration);
+    const [loading, setLoading] = useState(!initialGeneration);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!generation) {
+            const fetchGeneration = async () => {
+                const id = searchParams.get("id");
+                if (!id) {
+                    setError("Missing Generation ID");
+                    setLoading(false);
+                    return;
+                }
+
+                try {
+                    const supabase = createClient();
+                    const { data, error } = await supabase
+                        .from("generations")
+                        .select("*")
+                        .eq("id", id)
+                        .single();
+
+                    if (error || !data) {
+                        setError("Generation not found");
+                    } else {
+                        setGeneration(data);
+                    }
+                } catch (err) {
+                    setError("Failed to load archived material");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            fetchGeneration();
+        }
+    }, [generation, searchParams]);
+
     const renderContent = () => {
+        if (!generation) return null;
+
         if (generation.type === "summary") {
             const { summary } = generation.content;
             const textSections = typeof summary.data === "string" ? summary.data : typeof summary === "string" ? summary : null;
@@ -162,6 +205,32 @@ export default function SharedGenerationClient({ generation }: SharedGenerationC
 
         return null;
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-5">
+                <div className="w-16 h-16 rounded-full border-4 border-[var(--accent)]/20 border-t-[var(--accent)] animate-spin mb-6" />
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] animate-pulse">
+                    Accessing Archived Materials...
+                </p>
+            </div>
+        );
+    }
+
+    if (error || !generation) {
+        return (
+            <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-5 text-center">
+                <div className="w-20 h-20 rounded-3xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center mb-8 shadow-xl">
+                    <span className="material-symbols-outlined text-4xl text-[var(--foreground-muted)]">history_edu</span>
+                </div>
+                <h2 className="text-2xl font-black mb-4">Archive Link Expired</h2>
+                <p className="text-sm text-[var(--foreground-muted)] mb-8 max-w-xs">{error || "The requested material could not be found or has been purged from our records."}</p>
+                <Link href="/" className="px-8 py-3 rounded-2xl bg-[var(--accent)] text-white font-black tracking-widest text-[11px] uppercase transition-all hover:scale-105 active:scale-95 shadow-lg">
+                    Back to The Professor
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-[var(--accent)]/20 pb-24 font-sans transition-colors duration-500">
