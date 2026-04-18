@@ -24,7 +24,7 @@ import {
     Tag, 
     Check, 
     FileDown, 
-    Trash2. 
+    Trash2,
     Loader2 
 } from "lucide-react";
 
@@ -234,12 +234,6 @@ export default function LibraryPage() {
 
     return (
         <div className="min-h-[100dvh] bg-[#06060B] text-white/90 pb-28 relative overflow-hidden">
-            <SiteHeader 
-                activeMode="CREATE" 
-                onModeChange={handleModeChange} 
-                showLogo={true} 
-            />
-
             {/* Ambient */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute w-[500px] h-[500px] rounded-full animate-pulse"
@@ -249,6 +243,8 @@ export default function LibraryPage() {
             </div>
 
             <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-6 py-8 sm:py-24">
+                {/* Header Scroll Sentinel */}
+                <div data-header-sentinel className="absolute top-0 left-0 h-1 w-full pointer-events-none" />
 
                 {/* Header */}
                 <div className="flex items-start justify-between mb-8">
