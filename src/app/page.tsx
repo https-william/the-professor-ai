@@ -127,7 +127,7 @@ export default function LandingPage() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-fade-in-up animation-delay-300 w-full sm:w-auto">
           <Link href="/signup" className="btn-jelly text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center group font-bold">
-            Start Neural Session
+            Start Session
             <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-1 transition-transform" />
           </Link>
           

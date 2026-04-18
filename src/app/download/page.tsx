@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, CheckCircle, HelpCircle, PhoneIphone, Laptop, Globe, Monitor } from "lucide-react";
+import { ArrowLeft, Download, CheckCircle, HelpCircle, Smartphone, Laptop, Globe, Monitor } from "lucide-react";
 import SEOHead, { getWebApplicationSchema } from "@/components/SEOHead";
 
 type Platform = "android" | "ios" | "desktop" | null;
@@ -134,7 +134,7 @@ export default function DownloadPage() {
                     {/* iOS */}
                     <div className={`p-6 rounded-2xl border transition-all ${platform === "ios" ? "border-[var(--foreground)]/50 bg-[var(--foreground)]/5" : "border-[var(--border)] bg-[var(--background-secondary)] shadow-sm"}`}>
                         <div className="flex items-center gap-2 mb-3">
-                          <PhoneIphone size={20} className="text-[var(--foreground-muted)]" />
+                          <Smartphone size={20} className="text-[var(--foreground-muted)]" />
                           <h3 className="font-bold">iOS</h3>
                         </div>
                         <p className="text-xs text-[var(--foreground-muted)] mb-4">Add to Home Screen via Safari for native feel.</p>
@@ -198,7 +198,7 @@ export default function DownloadPage() {
                             <span className="text-xs font-medium">Google Play — Q2 2026</span>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
-                            <PhoneIphone size={14} className="text-[var(--foreground-muted)]" />
+                            <Smartphone size={14} className="text-[var(--foreground-muted)]" />
                             <span className="text-xs font-medium">App Store — Q3 2026</span>
                         </div>
                     </div>
