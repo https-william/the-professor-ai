@@ -5,7 +5,7 @@
   "identifier": "com.theprofessor.app",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devPath": "http://localhost:3000",
+    "devUrl": "http://localhost:3000",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../out"
   },
@@ -20,13 +20,23 @@
         "transparent": false
       }
     ],
-    "deepLinkProtocol": "theprofessor",
     "security": {
       "csp": null
     }
   },
   "plugins": {
-    "deep-link": {},
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "theprofessor"
+        ]
+      },
+      "mobile": {
+        "schemes": [
+          "theprofessor"
+        ]
+      }
+    },
     "shell": {
       "open": true
     }
@@ -37,7 +47,6 @@
     "icon": [
       "../public/icon-512.png"
     ],
-    "identifier": "com.theprofessor.app",
     "publisher": "The Professor Academy",
     "windows": {
       "wix": {
