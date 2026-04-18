@@ -18,8 +18,8 @@ jobs:
         include:
           - platform: 'windows-latest'
             args: '--target x86_64-pc-windows-msvc'
-          - platform: 'ubuntu-22.04' # Using Ubuntu to build Android APK
-            args: '--target aarch64-linux-android' # Simplified Android target
+          - platform: 'ubuntu-22.04'
+            args: '--target aarch64-linux-android'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -31,6 +31,13 @@ jobs:
           node-version: lts/*
           cache: 'npm'
 
+      - name: Setup Java (Android only)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -41,8 +48,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-          # Install Android prerequisites
-          sudo apt-get install -y openjdk-17-jdk
 
       - name: Setup Android SDK (Ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -62,7 +67,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__ # tauri-action replaces this
+          tagName: v__VERSION__
           releaseName: 'The Professor v__VERSION__'
           releaseBody: 'Automated release from GitHub Actions'
           releaseDraft: true
@@ -72,7 +77,7 @@ jobs:
       - name: Build Tauri (Android)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          # Initialize Android if not already done (Tauri 2.0 specific)
+          # Initialize Android (Tauri 2.0 specific)
           npx tauri android init --yes
           # Build APK
           npx tauri android build --debug

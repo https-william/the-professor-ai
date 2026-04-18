@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
+import BrandLogo from "@/components/ui/BrandLogo";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { getRedirectUrl } from "@/lib/api-client";
 
 export default function LoginPage() {
