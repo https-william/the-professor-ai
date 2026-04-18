@@ -9,12 +9,20 @@ import { useEffect } from "react";
  */
 export default function GlassRefractionProvider() {
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth) * 100;
-      const y = (e.clientY / window.innerHeight) * 100;
+    let ticking = false;
 
-      document.documentElement.style.setProperty("--mouse-x", `${x}%`);
-      document.documentElement.style.setProperty("--mouse-y", `${y}%`);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const x = (e.clientX / window.innerWidth) * 100;
+          const y = (e.clientY / window.innerHeight) * 100;
+
+          document.documentElement.style.setProperty("--mouse-x", `${x}%`);
+          document.documentElement.style.setProperty("--mouse-y", `${y}%`);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("mousemove", handleMouseMove);

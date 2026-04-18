@@ -93,44 +93,47 @@ export default function DataDustLoader({
         ctx.fill();
         ctx.globalAlpha = 1.0;
 
-        // Add glow effect
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = p.color;
+        // Draw and update particles
+        for (let i = 0; i < particleCount; i++) {
+          const p = particles[i];
+          
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.alpha * 0.8; // Slightly boost opacity as shadow is gone
+          ctx.fill();
+          ctx.globalAlpha = 1.0;
 
-        p.x += p.vx;
-        p.y += p.vy;
+          p.x += p.vx;
+          p.y += p.vy;
 
-        // Bounce off walls
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
-      }
+          // Bounce off walls
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+        }
 
-      ctx.shadowBlur = 0;
+        // Draw central orbital ring
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const time = Date.now() * 0.001;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(16, 185, 129, 0.2)"; // Boosted from 0.1
+        ctx.lineWidth = 1;
+        ctx.stroke();
 
-      // Draw central orbital ring
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const time = Date.now() * 0.001;
-      
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(16, 185, 129, 0.1)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
+        // Orbiting node
+        const orbX = centerX + Math.cos(time * 2) * 40;
+        const orbY = centerY + Math.sin(time * 2) * 40;
+        
+        ctx.beginPath();
+        ctx.arc(orbX, orbY, 4, 0, Math.PI * 2); // Slightly larger
+        ctx.fillStyle = "#10B981";
+        ctx.fill();
 
-      // Orbiting node
-      const orbX = centerX + Math.cos(time * 2) * 40;
-      const orbY = centerY + Math.sin(time * 2) * 40;
-      
-      ctx.beginPath();
-      ctx.arc(orbX, orbY, 3, 0, Math.PI * 2);
-      ctx.fillStyle = "#10B981";
-      ctx.fill();
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "#10B981";
-
-      animationFrameId = requestAnimationFrame(render);
-    };
+        animationFrameId = requestAnimationFrame(render);
+      };
 
     render();
 

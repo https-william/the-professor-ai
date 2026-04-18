@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BlogPost } from "@/lib/blog/posts";
@@ -388,7 +389,9 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
         </div>
 
         {/* Content */}
-        <div className="prose-professor">{renderMarkdown(post.content)}</div>
+        <div className="prose-professor">
+          {useMemo(() => renderMarkdown(post.content), [post.content])}
+        </div>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mt-12 mb-16">

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { UserProvider } from "@/context/UserContext";
@@ -12,6 +13,19 @@ import GlobalToasts from "@/components/ui/GlobalToasts";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import GlassRefractionProvider from "@/components/ui/GlassRefractionProvider";
 import SiteHeader from "@/components/ui/SiteHeader";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  axes: ["opsz"],
+});
 
 const SITE_URL = "https://theprofessor.xyz";
 
@@ -137,15 +151,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${fraunces.variable}`} suppressHydrationWarning>
       <head>
-        {/* Preload fonts for faster loading */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap"
-          rel="stylesheet"
-        />
+        {/* Font Fallback for Material Symbols */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
           rel="stylesheet"

@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, Text, MeshTransmissionMaterial } from "@react-three/drei";
+import { Float, Text, MeshTransmissionMaterial, PerformanceMonitor } from "@react-three/drei";
 import * as THREE from "three";
 
 /* ─── Floating Glass Letter ────────────────────────────────────────────────── */
@@ -47,7 +47,7 @@ function GlassLetter({
         >
           <MeshTransmissionMaterial
             backside
-            samples={6}
+            samples={3}
             thickness={0.4}
             chromaticAberration={0.15}
             anisotropy={0.3}
@@ -108,7 +108,7 @@ function GlassOrb({
       <sphereGeometry args={[size, 32, 32]} />
       <MeshTransmissionMaterial
         backside
-        samples={4}
+        samples={2}
         thickness={0.3}
         chromaticAberration={0.1}
         anisotropy={0.2}
@@ -201,14 +201,16 @@ export default function HeroScene() {
     <div className="absolute inset-0 z-0" style={{ pointerEvents: "none" }}>
       <Canvas
         camera={{ position: [0, 0, 7], fov: 50 }}
-        dpr={[1, 1.5]}
+        dpr={[1, 1.2]}
         gl={{
-          antialias: true,
+          antialias: false, // Performance win: disabled antialias as we have high pixel density
           alpha: true,
           powerPreference: "high-performance",
+          depth: false, // Performance win: we don't need depth testing for this specific overlay scene
         }}
         style={{ background: "transparent" }}
       >
+        <PerformanceMonitor onDecline={() => console.log('Performance declined, scaling down...')} />
         <Scene />
       </Canvas>
     </div>
