@@ -33,7 +33,9 @@
       },
       "mobile": [
         {
-          "scheme": "theprofessor"
+          "scheme": [
+            "theprofessor"
+          ]
         }
       ]
     },
