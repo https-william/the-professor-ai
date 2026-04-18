@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Upload,
   Sparkles,
-  Trophy
+  Trophy,
+  Download
 } from "lucide-react";
 import SEOHead, { getOrgSchema, getWebsiteSchema, getWebApplicationSchema } from "@/components/SEOHead";
 import SocialProof from "@/components/landing/SocialProof";
@@ -125,14 +126,14 @@ export default function LandingPage() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-fade-in-up animation-delay-300 w-full sm:w-auto">
-          <Link href="/signup" className="btn-jelly text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center group">
-            Start Session
+          <Link href="/signup" className="btn-jelly text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center group font-bold">
+            Start Neural Session
             <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-1 transition-transform" />
           </Link>
           
-          <Link href="/blog" className="btn-skeuo text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center flex items-center gap-2 text-[var(--foreground)]/80 hover:text-[var(--foreground)] transition-colors">
-            Read Blog
-            <Sparkles size={18} strokeWidth={1.5} className="text-[var(--accent)]" />
+          <Link href="/download" className="btn-skeuo text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center flex items-center gap-2 text-[var(--foreground)]/80 hover:text-[var(--foreground)] transition-colors group">
+            Download App
+            <Download size={18} strokeWidth={1.5} className="text-[var(--accent)] group-hover:translate-y-0.5 transition-transform" />
           </Link>
         </div>
 

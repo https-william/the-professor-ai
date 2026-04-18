@@ -106,16 +106,19 @@ jobs:
       - name: Build Tauri (Android)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          # Initialize Android (Tauri 2.0 specific)
           npx tauri android init --ci
-          # Build APK
           npx tauri android build --debug
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Android Artifact (Ubuntu only)
+      - name: Attach Android APK to Release
         if: matrix.platform == 'ubuntu-22.04'
-        uses: actions/upload-artifact@v4
+        uses: softprops/action-gh-release@v2
         with:
-          name: professor-android-debug
-          path: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk
+          files: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk
+          tag_name: v__VERSION__
+          name: 'The Professor v__VERSION__'
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { ArrowLeft, Download, CheckCircle, HelpCircle, PhoneIphone, Laptop, Globe, Monitor } from "lucide-react";
+import SEOHead, { getWebApplicationSchema } from "@/components/SEOHead";
 
 type Platform = "android" | "ios" | "desktop" | null;
 
@@ -18,19 +19,16 @@ export default function DownloadPage() {
     const [platform, setPlatform] = useState<Platform>(null);
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [pwaInstalled, setPwaInstalled] = useState(false);
-    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         setPlatform(detectPlatform());
 
-        // Capture PWA install prompt (Android/Desktop Chrome)
         const handler = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
         };
         window.addEventListener("beforeinstallprompt", handler);
 
-        // Check if already installed
         if (window.matchMedia("(display-mode: standalone)").matches) {
             setPwaInstalled(true);
         }
@@ -49,151 +47,142 @@ export default function DownloadPage() {
         }
     };
 
-    const LATEST_APK_URL = "https://github.com/https-william/the-professor-ai/releases/latest/download/the-professor-release.apk";
+    const LATEST_APK_URL = "https://github.com/https-william/the-professor-ai/releases/latest/download/app-debug.apk";
+    const LATEST_WINDOWS_URL = "https://github.com/https-william/the-professor-ai/releases/latest";
 
     return (
-        <div className="min-h-screen bg-[#08080E] text-white overflow-hidden">
-            {/* Ambient */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-[#7C3AED]/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#F59E0B]/10 rounded-full blur-3xl" />
-            </div>
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-amber-500/30 overflow-x-hidden">
+            {/* ═══ Advanced AEO/SEO Layer ═══ */}
+            <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
+
+            {/* Subtle ambient radial glow */}
+            <div className="fixed inset-0 z-0 pointer-events-none" style={{
+              background: "radial-gradient(ellipse 80% 50% at 50% 30%, rgba(99,102,241,0.06) 0%, transparent 70%)",
+            }} />
 
             <div className="relative z-10 max-w-4xl mx-auto px-6 py-16">
                 {/* Back */}
-                <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-white/80 mb-12 transition-colors">
-                    <span className="material-symbols-outlined text-base">arrow_back</span>
-                    Back to app
+                <Link href="/" className="inline-flex items-center gap-2 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-12 transition-colors group">
+                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                    Back to home
                 </Link>
 
                 {/* Hero */}
                 <div className="text-center mb-16">
-                    <div className="w-24 h-24 mx-auto mb-6 rounded-3xl overflow-hidden shadow-2xl shadow-[#7C3AED]/30 ring-1 ring-white/10">
-                        <img src="/icon-512.png" alt="The Professor AI" className="w-full h-full object-cover" />
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-3xl overflow-hidden shadow-2xl relative group">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#7C3AED]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <img src="/icon-512.png" alt="The Professor AI" className="w-full h-full object-cover shadow-2xl" />
                     </div>
-                    <h1 className="text-4xl sm:text-5xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#F59E0B] via-white to-[#7C3AED]">
-                        The Professor AI
+                    <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#F59E0B] via-[var(--foreground)] to-[#7C3AED]">
+                            The Professor AI
+                        </span>
                     </h1>
-                    <p className="text-white/60 text-lg max-w-md mx-auto">
+                    <p className="text-[var(--foreground-secondary)] text-lg max-w-md mx-auto">
                         Cheat codes for your degree. Now in your pocket.
                     </p>
                 </div>
 
                 {/* Platform-aware CTA */}
                 {platform === "android" && (
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-8 text-center">
+                    <div className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-3xl p-8 mb-8 text-center clay-card-heavy">
                         <div className="flex items-center justify-center gap-3 mb-6">
-                            <span className="material-symbols-outlined text-[#4CAF50] text-3xl">android</span>
+                            <Monitor size={32} className="text-[#4CAF50]" />
                             <span className="text-lg font-bold">Android Detected!</span>
                         </div>
-                        <p className="text-white/60 text-sm mb-6">
-                            Download and install The Professor directly — no Google Play needed.
+                        <p className="text-[var(--foreground-secondary)] text-sm mb-6 max-w-xs mx-auto">
+                            Download and install the native Android companion directly.
                         </p>
                         <a
                             href={LATEST_APK_URL}
-                            className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[#4CAF50] text-white font-black text-lg hover:bg-[#43A047] transition-all shadow-xl shadow-[#4CAF50]/20 active:scale-95"
+                            className="btn-jelly inline-flex items-center gap-3 px-10 py-4 justify-center"
                             download="the-professor.apk"
                         >
-                            <span className="material-symbols-outlined text-2xl">download</span>
+                            <Download size={20} />
                             Download APK — Free
                         </a>
-                        <p className="mt-4 text-xs text-white/30">v1.0.0 · Android 5.0+ · ~5MB</p>
-                    </div>
-                )}
-
-                {platform === "ios" && (
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-8">
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="material-symbols-outlined text-white/70 text-3xl">phone_iphone</span>
-                            <div>
-                                <h2 className="font-bold">iPhone / iPad</h2>
-                                <p className="text-xs text-white/50">Install as Home Screen App (iOS PWA)</p>
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            {[
-                                { n: 1, icon: "ios_share", text: "Tap the Share button in Safari (the box with an arrow)" },
-                                { n: 2, icon: "add_box", text: 'Scroll down and tap "Add to Home Screen"' },
-                                { n: 3, icon: "touch_app", text: 'Tap "Add" in the top right corner' },
-                                { n: 4, icon: "check_circle", text: 'Find "Professor" on your home screen — done!' },
-                            ].map((step) => (
-                                <div key={step.n} className="flex items-center gap-4 p-4 rounded-xl bg-white/5">
-                                    <div className="w-8 h-8 rounded-full bg-[#7C3AED] flex items-center justify-center text-sm font-black shrink-0">
-                                        {step.n}
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="material-symbols-outlined text-white/60">{step.icon}</span>
-                                        <p className="text-sm text-white/80">{step.text}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="mt-6 p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20">
-                            <p className="text-xs text-[#F59E0B]">
-                                ⚡ <strong>Full iOS App Store version coming soon!</strong> Apple requires a $99/yr developer subscription — we're working on it.
-                            </p>
-                        </div>
+                        <p className="mt-4 text-xs text-[var(--foreground-muted)]">v0.1.0 · Android 7.0+ · ~10MB</p>
                     </div>
                 )}
 
                 {/* All-platform cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-12">
                     {/* Android */}
-                    <div className={`p-6 rounded-2xl border transition-all ${platform === "android" ? "border-[#4CAF50]/50 bg-[#4CAF50]/5" : "border-white/10 bg-white/5"}`}>
-                        <span className="material-symbols-outlined text-[#4CAF50] text-2xl mb-3 block">android</span>
-                        <h3 className="font-bold mb-1">Android</h3>
-                        <p className="text-xs text-white/50 mb-4">Direct APK download. No Play Store needed.</p>
-                        <a href={LATEST_APK_URL} download className="text-xs text-[#4CAF50] font-bold flex items-center gap-1 hover:underline">
-                            Download APK <span className="material-symbols-outlined text-xs">download</span>
+                    <div className={`p-6 rounded-2xl border transition-all ${platform === "android" ? "border-[#4CAF50]/50 bg-[#4CAF50]/5" : "border-[var(--border)] bg-[var(--background-secondary)] shadow-sm"}`}>
+                        <div className="flex items-center gap-2 mb-3">
+                           <Monitor size={20} className="text-[#4CAF50]" />
+                           <h3 className="font-bold">Android</h3>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Direct APK download. Native performance.</p>
+                        <a href={LATEST_APK_URL} className="text-xs text-[#4CAF50] font-bold flex items-center gap-1 hover:underline">
+                            Download APK <Download size={14} />
+                        </a>
+                    </div>
+
+                    {/* Windows */}
+                    <div className={`p-6 rounded-2xl border transition-all ${platform === "desktop" ? "border-[#0078D4]/50 bg-[#0078D4]/5" : "border-[var(--border)] bg-[var(--background-secondary)] shadow-sm"}`}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Laptop size={20} className="text-[#0078D4]" />
+                          <h3 className="font-bold">Windows</h3>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Installer for Windows 10/11. Neural acceleration.</p>
+                        <a href={LATEST_WINDOWS_URL} target="_blank" className="text-xs text-[#0078D4] font-bold flex items-center gap-1 hover:underline">
+                            Get Latest .exe <Download size={14} />
                         </a>
                     </div>
 
                     {/* iOS */}
-                    <div className={`p-6 rounded-2xl border transition-all ${platform === "ios" ? "border-white/50 bg-white/5" : "border-white/10 bg-white/5"}`}>
-                        <span className="material-symbols-outlined text-white/70 text-2xl mb-3 block">phone_iphone</span>
-                        <h3 className="font-bold mb-1">iPhone / iPad</h3>
-                        <p className="text-xs text-white/50 mb-4">Add to Home Screen via Safari for a native feel.</p>
-                        <span className="text-xs text-white/40 font-medium">Safari → Share → Add to Home Screen</span>
+                    <div className={`p-6 rounded-2xl border transition-all ${platform === "ios" ? "border-[var(--foreground)]/50 bg-[var(--foreground)]/5" : "border-[var(--border)] bg-[var(--background-secondary)] shadow-sm"}`}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <PhoneIphone size={20} className="text-[var(--foreground-muted)]" />
+                          <h3 className="font-bold">iOS</h3>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Add to Home Screen via Safari for native feel.</p>
+                        <span className="text-xs text-[var(--foreground-muted)] font-medium">Safari → Share → Add to Home</span>
                     </div>
 
                     {/* PWA/Desktop */}
-                    <div className="p-6 rounded-2xl border border-white/10 bg-white/5">
-                        <span className="material-symbols-outlined text-[#F59E0B] text-2xl mb-3 block">computer</span>
-                        <h3 className="font-bold mb-1">Desktop / Chrome</h3>
-                        <p className="text-xs text-white/50 mb-4">Install as an app from Chrome, Edge, or Brave.</p>
+                    <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)] shadow-sm">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Globe size={20} className="text-[#F59E0B]" />
+                          <h3 className="font-bold">Web App</h3>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Install as an app from any modern browser.</p>
                         {deferredPrompt && !pwaInstalled ? (
                             <button onClick={handlePWAInstall} className="text-xs text-[#F59E0B] font-bold flex items-center gap-1 hover:underline">
-                                Install now <span className="material-symbols-outlined text-xs">download</span>
+                                Install app <Download size={14} />
                             </button>
                         ) : pwaInstalled ? (
-                            <span className="text-xs text-[#4CAF50] font-bold flex items-center gap-1">
-                                <span className="material-symbols-outlined text-xs">check_circle</span> Already installed!
+                            <span className="text-xs text-[var(--success)] font-bold flex items-center gap-1">
+                                <CheckCircle size={14} /> Already installed!
                             </span>
                         ) : (
-                            <span className="text-xs text-white/30">Use Chrome browser's install prompt (⋮ menu)</span>
+                            <span className="text-xs text-[var(--foreground-muted)]">Check menu for "Install App"</span>
                         )}
                     </div>
                 </div>
 
-                {/* Android install guide (collapsible) */}
-                <details className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 group">
+                {/* Android install guide */}
+                <details className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-2xl p-6 mb-8 group transition-all">
                     <summary className="cursor-pointer flex items-center justify-between font-semibold text-sm list-none">
                         <span className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[#4CAF50] text-base">help_outline</span>
+                            <HelpCircle size={18} className="text-[#4CAF50]" />
                             How to install the Android APK
                         </span>
-                        <span className="material-symbols-outlined text-white/40 group-open:rotate-180 transition-transform">expand_more</span>
+                        <div className="group-open:rotate-180 transition-transform">
+                          <Download size={16} className="rotate-180" />
+                        </div>
                     </summary>
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-4 space-y-3 border-t border-[var(--border)] pt-4">
                         {[
-                            { icon: "download", text: "Tap the Download APK button above — Chrome will download the file" },
-                            { icon: "notifications", text: "A notification appears when download is complete — tap it, or find it in your Downloads folder" },
-                            { icon: "security", text: 'If prompted "Install for unknown sources" → tap Settings → toggle ON for your browser' },
-                            { icon: "install_mobile", text: "Tap the APK file → tap Install → wait a few seconds" },
-                            { icon: "check_circle", text: 'Find "Professor" in your app drawer or on your home screen!' },
+                            { icon: <Download size={16} />, text: "Tap the Download APK button above — your browser will download the file" },
+                            { icon: <Globe size={16} />, text: "A notification appears when complete — tap it, or find it in your Downloads folder" },
+                            { icon: <Laptop size={16} />, text: 'If prompted "Install for unknown sources" → tap Settings → toggle ON for browser' },
+                            { icon: <Monitor size={16} />, text: "Tap the APK file → tap Install → wait a few seconds" },
+                            { icon: <CheckCircle size={16} />, text: 'Find "Professor" in your app drawer or on your home screen!' },
                         ].map((step, i) => (
-                            <div key={i} className="flex items-start gap-3 text-sm text-white/70">
-                                <span className="material-symbols-outlined text-[#4CAF50] text-base mt-0.5 shrink-0">{step.icon}</span>
+                            <div key={i} className="flex items-start gap-3 text-sm text-[var(--foreground-secondary)]">
+                                <span className="text-[#4CAF50] mt-0.5 shrink-0">{step.icon}</span>
                                 {step.text}
                             </div>
                         ))}
@@ -201,16 +190,16 @@ export default function DownloadPage() {
                 </details>
 
                 {/* Roadmap */}
-                <div className="text-center">
-                    <p className="text-white/30 text-sm mb-4">Coming to official stores soon</p>
+                <div className="text-center opacity-60">
+                    <p className="text-[var(--foreground-muted)] text-sm mb-4">Official store coming soon</p>
                     <div className="flex items-center justify-center gap-6">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
-                            <span className="material-symbols-outlined text-white/40">shopping_bag</span>
-                            <span className="text-xs text-white/40 font-medium">Google Play — Q2 2025</span>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
+                            <Monitor size={14} className="text-[var(--foreground-muted)]" />
+                            <span className="text-xs font-medium">Google Play — Q2 2026</span>
                         </div>
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
-                            <span className="material-symbols-outlined text-white/40">apple</span>
-                            <span className="text-xs text-white/40 font-medium">App Store — Q3 2025</span>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
+                            <PhoneIphone size={14} className="text-[var(--foreground-muted)]" />
+                            <span className="text-xs font-medium">App Store — Q3 2026</span>
                         </div>
                     </div>
                 </div>
