@@ -5,11 +5,10 @@
  * 1. GPT4Free (g4f) - Free, multi-provider — uses g4f server or public API
  * 2. Kimi 2.5 (NVIDIA) - Secondary
  * 3. Trinity Large (OpenRouter) - Backup
- * 4. Gemini Flash - Fallback (round-robin keys)
- * 5. Groq - Last resort
+ * 4. Groq - Main logic provider
  */
 
-export type AIProvider = 'g4f' | 'ollamafree' | 'moonshot' | 'trinity' | 'gemini' | 'groq' | 'cerebras';
+export type AIProvider = 'g4f' | 'ollamafree' | 'moonshot' | 'trinity' | 'groq' | 'cerebras';
 
 interface ProviderConfig {
     name: string;
@@ -48,16 +47,9 @@ export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
     trinity: {
         name: 'Trinity (OpenRouter Free)',
         baseUrl: 'https://openrouter.ai/api/v1',
-        model: 'google/gemini-flash-1.5-8b', // 100% Free on OpenRouter
+        model: 'meta-llama/llama-3.1-8b-instruct:free', // 100% Free on OpenRouter
         envKey: 'OPENROUTER_API_KEY',
         bestFor: 'Cost-Effective High Performance',
-    },
-    gemini: {
-        name: 'Google Gemini',
-        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-        model: 'gemini-2.0-flash',
-        envKey: 'GEMINI_API_KEY',
-        bestFor: 'Fallback - Reliable and free',
     },
     groq: {
         name: 'Groq',

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     console.log("Chat Request received. Thread:", threadId, "Messages:", messages.length);
 
-    // 1. Get User Query & Embed It (using standard Gemini from embedding module)
+    // 1. Get User Query & Embed It
     const lastMessage = messages[messages.length - 1];
     const userQuery = lastMessage.content;
     const queryEmbedding = await generateEmbedding(userQuery);

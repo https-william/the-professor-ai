@@ -2,7 +2,6 @@
  * Hydra AI System — Multi-provider resilience.
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { callOpenAICompatible, callOpenAICompatibleStream, AI_PROVIDERS } from "./providers";
 import { logAIError, logAISuccess } from "@/lib/error-logger";
 
@@ -30,19 +29,6 @@ function chunkContent(content: string): string[] {
     return chunks;
 }
 
-function getGeminiKeys(): string[] {
-    const keys: string[] = [];
-    const multiKeys = process.env.GEMINI_API_KEYS;
-    if (multiKeys) {
-        keys.push(...multiKeys.split(",").map(k => k.trim()).filter(Boolean));
-    }
-    if (keys.length === 0 && process.env.GEMINI_API_KEY) {
-        keys.push(process.env.GEMINI_API_KEY);
-    }
-    return keys;
-}
-
-let currentGeminiKeyIndex = 0;
 
 export interface HydraOptions {
     feature?: string;
@@ -61,7 +47,7 @@ export async function hydraGenerateContent(
         feature = "default",
         jsonMode = false,
         timeoutMs = 30_000,
-        model = "gemini-2.0-flash",
+        model = "llama-3.3-70b-versatile",
         systemPrompt,
     } = options;
 
@@ -135,22 +121,6 @@ export async function hydraGenerateContent(
         }
     }
 
-    // 5. Gemini
-    const geminiKeys = getGeminiKeys();
-    for (let i = 0; i < Math.min(geminiKeys.length, 2); i++) {
-        const keyIdx = (currentGeminiKeyIndex + i) % geminiKeys.length;
-        try {
-            const genAI = new GoogleGenerativeAI(geminiKeys[keyIdx]);
-            const config = jsonMode ? { model, generationConfig: { responseMimeType: "application/json" as const, temperature } } : { model, generationConfig: { temperature } };
-            const m = genAI.getGenerativeModel(config);
-            const res = await m.generateContent([sysPrompt, prompt]);
-            currentGeminiKeyIndex = keyIdx;
-            logAISuccess("gemini", feature, Date.now() - startTime);
-            return cleanJson(res.response.text());
-        } catch (error: any) {
-            errors.push(`Gemini: ${error.message}`);
-        }
-    }
 
     throw new Error(`All providers failed: ${errors.join(" | ")}`);
 }
@@ -182,33 +152,18 @@ export async function hydraGenerateWithChunking(
 }
 
 export async function hydraGenerateStream(prompt: string, options: HydraOptions = {}): Promise<ReadableStream> {
-    const { feature = "default", timeoutMs = 45_000, model = "gemini-2.0-flash", systemPrompt } = options;
+    const { feature = "default", timeoutMs = 45_000, model = "llama-3.3-70b-versatile", systemPrompt } = options;
     const temperature = options.temperature ?? FEATURE_TEMPERATURES[feature] ?? FEATURE_TEMPERATURES.default;
     const sysPrompt = systemPrompt ?? "You are an expert AI assistant. Output JSON only.";
     
     const tryStream = async (p: any): Promise<Response | null> => {
         try {
-            if (p === 'gemini') {
-                const keys = getGeminiKeys();
-                const genAI = new GoogleGenerativeAI(keys[currentGeminiKeyIndex % keys.length]);
-                const m = genAI.getGenerativeModel({ model, generationConfig: { temperature } });
-                const res = await m.generateContentStream([sysPrompt, prompt]);
-                const encoder = new TextEncoder();
-                return new Response(new ReadableStream({
-                    async start(c) {
-                        for await (const chunk of res.stream) c.enqueue(encoder.encode(`data: {"choices":[{"delta":{"content": ${JSON.stringify(chunk.text())}}}]}\n\n`));
-                        c.enqueue(encoder.encode("data: [DONE]\n\n"));
-                        c.close();
-                    }
-                }));
-            }
             return await callOpenAICompatibleStream(p, [{ role: "system", content: sysPrompt }, { role: "user", content: prompt }], { temperature, timeoutMs });
         } catch { return null; }
     };
 
     let resp = null;
     if (process.env.GROQ_API_KEY) resp = await tryStream("groq");
-    if (!resp) resp = await tryStream("gemini");
     if (!resp && process.env.OPENROUTER_API_KEY) resp = await tryStream("trinity");
     if (!resp) throw new Error("Streaming failed");
 
@@ -265,33 +220,18 @@ export async function hydraGenerateStream(prompt: string, options: HydraOptions 
 }
 
 export async function hydraChatStream(systemPrompt: string, messages: any[], options: HydraOptions = {}): Promise<ReadableStream> {
-    const { feature = "chat", timeoutMs = 45_000, model = "gemini-2.0-flash" } = options;
+    const { feature = "chat", timeoutMs = 45_000, model = "llama-3.3-70b-versatile" } = options;
     const temperature = options.temperature ?? FEATURE_TEMPERATURES[feature] ?? FEATURE_TEMPERATURES.default;
 
     const tryStream = async (p: any): Promise<Response | null> => {
         try {
-            if (p === 'gemini') {
-                const keys = getGeminiKeys();
-                const genAI = new GoogleGenerativeAI(keys[currentGeminiKeyIndex % keys.length]);
-                const m = genAI.getGenerativeModel({ model, generationConfig: { temperature } });
-                const history = messages.map(msg => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
-                const res = await m.generateContentStream({ contents: [{ role: 'user', parts: [{ text: systemPrompt }] }, ...history] });
-                const encoder = new TextEncoder();
-                return new Response(new ReadableStream({
-                    async start(c) {
-                        for await (const chunk of res.stream) { const t = chunk.text(); if (t) c.enqueue(encoder.encode(t)); }
-                        c.close();
-                    }
-                }));
-            }
             return await callOpenAICompatibleStream(p, [{ role: "system", content: systemPrompt }, ...messages], { temperature, timeoutMs });
         } catch { return null; }
     };
 
     let resp = null;
-    if (process.env.GROQ_API_KEY) resp = await tryStream("groq");
+    if (!resp && process.env.GROQ_API_KEY) resp = await tryStream("groq");
     if (!resp && process.env.OPENROUTER_API_KEY) resp = await tryStream("trinity");
-    if (!resp) resp = await tryStream("gemini");
     if (!resp) throw new Error("Chat sequence failed");
 
     const isSSE = resp.headers.get("content-type")?.includes("text/event-stream");

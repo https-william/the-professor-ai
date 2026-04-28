@@ -75,7 +75,7 @@ export async function POST(req: Request) {
             feature: "roadmap",
             jsonMode: true,
             timeoutMs: 60_000, 
-            model: "trinity" // OpenRouter Free Gemini Flash 1.5 8b
+            model: "trinity" // OpenRouter Free Llama 3.1 8b
         });
 
         if (!responseText || responseText.trim() === "") {

@@ -1,5 +1,4 @@
 import type { Buffer } from "node:buffer";
-import { transcribeMultimodalContent } from "./parser/ai-lens";
 
 export type ParseResult = {
     text: string;
@@ -111,22 +110,18 @@ export async function parseDocument(
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.ms-powerpoint",
         "application/vnd.ms-excel",
+        "application/vnd.ms-office",
         "application/msword"
     ].includes(mimeType) || ["pptx", "xlsx", "docx", "ppt", "xls", "doc"].includes(ext);
 
     if (isDigitalOffice) {
         fileType = ext.toUpperCase() || "OFFICE";
-        console.log(`[Parser] Running Robust Layered pass for ${fileType}...`);
-        // Note: Digital Documents now use the multi-layer local engine. AI Lens is for IMAGES and SCANS.
         text = await parseOffice(buffer, fileName, ext);
     } 
     // ── IMAGE SUPPORT ──
     else if (mimeType.startsWith("image/") || ["jpg", "jpeg", "png", "webp"].includes(ext)) {
         fileType = "IMAGE";
-        console.log(`[Parser] Running AI Lens pass for IMAGE...`);
-        const result = await transcribeMultimodalContent(buffer, mimeType, fileName);
-        text = result.text;
-        isMultimodal = true;
+        throw new Error("Local OCR is not supported. Please ensure the Python MarkItDown service is running to process images.");
     } 
     // ── PDF ──
     else if (mimeType === "application/pdf" || ext === "pdf") {
@@ -134,10 +129,7 @@ export async function parseDocument(
         const { text: rawText, isScanned } = await parsePDF(buffer);
         
         if (isScanned) {
-            console.log("[Parser] Scanned PDF detected. Triggering AI Lens...");
-            const result = await transcribeMultimodalContent(buffer, mimeType, fileName);
-            text = result.text;
-            isMultimodal = true;
+            throw new Error("This PDF appears to be scanned or contains mainly images. Please ensure the Python MarkItDown service is running for high-fidelity OCR.");
         } else {
             text = rawText;
         }
@@ -166,7 +158,7 @@ export async function parseDocument(
         text: text.replace(/\n{3,}/g, "\n\n").trim(),
         wordCount: text.split(/\s+/).filter(Boolean).length,
         fileType,
-        isMultimodal
+        isMultimodal: false
     };
 }
 

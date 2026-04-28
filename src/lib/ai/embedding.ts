@@ -1,14 +1,16 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+/**
+ * Embedding Utility — Vector Generation
+ * NOTE: Gemini API usage has been removed per user request.
+ * RAG features will require a new embedding provider (e.g. OpenAI).
+ * Returning a zero-vector for now to maintain database schema compatibility.
+ */
 
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+  console.warn("[Embedding] Gemini disabled. Returning zero-vector for RAG compatibility.");
   
-  // Clean text to avoid issues
-  const cleanText = text.replace(/\n/g, " ");
+  // Clean text is still good for logs
+  // const cleanText = text.replace(/\n/g, " ");
   
-  const result = await model.embedContent(cleanText);
-  // Slice to 768 dimensions (Standard pgvector requirement) utilizing MRL compatibility
-  return result.embedding.values.slice(0, 768);
+  // Return a 768-dimension zero vector (Standard pgvector requirement for this app)
+  return new Array(768).fill(0);
 }

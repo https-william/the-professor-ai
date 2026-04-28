@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
 
         } catch (parseError: unknown) {
             const primaryMsg = parseError instanceof Error ? parseError.message : String(parseError);
-            console.warn("[Parser] MarkItDown unavailable:", primaryMsg, "→ Using legacy fallback.");
+            console.warn("[Parser] Python service unavailable or failed:", primaryMsg, "→ Falling back to native local extraction.");
             
-            // Fallback to legacy parser (handles PDF, DOCX, etc. natively)
+            // Fallback to native local parser (handles PDF, DOCX, etc. natively without AI)
             try {
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
                     file.size
                 );
                 logParserSuccess(fileType, file.size, wordCount, Date.now() - parseStart);
-                console.log(`[Parser] Legacy fallback success. Type: ${fileType}, Words: ${wordCount}`);
+                console.log(`[Parser] Local extraction success. Type: ${fileType}, Words: ${wordCount}`);
                 return NextResponse.json({ success: true, text, wordCount, fileType, isMultimodal });
             } catch (fallbackError) {
                 const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
