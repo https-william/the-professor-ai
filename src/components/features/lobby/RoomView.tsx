@@ -12,7 +12,8 @@ import {
     GraduationCap, 
     Layers, 
     FolderOpen, 
-    MessageSquare 
+    MessageSquare,
+    Trophy
 } from "lucide-react";
 
 interface RoomViewProps {
@@ -112,7 +113,7 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
@@ -124,7 +125,7 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
                 {error && <p className="text-[#EF4444] text-xs mb-4">{error}</p>}
                 <button 
                     onClick={() => router.push("/hub?s=lobby")}
-                    className="text-[#10B981] text-sm mt-2"
+                    className="text-[var(--foreground)] font-bold text-sm mt-2 hover:underline underline-offset-4"
                 >
                     Back to Lobby
                 </button>
@@ -158,8 +159,8 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
                 >
                     <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-[#10B981]/10 flex items-center justify-center">
-                                <IconComponent size={20} strokeWidth={1.5} className="text-[#10B981]" />
+                            <div className="w-12 h-12 rounded-xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center">
+                                <IconComponent size={20} strokeWidth={2} className="text-[var(--foreground)]" />
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-white">{room.name}</h2>
@@ -168,9 +169,9 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
                         </div>
                         <button
                             onClick={handleCopyCode}
-                            className="px-4 py-2 rounded-xl bg-[#10B981]/10 border border-[#10B981]/20 text-[#10B981] text-sm font-bold hover:bg-[#10B981]/20 transition-all"
+                            className="px-4 py-2 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
                         >
-                            {copied ? "Copied!" : `Code: ${room.code}`}
+                            {copied ? "Copied!" : `Invite: ${room.code}`}
                         </button>
                     </div>
 
@@ -197,7 +198,7 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
                                         )}
                                     </div>
                                     <span className="text-sm text-white/80">{member.name}</span>
-                                    {member.is_host && <span className="text-[#F59E0B]">👑</span>}
+                                    {member.is_host && <Trophy size={10} className="text-[var(--foreground)]" />}
                                 </div>
                             ))}
                         </div>

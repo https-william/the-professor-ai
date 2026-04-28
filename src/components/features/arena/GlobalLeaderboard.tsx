@@ -176,9 +176,9 @@ export default function GlobalLeaderboard({ currentUser }: GlobalLeaderboardProp
 
 function PodiumCard({ rank, user }: { rank: number; user: LeaderboardEntry | null | undefined }) {
   const colors = {
-    1: 'var(--accent)',
-    2: 'var(--secondary)',
-    3: '#94A3B8'
+    1: 'var(--foreground)',
+    2: 'var(--foreground-muted)',
+    3: 'var(--foreground-muted)'
   } as any;
 
   const heights = {
@@ -199,52 +199,52 @@ function PodiumCard({ rank, user }: { rank: number; user: LeaderboardEntry | nul
              animate={{ y: [0, -10, 0] }} 
              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
            >
-             <Trophy size={48} strokeWidth={1.5} className="text-[var(--accent)] drop-shadow-[0_0_12px_var(--accent-glow)]" />
+             <Trophy size={48} strokeWidth={1.5} className="text-[var(--foreground)] drop-shadow-[0_0_12px_rgba(255,255,255,0.1)]" />
            </motion.div>
         </div>
       )}
       
       <div 
-        className={`relative overflow-hidden ${heights[rank]} bg-[var(--foreground)]/[0.02] border border-[var(--border)] rounded-[40px] p-8 flex flex-col items-center justify-end transition-all duration-500 group-hover:border-[var(--secondary)]/30 group-hover:bg-[var(--foreground)]/[0.04] container-clay`}
+        className={`relative overflow-hidden ${heights[rank]} bg-[var(--background-secondary)] border border-[var(--border)] rounded-[40px] p-8 flex flex-col items-center justify-end transition-all duration-500 group-hover:border-[var(--foreground)]/30 group-hover:bg-[var(--foreground)]/[0.04] container-clay`}
         style={{
-            boxShadow: rank === 1 ? '0 0 60px var(--accent-glow)' : 'none'
+            boxShadow: rank === 1 ? '0 30px 60px -12px rgba(0,0,0,0.5)' : 'none'
         }}
       >
         <div className="absolute top-8 left-8">
-          <span className="text-7xl font-black opacity-10 leading-none" style={{ color: colors[rank] }}>{rank}</span>
+          <span className="text-7xl font-black opacity-5 leading-none" style={{ color: colors[rank] }}>{rank}</span>
         </div>
 
         <div className="flex flex-col items-center text-center w-full relative z-10">
           <div className={`relative mb-6 ${rank === 1 ? 'w-24 h-24' : 'w-20 h-20'}`}>
-            <div className="absolute inset-0 rounded-full animate-spin-slow opacity-20" style={{ border: `2px dashed ${colors[rank]}` }} />
+            <div className="absolute inset-0 rounded-full animate-spin-slow opacity-10" style={{ border: `2px dashed ${colors[rank]}` }} />
             <div className="absolute inset-2 rounded-full overflow-hidden border-2 border-[var(--background)] bg-[var(--foreground)]/5 shadow-2xl">
               {user.avatar ? (
                 <img src={user.avatar} className="w-full h-full object-cover" alt={user.name} />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl font-black text-[var(--foreground)]">
+                <div className="w-full h-full flex items-center justify-center text-2xl font-black text-[var(--foreground)] uppercase">
                   {user.name[0]}
                 </div>
               )}
             </div>
           </div>
           
-          <h3 className="text-xl font-black text-[var(--foreground)] mb-1 leading-tight truncate w-full px-2">{user.name}</h3>
-          <p className="text-[10px] font-bold text-[var(--secondary)] uppercase tracking-widest mb-6">Level {user.socialLevel} • {user.rankTitle}</p>
+          <h3 className="text-xl font-black text-[var(--foreground)] mb-1 leading-tight tracking-tight truncate w-full px-2">{user.name}</h3>
+          <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.2em] mb-6">{user.rankTitle} • Scholar Level {user.socialLevel}</p>
           
           <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-[var(--border)]">
             <div>
-              <p className="text-[9px] font-bold text-[var(--foreground-muted)] uppercase tracking-tighter mb-1">Total XP</p>
-              <p className="text-lg font-black text-[var(--foreground)]">{user.xp.toLocaleString()}</p>
+              <p className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-tighter mb-1">Scholar XP</p>
+              <p className="text-lg font-black text-[var(--foreground)] tracking-tighter">{user.xp.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-[9px] font-bold text-[var(--foreground-muted)] uppercase tracking-tighter mb-1">Win Rate</p>
-              <p className="text-lg font-black text-[var(--success)]">{Math.round(user.winRate)}%</p>
+              <p className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-tighter mb-1">Win Rate</p>
+              <p className="text-lg font-black text-[var(--foreground)] tracking-tighter">{Math.round(user.winRate)}%</p>
             </div>
           </div>
         </div>
 
         <div 
-            className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-20" 
+            className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-10" 
             style={{ backgroundColor: colors[rank] }}
         />
       </div>

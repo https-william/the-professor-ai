@@ -1,79 +1,122 @@
-/// <reference lib="webworker" />
-
 const CACHE_NAME = 'professor-v1';
-const OFFLINE_URL = '/';
-
-// Static assets to pre-cache on install
 const STATIC_ASSETS = [
-    '/',
-    '/icon.svg',
-    '/manifest.webmanifest',
+  '/',
+  '/offline',
+  '/favicon.ico',
+  '/site.webmanifest',
+  '/web-app-manifest-192x192.png',
+  '/web-app-manifest-512x512.png'
 ];
 
-// @ts-ignore
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS);
-        })
-    );
-    // @ts-ignore
-    self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS);
+    })
+  );
+  self.skipWaiting();
 });
 
-// @ts-ignore
 self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((keys) =>
-            Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-            )
-        )
-    );
-    // @ts-ignore
-    self.clients.claim();
-});
-
-// @ts-ignore
-self.addEventListener('fetch', (event) => {
-    const { request } = event;
-
-    // Skip non-GET requests
-    if (request.method !== 'GET') return;
-
-    // Skip API calls — always go to network
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/')) return;
-
-    // Network-first strategy for HTML pages
-    if (request.headers.get('accept')?.includes('text/html')) {
-        event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-                    return response;
-                })
-                .catch(() => caches.match(request).then((r) => r || caches.match(OFFLINE_URL)))
-        );
-        return;
-    }
-
-    // Cache-first for static assets (JS, CSS, images, fonts)
-    event.respondWith(
-        caches.match(request).then((cached) => {
-            if (cached) return cached;
-            return fetch(request).then((response) => {
-                if (response.ok && (
-                    url.pathname.match(/\.(js|css|png|jpg|svg|woff2?|ttf)$/) ||
-                    url.hostname === 'fonts.googleapis.com' ||
-                    url.hostname === 'fonts.gstatic.com'
-                )) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-                }
-                return response;
-            });
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
         })
-    );
+      );
+    })
+  );
+  self.clients.claim();
 });
+
+self.addEventListener('fetch', (event) => {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Skip chrome-extension, supabase, etc.
+  if (!url.protocol.startsWith('http')) return;
+
+  // Caching strategy: Stale-while-revalidate for static assets
+  if (STATIC_ASSETS.includes(url.pathname) || url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+          });
+          return networkResponse;
+        });
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Caching strategy: Network-first for pages and data
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful responses for navigation
+        if (event.request.mode === 'navigate' && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          
+          if (event.request.mode === 'navigate') {
+            return caches.match('/offline');
+          }
+          return null;
+        });
+      })
+  );
+});
+
+// Push Notifications
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : { title: 'The Professor', body: 'New update from the academy!' };
+  
+  const options = {
+    body: data.body,
+    icon: '/web-app-manifest-192x192.png',
+    badge: '/favicon-16x16.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/'
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url)
+  );
+});
+
+// Background Sync
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-study-data') {
+    event.waitUntil(syncStudyData());
+  }
+});
+
+async function syncStudyData() {
+  // Logic to sync pending study data when back online
+  console.log('Syncing study data...');
+}

@@ -46,8 +46,8 @@ export const InteractiveFlashcards = () => {
   const currentCard = INITIAL_CARDS[currentIndex];
 
   return (
-    <div className="relative w-full h-[480px] flex flex-col items-center justify-center p-4 md:p-6 cursor-default overflow-hidden">
-      <div className="relative w-full max-w-[340px] h-[420px] perspective-1200">
+    <div className="relative w-full h-[520px] flex flex-col items-center justify-center p-4 md:p-6 cursor-default overflow-visible">
+      <div className="relative w-full max-w-[360px] h-[450px] perspective-1200">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentIndex}
@@ -72,12 +72,7 @@ export const InteractiveFlashcards = () => {
                 "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-[var(--foreground)]/10 before:to-transparent before:pointer-events-none"
               )}>
                 {/* Refraction Streak */}
-                <motion.div 
-                  initial={{ x: "-150%", skewX: -45 }}
-                  animate={{ x: "150%" }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
-                  className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent pointer-events-none"
-                />
+                <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent pointer-events-none shimmer-streak" />
 
                 <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 mb-6 shadow-inner relative z-10">
                   <Brain size={32} strokeWidth={1.5} className="text-[var(--accent)]" />
@@ -96,35 +91,29 @@ export const InteractiveFlashcards = () => {
                 "bg-[var(--background-secondary)]/90 backdrop-blur-3xl border border-[var(--accent)]/40 shadow-[0_0_50px_rgba(245,158,11,0.15)]"
               )}>
                 {/* Refraction Streak (Back) */}
-                <motion.div 
-                  initial={{ x: "-150%", skewX: -45 }}
-                  animate={{ x: "150%" }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 1.5 }}
-                  className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent pointer-events-none"
-                />
+                <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent pointer-events-none shimmer-streak" />
 
-                <div className="space-y-4 md:space-y-5 relative z-10 w-full">
-                   <div className="space-y-1">
+                <div className="flex flex-col h-full relative z-10 w-full pt-4">
+                   <div className="mb-4 overflow-y-auto max-h-[140px] pr-2 scrollbar-thin scrollbar-thumb-[var(--accent)]/20">
                       <p className="text-[13px] md:text-[14px] font-medium leading-relaxed text-[var(--foreground)]">
                         {currentCard.answer}
                       </p>
                    </div>
                    
-                   <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent" />
+                   <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent mb-4" />
                    
-                   <div className="space-y-1.5 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden">
-                      {/* Sub-bevel for extra depth */}
-                      <div className="absolute inset-x-0 top-0 h-px bg-[var(--foreground)]/5" />
-                      
-                      <div className="flex items-center gap-2 mb-1">
+                   <div className="flex-1 min-h-0 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col">
+                      <div className="flex items-center gap-2 mb-2 shrink-0">
                          <div className="w-5 h-5 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20">
                             <Lightbulb size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
                          </div>
                          <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] text-[var(--accent)]">Professor&apos;s Hook</span>
                       </div>
-                      <p className="text-[11px] md:text-[12px] italic leading-relaxed text-[var(--foreground-secondary)]">
-                        &quot;{currentCard.hook}&quot;
-                      </p>
+                      <div className="overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[var(--accent)]/10">
+                        <p className="text-[11px] md:text-[12px] italic leading-relaxed text-[var(--foreground-secondary)]">
+                          &quot;{currentCard.hook}&quot;
+                        </p>
+                      </div>
                    </div>
                 </div>
               </div>

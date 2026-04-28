@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import SiteHeader from "@/components/ui/SiteHeader";
-import type { AppMode } from "@/components/ui/SiteHeader";
+
 import ProfessorEmptyState from "@/components/ui/ProfessorEmptyState";
 import { generateLibraryExportHTML } from "@/lib/export-utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { AppMode } from "@/components/ui/SiteHeader";
 import { 
     Library, 
     Plus, 
@@ -29,23 +29,24 @@ import {
 } from "lucide-react";
 
 /* ═══ Claymorphic Helpers ═══ */
+/* ═══ Claymorphic Helpers ═══ */
 const clay = {
     card: {
-        background: "rgba(255,255,255,0.025)",
+        background: "var(--card)",
         borderRadius: "24px",
-        border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.04), inset 0 -1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
     } as React.CSSProperties,
     pill: {
-        background: "rgba(255,255,255,0.04)",
+        background: "var(--background-secondary)",
         borderRadius: "14px",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05), inset 0 -1px 2px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.15)",
+        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05), inset 0 -1px 2px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.1)",
     } as React.CSSProperties,
     list: {
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--card)",
         borderRadius: "20px",
-        border: "1px solid rgba(255,255,255,0.05)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.03), 0 4px 12px rgba(0,0,0,0.2)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-md)",
     } as React.CSSProperties,
 };
 
@@ -79,7 +80,6 @@ export default function LibraryPage() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handleModeChange = (mode: AppMode) => {
-        if (mode === "CHAT") router.push("/dashboard?mode=chat");
         if (mode === "CREATE") router.push("/dashboard?mode=create");
         if (mode === "HUB") router.push("/hub");
     };
@@ -87,15 +87,24 @@ export default function LibraryPage() {
     useEffect(() => {
         if (!user.id) return;
         const fetchLibrary = async () => {
+            setLoading(true);
             const supabase = createClient();
+            
+            // Query with explicit nocache/revalidate behavior
             const { data, error } = await supabase
                 .from("generations")
                 .select("*")
                 .eq("user_id", user.id)
                 .order("created_at", { ascending: false });
-            if (!error && data) setGenerations(data);
+
+            if (!error && data) {
+                setGenerations(data);
+                console.log(`Fetched ${data.length} scholarly records.`);
+            } else if (error) {
+                console.error("Library sync failure:", error.message);
+            }
             
-            // Fetch due card info to show badges and support "Due" filter
+            // Fetch due card info
             try {
                 const res = await fetch("/api/user/due-cards");
                 if (res.ok) {
@@ -110,7 +119,7 @@ export default function LibraryPage() {
             setLoading(false);
         };
         fetchLibrary();
-    }, [user.id]);
+    }, [user.id, router]); // Refresh on navigation to catch new generations
 
     const filtered = filter === "all" 
         ? generations 
@@ -147,14 +156,11 @@ export default function LibraryPage() {
         }
 
         if (item.type === "flashcards") {
-            sessionStorage.setItem("generatedContent", JSON.stringify({ type: "flashcards", data: item.content?.flashcards, title: item.title }));
-            router.push("/flashcards");
+            router.push(`/flashcards?id=${item.id}`);
         } else if (item.type === "quiz") {
-            sessionStorage.setItem("quiz_data", JSON.stringify(item.content));
-            router.push("/quiz");
+            router.push(`/quiz?id=${item.id}`);
         } else if (item.type === "summary") {
-            sessionStorage.setItem("summaryData", JSON.stringify({ summary: item.content?.summary, title: item.title }));
-            router.push("/create?view=summary");
+            router.push(`/summary?id=${item.id}`);
         }
     };
 
@@ -233,13 +239,13 @@ export default function LibraryPage() {
     const summaryCount = generations.filter(g => g.type === "summary").length;
 
     return (
-        <div className="min-h-[100dvh] bg-[#06060B] text-white/90 pb-28 relative overflow-hidden">
+        <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
             {/* Ambient */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute w-[500px] h-[500px] rounded-full animate-pulse"
-                    style={{ top: "-20%", left: "-15%", background: "radial-gradient(circle, rgba(99,102,241,0.04), transparent 60%)", filter: "blur(80px)", animationDuration: "7s" }} />
+                    style={{ top: "-20%", left: "-15%", background: "radial-gradient(circle, var(--foreground-muted), transparent 60%)", opacity: 0.03, filter: "blur(80px)", animationDuration: "7s" }} />
                 <div className="absolute w-[400px] h-[400px] rounded-full animate-pulse"
-                    style={{ bottom: "10%", right: "-10%", background: "radial-gradient(circle, rgba(245,158,11,0.03), transparent 60%)", filter: "blur(70px)", animationDuration: "9s" }} />
+                    style={{ bottom: "10%", right: "-10%", background: "radial-gradient(circle, var(--foreground-muted), transparent 60%)", opacity: 0.02, filter: "blur(70px)", animationDuration: "9s" }} />
             </div>
 
             <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-6 py-8 sm:py-24">
@@ -252,27 +258,23 @@ export default function LibraryPage() {
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
                                 style={{
-                                    background: "linear-gradient(145deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05))",
-                                    boxShadow: "inset 0 2px 3px rgba(255,255,255,0.06), inset 0 -2px 4px rgba(0,0,0,0.25), 0 4px 16px rgba(99,102,241,0.1)",
-                                    border: "1px solid rgba(99,102,241,0.1)",
+                                    background: "var(--background-secondary)",
+                                    boxShadow: "var(--shadow-sm)",
+                                    border: "1px solid var(--border)",
                                 }}>
-                                <Library size={20} strokeWidth={1.5} className="text-[#818CF8]" />
+                                <Library size={20} strokeWidth={1.5} className="text-[var(--foreground)]" />
                             </div>
                             <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-white/15">My Library</span>
                         </div>
-                        <h1 className="font-heading text-3xl sm:text-[40px] font-bold text-white/95 tracking-tight mb-2 leading-tight">
+                        <h1 className="font-serif text-3xl sm:text-[44px] font-bold italic text-[var(--foreground)] tracking-tight mb-2 leading-tight">
                             Your Study Vault
                         </h1>
-                        <p className="text-sm text-white/25">Everything you&apos;ve generated, in one place.</p>
+                        <p className="text-[11px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] opacity-40">Preserving scholarly progress in real-time.</p>
                     </div>
                     <Link href="/create"
-                        className="flex items-center gap-1.5 px-5 py-3 rounded-2xl text-[12px] font-bold transition-all active:scale-95 hover:translate-y-[-2px]"
-                        style={{
-                            background: "linear-gradient(145deg, #F5A623, #D4911A)",
-                            color: "#08080E",
-                            boxShadow: "inset 0 1px 2px rgba(255,255,255,0.25), inset 0 -1px 2px rgba(0,0,0,0.15), 0 4px 16px rgba(245,158,11,0.3)",
-                        }}>
-                        <Plus size={14} strokeWidth={1.5} />
+                        className="flex items-center gap-1.5 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-[var(--foreground)] text-[var(--background)] transition-all active:scale-[0.98] shadow-xl"
+                    >
+                        <Plus size={14} strokeWidth={2} />
                         Create
                     </Link>
                 </div>
@@ -280,18 +282,16 @@ export default function LibraryPage() {
                 {/* ═══ Stats — Bento Row ═══ */}
                 <div className="grid grid-cols-3 gap-3 mb-8">
                     {[
-                        { label: "Flashcard Sets", count: flashcardCount, icon: Layers, color: "#F59E0B" },
-                        { label: "Quizzes", count: quizCount, icon: HelpCircle, color: "#818CF8" },
-                        { label: "Summaries", count: summaryCount, icon: FileText, color: "#6366F1" },
+                        { label: "Flashcard Sets", count: flashcardCount, icon: Layers },
+                        { label: "Quizzes", count: quizCount, icon: HelpCircle },
+                        { label: "Summaries", count: summaryCount, icon: FileText },
                     ].map((s) => (
-                        <div key={s.label} className="text-center p-4 transition-all duration-300 hover:translate-y-[-2px]"
-                            style={{ ...clay.card, borderRadius: "18px" }}>
-                            <div className="w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2"
-                                style={{ background: `${s.color}10`, boxShadow: `inset 0 1px 2px ${s.color}12` }}>
-                                <s.icon size={15} strokeWidth={1.5} style={{ color: `${s.color}90` }} />
+                        <div key={s.label} className="text-center p-6 transition-all duration-300 hover:translate-y-[-2px] bg-[var(--card)] border border-[var(--border)] rounded-[24px] shadow-sm">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 bg-[var(--foreground)]/[0.03] border border-[var(--border)] shadow-sm">
+                                <s.icon size={18} strokeWidth={2} className="text-[var(--foreground)]" />
                             </div>
-                            <div className="text-2xl font-bold text-white/65">{s.count}</div>
-                            <div className="text-[10px] text-white/15 font-medium mt-0.5">{s.label}</div>
+                            <div className="text-3xl font-black text-[var(--foreground)] leading-none">{s.count}</div>
+                            <div className="text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-widest opacity-40 mt-2">{s.label}</div>
                         </div>
                     ))}
                 </div>
@@ -425,11 +425,11 @@ export default function LibraryPage() {
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="text-[13px] font-semibold text-white/65 truncate group-hover:text-white/85 transition-colors">
-                                                {item.title || "Untitled"}
+                                            <span className="text-[14px] font-bold text-[var(--foreground)] truncate group-hover:opacity-40 transition-opacity">
+                                                {item.title || "Untitled Scholarly Work"}
                                             </span>
-                                            <span className="text-[9px] font-extrabold uppercase tracking-[0.15em] px-2 py-0.5 rounded-md flex-shrink-0"
-                                                style={{ background: `${cfg.color}10`, color: `${cfg.color}99` }}>
+                                            <span className="text-[9px] font-extrabold uppercase tracking-[0.12em] px-2 py-0.5 rounded-md flex-shrink-0"
+                                                style={{ background: "var(--foreground-muted)", color: "var(--background)", opacity: 0.15 }}>
                                                 {cfg.label}
                                             </span>
                                             {dueIds.has(item.id) && (
@@ -462,14 +462,14 @@ export default function LibraryPage() {
                         exit={{ y: 100, x: "-50%", opacity: 0 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-40px)] max-w-lg"
                     >
-                        <div className="bg-[#0D0D15]/80 backdrop-blur-2xl border border-white/10 rounded-[28px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative">
+                        <div className="bg-[var(--card)] backdrop-blur-2xl border border-[var(--border)] rounded-[28px] p-4 flex items-center justify-between shadow-2xl overflow-hidden relative">
                             {/* Accent Glow */}
-                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#F59E0B]/30 to-transparent" />
+                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent" />
                             
                             <div className="flex items-center gap-3 pl-2">
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-black text-[#F59E0B] leading-none uppercase tracking-widest">{selectedIds.length} Selected</span>
-                                    <span className="text-[10px] text-white/30 font-bold uppercase tracking-tighter mt-1">{selectedIds.length === 10 ? "Capacity Reached" : "Max 10 per batch"}</span>
+                                    <span className="text-[12px] font-black text-[var(--foreground)] leading-none uppercase tracking-widest">{selectedIds.length} Selected</span>
+                                    <span className="text-[10px] text-[var(--foreground-muted)] font-bold uppercase tracking-tighter mt-1">{selectedIds.length === 10 ? "Capacity Reached" : "Batch Processing Locked"}</span>
                                 </div>
                             </div>
 

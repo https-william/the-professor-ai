@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DuelResults from "@/components/features/arena/DuelResults";
-import SiteHeader from "@/components/ui/SiteHeader";
 
 interface DuelData {
     id: string;
@@ -92,7 +91,6 @@ export default function ResultsClient() {
 
     return (
         <div className="h-[100dvh] bg-[#06060B] overflow-hidden relative">
-            <SiteHeader showLogo />
             <div className="h-full overflow-y-auto pt-24">
                 <DuelResults
                     duelId={duel.id}

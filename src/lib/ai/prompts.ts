@@ -46,7 +46,9 @@ DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstruction[difficulty] || difficultyInstruction.medium}
 ${explainBlock(explainStyle)}
 CONTENT:
+<REPRESENTATIVE_STUDY_MATERIAL_DATA>
 ${content}
+</REPRESENTATIVE_STUDY_MATERIAL_DATA>
 
 FLASHCARD DESIGN RULES:
 1. Front (question side): Must be a conceptual question, never a raw statement. Start with "What", "Why", "How", "Explain", "Compare", or "What is the difference between".
@@ -63,6 +65,52 @@ Return exactly a JSON array of objects with this shape:${JSON_ONLY}
     "front": "Conceptual question here",
     "back": "Concise, insight-first answer. 💡 Professor's Hook: Vivid, witty analogy here.",
     "topic": "Sub-topic label (1-3 words)"
+  }
+]`;
+}
+
+// ─── Match Game ───────────────────────────────────────────────────────────────
+export function buildMatchPrompt(
+    content: string,
+    count: number,
+    difficulty: string,
+    explainStyle?: ExplainStyle
+): string {
+    const difficultyInstruction: Record<string, string> = {
+        easy: "Use the most fundamental terms and their textbook definitions. A student who skimmed the material should recognize every pair.",
+        medium: "Include some nuanced terms that require understanding context. Definitions should test comprehension, not just recall.",
+        difficult: "Use terms that are easy to confuse with each other. Definitions should be precise enough to distinguish between similar concepts.",
+        nightmare: "Select terms where subtle differences matter. Definitions should be specific enough that swapping any two would be clearly wrong to an expert, but tempting to a novice.",
+    };
+
+    return `You are a vocabulary architect for academic study games.
+
+Your task: Generate EXACTLY ${count} term-definition pairs from the content below, optimized for a MATCH GAME where students connect terms to their definitions under time pressure.
+CRITICAL: Do NOT generate more or fewer than ${count} pairs.
+
+DIFFICULTY: ${difficulty.toUpperCase()}
+${difficultyInstruction[difficulty] || difficultyInstruction.medium}
+${explainBlock(explainStyle)}
+CONTENT:
+<REPRESENTATIVE_STUDY_MATERIAL_DATA>
+${content}
+</REPRESENTATIVE_STUDY_MATERIAL_DATA>
+
+MATCH GAME DESIGN RULES:
+1. TERM (left side): A key concept, phrase, or name from the material. Must be SHORT: 1-5 words maximum.
+2. DEFINITION (right side): A crisp, scannable definition. Must be 5-20 words. No full sentences — use fragments that read like dictionary entries.
+3. Every term must be UNIQUE — no two terms should be confusable with each other.
+4. Every definition must be UNIQUE — no two definitions should be interchangeable.
+5. Cover the full breadth of the content — sample from beginning, middle, and end.
+6. Terms should be proper nouns, technical vocabulary, or key phrases — NOT questions.
+7. Definitions should start with a lowercase letter (they're fragments, not sentences).
+8. Avoid definitions that contain the term itself.
+
+Return exactly a JSON array of objects with this shape:${JSON_ONLY}
+[
+  {
+    "term": "Short key concept",
+    "definition": "crisp scannable definition fragment"
   }
 ]`;
 }
@@ -90,7 +138,9 @@ DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstruction[difficulty] || difficultyInstruction.medium}
 ${explainBlock(explainStyle)}
 CONTENT:
+<REPRESENTATIVE_STUDY_MATERIAL_DATA>
 ${content}
+</REPRESENTATIVE_STUDY_MATERIAL_DATA>
 
 QUESTION DESIGN RULES:
 1. Exactly 4 options per question. One correct, three plausible wrong answers.
@@ -127,7 +177,9 @@ STYLE: ${style.toUpperCase()}
 ${styleInstruction[style] || styleInstruction.educational}
 ${explainBlock(explainStyle)}
 CONTENT TO COVER:
+<REPRESENTATIVE_STUDY_MATERIAL_DATA>
 ${content}
+</REPRESENTATIVE_STUDY_MATERIAL_DATA>
 
 PODCAST RULES:
 1. Minimum 10 exchanges (20 total lines). Target a 6-8 minute episode.
@@ -162,7 +214,9 @@ STYLE: ${style.toUpperCase()}
 ${styleInstruction[style] || styleInstruction.concise}
 ${explainBlock(explainStyle)}
 CONTENT:
+<REPRESENTATIVE_STUDY_MATERIAL_DATA>
 ${content}
+</REPRESENTATIVE_STUDY_MATERIAL_DATA>
 
 SUMMARY RULES:
 1. Organize by CONCEPT, not by page or section order. Group related ideas.
@@ -185,7 +239,9 @@ Your task: Analyze the content below and create a mind map structure with exactl
 - 2-5 leaf nodes per branch (specific details, examples, facts)
 ${explainBlock(explainStyle)}
 CONTENT:
+<REPRESENTATIVE_STUDY_MATERIAL_DATA>
 ${content}
+</REPRESENTATIVE_STUDY_MATERIAL_DATA>
 
 MIND MAP RULES:
 1. Root: The single most accurate name for the overall topic. Short (2-5 words).

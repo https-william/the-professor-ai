@@ -3,6 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { 
+    Swords, 
+    Copy, 
+    Check, 
+    Hourglass, 
+    BookOpen, 
+    Users, 
+    Clock, 
+    X,
+    BookOpen as QuizIcon 
+} from "lucide-react";
 import { useDuelRealtime } from "@/hooks/useRealtime";
 import GlobalLeaderboard from "./GlobalLeaderboard";
 
@@ -255,8 +266,8 @@ export default function DuelLobby({
                     <div className="relative p-8 text-center border-b border-[var(--border)]">
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--error)] via-[var(--secondary)] to-[var(--error)]" />
                         
-                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--error)]/10 border-2 border-[var(--error)]/30 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-4xl text-[var(--error)]">swords</span>
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--foreground)]/5 border-2 border-[var(--border)] flex items-center justify-center">
+                            <Swords size={40} className="text-[var(--foreground)]" />
                         </div>
                         
                         <h2 className="text-2xl font-black text-[var(--foreground)] italic tracking-tight">THE PIT</h2>
@@ -281,10 +292,8 @@ export default function DuelLobby({
                                             </span>
                                         ))}
                                     </p>
-                                    <div className={`p-3 rounded-xl transition-all ${copied ? 'bg-[var(--success)]/20 text-[var(--success)]' : 'bg-[var(--foreground)]/5 text-[var(--foreground-muted)] group-hover:text-[var(--foreground)]'}`}>
-                                        <span className="material-symbols-outlined text-xl">
-                                            {copied ? 'check' : 'content_copy'}
-                                        </span>
+                                    <div className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500/20 text-emerald-500' : 'bg-[var(--foreground)]/5 text-[var(--foreground-muted)] group-hover:text-[var(--foreground)]'}`}>
+                                        {copied ? <Check size={20} /> : <Copy size={20} />}
                                     </div>
                                 </div>
                             </div>
@@ -337,10 +346,10 @@ export default function DuelLobby({
                             ) : (
                                 <>
                                     <div className="w-12 h-12 rounded-xl bg-[var(--foreground)]/5 flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-xl text-[var(--foreground-muted)]">hourglass_empty</span>
+                                        <Hourglass size={20} className="text-[var(--foreground-muted)] animate-pulse" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-[var(--foreground-muted)] italic">Waiting for challenger...</p>
+                                        <p className="text-[var(--foreground-muted)] italic font-medium tracking-tight">Awaiting Challenger...</p>
                                     </div>
                                     <div className="w-3 h-3 rounded-full bg-[var(--accent)]/50 animate-pulse" />
                                 </>
@@ -350,12 +359,12 @@ export default function DuelLobby({
 
                     {/* Quiz Info */}
                     <div className="px-6 pb-4">
-                        <div className="p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
+                        <div className="p-4 rounded-xl bg-[var(--foreground)]/[0.03] border border-[var(--border)]">
                             <div className="flex items-center gap-3">
-                                <span className="material-symbols-outlined text-[var(--accent)]">quiz</span>
+                                <QuizIcon size={20} className="text-[var(--foreground-muted)]" />
                                 <div>
-                                    <p className="text-sm font-bold text-[var(--foreground)]">{generation.title}</p>
-                                    <p className="text-[10px] text-[var(--foreground-muted)]">{generation.questionCount} Questions • {Math.floor(timeLimit / 60)} min time limit</p>
+                                    <p className="text-sm font-black text-[var(--foreground)] tracking-tight">{generation.title}</p>
+                                    <p className="text-[10px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">{generation.questionCount} Questions • {Math.floor(timeLimit / 60)} min limit</p>
                                 </div>
                             </div>
                         </div>

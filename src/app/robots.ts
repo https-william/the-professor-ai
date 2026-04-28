@@ -17,6 +17,6 @@ export default function robots(): MetadataRoute.Robots {
         '/profile/',
       ],
     },
-    sitemap: 'https://the-professor.ai/sitemap.xml',
+    sitemap: 'https://theprofessor.xyz/sitemap.xml',
   };
 }

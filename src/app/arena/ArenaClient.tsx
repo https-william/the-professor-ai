@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AlertCircle } from "lucide-react";
 import DuelLobby from "@/components/features/arena/DuelLobby";
-import SiteHeader from "@/components/ui/SiteHeader";
 
 interface DuelData {
     id: string;
@@ -92,9 +92,9 @@ export default function ArenaClient() {
         return (
             <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ background: "var(--error-bg)", border: "1px solid var(--error-light)" }}>
-                    <span className="material-symbols-outlined text-3xl text-[var(--error)]">error</span>
+                    <AlertCircle size={32} className="text-[var(--error)]" />
                 </div>
-                <h2 className="text-xl font-bold text-[var(--foreground)] mb-2">Duel Not Found</h2>
+                <h2 className="text-xl font-black text-[var(--foreground)] mb-2">Duel Not Found</h2>
                 <p className="text-sm text-[var(--foreground-muted)] mb-6 text-center">{error || "This duel may have expired or been cancelled."}</p>
                 <button
                     onClick={() => router.push("/hub?s=arena")}
@@ -110,7 +110,6 @@ export default function ArenaClient() {
     if (duel.status === 'WAITING' || duel.status === 'READY') {
         return (
             <>
-                <SiteHeader showLogo />
                 <DuelLobby
                     duelId={duel.id}
                     code={duel.code}

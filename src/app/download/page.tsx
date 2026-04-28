@@ -2,8 +2,25 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, CheckCircle, HelpCircle, Smartphone, Laptop, Globe, Monitor } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+    ArrowLeft, 
+    Download, 
+    CheckCircle, 
+    HelpCircle, 
+    Smartphone, 
+    Laptop, 
+    Globe, 
+    Monitor,
+    Zap,
+    Cpu,
+    SmartphoneNfc,
+    ShieldCheck,
+    ChevronRight,
+    Star
+} from "lucide-react";
 import SEOHead, { getWebApplicationSchema } from "@/components/SEOHead";
+import { cn } from "@/lib/utils";
 
 type Platform = "android" | "ios" | "desktop" | null;
 
@@ -50,158 +67,241 @@ export default function DownloadPage() {
     const LATEST_APK_URL = "https://github.com/https-william/the-professor-ai/releases/latest/download/app-debug.apk";
     const LATEST_WINDOWS_URL = "https://github.com/https-william/the-professor-ai/releases/latest";
 
+    const PLATFORMS = [
+        { 
+            id: "android", 
+            name: "Android", 
+            icon: SmartphoneNfc, 
+            color: "#4CAF50", 
+            desc: "Direct APK. Native neural engine.",
+            action: { label: "Download APK", href: LATEST_APK_URL } 
+        },
+        { 
+            id: "desktop", 
+            name: "Windows", 
+            icon: Laptop, 
+            color: "#0078D4", 
+            desc: "Installer for Win 10/11. High fidelity.",
+            action: { label: "Get Latest .exe", href: LATEST_WINDOWS_URL } 
+        },
+        { 
+            id: "ios", 
+            name: "iOS", 
+            icon: Smartphone, 
+            color: "#FFFFFF", 
+            desc: "PWA Companion. Add to Home Screen.",
+            action: { label: "Safari → Share", href: "#" } 
+        },
+        { 
+            id: "web", 
+            name: "Web App", 
+            icon: Globe, 
+            color: "#F59E0B", 
+            desc: "Universal access. Offline support.",
+            action: { label: "Install as App", onClick: handlePWAInstall } 
+        },
+    ];
+
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-amber-500/30 overflow-x-hidden">
+        <div className="min-h-screen bg-[#08080E] text-[var(--foreground)] selection:bg-amber-500/30 overflow-x-hidden font-sans">
             {/* ═══ Advanced AEO/SEO Layer ═══ */}
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
-            {/* Subtle ambient radial glow */}
-            <div className="fixed inset-0 z-0 pointer-events-none" style={{
-              background: "radial-gradient(ellipse 80% 50% at 50% 30%, rgba(99,102,241,0.06) 0%, transparent 70%)",
-            }} />
+            {/* Cinematic Background */}
+            <div className="fixed inset-0 z-0">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(129,140,248,0.15),transparent)]" />
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-amber-500/5 to-transparent" />
+                
+                {/* Floating Glimmer Line */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            </div>
 
-            <div className="relative z-10 max-w-4xl mx-auto px-6 py-16">
-                {/* Back */}
-                <Link href="/" className="inline-flex items-center gap-2 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-12 transition-colors group">
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Back to home
-                </Link>
+            <div className="relative z-10 max-w-5xl mx-auto px-6 py-12 md:py-20">
+                {/* Back Link */}
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                    <Link href="/" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 hover:text-white transition-colors mb-16 group">
+                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                        Archives
+                    </Link>
+                </motion.div>
 
-                {/* Hero */}
-                <div className="text-center mb-16">
-                    <div className="w-24 h-24 mx-auto mb-6 rounded-3xl overflow-hidden shadow-2xl relative group">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-[#7C3AED]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <img src="/icon-512.png" alt="The Professor AI" className="w-full h-full object-cover shadow-2xl" />
+                {/* Volumetric Hero */}
+                <div className="flex flex-col items-center text-center mb-24">
+                    <motion.div 
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="relative mb-10"
+                    >
+                        {/* Recursive Glow Rings */}
+                        <div className="absolute inset-0 rounded-[2.5rem] bg-[#316fae]/20 blur-3xl animate-pulse" />
+                        <div className="relative w-32 h-32 md:w-48 md:h-48 aspect-square rounded-[2rem] overflow-hidden glass-skeuo border border-white/10 shadow-2xl p-6 md:p-8">
+                        <img 
+                            src="/brand/professor-og-logo.svg" 
+                            alt="The Professor AI" 
+                            className="w-full h-full object-contain filter drop-shadow-2xl"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)]/20 via-transparent to-transparent pointer-events-none" />
                     </div>
-                    <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#F59E0B] via-[var(--foreground)] to-[#7C3AED]">
-                            The Professor AI
-                        </span>
-                    </h1>
-                    <p className="text-[var(--foreground-secondary)] text-lg max-w-md mx-auto">
-                        Cheat codes for your degree. Now in your pocket.
-                    </p>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter leading-[0.95]">
+                            Take the Professor<br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-500 to-amber-700">Mobile. Native. Everywhere.</span>
+                        </h1>
+                        <p className="text-white/40 text-lg md:text-xl font-medium max-w-xl mx-auto leading-relaxed">
+                            Cheat codes for your degree, optimized for the device in your hand. Performance is shared, focus is localized.
+                        </p>
+                    </motion.div>
                 </div>
 
-                {/* Platform-aware CTA */}
-                {platform === "android" && (
-                    <div className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-3xl p-8 mb-8 text-center clay-card-heavy">
-                        <div className="flex items-center justify-center gap-3 mb-6">
-                            <Monitor size={32} className="text-[#4CAF50]" />
-                            <span className="text-lg font-bold">Android Detected!</span>
+                {/* Recommended Section (Platform Aware) */}
+                {platform && platform !== "ios" && (
+                    <motion.div 
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="mb-20"
+                    >
+                        <div className="relative p-[1px] rounded-[3rem] bg-gradient-to-br from-amber-500/40 via-white/5 to-white/5 overflow-hidden group">
+                           <div className="relative bg-[#0A0A10]/90 backdrop-blur-3xl rounded-[calc(3rem-1px)] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-16">
+                               <div className="w-24 h-24 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-inner shrink-0">
+                                   {platform === "android" ? <SmartphoneNfc size={48} className="text-amber-500" /> : <Monitor size={48} className="text-amber-500" />}
+                               </div>
+                               <div className="text-center md:text-left flex-1">
+                                   <div className="flex flex-col md:flex-row items-center gap-3 mb-4">
+                                       <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-widest border border-amber-500/20">Recommended for You</span>
+                                       <h2 className="text-2xl font-black text-white">{platform === "android" ? "The Android App" : "The Windows Client"}</h2>
+                                   </div>
+                                   <p className="text-white/40 font-medium mb-8 leading-relaxed max-w-lg">
+                                       Experience the fastest generation speeds with our direct-to-metal {platform === "android" ? "Android APK" : "Windows Installer"}. 
+                                   </p>
+                                   <div className="relative inline-block">
+                                       <div 
+                                          className="btn-skeuo-primary px-10 py-4 inline-flex items-center gap-3 grayscale opacity-60 cursor-not-allowed pointer-events-none"
+                                       >
+                                           <Download size={20} />
+                                           Get the Native App
+                                       </div>
+                                       <span className="absolute -top-3 -right-6 px-3 py-1 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-full shadow-2xl rotate-12 ring-2 ring-[#08080E] animate-pulse">
+                                           Coming Soon!!
+                                       </span>
+                                   </div>
+                               </div>
+                               <div className="hidden lg:block w-px h-24 bg-white/5" />
+                               <div className="hidden lg:grid grid-cols-1 gap-4">
+                                   <div className="flex items-center gap-3">
+                                       <Zap size={14} className="text-amber-500" />
+                                       <span className="text-[11px] font-bold text-white/60">60FPS Fluid UI</span>
+                                   </div>
+                                   <div className="flex items-center gap-3">
+                                       <Cpu size={14} className="text-amber-500" />
+                                       <span className="text-[11px] font-bold text-white/60">Neural Cache</span>
+                                   </div>
+                                   <div className="flex items-center gap-3">
+                                       <ShieldCheck size={14} className="text-amber-500" />
+                                       <span className="text-[11px] font-bold text-white/60">Encrypted Vault</span>
+                                   </div>
+                               </div>
+                           </div>
                         </div>
-                        <p className="text-[var(--foreground-secondary)] text-sm mb-6 max-w-xs mx-auto">
-                            Download and install the native Android companion directly.
-                        </p>
-                        <a
-                            href={LATEST_APK_URL}
-                            className="btn-jelly inline-flex items-center gap-3 px-10 py-4 justify-center"
-                            download="the-professor.apk"
-                        >
-                            <Download size={20} />
-                            Download APK — Free
-                        </a>
-                        <p className="mt-4 text-xs text-[var(--foreground-muted)]">v0.1.0 · Android 7.0+ · ~10MB</p>
-                    </div>
+                    </motion.div>
                 )}
 
-                {/* All-platform cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                    {/* Android */}
-                    <div className={`p-6 rounded-2xl border transition-all ${platform === "android" ? "border-[#4CAF50]/50 bg-[#4CAF50]/5" : "border-[var(--border)] bg-[var(--background-secondary)] shadow-sm"}`}>
-                        <div className="flex items-center gap-2 mb-3">
-                           <Monitor size={20} className="text-[#4CAF50]" />
-                           <h3 className="font-bold">Android</h3>
-                        </div>
-                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Direct APK download. Native performance.</p>
-                        <a href={LATEST_APK_URL} className="text-xs text-[#4CAF50] font-bold flex items-center gap-1 hover:underline">
-                            Download APK <Download size={14} />
-                        </a>
-                    </div>
+                {/* Platform Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-24">
+                    {PLATFORMS.map((p, i) => (
+                        <motion.div 
+                            key={p.id}
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.3 + (i * 0.1) }}
+                            className="group relative"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
+                            <div className="relative bg-white/[0.03] border border-white/10 p-7 rounded-[2rem] h-full flex flex-col transition-all hover:border-white/20 hover:bg-white/[0.05] hover:-translate-y-1">
+                                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-inner">
+                                    <p.icon size={24} style={{ color: p.color }} strokeWidth={1.5} />
+                                </div>
+                                <h3 className="text-lg font-black text-white mb-2">{p.name}</h3>
+                                <p className="text-[13px] text-white/30 font-medium leading-relaxed mb-8 flex-1">{p.desc}</p>
+                                
+                                {p.action.onClick ? (
+                                    <button 
+                                        onClick={p.action.onClick}
+                                        className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                                        style={{ color: p.color }}
+                                    >
+                                        {deferredPrompt && !pwaInstalled ? p.action.label : pwaInstalled ? "Active" : "Check Menu"}
+                                        <ChevronRight size={14} />
+                                    </button>
+                                ) : (
+                                    <div className="relative">
+                                        <div 
+                                            className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 opacity-40 cursor-not-allowed"
+                                            style={{ color: p.color }}
+                                        >
+                                            {p.action.label}
+                                            <ChevronRight size={14} />
+                                        </div>
+                                        <span className="absolute -top-2 -right-4 px-2 py-0.5 bg-amber-500 text-black text-[7px] font-black uppercase tracking-tighter rounded-full shadow-xl">
+                                            Soon
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
 
-                    {/* Windows */}
-                    <div className={`p-6 rounded-2xl border transition-all ${platform === "desktop" ? "border-[#0078D4]/50 bg-[#0078D4]/5" : "border-[var(--border)] bg-[var(--background-secondary)] shadow-sm"}`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Laptop size={20} className="text-[#0078D4]" />
-                          <h3 className="font-bold">Windows</h3>
-                        </div>
-                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Installer for Windows 10/11. Neural acceleration.</p>
-                        <a href={LATEST_WINDOWS_URL} target="_blank" className="text-xs text-[#0078D4] font-bold flex items-center gap-1 hover:underline">
-                            Get Latest .exe <Download size={14} />
-                        </a>
+                {/* Installation Journey */}
+                <div className="max-w-xl mx-auto mb-24">
+                    <div className="text-center mb-12">
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500 mb-4 block">Deployment Guide</span>
+                        <h2 className="text-3xl font-black text-white">How to Install</h2>
                     </div>
-
-                    {/* iOS */}
-                    <div className={`p-6 rounded-2xl border transition-all ${platform === "ios" ? "border-[var(--foreground)]/50 bg-[var(--foreground)]/5" : "border-[var(--border)] bg-[var(--background-secondary)] shadow-sm"}`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Smartphone size={20} className="text-[var(--foreground-muted)]" />
-                          <h3 className="font-bold">iOS</h3>
-                        </div>
-                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Add to Home Screen via Safari for native feel.</p>
-                        <span className="text-xs text-[var(--foreground-muted)] font-medium">Safari → Share → Add to Home</span>
-                    </div>
-
-                    {/* PWA/Desktop */}
-                    <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)] shadow-sm">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Globe size={20} className="text-[#F59E0B]" />
-                          <h3 className="font-bold">Web App</h3>
-                        </div>
-                        <p className="text-xs text-[var(--foreground-muted)] mb-4">Install as an app from any modern browser.</p>
-                        {deferredPrompt && !pwaInstalled ? (
-                            <button onClick={handlePWAInstall} className="text-xs text-[#F59E0B] font-bold flex items-center gap-1 hover:underline">
-                                Install app <Download size={14} />
-                            </button>
-                        ) : pwaInstalled ? (
-                            <span className="text-xs text-[var(--success)] font-bold flex items-center gap-1">
-                                <CheckCircle size={14} /> Already installed!
-                            </span>
-                        ) : (
-                            <span className="text-xs text-[var(--foreground-muted)]">Check menu for "Install App"</span>
-                        )}
+                    
+                    <div className="space-y-6 relative">
+                        {/* Connector Line */}
+                        <div className="absolute left-[27px] top-4 bottom-4 w-px bg-gradient-to-b from-amber-500 via-white/5 to-transparent" />
+                        
+                        {[
+                            { title: "Acquire Artifact", desc: "Download the native archive (.apk or .exe) from the anchors above." },
+                            { title: "Security Permission", desc: "If prompted, allow your system or browser to 'Install from unknown sources'." },
+                            { title: "Initialize Core", desc: "Launch the installer or tap the APK to begin the synthesis process." },
+                            { title: "Mastery Entry", desc: "Find 'The Professor' in your apps and log in to sync your archives." }
+                        ].map((step, i) => (
+                            <motion.div 
+                                key={i}
+                                initial={{ x: -20, opacity: 0 }}
+                                whileInView={{ x: 0, opacity: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                className="flex gap-6 relative z-10"
+                            >
+                                <div className="w-14 h-14 rounded-2xl bg-[#0A0A10] border border-white/10 flex items-center justify-center shrink-0 shadow-2xl">
+                                    <span className="text-lg font-black text-amber-500">{i + 1}</span>
+                                </div>
+                                <div className="pt-2">
+                                    <h4 className="text-[15px] font-black text-white mb-1">{step.title}</h4>
+                                    <p className="text-[13px] text-white/40 font-medium leading-relaxed">{step.desc}</p>
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
 
-                {/* Android install guide */}
-                <details className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-2xl p-6 mb-8 group transition-all">
-                    <summary className="cursor-pointer flex items-center justify-between font-semibold text-sm list-none">
-                        <span className="flex items-center gap-2">
-                            <HelpCircle size={18} className="text-[#4CAF50]" />
-                            How to install the Android APK
-                        </span>
-                        <div className="group-open:rotate-180 transition-transform">
-                          <Download size={16} className="rotate-180" />
-                        </div>
-                    </summary>
-                    <div className="mt-4 space-y-3 border-t border-[var(--border)] pt-4">
-                        {[
-                            { icon: <Download size={16} />, text: "Tap the Download APK button above — your browser will download the file" },
-                            { icon: <Globe size={16} />, text: "A notification appears when complete — tap it, or find it in your Downloads folder" },
-                            { icon: <Laptop size={16} />, text: 'If prompted "Install for unknown sources" → tap Settings → toggle ON for browser' },
-                            { icon: <Monitor size={16} />, text: "Tap the APK file → tap Install → wait a few seconds" },
-                            { icon: <CheckCircle size={16} />, text: 'Find "Professor" in your app drawer or on your home screen!' },
-                        ].map((step, i) => (
-                            <div key={i} className="flex items-start gap-3 text-sm text-[var(--foreground-secondary)]">
-                                <span className="text-[#4CAF50] mt-0.5 shrink-0">{step.icon}</span>
-                                {step.text}
-                            </div>
-                        ))}
+                {/* Trust Footer */}
+                <div className="flex flex-col items-center text-center opacity-40">
+                    <div className="flex gap-1 mb-4">
+                        {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" className="text-amber-500" />)}
                     </div>
-                </details>
-
-                {/* Roadmap */}
-                <div className="text-center opacity-60">
-                    <p className="text-[var(--foreground-muted)] text-sm mb-4">Official store coming soon</p>
-                    <div className="flex items-center justify-center gap-6">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
-                            <Monitor size={14} className="text-[var(--foreground-muted)]" />
-                            <span className="text-xs font-medium">Google Play — Q2 2026</span>
-                        </div>
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
-                            <Smartphone size={14} className="text-[var(--foreground-muted)]" />
-                            <span className="text-xs font-medium">App Store — Q3 2026</span>
-                        </div>
-                    </div>
+                    <p className="text-xs font-black uppercase tracking-widest mb-2 text-white">Direct Repository Access</p>
+                    <p className="text-[10px] text-white/30 max-w-xs font-medium">Verify all binaries via the official GitHub repository releases page.</p>
                 </div>
             </div>
         </div>

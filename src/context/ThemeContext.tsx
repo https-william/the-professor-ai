@@ -90,10 +90,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setTheme(newTheme);
     }, [resolvedTheme, setTheme]);
 
-    // Show nothing until mounted to prevent hydration mismatch
-    if (!mounted) {
-        return null;
-    }
+    // Note: We no longer return null here to prevent "Double-Null" hydration blackouts.
+    // The documents will render with the resolvedTheme (default dark) immediately.
 
     return (
         <ThemeContext.Provider value={{ theme, resolvedTheme, toggleTheme, setTheme }}>

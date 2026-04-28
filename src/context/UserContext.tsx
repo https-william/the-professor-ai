@@ -29,17 +29,20 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const store = useUserStore();
-    const supabase = createClient();
+    const supabase = React.useMemo(() => createClient(), []);
 
     useEffect(() => {
+        // Only run on client
+        if (typeof window === 'undefined') return;
+        
         store.refreshUser();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             store.refreshUser();
         });
 
         return () => subscription.unsubscribe();
-    }, [supabase]);
+    }, [supabase, store.refreshUser]);
 
     const addCredits = async (amount: number): Promise<boolean> => {
         try {
@@ -191,7 +194,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         streakResetAt: store.streakResetAt,
         isLoading: store.isLoading,
         isAuthenticated: store.isAuthenticated,
-        hasOnboarded: store.hasOnboarded
+        hasOnboarded: store.hasOnboarded,
+        createdAt: store.createdAt
     };
 
     return (

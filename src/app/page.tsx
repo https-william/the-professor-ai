@@ -1,15 +1,8 @@
-"use client";
-// Force cache invalidation for theme fluidity audit
-
-
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { useTheme } from "@/context/ThemeContext";
 import BrandLogo from "@/components/ui/BrandLogo";
-import SiteHeader from "@/components/ui/SiteHeader";
-import { InteractiveFlashcards } from "@/components/features/InteractiveFlashcards";
-import { InteractiveQuiz } from "@/components/features/InteractiveQuiz";
-import { InteractiveSummary } from "@/components/features/InteractiveSummary";
+import LandingFeatures from "@/components/landing/LandingFeatures";
+
 import { 
   Zap, 
   Layers, 
@@ -33,14 +26,6 @@ import LandingPricing from "@/components/landing/LandingPricing";
 import FAQ from "@/components/landing/FAQ";
 
 export default function LandingPage() {
-  const { resolvedTheme, toggleTheme } = useTheme();
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
     <>
@@ -66,15 +51,15 @@ export default function LandingPage() {
         {/* Header Scroll Sentinel */}
         <div data-header-sentinel className="absolute top-0 left-0 h-1 w-full pointer-events-none" />
         
-        {/* Headline */}
-        <h1 className="text-center leading-[1.08] mb-6 md:mb-8 animate-fade-in-up">
+        {/* Headline — Certified Galaxie Copernicus */}
+        <h1 className="text-center leading-[1.08] mb-6 md:mb-8 animate-fade-in-up font-heading">
           {/* Line 1: "Learning is as" */}
-          <span className="block font-heading text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold text-[var(--foreground)] tracking-tight">
+          <span className="block font-bold text-[var(--foreground)] tracking-tight" style={{ fontSize: "var(--text-h1)" }}>
             Learning is as
           </span>
 
           {/* Line 2: "simple as  ~~ABC~~  XYZ." */}
-          <span className="block font-heading text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tight mt-1">
+          <span className="block font-bold tracking-tight mt-1" style={{ fontSize: "var(--text-h1)" }}>
             {/* "simple as " — purple gradient */}
             <span
               style={{
@@ -89,7 +74,7 @@ export default function LandingPage() {
 
             {/* "ABC" — crossed out, floating */}
             <span className="relative inline-block text-base sm:text-xl md:text-2xl lg:text-3xl mx-0.5 md:mx-1 align-middle animate-float-abc">
-              <span className="font-heading font-bold text-[var(--foreground)] opacity-15">ABC</span>
+              <span className="font-bold text-[var(--foreground)] opacity-15">ABC</span>
               <span
                 className="absolute left-[-3px] right-[-3px] top-1/2 h-[1.5px] md:h-[2px] -rotate-12 pointer-events-none"
                 style={{ background: "linear-gradient(90deg, rgba(239,68,68,0.7), rgba(239,68,68,0.25))" }}
@@ -98,8 +83,9 @@ export default function LandingPage() {
 
             {/* "XYZ." — rainbow + shimmer + float */}
             <span
-              className="inline-block text-5xl sm:text-6xl md:text-8xl lg:text-[7rem]"
+              className="inline-block"
               style={{
+                fontSize: "calc(var(--text-h1) * 1.2)",
                 background: "linear-gradient(90deg, #818cf8, #c084fc, #f472b6, #fb923c, #facc15, #818cf8)",
                 backgroundSize: "200% auto",
                 WebkitBackgroundClip: "text",
@@ -129,11 +115,6 @@ export default function LandingPage() {
           <Link href="/signup" className="btn-jelly text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center group font-bold">
             Start Session
             <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-          
-          <Link href="/download" className="btn-skeuo text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center flex items-center gap-2 text-[var(--foreground)]/80 hover:text-[var(--foreground)] transition-colors group">
-            Download App
-            <Download size={18} strokeWidth={1.5} className="text-[var(--accent)] group-hover:translate-y-0.5 transition-transform" />
           </Link>
         </div>
 
@@ -326,71 +307,11 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          {/* Bento Grid — asymmetric layout */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5 auto-rows-auto">
-
-            {/* ─── FLASHCARDS — wide hero card (spans 7 cols) ─── */}
-            <div className="clay-card md:col-span-7 p-6 md:p-8 group cursor-default relative overflow-visible h-[500px] flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="relative z-10 w-full md:w-[45%]">
-                <div className="flex items-center gap-2 mb-3">
-                  <Layers className="w-5 h-5 text-[#F59E0B]" strokeWidth={1.5} />
-                  <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#F59E0B]/70">Most Popular</span>
-                </div>
-                <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
-                  Flashcards
-                </h3>
-                <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
-                  Spaced-repetition cards with mnemonic hooks. Not just Q&A — built to make concepts stick.
-                </p>
-              </div>
-
-              <div className="relative w-full md:w-[50%] h-full flex flex-col z-20 overflow-visible">
-                <InteractiveFlashcards />
-              </div>
-            </div>
-
-            {/* ─── QUIZ ENGINE — tall narrow card (spans 5 cols) ─── */}
-            <div className="clay-card md:col-span-5 p-6 md:p-8 group cursor-default relative overflow-visible min-h-[400px] flex flex-col">
-              <div className="relative z-10 mb-5 md:mb-1">
-                <HelpCircle className="w-6 h-6 text-[#818CF8] mb-3 block" strokeWidth={1.5} />
-                <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
-                  Quiz Engine
-                </h3>
-                <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
-                  Adaptive MCQs with distractors designed to probe real understanding.
-                </p>
-              </div>
-
-              {/* Interactive Visual */}
-              <div className="mt-auto md:h-full w-full pointer-events-auto z-20 relative">
-                  <InteractiveQuiz />
-              </div>
-            </div>
-
-            {/* ─── SMART SUMMARY — wide bottom-left (spans full width) ─── */}
-            <div className="clay-card md:col-span-12 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[200px] md:min-h-[240px] flex flex-col md:flex-row md:items-center gap-8">
-              <div className="relative z-10 mb-5 md:mb-0 md:w-[45%]">
-                <FileText className="w-6 h-6 text-[#6366F1] mb-3 block" strokeWidth={1.5} />
-                <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
-                  Smart Summary
-                </h3>
-                <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
-                  Organized by concept, not page order. Includes common mistakes section.
-                </p>
-              </div>
-
-              {/* Interactive Visual components */}
-              <div className="mt-auto md:w-1/2 md:ml-auto md:h-full pointer-events-auto z-20 relative overflow-visible">
-                 <InteractiveSummary />
-              </div>
-            </div>
-
-          </div>
+          <LandingFeatures />
         </div>
       </section>
 
       <Testimonials />
-      <LandingPricing />
       <FAQ />
 
       {/* ═══════════════════════════════════════════════
@@ -477,15 +398,8 @@ export default function LandingPage() {
                     className="btn-skeuo-primary justify-center group"
                     style={{ fontSize: "clamp(0.85rem, 1.25vw, 1rem)", padding: "clamp(0.875rem, 1.5vw, 1.1rem) clamp(1.75rem, 3.5vw, 2.75rem)" }}
                   >
-                    Get 100 Free Credits
+                    Get Started for Free
                     <Zap className="w-[18px] h-[18px] group-hover:rotate-12 transition-transform ml-1" strokeWidth={1.5} />
-                  </Link>
-                  <Link
-                    href="/login"
-                    className="btn-skeuo justify-center"
-                    style={{ fontSize: "clamp(0.85rem, 1.25vw, 1rem)", padding: "clamp(0.875rem, 1.5vw, 1.1rem) clamp(1.75rem, 3.5vw, 2.75rem)" }}
-                  >
-                    Already have an account?
                   </Link>
                 </div>
 
@@ -513,52 +427,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          FOOTER — Layered with frosted separator
-         ═══════════════════════════════════════════════ */}
-      <footer className="relative z-10" style={{ paddingBlock: "clamp(2rem, 4vw, 3.5rem)" }}>
-        {/* Frosted separator line */}
-        <div className="mx-auto mb-8" style={{
-          maxWidth: "clamp(200px, 30vw, 400px)",
-          height: "1px",
-          background: `linear-gradient(90deg, transparent, var(--border), var(--accent-glow), var(--border), transparent)`,
-        }} />
-
-        <div className="max-w-5xl mx-auto px-5 md:px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Left — Brand */}
-            <div className="flex items-center gap-2.5">
-              <BrandLogo size="sm" />
-              <span className="font-semibold text-[var(--foreground-muted)]" style={{ fontSize: "clamp(0.75rem, 1.2vw, 0.9rem)" }}>
-                The Professor
-              </span>
-            </div>
-
-            {/* Center — Links */}
-            <div className="flex items-center gap-6">
-              {[
-                { label: "Features", href: "#how-it-works" },
-                { label: "Pricing", href: "/settings/billing" },
-                { label: "Privacy", href: "#" },
-              ].map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
-                  style={{ fontSize: "clamp(0.7rem, 1vw, 0.8rem)" }}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-
-            {/* Right — Copyright */}
-            <p className="text-[var(--foreground-muted)] opacity-50" style={{ fontSize: "clamp(0.65rem, 0.9vw, 0.75rem)" }}>
-              © 2026 The Professor
-            </p>
-          </div>
-        </div>
-      </footer>
+      {/* Old Footer removed to prevent duplication. Global Footer handles this. */}
       </main>
     </>
   );

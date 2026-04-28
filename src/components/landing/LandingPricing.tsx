@@ -44,7 +44,7 @@ export default function LandingPricing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[var(--space-md)]">
           {plans.map((plan, i) => (
             <div 
               key={i} 

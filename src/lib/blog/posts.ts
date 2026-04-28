@@ -68,7 +68,7 @@ Stop re-reading. Start recalling. Your future exam-taking self will thank you.
     category: "Study Techniques",
     tags: ["active recall", "memory", "study tips", "science of learning"],
     coverGradient: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-    icon: "psychology",
+    icon: "Brain",
     featured: true,
   },
   {
@@ -116,7 +116,7 @@ AI study tools are powerful when they make you **do more cognitive work**, not l
     category: "EdTech",
     tags: ["AI", "study tools", "education technology", "learning"],
     coverGradient: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
-    icon: "smart_toy",
+    icon: "Bot",
   },
   {
     slug: "spaced-repetition-explained",
@@ -176,7 +176,7 @@ Start today. Your exam-month self will feel like a genius.
     category: "Study Techniques",
     tags: ["spaced repetition", "memory", "flashcards", "Ebbinghaus"],
     coverGradient: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-    icon: "event_repeat",
+    icon: "Calendar",
     featured: true,
   },
   {
@@ -232,7 +232,7 @@ You don't need to read every paper thoroughly. You need to read the right papers
     category: "Academic Skills",
     tags: ["academic papers", "reading strategies", "research", "study skills"],
     coverGradient: "linear-gradient(135deg, #EC4899 0%, #DB2777 100%)",
-    icon: "description",
+    icon: "FileText",
   },
   {
     slug: "feynman-technique-guide",
@@ -287,7 +287,140 @@ If you can explain it simply, you understand it deeply. If you can't, you know e
     category: "Study Techniques",
     tags: ["Feynman technique", "learning", "teaching", "deep understanding"],
     coverGradient: "linear-gradient(135deg, #F97316 0%, #EA580C 100%)",
-    icon: "lightbulb",
+    icon: "Lightbulb",
+  },
+  {
+    slug: "memory-palace-technique",
+    title: "Memory Palaces: Lock Your Knowledge in Virtual Rooms",
+    excerpt: "Ancient Roman orators used this spatial technique to remember three-hour speeches. Here is how you can use it to ace your finals.",
+    content: `
+## Spatial Memory is Your Superpower
+
+Ever notice how you can perfectly remember the layout of your childhood home, but you can't remember a single date from history class? That's because humans evolved to navigate physical spaces, not abstract facts.
+
+The **Method of Loci** (or Memory Palace) hacks this evolution.
+
+## How to Build Your First Palace
+
+1. **Choose a familiar place**: Your bedroom, your school, or your favorite park.
+2. **Define a path**: Decide exactly how you'll walk through this space. Start at the door, move to the bed, then the desk, etc.
+3. **Place your "vivid" items**: Turn abstract facts into bizarre, colorful, or funny images.
+4. **Walk through it**: In your mind, walk the path and look at each image.
+
+## Why "The Professor" Recommends It
+
+The Professor's AI can help you generate these vivid images. If you're struggling to remember the steps of Mitosis, ask The Professor: "Help me create a memory palace for Mitosis." It will turn Prophase into a giant 'P' anchor in your kitchen, and Metaphase into a 'M' meeting in your living room.
+
+## The Bottom Line
+
+Don't memorize lists. Build houses. The more ridiculous the images in your palace, the longer you'll remember them.
+    `,
+    author: "The Professor",
+    date: "2026-04-10",
+    readTime: "5 min read",
+    category: "Study Techniques",
+    tags: ["memory palace", "mnemonics", "learning science"],
+    coverGradient: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+    icon: "Home",
+  },
+  {
+    slug: "procrastination-loop-fix",
+    title: "Breaking the Procrastination Loop with AI Planning",
+    excerpt: "Procrastination isn't about laziness; it's about emotional regulation. Let's use AI to lower the barrier to starting.",
+    content: `
+## Why You Procrastinate
+
+We procrastinate because a task feels too big, too scary, or too boring. Your brain sees the giant "Write Research Paper" task and triggers a fight-or-flight response. 
+
+The secret to stopping is **lowering the friction of the first step**.
+
+## Enter AI Planning
+
+The Professor's planner doesn't just say "Study." It breaks the task into 15-minute microscopic steps:
+- "Open the PDF"
+- "Read the first two paragraphs"
+- "Generate one flashcard"
+
+Suddenly, the "Research Paper" isn't a mountain. It's a series of pebbles.
+
+## The 2-Minute Rule
+
+If a task takes less than 2 minutes, do it now. If it takes longer, ask The Professor to "break this down into 2-minute steps." 
+
+## The Bottom Line
+
+You don't need more discipline. You need a smaller starting line. Use AI to build that line for you.
+    `,
+    author: "The Professor",
+    date: "2026-04-12",
+    readTime: "4 min read",
+    category: "Academic Skills",
+    tags: ["procrastination", "productivity", "AI tools"],
+    coverGradient: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
+    icon: "Zap",
+  },
+  {
+    slug: "writing-better-essays-bloom",
+    title: "Writing Better Essays with Bloom's Taxonomy",
+    excerpt: "Stop just describing facts. Start evaluating them. Here is how to use higher-order thinking to jump from a B to an A.",
+    content: `
+## The Levels of Thinking
+
+Most students write at the **Knowledge** and **Comprehension** levels. They describe what happened and explain why. That's a B-grade essay.
+
+To get an A, you need to reach the top of Bloom's Taxonomy: **Analysis, Synthesis, and Evaluation**.
+
+## Moving Up the Pyramid
+
+- **Analysis**: Don't just say "The economy crashed." Ask "How did the interaction between housing prices and interest rates cause the crash?"
+- **Evaluation**: Don't just explain a theory. Critique it. "While Smith's theory works in short-term markets, it fails to account for long-term climate impacts."
+
+## How The Professor Helps
+
+Ask The Professor: "Evaluate my essay intro using Bloom's Taxonomy." It will tell you if you're stuck at the 'Understanding' level and suggest how to add 'Critical Evaluation'.
+
+## The Bottom Line
+
+The best writers don't have better vocabulary; they have better questions. Use Bloom's Taxonomy to ask those questions.
+    `,
+    author: "The Professor",
+    date: "2026-04-14",
+    readTime: "6 min read",
+    category: "Academic Skills",
+    tags: ["essay writing", "critical thinking", "Bloom's taxonomy"],
+    coverGradient: "linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)",
+    icon: "PenTool",
+  },
+  {
+    slug: "science-of-sleep-study",
+    title: "The Science of Sleep: The Ultimate Study Technique",
+    excerpt: "While you sleep, your brain is busy 'replaying' what you learned that day. Learn why pulling an all-nighter is academic suicide.",
+    content: `
+## Memory Consolidation Happens at Night
+
+Think of your brain like a shelf. During the day, you're throwing books on the floor. During sleep, your brain picks them up and organizes them into the library. 
+
+If you don't sleep, the books stay on the floor. You haven't truly "learned" anything until you've slept on it.
+
+## The All-Nighter Myth
+
+Pulling an all-nighter reduces your cognitive performance to that of someone who is legally intoxicated. Your ability to recall information drops by up to 40%.
+
+## The Professor's Sleep Tip
+
+Don't study new material right before bed if it makes you anxious. Instead, review **The Professor's flashcards** 30 minutes before sleep. This signals to your brain that this specific information is high priority for consolidation.
+
+## The Bottom Line
+
+Sleep is not a luxury. It is a biological necessity for long-term memory. Go to bed.
+    `,
+    author: "The Professor",
+    date: "2026-04-16",
+    readTime: "5 min read",
+    category: "Study Techniques",
+    tags: ["sleep science", "biology", "health", "study tips"],
+    coverGradient: "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
+    icon: "Moon",
   },
 ];
 

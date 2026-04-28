@@ -27,6 +27,7 @@ export interface UserState {
     isLoading: boolean;
     isAuthenticated: boolean;
     hasOnboarded: boolean;
+    createdAt: string | null;
 }
 
 export interface UserStore extends UserState {
@@ -59,6 +60,7 @@ export const defaultUser: UserState = {
     isLoading: true,
     isAuthenticated: false,
     hasOnboarded: true,
+    createdAt: null,
 };
 
 export const useUserStore = create<UserStore>()(
@@ -68,86 +70,86 @@ export const useUserStore = create<UserStore>()(
             updateUser: (updates) => set((state) => ({ ...state, ...updates })),
             
             refreshUser: async () => {
+                // Prevent concurrent refreshes which cause AbortErrors and race conditions
+                if (get().isLoading) return;
+                
                 const supabase = createClient();
+                set({ isLoading: true });
+
                 try {
-                    const { data: { session } } = await supabase.auth.getSession();
+                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-                    if (!session?.user) {
+                    if (sessionError || !session?.user) {
+                        // Only clear if we're sure there's no session
                         set({ ...defaultUser, isLoading: false, isAuthenticated: false, hasOnboarded: true });
                         return;
                     }
         
-                    // Fetch profile from API with retry logic
-                    let retries = 2;
+                    // Fetch profile from API with strict timeout
                     let profile = null;
                     let email = session.user.email;
         
-                    while (retries > 0) {
-                        try {
-                            const res = await fetch("/api/user/profile", {
-                                signal: AbortSignal.timeout(10000)
-                            });
-                            if (res.ok) {
-                                const data = await res.json();
-                                profile = data.profile;
-                                email = data.email || email;
-                                break;
-                            }
-                        } catch (fetchError: any) {
-                            if (fetchError.name === 'AbortError') return;
-                            console.warn(`Profile fetch attempt failed, ${retries - 1} retries left`);
-                        }
-                        retries--;
-                    }
-        
-                    // Fetch social stats
-                    let socialStats = null;
                     try {
-                        const socialRes = await fetch("/api/leaderboard", {
-                            signal: AbortSignal.timeout(5000)
+                        const controller = new AbortController();
+                        const id = setTimeout(() => controller.abort(), 6000); 
+
+                        const res = await fetch("/api/user/profile", {
+                            signal: controller.signal
                         });
-                        if (socialRes.ok) {
-                            const socialData = await socialRes.json();
-                            if (socialData.userRank) {
-                                socialStats = socialData.userRank;
-                            }
+                        clearTimeout(id);
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            profile = data.profile;
+                            email = data.email || email;
                         }
-                    } catch (err: any) {
-                        if (err.name !== 'AbortError') {
-                            console.warn("Social stats fetch failed");
+                    } catch (fetchError: any) {
+                        if (fetchError.name === 'AbortError') {
+                            console.warn("[UserStore] Profile fetch timed out or was aborted, using session data.");
+                        } else {
+                            console.warn("[UserStore] Profile fetch failed:", fetchError);
                         }
                     }
         
-                    // Use session data as fallback if profile fetch fails
+                    // Apply state with session data as baseline to prevent "logout on fail"
                     set({
-                        id: profile?.id || session.user.id,
-                        name: profile?.alias || profile?.first_name || email?.split("@")[0] || "Scholar",
-                        firstName: profile?.first_name || "",
-                        lastName: profile?.last_name || "",
-                        username: profile?.username || "",
-                        age: profile?.age || 0,
-                        email: email || "",
-                        avatar: profile?.avatar_url || (email?.[0] || "S").toUpperCase(),
-                        streak: profile?.current_streak || profile?.streak || 0,
-                        credits: profile?.credits || 100,
-                        xp: profile?.xp_total || profile?.xp || 0,
-                        rank: socialStats?.rank || 0,
-                        wins: socialStats?.wins || 0,
-                        losses: socialStats?.losses || 0,
-                        winRate: socialStats?.winRate || 0,
-                        duelXp: socialStats?.duelXp || 0,
-                        socialLevel: socialStats?.socialLevel || 1,
-                        rankTitle: socialStats?.rankTitle || "Novice",
-                        streakFreezeCount: profile?.streak_freeze_count || 0,
-                        lastStreak: profile?.last_streak || 0,
-                        streakResetAt: profile?.streak_reset_at || null,
+                        id: session.user.id,
+                        email: email || session.user.email || "",
+                        name: profile?.alias || profile?.first_name || session.user.email?.split("@")[0] || get().name || "Scholar",
+                        firstName: profile?.first_name || get().firstName || "",
+                        lastName: profile?.last_name || get().lastName || "",
+                        username: profile?.username || get().username || "",
+                        age: profile?.age || get().age || 0,
+                        avatar: profile?.avatar_url || (session.user.email?.[0] || "S").toUpperCase(),
+                        streak: profile?.current_streak ?? profile?.streak ?? get().streak ?? 0,
+                        credits: profile?.credits ?? get().credits ?? 100,
+                        xp: profile?.xp_total ?? profile?.xp ?? get().xp ?? 0,
                         isLoading: false,
                         isAuthenticated: true,
-                        hasOnboarded: profile ? profile.has_onboarded : true, 
+                        hasOnboarded: profile ? !!profile.has_onboarded : get().hasOnboarded,
+                        createdAt: session.user.created_at || get().createdAt || null,
+                        // Maintain existing stats if new ones are missing
+                        streakFreezeCount: profile?.streak_freeze_count ?? get().streakFreezeCount ?? 0,
+                        lastStreak: profile?.last_streak ?? get().lastStreak ?? 0,
+                        streakResetAt: profile?.streak_reset_at ?? get().streakResetAt ?? null,
                     });
-                } catch (error) {
-                    console.error("Error fetching user:", error);
-                    set({ ...defaultUser, isLoading: false, isAuthenticated: false, hasOnboarded: true });
+
+                } catch (error: any) {
+                    // Log the error but DON'T log out the user if it's just a network/signal issue
+                    console.error("Non-critical error in refreshUser:", error);
+                    
+                    // If we get an AbortError here, it means getSession() was aborted.
+                    // We should just stop loading but keep the current state (which is persisted)
+                    if (error.name === 'AbortError') {
+                        set({ isLoading: false });
+                    } else {
+                        // For other critical errors, we still keep the current state if it's already authenticated
+                        if (!get().isAuthenticated) {
+                            set({ ...defaultUser, isLoading: false, isAuthenticated: false });
+                        } else {
+                            set({ isLoading: false });
+                        }
+                    }
                 }
             }
         }),

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { HelpCircle, Book, MessageCircle, Mail, ExternalLink, ChevronRight } from "lucide-react";
 
 const faqs = [
-    { q: "How do I upload study materials?", a: "You can upload PDFs, documents, and notes directly in the Professor chat or Library page." },
+    { q: "How do I upload study materials?", a: "You can upload PDFs, documents, and notes directly in the Creation Studio or Library page." },
     { q: "What file types are supported?", a: "We support PDF, DOCX, TXT, MD, PPTX, and CSV files." },
     { q: "How does the Arena work?", a: "The Arena lets you test your knowledge with AI-generated quizzes based on your study materials." },
     { q: "Is my data secure?", a: "Yes, all your data is encrypted and stored securely. We never share your information." },

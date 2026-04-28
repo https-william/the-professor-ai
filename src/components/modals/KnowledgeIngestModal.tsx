@@ -163,8 +163,8 @@ export default function KnowledgeIngestModal({ onSuccess }: KnowledgeIngestModal
                                     <Upload className={`w-8 h-8 ${dragActive ? 'text-[#F59E0B]' : 'text-white/20'}`} />
                                 </div>
                                 <h4 className="text-[15px] font-bold text-white/70 mb-1">Drop notes here</h4>
-                                <p className="text-[11px] text-white/20 uppercase tracking-widest font-black">PDF, Word, or Markdown</p>
-                                <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md" />
+                                <p className="text-[11px] text-white/20 uppercase tracking-widest font-black uppercase">Any document, image, or spreadsheet</p>
+                                <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
                             </div>
                         </label>
 

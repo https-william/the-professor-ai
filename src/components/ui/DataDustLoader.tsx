@@ -1,189 +1,319 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+/**
+ * DataDustLoader — The Professor's Signature Generation Screen
+ *
+ * Design language: "Midnight Scholar at 3 AM"
+ * - Warm amber identity, no purple
+ * - Academic / archival aesthetic — ink, paper, calligraphy
+ * - CSS-driven animation for reliability; Framer Motion for phrase swap
+ * - Full-screen centered; passes through context-specific phrases
+ */
+
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface DataDustLoaderProps {
-  phrases?: string[];
-  currentPhraseIndex?: number;
+    phrases?: string[];
+    currentPhraseIndex?: number;
+    /** Optional label shown above the phrase, e.g. "Building Practice Exam" */
+    label?: string;
 }
 
 const DEFAULT_PHRASES = [
-  "Ingesting complex data payloads...",
-  "Applying active recall matrices...",
-  "Spinning up the Professor...",
-  "Encoding memories...",
+    "Consulting the archives...",
+    "Distilling key concepts...",
+    "Encoding academic payloads...",
+    "Applying active recall matrices...",
 ];
 
-export default function DataDustLoader({ 
-    phrases = DEFAULT_PHRASES, 
-    currentPhraseIndex = 0 
-}: DataDustLoaderProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// --- Minimal canvas: slow drifting ink motes (< 50 particles, very light) ---
+function InkMoteCanvas() {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-    // Set canvas dimensions
-    let width = canvas.width = canvas.parentElement?.clientWidth || 300;
-    let height = canvas.height = 300; // Fixed inner height
+        let raf: number;
+        let W = (canvas.width  = canvas.offsetWidth);
+        let H = (canvas.height = canvas.offsetHeight);
 
-    // Handle resize
-    const handleResize = () => {
-      width = canvas.width = canvas.parentElement?.clientWidth || 300;
-      height = canvas.height = 300;
-    };
-    window.addEventListener("resize", handleResize);
+        const onResize = () => {
+            W = canvas.width  = canvas.offsetWidth;
+            H = canvas.height = canvas.offsetHeight;
+        };
+        window.addEventListener("resize", onResize);
 
-    // Particle system
-    const particles: any[] = [];
-    const particleCount = 80;
-    
-    // Amber and Emerald palette
-    const colors = ["#F59E0B", "#10B981", "#D97706", "#047857"];
+        // Warm amber + deep teal palette — no purple
+        const COLORS = ["rgba(245,158,11,", "rgba(251,191,36,", "rgba(16,185,129,", "rgba(217,119,6,"];
 
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 1.5,
-        vy: (Math.random() - 0.5) * 1.5,
-        radius: Math.random() * 2 + 0.5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        alpha: Math.random() * 0.5 + 0.2
-      });
-    }
+        const motes = Array.from({ length: 48 }, () => ({
+            x:   Math.random() * W,
+            y:   Math.random() * H,
+            r:   Math.random() * 1.8 + 0.4,
+            vx:  (Math.random() - 0.5) * 0.4,
+            vy:  (Math.random() - 0.5) * 0.4,
+            a:   Math.random() * 0.45 + 0.1,
+            col: COLORS[Math.floor(Math.random() * COLORS.length)],
+        }));
 
-    let animationFrameId: number;
+        const render = () => {
+            ctx.clearRect(0, 0, W, H);
 
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
+            // Draw gossamer connections
+            for (let i = 0; i < motes.length; i++) {
+                for (let j = i + 1; j < motes.length; j++) {
+                    const dx = motes[i].x - motes[j].x;
+                    const dy = motes[i].y - motes[j].y;
+                    const d  = Math.sqrt(dx * dx + dy * dy);
+                    if (d < 70) {
+                        ctx.beginPath();
+                        ctx.moveTo(motes[i].x, motes[i].y);
+                        ctx.lineTo(motes[j].x, motes[j].y);
+                        ctx.strokeStyle = `rgba(245,158,11,${0.09 * (1 - d / 70)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
 
-      // Draw connections
-      for (let i = 0; i < particleCount; i++) {
-        for (let j = i + 1; j < particleCount; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
+            // Draw motes
+            for (const m of motes) {
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+                ctx.fillStyle = `${m.col}${m.a})`;
+                ctx.fill();
 
-          if (distance < 60) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(245, 158, 11, ${0.15 * (1 - distance / 60)})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.stroke();
-          }
-        }
-      }
+                m.x += m.vx;
+                m.y += m.vy;
+                if (m.x < 0 || m.x > W) m.vx *= -1;
+                if (m.y < 0 || m.y > H) m.vy *= -1;
+            }
 
-      // Draw and update particles
-      for (let i = 0; i < particleCount; i++) {
-        const p = particles[i];
-        
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha * 0.8;
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
+            raf = requestAnimationFrame(render);
+        };
 
-        p.x += p.vx;
-        p.y += p.vy;
+        render();
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener("resize", onResize);
+        };
+    }, []);
 
-        // Bounce off walls
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
-      }
-
-      // Draw central orbital ring
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const time = Date.now() * 0.001;
-      
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(16, 185, 129, 0.2)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Orbiting node
-      const orbX = centerX + Math.cos(time * 2) * 40;
-      const orbY = centerY + Math.sin(time * 2) * 40;
-      
-      ctx.beginPath();
-      ctx.arc(orbX, orbY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = "#10B981";
-      ctx.fill();
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  const currentPhrase = phrases[currentPhraseIndex % phrases.length];
-
-  return (
-    <div className="w-full max-w-md mx-auto flex flex-col items-center">
-      {/* Canvas Container */}
-      <div className="relative w-full h-[300px] mb-8 flex items-center justify-center">
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#06060B] to-transparent z-10 pointer-events-none" />
-        <canvas 
-          ref={canvasRef} 
-          className="absolute inset-0 w-full h-full object-cover rounded-3xl opacity-80"
-          style={{ mixBlendMode: "screen" }}
+    return (
+        <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full"
+            style={{ opacity: 0.6, mixBlendMode: "screen" }}
         />
-        
-        {/* Core Jewel */}
-        <motion.div 
-            className="absolute z-20 w-16 h-16 rounded-full flex items-center justify-center border border-white/10 glass-card"
-            animate={{ 
-                boxShadow: ["0 0 20px rgba(245,158,11,0.2)", "0 0 50px rgba(16,185,129,0.4)", "0 0 20px rgba(245,158,11,0.2)"],
-                scale: [1, 1.05, 1]
-            }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        >
-            <Sparkles size={24} strokeWidth={1.5} className="text-white/80 animate-pulse" />
-        </motion.div>
-      </div>
+    );
+}
 
-      {/* Dynamic Text Stream */}
-      <div className="w-full bg-[#0A0A0F]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-5 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-white/5 overflow-hidden">
-             <motion.div 
-                className="h-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent"
-                initial={{ x: "-100%" }}
-                animate={{ x: "200%" }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-             />
+// --- Orbiting ring SVG (pure CSS animation, no JS) ---
+function OrbitRing() {
+    return (
+        <div className="relative w-24 h-24 flex items-center justify-center">
+            {/* Outer slow ring */}
+            <svg
+                className="absolute inset-0 w-full h-full"
+                style={{ animation: "professor-spin 6s linear infinite" }}
+                viewBox="0 0 96 96"
+            >
+                <circle
+                    cx="48" cy="48" r="44"
+                    fill="none"
+                    stroke="rgba(245,158,11,0.15)"
+                    strokeWidth="1"
+                    strokeDasharray="12 6"
+                />
+                {/* Amber traveller node */}
+                <circle
+                    cx="48" cy="4" r="3.5"
+                    fill="#F59E0B"
+                    style={{ filter: "drop-shadow(0 0 6px rgba(245,158,11,0.8))" }}
+                />
+            </svg>
+
+            {/* Inner counter-spin */}
+            <svg
+                className="absolute w-14 h-14"
+                style={{ animation: "professor-spin 3.5s linear infinite reverse" }}
+                viewBox="0 0 56 56"
+            >
+                <circle
+                    cx="28" cy="28" r="24"
+                    fill="none"
+                    stroke="rgba(16,185,129,0.18)"
+                    strokeWidth="1"
+                    strokeDasharray="4 10"
+                />
+                <circle
+                    cx="28" cy="4" r="2.5"
+                    fill="#10B981"
+                    style={{ filter: "drop-shadow(0 0 5px rgba(16,185,129,0.9))" }}
+                />
+            </svg>
+
+            {/* Core glyph — scholarly quill/ink */}
+            <div
+                className="relative z-10 w-10 h-10 rounded-2xl flex items-center justify-center"
+                style={{
+                    background: "radial-gradient(circle, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0.04) 100%)",
+                    border: "1px solid rgba(245,158,11,0.2)",
+                    boxShadow: "0 0 24px rgba(245,158,11,0.15), inset 0 1px 1px rgba(255,255,255,0.06)",
+                    animation: "professor-pulse 2.4s ease-in-out infinite",
+                }}
+            >
+                <span style={{ fontSize: "18px", lineHeight: 1 }}>🎓</span>
+            </div>
         </div>
-        
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F59E0B]/50 mb-2">Neural Link Active</p>
-        <motion.div 
-            key={currentPhraseIndex} // Forces re-animation on phrase change
-            initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            className="font-mono text-sm text-white/80 tracking-tight"
-        >
-          {">"} {currentPhrase}
-          <motion.span 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            transition={{ repeat: Infinity, duration: 0.8, repeatType: "reverse" }}
-          >_</motion.span>
-        </motion.div>
-      </div>
-    </div>
-  );
+    );
+}
+
+// --- Step dots that fill in as time passes ---
+const STEPS = ["Reading", "Thinking", "Writing", "Finishing"];
+
+export default function DataDustLoader({
+    phrases = DEFAULT_PHRASES,
+    currentPhraseIndex = 0,
+    label,
+}: DataDustLoaderProps) {
+    const [stepIdx, setStepIdx] = useState(0);
+
+    // Advance step dot every ~3 s
+    useEffect(() => {
+        const id = setInterval(() => {
+            setStepIdx(p => Math.min(p + 1, STEPS.length - 1));
+        }, 3000);
+        return () => clearInterval(id);
+    }, []);
+
+    const phrase = phrases[currentPhraseIndex % phrases.length];
+
+    return (
+        <>
+            {/* Keyframes injected once via a style tag */}
+            <style>{`
+                @keyframes professor-spin {
+                    from { transform: rotate(0deg); }
+                    to   { transform: rotate(360deg); }
+                }
+                @keyframes professor-pulse {
+                    0%, 100% { box-shadow: 0 0 24px rgba(245,158,11,0.15), inset 0 1px 1px rgba(255,255,255,0.06); }
+                    50%       { box-shadow: 0 0 40px rgba(245,158,11,0.30), inset 0 1px 1px rgba(255,255,255,0.06); }
+                }
+                @keyframes professor-shimmer {
+                    from { transform: translateX(-100%); }
+                    to   { transform: translateX(200%); }
+                }
+            `}</style>
+
+            <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden"
+                style={{ background: "var(--background)" }}>
+
+                {/* Canvas backdrop */}
+                <div className="absolute inset-0">
+                    <InkMoteCanvas />
+                </div>
+
+                {/* Radial warm glow behind the ring */}
+                <div
+                    className="absolute rounded-full pointer-events-none"
+                    style={{
+                        width: "320px", height: "320px",
+                        background: "radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%)",
+                    }}
+                />
+
+                {/* Main card */}
+                <div
+                    className="relative z-10 flex flex-col items-center gap-10 px-8 py-10 mx-4"
+                    style={{ maxWidth: "420px", width: "100%" }}
+                >
+                    {/* Orbital graphic */}
+                    <OrbitRing />
+
+                    {/* Text block */}
+                    <div className="w-full text-center space-y-3">
+                        {label && (
+                            <p
+                                className="text-[10px] font-black uppercase tracking-[0.25em]"
+                                style={{ color: "var(--accent)", opacity: 0.7 }}
+                            >
+                                {label}
+                            </p>
+                        )}
+
+                        {/* Rotating phrase */}
+                        <div className="h-7 flex items-center justify-center overflow-hidden">
+                            <AnimatePresence mode="wait">
+                                <motion.p
+                                    key={phrase}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{   opacity: 0, y: -8 }}
+                                    transition={{ type: "tween", duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
+                                    className="text-[15px] font-semibold"
+                                    style={{ color: "var(--foreground)", fontFamily: "var(--font-tiempos, Georgia, serif)" }}
+                                >
+                                    {phrase}
+                                </motion.p>
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Animated amber progress bar */}
+                        <div
+                            className="relative h-[2px] w-48 mx-auto rounded-full overflow-hidden"
+                            style={{ background: "var(--border)" }}
+                        >
+                            <div
+                                className="absolute inset-y-0 left-0 rounded-full"
+                                style={{
+                                    width: "40%",
+                                    background: "var(--accent)",
+                                    animation: "professor-shimmer 1.8s ease-in-out infinite",
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Step progress dots */}
+                    <div className="flex items-center gap-6">
+                        {STEPS.map((step, i) => {
+                            const done   = i <  stepIdx;
+                            const active = i === stepIdx;
+                            return (
+                                <div key={step} className="flex flex-col items-center gap-1.5">
+                                    <motion.div
+                                        animate={active ? { scale: [1, 1.3, 1] } : {}}
+                                        transition={{ repeat: Infinity, duration: 1.2 }}
+                                        className="w-2 h-2 rounded-full"
+                                        style={{
+                                            background: done || active
+                                                ? "var(--accent)"
+                                                : "var(--foreground-muted)",
+                                            opacity: done ? 1 : active ? 1 : 0.3,
+                                            boxShadow: active ? "0 0 8px var(--accent)" : "none",
+                                        }}
+                                    />
+                                    <span
+                                        className="text-[9px] font-bold uppercase tracking-wider"
+                                        style={{
+                                            color: active ? "var(--accent)" : "var(--foreground-muted)",
+                                            opacity: done || active ? 1 : 0.35,
+                                        }}
+                                    >
+                                        {step}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
 }

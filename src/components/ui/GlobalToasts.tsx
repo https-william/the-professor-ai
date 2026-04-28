@@ -113,15 +113,14 @@ export function ToastContainer() {
     // Listen for Realtime Broadcasts
     useEffect(() => {
         const supabase = createClient();
-        const channel = supabase.channel('realtime_broadcasts')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'broadcasts' }, (payload) => {
+        const sub = supabase.channel('toast_updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload: any) => {
                  const b = payload.new;
                  useToasts.getState().addToast(b.message, b.type || 'broadcast', b.icon, b.link);
             })
             .subscribe();
 
         return () => {
-            supabase.removeChannel(channel);
+            supabase.removeChannel(sub);
         };
     }, []);
 
@@ -209,6 +208,9 @@ export function ToastContainer() {
                                                 `}>
                                                     {(() => {
                                                         const IconComp = toast.icon || defaultIcons[toast.type];
+                                                        if (typeof IconComp === 'string') {
+                                                            return <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{IconComp}</span>;
+                                                        }
                                                         return <IconComp size={18} strokeWidth={1.5} className={typeStyles[toast.type].iconColor} />;
                                                     })()}
                                                 </div>
@@ -304,6 +306,9 @@ export default function GlobalToasts() {
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-black/40 border border-white/5 ${typeStyles[toast.type].iconColor}`}>
                                 {(() => {
                                     const IconComp = toast.icon || defaultIcons[toast.type];
+                                    if (typeof IconComp === 'string') {
+                                        return <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{IconComp}</span>;
+                                    }
                                     return <IconComp size={20} strokeWidth={1.5} />;
                                 })()}
                             </div>

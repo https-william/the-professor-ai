@@ -4,9 +4,12 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
 import BrandLogo from "@/components/ui/BrandLogo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { PrivacyPolicyModal, TermsOfUseModal } from "@/components/ui/LegalModals";
+import { AlertCircle, Eye, EyeOff, Loader2, CheckCircle2, Gavel, Shield } from "lucide-react";
 
 type Step = 1 | 2;
 
@@ -19,6 +22,10 @@ export default function SignupPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [isAgeVerified, setIsAgeVerified] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const router = useRouter();
     const { resolvedTheme } = useTheme();
     const supabase = createClient();
@@ -35,6 +42,7 @@ export default function SignupPage() {
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        if (!isAgeVerified) { setError("You must verify your age to continue."); return; }
         if (password !== confirmPassword) { setError("Passwords don't match"); return; }
         if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
         
@@ -43,7 +51,13 @@ export default function SignupPage() {
             email, password,
         });
         if (error) { setError(error.message); setLoading(false); }
-        else { router.push("/dashboard"); router.refresh(); }
+        else { 
+            setIsSuccess(true);
+            setTimeout(() => {
+                router.push("/dashboard"); 
+                router.refresh(); 
+            }, 2000);
+        }
     };
 
     const inputClass = "w-full px-3.5 py-2.5 rounded-lg text-[14px] text-[var(--foreground)] placeholder-[var(--foreground-muted)]/50 outline-none transition-all duration-200 shadow-inner";
@@ -75,7 +89,7 @@ export default function SignupPage() {
                         Create your account
                     </h1>
                     <p className="text-sm text-[var(--foreground-muted)] mt-1">
-                        100 free credits on us
+                        Scholarly access on us
                     </p>
                 </div>
 
@@ -92,102 +106,166 @@ export default function SignupPage() {
                     }} />
 
                     <div className="p-7">
+                        <AnimatePresence mode="wait">
+                            {!isSuccess ? (
+                                <motion.div
+                                    key="signup-form"
+                                    initial={{ opacity: 1 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    {/* ─── STEP 1 ─── */}
+                                    {step === 1 && (
+                                        <>
+                                            {/* Google */}
+                                            <button onClick={handleGoogleSignup} disabled={loading || !isAgeVerified}
+                                                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
+                                                style={{ background: "var(--background-tertiary)", border: "1px solid var(--border)", color: "var(--foreground-secondary)" }}>
+                                                <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
+                                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                                                </svg>
+                                                Sign up with Google
+                                            </button>
 
-                        {/* ─── STEP 1 ─── */}
-                        {step === 1 && (
-                            <>
-                                {/* Google */}
-                                <button onClick={handleGoogleSignup} disabled={loading}
-                                    className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
-                                    style={{ background: "var(--background-tertiary)", border: "1px solid var(--border)", color: "var(--foreground-secondary)" }}>
-                                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
-                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                    </svg>
-                                    Sign up with Google
-                                </button>
+                                            <div className="flex items-center gap-3 my-6">
+                                                <div className="flex-1 h-px bg-[var(--border)]" />
+                                                <span className="text-[11px] text-[var(--foreground-muted)] uppercase tracking-widest">or</span>
+                                                <div className="flex-1 h-px bg-[var(--border)]" />
+                                            </div>
+                                        </>
+                                    )}
 
-                                <div className="flex items-center gap-3 my-6">
-                                    <div className="flex-1 h-px bg-[var(--border)]" />
-                                    <span className="text-[11px] text-[var(--foreground-muted)] uppercase tracking-widest">or</span>
-                                    <div className="flex-1 h-px bg-[var(--border)]" />
-                                </div>
-                            </>
-                        )}
+                                    {/* Error */}
+                                    {error && (
+                                        <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl mb-5 text-sm"
+                                            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.12)", color: "#f87171" }}>
+                                            <AlertCircle className="w-4 h-4" />
+                                            {error}
+                                        </div>
+                                    )}
 
-                        {/* Error */}
-                        {error && (
-                            <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl mb-5 text-sm"
-                                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.12)", color: "#f87171" }}>
-                                <span className="material-symbols-outlined text-base">error</span>
-                                {error}
-                            </div>
-                        )}
+                                    {/* Step 1 Form */}
+                                    <form onSubmit={handleSignup} className="space-y-4">
+                                        <div>
+                                            <label htmlFor="s-email" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Email</label>
+                                            <input id="s-email" type="email" placeholder="you@university.edu" value={email}
+                                                onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
+                                                onFocus={() => setFocusedField("email")} onBlur={() => setFocusedField(null)}
+                                                className={inputClass} style={getInputStyle("email")} />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="s-pass" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Password</label>
+                                            <div className="relative">
+                                                <input id="s-pass" type={showPassword ? "text" : "password"} placeholder="At least 6 characters" value={password}
+                                                    onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password"
+                                                    onFocus={() => setFocusedField("pass")} onBlur={() => setFocusedField(null)}
+                                                    className={`${inputClass} pr-10`} style={getInputStyle("pass")} />
+                                                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors" aria-label="Toggle visibility">
+                                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="s-confirm" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Confirm</label>
+                                            <input id="s-confirm" type={showPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password"
+                                                onFocus={() => setFocusedField("confirm")} onBlur={() => setFocusedField(null)}
+                                                className={inputClass} style={getInputStyle("confirm")} />
+                                        </div>
 
-                        {/* Step 1 Form */}
-                        <form onSubmit={handleSignup} className="space-y-4">
-                            <div>
-                                <label htmlFor="s-email" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Email</label>
-                                <input id="s-email" type="email" placeholder="you@university.edu" value={email}
-                                    onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
-                                    onFocus={() => setFocusedField("email")} onBlur={() => setFocusedField(null)}
-                                    className={inputClass} style={getInputStyle("email")} />
-                            </div>
-                            <div>
-                                <label htmlFor="s-pass" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Password</label>
-                                <div className="relative">
-                                    <input id="s-pass" type={showPassword ? "text" : "password"} placeholder="At least 6 characters" value={password}
-                                        onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password"
-                                        onFocus={() => setFocusedField("pass")} onBlur={() => setFocusedField(null)}
-                                        className={`${inputClass} pr-10`} style={getInputStyle("pass")} />
-                                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors" aria-label="Toggle visibility">
-                                        <span className="material-symbols-outlined text-[18px]">{showPassword ? "visibility_off" : "visibility"}</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label htmlFor="s-confirm" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Confirm</label>
-                                <input id="s-confirm" type={showPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password"
-                                    onFocus={() => setFocusedField("confirm")} onBlur={() => setFocusedField(null)}
-                                    className={inputClass} style={getInputStyle("confirm")} />
-                            </div>
+                                        {/* COPPA Age Gate */}
+                                        <div className="flex items-start gap-3 mt-4 px-1">
+                                            <div className="pt-0.5">
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="age-gate" 
+                                                    checked={isAgeVerified}
+                                                    onChange={(e) => setIsAgeVerified(e.target.checked)}
+                                                    className="w-4 h-4 rounded border-[var(--border)] bg-[var(--background-secondary)] text-[var(--accent)] focus:ring-[var(--accent-glow)] transition-all cursor-pointer"
+                                                />
+                                            </div>
+                                            <label htmlFor="age-gate" className="text-[12px] text-[var(--foreground-muted)] leading-tight cursor-pointer select-none">
+                                                I confirm that I am at least 13 years of age and agree to the <button type="button" onClick={() => setShowTerms(true)} className="text-[var(--foreground)] hover:text-[var(--accent)] transition-colors underline">Terms of Use</button> and <button type="button" onClick={() => setShowPrivacy(true)} className="text-[var(--foreground)] hover:text-[var(--accent)] transition-colors underline">Privacy Policy</button>.
+                                            </label>
+                                        </div>
 
-                            {/* Credits callout */}
-                            <div className="flex items-start gap-3 px-3.5 py-3 rounded-xl mt-4 mb-2"
-                                style={{ background: "var(--accent-bg)", border: "1px solid var(--accent-glow)" }}>
-                                <span className="text-lg mt-0.5">🎁</span>
-                                <p className="text-[13px] text-[var(--foreground-secondary)] leading-relaxed">
-                                    You&apos;ll get <strong className="text-[#F59E0B]">100 free credits</strong> to generate flashcards, quizzes, and more.
-                                </p>
-                            </div>
+                                        {/* Credits callout */}
+                                        <div className="flex items-start gap-3 px-3.5 py-3 rounded-xl mt-4 mb-2"
+                                            style={{ background: "var(--accent-bg)", border: "1px solid var(--accent-glow)" }}>
+                                            <span className="text-lg mt-0.5">🎁</span>
+                                            <p className="text-[13px] text-[var(--foreground-secondary)] leading-relaxed">
+                                                You&apos;ll get <strong className="text-[#F59E0B]">instant access</strong> to generate flashcards, quizzes, and more.
+                                            </p>
+                                        </div>
 
-                            <button type="submit" disabled={loading}
-                                className="w-full mt-4 py-2.5 rounded-lg font-semibold text-[14px] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                                style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E", boxShadow: "0 2px 12px rgba(245,158,11,0.2), inset 0 1px 1px rgba(255,255,255,0.15)" }}>
-                                {loading ? (
-                                    <><span className="material-symbols-outlined animate-spin text-base">progress_activity</span>Creating Account...</>
-                                ) : "Create Account"}
-                            </button>
-                        </form>
+                                        <button type="submit" disabled={loading || !isAgeVerified}
+                                            className="w-full mt-4 py-2.5 rounded-lg font-semibold text-[14px] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                                            style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E", boxShadow: "0 2px 12px rgba(245,158,11,0.2), inset 0 1px 1px rgba(255,255,255,0.15)" }}>
+                                            {loading ? (
+                                                <><Loader2 className="w-4 h-4 animate-spin" />Creating Account...</>
+                                            ) : "Create Account"}
+                                        </button>
+                                    </form>
 
-                        <p className="text-center text-[13px] text-[var(--foreground-muted)] mt-6">
-                            Already have an account?{" "}
-                            <Link href="/login" className="text-[#F59E0B] hover:text-[#FCD34D] font-medium transition-colors">Sign in</Link>
-                        </p>
+                                    <p className="text-center text-[13px] text-[var(--foreground-muted)] mt-6">
+                                        Already have an account?{" "}
+                                        <Link href="/login" className="text-[#F59E0B] hover:text-[#FCD34D] font-medium transition-colors">Sign in</Link>
+                                    </p>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="signup-success"
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="py-12 flex flex-col items-center text-center"
+                                >
+                                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
+                                        <motion.span 
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="flex items-center justify-center"
+                                        >
+                                            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                                        </motion.span>
+                                    </div>
+                                    <h2 className="text-xl font-bold text-white mb-2">Welcome to the Academy</h2>
+                                    <p className="text-sm text-white/40 leading-relaxed max-w-[240px]">
+                                        Your scholarly credentials have been verified. Synchronizing your archives...
+                                    </p>
+                                    <div className="mt-8 flex gap-1">
+                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
-                <div className="text-center mt-6">
-                    <Link href="/" className="text-[13px] text-white/20 hover:text-white/40 transition-colors inline-flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">arrow_back</span>
-                        Home
-                    </Link>
+                {/* Back links */}
+                <div className="flex items-center justify-center gap-6 mt-6">
+                    <button onClick={() => setShowTerms(true)} className="text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1.5 group">
+                        <Gavel className="w-[18px] h-[18px]" />
+                        Terms
+                    </button>
+                    <div className="w-1 h-1 rounded-full bg-[var(--border)]" />
+                    <button onClick={() => setShowPrivacy(true)} className="text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1.5 group">
+                        <Shield className="w-[18px] h-[18px]" />
+                        Privacy
+                    </button>
                 </div>
             </div>
+
+            {/* Legal Modals */}
+            <AnimatePresence>
+                {showPrivacy && <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />}
+                {showTerms && <TermsOfUseModal onClose={() => setShowTerms(false)} />}
+            </AnimatePresence>
         </div>
     );
 }

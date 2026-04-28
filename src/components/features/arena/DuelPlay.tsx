@@ -3,6 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { 
+    Swords, 
+    CheckCircle, 
+    Flag, 
+    Clock, 
+    Check, 
+    AlertCircle,
+    ArrowLeft,
+    ArrowRight
+} from "lucide-react";
 import { useDuelRealtime } from "@/hooks/useRealtime";
 
 interface Question {
@@ -183,13 +193,13 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                     />
                 </div>
 
-                <div className="flex items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20">
-                            <span className="material-symbols-outlined text-sm text-[var(--error)]">swords</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--error)]">Live Duel</span>
+                    <div className="flex items-center justify-between px-4 py-3">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 shadow-[0_0_12px_rgba(244,63,94,0.1)]">
+                                <Swords size={14} className="text-[var(--error)]" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--error)]">Live Duel</span>
+                            </div>
                         </div>
-                    </div>
 
                     <div className="flex items-center gap-4">
                         {/* Opponent Status */}
@@ -282,7 +292,7 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                                         {option}
                                     </span>
                                     {isSelected && (
-                                        <span className="material-symbols-outlined text-[var(--success)]">check_circle</span>
+                                        <CheckCircle size={20} className="text-[var(--success)]" />
                                     )}
                                 </motion.button>
                             );
@@ -294,13 +304,14 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
             {/* Footer */}
             <footer className="sticky bottom-0 border-t border-white/5 bg-[#06060B]/90 backdrop-blur-xl p-4">
                 <div className="max-w-3xl mx-auto flex items-center justify-between">
-                    <button
-                        onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-                        disabled={currentIndex === 0}
-                        className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 disabled:hover:text-[var(--foreground-muted)] transition-all"
-                    >
-                        ← Prev
-                    </button>
+                        <button
+                            onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                            disabled={currentIndex === 0}
+                            className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 disabled:hover:text-[var(--foreground-muted)] transition-all flex items-center gap-2"
+                        >
+                            <ArrowLeft size={14} />
+                            Prev
+                        </button>
 
                     <div className="flex items-center gap-2">
                         {syncError && (
@@ -327,9 +338,10 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                     ) : (
                         <button
                             onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                            className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 transition-all"
+                            className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 transition-all flex items-center gap-2"
                         >
-                            Next →
+                            Next
+                            <ArrowRight size={14} />
                         </button>
                     )}
                 </div>
@@ -350,8 +362,8 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                             exit={{ scale: 0.95, opacity: 0 }}
                             className="w-full max-w-sm bg-[var(--background)] rounded-3xl border border-[var(--border)] p-8 text-center"
                         >
-                            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--error)]/10 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-3xl text-[var(--error)]">flag</span>
+                            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--error)]/10 flex items-center justify-center border border-[var(--error)]/20 shadow-xl">
+                                <Flag size={32} className="text-[var(--error)]" />
                             </div>
                             <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Submit Duel?</h3>
                             <p className="text-sm text-[var(--foreground-muted)] mb-6">

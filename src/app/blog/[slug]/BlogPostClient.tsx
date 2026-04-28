@@ -7,6 +7,33 @@ import type { BlogPost } from "@/lib/blog/posts";
 import { blogPosts } from "@/lib/blog/posts";
 import BrandLogo from "@/components/ui/BrandLogo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { 
+  ArrowLeft, 
+  GraduationCap, 
+  Clock,
+  Brain,
+  Bot,
+  Calendar,
+  FileText,
+  Lightbulb,
+  Home,
+  Zap,
+  PenTool,
+  Moon
+} from "lucide-react";
+
+/* ═══ Icon Components Mapping ═══ */
+const IconMap = {
+  Brain,
+  Bot,
+  Calendar,
+  FileText,
+  Lightbulb,
+  Home,
+  Zap,
+  PenTool,
+  Moon
+};
 
 /* ═══ Simple Markdown Renderer ═══ */
 function renderMarkdown(md: string) {
@@ -105,7 +132,8 @@ function renderMarkdown(md: string) {
       elements.push(
         <h2
           key={`h2-${i}`}
-          className="font-heading text-xl sm:text-2xl font-bold text-[var(--foreground)] mt-10 mb-4"
+          className="font-heading font-bold text-[var(--foreground)] mt-12 mb-5 tracking-tight"
+          style={{ fontSize: "var(--text-h2)" }}
         >
           {line.slice(3)}
         </h2>
@@ -119,7 +147,8 @@ function renderMarkdown(md: string) {
       elements.push(
         <h3
           key={`h3-${i}`}
-          className="font-heading text-lg font-bold text-[var(--foreground-secondary)] mt-8 mb-3"
+          className="font-heading font-bold text-[var(--foreground-secondary)] mt-10 mb-4"
+          style={{ fontSize: "var(--text-h3)" }}
         >
           {line.slice(4)}
         </h3>
@@ -181,7 +210,8 @@ function renderMarkdown(md: string) {
     elements.push(
       <p
         key={`p-${i}`}
-        className="text-[15px] text-[var(--foreground-muted)] leading-[1.8] mb-5"
+        className="text-[var(--foreground-secondary)] leading-[1.65] mb-6"
+        style={{ fontSize: "var(--text-body)" }}
         dangerouslySetInnerHTML={{ __html: inlineMd(line) }}
       />
     );
@@ -293,11 +323,9 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/blog")}
-              className="flex items-center gap-1 text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)] transition-colors text-[12px] font-semibold"
+              className="flex items-center gap-1.5 text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)] transition-colors text-[12px] font-semibold"
             >
-              <span className="material-symbols-outlined text-[16px]">
-                arrow_back
-              </span>
+              <ArrowLeft className="w-4 h-4" />
               Blog
             </button>
           </div>
@@ -363,9 +391,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
                 boxShadow: "0 2px 8px var(--accent-glow)",
               }}
             >
-              <span className="material-symbols-outlined text-[15px] text-[var(--background)]">
-                school
-              </span>
+              <GraduationCap className="w-4 h-4 text-[var(--background)]" />
             </div>
             <div>
               <p className="text-[13px] font-bold text-[var(--foreground-secondary)]">
@@ -381,9 +407,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
             </div>
           </div>
           <span className="text-[12px] text-white/20 flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[15px]">
-              schedule
-            </span>
+            <Clock className="w-4 h-4" />
             {post.readTime}
           </span>
         </div>
@@ -416,35 +440,36 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
               Continue Reading
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {related.map((rp) => (
-                <Link
-                  key={rp.slug}
-                  href={`/blog/${rp.slug}`}
-                  className="group p-5 rounded-2xl transition-all duration-300 hover:translate-y-[-2px]"
-                  style={{
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.05)",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ background: rp.coverGradient }}
-                    >
-                      <span className="material-symbols-outlined text-[16px] text-white">
-                        {rp.icon}
+              {related.map((rp) => {
+                const IconComponent = (IconMap as any)[rp.icon] || Brain;
+                return (
+                  <Link
+                    key={rp.slug}
+                    href={`/blog/${rp.slug}`}
+                    className="group p-5 rounded-2xl transition-all duration-300 hover:translate-y-[-2px]"
+                    style={{
+                      background: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ background: rp.coverGradient }}
+                      >
+                        <IconComponent className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-wider">
+                        {rp.category}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-wider">
-                      {rp.category}
-                    </span>
-                  </div>
-                  <h4 className="text-[14px] font-bold text-[var(--foreground-secondary)] group-hover:text-[var(--foreground)] transition-colors leading-snug">
-                    {rp.title}
-                  </h4>
-                </Link>
-              ))}
+                    <h4 className="text-[14px] font-bold text-[var(--foreground-secondary)] group-hover:text-[var(--foreground)] transition-colors leading-snug">
+                      {rp.title}
+                    </h4>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

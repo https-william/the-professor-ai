@@ -102,7 +102,7 @@ export default function SpacedRepetitionCalendar() {
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
+            if (!user || !user.id) {
                 setLoading(false);
                 return;
             }
@@ -115,6 +115,22 @@ export default function SpacedRepetitionCalendar() {
                 .limit(30);
 
             if (generations) {
+                // Fetch user activity to check for completions
+                const { data: activity } = await supabase
+                    .from("user_activity")
+                    .select("generation_id, created_at")
+                    .eq("user_id", user.id)
+                    .ilike("type", "%review%") // Matches "recall", "quiz_review", "summary_review", etc.
+                    .order("created_at", { ascending: false });
+
+                const completedMap = new Set();
+                if (activity) {
+                    activity.forEach((a: { created_at: string; generation_id: string }) => {
+                        const dateStr = new Date(a.created_at).toDateString();
+                        completedMap.add(`${a.generation_id}-${dateStr}`);
+                    });
+                }
+
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const items: ReviewItem[] = [];
@@ -127,8 +143,11 @@ export default function SpacedRepetitionCalendar() {
                         const dueDate = reviewDates[i];
                         const urgency = getUrgency(dueDate, today);
 
+                        // Check if this specific review date for this generation is already "done"
+                        const isDone = completedMap.has(`${gen.id}-${dueDate.toDateString()}`);
+                        if (isDone) continue;
+
                         // Only include reviews that are within a reasonable window
-                        // (overdue up to 30 days, upcoming up to 60 days)
                         const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / 86400000);
                         if (diffDays >= -30 && diffDays <= 60) {
                             items.push({

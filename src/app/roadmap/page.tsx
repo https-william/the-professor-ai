@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
-import SiteHeader from "@/components/ui/SiteHeader";
+
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { motion, AnimatePresence } from "framer-motion";
 import EndowmentModal from "@/components/modals/EndowmentModal";
@@ -20,6 +20,7 @@ import {
     CheckCircle2, 
     Network 
 } from "lucide-react";
+import DataDustLoader from "@/components/ui/DataDustLoader";
 
 function RoadmapContent() {
     const router = useRouter();
@@ -150,29 +151,7 @@ function RoadmapContent() {
     };
 
     if (isGenerating) {
-        return (
-            <div className="min-h-screen bg-[#06060B] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                 <div className="absolute inset-0 flex flex-col p-6 opacity-[0.05] pointer-events-none z-0">
-                    <div className="max-w-3xl w-full mx-auto space-y-4 pt-20">
-                        {[1,2,3,4,5].map(i => (
-                            <div key={i} className="flex gap-4">
-                                <div className="w-12 h-12 rounded-full bg-white animate-pulse shrink-0" />
-                                <div className="flex-1 h-20 rounded-2xl bg-white animate-pulse" />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                
-                <div className="relative z-10 text-center animate-in zoom-in-95 duration-700">
-                    <div className="w-20 h-20 mx-auto mb-8 rounded-3xl nm-flat flex items-center justify-center relative">
-                        <div className="absolute inset-0 rounded-3xl border-2 border-purple-500/20 border-t-purple-500 animate-spin" />
-                        <MapIcon size={30} strokeWidth={1.5} className="text-purple-500" />
-                    </div>
-                    <h2 className="text-2xl font-black tracking-tight mb-2">Architecting Syllabus</h2>
-                    <p className="text-white/30 text-[10px] uppercase tracking-[0.5em] font-black">Phased Implementation Strategy</p>
-                </div>
-            </div>
-        );
+        return <DataDustLoader label="Architecting Syllabus" phrases={["Mapping the curriculum...", "Sequencing cognitive load...", "Designing phase structure...", "Validating learning path..."]} />;
     }
 
     if (generationError) {
@@ -314,9 +293,10 @@ function RoadmapContent() {
 export default function RoadmapPage() {
     return (
         <div className="min-h-screen bg-[#06060B]">
-            <Suspense fallback={<div className="min-h-screen bg-[#06060B] flex items-center justify-center">Loading...</div>}>
+            <Suspense fallback={<DataDustLoader />}>
                 <RoadmapContent />
             </Suspense>
         </div>
     );
 }
+

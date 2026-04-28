@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useUser } from "@/context/UserContext";
-import SiteHeader from "@/components/ui/SiteHeader";
-import type { AppMode } from "@/components/ui/SiteHeader";
+
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { calculateLevel, getLevelProgress, getLevelTitle } from "@/lib/profiles-client";
+import { AppMode } from "@/components/ui/SiteHeader";
 
 /* ═══ Claymorphic Helpers ═══ */
 const clay = {
@@ -61,6 +61,39 @@ export default function ProfilePage() {
     const levelTitle = getLevelTitle(level);
     const nextLevelXp = Math.pow(level, 2) * 100;
     const currentLevelXp = Math.pow(level - 1, 2) * 100;
+    
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteAccount = async () => {
+        const confirmed = window.confirm("Are you sure? This action is permanent and will delete all your uploaded PDFs, generated flashcards, and quizzes. This cannot be undone.");
+        if (!confirmed) return;
+
+        setIsDeleting(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("No session found");
+
+            const res = await fetch("/api/user/delete", {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${session.access_token}`
+                }
+            });
+
+            if (res.ok) {
+                await supabase.auth.signOut();
+                router.push("/signup");
+            } else {
+                const data = await res.json();
+                alert(data.error || "Failed to delete account");
+            }
+        } catch (error) {
+            console.error("Delete account error:", error);
+            alert("An error occurred while deleting your account.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     // Fetch real stats
     useEffect(() => {
@@ -99,7 +132,6 @@ export default function ProfilePage() {
     }, [user.id, user.xp, user.streak, user.wins, level]);
 
     const handleModeChange = (mode: AppMode) => {
-        if (mode === "CHAT") router.push("/dashboard?mode=chat");
         if (mode === "CREATE") router.push("/dashboard?mode=create");
         if (mode === "HUB") router.push("/hub");
     };
@@ -313,6 +345,23 @@ export default function ProfilePage() {
                             </div>
                             <span className="text-[13px] font-semibold text-red-400/40 group-hover:text-red-400/70 transition-colors">Sign Out</span>
                         </button>
+
+                        {/* Danger Zone */}
+                        <div className="mt-8 pt-8 border-t border-[var(--border)] space-y-4">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/50 mb-2">Danger Zone</h4>
+                            <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex flex-col gap-3">
+                                <p className="text-[11px] text-red-400/60 leading-relaxed">
+                                    <strong>GDPR/CCPA Data Wipe:</strong> Deleting your account will permanently remove all your personal data, uploaded PDFs, quizzes, and history from our servers.
+                                </p>
+                                <button 
+                                    onClick={handleDeleteAccount}
+                                    disabled={isDeleting}
+                                    className="w-full py-2.5 rounded-xl font-bold text-[12px] bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                                >
+                                    {isDeleting ? "Wiping Data..." : "Permanently Delete My Account"}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

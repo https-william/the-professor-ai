@@ -8,6 +8,7 @@ import { useTheme } from "@/context/ThemeContext";
 import BrandLogo from "@/components/ui/BrandLogo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { getRedirectUrl } from "@/lib/api-client";
+import { ArrowLeft, BookOpen, AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -126,7 +127,7 @@ export default function LoginPage() {
                         {error && (
                             <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl mb-5 text-sm"
                                 style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.12)", color: "#f87171" }}>
-                                <span className="material-symbols-outlined text-base">error</span>
+                                <AlertCircle className="w-4 h-4" />
                                 {error}
                             </div>
                         )}
@@ -187,7 +188,7 @@ export default function LoginPage() {
                                     <button type="button" onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
                                         aria-label="Toggle password visibility">
-                                        <span className="material-symbols-outlined text-[18px]">{showPassword ? "visibility_off" : "visibility"}</span>
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
                                 </div>
                             </div>
@@ -205,7 +206,7 @@ export default function LoginPage() {
                             >
                                 {loading ? (
                                     <>
-                                        <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
                                         Signing in...
                                     </>
                                 ) : "Sign in"}
@@ -221,11 +222,16 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                {/* Back link */}
-                <div className="text-center mt-6">
-                    <Link href="/" className="text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                {/* Back links */}
+                <div className="flex items-center justify-center gap-6 mt-6">
+                    <Link href="/" className="text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1.5 group">
+                        <ArrowLeft className="w-[18px] h-[18px] transition-transform group-hover:-translate-x-1" />
                         Home
+                    </Link>
+                    <div className="w-1 h-1 rounded-full bg-[var(--border)]" />
+                    <Link href="/blog" className="text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1.5 group">
+                        <BookOpen className="w-[18px] h-[18px]" />
+                        Blog
                     </Link>
                 </div>
             </div>

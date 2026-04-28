@@ -17,8 +17,12 @@ import {
     Layout, 
     Focus, 
     Settings,
-    FileType
+    FileType,
+    Check
 } from "lucide-react";
+import { exportToPDF } from "@/lib/pdf-bridge";
+import PrintLayout from "@/components/premium/PrintLayout";
+import { Button } from "@/components/ui/button";
 
 interface ShareCardProps {
     isOpen: boolean;
@@ -36,7 +40,8 @@ interface ShareCardProps {
 export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
     const contentType = (data.type.toLowerCase() === 'quiz' ? 'quiz' : 
                          data.type.toLowerCase().includes('flash') ? 'flashcard' : 
-                         data.type.toLowerCase().includes('summary') ? 'summary' : 'chat') as ContentType;
+                         data.type.toLowerCase().includes('summary') ? 'summary' : 
+                         data.type.toLowerCase() === 'mastery' ? 'mastery' : 'chat') as ContentType;
 
     const filteredTemplates = useMemo(() => getTemplatesForType(contentType), [contentType]);
     const [selectedTemplateId, setSelectedTemplateId] = useState(filteredTemplates[0]?.id || TEMPLATE_REGISTRY[0].id);
@@ -81,6 +86,49 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
         });
     };
 
+    const handleNativeShare = async () => {
+        if (!canvasRef.current) return;
+        setIsGenerating(true);
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const svgData = getProcessedSvg();
+        const img = new Image();
+        const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = async () => {
+            canvas.width = 1080;
+            canvas.height = 1350;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const file = new File([blob], `TheProfessor-${data.type}.png`, { type: "image/png" });
+                
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: `Achievement: ${data.title}`,
+                            text: `I just mastered ${data.title} on The Professor! #ProfessorAI #ActiveRecall`,
+                        });
+                    } catch (err) {
+                        console.error("Native share failed:", err);
+                        handleDownloadImage(); // Fallback
+                    }
+                } else {
+                    handleDownloadImage(); // Fallback
+                }
+                URL.revokeObjectURL(url);
+                setIsGenerating(false);
+            }, "image/png");
+        };
+        img.src = url;
+    };
+
     const handleDownloadImage = async () => {
         if (!canvasRef.current) return;
         setIsGenerating(true);
@@ -111,133 +159,22 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
         img.src = url;
     };
 
-    const handleNativeShare = async () => {
-        if (!canvasRef.current || typeof navigator === 'undefined' || !navigator.share) {
-            handleDownloadImage();
-            return;
+    const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+    const handleExportPDF = async () => {
+        setIsExportingPDF(true);
+        try {
+            await exportToPDF("pdf-export-container", {
+                title: data.title,
+                filename: `TheProfessor-${data.type}-${data.title.replace(/\s+/g, '-')}`,
+                author: data.user
+            });
+        } catch (err) {
+            console.error("PDF Export error:", err);
+            // Optionally trigger a toast here
+        } finally {
+            setIsExportingPDF(false);
         }
-
-        setIsGenerating(true);
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const svgData = getProcessedSvg();
-        const img = new Image();
-        const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-        const url = URL.createObjectURL(svgBlob);
-
-        img.onload = async () => {
-            canvas.width = 1080;
-            canvas.height = 1350;
-            ctx.drawImage(img, 0, 0);
-            canvas.toBlob(async (blob) => {
-                if (!blob) return;
-                const file = new File([blob], "share-card.png", { type: "image/png" });
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: `My Study Progress - ${data.title}`,
-                        text: `Check out what I just generated with The Professor: ${data.count} ${data.type}!`,
-                    });
-                } catch (err) {
-                    console.error("Share failed:", err);
-                    handleDownloadImage();
-                }
-                URL.revokeObjectURL(url);
-                setIsGenerating(false);
-            }, "image/png");
-        };
-        img.src = url;
-    };
-
-    const handleExportPDF = () => {
-        // Create a hidden print structure
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
-        const isQuiz = data.type.toLowerCase() === 'quiz';
-        const items = data.items || [];
-
-        let contentHtml = `
-            <html>
-            <head>
-                <title>${data.title}</title>
-                <style>
-                    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; color: #111; line-height: 1.6; }
-                    .header { border-bottom: 2px solid #F59E0B; padding-bottom: 20px; margin-bottom: 40px; }
-                    .title { font-size: 28px; font-weight: 800; margin: 0; color: #000; }
-                    .meta { font-size: 12px; color: #666; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; }
-                    .item { margin-bottom: 30px; page-break-inside: avoid; }
-                    .question { font-weight: 700; font-size: 16px; margin-bottom: 12px; display: flex; gap: 10px; }
-                    .options { list-style: none; padding: 0; margin: 0 0 0 25px; }
-                    .option { margin-bottom: 6px; padding: 8px 12px; border: 1px solid #eee; border-radius: 8px; font-size: 14px; }
-                    .flashcard { border: 1px solid #eee; padding: 20px; border-radius: 12px; background: #fafafa; }
-                    .front { font-weight: 700; font-size: 16px; margin-bottom: 10px; color: #F59E0B; }
-                    .back { font-size: 14px; color: #444; border-top: 1px solid #eee; padding-top: 10px; }
-                    .answer-key { margin-top: 60px; border-top: 2px dashed #ccc; padding-top: 40px; page-break-before: always; }
-                    .ak-title { font-size: 20px; font-weight: 800; margin-bottom: 20px; }
-                    @media print {
-                        body { padding: 0; }
-                        .no-print { display: none; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1 class="title">${data.title}</h1>
-                    <div class="meta">${data.type} • ${data.count} Items • Generated by ${data.user} on ${today}</div>
-                </div>
-                <div class="content">
-                    ${items.map((item, idx) => {
-                        if (isQuiz) {
-                            return `
-                                <div class="item">
-                                    <div class="question"><span>${idx + 1}.</span> <span>${item.question}</span></div>
-                                    <div class="options">
-                                        ${item.options.map((opt: string, i: number) => `
-                                            <div class="option">${String.fromCharCode(65 + i)}) ${opt}</div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        } else {
-                            return `
-                                <div class="item flashcard">
-                                    <div class="front">${item.front}</div>
-                                    <div class="back">${item.back}</div>
-                                </div>
-                            `;
-                        }
-                    }).join('')}
-                </div>
-                ${isQuiz ? `
-                    <div class="answer-key">
-                        <h2 class="ak-title">Answer Key</h2>
-                        <div style="display: grid; grid-template-cols: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">
-                            ${items.map((item, idx) => `
-                                <div style="font-size: 14px;"><strong>${idx + 1}:</strong> ${String.fromCharCode(65 + item.correctIndex)}</div>
-                            `).join('')}
-                        </div>
-                        <div style="margin-top: 40px; font-size: 12px; color: #999;">
-                            ${items.map((item, idx) => `
-                                <p><strong>${idx + 1} Explanation:</strong> ${item.explanation}</p>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-                <script>
-                    window.onload = () => {
-                        window.print();
-                        // Optional: window.close();
-                    };
-                </script>
-            </body>
-            </html>
-        `;
-
-        printWindow.document.write(contentHtml);
-        printWindow.document.close();
     };
 
     if (!isOpen) return null;
@@ -346,40 +283,52 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                         )}
                     </div>
 
-                    <div className="space-y-2 mt-auto">
-                        <button
+                    <div className="space-y-4 mt-auto">
+                        <Button
                             onClick={handleNativeShare}
+                            variant="jelly"
+                            className="w-full h-14 bg-gradient-to-r from-[var(--accent)] to-[var(--secondary)] text-white shadow-[0_8px_20px_var(--accent-glow)]"
                             disabled={isGenerating}
-                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#08080E] font-black text-[13px] shadow-xl shadow-[#F59E0B]/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
                             {isGenerating ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
-                                    <Share size={20} strokeWidth={1.5} />
+                                    <Share className="w-5 h-5 mr-2" />
                                     Share Achievement
                                 </>
                             )}
-                        </button>
+                        </Button>
                         
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button
                                 onClick={handleDownloadImage}
+                                variant="jelly-ghost"
+                                className="h-11"
                                 disabled={isGenerating}
-                                className="py-2.5 rounded-xl border border-white/5 text-white/40 font-bold text-[11px] hover:bg-white/5 transition-all flex items-center justify-center gap-1.5"
                             >
-                                <FileImage size={16} strokeWidth={1.5} />
+                                <FileImage className="w-4 h-4 mr-2 opacity-50" />
                                 PNG
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={handleExportPDF}
-                                className="py-2.5 rounded-xl border border-white/5 text-white/40 font-bold text-[11px] hover:bg-white/5 transition-all flex items-center justify-center gap-1.5"
+                                variant="jelly-ghost"
+                                className="h-11"
+                                disabled={isExportingPDF}
                             >
-                                <FileType size={16} strokeWidth={1.5} />
-                                PDF
-                            </button>
+                                {isExportingPDF ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <FileType className="w-4 h-4 mr-2 opacity-50" />
+                                        High-Res PDF
+                                    </>
+                                )}
+                            </Button>
                         </div>
                     </div>
+
+                    <PrintLayout data={data} />
 
                     <p className="text-[9px] text-center text-white/20 mt-4 font-medium italic">
                         The Professor generates high-fidelity exports locally.

@@ -1,52 +1,87 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
-// Note: Ensure class-variance-authority and @radix-ui/react-slot are installed. 
-// If not, I will add a simplified version or install them.
-// I will assume for now I should use simple props or install them. 
-// Actually, I didn't install cva or radix-slot. 
-// I will implementation a simpler version without those deps for speed, 
-// or I should install them. 
-// "I want you to be extremely creative" -> implies high quality. 
-// I will install them in next step or use a simpler implementation now.
-// Simpler implementation:
-
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
-    size?: "default" | "sm" | "lg" | "icon"
+    variant?: "default" | "jelly" | "jelly-ghost" | "destructive" | "outline" | "secondary" | "ghost" | "link" | "skeuo" | "skeuo-primary"
+    size?: "default" | "sm" | "lg" | "icon" | "xl"
     asChild?: boolean
+    loading?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant = "default", size = "default", asChild = false, ...props }, ref) => {
+    ({ className, variant = "jelly", size = "default", asChild = false, loading = false, children, disabled, ...props }, ref) => {
 
-        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap text-sm font-bold tracking-tight ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30"
 
         const variants = {
-            default: "bg-primary text-primary-foreground hover:bg-primary/90",
-            destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-            outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-            secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-            ghost: "hover:bg-accent hover:text-accent-foreground",
-            link: "text-primary underline-offset-4 hover:underline",
+            jelly: "btn-jelly",
+            "jelly-ghost": "btn-jelly-ghost",
+            default: "btn-jelly",
+            destructive: "bg-error text-white shadow-lg hover:brightness-110",
+            outline: "border-2 border-border bg-transparent hover:bg-accent/10 hover:text-accent hover:border-accent",
+            secondary: "btn-jelly-ghost",
+            ghost: "hover:bg-accent/10 hover:text-accent",
+            link: "text-accent underline-offset-4 hover:underline font-medium",
+            skeuo: "btn-skeuo font-black",
+            "skeuo-primary": "btn-skeuo-primary font-black",
         }
 
         const sizes = {
-            default: "h-10 px-4 py-2",
-            sm: "h-9 rounded-md px-3",
-            lg: "h-11 rounded-md px-8",
-            icon: "h-10 w-10",
+            default: "h-11 px-6 rounded-[1.25rem]",
+            sm: "h-9 px-4 rounded-xl text-xs",
+            lg: "h-14 px-10 rounded-[1.5rem] text-base",
+            xl: "h-16 px-12 rounded-[2rem] text-lg",
+            icon: "h-11 aspect-square rounded-xl",
         }
 
-        const Comp = "button" // Simplified: removed Slot for now to avoid install overhead
+        if (asChild) {
+            return (
+                <Slot
+                    className={cn(baseStyles, variants[variant], sizes[size], className)}
+                    ref={ref as any}
+                    {...props}
+                >
+                    {children}
+                </Slot>
+            )
+        }
+
         return (
-            <Comp
-                className={cn(baseStyles, variants[variant], sizes[size], className)}
+            <motion.button
                 ref={ref}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className={cn(baseStyles, variants[variant], sizes[size], className, loading && "cursor-wait")}
+                disabled={disabled || loading}
                 {...props}
-            />
+            >
+                <AnimatePresence mode="wait">
+                    {loading ? (
+                        <motion.div
+                            key="loader"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className="flex items-center justify-center gap-2"
+                        >
+                            <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full motion-safe:animate-spin" />
+                            <span className="sr-only">Loading...</span>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="content"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="flex items-center justify-center gap-2"
+                        >
+                            {children}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.button>
         )
     }
 )

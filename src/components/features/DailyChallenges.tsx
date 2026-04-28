@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/context/UserContext";
 import { useToasts } from "@/components/ui/GlobalToasts";
@@ -44,6 +45,7 @@ interface DailyChallengesProps {
 
 export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
   const { user } = useUser();
+  const router = useRouter();
   const { addToast } = useToasts();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,10 +54,10 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
   const supabase = createClient();
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchChallenges();
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -81,14 +83,14 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
         .eq("user_id", user?.id)
         .gte("created_at", today.toISOString());
 
-      const flashcardsToday = todayGenerations?.filter(g => g.type === "flashcards").length || 0;
-      const quizzesToday = todayGenerations?.filter(g => g.type === "quiz").length || 0;
+      const flashcardsToday = todayGenerations?.filter((g: { type: string }) => g.type === "flashcards").length || 0;
+      const quizzesToday = todayGenerations?.filter((g: { type: string }) => g.type === "quiz").length || 0;
 
       const { data: stats } = await supabase
         .from("social_stats")
-        .select("current_streak, wins")
+        .select("current_streak, duel_wins")
         .eq("user_id", user?.id)
-        .single();
+        .maybeSingle();
 
       const todayStr = today.toISOString().split("T")[0];
       const claimsKey = `daily_claims_${user?.id}_${todayStr}`;
@@ -145,11 +147,11 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
           title: "Arena Champion",
           description: "Win 2 quiz duels",
           target: 2,
-          current: Math.min(stats?.wins || 0, 2),
+          current: Math.min(stats?.duel_wins || 0, 2),
           xpReward: 100,
           icon: "emoji_events",
           type: "social",
-          completed: (stats?.wins || 0) >= 2,
+          completed: (stats?.duel_wins || 0) >= 2,
         },
       ];
 
@@ -174,10 +176,26 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
     }
   };
 
-  const completedCount = challenges.filter(c => (c as any)._claimed).length;
-  const totalXp = challenges.filter(c => (c as any)._claimed).reduce((sum, c) => sum + c.xpReward, 0);
-  const progress = challenges.length > 0 ? (completedCount / challenges.length) * 100 : 0;
   const hasUnclaimed = challenges.some(c => c.completed && !(c as any)._claimed);
+
+  const handleQuestClick = (challenge: Challenge) => {
+    if (challenge.completed && !(challenge as any)._claimed) return; // Wait for claim click
+    
+    setIsOpen(false);
+    switch(challenge.type) {
+      case "generate":
+        router.push("/create");
+        break;
+      case "review":
+        router.push("/library");
+        break;
+      case "social":
+        router.push("/hub");
+        break;
+      default:
+        router.push("/dashboard");
+    }
+  };
 
   const claimReward = async (challenge: Challenge, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -211,15 +229,20 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
     }
   };
 
+  const completedCount = challenges.filter(c => c.completed).length;
+  const totalXp = challenges.filter(c => c.completed).reduce((acc, c) => acc + c.xpReward, 0);
+  const progress = challenges.length > 0 ? (completedCount / challenges.length) * 100 : 0;
+
   return (
     <div className="relative z-[9999]" ref={dropdownRef}>
       {/* ═══ TRIGGER BUTTON ═══ */}
-      <button 
+      <motion.button 
+        whileTap={{ y: 1.5, boxShadow: "inset 0 4px 8px rgba(0,0,0,0.3)" }}
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all ${
            isOpen 
-             ? "bg-[var(--accent-bg)] border-[var(--border)] scale-[0.98]" 
-             : "bg-[var(--background-secondary)]/70 backdrop-blur-md border-[var(--border)] hover:bg-[var(--accent-bg)] shadow-[var(--shadow-sm)]"
+             ? "bg-[var(--accent-bg)] border-[var(--border)]" 
+             : "bg-[var(--background-secondary)]/70 backdrop-blur-md border-[var(--border)] hover:bg-[var(--accent-bg)] shadow-[0_4px_10px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.1)]"
         } border relative h-10`}
       >
         <Award size={16} strokeWidth={1.5} className="text-amber-500" />
@@ -230,7 +253,7 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 border border-[var(--background)]"></span>
           </span>
         )}
-      </button>
+      </motion.button>
 
       {/* ═══ DROPDOWN POPOVER ═══ */}
       <AnimatePresence>
@@ -240,11 +263,11 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 450, damping: 25 }}
-            className="absolute top-[calc(100%+8px)] right-0 w-[320px] rounded-signup overflow-hidden shadow-2xl"
+            className="absolute top-[calc(100%+12px)] right-0 w-[340px] rounded-[32px] overflow-hidden shadow-2xl"
             style={{ 
               background: "var(--card)", 
               border: "1px solid var(--border)",
-              boxShadow: "var(--shadow-xl), 0 20px 40px rgba(0,0,0,0.5)"
+              boxShadow: "0 20px 80px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.05)"
             }}
           >
             {loading ? (
@@ -297,15 +320,21 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
                     <div
                       key={challenge.id}
                       className={`
-                        relative w-full p-3 rounded-2xl transition-all
+                        relative w-full p-4 rounded-[24px] transition-all
                         ${challenge.completed 
                           ? (challenge as any)._claimed 
                             ? "bg-emerald-500/5 border border-emerald-500/10" 
-                            : "bg-amber-500/5 border border-amber-500/20 cursor-pointer hover:bg-amber-500/10 hover:scale-[1.02]"
-                          : "bg-[var(--foreground)]/5 border border-[var(--border)]"
+                            : "bg-amber-500/5 border border-amber-500/20 cursor-pointer hover:bg-amber-500/10"
+                          : "bg-[var(--foreground)]/5 border border-[var(--border)] cursor-pointer hover:bg-[var(--foreground)]/[0.08] active:scale-[0.98]"
                         }
                       `}
-                      onClick={(e) => challenge.completed && claimReward(challenge, e)}
+                      onClick={(e) => {
+                        if (challenge.completed && !(challenge as any)._claimed) {
+                          claimReward(challenge, e);
+                        } else {
+                          handleQuestClick(challenge);
+                        }
+                      }}
                     >
                       {challenge.completed && !(challenge as any)._claimed && (
                         <div className="absolute inset-0 rounded-2xl border border-amber-500/30 animate-pulse pointer-events-none" />

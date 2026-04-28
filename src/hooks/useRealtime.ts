@@ -23,7 +23,7 @@ export function useDuelRealtime(duelId: string | null, callbacks: {
           table: 'duels',
           filter: `id=eq.${duelId}`
         },
-        (payload) => {
+        (payload: any) => {
           callbacks.onDuelUpdate?.(payload);
           
           if (payload.eventType === 'UPDATE') {

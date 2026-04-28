@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
-import SiteHeader from "@/components/ui/SiteHeader";
+
 import SessionComplete from "@/components/features/SessionComplete";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { 
@@ -197,7 +197,7 @@ export default function ReviewPage() {
     if (loading) {
         return (
             <div className="h-[100dvh] bg-[#06060B] overflow-hidden relative">
-                <SiteHeader showLogo />
+
                 <div className="h-full flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-[#F59E0B]/10 flex items-center justify-center">
@@ -214,7 +214,7 @@ export default function ReviewPage() {
     if (allCards.length === 0) {
         return (
             <div className="h-[100dvh] bg-[#06060B] overflow-hidden relative">
-                <SiteHeader showLogo />
+
                 <div className="h-full flex items-center justify-center px-6">
                     <motion.div
                         className="text-center max-w-sm"

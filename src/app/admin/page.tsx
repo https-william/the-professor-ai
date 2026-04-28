@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import AdminDashboardClient from "./AdminDashboardClient";
-import SiteHeader from "@/components/ui/SiteHeader";
+
 
 export const metadata = {
   title: "Admin Atrium | The Professor",

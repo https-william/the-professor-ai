@@ -1,201 +1,172 @@
 import type { Buffer } from "node:buffer";
+import { transcribeMultimodalContent } from "./parser/ai-lens";
 
 export type ParseResult = {
     text: string;
     pageCount?: number;
     wordCount: number;
     fileType: string;
+    isMultimodal?: boolean;
 };
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB hard limit
-const MIN_TEXT_LENGTH = 50; // If we extract less than this, warn user
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // Expanded to 15MB for high-fidelity images/PDFs
+const MIN_TEXT_LENGTH = 10; // Lowered for multimodal transcription
 
 // ─── PDF Parsing ──────────────────────────────────────────────────────────────
-async function parsePDF(buffer: Buffer): Promise<string> {
+async function parsePDF(buffer: Buffer): Promise<{ text: string; isScanned: boolean }> {
     // Lazy require to avoid edge runtime issues
     /* eslint-disable @typescript-eslint/no-require-imports */
     let pdfParse = require("pdf-parse");
-    // Handle Next.js Webpack / Edge module mangling
     if (pdfParse && typeof pdfParse === "object" && "default" in pdfParse) {
         pdfParse = pdfParse.default;
     }
     /* eslint-enable @typescript-eslint/no-require-imports */
 
-    let data: { text: string; numpages: number };
     try {
-        data = await pdfParse(buffer, {
-            // Don't render pages — raw text only
-            pagerender: undefined,
-            max: 0, // No page limit
-        });
+        const data = await pdfParse(buffer, { pagerender: undefined, max: 0 });
+        const rawText = (data.text || "").trim();
+
+        // Heuristic: If we have multiple pages but almost no text, it's likely scanned
+        const isScanned = rawText.length < 50 && data.numpages > 0;
+        
+        return { text: rawText, isScanned };
     } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
+        // If pdf-parse fails entirely, we treat it as a potential scanned/complex PDF
+        return { text: "", isScanned: true };
+    }
+}
 
-        // Detect scanned-only PDFs
-        if (
-            msg.includes("No text") ||
-            msg.includes("no text") ||
-            msg.includes("stream") ||
-            msg.includes("password")
-        ) {
-            throw new Error(
-                "SCANNED_PDF: This PDF appears to be image-based (scanned). " +
-                "Please paste your text directly instead, or upload a digitally-created PDF."
-            );
+// ─── NATIVE OFFICE EXTRACTION (PPTX, XLSX, DOCX) ─────────────────────────────
+async function parseOffice(buffer: Buffer, fileName: string, ext: string): Promise<string> {
+    const { extractRawTextFromOffice } = require("./parser/raw-xml");
+    const { extractor } = require("office-text-extractor");
+    const officeParser = require("officeparser");
+    const XLSX = require("xlsx");
+    
+    let text = "";
+
+    // ── LAYER 0: THE PERMANENT SOLUTION (RAW XML) ──
+    try {
+        console.log(`[Parser] Running "The Permanent Solution" (Raw XML) for ${fileName}...`);
+        text = await extractRawTextFromOffice(buffer, ext);
+        if (text && text.length > MIN_TEXT_LENGTH) return text;
+    } catch (err) {
+        console.warn(`[Parser] Permanent Solution failed for ${fileName}:`, err);
+    }
+
+    // ── LAYER 1: SPECIALIZED LOCAL HANDLERS ──
+    try {
+        if (["xlsx", "xls", "csv"].includes(ext)) {
+            console.log(`[Parser] Attempting specialized XLSX extraction for ${fileName}...`);
+            const workbook = XLSX.read(buffer, { type: "buffer" });
+            const sheetNames = workbook.SheetNames;
+            text = sheetNames.map((name: string) => {
+                const sheet = workbook.Sheets[name];
+                return XLSX.utils.sheet_to_txt(sheet);
+            }).join("\n\n");
+        } 
+        else if (["pptx", "docx"].includes(ext)) {
+            console.log(`[Parser] Attempting specialized Office extraction for ${fileName}...`);
+            text = await extractor().extract(buffer);
         }
-
-        throw new Error(`PDF could not be read: ${msg.substring(0, 200)}`);
+        
+        if (text && text.length > MIN_TEXT_LENGTH) return text.trim();
+    } catch (err) {
+        console.warn(`[Parser] Layer 1 extraction failed for ${fileName}:`, err);
     }
 
-    const text = (data.text || "").trim();
-
-    if (text.length < MIN_TEXT_LENGTH) {
-        throw new Error(
-            "SCANNED_PDF: Very little text was extracted from this PDF. " +
-            "It may be a scanned document. Try pasting your text directly instead."
-        );
+    // ── LAYER 2: GENERIC LOCAL FAILOVER (officeparser) ──
+    try {
+        console.log(`[Parser] Attempting Layer 2 (officeparser) for ${fileName}...`);
+        const result = await officeParser.parseOfficeAsync(buffer);
+        if (result && result.length > MIN_TEXT_LENGTH) return result.trim();
+    } catch (err) {
+        console.warn(`[Parser] Layer 2 extraction failed for ${fileName}:`, err);
     }
 
-    return text;
+    throw new Error(`Local extraction failed for ${fileName}. Please ensure the file is not corrupted.`);
 }
 
-// ─── DOCX / DOC Parsing ───────────────────────────────────────────────────────
-async function parseDOCX(buffer: Buffer): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mammoth = require("mammoth");
-
-    const result = await mammoth.extractRawText({ buffer });
-
-    if (result.messages?.length > 0) {
-        // Log non-fatal warnings from mammoth (e.g. unsupported features)
-        for (const msg of result.messages) {
-            if (msg.type === "warning") {
-                console.warn("[Parser] Mammoth warning:", msg.message);
-            }
-        }
-    }
-
-    const text = (result.value || "").trim();
-    if (!text) {
-        throw new Error(
-            "This Word document appears to be empty or contains only images/tables that cannot be extracted. " +
-            "Try copying and pasting your text instead."
-        );
-    }
-
-    return text;
-}
-
-// ─── CSV Parsing ──────────────────────────────────────────────────────────────
-async function parseCSV(text: string): Promise<string> {
-    const { default: Papa } = await import("papaparse");
-
-    const result = Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: false,
-    });
-
-    if (result.errors.length > 0 && result.data.length === 0) {
-        throw new Error("This CSV file could not be parsed. Please check the file format.");
-    }
-
-    // Convert CSV rows to readable text
-    const headers = result.meta.fields || [];
-    const rows = result.data as Record<string, string>[];
-
-    const lines: string[] = [
-        `CSV Data (${rows.length} rows, ${headers.length} columns):`,
-        `Columns: ${headers.join(", ")}`,
-        "",
-        ...rows.slice(0, 500).map(row =>  // Cap at 500 rows to prevent overflow
-            headers.map(h => `${h}: ${row[h] ?? ""}`).join(" | ")
-        ),
-    ];
-
-    if (rows.length > 500) {
-        lines.push(`\n[Note: Showing first 500 of ${rows.length} rows]`);
-    }
-
-    return lines.join("\n");
-}
-
-// ─── Main Export ──────────────────────────────────────────────────────────────
+// ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 export async function parseDocument(
     buffer: Buffer,
     mimeType: string,
     fileName: string,
     fileSizeBytes?: number
 ): Promise<ParseResult> {
-    // ── Size guard ──
     const size = fileSizeBytes ?? buffer.byteLength;
     if (size > MAX_FILE_SIZE_BYTES) {
-        const mb = (size / 1024 / 1024).toFixed(1);
-        throw new Error(
-            `File too large (${mb} MB). Please keep files under 10 MB. ` +
-            "For large documents, try splitting them into sections."
-        );
+        throw new Error(`File too large (${(size / 1024 / 1024).toFixed(1)} MB). Limit is 15MB.`);
     }
 
     const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-
     let text = "";
     let fileType = "unknown";
+    let isMultimodal = false;
 
-    // ── Route by MIME type or extension ──
-    if (mimeType === "application/pdf" || ext === "pdf") {
+    // ── NATIVE OFFICE PATH (PPTX, XLSX, DOCX) ──
+    const isDigitalOffice = [
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.ms-excel",
+        "application/msword"
+    ].includes(mimeType) || ["pptx", "xlsx", "docx", "ppt", "xls", "doc"].includes(ext);
+
+    if (isDigitalOffice) {
+        fileType = ext.toUpperCase() || "OFFICE";
+        console.log(`[Parser] Running Robust Layered pass for ${fileType}...`);
+        // Note: Digital Documents now use the multi-layer local engine. AI Lens is for IMAGES and SCANS.
+        text = await parseOffice(buffer, fileName, ext);
+    } 
+    // ── IMAGE SUPPORT ──
+    else if (mimeType.startsWith("image/") || ["jpg", "jpeg", "png", "webp"].includes(ext)) {
+        fileType = "IMAGE";
+        console.log(`[Parser] Running AI Lens pass for IMAGE...`);
+        const result = await transcribeMultimodalContent(buffer, mimeType, fileName);
+        text = result.text;
+        isMultimodal = true;
+    } 
+    // ── PDF ──
+    else if (mimeType === "application/pdf" || ext === "pdf") {
         fileType = "PDF";
-        text = await parsePDF(buffer);
-    } else if (
-        mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        ext === "docx"
-    ) {
-        fileType = "DOCX";
-        text = await parseDOCX(buffer);
-    } else if (
-        mimeType === "application/msword" ||
-        ext === "doc"
-    ) {
-        fileType = "DOC";
-        // mammoth can handle old .doc via buffer too, though with less reliability
-        text = await parseDOCX(buffer);
-    } else if (mimeType === "text/csv" || ext === "csv") {
+        const { text: rawText, isScanned } = await parsePDF(buffer);
+        
+        if (isScanned) {
+            console.log("[Parser] Scanned PDF detected. Triggering AI Lens...");
+            const result = await transcribeMultimodalContent(buffer, mimeType, fileName);
+            text = result.text;
+            isMultimodal = true;
+        } else {
+            text = rawText;
+        }
+    } 
+    // ── CSV ──
+    else if (mimeType === "text/csv" || ext === "csv") {
+        const { default: Papa } = await import("papaparse");
+        const result = Papa.parse(buffer.toString("utf-8"), { header: true, skipEmptyLines: true });
+        text = result.data.slice(0, 500).map((row: any) => Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(" | ")).join("\n");
         fileType = "CSV";
-        text = await parseCSV(buffer.toString("utf-8"));
-    } else if (
-        mimeType === "text/plain" ||
-        ext === "txt" ||
-        ext === "md" ||
-        ext === "markdown"
-    ) {
+    } 
+    // ── TXT / MD ──
+    else if (["text/plain", "text/markdown"].includes(mimeType) || ["txt", "md"].includes(ext)) {
         fileType = "TXT";
         text = buffer.toString("utf-8").trim();
-        if (!text) {
-            throw new Error("This text file appears to be empty.");
-        }
-    } else {
-        throw new Error(
-            `Unsupported file type: .${ext || mimeType}. ` +
-            "Please upload a PDF, DOCX, TXT, or CSV file."
-        );
+    } 
+    else {
+        throw new Error(`Unsupported file type: .${ext}. Please upload standard academic files.`);
     }
 
-    // ── Post-processing ──
-    // Collapse excessive whitespace (3+ blank lines → 1)
-    text = text.replace(/\n{3,}/g, "\n\n").trim();
-
-    const wordCount = text.split(/\s+/).filter(Boolean).length;
-
-    if (wordCount < 10) {
-        throw new Error(
-            `Very little text was extracted from this ${fileType} (${wordCount} words). ` +
-            "The file may be empty, image-only, or password-protected."
-        );
+    if (!text || text.length < MIN_TEXT_LENGTH) {
+        throw new Error(`Extraction failed for ${fileType}. The file may be empty or corrupted.`);
     }
 
     return {
-        text,
-        wordCount,
+        text: text.replace(/\n{3,}/g, "\n\n").trim(),
+        wordCount: text.split(/\s+/).filter(Boolean).length,
         fileType,
+        isMultimodal
     };
 }
+

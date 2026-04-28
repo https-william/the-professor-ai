@@ -8,34 +8,67 @@ export default function SocialProof() {
           Trusted by top scholars globally
         </p>
         
-        {/* CSS Marquee */}
-        <div className="flex overflow-hidden relative">
-          <div className="flex space-x-12 animate-marquee whitespace-nowrap items-center w-max min-w-full justify-around">
-            {[
-              { val: "10,000+", label: "Decks Mastered" },
-              { val: "OAU & UNILAG", label: "Top Public Adopters" },
-              { val: "COVENANT & BABCOCK", label: "Top Private Adopters" },
-              { val: "100%", label: "Curriculum Aligned" }
-            ].map((stat, i) => (
-              <div key={i} className="flex flex-col items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                <span className="text-xl md:text-2xl font-black text-[var(--foreground)] tracking-tight">{stat.val}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-muted)]">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-          
-          <div className="flex space-x-12 animate-marquee whitespace-nowrap items-center w-max min-w-full justify-around absolute top-0" style={{ animationDelay: '-15s', left: '100%' }}>
-            {[
-              { val: "10,000+", label: "Decks Mastered" },
-              { val: "OAU & UNILAG", label: "Top Public Adopters" },
-              { val: "COVENANT & BABCOCK", label: "Top Private Adopters" },
-              { val: "100%", label: "Curriculum Aligned" }
-            ].map((stat, i) => (
-              <div key={i + "b"} className="flex flex-col items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                <span className="text-xl md:text-2xl font-black text-[var(--foreground)] tracking-tight">{stat.val}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-muted)]">{stat.label}</span>
-              </div>
-            ))}
+        {/* Unified High-Density Scrolling Ticker */}
+        <div className="flex overflow-hidden relative group">
+          <div className="flex animate-marquee whitespace-nowrap py-2">
+            <div className="flex space-x-20 items-center px-10">
+              {[
+                { val: "15,000+", label: "Decks Mastered" },
+                { val: "OAU", label: "Top Campus" },
+                { val: "UNILAG", label: "Scholarly Hub" },
+                { val: "UK", label: "Global Presence" },
+                { val: "USA", label: "International Partner" },
+                { val: "UNIVERSITY OF IBADAN", label: "Academic Giant" },
+                { val: "COVENANT", label: "Elite Partner" },
+                { val: "BABCOCK", label: "Top Choice" },
+                { val: "GHANA", label: "Regional Leader" },
+                { val: "CANADA", label: "Research Link" },
+                { val: "ABU", label: "Northern Hub" },
+                { val: "LASU", label: "Lagos Giant" },
+                { val: "GERMANY", label: "EU Scholar Hub" },
+                { val: "FRANCE", label: "EU Expansion" },
+                { val: "NILE", label: "Private Adopter" },
+                { val: "PAN-ATLANTIC", label: "Innovation Hub" },
+                { val: "UNIZIK", label: "Eastern Hub" },
+                { val: "BUK", label: "Strategic Partner" },
+                { val: "100%", label: "Curriculum Aligned" }
+              ].map((stat, i) => (
+                <div key={i} className="flex flex-col items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-300">
+                  <span className="text-xl md:text-2xl font-black text-[var(--foreground)] tracking-tight">{stat.val}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-muted)]">{stat.label}</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Duplicated for seamless loop within the SAME scrolling flow */}
+            <div className="flex space-x-20 items-center px-10">
+              {[
+                { val: "15,000+", label: "Decks Mastered" },
+                { val: "OAU", label: "Top Campus" },
+                { val: "UNILAG", label: "Scholarly Hub" },
+                { val: "UK", label: "Global Presence" },
+                { val: "USA", label: "International Partner" },
+                { val: "UNIVERSITY OF IBADAN", label: "Academic Giant" },
+                { val: "COVENANT", label: "Elite Partner" },
+                { val: "BABCOCK", label: "Top Choice" },
+                { val: "GHANA", label: "Regional Leader" },
+                { val: "CANADA", label: "Research Link" },
+                { val: "ABU", label: "Northern Hub" },
+                { val: "LASU", label: "Lagos Giant" },
+                { val: "GERMANY", label: "EU Scholar Hub" },
+                { val: "FRANCE", label: "EU Expansion" },
+                { val: "NILE", label: "Private Adopter" },
+                { val: "PAN-ATLANTIC", label: "Innovation Hub" },
+                { val: "UNIZIK", label: "Eastern Hub" },
+                { val: "BUK", label: "Strategic Partner" },
+                { val: "100%", label: "Curriculum Aligned" }
+              ].map((stat, i) => (
+                <div key={i + "b"} className="flex flex-col items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-300">
+                  <span className="text-xl md:text-2xl font-black text-[var(--foreground)] tracking-tight">{stat.val}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-muted)]">{stat.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

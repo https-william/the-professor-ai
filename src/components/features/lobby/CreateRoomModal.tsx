@@ -97,9 +97,9 @@ export default function CreateRoomModal({ isOpen, onClose, onCreated }: CreateRo
                         <div className="p-6 border-b border-white/5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 flex items-center justify-center">
-                                        <PlusCircle size={20} strokeWidth={1.5} className="text-[#10B981]" />
-                                    </div>
+                                        <div className="w-10 h-10 rounded-xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center">
+                                            <PlusCircle size={20} strokeWidth={2} className="text-[var(--foreground)]" />
+                                        </div>
                                     <div>
                                         <h2 className="text-lg font-bold text-white">Create Study Room</h2>
                                         <p className="text-[10px] text-white/40">Start a collaborative session</p>
@@ -144,8 +144,8 @@ export default function CreateRoomModal({ isOpen, onClose, onCreated }: CreateRo
                                             onClick={() => setRoomType(type.id as any)}
                                             className={`p-3 rounded-xl border text-center transition-all ${
                                                 roomType === type.id
-                                                    ? 'bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]'
-                                                    : 'bg-white/[0.02] border-white/5 text-white/40 hover:border-white/10'
+                                                    ? 'bg-[var(--foreground)] text-[var(--background)] border-[var(--foreground)] shadow-lg'
+                                                    : 'bg-[var(--foreground)]/[0.02] border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--foreground)]/20'
                                             }`}
                                         >
                                             <type.icon size={18} strokeWidth={1.5} className="block mx-auto mb-1" />
@@ -181,9 +181,9 @@ export default function CreateRoomModal({ isOpen, onClose, onCreated }: CreateRo
                                 </div>
                                 <button
                                     onClick={() => setIsPublic(!isPublic)}
-                                    className={`w-12 h-7 rounded-full transition-all ${isPublic ? 'bg-[#10B981]' : 'bg-white/10'}`}
+                                    className={`w-12 h-7 rounded-full transition-all flex items-center px-1 ${isPublic ? 'bg-[var(--foreground)]' : 'bg-[var(--border)]'}`}
                                 >
-                                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-all ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    <div className={`w-5 h-5 rounded-full bg-[var(--background)] shadow-sm transition-all ${isPublic ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
                             </div>
 
@@ -224,9 +224,9 @@ export default function CreateRoomModal({ isOpen, onClose, onCreated }: CreateRo
                                     disabled={isCreating || !name.trim()}
                                     className="flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50"
                                     style={{
-                                        background: "linear-gradient(135deg, #10B981, #059669)",
-                                        color: "#fff",
-                                        boxShadow: "0 4px 20px rgba(16, 185, 129, 0.3)"
+                                        background: "var(--foreground)",
+                                        color: "var(--background)",
+                                        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.4)"
                                     }}
                                 >
                                     {isCreating ? (

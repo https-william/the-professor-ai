@@ -7,7 +7,6 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
-import SiteHeader from "@/components/ui/SiteHeader";
 import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
 import { useIngestStore } from "@/store/useIngestStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -169,23 +168,9 @@ function ChatTool() {
                     style={{ top: "-10%", left: "-10%", background: "radial-gradient(circle, rgba(52, 211, 153, 0.05), transparent 60%)", filter: "blur(80px)", animationDuration: "8s" }} />
             </div>
 
-            {/* Floating HUD */}
-            <SiteHeader showLogo={false} leftSlot={
-                <button
-                    onClick={() => router.push('/create')}
-                    className="flex w-10 h-10 rounded-2xl items-center justify-center interactive-glass z-50 text-[var(--foreground)]"
-                    style={{
-                        background: "var(--card-bg)",
-                        backdropFilter: "blur(20px)",
-                        border: "1px solid var(--border)",
-                        boxShadow: "0 4px 24px rgba(0,0,0,0.4), inset 0 1px 1px var(--glow)",
-                    }}
-                >
-                    <span className="material-symbols-outlined text-lg">
-                        arrow_back
-                    </span>
-                </button>
-            } />
+            <div className="mx-auto flex justify-center py-4">
+                {/* Header Slot Placeholder or direct back button if needed */}
+            </div>
 
             <main className="flex-1 flex flex-col relative min-w-0 pt-24 md:pt-16 overflow-hidden h-full z-10 w-full max-w-4xl mx-auto">
                 <motion.div 

@@ -1,15 +1,16 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
-import SiteHeader from "@/components/ui/SiteHeader";
+
 import SessionComplete from "@/components/features/SessionComplete";
 import { motion, AnimatePresence } from "framer-motion";
+import DataDustLoader from "@/components/ui/DataDustLoader";
 
-/* ══════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    LEVENSHTEIN DISTANCE (fuzzy matching)
-   ══════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function levenshtein(a: string, b: string): number {
     const m = a.length, n = b.length;
     const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
@@ -169,16 +170,7 @@ export default function LearnModePage() {
     const progress = cards.length > 0 ? ((currentIndex) / cards.length) * 100 : 0;
 
     if (loading) {
-        return (
-            <div className="h-[100dvh] bg-[#06060B] overflow-hidden relative">
-                <SiteHeader showLogo />
-                <div className="h-full flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-2xl bg-[#10B981]/10 flex items-center justify-center">
-                        <div className="w-6 h-6 border-2 border-[#10B981]/20 border-t-[#10B981] rounded-full animate-spin" />
-                    </div>
-                </div>
-            </div>
-        );
+        return <DataDustLoader label="Loading Session" phrases={["Preparing your cards...", "Setting up learn mode...", "Almost ready..."]} />;
     }
 
     const resultConfig = {
@@ -189,7 +181,7 @@ export default function LearnModePage() {
 
     return (
         <div className="h-[100dvh] bg-[#06060B] overflow-hidden relative flex flex-col">
-            <SiteHeader showLogo />
+
 
             {/* Progress Bar */}
             <div className="w-full h-1 bg-white/5 shrink-0">
@@ -374,3 +366,4 @@ export default function LearnModePage() {
         </div>
     );
 }
+

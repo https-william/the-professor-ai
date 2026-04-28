@@ -30,18 +30,18 @@ export default function AdminDashboardClient() {
 
     // Subscriptions
     const subGen = supabase.channel('admin_gen')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'generations' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duel_results' }, (payload: any) => {
          setGenerations(prev => [payload.new, ...prev].slice(0, 50));
       }).subscribe();
       
     const subBroadcast = supabase.channel('admin_broad')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts' }, (payload: any) => {
          if (payload.eventType === 'INSERT') setBroadcasts(prev => [payload.new, ...prev]);
          if (payload.eventType === 'DELETE') setBroadcasts(prev => prev.filter(b => b.id !== payload.old.id));
       }).subscribe();
 
     const subProfile = supabase.channel('admin_prof')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload: any) => {
          // handle profile updates live
          if (payload.eventType === 'UPDATE') {
              setProfiles(prev => prev.map(p => p.id === payload.new.id ? payload.new : p));
@@ -51,7 +51,7 @@ export default function AdminDashboardClient() {
       }).subscribe();
 
     const subBlog = supabase.channel('admin_blog')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, (payload: any) => {
          if (payload.eventType === 'INSERT') setBlogs(prev => [payload.new, ...prev]);
          if (payload.eventType === 'DELETE') setBlogs(prev => prev.filter(b => b.id !== payload.old.id));
       }).subscribe();

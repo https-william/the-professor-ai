@@ -5,13 +5,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import ShareCard from "@/components/ShareCard";
-import SiteHeader from "@/components/ui/SiteHeader";
+
 import { useToasts } from "@/components/ui/GlobalToasts";
 import EndowmentModal from "@/components/modals/EndowmentModal";
 import SessionComplete from "@/components/features/SessionComplete";
 import DataDustLoader from "@/components/ui/DataDustLoader";
 import AuthInterceptor from "@/components/ui/AuthInterceptor";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
+import { Share2 } from "lucide-react";
 
 interface Flashcard {
     id?: string;
@@ -37,16 +38,52 @@ function FlashcardContent() {
     // Generation State
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationError, setGenerationError] = useState<string | null>(null);
+
+    // UX State
+    const [isTheaterMode, setIsTheaterMode] = useState(false);
+
+    // Universal Study Hotkeys
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isGenerating || isGeneratingEli5 || isEndowmentOpen || sessionComplete) return;
+
+            switch (e.key) {
+                case ' ':
+                case 'Enter':
+                    e.preventDefault();
+                    setIsFlipped(prev => !prev);
+                    setIsTheaterMode(true);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    handleNext();
+                    setIsTheaterMode(true);
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    handlePrev();
+                    setIsTheaterMode(true);
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    if (isTheaterMode) {
+                        setIsTheaterMode(false);
+                    } else {
+                        router.push('/dashboard');
+                    }
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isGenerating, currentIndex, flashcards.length]); // Dependencies needed because handleNext uses stale state if not careful, but wait, handleNext uses set state callback. So we only need to re-bind when necessary.
     const [generationId, setGenerationId] = useState<string | null>(null);
     const hasStartedGeneration = useRef(false);
     const [hasRecordedActivity, setHasRecordedActivity] = useState(false);
     const [isEndowmentOpen, setIsEndowmentOpen] = useState(false);
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
     const [showSwipeHint, setShowSwipeHint] = useState(true);
-
-    // Self-rating state
-    const [ratingSubmitting, setRatingSubmitting] = useState(false);
-    const [showRatingHint, setShowRatingHint] = useState(true);
 
     // ELI5 state
     const [eli5Text, setEli5Text] = useState<Record<number, string>>({});
@@ -245,35 +282,9 @@ function FlashcardContent() {
             setTimeout(() => setCurrentIndex(0), 400); // Reset for replay behind overlay
             return;
         }
-        
         setTimeout(() => setCurrentIndex(nextIndex), 300);
     };
 
-    const handleSelfRate = async (rating: 1 | 2 | 3 | 4) => {
-        if (ratingSubmitting) return;
-        setRatingSubmitting(true);
-        setShowRatingHint(false);
-
-        try {
-            await fetch("/api/user/card-review", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    generationId: generationId,
-                    cardId: currentCard?.id,
-                    rating,
-                    front: currentCard?.front,
-                    back: currentCard?.back,
-                }),
-            });
-        } catch (err) {
-            console.error("Rating failed:", err);
-        }
-
-        setRatingSubmitting(false);
-        // Auto-advance after rating
-        handleNext();
-    };
     const handlePrev = () => {
         setIsFlipped(false);
         setTimeout(() => setCurrentIndex((prev) => (prev - 1 + flashcards.length) % flashcards.length), 300);
@@ -326,13 +337,18 @@ function FlashcardContent() {
     if (!currentCard) return null;
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-24 relative overflow-hidden flex flex-col items-center">
+        <div className={`min-h-screen transition-colors duration-700 ${isTheaterMode ? 'bg-[#030305]' : 'bg-[var(--background)]'} text-[var(--foreground)] pb-24 relative overflow-hidden flex flex-col items-center`}>
+            {/* Smart Theater Mode Dimmer */}
+            <div 
+                className={`fixed inset-0 bg-black pointer-events-none transition-opacity duration-1000 z-0 ${isTheaterMode ? 'opacity-60' : 'opacity-0'}`} 
+            />
+
             {/* Ambient Lighting */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--accent)]/5 blur-3xl pointer-events-none rounded-full translate-x-1/3 -translate-y-1/3" />
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--secondary)]/5 blur-3xl pointer-events-none rounded-full -translate-x-1/3 translate-y-1/3" />
+            <div className={`absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--accent)]/5 blur-3xl pointer-events-none rounded-full translate-x-1/3 -translate-y-1/3 transition-opacity duration-1000 ${isTheaterMode ? 'opacity-0' : 'opacity-100'}`} />
+            <div className={`absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--secondary)]/5 blur-3xl pointer-events-none rounded-full -translate-x-1/3 translate-y-1/3 transition-opacity duration-1000 ${isTheaterMode ? 'opacity-0' : 'opacity-100'}`} />
 
             {/* Header */}
-            <header className="w-full max-w-4xl p-5 flex items-center justify-between relative z-10 animate-in slide-in-from-top-4 duration-500">
+            <header className={`w-full max-w-4xl p-5 flex items-center justify-between relative z-10 animate-in slide-in-from-top-4 transition-opacity duration-500 ${isTheaterMode ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                 <button
                     onClick={() => router.push('/create')}
                     className="group flex flex-col items-start gap-1"
@@ -401,7 +417,7 @@ function FlashcardContent() {
                  >
                     <div className={`relative w-full h-full transition-all duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                         {/* Front Side */}
-                        <div className="absolute inset-0 rounded-[40px] nm-flat p-10 flex flex-col items-center justify-center backface-hidden transition-all group-hover:scale-[1.01]">
+                        <div className="absolute inset-0 rounded-[40px] nm-flat p-10 flex flex-col items-center justify-center backface-hidden transition-all group-hover:scale-[1.01] border-[1.5px] border-[var(--border)] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                             <p className="text-3xl font-bold text-center text-[var(--foreground)] leading-tight tracking-tight mb-8">{currentCard.front}</p>
                             <div className="absolute bottom-10 flex flex-col items-center gap-3">
                                 <div className="w-12 h-1 bg-[var(--foreground)]/5 rounded-full overflow-hidden">
@@ -448,80 +464,22 @@ function FlashcardContent() {
                     </div>
                 </motion.div>
 
-                {/* Self-Rating Buttons (appear when flipped) */}
-                <AnimatePresence>
-                    {isFlipped && (
-                        <motion.div
-                            className="w-full max-w-sm mt-8"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ delay: 0.3, duration: 0.3 }}
-                        >
-                            {showRatingHint && (
-                                <p className="text-[10px] text-center text-[var(--foreground-muted)] opacity-50 uppercase tracking-widest font-bold mb-3">How well did you know this?</p>
-                            )}
-                            <div className="grid grid-cols-4 gap-2">
-                                {[
-                                    { rating: 1 as const, label: "Again", color: "#EF4444", sub: "1d" },
-                                    { rating: 2 as const, label: "Hard", color: "#F97316", sub: "3d" },
-                                    { rating: 3 as const, label: "Good", color: "#3B82F6", sub: "7d" },
-                                    { rating: 4 as const, label: "Easy", color: "#10B981", sub: "14d" },
-                                ].map(({ rating, label, color, sub }) => (
-                                    <button
-                                        key={rating}
-                                        onClick={(e) => { e.stopPropagation(); handleSelfRate(rating); }}
-                                        disabled={ratingSubmitting}
-                                        className="py-3 rounded-2xl flex flex-col items-center gap-1 transition-all active:scale-[0.93] disabled:opacity-50"
-                                        style={{
-                                            background: `${color}12`,
-                                            border: `1px solid ${color}25`,
-                                        }}
-                                    >
-                                        <span className="text-[12px] font-bold" style={{ color }}>{label}</span>
-                                        <span className="text-[9px] font-bold text-[var(--foreground-muted)] opacity-40">{sub}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Navigation buttons (only when NOT flipped) */}
-                {!isFlipped && (
-                    <div className="flex items-center gap-8 mt-16 w-full max-w-sm">
-                        <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} 
-                            className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 nm-button">
-                            <span className="material-symbols-outlined text-[var(--foreground-muted)]">chevron_left</span>
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); handleNext(); }} 
-                            className="flex-1 py-5 rounded-2xl bg-[var(--accent)] text-[var(--background)] font-black tracking-[0.2em] text-[11px] uppercase transition-all active:scale-[0.95] shadow-[0_10px_30px_rgba(245,158,11,0.2)]">
-                            {currentIndex === flashcards.length - 1 ? "Finish Deck" : "Next Card"}
-                        </button>
-                    </div>
-                )}
+                {/* Navigation buttons (always visible) */}
+                <div className="flex items-center gap-8 mt-16 w-full max-w-sm">
+                    <button onClick={(e) => { e.stopPropagation(); handlePrev(); }} 
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 nm-button">
+                        <span className="material-symbols-outlined text-[var(--foreground-muted)]">chevron_left</span>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleNext(); }} 
+                        className="flex-1 py-5 rounded-2xl bg-[var(--accent)] text-[var(--background)] font-black tracking-[0.2em] text-[11px] uppercase transition-all active:scale-[0.95] shadow-[0_10px_30px_rgba(245,158,11,0.2)]">
+                        {currentIndex === flashcards.length - 1 ? "Finish Deck" : "Next Card"}
+                    </button>
+                </div>
             </main>
 
-            {/* Study Modes */}
-            <div className="w-full px-6 py-6 mt-auto">
+            <div className="w-full px-6 py-6 mt-auto flex flex-col items-center justify-center">
                 <p className="text-[9px] font-black text-[var(--foreground-muted)] opacity-50 uppercase tracking-[0.3em] text-center mb-4">More ways to study</p>
-                <div className="flex items-center justify-center gap-3 max-w-md mx-auto">
-                    {/* Match Game */}
-                    <button
-                        onClick={() => {
-                            sessionStorage.setItem("matchGameCards", JSON.stringify({
-                                cards: flashcards,
-                                title: title,
-                            }));
-                            router.push("/flashcards/match");
-                        }}
-                        disabled={flashcards.length < 3}
-                        className="flex-1 py-3 rounded-2xl flex flex-col items-center gap-1 transition-all active:scale-[0.95] disabled:opacity-25"
-                        style={{ background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.12)" }}
-                    >
-                        <span className="material-symbols-outlined text-[18px] text-[#818CF8]">extension</span>
-                        <span className="text-[9px] font-bold text-[#818CF8]/70 uppercase tracking-wider">Match</span>
-                    </button>
+                <div className="flex items-center justify-center gap-3 w-full max-w-[200px]">
 
                     {/* Learn Mode */}
                     <button
@@ -566,6 +524,20 @@ function FlashcardContent() {
                 </div>
             </div>
 
+            {/* ─── FLOATING SHARE PILL ─── */}
+            <motion.button
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsShareOpen(true)}
+                className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 rounded-full bg-[var(--foreground)] text-[var(--background)] flex items-center gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.4)] group overflow-hidden"
+            >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                <Share2 size={18} strokeWidth={2.5} />
+                <span className="text-xs font-black uppercase tracking-[0.2em]">Share deck</span>
+            </motion.button>
+
             <ShareCard 
                 isOpen={isShareOpen}
                 onClose={() => setIsShareOpen(false)}
@@ -606,7 +578,8 @@ function FlashcardContent() {
 export default function FlashcardsPage() {
     return (
         <div className="h-[100dvh] bg-[var(--background)] overflow-hidden relative">
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto relative">
+                <div data-header-sentinel className="absolute top-0 h-1 w-full pointer-events-none" />
                 <Suspense fallback={<div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-[10px] font-black tracking-[0.4em] text-[var(--foreground-muted)] opacity-60 uppercase">Loading deck...</div>}>
                     <FlashcardContent />
                 </Suspense>

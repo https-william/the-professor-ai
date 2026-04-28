@@ -1,13 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
   images: {
     unoptimized: true,
   },
   serverExternalPackages: ["pdf-parse"],
-  // Note: headers() are ignored in static export mode. 
-  // Cache control will be handled by the Tauri asset protocol or the production host.
+  async rewrites() {
+    return [
+      {
+        source: "/api/markitdown",
+        destination: "http://localhost:5000/api/markitdown",
+      },
+    ];
+  },
+  // Note: 'output: export' was removed — it conflicts with dynamic API routes.
+  // Tauri builds should use a separate build command with NEXT_PUBLIC_TAURI=1
+  // to conditionally apply static export settings.
 };
 
 export default nextConfig;

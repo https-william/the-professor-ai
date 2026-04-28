@@ -14,7 +14,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ────── TYPES ────── */
-export type ContentType = "flashcard" | "quiz" | "summary" | "chat";
+export type ContentType = "flashcard" | "quiz" | "summary" | "chat" | "mastery";
 
 export interface ShareableContent {
   type: ContentType;
@@ -44,7 +44,8 @@ export type LayoutId =
   | "diagonal"         // Content on a diagonal cut
   | "floating"         // Content floats over background
   | "timeline"         // Chronological/sequential layout
-  | "spotlight";       // Single element focus with radial bg
+  | "spotlight"        // Single element focus with radial bg
+  | "liquid-glass";    // Ultra-modern blurred glass with refraction
 
 export interface LayoutPrimitive {
   id: LayoutId;
@@ -171,6 +172,14 @@ export const LAYOUT_PRIMITIVES: LayoutPrimitive[] = [
     zones: 1,
     bestFor: ["flashcard"],
   },
+  {
+    id: "liquid-glass",
+    label: "Liquid Glass",
+    description: "Multi-layered glass refraction with vibrant depth",
+    gridTemplate: "relative flex items-center justify-center p-12",
+    zones: 3,
+    bestFor: ["flashcard", "quiz", "summary", "mastery"],
+  },
 ];
 
 /* ────── COLOR THEMES ────── */
@@ -281,6 +290,28 @@ export const COLOR_THEMES: ColorTheme[] = [
     cardBg: "rgba(251,146,60,0.06)",
     border: "rgba(251,146,60,0.15)",
     glow: "rgba(251,146,60,0.2)",
+  },
+  {
+    id: "liquid-refraction",
+    label: "Liquid Refraction",
+    background: "linear-gradient(135deg, #050505 0%, #111111 100%)",
+    accent: "#6366F1",
+    text: "#FFFFFF",
+    textMuted: "#FFFFFF66",
+    cardBg: "rgba(255,255,255,0.03)",
+    border: "rgba(255,255,255,0.12)",
+    glow: "rgba(99,102,241,0.4)",
+  },
+  {
+    id: "professor-beacon",
+    label: "Professor Beacon",
+    background: "linear-gradient(135deg, #06060B 0%, #0F0F1A 100%)",
+    accent: "#F59E0B",
+    text: "#FFFFFF",
+    textMuted: "#FFFFFF33",
+    cardBg: "rgba(245,158,11,0.08)",
+    border: "rgba(245,158,11,0.2)",
+    glow: "rgba(245,158,11,0.3)",
   },
 ];
 
@@ -584,10 +615,21 @@ export function renderTemplate(templateId: string, content: ShareableContent): s
                 <text x="0" y="150" text-anchor="start" fill="${color.accent}" font-family="${typo.headingFont}" font-size="${120 * typo.headingScale}" font-weight="900" letter-spacing="-0.04em">${wrapSvgText(content.title, 0, 0, innerW, 120)}</text>
                 
                 <rect y="${innerH - 300}" width="${innerW}" height="300" fill="${color.accent}11"/>
-                <text x="${innerW - 40}" y="${innerH - 120}" text-anchor="end" fill="${color.accent}" font-family="${typo.bodyFont}" font-size="200" font-weight="900" opacity="0.3">${content.data.count || '99'}</text>
+                <text x="${innerW - 40}" y="${innerH - 120}" text-anchor="end" fill="${color.accent}" font-family="${typo.bodyFont}" font-size="200" font-weight="900" opacity="0.3">${content.data.count || content.data.streak || '99'}</text>
                 
                 <text x="40" y="${innerH - 180}" text-anchor="start" fill="${color.text}" font-family="${typo.bodyFont}" font-size="32" font-weight="800">${content.type.toUpperCase()}</text>
                 <text x="40" y="${innerH - 140}" text-anchor="start" fill="${color.text}44" font-family="${typo.bodyFont}" font-size="16" font-weight="600">BY THE PROFESSOR AI · ${(content.author || 'Scholar').toUpperCase()}</text>
+            </g>
+            `;
+            break;
+
+        case "spotlight":
+             svg += `
+            <g transform="translate(${padding}, ${padding})">
+                <circle cx="${innerW/2}" cy="${innerH/2}" r="${innerW * 0.4}" fill="${color.accent}05" stroke="${color.accent}22" stroke-width="2"/>
+                <text x="${innerW/2}" y="${innerH/2 - 40}" text-anchor="middle" fill="${color.text}" font-family="${typo.headingFont}" font-size="${42 * typo.headingScale}" font-weight="900">${wrapSvgText(content.title, innerW/2, 0, innerW * 0.6, 42)}</text>
+                <text x="${innerW/2}" y="${innerH/2 + 100}" text-anchor="middle" fill="${color.accent}" font-family="${typo.bodyFont}" font-size="120" font-weight="900">${content.data.count || content.data.streak || 'A+'}</text>
+                <text x="${innerW/2}" y="${innerH/2 + 160}" text-anchor="middle" fill="${color.text}44" font-family="${typo.bodyFont}" font-size="14" font-weight="900" letter-spacing="0.4em">${content.type.toUpperCase()}</text>
             </g>
             `;
             break;
@@ -599,6 +641,59 @@ export function renderTemplate(templateId: string, content: ShareableContent): s
                 <text x="${innerW/2}" y="${innerH/2}" text-anchor="middle" fill="${color.text}">${content.title}</text>
             </g>
             `;
+    }
+
+    // 3.5 Specific Layout: Liquid Glass (Custom specialized drawing)
+    if (layout.id === "liquid-glass") {
+        svg += `
+        <defs>
+            <linearGradient id="orb1" cx="0" cy="0" r="1">
+                <stop offset="0%" stop-color="#FF0080" />
+                <stop offset="100%" stop-color="#FF0080" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="orb2" cx="0" cy="0" r="1">
+                <stop offset="0%" stop-color="#7928CA" />
+                <stop offset="100%" stop-color="#7928CA" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="orb3" cx="0" cy="0" r="1">
+                <stop offset="0%" stop-color="#0070F3" />
+                <stop offset="100%" stop-color="#0070F3" stop-opacity="0" />
+            </linearGradient>
+            <filter id="glassBlur">
+                <feGaussianBlur stdDeviation="40" />
+            </filter>
+        </defs>
+
+        <!-- Vibrant Orbs Background -->
+        <g opacity="0.6" filter="url(#glassBlur)">
+            <circle cx="200" cy="300" r="400" fill="url(#orb1)" />
+            <circle cx="900" cy="1100" r="500" fill="url(#orb2)" />
+            <circle cx="800" cy="200" r="450" fill="url(#orb3)" />
+        </g>
+
+        <!-- Main Glass Panel -->
+        <g transform="translate(100, 200)">
+            <rect width="880" height="950" rx="60" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="2" />
+            <rect x="2" y="2" width="876" height="946" rx="58" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+            
+            <text x="440" y="120" text-anchor="middle" fill="#FFFFFF" font-family="'Inter', sans-serif" font-size="24" font-weight="900" letter-spacing="0.5em" opacity="0.4">THE PROFESSOR</text>
+            
+            <text x="440" y="300" text-anchor="middle" fill="#FFFFFF" font-family="${typo.headingFont}" font-size="${80 * typo.headingScale}" font-weight="900" letter-spacing="-0.02em">
+                ${wrapSvgText(content.title, 440, 0, 700, 80)}
+            </text>
+
+            <g transform="translate(440, 520)">
+                <circle r="140" fill="rgba(255,255,255,0.05)" stroke="${color.accent}" stroke-width="12" stroke-dasharray="20 10" />
+                <text y="25" text-anchor="middle" fill="${color.accent}" font-family="${typo.bodyFont}" font-size="120" font-weight="900" filter="url(#softGlow)">${content.data.count || 'A+'}</text>
+            </g>
+
+            <text x="440" y="780" text-anchor="middle" fill="#FFFFFF" font-family="${typo.bodyFont}" font-size="32" font-weight="700" letter-spacing="0.1em" opacity="0.6">${content.type.toUpperCase()}</text>
+            
+            <rect x="290" y="830" width="300" height="2" fill="rgba(255,255,255,0.1)" />
+            
+            <text x="440" y="890" text-anchor="middle" fill="#FFFFFF" font-family="${typo.bodyFont}" font-size="22" font-weight="500" opacity="0.4">${content.author || 'Anonymous Scholar'} · ${content.createdAt ? new Date(content.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</text>
+        </g>
+        `;
     }
 
     // 4. Branding & Final

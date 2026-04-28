@@ -10,7 +10,13 @@ import {
     CheckCircle2, 
     Lightbulb, 
     Trophy,
-    ListOrdered
+    ListOrdered,
+    ArrowLeft,
+    ArrowRight,
+    Search,
+    Swords,
+    Frown,
+    Handshake
 } from "lucide-react";
 import GlobalLeaderboard from "./GlobalLeaderboard";
 
@@ -99,8 +105,8 @@ export default function DuelResults({
                         >
                             {isDraw ? (
                                 <div className="space-y-4">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--secondary)]/20 border-2 border-[var(--secondary)]/30 flex items-center justify-center">
-                                        <span className="text-5xl">🤝</span>
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--secondary)]/5 border-2 border-[var(--secondary)]/20 flex items-center justify-center shadow-[0_0_40px_var(--secondary-glow)]">
+                                        <Handshake size={48} className="text-[var(--secondary)]" />
                                     </div>
                                     <div>
                                         <h1 className="text-3xl font-black text-[var(--secondary)]">IT&apos;S A DRAW!</h1>
@@ -109,8 +115,8 @@ export default function DuelResults({
                                 </div>
                             ) : isWinner ? (
                                 <div className="space-y-4">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--accent)]/20 border-2 border-[var(--accent)]/30 flex items-center justify-center animate-pulse" style={{ boxShadow: "0 0 40px var(--accent-glow)" }}>
-                                        <span className="text-5xl">👑</span>
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--accent)]/5 border-2 border-[var(--accent)]/20 flex items-center justify-center animate-pulse shadow-[0_0_40px_var(--accent-glow)]">
+                                        <Trophy size={48} className="text-[var(--accent)]" />
                                     </div>
                                     <div>
                                         <h1 className="text-3xl font-black text-[var(--accent)]">VICTORY!</h1>
@@ -119,8 +125,8 @@ export default function DuelResults({
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--error)]/20 border-2 border-[var(--error)]/30 flex items-center justify-center">
-                                        <span className="text-5xl">💀</span>
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--error)]/5 border-2 border-[var(--error)]/20 flex items-center justify-center shadow-[0_0_40px_var(--error-glow)]">
+                                        <Frown size={48} className="text-[var(--error)]" />
                                     </div>
                                     <div>
                                         <h1 className="text-3xl font-black text-[var(--error)]">DEFEAT</h1>
@@ -286,8 +292,8 @@ export default function DuelResults({
                                 </div>
 
                                  <div className="mt-6 p-4 rounded-xl bg-[var(--secondary)]/5 border-l-4 border-[var(--secondary)]">
-                                    <h4 className="text-[12px] font-bold uppercase tracking-wider text-[var(--secondary)] mb-2 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-sm">lightbulb</span>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--secondary)] mb-2 flex items-center gap-2">
+                                        <Lightbulb size={14} />
                                         Explanation
                                     </h4>
                                     <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
@@ -301,9 +307,10 @@ export default function DuelResults({
                              <button
                                 onClick={() => setCurrentReviewIndex(prev => Math.max(0, prev - 1))}
                                 disabled={currentReviewIndex === 0}
-                                className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 transition-all bg-[var(--foreground)]/5"
+                                className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 transition-all bg-[var(--foreground)]/5 flex items-center gap-2"
                             >
-                                ← Prev
+                                <ArrowLeft size={14} />
+                                Prev
                             </button>
 
                             {currentReviewIndex === questions.length - 1 ? (
@@ -316,9 +323,10 @@ export default function DuelResults({
                             ) : (
                                  <button
                                     onClick={() => setCurrentReviewIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                                    className="px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider bg-[var(--foreground)] text-[var(--background)]"
+                                    className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[var(--foreground)] text-[var(--background)] flex items-center gap-2"
                                 >
-                                    Next →
+                                    Next
+                                    <ArrowRight size={14} />
                                 </button>
                             )}
                         </div>

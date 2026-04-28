@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useIngestStore } from "@/store/useIngestStore";
 import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
-import SiteHeader from "@/components/ui/SiteHeader";
+import DataDustLoader from "@/components/ui/DataDustLoader";
+
 import { 
     Loader2, 
     Layers, 
     HelpCircle, 
     FileText, 
-    Map, 
+    Map as MapIcon, 
     MessageSquare, 
     ChevronLeft, 
     X, 
@@ -24,7 +25,7 @@ import {
 
 const MAX_CHARS = 50000;
 
-/* ═══ Claymorphic Helpers ═══ */
+/* â•â•â• Claymorphic Helpers â•â•â• */
 const clay = {
     card: {
         background: "var(--card-bg, rgba(255,255,255,0.02))",
@@ -45,7 +46,7 @@ const clay = {
     } as React.CSSProperties,
 };
 
-// ─── Creator Types ─────────────────────────────────────────────
+// â”€â”€â”€ Creator Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const creatorTypes = [
     {
         id: "flashcards",
@@ -56,6 +57,17 @@ const creatorTypes = [
         color: "#F59E0B",
         gradient: "from-[#F59E0B] to-[#D97706]",
         apiEndpoint: "/api/generate/flashcards",
+        cost: 1,
+    },
+    {
+        id: "match",
+        label: "Match Studio",
+        desc: "Interactive drag-and-drop connections",
+        longDesc: "AI synthesizes concepts into interactive pairs for high-velocity gamified recall training.",
+        icon: Zap,
+        color: "#EF4444",
+        gradient: "from-[#EF4444] to-[#B91C1C]",
+        apiEndpoint: "/api/generate/match",
         cost: 1,
     },
     {
@@ -86,23 +98,11 @@ const creatorTypes = [
         label: "Syllabus Architect",
         desc: "Convert chaos into a structured learning path",
         longDesc: "AI analyzes your curriculum and breaks it down into a logical, phased implementation strategy for your degree.",
-        icon: Map,
+        icon: MapIcon,
         color: "#C084FC",
         gradient: "from-[#C084FC] to-[#A855F7]",
         apiEndpoint: "/api/generate/roadmap",
         cost: 2,
-    },
-    {
-        id: "chat",
-        label: "Professor Chat",
-        desc: "Direct 1-on-1 AI Mentoring",
-        longDesc: "Ask questions, brainstorm ideas, or get complex topics explained simply in real-time.",
-        icon: MessageSquare,
-        color: "#34D399",
-        gradient: "from-[#34D399] to-[#059669]",
-        apiEndpoint: "",
-        cost: 0,
-        directRoute: "/chat"
     },
 ];
 
@@ -112,13 +112,13 @@ interface GenerationResult {
     data: any;
 }
 
-// ─── Configuration Options ─────────────────────────────────────
+// â”€â”€â”€ Configuration Options â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const countOptions = [5, 10, 20, 30, 45, 60];
 const difficultyOptions = [
-    { id: "easy", label: "Easy", desc: "Basic recall & definitions", emoji: "🟢" },
-    { id: "medium", label: "Medium", desc: "Conceptual understanding", emoji: "🟡" },
-    { id: "difficult", label: "Hard", desc: "Application & analysis", emoji: "🟠" },
-    { id: "nightmare", label: "Nightmare", desc: "Expert-level traps", emoji: "🔴" },
+    { id: "easy", label: "Easy", desc: "Basic recall & definitions", emoji: "ðŸŸ¢" },
+    { id: "medium", label: "Medium", desc: "Conceptual understanding", emoji: "ðŸŸ¡" },
+    { id: "difficult", label: "Hard", desc: "Application & analysis", emoji: "ðŸŸ " },
+    { id: "nightmare", label: "Nightmare", desc: "Expert-level traps", emoji: "ðŸ”´" },
 ];
 
 function CreatorStudio() {
@@ -133,7 +133,7 @@ function CreatorStudio() {
     // Deep Link Interception
     useEffect(() => {
         const tool = searchParams.get('tool');
-        if (tool && ['flashcards', 'quiz', 'summary', 'roadmap'].includes(tool)) {
+        if (tool && ['flashcards', 'match', 'quiz', 'summary', 'roadmap'].includes(tool)) {
             setSelectedType(tool);
         }
     }, [searchParams]);
@@ -149,12 +149,12 @@ function CreatorStudio() {
     const [itemCount, setItemCount] = useState(10);
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
 
-    // ─── Computed ───────────────────────────────────────────────
+    // â”€â”€â”€ Computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const selectedCreator = creatorTypes.find(c => c.id === selectedType);
     const charPercentage = (inputText.length / MAX_CHARS) * 100;
     const canGenerate = inputText.trim().length > 50 && selectedType;
 
-    // ─── Handlers ───────────────────────────────────────────────
+    // â”€â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
     };
@@ -192,38 +192,26 @@ function CreatorStudio() {
         setSetupError(null);
     };
 
-    // ─── RENDER ─────────────────────────────────────────────────
+    // â”€â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     return (
         <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
-            {/* Ambient Background */}
+            {/* Ambient Background — warm amber only, no purple */}
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute w-[600px] h-[600px] rounded-full animate-pulse"
-                    style={{ top: "-10%", right: "-10%", background: "radial-gradient(circle, rgba(245,158,11,0.05), transparent 60%)", filter: "blur(80px)", animationDuration: "8s" }} />
-                <div className="absolute w-[400px] h-[400px] rounded-full animate-pulse"
-                    style={{ bottom: "10%", left: "-5%", background: "radial-gradient(circle, rgba(129,140,248,0.04), transparent 60%)", filter: "blur(70px)", animationDuration: "10s" }} />
+                <div className="absolute w-[600px] h-[600px] rounded-full"
+                    style={{ top: "-10%", right: "-10%", background: "radial-gradient(circle, rgba(245,158,11,0.06), transparent 60%)", filter: "blur(80px)", animation: "professor-pulse 8s ease-in-out infinite" }} />
+                <div className="absolute w-[400px] h-[400px] rounded-full"
+                    style={{ bottom: "10%", left: "-5%", background: "radial-gradient(circle, rgba(16,185,129,0.03), transparent 60%)", filter: "blur(70px)", animation: "professor-pulse 10s ease-in-out infinite reverse" }} />
             </div>
 
-            {/* Floating HUD */}
-            <SiteHeader showLogo leftSlot={
-                <button
-                    onClick={() => selectedType ? resetSelection() : router.push('/dashboard')}
-                    className="flex w-10 h-10 rounded-2xl items-center justify-center interactive-glass text-[var(--foreground)]"
-                    style={{
-                        background: "var(--card-bg, rgba(6, 6, 11, 0.7))",
-                        backdropFilter: "blur(20px)",
-                        border: "1px solid var(--border)",
-                        boxShadow: "0 4px 24px rgba(0,0,0,0.1), inset 0 1px 1px var(--glow)",
-                    }}
-                >
-                    {selectedType ? <ChevronLeft size={20} strokeWidth={1.5} /> : <X size={20} strokeWidth={1.5} />}
-                </button>
-            } />
+            <div className="mx-auto flex justify-center py-4">
+                {/* Header Slot Placeholder or direct back button if needed */}
+            </div>
 
             <main className="max-w-2xl mx-auto px-5 pt-24 pb-8 sm:pt-20 sm:pb-12 relative z-10">
 
-                {/* ═══════════════════════════════════════════════════
+                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     VIEW 1: TOOL SELECTION
-                   ═══════════════════════════════════════════════════ */}
+                   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
                 {!selectedType && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Welcome */}
@@ -295,9 +283,9 @@ function CreatorStudio() {
                     </div>
                 )}
 
-                {/* ═══════════════════════════════════════════════════
+                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     VIEW 2: INPUT + CONFIG
-                   ═══════════════════════════════════════════════════ */}
+                   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
                 {selectedType && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-400 space-y-6">
 
@@ -334,9 +322,14 @@ function CreatorStudio() {
                             </div>
                             <div className="relative p-5">
                                 {isUploading && (
-                                    <div className="absolute inset-0 z-10 bg-[#06060B]/80 backdrop-blur-md flex flex-col items-center justify-center rounded-xl">
-                                        <RotateCw size={24} strokeWidth={1.5} className="animate-spin text-[#F59E0B] mb-2" />
-                                        <p className="text-[12px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">{uploadStatus}</p>
+                                    <div className="absolute inset-0 z-10 bg-[var(--background)]/85 backdrop-blur-md flex flex-col items-center justify-center rounded-xl gap-3">
+                                        {/* Inline amber orbital spinner */}
+                                        <div className="relative w-10 h-10">
+                                            <div className="absolute inset-0 rounded-full border border-[var(--accent)]/15" />
+                                            <div className="absolute inset-0 rounded-full border border-transparent border-t-[var(--accent)]" style={{ animation: "professor-spin 1.2s linear infinite" }} />
+                                            <div className="absolute inset-[6px] rounded-full border border-transparent border-t-[#10B981]" style={{ animation: "professor-spin 0.8s linear infinite reverse" }} />
+                                        </div>
+                                        <p className="text-[11px] font-bold text-[var(--foreground-muted)] uppercase tracking-[0.2em]">{uploadStatus}</p>
                                     </div>
                                 )}
                                 <textarea
@@ -364,7 +357,7 @@ function CreatorStudio() {
                         </div>
 
                         {/* Config Block */}
-                        {(selectedType === "flashcards" || selectedType === "quiz") && (
+                        {(selectedType === "flashcards" || selectedType === "match" || selectedType === "quiz") && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="p-5" style={clay.card}>
                                     <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Density / Count</label>
@@ -465,8 +458,9 @@ function CreatorStudio() {
 
 export default function CreatePage() {
     return (
-        <Suspense fallback={<div className="h-[100dvh] bg-[var(--background)] flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#F59E0B] animate-spin" /></div>}>
+        <Suspense fallback={<DataDustLoader />}>
             <CreatorStudio />
         </Suspense>
     );
 }
+

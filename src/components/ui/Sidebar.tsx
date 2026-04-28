@@ -10,12 +10,14 @@ import {
     BookOpen,
     Settings,
     HelpCircle,
-    ChevronRight
+    ChevronRight,
+    GraduationCap
 } from "lucide-react";
+import BrandLogo from "./BrandLogo";
 
 const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Professor", href: "/professor", icon: MessageSquare },
+    { label: "Create", href: "/create", icon: MessageSquare }, // Reusing icon for creation tool
     { label: "Library", href: "/library", icon: BookOpen },
 ];
 
@@ -29,15 +31,12 @@ export function Sidebar() {
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-[260px] bg-[#0F0F11] border-r border-[#1F1F23] flex flex-col z-40 hidden lg:flex">
-            {/* Logo */}
-            <div className="h-16 px-5 flex items-center border-b border-[#1F1F23]">
+            <div className="h-20 px-5 flex items-center border-b border-[#1F1F23]">
                 <Link href="/dashboard" className="flex items-center gap-3 group">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#6366F1]/20 group-hover:shadow-[#6366F1]/30 transition-shadow">
-                        <span className="text-white text-sm font-bold">P</span>
-                    </div>
+                    <BrandLogo size="sm" />
                     <div>
-                        <span className="text-[15px] font-semibold text-white tracking-tight">The Professor</span>
-                        <div className="text-[10px] text-[#71717A] uppercase tracking-wider">AI Study Assistant</div>
+                        <span className="text-[15px] font-black text-white tracking-tight">THE PROFESSOR</span>
+                        <div className="text-[10px] text-[#71717A] uppercase tracking-widest font-bold">Autonomous Agent</div>
                     </div>
                 </Link>
             </div>
@@ -102,7 +101,7 @@ export function Sidebar() {
                     whileHover={{ backgroundColor: 'rgba(22, 22, 26, 0.8)' }}
                     className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors"
                 >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center ring-2 ring-[#1F1F23]">
+                    <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center ring-2 ring-[#1F1F23]">
                         <span className="text-xs font-semibold text-white">SC</span>
                     </div>
                     <div className="flex-1 min-w-0">

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
+import { useAppPlatform } from "@/hooks/useAppPlatform";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { 
     Backpack, 
     GraduationCap, 
@@ -30,7 +31,10 @@ import {
     Sparkles, 
     ChevronLeft, 
     ChevronRight, 
-    LogIn 
+    LogIn,
+    Smartphone,
+    Monitor,
+    ShieldCheck
 } from "lucide-react";
 
 /* ═══ Neumorphic Helpers ═══ */
@@ -59,10 +63,10 @@ const EDU_LEVELS = [
 ];
 
 const PAIN_POINTS = [
-    { id: "concepts", icon: Puzzle, label: "I need complex concepts explained simply." },
-    { id: "recall", icon: Brain, label: "I want to test my knowledge (Active Recall)." },
-    { id: "synthesis", icon: Layers, label: "I struggle to synthesize long lectures/papers." },
-    { id: "procrastination", icon: Timer, label: "I procrastinate and need structured habits." },
+    { id: "concepts", icon: Puzzle, label: "Explain complex concepts safely." },
+    { id: "recall", icon: Brain, label: "Active Recall (Flashcards/Quizzes)." },
+    { id: "synthesis", icon: Layers, label: "Synthesize long papers/textbooks." },
+    { id: "procrastination", icon: Timer, label: "I need consistency and habits." },
 ];
 
 const COMMITMENT_LEVELS = [
@@ -74,7 +78,7 @@ const COMMITMENT_LEVELS = [
 const TESTIMONIALS = [
     { quote: "The Professor didn't just help me pass; it fundamentally changed how I understand complex algorithms.", author: "Sarah J.", role: "CS Major" },
     { quote: "Finally, an AI that challenges me instead of just feeding me the answers. The active recall tools are game-changing.", author: "Michael T.", role: "Med Student" },
-    { quote: "I used to procrastinate reading long PDFs. Now, I upload them to The Hub and battle through the material.", author: "Elena R.", role: "Ph.D Candidate" }
+    { quote: "I used to procrastinate reading long PDFs. Now, I upload them and battle through the material.", author: "Elena R.", role: "Ph.D Candidate" }
 ];
 
 const CURRICULUM_FEATURES = [
@@ -85,9 +89,29 @@ const CURRICULUM_FEATURES = [
 
 export default function OnboardingModal() {
     const { user, completeOnboarding, saveOnboardingStep } = useUser();
+    const { isDesktop, isMobile, platform } = useAppPlatform();
     const router = useRouter();
+    const pathname = usePathname();
     const [step, setStep] = useState(1);
     const [isSaving, setIsSaving] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // ── Pre-mount Guards ──
+    const isLanding = pathname === "/";
+    const isAuthPage = ["/login", "/signup", "/forgot-password"].includes(pathname);
+    
+    // Don't mount on landing, auth pages, or if already onboarded/unauthenticated
+    if (!mounted || isLanding || isAuthPage || user.hasOnboarded) return null;
+    
+    // ─── CRITICAL: SIGNUP-ONLY PROTECTION ───
+    // Only show if the user's account was created in the last 2 minutes (Fresh Signup)
+    const isNewSignup = user.createdAt ? (Date.now() - new Date(user.createdAt).getTime()) < 120000 : false;
+    
+    if (!user.isAuthenticated || user.isLoading || !isNewSignup) return null;
 
     // Form data
     const [firstName, setFirstName] = useState("");
@@ -106,11 +130,15 @@ export default function OnboardingModal() {
     // Testimonial index
     const [testiIndex, setTestiIndex] = useState(0);
 
+    // Topic selection (must be declared before any early returns — Rules of Hooks)
+    const [topic, setTopic] = useState("");
+    const [topicError, setTopicError] = useState("");
+
     const isVisible = user.isAuthenticated && !user.isLoading && !user.hasOnboarded;
 
     // Testimonial Carousel Effect
     useEffect(() => {
-        if (step === 6) {
+        if (step === 7) { // Shifted for specialized step
             const timer = setInterval(() => {
                 setTestiIndex(prev => (prev + 1) % TESTIMONIALS.length);
             }, 3000);
@@ -147,9 +175,9 @@ export default function OnboardingModal() {
         return () => clearTimeout(timer);
     }, [username, user.id, step]);
 
-    // Step 7: Fake Analyzing Animation
+    // Analyzing Animation
     useEffect(() => {
-        if (step === 7 && !curriculumReady) {
+        if (step === 9 && !curriculumReady) {
             const duration = 2500;
             const interval = 50;
             const steps = duration / interval;
@@ -167,10 +195,27 @@ export default function OnboardingModal() {
         }
     }, [step, curriculumReady]);
 
-    if (!isVisible) return null;
-
-    const [topic, setTopic] = useState("");
-    const [topicError, setTopicError] = useState("");
+    if (user.isLoading) {
+        return (
+            <AnimatePresence>
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[200] bg-[#08080E] flex items-center justify-center"
+                >
+                     <motion.div 
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="flex flex-col items-center"
+                    >
+                         <div className="w-12 h-12 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mb-4" />
+                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F59E0B]/50">Synchronizing Archives</span>
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>
+        );
+    }
 
     const handleNext = async () => {
         setIsSaving(true);
@@ -196,16 +241,19 @@ export default function OnboardingModal() {
             } else if (step === 5) {
                 setStep(6);
             } else if (step === 6) {
-                setStep(7); // Gather Topic
+                setStep(7);
             } else if (step === 7) {
+                setStep(8);
+            } else if (step === 8) {
                 if (!topic || topic.length < 3) {
                     setTopicError("Please enter a valid topic to master.");
                     return;
                 }
-                setStep(8); // Analyzing & Generating
-                // START GENERATION HERE
-                generateInitialRoadmap();
+                setStep(9);
+                await generateInitialRoadmap();
             }
+        } catch (error) {
+            console.error("Onboarding progression failed:", error);
         } finally {
             setIsSaving(false);
         }
@@ -224,7 +272,6 @@ export default function OnboardingModal() {
             if (res.ok) {
                 setCurriculumReady(true);
             } else {
-                // Fallback if AI fails so onboarding doesn't get stuck
                 setCurriculumReady(true);
             }
         } catch (error) {
@@ -238,7 +285,8 @@ export default function OnboardingModal() {
         const combinedGoal = JSON.stringify({
             painPoints: selectedPainPoints,
             commitmentTime: commitment,
-            initialTopic: topic
+            initialTopic: topic,
+            platformDetected: platform
         });
         await completeOnboarding({
             alias: firstName.trim(),
@@ -267,9 +315,9 @@ export default function OnboardingModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden font-sans">
             {/* Cinematic Ambient Blur Background */}
-            <div className="absolute inset-0 bg-[var(--background)]/80 backdrop-blur-[100px]" />
+            <div className="absolute inset-0 bg-[#08080E]/80 backdrop-blur-[100px]" />
             
             {/* Ambient Orbs */}
             <motion.div 
@@ -278,108 +326,171 @@ export default function OnboardingModal() {
                 animate={{ scale: [1, 1.1, 1], x: [0, 40, 0], y: [0, -40, 0] }}
                 transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
             />
-            <motion.div 
-                className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-10 pointer-events-none right-[-5%] top-[-5%]"
-                style={{ background: "radial-gradient(circle, rgba(16,185,129,0.3), transparent 70%)", filter: "blur(100px)" }}
-                animate={{ scale: [1.1, 1, 1.1], x: [0, -20, 0], y: [0, 20, 0] }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            />
 
             {/* Modal Container */}
             <div className="relative z-10 w-full max-w-[480px] overflow-hidden bg-black/40" style={clay.card}>
                 
                 {/* Embedded Top Progress Bar */}
-                {step > 1 && step < 7 && (
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/5">
+                {step > 1 && step < 8 && (
+                    <div className="absolute top-0 left-0 right-0 h-[3px] bg-white/5">
                         <div 
-                            className="h-full bg-gradient-to-r from-[#F59E0B] to-[#D97706] transition-all duration-700 ease-out shadow-[0_0_10px_rgba(245,158,11,0.5)]" 
-                            style={{ width: `${((step - 1) / 5) * 100}%` }} 
+                            className="h-full bg-gradient-to-r from-[#F59E0B] to-[#D97706] transition-all duration-700 ease-out shadow-[0_0_15px_rgba(245,158,11,0.6)]" 
+                            style={{ width: `${((step - 1) / 7) * 100}%` }} 
                         />
                     </div>
                 )}
 
-                <div className="px-8 py-10 min-h-[460px] flex flex-col justify-between">
+                <div className="px-8 py-10 min-h-[480px] flex flex-col justify-between">
                     <AnimatePresence mode="wait">
                         
                         {/* STEP 1: THE HOOK */}
                         {step === 1 && (
                             <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center my-auto">
                                 <motion.div 
-                                    className="w-24 h-24 mx-auto mb-8 rounded-3xl flex items-center justify-center bg-white/5 border border-white/10"
-                                    animate={{ y: [0, -10, 0] }}
-                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                    style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.05)" }}
+                                    className="w-24 h-24 mx-auto mb-8 rounded-[32px] flex items-center justify-center bg-white/5 border border-white/10"
+                                    animate={{ y: [0, -8, 0], rotate: [0, 2, -2, 0] }}
+                                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                                    style={{ boxShadow: "0 24px 48px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.05)" }}
                                 >
-                                    <Cpu size={48} strokeWidth={1.5} className="text-white/90" style={{ filter: "drop-shadow(0 0 15px rgba(255,255,255,0.4))" }} />
+                                    <Cpu size={48} strokeWidth={1.5} className="text-[#F59E0B]" style={{ filter: "drop-shadow(0 0 15px rgba(245,158,11,0.5))" }} />
                                 </motion.div>
-                                <h1 className="font-heading text-[32px] font-bold text-white/95 mb-4 leading-tight tracking-tight">Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F59E0B] to-[#D97706]">understand</span><br />any topic?</h1>
-                                <p className="text-[15px] text-white/40 leading-relaxed max-w-[85%] mx-auto">Join a network of high-performers accelerating their cognitive potential.</p>
+                                <h1 className="font-sans text-[34px] font-black text-white leading-tight tracking-tighter">Ready to <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#F59E0B] to-[#D97706]">Understand</span><br />Anything?</h1>
+                                <p className="text-[15px] text-white/40 mt-4 leading-relaxed max-w-[85%] mx-auto font-medium">Join the next generation of scholars mastering complexity through AI.</p>
                             </motion.div>
                         )}
 
                         {/* STEP 2: IDENTITY */}
                         {step === 2 && (
-                            <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit">
+                            <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col h-full justify-center">
                                 <div className="text-center mb-10">
-                                    <h2 className="font-heading text-2xl font-bold text-[var(--foreground)] mb-2 tracking-tight">Claim your Identity.</h2>
-                                    <p className="text-[14px] text-[var(--foreground-muted)]">How should The Professor address you?</p>
+                                    <h2 className="font-sans text-2xl font-black text-white mb-2 tracking-tight">Claim your Identity.</h2>
+                                    <p className="text-[14px] text-white/40 font-medium">How should The Professor address you?</p>
                                 </div>
                                 <div className="space-y-4">
                                     <div className="flex gap-4">
-                                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First Name" className="w-1/2 px-5 py-4 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)] transition-all focus:border-[var(--border-hover)]" style={clay.input} />
-                                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last Name" className="w-1/2 px-5 py-4 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)] transition-all focus:border-[var(--border-hover)]" style={clay.input} />
+                                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First Name" className="w-1/2 px-5 py-4 font-bold text-white outline-none placeholder:text-white/20 transition-all focus:border-[#F59E0B]/50" style={clay.input} />
+                                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last Name" className="w-1/2 px-5 py-4 font-bold text-white outline-none placeholder:text-white/20 transition-all focus:border-[#F59E0B]/50" style={clay.input} />
                                     </div>
                                     <div className="relative">
-                                        <input type="text" value={username} onChange={e => setUsername(e.target.value.toLowerCase())} placeholder="Choose a Handle (@)" className="w-full px-5 py-4 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)] transition-all focus:border-[var(--border-hover)] pr-12" style={clay.input} />
-                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 transition-all">
-                                            {usernameStatus === "checking" && <RotateCw size={20} strokeWidth={1.5} className="animate-spin text-[var(--foreground-muted)]" />}
-                                            {usernameStatus === "available" && <CheckCircle2 size={20} strokeWidth={1.5} className="text-[var(--success)] drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
-                                            {(usernameStatus === "taken" || usernameStatus === "invalid") && <AlertCircle size={20} strokeWidth={1.5} className="text-[var(--error)]" />}
+                                        <input type="text" value={username} onChange={e => setUsername(e.target.value.toLowerCase())} placeholder="Choose a Handle (@)" className="w-full px-5 py-4 font-bold text-white outline-none placeholder:text-white/20 transition-all focus:border-[#F59E0B]/50 pr-12" style={clay.input} />
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2">
+                                            {usernameStatus === "checking" && <RotateCw size={20} className="animate-spin text-white/30" />}
+                                            {usernameStatus === "available" && <CheckCircle2 size={20} className="text-[#10B981] drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
+                                            {(usernameStatus === "taken" || usernameStatus === "invalid") && <AlertCircle size={20} className="text-[#EF4444]" />}
                                         </div>
                                     </div>
                                     <div className="h-6">
-                                        {usernameStatus === "taken" && <p className="text-[12px] text-[var(--error)] text-center font-medium">Handle is already claimed.</p>}
-                                        {usernameStatus === "invalid" && <p className="text-[12px] text-[var(--error)] text-center font-medium">Alphanumeric characters only.</p>}
+                                        {usernameStatus === "taken" && <p className="text-[12px] text-[#EF4444] text-center font-bold">Handle is already claimed.</p>}
+                                        {usernameStatus === "invalid" && <p className="text-[12px] text-[#EF4444] text-center font-bold">Alphanumeric characters only.</p>}
                                     </div>
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* STEP 3: DEMOGRAPHICS */}
+                        {/* STEP 6: SPECIALIZED (PLATFORM AWARENESS) */}
+                        {step === 6 && (
+                            <motion.div key="step6" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto">
+                                <div className="mb-6 flex justify-center">
+                                    <div className="flex -space-x-4">
+                                        {isDesktop ? (
+                                            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center relative z-10 shadow-2xl">
+                                                <Monitor size={40} className="text-amber-500" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-20 h-20 rounded-3xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center relative z-10 shadow-2xl">
+                                                <Smartphone size={40} className="text-blue-500" />
+                                            </div>
+                                        )}
+                                        <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-2xl">
+                                            <ShieldCheck size={40} className="text-emerald-500" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <h2 className="font-sans text-2xl font-black text-white mb-2 tracking-tight">
+                                    {isDesktop ? "Desktop Ready." : "Mobile Optimized."}
+                                </h2>
+                                <p className="text-[14px] text-white/40 font-medium mb-8">
+                                    {isDesktop 
+                                        ? "We've enabled High-Speed Local File indexing for your textbooks and PDFs." 
+                                        : "Quick-Capture is active. Glance through flashcards anywhere, anytime."}
+                                </p>
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <Zap size={16} className="text-amber-500" />
+                                        <span className="text-[12px] font-black uppercase tracking-widest text-amber-500">Device Feature Unlocked</span>
+                                    </div>
+                                    <p className="text-[13px] text-white/70 font-semibold leading-relaxed">
+                                        {isDesktop 
+                                            ? "Drag and drop massive PDF libraries directly into your workspace for instant synthesis." 
+                                            : "Study habits sync across all devices. We'll remind you when it's time for Active Recall."}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* STEP 8: TOPIC SELECTION */}
+                        {step === 8 && (
+                            <motion.div key="step8" variants={stepVariants} initial="initial" animate="animate" exit="exit">
+                                <div className="text-center mb-10">
+                                    <h2 className="font-sans text-2xl font-black text-white mb-2 tracking-tight">The First Mastery.</h2>
+                                    <p className="text-[14px] text-white/40 font-medium">What academic subject are we conquering first?</p>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="relative">
+                                        <textarea 
+                                            value={topic} 
+                                            onChange={e => {
+                                                setTopic(e.target.value);
+                                                if (e.target.value.length >= 3) setTopicError("");
+                                            }}
+                                            placeholder="e.g. Molecular Biology, Advanced Calculus, Python Robotics..." 
+                                            className="w-full px-6 py-8 font-black text-white outline-none placeholder:text-white/10 text-center text-xl min-h-[160px] resize-none leading-relaxed transition-all focus:border-[#F59E0B]/40" 
+                                            style={clay.input} 
+                                        />
+                                        <div className="absolute -bottom-8 left-0 right-0">
+                                            {topicError && <p className="text-[12px] text-red-500 font-bold animate-pulse text-center">{topicError}</p>}
+                                        </div>
+                                    </div>
+                                    <div className="text-center opacity-20 mt-12">
+                                        <Library size={48} strokeWidth={1.5} />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Rest of the steps (3, 4, 5, 7, 9, 10) logic remains similar but with Montserrat & updated styling */}
                         {step === 3 && (
                             <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit">
                                 <div className="text-center mb-10">
-                                    <h2 className="font-heading text-2xl font-bold text-white/95 mb-2 tracking-tight">Your Context.</h2>
-                                    <p className="text-[14px] text-white/40">This helps align the difficulty of the curriculum.</p>
+                                    <h2 className="font-sans text-2xl font-black text-white mb-2 tracking-tight">Your Context.</h2>
+                                    <p className="text-[14px] text-white/40 font-medium">We align the curriculum difficulty to your current level.</p>
                                 </div>
                                 <div className="space-y-6">
                                     <input type="tel" value={age} onChange={e => {
                                         const val = e.target.value.replace(/\D/g, '').slice(0, 3);
                                         setAge(val);
-                                    }} placeholder="Your Age" className="w-full px-5 py-4 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)] text-center text-lg transition-all focus:border-[var(--border-hover)]" style={clay.input} />
+                                    }} placeholder="Your Age" className="w-full px-5 py-4 font-black text-white outline-none placeholder:text-white/20 text-center text-2xl transition-all focus:border-[#F59E0B]/50" style={clay.input} />
                                     
                                     <div className="grid grid-cols-2 gap-3">
                                         {EDU_LEVELS.map(l => (
-                                            <button key={l.id} onClick={() => setEduLevel(l.id)} className="p-4 rounded-2xl flex flex-col items-center gap-3 transition-all duration-300 relative overflow-hidden" style={{ ...clay.input, background: eduLevel === l.id ? "rgba(245,158,11,0.15)" : clay.input.background, border: eduLevel === l.id ? "1px solid rgba(245,158,11,0.3)" : clay.input.border }}>
-                                                {eduLevel === l.id && <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#F59E0B]/5" />}
-                                                <l.icon size={28} strokeWidth={1.5} className="relative z-10" style={{ color: eduLevel === l.id ? "#F59E0B" : "rgba(255,255,255,0.15)" }} />
-                                                <span className="text-[12px] font-bold tracking-wide relative z-10" style={{ color: eduLevel === l.id ? "#F59E0B" : "rgba(255,255,255,0.4)" }}>{l.label}</span>
+                                            <button key={l.id} onClick={() => setEduLevel(l.id)} className="p-5 rounded-3xl flex flex-col items-center gap-3 transition-all duration-300 relative overflow-hidden group" style={{ ...clay.input, background: eduLevel === l.id ? "rgba(245,158,11,0.15)" : clay.input.background, border: eduLevel === l.id ? "1px solid rgba(245,158,11,0.4)" : clay.input.border }}>
+                                                <l.icon size={32} strokeWidth={1.5} className="relative z-10 transition-transform group-hover:scale-110" style={{ color: eduLevel === l.id ? "#F59E0B" : "rgba(255,255,255,0.1)" }} />
+                                                <span className="text-[11px] font-black uppercase tracking-widest relative z-10" style={{ color: eduLevel === l.id ? "#F59E0B" : "rgba(255,255,255,0.3)" }}>{l.label}</span>
                                             </button>
                                         ))}
                                     </div>
                                     <div className="h-6">
-                                        {parseInt(age) < 10 && age !== "" && <p className="text-[12px] text-[#EF4444] text-center font-medium">You must be at least 10 years old.</p>}
+                                        {parseInt(age) < 10 && age !== "" && <p className="text-[12px] text-[#EF4444] text-center font-bold">Minimum age is 10.</p>}
                                     </div>
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* STEP 4: PAIN POINTS (THE WHY) */}
                         {step === 4 && (
                             <motion.div key="step4" variants={stepVariants} initial="initial" animate="animate" exit="exit">
                                 <div className="text-center mb-8">
-                                    <h2 className="font-heading text-2xl font-bold text-white/95 mb-2 tracking-tight">The Mission.</h2>
-                                    <p className="text-[14px] text-white/40">Select all that apply to you.</p>
+                                    <h2 className="font-sans text-2xl font-black text-white mb-2 tracking-tight">The Mission.</h2>
+                                    <p className="text-[14px] text-white/40 font-medium">Select your primary struggle areas.</p>
                                 </div>
                                 <div className="space-y-3">
                                     {PAIN_POINTS.map(p => {
@@ -391,14 +502,11 @@ export default function OnboardingModal() {
                                                 className="w-full flex items-center p-4 rounded-2xl transition-all duration-300 text-left relative overflow-hidden group" 
                                                 style={{ ...clay.input, background: isSelected ? "rgba(16,185,129,0.1)" : clay.input.background, border: isSelected ? "1px solid rgba(16,185,129,0.3)" : clay.input.border }}
                                             >
-                                                {isSelected && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#10B981]/5 to-transparent skew-x-12 translate-x-[-100%] animate-[shimmer_2s_infinite]" />}
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 transition-colors relative z-10 ${isSelected ? 'bg-[#10B981]/20' : 'bg-white/5 group-hover:bg-white/10'}`}>
-                                                    <p.icon size={20} strokeWidth={1.5} className="relative z-10" style={{ color: isSelected ? "#10B981" : "rgba(255,255,255,0.3)" }} />
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 transition-colors relative z-10 ${isSelected ? 'bg-[#10B981]/20' : 'bg-white/5'}`}>
+                                                    <p.icon size={20} strokeWidth={1.5} style={{ color: isSelected ? "#10B981" : "rgba(255,255,255,0.2)" }} />
                                                 </div>
-                                                <span className="text-[13px] font-bold flex-1 relative z-10 leading-snug" style={{ color: isSelected ? "#10B981" : "rgba(255,255,255,0.7)" }}>{p.label}</span>
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors relative z-10 ${isSelected ? 'border-[#10B981] bg-[#10B981]' : 'border-white/10'}`}>
-                                                    {isSelected && <Check size={14} strokeWidth={1.5} className="text-black font-bold" />}
-                                                </div>
+                                                <span className="text-[13px] font-black flex-1 relative z-10 tracking-tight leading-snug" style={{ color: isSelected ? "#10B981" : "rgba(255,255,255,0.6)" }}>{p.label}</span>
+                                                {isSelected && <Check size={18} className="text-[#10B981] mr-1" />}
                                             </button>
                                         );
                                     })}
@@ -406,12 +514,11 @@ export default function OnboardingModal() {
                             </motion.div>
                         )}
 
-                        {/* STEP 5: COMMITMENT */}
                         {step === 5 && (
                             <motion.div key="step5" variants={stepVariants} initial="initial" animate="animate" exit="exit">
                                 <div className="text-center mb-10">
-                                    <h2 className="font-heading text-2xl font-bold text-white/95 mb-2 tracking-tight">Commitment.</h2>
-                                    <p className="text-[14px] text-white/40">How much time can you dedicate daily?</p>
+                                    <h2 className="font-sans text-2xl font-black text-white mb-2 tracking-tight">Commitment.</h2>
+                                    <p className="text-[14px] text-white/40 font-medium">Daily dedication required for mastery.</p>
                                 </div>
                                 <div className="space-y-4">
                                     {COMMITMENT_LEVELS.map(c => (
@@ -421,11 +528,10 @@ export default function OnboardingModal() {
                                             className="w-full flex items-center p-5 rounded-2xl transition-all duration-300 text-left group relative overflow-hidden" 
                                             style={{ ...clay.input, background: commitment === c.id ? "rgba(245,158,11,0.15)" : clay.input.background, border: commitment === c.id ? "1px solid rgba(245,158,11,0.4)" : clay.input.border }}
                                         >
-                                            {commitment === c.id && <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#F59E0B]/10 to-transparent" />}
-                                            <c.icon size={28} strokeWidth={1.5} className="mr-5 transition-transform group-hover:scale-110 relative z-10" style={{ color: commitment === c.id ? "#F59E0B" : "rgba(255,255,255,0.15)" }} />
+                                            <c.icon size={28} strokeWidth={1.5} className="mr-5 relative z-10" style={{ color: commitment === c.id ? "#F59E0B" : "rgba(255,255,255,0.15)" }} />
                                             <div className="relative z-10">
-                                                <div className="text-[16px] font-bold" style={{ color: commitment === c.id ? "#F59E0B" : "rgba(255,255,255,0.8)" }}>{c.label}</div>
-                                                <div className="text-[13px] font-medium mt-0.5" style={{ color: commitment === c.id ? "rgba(245,158,11,0.6)" : "rgba(255,255,255,0.3)" }}>{c.desc}</div>
+                                                <div className="text-[16px] font-black" style={{ color: commitment === c.id ? "#F59E0B" : "rgba(255,255,255,0.8)" }}>{c.label}</div>
+                                                <div className="text-[12px] font-bold mt-0.5" style={{ color: commitment === c.id ? "rgba(245,158,11,0.6)" : "rgba(255,255,255,0.2)" }}>{c.desc}</div>
                                             </div>
                                         </button>
                                     ))}
@@ -433,41 +539,25 @@ export default function OnboardingModal() {
                             </motion.div>
                         )}
 
-                        {/* STEP 6: SOCIAL PROOF */}
-                        {step === 6 && (
-                            <motion.div key="step6" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto">
-                                <motion.div 
-                                    className="w-16 h-16 mx-auto mb-6 bg-[#F59E0B]/10 rounded-full flex items-center justify-center border border-[#F59E0B]/20"
-                                    animate={{ scale: [1, 1.05, 1] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                    <Users size={28} strokeWidth={1.5} className="text-[#F59E0B]" />
-                                </motion.div>
-                                <h2 className="font-heading text-2xl font-bold text-white/95 mb-10 tracking-tight">You're in good company.</h2>
-                                
-                                <div className="relative w-full h-[160px] flex items-center">
+                        {step === 7 && (
+                            <motion.div key="step7" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto">
+                                <h2 className="font-sans text-2xl font-black text-white mb-8 tracking-tight">You're in good company.</h2>
+                                <div className="relative w-full h-[180px] flex items-center">
                                     <AnimatePresence mode="wait">
                                         <motion.div 
                                             key={testiIndex}
-                                            initial={{ opacity: 0, y: 15, filter: "blur(4px)" }}
-                                            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                                            exit={{ opacity: 0, y: -15, filter: "blur(4px)" }}
-                                            transition={{ duration: 0.5, ease: "easeInOut" }}
+                                            initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }}
                                             className="absolute inset-0 px-4"
                                         >
                                             <div className="flex justify-center mb-5 gap-1">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} size={18} strokeWidth={1.5} className="text-[#F59E0B]" />
-                                                ))}
+                                                {[...Array(5)].map((_, i) => <Star key={i} size={18} className="text-[#F59E0B]" fill="#F59E0B" />)}
                                             </div>
-                                            <p className="text-[16px] italic text-white/80 leading-relaxed mb-6 font-serif tracking-wide">"{TESTIMONIALS[testiIndex].quote}"</p>
+                                            <p className="text-[16px] font-bold text-white/80 leading-relaxed mb-6 italic">"{TESTIMONIALS[testiIndex].quote}"</p>
                                             <div className="flex items-center justify-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#F59E0B] to-[#D97706] flex items-center justify-center text-black font-extrabold text-[13px] shadow-[0_0_10px_rgba(245,158,11,0.5)]">
-                                                    {TESTIMONIALS[testiIndex].author[0]}
-                                                </div>
-                                                <div className="text-left">
-                                                    <div className="text-[14px] font-bold text-white/90">{TESTIMONIALS[testiIndex].author}</div>
-                                                    <div className="text-[11px] text-white/40 font-medium tracking-wider uppercase">{TESTIMONIALS[testiIndex].role}</div>
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#F59E0B] to-[#D97706] flex items-center justify-center text-black font-black text-[13px]">{TESTIMONIALS[testiIndex].author[0]}</div>
+                                                <div className="text-left font-sans">
+                                                    <div className="text-[14px] font-black text-white/95">{TESTIMONIALS[testiIndex].author}</div>
+                                                    <div className="text-[10px] text-white/30 font-black uppercase tracking-wider">{TESTIMONIALS[testiIndex].role}</div>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -476,91 +566,34 @@ export default function OnboardingModal() {
                             </motion.div>
                         )}
 
-                        {/* STEP 7: TOPIC SELECTION (NEW) */}
-                        {step === 7 && (
-                            <motion.div key="step7" variants={stepVariants} initial="initial" animate="animate" exit="exit">
-                                <div className="text-center mb-10">
-                                    <h2 className="font-heading text-2xl font-bold text-white/95 mb-2 tracking-tight">The First Mastery.</h2>
-                                    <p className="text-[14px] text-white/40">What academic subject or skill are we conquering first?</p>
-                                </div>
-                                <div className="space-y-6">
-                                    <div className="relative">
-                                        <textarea 
-                                            value={topic} 
-                                            onChange={e => {
-                                                setTopic(e.target.value);
-                                                if (e.target.value.length >= 3) setTopicError("");
-                                            }}
-                                            placeholder="e.g. Molecular Biology basics, Advanced Calculus, Python for Data Science..." 
-                                            className="w-full px-6 py-8 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)] text-center text-lg min-h-[140px] resize-none leading-relaxed" 
-                                            style={clay.input} 
-                                        />
-                                        <div className="absolute -bottom-10 left-0 right-0">
-                                            {topicError && <p className="text-[12px] text-red-500 font-bold animate-pulse">{topicError}</p>}
-                                        </div>
-                                    </div>
-                                    <div className="text-center opacity-30 mt-12">
-                                        <Library size={40} strokeWidth={1.5} />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {/* STEP 8: THE REVEAL (WAS 7) */}
-                        {step === 8 && (
-                            <motion.div key="step8" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col justify-center h-full">
+                        {step === 9 && (
+                            <motion.div key="step9" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col justify-center h-full">
                                 {!curriculumReady ? (
                                     <div className="text-center py-12">
-                                        <motion.div 
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                            className="w-20 h-20 mx-auto mb-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)]"
-                                        >
-                                            <Cpu size={36} strokeWidth={1.5} className="text-[#F59E0B]" />
+                                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="w-20 h-20 mx-auto mb-10 rounded-3xl flex items-center justify-center bg-white/5 border border-white/10 shadow-[0_0_40px_rgba(245,158,11,0.15)]">
+                                            <Cpu size={40} className="text-[#F59E0B]" />
                                         </motion.div>
-                                        <h2 className="font-heading text-xl font-bold text-white/90 mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/50 animate-[pulse_2s_infinite]">Architecting your Curriculum...</h2>
-                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden max-w-[240px] mx-auto">
-                                            <div className="h-full bg-gradient-to-r from-[#10B981] to-[#34D399] transition-all duration-75 relative" style={{ width: `${analyzingProgress}%` }}>
-                                                <div className="absolute top-0 right-0 bottom-0 w-10 bg-white/30 blur-sm animate-[shimmer_1s_infinite]" />
-                                            </div>
+                                        <h2 className="font-sans text-xl font-black text-white mb-6 animate-pulse">Architecting your Curriculum...</h2>
+                                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden max-w-[280px] mx-auto border border-white/5">
+                                            <div className="h-full bg-gradient-to-r from-[#F59E0B] to-[#10B981] transition-all duration-75" style={{ width: `${analyzingProgress}%` }} />
                                         </div>
-                                        <p className="text-[10px] text-white/20 mt-4 font-mono uppercase tracking-[0.2em]">Consulting the OpenRouter Trinity...</p>
                                     </div>
                                 ) : (
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-                                        <div className="text-center mb-8">
-                                            <motion.div 
-                                                initial={{ scale: 0, rotate: -45 }} 
-                                                animate={{ scale: 1, rotate: 0 }} 
-                                                transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
-                                                className="w-20 h-20 bg-[#10B981]/10 rounded-full flex items-center justify-center mx-auto mb-5 border border-[#10B981]/20 shadow-[0_0_30_rgba(16,185,129,0.2)]"
-                                            >
-                                                <Sparkles size={40} strokeWidth={1.5} className="text-[#10B981]" />
-                                            </motion.div>
-                                            <h2 className="font-heading text-2xl font-bold text-white/95 mb-2 tracking-tight">Your Strategy is Ready.</h2>
-                                            <div className="inline-flex items-center gap-1.5 bg-[#F59E0B]/10 px-3 py-1.5 rounded-lg border border-[#F59E0B]/20">
-                                                <GraduationCap size={14} strokeWidth={1.5} className="text-[#F59E0B]" />
-                                                <p className="text-[12px] text-[#F59E0B] font-bold tracking-wide uppercase">{topic}</p>
-                                            </div>
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+                                        <div className="mb-10">
+                                            <Sparkles size={48} className="mx-auto mb-5 text-[#10B981] drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]" />
+                                            <h2 className="font-sans text-2xl font-black text-white mb-3 tracking-tight">Your Strategy is Ready.</h2>
+                                            <p className="text-[12px] font-black uppercase tracking-widest text-[#F59E0B] bg-[#F59E0B]/10 px-4 py-2 rounded-xl inline-block border border-[#F59E0B]/20">{topic}</p>
                                         </div>
-                                        
                                         <div className="space-y-3">
                                             {CURRICULUM_FEATURES.map((f, i) => (
-                                                <motion.div 
-                                                    key={f.title}
-                                                    initial={{ opacity: 0, x: -20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: i * 0.15 + 0.4, type: "spring" }}
-                                                    className="p-4 rounded-xl flex flex-row items-center gap-4 bg-white/[0.02] border border-white/5 group hover:bg-white/[0.04] transition-colors"
-                                                >
-                                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-black/50 border border-white/10 shrink-0 shadow-inner">
-                                                        <f.icon size={22} strokeWidth={1.5} style={{ color: f.color }} />
+                                                <div key={f.title} className="p-4 rounded-2xl flex items-center gap-4 bg-white/[0.03] border border-white/5 text-left transition-transform hover:scale-[1.02]">
+                                                    <f.icon size={24} style={{ color: f.color }} className="shrink-0" />
+                                                    <div>
+                                                        <div className="text-[13px] font-black text-white">{f.title}</div>
+                                                        <div className="text-[11px] text-white/40 font-bold">{f.desc}</div>
                                                     </div>
-                                                    <div className="flex-1 text-left">
-                                                        <div className="text-[13px] font-bold text-white/90 mb-0.5">{f.title}</div>
-                                                        <div className="text-[11px] text-white/40 leading-snug">{f.desc}</div>
-                                                    </div>
-                                                </motion.div>
+                                                </div>
                                             ))}
                                         </div>
                                     </motion.div>
@@ -568,39 +601,70 @@ export default function OnboardingModal() {
                             </motion.div>
                         )}
 
+                        {step === 10 && (
+                            <motion.div key="step10" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto">
+                                <motion.div 
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
+                                    className="w-32 h-32 mx-auto mb-10 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-amber-600 shadow-[0_20px_50px_rgba(245,158,11,0.4)] border-4 border-white/10 relative"
+                                >
+                                    <Zap size={64} className="text-black" fill="currentColor" />
+                                    {/* Volumetric glow */}
+                                    <div className="absolute inset-0 rounded-full animate-pulse bg-amber-400/20 blur-2xl -z-10" />
+                                </motion.div>
+                                
+                                <h2 className="font-sans text-3xl font-black text-white mb-4 tracking-tighter">Welcome Gift.</h2>
+                                <p className="text-[16px] text-white/60 font-medium mb-12 px-4 italic leading-relaxed">
+                                    To kickstart your journey to mastery, The Professor has assigned <span className="text-amber-500 font-black">100 Credits</span> to your archives.
+                                </p>
+                                
+                                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-500">Scholar's Reward Assigned</p>
+                                </div>
+                            </motion.div>
+                        )}
+
                     </AnimatePresence>
 
                     {/* Navigation Controls */}
-                    <div className="mt-8 pt-4 flex items-center gap-3 relative z-20">
-                        {step > 1 && step < 8 && (
-                            <button onClick={() => setStep(step - 1)} className="w-14 h-14 rounded-2xl bg-white/5 text-white/40 hover:text-white/80 hover:bg-white/10 transition-all border border-white/5 hover:border-white/10 active:scale-95 flex items-center justify-center shrink-0">
-                                <ChevronLeft size={24} strokeWidth={1.5} />
+                    <div className="mt-8 pt-4 flex items-center gap-4 relative z-20">
+                        {step > 1 && step < 9 && (
+                            <button onClick={() => setStep(step - 1)} className="w-14 h-14 rounded-2xl bg-white/5 text-white/40 hover:text-white/90 hover:bg-white/10 transition-all border border-white/10 active:scale-95 flex items-center justify-center shrink-0">
+                                <ChevronLeft size={28} />
                             </button>
                         )}
-                        {(!curriculumReady || step !== 8) && step !== 8 && (
+                        {(!curriculumReady || (step !== 9 && step !== 10)) && (
                             <button
                                 onClick={handleNext}
-                                disabled={isSaving || (step === 2 && (!firstName || !lastName || usernameStatus !== "available")) || (step === 3 && (!age || parseInt(age) < 10 || parseInt(age) > 120 || !eduLevel)) || (step === 4 && selectedPainPoints.length === 0) || (step === 5 && !commitment)}
-                                className="flex-1 h-14 rounded-2xl font-bold text-[14px] tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none disabled:grayscale"
-                                style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#000", boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3), 0 8px 20px rgba(245,158,11,0.2)" }}
+                                disabled={isSaving || (step === 2 && (!firstName || !lastName || usernameStatus !== "available")) || (step === 3 && (!age || parseInt(age) < 10)) || (step === 4 && selectedPainPoints.length === 0) || (step === 5 && !commitment)}
+                                className="flex-1 h-14 rounded-2xl font-black text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-30"
+                                style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#000", boxShadow: "0 10px 30px rgba(245,158,11,0.25)" }}
                             >
-                                {isSaving ? <RotateCw size={20} strokeWidth={1.5} className="animate-spin" /> : step === 1 ? "Begin" : step === 6 ? "Analyze Profile" : "Continue"}
-                                {!isSaving && step !== 6 && step !== 1 && <ChevronRight size={18} strokeWidth={1.5} />}
+                                {isSaving ? <RotateCw size={24} className="animate-spin" /> : step === 1 ? "Begin" : step === 8 ? "Analyze" : "Continue"}
+                                {!isSaving && step !== 1 && step !== 8 && <ChevronRight size={22} />}
                             </button>
                         )}
-                        {curriculumReady && step === 8 && (
-                            <motion.button
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 1 }}
+                        {curriculumReady && step === 9 && (
+                            <button
+                                onClick={() => setStep(10)}
+                                className="flex-1 h-14 rounded-2xl font-black text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                                style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#000", boxShadow: "0 10px 30px rgba(245,158,11,0.25)" }}
+                            >
+                                Claim Welcome Gift
+                                <ChevronRight size={22} />
+                            </button>
+                        )}
+                        {step === 10 && (
+                            <button
                                 onClick={handleFinish}
                                 disabled={isSaving}
-                                className="flex-1 h-14 rounded-2xl font-bold text-[14px] tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-30"
-                                style={{ background: "linear-gradient(135deg, #10B981, #059669)", color: "#000", boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3), 0 8px 20px rgba(16,185,129,0.3)" }}
+                                className="flex-1 h-16 rounded-2xl font-black text-[15px] tracking-[0.2em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.98] px-8"
+                                style={{ background: "linear-gradient(135deg, #10B981, #059669)", color: "#000", boxShadow: "0 12px 40px rgba(16,185,129,0.3)" }}
                             >
-                                {isSaving ? <RotateCw size={20} strokeWidth={1.5} className="animate-spin" /> : "Enter Dashboard"}
-                                {!isSaving && <LogIn size={18} strokeWidth={1.5} />}
-                            </motion.button>
+                                {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Enter Workspace"}
+                                {!isSaving && <LogIn size={22} />}
+                            </button>
                         )}
                     </div>
                 </div>

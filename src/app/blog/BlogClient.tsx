@@ -8,6 +8,26 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import SEOHead, { getFAQSchema } from "@/components/SEOHead";
 
+import { 
+  Brain, 
+  Bot, 
+  Calendar, 
+  FileText, 
+  Lightbulb, 
+  GraduationCap, 
+  Clock, 
+  Mail, 
+  ArrowRight, 
+  BookOpen, 
+  Zap, 
+  Home, 
+  PenTool, 
+  Moon,
+  LayoutDashboard,
+  Sparkles
+} from "lucide-react";
+import NewsFeed from "@/components/blog/NewsFeed";
+
 /* ═══ Claymorphic Helpers ═══ */
 const clay = {
   card: {
@@ -23,8 +43,23 @@ const clay = {
   } as React.CSSProperties,
 };
 
+/* ═══ Icon Components Mapping ═══ */
+const IconMap = {
+  Brain,
+  Bot,
+  Calendar,
+  FileText,
+  Lightbulb,
+  Home,
+  Zap,
+  PenTool,
+  Moon
+};
+
 /* ═══ Featured Hero Card ═══ */
 function FeaturedCard({ post }: { post: BlogPost }) {
+  const IconComponent = (IconMap as any)[post.icon] || Brain;
+  
   return (
     <Link
       href={`/blog/${post.slug}`}
@@ -57,9 +92,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
             border: "1px solid rgba(255,255,255,0.2)",
           }}
         >
-          <span className="material-symbols-outlined text-[28px] text-white">
-            {post.icon}
-          </span>
+          <IconComponent className="w-7 h-7 text-white" />
         </div>
         {/* Featured badge */}
         <span
@@ -93,9 +126,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
                 boxShadow: "0 2px 8px var(--accent-glow)",
               }}
             >
-              <span className="material-symbols-outlined text-[14px] text-[var(--background)]">
-                school
-              </span>
+              <GraduationCap className="w-3.5 h-3.5 text-[var(--background)]" />
             </div>
             <div>
               <p className="text-[12px] font-bold text-[var(--foreground-secondary)]">
@@ -111,9 +142,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
             </div>
           </div>
           <span className="text-[11px] font-semibold text-[var(--foreground-muted)] flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">
-              schedule
-            </span>
+            <Clock className="w-3.5 h-3.5" />
             {post.readTime}
           </span>
         </div>
@@ -124,6 +153,8 @@ function FeaturedCard({ post }: { post: BlogPost }) {
 
 /* ═══ Regular Blog Card ═══ */
 function BlogCard({ post }: { post: BlogPost }) {
+  const IconComponent = (IconMap as any)[post.icon] || Brain;
+
   return (
     <Link
       href={`/blog/${post.slug}`}
@@ -150,9 +181,7 @@ function BlogCard({ post }: { post: BlogPost }) {
             {post.category}
           </span>
           <span className="text-[10px] text-[var(--foreground-muted)] flex items-center gap-1">
-            <span className="material-symbols-outlined text-[12px]">
-              schedule
-            </span>
+            <Clock className="w-3 h-3" />
             {post.readTime}
           </span>
         </div>
@@ -166,9 +195,7 @@ function BlogCard({ post }: { post: BlogPost }) {
               boxShadow: "inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 12px rgba(0,0,0,0.3)",
             }}
           >
-            <span className="material-symbols-outlined text-[20px] text-white">
-              {post.icon}
-            </span>
+            <IconComponent className="w-5 h-5 text-white" />
           </div>
           <h3 className="text-[16px] sm:text-[17px] font-bold text-[var(--foreground-secondary)] font-heading leading-snug group-hover:text-[var(--foreground)] transition-colors">
             {post.title}
@@ -189,9 +216,7 @@ function BlogCard({ post }: { post: BlogPost }) {
               year: "numeric",
             })}
           </p>
-          <span className="material-symbols-outlined text-[16px] text-white/10 group-hover:text-white/40 group-hover:translate-x-1 transition-all">
-            arrow_forward
-          </span>
+          <ArrowRight className="w-4 h-4 text-white/10 group-hover:text-white/40 group-hover:translate-x-1 transition-all" />
         </div>
       </div>
     </Link>
@@ -264,7 +289,7 @@ export default function BlogClient() {
         />
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - Minimal and Floating */}
       <nav className="fixed top-0 w-full z-50 px-3 md:px-4 py-3 md:py-4">
         <div
           className="max-w-4xl mx-auto flex items-center justify-between px-4 md:px-5 py-2 md:py-2.5 rounded-full"
@@ -280,24 +305,18 @@ export default function BlogClient() {
         >
           <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
             <BrandLogo size="sm" />
-            <span className="text-xs font-bold tracking-widest text-white/30 uppercase group-hover:text-white/60 transition-colors hidden sm:inline">
-              Blog
+            <span className="hidden sm:block font-heading font-bold text-[var(--foreground)] tracking-tight text-[14px]">
+              The Professor
             </span>
           </Link>
+
+          {/* Floating Middle Blog Identifier */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-[var(--accent-bg)] border border-[var(--accent-glow)] rounded-full">
+            <BookOpen className="w-3 h-3 text-[var(--accent)]" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">Blog</span>
+          </div>
+
           <div className="flex items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-bold transition-all hover:translate-y-[-1px] active:scale-95 shadow-[0_4px_12px_var(--accent-glow)]"
-              style={{
-                background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
-                color: "var(--background)",
-              }}
-            >
-              <span className="material-symbols-outlined text-[13px]">
-                dashboard
-              </span>
-              Dashboard
-            </Link>
             <ThemeToggle variant="minimal" />
           </div>
         </div>
@@ -317,9 +336,7 @@ export default function BlogClient() {
                 border: "1px solid rgba(245,158,11,0.1)",
               }}
             >
-              <span className="material-symbols-outlined text-2xl text-[#F59E0B]">
-                auto_stories
-              </span>
+              <Sparkles className="w-6 h-6 text-[#F59E0B]" />
             </div>
           </div>
           <h1 className="font-heading text-3xl sm:text-[44px] font-bold text-[var(--foreground)] tracking-tight mb-3 leading-tight">
@@ -384,6 +401,9 @@ export default function BlogClient() {
           ))}
         </div>
 
+        {/* News Engine Section */}
+        <NewsFeed />
+
         {/* Newsletter CTA */}
         <div
           className="mt-16 p-8 sm:p-10 text-center relative overflow-hidden"
@@ -400,9 +420,7 @@ export default function BlogClient() {
             }}
           />
           <div className="relative z-10">
-            <span className="material-symbols-outlined text-4xl text-[#F59E0B]/40 mb-4 block">
-              mark_email_read
-            </span>
+            <Mail className="w-10 h-10 text-[#F59E0B]/40 mx-auto mb-4" />
             <h3 className="font-heading text-xl sm:text-2xl font-bold text-white/80 mb-2">
               Stay Sharp
             </h3>

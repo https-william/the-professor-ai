@@ -6,11 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
 import { createClient } from "@/lib/supabase/client";
 import Markdown from "@/components/ui/Markdown";
-import SiteHeader from "@/components/ui/SiteHeader";
+
 import { useToasts } from "@/components/ui/GlobalToasts";
 import EndowmentModal from "@/components/modals/EndowmentModal";
 import { useUser } from "@/context/UserContext";
 import AuthInterceptor from "@/components/ui/AuthInterceptor";
+import DataDustLoader from "@/components/ui/DataDustLoader";
+import BrandLogo from "@/components/ui/BrandLogo";
+import { cn } from "@/lib/utils";
 import { 
     HelpCircle, 
     FileText, 
@@ -21,25 +24,37 @@ import {
     Printer, 
     Download, 
     ChevronsDown, 
-    CheckCircle2 
+    CheckCircle2,
+    ArrowRight
 } from "lucide-react";
 
-// ── Watermarked export HTML builder ──────────────────────────────────
+// â”€â”€ Watermarked export HTML builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function buildExportHTML(title: string, bodyHTML: string) {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} — The Professor AI</title>
+<title>${title} â€” The Professor AI</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #08080E; color: #d1d5db; line-height: 1.7; padding: 40px 20px; }
   .page { max-width: 720px; margin: 0 auto; }
   /* Watermark header */
-  .wm { display: flex; align-items: center; gap: 12px; padding-bottom: 24px; margin-bottom: 32px; border-bottom: 2px solid #F59E0B33; }
-  .wm-logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #F59E0B, #D97706); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #06060B; box-shadow: 0 0 16px #F59E0B55; }
+  .wm { display: flex; align-items: center; gap: 12px; padding-bottom: 24px; margin-bottom: 32px; border-bottom: 2px solid #ffffff20; }
+  .wm-logo { 
+    width: 42px; 
+    height: 42px; 
+    border-radius: 12px; 
+    background: #fff; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: #000; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
+  }
+  .wm-logo svg { width: 28px; height: 28px; }
   .wm-text h2 { font-size: 14px; font-weight: 800; color: #F5F5F5; letter-spacing: 0.02em; }
   .wm-text p { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; }
   /* Title */
@@ -75,7 +90,14 @@ function buildExportHTML(title: string, bodyHTML: string) {
 <body>
 <div class="page">
   <div class="wm">
-    <div class="wm-logo">P</div>
+    <div class="wm-logo">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 90 L20 50 C20 30 35 15 50 15 C65 15 80 30 80 50 L50 90 Z" fill="black"/>
+        <path d="M50 85 V35" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="50" cy="35" r="6" fill="white"/>
+        <circle cx="50" cy="35" r="2.5" fill="black"/>
+      </svg>
+    </div>
     <div class="wm-text">
       <h2>The Professor</h2>
       <p>Autonomous Study Agent</p>
@@ -85,14 +107,14 @@ function buildExportHTML(title: string, bodyHTML: string) {
   <p class="doc-meta">Generated on ${new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
   <div class="content">${bodyHTML}</div>
   <div class="footer-wm">
-    <p>Curated with ♦ by <a href="#">The Professor AI</a></p>
+    <p>Curated with â™¦ by <a href="#">The Professor AI</a></p>
   </div>
 </div>
 </body>
 </html>`;
 }
 
-// ── Markdown Components (reusable) ──────────────────────────────────
+// â”€â”€ Markdown Components (reusable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Moved to src/components/ui/Markdown.tsx
 
 function SummaryCheckpoint({ text, onCorrect }: { text: string; onCorrect: () => void }) {
@@ -177,6 +199,7 @@ function SummaryContent() {
     const [isEndowmentOpen, setIsEndowmentOpen] = useState(false);
     const [visibleCount, setVisibleCount] = useState(1);
     const [checkpointPassed, setCheckpointPassed] = useState(false);
+    const [currentSlide, setCurrentSlide] = useState(0);
 
     const LOADING_PHRASES = [
         "Sipping digital espresso...",
@@ -326,7 +349,7 @@ function SummaryContent() {
         return rawChapters.map((c: string, i: number) => (i > 0 ? "## " + c : c));
     }, [textSections]);
 
-    // ── Export Handlers ──────────────────────────────────────────────
+    // â”€â”€ Export Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     const getExportHTML = () => {
         const el = document.getElementById("export-content");
@@ -400,58 +423,12 @@ function SummaryContent() {
         URL.revokeObjectURL(url);
     };
 
-    // ── Loading State ───────────────────────────────────────────────
+    // -- Loading State
     if (isGenerating) {
-        return (
-            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                <div className="absolute inset-x-0 top-16 flex flex-col items-center opacity-[0.15] pointer-events-none z-0 px-6">
-                    <div className="w-16 h-16 rounded-2xl bg-[var(--foreground)]/20 animate-pulse mb-6" />
-                    <div className="w-1/3 h-8 rounded-lg bg-[var(--foreground)]/20 animate-pulse mb-12" />
-                    <div className="w-full max-w-3xl space-y-6">
-                        <div className="w-full h-32 rounded-3xl bg-[var(--foreground)]/20 animate-pulse" />
-                        <div className="w-full h-24 rounded-3xl bg-[var(--foreground)]/20 animate-pulse delay-75" />
-                        <div className="w-full h-40 rounded-3xl bg-[var(--foreground)]/20 animate-pulse delay-150" />
-                    </div>
-                </div>
-
-                <div className="absolute w-[600px] h-[600px] rounded-full animate-pulse opacity-20 z-0" 
-                     style={{ background: "radial-gradient(circle, rgba(139,92,246,0.1), transparent 60%)", filter: "blur(80px)" }} />
-                
-                {/* Central Console */}
-                <div className="relative z-10 w-full max-w-md mx-auto animate-in zoom-in-95 duration-700 mt-20">
-                    <div className="p-1 rounded-3xl" style={{ background: "linear-gradient(135deg, var(--accent-glow), rgba(0,0,0,0) 50%, var(--accent-glow))" }}>
-                        <div className="p-8 rounded-[28px] bg-[var(--card)]/90 backdrop-blur-2xl border border-[var(--border)] shadow-2xl flex flex-col items-center">
-                            
-                            <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center relative">
-                                <div className="absolute inset-0 rounded-full border-2 border-[var(--accent)]/20 border-t-[var(--accent)] animate-spin" style={{ animationDuration: '1.5s' }} />
-                                <FileText size={20} strokeWidth={1.5} className="text-[var(--accent)] animate-pulse" />
-                            </div>
-                            
-                            {/* Simulated Terminal */}
-                            <div className="w-full bg-[var(--background-secondary)] rounded-xl p-5 border border-[var(--border)] mb-5 h-28 relative overflow-hidden flex flex-col justify-end">
-                                <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-[var(--background-secondary)] to-transparent z-10" />
-                                <div className="font-mono text-[11px] flex flex-col gap-2 relative z-0">
-                                    <span className="text-[var(--foreground-muted)] truncate">&gt; Analyzing your material...</span>
-                                    <span className="text-[var(--foreground-muted)] truncate">&gt; Building summary structure...</span>
-                                    <span className="text-[var(--accent)] truncate animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <b key={loadingIdx}>&gt; {LOADING_PHRASES[loadingIdx]}</b>
-                                        <span className="animate-pulse">_</span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Progress Line */}
-                            <div className="w-full h-1 bg-[var(--border)] rounded-full overflow-hidden">
-                                <div className="h-full bg-[var(--accent)] rounded-full w-full animate-pulse opacity-50" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <DataDustLoader label="Distilling Smart Summary" phrases={LOADING_PHRASES} currentPhraseIndex={loadingIdx} />;
     }
 
-    // ── Error State ─────────────────────────────────────────────────
+    // â”€â”€ Error State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (generationError) {
         if (generationError.toLowerCase().includes("unauthorized")) {
             return (
@@ -484,7 +461,7 @@ function SummaryContent() {
 
     const sections = Array.isArray(summary.data) ? summary.data : [];
 
-    // ── Share Menu Items ────────────────────────────────────────────
+    // â”€â”€ Share Menu Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const shareActions = [
         { icon: Link, label: summary?.id ? "Copy Public Link" : "Copy Text", onClick: handleCopyLink },
         { icon: Printer, label: "Save as PDF", onClick: handleDownloadPDF },
@@ -493,31 +470,118 @@ function SummaryContent() {
     ];
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-32">
-             <SiteHeader onModeChange={() => {}} />
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-32 flex flex-col items-center">
+             {/* â”€â”€â”€ Persistent Share Pill â”€â”€â”€ */}
+             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-1.5 rounded-full bg-[var(--card)]/80 backdrop-blur-xl border border-[var(--border)] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <button 
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent)] text-black font-black text-[10px] uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+                >
+                    <Share2 size={14} />
+                    <span>{copySuccess ? "Copied!" : "Share Link"}</span>
+                </button>
+                <div className="w-[1px] h-4 bg-[var(--border)] mx-1" />
+                <button 
+                    onClick={handleDownloadPDF}
+                    className="p-2 rounded-full hover:bg-[var(--foreground)]/5 transition-colors"
+                    title="Save as PDF"
+                >
+                    <Download size={16} strokeWidth={1.5} className="text-[var(--foreground-muted)]" />
+                </button>
+             </div>
 
-             <main id="export-content" className="max-w-3xl mx-auto px-6 pt-32 sm:pt-40">
-                <div className="mb-12">
-                    <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">{summary.title}</h1>
-                    <div className="flex items-center gap-3 text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] opacity-40">
-                        <FileText size={12} />
-                        <span>Generated by The Professor</span>
-                        <span>•</span>
-                        <span>{new Date().toLocaleDateString()}</span>
+             <AnimatePresence mode="wait">
+                 <motion.main 
+                    key={currentSlide}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    id="export-content" 
+                    className="w-full max-w-3xl mx-auto px-6 pt-32 sm:pt-40 flex-grow"
+                >
+                    <div className="mb-12">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--accent)]">
+                                Part {currentSlide + 1} of {chapters.length}
+                            </span>
+                        </div>
+                        <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
+                            {currentSlide === 0 ? summary.title : chapters[currentSlide].split("\n")[0].replace("## ", "")}
+                        </h1>
+                        <div className="flex items-center gap-3 text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] opacity-40">
+                            <FileText size={12} />
+                            <span>Generated by The Professor</span>
+                        </div>
                     </div>
-                </div>
 
-                <div className="prose prose-invert prose-purple max-w-none">
-                    <Markdown>{textSections || ""}</Markdown>
-                </div>
-                
-                {checkpointPassed && (
-                    <div className="mt-20 py-12 border-t border-[var(--border)] flex flex-col items-center opacity-20">
-                         <CheckCircle2 size={32} strokeWidth={1.5} className="mb-4 text-green-500" />
-                         <p className="text-[10px] font-black uppercase tracking-[0.5em]">Cognitive Checkpoint Verified</p>
+                    <div className="prose prose-invert prose-purple max-w-none mb-20 min-h-[40vh]">
+                        <Markdown>
+                            {currentSlide === 0 ? chapters[0] : chapters[currentSlide].split("\n").slice(1).join("\n")}
+                        </Markdown>
                     </div>
-                )}
-             </main>
+                    
+                    {/* Knowledge Check every few slides or at end */}
+                    {((currentSlide + 1) % 2 === 0 || currentSlide === chapters.length - 1) && !checkpointPassed && (
+                        <div className="mb-20">
+                            <SummaryCheckpoint 
+                                text={chapters[currentSlide]} 
+                                onCorrect={() => {
+                                    setCheckpointPassed(true);
+                                    addToast("Insight verified!", "success");
+                                }} 
+                            />
+                        </div>
+                    )}
+                    
+                    {checkpointPassed && (
+                        <div className="mb-20 py-12 border-t border-[var(--border)] flex flex-col items-center animate-in fade-in zoom-in duration-700">
+                             <CheckCircle2 size={32} strokeWidth={1.5} className="mb-4 text-green-500" />
+                             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-green-500">Cognitive Checkpoint Verified</p>
+                        </div>
+                    )}
+
+                    {/* Navigation Actions */}
+                    <div className="flex items-center justify-between mt-12 pb-20 border-t border-[var(--border)] pt-8">
+                        <button 
+                            onClick={() => {
+                                setCurrentSlide(prev => Math.max(0, prev - 1));
+                                setCheckpointPassed(false);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className={cn(
+                                "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] transition-all",
+                                currentSlide === 0 ? "opacity-0 pointer-events-none" : "opacity-100 hover:text-[var(--foreground)]"
+                            )}
+                        >
+                            <ChevronLeft size={14} />
+                            <span>Previous Segment</span>
+                        </button>
+
+                        {currentSlide < chapters.length - 1 ? (
+                            <button 
+                                onClick={() => {
+                                    setCurrentSlide(prev => prev + 1);
+                                    setCheckpointPassed(false);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className="group flex items-center gap-4 bg-[var(--foreground)] text-[var(--background)] px-8 py-4 rounded-2xl font-black text-xs transition-all hover:scale-105 active:scale-95"
+                            >
+                                <span>Continue Deep Dive</span>
+                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={() => router.push("/dashboard")}
+                                className="group flex items-center gap-4 bg-green-500 text-black px-8 py-4 rounded-2xl font-black text-xs transition-all hover:scale-105 active:scale-95"
+                            >
+                                <span>Complete Masterclass</span>
+                                <CheckCircle2 size={16} />
+                            </button>
+                        )}
+                    </div>
+                 </motion.main>
+             </AnimatePresence>
 
              <EndowmentModal 
                 isOpen={isEndowmentOpen} 
@@ -532,11 +596,13 @@ function SummaryContent() {
 export default function SummaryPage() {
     return (
         <div className="h-[100dvh] bg-[var(--background)] overflow-hidden relative">
-            <div className="h-full overflow-y-auto">
-                <Suspense fallback={<div className="flex h-full bg-[var(--background)] items-center justify-center text-[var(--foreground-muted)]">Loading...</div>}>
+            <div className="h-full overflow-y-auto relative">
+                <div data-header-sentinel className="absolute top-0 h-1 w-full pointer-events-none" />
+                <Suspense fallback={<DataDustLoader />}>
                     <SummaryContent />
                 </Suspense>
             </div>
         </div>
     );
 }
+

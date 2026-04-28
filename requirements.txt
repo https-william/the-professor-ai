@@ -1,0 +1,10 @@
+markitdown==0.0.1a5
+tabulate
+beautifulsoup4
+markdownify
+mammoth
+pdfminer.six
+python-pptx
+openpyxl
+flask
+werkzeug

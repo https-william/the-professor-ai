@@ -18,7 +18,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: '/hub', priority: 0.9, changefreq: 'daily' as const },
     { route: '/create', priority: 0.9, changefreq: 'daily' as const },
     { route: '/library', priority: 0.9, changefreq: 'daily' as const },
-    { route: '/dashboard', priority: 0.8, changefreq: 'daily' as const },
     { route: '/arena', priority: 0.8, changefreq: 'weekly' as const },
     { route: '/roadmap', priority: 0.8, changefreq: 'weekly' as const },
     { route: '/download', priority: 0.7, changefreq: 'monthly' as const },
@@ -30,8 +29,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { route: '/flashcards', priority: 0.8, changefreq: 'daily' as const },
     { route: '/quiz', priority: 0.8, changefreq: 'daily' as const },
     { route: '/summary', priority: 0.8, changefreq: 'daily' as const },
-    { route: '/chat', priority: 0.8, changefreq: 'daily' as const },
-    { route: '/profile', priority: 0.7, changefreq: 'weekly' as const },
   ];
 
   // Build all static pages

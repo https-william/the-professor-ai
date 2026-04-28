@@ -1,149 +1,127 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces } from "next/font/google";
+import { Outfit, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { UserProvider } from "@/context/UserContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import Dock from "@/components/ui/Dock";
+import { PWAProvider } from "@/context/PWAContext";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import OnboardingModal from "@/components/features/OnboardingModal";
+import FaviconSync from "@/components/ui/FaviconSync";
 import GlobalToasts from "@/components/ui/GlobalToasts";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import GlassRefractionProvider from "@/components/ui/GlassRefractionProvider";
 import SiteHeader from "@/components/ui/SiteHeader";
+import DesktopTitleBar from "@/components/ui/DesktopTitleBar";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import DesktopSidebar from "@/components/navigation/DesktopSidebar";
+import MobileNavigation from "@/components/navigation/MobileNavigation";
+import PlatformShell from "@/components/platforms/PlatformShell";
+import ConnectivityIndicator from "@/components/ui/ConnectivityIndicator";
+import CommandPalette from "@/components/ui/CommandPalette";
+import Footer from "@/components/ui/Footer";
+import CookieBanner from "@/components/ui/CookieBanner";
+import { Suspense } from "react";
+import PWAUpdateNotifier from "@/components/providers/PWAUpdateNotifier";
+import PWAInstallBanner from "@/components/ui/PWAInstallBanner";
 
-const inter = Inter({
+/* ═══ Typography Stack ═══
+   Outfit → Geometric sans. Used for headings, UI chrome, user prompts.
+             Closest free alternative to Styrene B (Claude aesthetic).
+   Source Serif 4 → Editorial serif. Used for body text, AI responses, reading.
+                     Closest free alternative to Tiempos Text.
+   ═══════════════════════ */
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-outfit",
   display: "swap",
+  adjustFontFallback: true,
 });
 
-const fraunces = Fraunces({
+const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  variable: "--font-source-serif",
   display: "swap",
-  axes: ["opsz"],
+  style: ["normal", "italic"],
+  adjustFontFallback: true,
 });
 
 const SITE_URL = "https://theprofessor.xyz";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "The Professor | Advanced AI Study Companion",
     template: "%s | The Professor",
   },
   description: "Accelerate your learning with The Professor. Generate high-fidelity flashcards, quizzes, and academic roadmaps instantly using state-of-the-art AI.",
-  manifest: "/manifest.json",
-  keywords: [
-    "AI Study Assistant",
-    "Active Recall AI", 
-    "Study Roadmap Generator",
-    "Flashcard AI",
-    "Academic Quiz Bot",
-    "The Professor Study",
-    "AI Tutor",
-    "Online Learning",
-    "Exam Prep",
-    "Spaced Repetition",
-    "Smart Flashcards",
-    "Quiz Maker",
-    "Study Companion",
-    "AI Education",
-    "Student Tools",
-    "Academic Assistant",
-    "Exam Cram",
-    "Learning Platform",
-    "AI Flashcards",
-    "Quiz Generation",
-  ],
-  authors: [{ name: "The Professor" }],
-  creator: "The Professor",
-  publisher: "The Professor Academy",
-  category: "education",
-  classification: "Web Application",
-  alternates: {
-    canonical: "/",
-    languages: {
-      "en-US": "/",
-      "en-GB": "https://theprofessor.xyz/en-gb",
-      "en-AU": "https://theprofessor.xyz/en-au",
-      "en-IN": "https://theprofessor.xyz/en-in",
-      "es-ES": "https://theprofessor.xyz/es",
-      "fr-FR": "https://theprofessor.xyz/fr",
-      "de-DE": "https://theprofessor.xyz/de",
-      "ja-JP": "https://theprofessor.xyz/ja",
-      "pt-BR": "https://theprofessor.xyz/pt-br",
-      "hi-IN": "https://theprofessor.xyz/hi",
-      "zh-CN": "https://theprofessor.xyz/zh",
-    },
-  },
-  icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
-    shortcut: "/logo.png",
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Professor AI",
-  },
+  manifest: "/site.webmanifest",
+  keywords: ["AI Study Assistant", "Flashcard Generator", "AI Quiz Maker", "Academic Roadmap", "Study Tools", "The Professor"],
+  authors: [{ name: "The Professor Team" }],
   openGraph: {
     title: "The Professor | Advanced AI Study Companion",
-    description: "Your personal AI-powered study companion. Generate flashcards, quizzes, summaries and roadmaps instantly. Cheat codes for your degree.",
+    description: "Accelerate your learning with The Professor. Generate high-fidelity flashcards, quizzes, and academic roadmaps instantly.",
     url: SITE_URL,
     siteName: "The Professor",
-    locale: "en_US",
-    alternateLocale: ["en_GB", "es_ES", "fr_FR", "de_DE", "ja_JP", "pt_BR", "hi_IN", "zh_CN"],
-    type: "website",
     images: [
       {
-        url: "/og-image.svg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "The Professor - AI Study Companion",
-        type: "image/svg+xml",
-      },
-      {
-        url: "/logo.png",
-        width: 512,
-        height: 512,
-        alt: "The Professor Logo",
+        alt: "The Professor AI Study Platform",
       },
     ],
+    locale: "en_US",
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "The Professor | Advanced AI Study Companion",
-    description: "Your personal AI-powered study companion. Generate flashcards, quizzes, summaries and roadmaps instantly.",
-    site: "@TheProfessorAI",
-    creator: "@TheProfessorAI",
-    images: ["/og-image.svg"],
+    description: "Accelerate your learning with The Professor. Generate high-fidelity flashcards, quizzes, and academic roadmaps instantly.",
+    images: ["/og-image.png"],
+    creator: "@theprofessor",
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicons/dark/favicon-32x32.png", sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: "/favicons/dark/favicon-16x16.png", sizes: "16x16", type: "image/png", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png" },
+      { url: "/favicons/dark/apple-touch-icon.png", media: "(prefers-color-scheme: dark)" },
+    ],
+    shortcut: "/favicon.ico",
   },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "The Professor",
+  url: SITE_URL,
+  logo: `${SITE_URL}/favicon-32x32.png`,
+  description: "Advanced AI-powered study platform for generating flashcards, quizzes, and summaries.",
+  sameAs: [
+    "https://twitter.com/theprofessor",
+    "https://github.com/the-professor-ai"
+  ]
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F59E0B",
+  themeColor: "#08080E",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5, // Allow zooming for accessibility
+  userScalable: true,
 };
-
-
 
 export default function RootLayout({
   children,
@@ -151,73 +129,107 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable}`} suppressHydrationWarning>
       <head>
-        {/* Font Fallback for Material Symbols */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
-          rel="stylesheet"
+          rel="preload"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          as="style"
         />
-        {/* Native API / Auth Bridge — Intercepts relative /api calls in native wrappers */}
+        <link
+          id="material-symbols-stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          rel="stylesheet"
+          media="print"
+          suppressHydrationWarning
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const PRODUCTION_URL = "https://theprofessor.xyz";
-                const isNative = window.location.protocol === 'tauri:' || 
-                               window.location.protocol === 'asset:' || 
-                               window.location.hostname.includes('tauri') ||
-                               (window.location.hostname === 'localhost' && window.location.port === '');
-                
-                if (isNative) {
-                  const originalFetch = window.fetch;
-                  window.fetch = function(input, init) {
-                    if (typeof input === 'string' && input.startsWith('/api/')) {
-                      input = PRODUCTION_URL + input;
-                    }
-                    return originalFetch(input, init);
-                  };
-                  console.log('Native Bridge Active: Redirecting API calls to ' + PRODUCTION_URL);
+                var link = document.getElementById('material-symbols-stylesheet');
+                if (link) {
+                  link.onload = function() { this.media = 'all'; };
                 }
               })();
-            `,
+            `
           }}
         />
-
-        {/* Old browser detection — redirect to static fallback */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                if (typeof CSS === 'undefined' || !CSS.supports || !CSS.supports('width', 'clamp(1px,2vw,3px)')) {
-                  if (window.location.pathname.indexOf('/fallback') === -1) {
-                    window.location.replace('/fallback.html');
+              (function() {
+                var updatePlatformAttribute = function() {
+                  var isNative = window.location.protocol === 'tauri:' || 
+                                 window.location.protocol === 'asset:' || 
+                                 window.location.hostname.includes('tauri') ||
+                                 (window.location.hostname === 'localhost' && window.location.port === '');
+                  
+                  var ua = navigator.userAgent.toLowerCase();
+                  var isMobile = ua.includes("android") || ua.includes("iphone") || ua.includes("ipad");
+                  
+                  var html = document.documentElement;
+                  if (isNative) {
+                    html.setAttribute('data-platform', isMobile ? 'mobile' : 'desktop');
+                    html.setAttribute('data-native', 'true');
+                  } else {
+                    html.setAttribute('data-platform', isMobile ? 'mobile' : 'web');
                   }
-                }
-              } catch(e) {
-                window.location.replace('/fallback.html');
-              }
+
+                  if (isMobile) {
+                     html.classList.add('is-mobile');
+                  }
+                };
+                updatePlatformAttribute();
+              })();
             `,
           }}
         />
       </head>
       <body className="font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
-        <ReactQueryProvider>
-          <ThemeProvider>
+        <ThemeProvider>
+          <PWAProvider>
             <UserProvider>
-              <GlassRefractionProvider />
-              <SiteHeader showLogo={true} />
-              {children}
-              <OnboardingModal />
-              <GlobalToasts />
-              <ServiceWorkerRegistrar />
-              <Analytics />
-              <SpeedInsights />
+              <ReactQueryProvider>
+                <ErrorBoundary>
+                  <FaviconSync />
+                  <GlassRefractionProvider />
+                  <PlatformShell desktop={<DesktopTitleBar />} />
+                  <PlatformShell desktop={<DesktopSidebar />} />
+                  
+                  <main className="platform-main-container relative min-h-screen flex flex-col">
+                      <SiteHeader showLogo={true} />
+                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
+                        <div className="flex-1">
+                          {children}
+                        </div>
+                      </Suspense>
+                      <Footer />
+                  </main>
+  
+                  <PlatformShell mobile={<MobileNavigation />} />
+                  <CookieBanner />
+                  <OnboardingModal />
+                  <ConnectivityIndicator />
+                  <GlobalToasts />
+                  <CommandPalette />
+                  <PWAUpdateNotifier />
+                  <PWAInstallBanner />
+                  <ServiceWorkerRegistrar />
+                  <Analytics />
+                  <SpeedInsights />
+                </ErrorBoundary>
+              </ReactQueryProvider>
             </UserProvider>
-          </ThemeProvider>
-        </ReactQueryProvider>
+          </PWAProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
 }
-

@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import ShareCard from "@/components/ShareCard";
-import SiteHeader from "@/components/ui/SiteHeader";
+
 import { useToasts } from "@/components/ui/GlobalToasts";
 import EndowmentModal from "@/components/modals/EndowmentModal";
 import SessionComplete from "@/components/features/SessionComplete";
@@ -534,6 +535,20 @@ function QuizContent() {
                             Next Assessment
                         </button>
                     </div>
+
+                    {/* ─── FLOATING SHARE PILL ─── */}
+                    <motion.button
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsShareOpen(true)}
+                        className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 rounded-full bg-[var(--foreground)] text-[var(--background)] flex items-center gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.4)] group overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                        <Share2 size={18} strokeWidth={2.5} />
+                        <span className="text-xs font-black uppercase tracking-[0.2em]">Share results</span>
+                    </motion.button>
                 </main>
 
                 <ShareCard 
@@ -556,7 +571,9 @@ function QuizContent() {
     const isFlagged = flags.has(currentIndex);
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] relative overflow-hidden">
+            <div data-header-sentinel className="absolute top-0 h-1 w-full pointer-events-none" />
+            {/* Background effects */}
             <header className="h-14 flex items-center justify-between px-4 md:px-6" style={{ borderBottom: "1px solid var(--border)" }}>
                 <div className="flex items-center gap-3">
                     <button onClick={() => router.push('/create')} className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.03] transition-all">
@@ -812,8 +829,7 @@ function QuizContent() {
 export default function QuizPage() {
     return (
         <div className="h-[100dvh] bg-[var(--background)] overflow-hidden relative">
-            <SiteHeader showLogo />
-            <div className="h-full overflow-y-auto pt-24">
+            <div className="h-full overflow-y-auto">
                 <Suspense fallback={<div className="flex h-full bg-[var(--background)] items-center justify-center text-[var(--foreground-muted)]">Loading...</div>}>
                     <QuizContent />
                 </Suspense>

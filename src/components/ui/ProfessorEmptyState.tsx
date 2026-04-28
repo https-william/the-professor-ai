@@ -7,7 +7,7 @@ import {
     HelpCircle, 
     FileText, 
     Search, 
-    Map, 
+    Map as MapIcon, 
     Plus 
 } from "lucide-react";
 
@@ -17,7 +17,7 @@ const ICON_MAP: Record<string, any> = {
   quiz: HelpCircle,
   summarize: FileText,
   search_off: Search,
-  map: Map,
+  map: MapIcon,
   add: Plus
 };
 

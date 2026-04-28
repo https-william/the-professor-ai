@@ -1,6 +1,4 @@
-"use client";
-
-import Script from "next/script";
+import React from "react";
 
 export type SchemaType = 
   | "Organization"
@@ -27,7 +25,7 @@ export default function SEOHead({ type, data }: SEOHeadProps) {
   };
 
   return (
-    <Script
+    <script
       id={`json-ld-${type.toLowerCase()}`}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(baseSchema) }}
