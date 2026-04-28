@@ -44,6 +44,11 @@ const HIDDEN_PATHS = [
     "/signup",
     "/forgot-password",
     "/blog",
+    "/flashcards",
+    "/quiz",
+    "/summary",
+    "/roadmap",
+    "/match",
 ];
 
 const MINIMAL_PATHS = [

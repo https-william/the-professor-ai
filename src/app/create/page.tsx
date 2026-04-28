@@ -25,7 +25,7 @@ import {
 
 const MAX_CHARS = 50000;
 
-/* â•â•â• Claymorphic Helpers â•â•â• */
+/* ═══ Claymorphic Helpers ═══ */
 const clay = {
     card: {
         background: "var(--card-bg, rgba(255,255,255,0.02))",
@@ -46,7 +46,7 @@ const clay = {
     } as React.CSSProperties,
 };
 
-// â”€â”€â”€ Creator Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Creator Types ────────────────────────────────────────────────────────
 const creatorTypes = [
     {
         id: "flashcards",
@@ -112,14 +112,42 @@ interface GenerationResult {
     data: any;
 }
 
-// â”€â”€â”€ Configuration Options â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Configuration Options ──────────────────────────────────────────
 const countOptions = [5, 10, 20, 30, 45, 60];
 const difficultyOptions = [
-    { id: "easy", label: "Easy", desc: "Basic recall & definitions", emoji: "ðŸŸ¢" },
-    { id: "medium", label: "Medium", desc: "Conceptual understanding", emoji: "ðŸŸ¡" },
-    { id: "difficult", label: "Hard", desc: "Application & analysis", emoji: "ðŸŸ " },
-    { id: "nightmare", label: "Nightmare", desc: "Expert-level traps", emoji: "ðŸ”´" },
+    { id: "easy", label: "Novice", desc: "Basic recall & definitions", emoji: "🌱" },
+    { id: "medium", label: "Scholar", desc: "Conceptual understanding", emoji: "📜" },
+    { id: "difficult", label: "Master", desc: "Application & analysis", emoji: "🏛️" },
+    { id: "nightmare", label: "Professor", desc: "Expert-level rigor", emoji: "🎓" },
 ];
+
+const timerOptions = [
+    { id: 0, label: "No Timer", desc: "Infinite time" },
+    { id: 300, label: "5 Min", desc: "Blitz session" },
+    { id: 600, label: "10 Min", desc: "Standard rigor" },
+    { id: 1200, label: "20 Min", desc: "Deep focus" },
+    { id: 1800, label: "30 Min", desc: "Mock exam" },
+];
+
+const formatOptions: Record<string, { id: string, label: string, desc: string }[]> = {
+    flashcards: [
+        { id: "front_back", label: "Front/Back", desc: "Classic active recall" },
+        { id: "cloze", label: "Cloze", desc: "Fill in the blanks" },
+    ],
+    quiz: [
+        { id: "mcq", label: "MCQ", desc: "Multiple choice" },
+        { id: "mixed", label: "Mixed", desc: "MCQ + True/False" },
+    ],
+    summary: [
+        { id: "bullets", label: "High-Yield", desc: "Focus on facts" },
+        { id: "cornell", label: "Cornell", desc: "Structured system" },
+        { id: "narrative", label: "Narrative", desc: "Prose explanation" },
+    ],
+    roadmap: [
+        { id: "chronological", label: "Phase-based", desc: "Step-by-step" },
+        { id: "thematic", label: "Thematic", desc: "Cluster-based" },
+    ]
+};
 
 function CreatorStudio() {
     const router = useRouter();
@@ -148,13 +176,22 @@ function CreatorStudio() {
     // Configuration
     const [itemCount, setItemCount] = useState(10);
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
+    const [timerValue, setTimerValue] = useState(600);
+    const [selectedFormat, setSelectedFormat] = useState("");
 
-    // â”€â”€â”€ Computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Initialize format when type changes
+    useEffect(() => {
+        if (selectedType && formatOptions[selectedType]) {
+            setSelectedFormat(formatOptions[selectedType][0].id);
+        }
+    }, [selectedType]);
+
+    // ─── Computed ──────────────────────────────────────────────────────────────
     const selectedCreator = creatorTypes.find(c => c.id === selectedType);
     const charPercentage = (inputText.length / MAX_CHARS) * 100;
     const canGenerate = inputText.trim().length > 50 && selectedType;
 
-    // â”€â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Handlers ──────────────────────────────────────────────────────────────
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
     };
@@ -174,10 +211,12 @@ function CreatorStudio() {
             content: inputText,
             count: itemCount,
             difficulty,
+            timer: timerValue,
+            format: selectedFormat,
             type: selectedType
         }));
         
-        router.push(`/${selectedType}?mode=generate`);
+        router.push(`/${selectedType}/generate`);
     };
 
     const handleDrag = (e: React.DragEvent) => {
@@ -192,7 +231,7 @@ function CreatorStudio() {
         setSetupError(null);
     };
 
-    // â”€â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── RENDER ────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
             {/* Ambient Background — warm amber only, no purple */}
@@ -209,9 +248,9 @@ function CreatorStudio() {
 
             <main className="max-w-2xl mx-auto px-5 pt-24 pb-8 sm:pt-20 sm:pb-12 relative z-10">
 
-                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                {/* ══════════════════════════════════════════════════════════════════════════════════════
                     VIEW 1: TOOL SELECTION
-                   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+                   ══════════════════════════════════════════════════════════════════════════════════════ */}
                 {!selectedType && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Welcome */}
@@ -283,9 +322,9 @@ function CreatorStudio() {
                     </div>
                 )}
 
-                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                {/* ══════════════════════════════════════════════════════════════════════════════════════
                     VIEW 2: INPUT + CONFIG
-                   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+                   ══════════════════════════════════════════════════════════════════════════════════════ */}
                 {selectedType && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-400 space-y-6">
 
@@ -299,6 +338,9 @@ function CreatorStudio() {
                                 <h3 className="text-sm font-bold text-[var(--foreground)]">{selectedCreator?.label}</h3>
                                 <p className="text-[11px] text-[var(--foreground-muted)]">{selectedCreator?.desc}</p>
                             </div>
+                            <button onClick={resetSelection} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                                <X size={18} />
+                            </button>
                         </div>
 
                         {/* Content Input */}
@@ -357,55 +399,110 @@ function CreatorStudio() {
                         </div>
 
                         {/* Config Block */}
-                        {(selectedType === "flashcards" || selectedType === "match" || selectedType === "quiz") && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="p-5" style={clay.card}>
-                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Density / Count</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {countOptions.map((count) => (
-                                            <button
-                                                key={count}
-                                                onClick={() => setItemCount(count)}
-                                                className={`px-3 py-1.5 text-[11px] font-bold transition-all rounded-lg`}
-                                                style={itemCount === count ? {
-                                                    background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.1))",
-                                                    color: "#F59E0B", border: "1px solid rgba(245,158,11,0.2)",
-                                                    boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1), 0 2px 6px rgba(245,158,11,0.2)"
-                                                } : {
-                                                    background: "var(--foreground-opacity-5, rgba(255,255,255,0.02))", color: "var(--foreground-muted)",
-                                                    border: "1px solid var(--border)"
-                                                }}
-                                            >
-                                                {count}
-                                            </button>
-                                        ))}
-                                    </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Count / Density */}
+                            <div className="p-5" style={clay.card}>
+                                <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">
+                                    {selectedType === "summary" ? "Detail Level" : "Density / Count"}
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {(selectedType === "summary" ? [3, 5, 8, 12] : countOptions).map((count) => (
+                                        <button
+                                            key={count}
+                                            onClick={() => setItemCount(count)}
+                                            className={`px-3 py-1.5 text-[11px] font-bold transition-all rounded-lg`}
+                                            style={itemCount === count ? {
+                                                background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.1))",
+                                                color: "#F59E0B", border: "1px solid rgba(245,158,11,0.2)",
+                                                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1), 0 2px 6px rgba(245,158,11,0.2)"
+                                            } : {
+                                                background: "var(--foreground-opacity-5, rgba(255,255,255,0.02))", color: "var(--foreground-muted)",
+                                                border: "1px solid var(--border)"
+                                            }}
+                                        >
+                                            {selectedType === "summary" ? (count < 5 ? "Concise" : count < 10 ? "Standard" : "Extensive") : count}
+                                        </button>
+                                    ))}
                                 </div>
+                            </div>
+
+                            {/* Rigor Level */}
+                            <div className="p-5" style={clay.card}>
+                                <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Professor's Rigor</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {difficultyOptions.map((opt) => (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => setDifficulty(opt.id as any)}
+                                            className="p-2.5 text-left rounded-xl transition-all"
+                                            style={difficulty === opt.id ? {
+                                                background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
+                                            } : {
+                                                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)"
+                                            }}
+                                        >
+                                            <div className="text-[11px] font-bold flex items-center gap-1.5 mb-1"
+                                                style={{ color: difficulty === opt.id ? "#F59E0B" : "var(--foreground-muted)" }}>
+                                                <span>{opt.emoji}</span> {opt.label}
+                                            </div>
+                                            <p className="text-[9px] text-[var(--foreground-muted)] opacity-70 px-1 truncate">{opt.desc}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Format Selection */}
+                            {formatOptions[selectedType] && (
                                 <div className="p-5" style={clay.card}>
-                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Rigor Level</label>
+                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Output Format</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {difficultyOptions.map((opt) => (
+                                        {formatOptions[selectedType].map((opt) => (
                                             <button
                                                 key={opt.id}
-                                                onClick={() => setDifficulty(opt.id as any)}
-                                                className="p-2.5 text-left rounded-xl transition-all"
-                                                style={difficulty === opt.id ? {
-                                                    background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
+                                                onClick={() => setSelectedFormat(opt.id)}
+                                                className="p-3 text-left rounded-xl transition-all"
+                                                style={selectedFormat === opt.id ? {
+                                                    background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)",
                                                 } : {
                                                     background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)"
                                                 }}
                                             >
-                                                <div className="text-[11px] font-bold flex items-center gap-1.5 mb-1"
-                                                    style={{ color: difficulty === opt.id ? "#F59E0B" : "var(--foreground-muted)" }}>
-                                                    <span>{opt.emoji}</span> {opt.label}
+                                                <div className="text-[11px] font-bold mb-1"
+                                                    style={{ color: selectedFormat === opt.id ? "#10B981" : "var(--foreground-muted)" }}>
+                                                    {opt.label}
                                                 </div>
-                                                <p className="text-[9px] text-[var(--foreground-muted)] opacity-70 px-1 truncate">{opt.desc}</p>
+                                                <p className="text-[9px] text-[var(--foreground-muted)] opacity-70 truncate">{opt.desc}</p>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+
+                            {/* Timer Selection (Only for Quiz/Match) */}
+                            {(selectedType === "quiz" || selectedType === "match") && (
+                                <div className="p-5" style={clay.card}>
+                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Time Pressure</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {timerOptions.map((opt) => (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => setTimerValue(opt.id)}
+                                                className="px-3 py-1.5 text-[11px] font-bold transition-all rounded-lg"
+                                                style={timerValue === opt.id ? {
+                                                    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)",
+                                                    color: "#EF4444"
+                                                } : {
+                                                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
+                                                    color: "var(--foreground-muted)"
+                                                }}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Generate Button */}
                         <div className="pt-2">
@@ -463,4 +560,3 @@ export default function CreatePage() {
         </Suspense>
     );
 }
-

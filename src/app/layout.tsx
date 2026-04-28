@@ -203,14 +203,14 @@ export default function RootLayout({
                   <PlatformShell desktop={<DesktopTitleBar />} />
                   <PlatformShell desktop={<DesktopSidebar />} />
                   
-                  <main className="platform-main-container relative min-h-screen flex flex-col">
+                  <main className="platform-main-container relative h-screen flex flex-col overflow-hidden bg-[var(--background)]">
                       <SiteHeader showLogo={true} />
-                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
-                        <div className="flex-1">
+                      <div className="flex-1 overflow-y-auto scroll-smooth relative custom-scrollbar">
+                        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
                           {children}
-                        </div>
-                      </Suspense>
-                      <Footer />
+                        </Suspense>
+                        <Footer />
+                      </div>
                   </main>
   
                   <PlatformShell mobile={<MobileNavigation />} />
