@@ -13,12 +13,9 @@ import FaviconSync from "@/components/ui/FaviconSync";
 import GlobalToasts from "@/components/ui/GlobalToasts";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import GlassRefractionProvider from "@/components/ui/GlassRefractionProvider";
-import SiteHeader from "@/components/ui/SiteHeader";
-import DesktopTitleBar from "@/components/ui/DesktopTitleBar";
-import ErrorBoundary from "@/components/ui/ErrorBoundary";
-import DesktopSidebar from "@/components/navigation/DesktopSidebar";
-import MobileNavigation from "@/components/navigation/MobileNavigation";
+import PlatformLoader from "@/components/platforms/PlatformLoader";
 import PlatformShell from "@/components/platforms/PlatformShell";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import ConnectivityIndicator from "@/components/ui/ConnectivityIndicator";
 import CommandPalette from "@/components/ui/CommandPalette";
 import Footer from "@/components/ui/Footer";
@@ -26,6 +23,7 @@ import CookieBanner from "@/components/ui/CookieBanner";
 import { Suspense } from "react";
 import PWAUpdateNotifier from "@/components/providers/PWAUpdateNotifier";
 import PWAInstallBanner from "@/components/ui/PWAInstallBanner";
+import SiteHeader from "@/components/ui/SiteHeader";
 
 /* ═══ Typography Stack ═══
    Outfit → Geometric sans. Used for headings, UI chrome, user prompts.
@@ -88,9 +86,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
       { url: "/favicons/dark/favicon-32x32.png", sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: dark)" },
       { url: "/favicons/dark/favicon-16x16.png", sizes: "16x16", type: "image/png", media: "(prefers-color-scheme: dark)" },
     ],
@@ -129,7 +127,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable} w-full h-full`} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -192,7 +190,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
+      <body className="font-sans antialiased transition-colors duration-300 w-full h-full m-0 p-0" suppressHydrationWarning>
         <ThemeProvider>
           <PWAProvider>
             <UserProvider>
@@ -200,12 +198,11 @@ export default function RootLayout({
                 <ErrorBoundary>
                   <FaviconSync />
                   <GlassRefractionProvider />
-                  <PlatformShell desktop={<DesktopTitleBar />} />
-                  <PlatformShell desktop={<DesktopSidebar />} />
+                  <PlatformLoader />
                   
-                  <main className="platform-main-container relative h-screen flex flex-col overflow-hidden bg-[var(--background)]">
-                      <SiteHeader showLogo={true} />
-                      <div className="flex-1 overflow-y-auto scroll-smooth relative custom-scrollbar">
+                  <SiteHeader showLogo={true} />
+                  <main className="platform-main-container relative h-full w-full flex flex-col bg-[var(--background)]">
+                      <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full h-full">
                         <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
                           {children}
                         </Suspense>
@@ -213,7 +210,7 @@ export default function RootLayout({
                       </div>
                   </main>
   
-                  <PlatformShell mobile={<MobileNavigation />} />
+                  {/* Mobile nav handled by PlatformLoader */}
                   <CookieBanner />
                   <OnboardingModal />
                   <ConnectivityIndicator />

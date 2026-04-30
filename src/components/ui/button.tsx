@@ -3,7 +3,7 @@ import { Slot } from "@radix-ui/react-slot"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag'> {
     variant?: "default" | "jelly" | "jelly-ghost" | "destructive" | "outline" | "secondary" | "ghost" | "link" | "skeuo" | "skeuo-primary"
     size?: "default" | "sm" | "lg" | "icon" | "xl"
     asChild?: boolean

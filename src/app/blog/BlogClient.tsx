@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import StandardContainer from "@/components/ui/StandardContainer";
 import { blogPosts, getAllCategories, getFeaturedPosts } from "@/lib/blog/posts";
 import type { BlogPost } from "@/lib/blog/posts";
 import { useState } from "react";
@@ -291,8 +292,8 @@ export default function BlogClient() {
 
       {/* Navigation - Minimal and Floating */}
       <nav className="fixed top-0 w-full z-50 px-3 md:px-4 py-3 md:py-4">
-        <div
-          className="max-w-4xl mx-auto flex items-center justify-between px-4 md:px-5 py-2 md:py-2.5 rounded-full"
+        <StandardContainer narrow
+          className="flex items-center justify-between px-4 md:px-5 py-2 md:py-2.5 rounded-full"
           style={{
             background: "var(--card)",
             backdropFilter: "blur(40px) saturate(180%)",
@@ -319,10 +320,10 @@ export default function BlogClient() {
           <div className="flex items-center gap-2">
             <ThemeToggle variant="minimal" />
           </div>
-        </div>
+        </StandardContainer>
       </nav>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-6 pt-28 sm:pt-32">
+      <StandardContainer narrow className="relative z-10 pt-28 sm:pt-32">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-5">
@@ -448,7 +449,8 @@ export default function BlogClient() {
             </div>
           </div>
         </div>
-      </div>
+      </StandardContainer>
     </div>
   );
 }
+

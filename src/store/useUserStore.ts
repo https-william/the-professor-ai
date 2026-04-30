@@ -59,7 +59,7 @@ export const defaultUser: UserState = {
     streakResetAt: null,
     isLoading: true,
     isAuthenticated: false,
-    hasOnboarded: true,
+    hasOnboarded: false,
     createdAt: null,
 };
 
@@ -81,8 +81,12 @@ export const useUserStore = create<UserStore>()(
         
                     if (sessionError || !session?.user) {
                         // Only clear if we're sure there's no session
-                        set({ ...defaultUser, isLoading: false, isAuthenticated: false, hasOnboarded: true });
+                        set({ ...defaultUser, isLoading: false, isAuthenticated: false, hasOnboarded: false });
                         return;
+                    }
+                    
+                    if (get().id && get().id !== session.user.id) {
+                        set({ ...defaultUser });
                     }
         
                     // Fetch profile from API with strict timeout

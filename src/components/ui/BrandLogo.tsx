@@ -1,44 +1,37 @@
 "use client";
 
 import React from 'react';
-import { useTheme } from '@/context/ThemeContext';
+import { GraduationCap } from "lucide-react";
 
 /**
- * BrandLogo: The Professor — Real Logo with Theme-Aware Switching
- * 
- * Uses the actual brand SVGs:
- * - /logo-dark.svg  → Shown in dark mode (light pen on dark bg)
- * - /logo-light.svg → Shown in light mode (dark pen on light bg)
+ * BrandLogo: The Professor — Graduation Cap Reverted
  */
 export const BrandLogo: React.FC<{ 
     className?: string; 
-    size?: 'sm' | 'md' | 'lg' | 'xl'; 
-    forceDark?: boolean;
-    showBackground?: boolean;
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; 
 }> = ({
     className = "",
     size = "md",
-    forceDark = false,
-    showBackground = false,
 }) => {
-    const { resolvedTheme } = useTheme();
-
     const sizes = {
-        sm: "w-8 h-8",
-        md: "w-10 h-10",
-        lg: "w-16 h-16",
-        xl: "w-24 h-24",
+        xs: "w-4 h-4",
+        sm: "w-6 h-6",
+        md: "w-8 h-8",
+        lg: "w-12 h-12",
+        xl: "w-20 h-20",
     };
 
-    const isDark = forceDark || resolvedTheme === 'dark';
-
     return (
-        <div className={`relative ${sizes[size]} ${className}`}>
+        <div className={`relative flex items-center justify-center ${sizes[size]} ${className}`}>
              <img 
-                src="/brand/professor-og-logo.svg" 
+                src="/favicon-96x96.png" 
                 alt="The Professor Logo"
                 className="w-full h-full object-contain"
                 loading="eager"
+                onError={(e) => {
+                    // Fallback to favicon.ico if PNG fails
+                    e.currentTarget.src = '/favicon.ico';
+                }}
             />
         </div>
     );

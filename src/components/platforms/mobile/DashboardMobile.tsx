@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import StandardContainer from "@/components/ui/StandardContainer";
 import { Layers, Zap, ArrowRight, Flame, Brain, Calendar } from "lucide-react";
 import XPGauge from "@/components/features/dashboard/XPGauge";
 import RecentActivity from "@/components/features/dashboard/RecentActivity";
@@ -43,7 +44,7 @@ export default function DashboardMobile({
     handleShare,
 }: DashboardMobileProps) {
     return (
-        <div className="w-full h-[100dvh] overflow-y-auto no-scrollbar relative font-sans bg-[var(--background)] selection:bg-[var(--accent)]/10 px-6 pt-24 pb-32">
+        <div className="w-full relative font-sans bg-[var(--background)] selection:bg-[var(--accent)]/10 pt-24 pb-32">
             {/* Ultra-Premium Glassmorphic Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-5%] right-[-10%] w-[300px] h-[300px] bg-[var(--accent)]/15 blur-[80px] rounded-full mix-blend-screen" />
@@ -51,7 +52,7 @@ export default function DashboardMobile({
                 {/* <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay" /> */}
             </div>
 
-            <div className="relative z-10 flex flex-col gap-6">
+            <StandardContainer className="relative z-10 flex flex-col gap-6">
                 
                 {/* ─── MASTHEAD (Banner) ─── */}
                 <motion.div 
@@ -60,10 +61,6 @@ export default function DashboardMobile({
                     className="p-8 rounded-[36px] border border-[var(--border)] bg-gradient-to-br from-[var(--card)] to-transparent relative overflow-hidden group flex flex-col justify-end min-h-[280px]"
                 >
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-0" />
-                    <div className="absolute top-0 right-0 p-6 opacity-[0.02] scale-150 rotate-12">
-                        <Layers size={200} />
-                    </div>
-                    
                     <div className="relative z-10">
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-4 backdrop-blur-md">
                             <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
@@ -173,7 +170,7 @@ export default function DashboardMobile({
                     </button>
                 )}
 
-            </div>
+            </StandardContainer>
         </div>
     );
 }

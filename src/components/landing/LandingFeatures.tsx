@@ -21,17 +21,17 @@ export default function LandingFeatures() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[var(--space-md)] auto-rows-auto">
       {/* ─── FLASHCARDS — wide hero card ─── */}
-      <div className="clay-card md:col-span-1 lg:col-span-2 p-6 md:p-8 group cursor-default relative overflow-visible min-h-[500px] flex flex-col items-center gap-6 [container-type:inline-size]">
+      <div className="md:col-span-1 lg:col-span-2 py-8 group cursor-default relative overflow-visible flex flex-col gap-6">
         <div className="relative z-10 w-full">
           <div className="flex items-center gap-2 mb-3">
             <Layers className="w-5 h-5 text-[#F59E0B]" strokeWidth={1.5} />
-            <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#F59E0B]/70">Most Popular</span>
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#F59E0B]">Most Popular</span>
           </div>
-          <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
+          <h3 className="font-heading text-2xl md:text-3xl font-black text-[var(--foreground)] tracking-tight mb-2">
             Flashcards
           </h3>
           <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
-            Spaced-repetition cards with mnemonic hooks. Not just Q&A — built to make concepts stick.
+            Spaced-repetition cards with hooks. Not just Q&A—built for retention.
           </p>
         </div>
 
@@ -41,10 +41,10 @@ export default function LandingFeatures() {
       </div>
 
       {/* ─── QUIZ ENGINE — tall narrow card ─── */}
-      <div className="clay-card md:col-span-1 lg:col-span-1 p-6 md:p-8 group cursor-default relative overflow-visible min-h-[500px] flex flex-col [container-type:inline-size]">
+      <div className="md:col-span-1 lg:col-span-1 py-8 group cursor-default relative overflow-visible flex flex-col">
         <div className="relative z-10 mb-5 md:mb-1">
           <HelpCircle className="w-6 h-6 text-[#818CF8] mb-3 block" strokeWidth={1.5} />
-          <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
+          <h3 className="font-heading text-2xl md:text-3xl font-black text-[var(--foreground)] tracking-tight mb-2">
             Quiz Engine
           </h3>
           <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
@@ -59,10 +59,10 @@ export default function LandingFeatures() {
       </div>
 
       {/* ─── SMART SUMMARY — wide bottom-left ─── */}
-      <div className="clay-card md:col-span-2 lg:col-span-3 p-6 md:p-8 group cursor-default relative overflow-hidden min-h-[200px] md:min-h-[240px] flex flex-col md:flex-row md:items-center gap-8 [container-type:inline-size]">
+      <div className="md:col-span-2 lg:col-span-3 py-10 md:py-16 group cursor-default relative overflow-hidden flex flex-col md:flex-row md:items-center gap-8 border-t border-[var(--border)]">
         <div className="relative z-10 mb-5 md:mb-0 md:w-[45%]">
           <FileText className="w-6 h-6 text-[#6366F1] mb-3 block" strokeWidth={1.5} />
-          <h3 className="font-heading text-xl md:text-2xl font-bold text-[var(--foreground)] mb-2">
+          <h3 className="font-heading text-2xl md:text-3xl font-black text-[var(--foreground)] tracking-tight mb-2">
             Smart Summary
           </h3>
           <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">

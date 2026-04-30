@@ -262,7 +262,7 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 450, damping: 25 }}
+            transition={{ type: "tween", duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="absolute top-[calc(100%+12px)] right-0 w-[340px] rounded-[32px] overflow-hidden shadow-2xl"
             style={{ 
               background: "var(--card)", 

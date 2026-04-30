@@ -26,9 +26,27 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) { setError(error.message); setLoading(false); }
-        else { router.push("/dashboard"); router.refresh(); }
+        
+        const { data: { user: authUser }, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        
+        if (loginError) { 
+            setError(loginError.message); 
+            setLoading(false); 
+        } else if (authUser) {
+            // Check if user has onboarded
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("has_onboarded")
+                .eq("id", authUser.id)
+                .single();
+
+            if (profile?.has_onboarded === false) {
+                router.push("/onboarding");
+            } else {
+                router.push("/dashboard");
+            }
+            router.refresh();
+        }
     };
 
     const handleGoogleLogin = async () => {
@@ -73,36 +91,23 @@ export default function LoginPage() {
 
                 {/* Logo + brand */}
                 <div className="text-center mb-10">
-                    <BrandLogo size="md" className="mx-auto mb-4" />
-                    <h1 className="font-heading text-[22px] font-semibold text-[var(--foreground)] tracking-tight">
+                    <BrandLogo size="md" className="mx-auto mb-6" />
+                    <h1 className="font-galaxie text-3xl md:text-4xl font-bold text-[var(--foreground)] tracking-tight">
                         Welcome back
                     </h1>
-                    <p className="text-sm text-[var(--foreground-muted)] mt-1">Sign in to continue learning</p>
+                    <p className="text-sm font-medium text-[var(--foreground-secondary)] mt-2">Sign in to continue learning</p>
                 </div>
 
-                {/* ═══ The Card ═══ */}
-                <div
-                    className="rounded-2xl relative overflow-hidden"
-                    style={{
-                        background: "var(--background-secondary)",
-                        border: "1px solid var(--border)",
-                        boxShadow: "var(--shadow-lg), inset 0 1px 1px var(--card-border)",
-                    }}
-                >
-                    {/* Inner glow */}
-                    <div className="absolute top-0 left-0 right-0 h-px" style={{
-                        background: "linear-gradient(90deg, transparent 10%, var(--border) 50%, transparent 90%)",
-                    }} />
-
-                    <div className="p-7">
+                {/* ═══ The Form ═══ */}
+                <div className="relative">
 
                         {/* Google */}
                         <button
                             onClick={handleGoogleLogin}
                             disabled={loading}
-                            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all hover:bg-white/5 active:scale-[0.98] disabled:opacity-50"
                             style={{
-                                background: "var(--background-tertiary)",
+                                background: "transparent",
                                 border: "1px solid var(--border)",
                                 color: "var(--foreground-secondary)",
                             }}
@@ -141,18 +146,18 @@ export default function LoginPage() {
                                 <input
                                     id="login-email"
                                     type="email"
-                                    placeholder="you@university.edu"
+                                    placeholder="you@email.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     onFocus={() => setEmailFocused(true)}
                                     onBlur={() => setEmailFocused(false)}
                                     required
                                     autoComplete="email"
-                                    className="w-full px-3.5 py-2.5 rounded-lg text-[14px] text-white/90 placeholder-white/15 outline-none transition-all duration-200"
+                                    className="w-full px-3.5 py-2.5 rounded-lg text-[14px] text-[var(--foreground)] placeholder-[var(--foreground-muted)]/40 outline-none transition-all duration-200"
                                     style={{
-                                        background: "rgba(255,255,255,0.03)",
-                                        border: `1px solid ${emailFocused ? "rgba(129,140,248,0.4)" : "rgba(255,255,255,0.07)"}`,
-                                        boxShadow: emailFocused ? "0 0 0 3px rgba(129,140,248,0.08)" : "none",
+                                        background: "var(--background-secondary)",
+                                        border: `1px solid ${emailFocused ? "rgba(245,158,11,0.5)" : "var(--border)"}`,
+                                        boxShadow: emailFocused ? "0 0 0 3px rgba(245,158,11,0.15)" : "none",
                                     }}
                                 />
                             </div>
@@ -163,7 +168,7 @@ export default function LoginPage() {
                                     <label htmlFor="login-pass" className="text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                                         Password
                                     </label>
-                                    <Link href="/forgot-password" className="text-[11px] text-[#818CF8] hover:text-[#a5b4fc] transition-colors">
+                                    <Link href="/forgot-password" className="text-[11px] text-[#F59E0B] hover:text-[#FCD34D] transition-colors">
                                         Forgot?
                                     </Link>
                                 </div>
@@ -178,11 +183,11 @@ export default function LoginPage() {
                                         onBlur={() => setPassFocused(false)}
                                         required
                                         autoComplete="current-password"
-                                        className="w-full px-3.5 py-2.5 pr-10 rounded-lg text-[14px] text-white/90 placeholder-white/15 outline-none transition-all duration-200"
+                                        className="w-full px-3.5 py-2.5 pr-10 rounded-lg text-[14px] text-[var(--foreground)] placeholder-[var(--foreground-muted)]/40 outline-none transition-all duration-200"
                                         style={{
-                                            background: "rgba(255,255,255,0.03)",
-                                            border: `1px solid ${passFocused ? "rgba(129,140,248,0.4)" : "rgba(255,255,255,0.07)"}`,
-                                            boxShadow: passFocused ? "0 0 0 3px rgba(129,140,248,0.08)" : "none",
+                                            background: "var(--background-secondary)",
+                                            border: `1px solid ${passFocused ? "rgba(245,158,11,0.5)" : "var(--border)"}`,
+                                            boxShadow: passFocused ? "0 0 0 3px rgba(245,158,11,0.15)" : "none",
                                         }}
                                     />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -199,9 +204,9 @@ export default function LoginPage() {
                                 disabled={loading}
                                 className="w-full py-2.5 rounded-lg font-semibold text-[14px] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                                 style={{
-                                    background: "linear-gradient(135deg, #F59E0B, #D97706)",
-                                    color: "#08080E",
-                                    boxShadow: "0 2px 12px rgba(245,158,11,0.2), inset 0 1px 1px rgba(255,255,255,0.15)",
+                                    background: "var(--foreground)",
+                                    color: "var(--background)",
+                                    boxShadow: "none",
                                 }}
                             >
                                 {loading ? (
@@ -213,14 +218,13 @@ export default function LoginPage() {
                             </button>
                         </form>
 
-                        <p className="text-center text-[13px] text-[var(--foreground-muted)] mt-6">
+                        <p className="text-center font-medium text-[13px] text-[var(--foreground-secondary)] mt-6">
                             New here?{" "}
                             <Link href="/signup" className="text-[#F59E0B] hover:text-[#FCD34D] font-medium transition-colors">
                                 Create an account
                             </Link>
                         </p>
                     </div>
-                </div>
 
                 {/* Back links */}
                 <div className="flex items-center justify-center gap-6 mt-6">

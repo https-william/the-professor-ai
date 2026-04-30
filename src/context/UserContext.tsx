@@ -12,13 +12,18 @@ interface UserContextType {
     spendCredits: (amount: number) => Promise<boolean>;
     incrementStreak: () => Promise<void>;
     completeOnboarding: (data: { 
-        alias: string, 
-        first_name: string, 
-        last_name: string, 
-        username: string, 
-        age: number,
+        alias?: string, 
+        first_name?: string, 
+        last_name?: string, 
+        username?: string, 
+        age?: number,
         education_level: string, 
-        study_goal: string 
+        study_goal: string,
+        study_style?: string,
+        preferred_subjects?: string[],
+        time_commitment?: string,
+        main_challenge?: string,
+        ai_persona?: string
     }) => Promise<boolean>;
     saveOnboardingStep: (data: any) => Promise<boolean>;
     buyStreakFreeze: () => Promise<boolean>;

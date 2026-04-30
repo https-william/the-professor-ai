@@ -1,9 +1,9 @@
-﻿"use client";
-
+"use client";
 import { useState } from "react";
 import BrandLogo from "./BrandLogo";
 import { AnimatePresence } from "framer-motion";
 import { PrivacyPolicyModal, TermsOfUseModal } from "@/components/ui/LegalModals";
+import StandardContainer from "./StandardContainer";
 
 export default function Footer() {
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -18,7 +18,7 @@ export default function Footer() {
           borderColor: "var(--border)",
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <StandardContainer className="py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <BrandLogo size="sm" />
             <p className="text-[11px]" style={{ color: "var(--foreground-muted)" }}>
@@ -45,8 +45,9 @@ export default function Footer() {
               © {new Date().getFullYear()} The Professor
             </p>
           </div>
-        </div>
+        </StandardContainer>
       </footer>
+
 
       <AnimatePresence>
         {showPrivacy && <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />}

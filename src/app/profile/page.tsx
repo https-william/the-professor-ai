@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useUser } from "@/context/UserContext";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { calculateLevel, getLevelProgress, getLevelTitle } from "@/lib/profiles-client";
@@ -51,7 +51,9 @@ const STATS = [
 export default function ProfilePage() {
     const { user } = useUser();
     const router = useRouter();
-    const [activeSection, setActiveSection] = useState<"achievements" | "settings">("achievements");
+    const searchParams = useSearchParams();
+    const initialTab = searchParams.get("tab") as "achievements" | "settings" || "achievements";
+    const [activeSection, setActiveSection] = useState<"achievements" | "settings">(initialTab);
     const [stats, setStats] = useState({ xp: 0, quizzes: 0, cards: 0, bestStreak: 0 });
     const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
     const supabase = createClient();

@@ -84,10 +84,6 @@ export default function DashboardDesktop({
                         className="lg:col-span-2 p-12 rounded-[40px] border border-[var(--border)] bg-gradient-to-br from-[var(--card)] to-transparent relative overflow-hidden group flex flex-col justify-end min-h-[360px]"
                     >
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-0" />
-                        <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-1000 rotate-12 group-hover:rotate-0 scale-150">
-                            <Layers size={400} />
-                        </div>
-                        
                         <div className="relative z-10 max-w-2xl">
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-6 backdrop-blur-md">
                                 <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
@@ -131,12 +127,7 @@ export default function DashboardDesktop({
                                         </div>
                                     </Link>
                                 </motion.div>
-                            ) : (
-                                <div className="flex-1 p-8 rounded-[40px] bg-[var(--card)] border border-[var(--border)] flex flex-col items-center justify-center text-center opacity-50">
-                                    <Layers size={48} className="text-[var(--foreground-muted)] mb-4" />
-                                    <p className="text-sm font-bold text-[var(--foreground-muted)] uppercase tracking-widest">No pending reviews</p>
-                                </div>
-                            )}
+                            ) : null}
                         </AnimatePresence>
                     </div>
                 </div>
@@ -220,9 +211,6 @@ export default function DashboardDesktop({
                         {canRecover && (
                             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                                 <div className="p-8 rounded-[40px] bg-gradient-to-br from-[#F59E0B]/20 to-[#F59E0B]/5 border border-[#F59E0B]/30 relative overflow-hidden group">
-                                    <div className="absolute -right-8 -top-8 opacity-10 group-hover:rotate-45 transition-transform duration-700">
-                                        <HistoryIcon size={160} className="text-[#F59E0B]" />
-                                    </div>
                                     <div className="relative z-10">
                                         <h3 className="text-xs font-black text-[#F59E0B] uppercase tracking-[0.4em] mb-4">Streak Recovery</h3>
                                         <p className="text-sm text-[var(--foreground-muted)] mb-6 font-medium">Restore <b>{user.lastStreak} days</b> of momentum.</p>

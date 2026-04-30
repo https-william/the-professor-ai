@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { useTheme } from "@/context/ThemeContext";
 import BrandLogo from "@/components/ui/BrandLogo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { PrivacyPolicyModal, TermsOfUseModal } from "@/components/ui/LegalModals";
-import { AlertCircle, Eye, EyeOff, Loader2, CheckCircle2, Gavel, Shield } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2, CheckCircle2, Gavel, Shield, Check } from "lucide-react";
 
 type Step = 1 | 2;
 
@@ -30,8 +30,26 @@ export default function SignupPage() {
     const { resolvedTheme } = useTheme();
     const supabase = createClient();
 
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                setError(`Note: You are currently signed in as ${session.user.email}. Creating a new account will sign you out.`);
+            }
+        };
+        checkSession();
+    }, [supabase]);
+
     const handleGoogleSignup = async () => {
         setLoading(true);
+        
+        // Sign out first to ensure we are creating a new account session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await supabase.auth.signOut();
+            await fetch('/api/auth/signout', { method: 'POST' });
+        }
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -47,6 +65,14 @@ export default function SignupPage() {
         if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
         
         setLoading(true);
+
+        // Ensure we sign out the old user before signing up the new one
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await supabase.auth.signOut();
+            await fetch('/api/auth/signout', { method: 'POST' });
+        }
+
         const { error } = await supabase.auth.signUp({
             email, password,
         });
@@ -54,17 +80,17 @@ export default function SignupPage() {
         else { 
             setIsSuccess(true);
             setTimeout(() => {
-                router.push("/dashboard"); 
+                router.push("/onboarding"); 
                 router.refresh(); 
             }, 2000);
         }
     };
 
-    const inputClass = "w-full px-3.5 py-2.5 rounded-lg text-[14px] text-[var(--foreground)] placeholder-[var(--foreground-muted)]/50 outline-none transition-all duration-200 shadow-inner";
+    const inputClass = "w-full px-3.5 py-2.5 rounded-lg text-[14px] text-[var(--foreground)] placeholder-[var(--foreground-muted)]/40 outline-none transition-all duration-200";
     const getInputStyle = (field: string) => ({
         background: "var(--background-secondary)",
-        border: `1px solid ${focusedField === field ? "var(--accent)" : "var(--border)"}`,
-        boxShadow: focusedField === field ? "0 0 0 3px var(--accent-bg)" : "none",
+        border: `1px solid ${focusedField === field ? "rgba(245,158,11,0.5)" : "var(--border)"}`,
+        boxShadow: focusedField === field ? "0 0 0 3px rgba(245,158,11,0.15)" : "none",
     });
 
     return (
@@ -84,27 +110,17 @@ export default function SignupPage() {
             <div className="relative z-10 w-full max-w-[400px]">
 
                 <div className="text-center mb-10">
-                    <BrandLogo size="md" className="mx-auto mb-4" />
-                    <h1 className="font-heading text-[22px] font-semibold text-[var(--foreground)] tracking-tight">
+                    <BrandLogo size="md" className="mx-auto mb-6" />
+                    <h1 className="font-galaxie text-3xl md:text-4xl font-bold text-[var(--foreground)] tracking-tight">
                         Create your account
                     </h1>
-                    <p className="text-sm text-[var(--foreground-muted)] mt-1">
+                    <p className="text-sm font-medium text-[var(--foreground-muted)] mt-2">
                         Scholarly access on us
                     </p>
                 </div>
 
                 {/* ═══ Card ═══ */}
-                <div className="rounded-2xl relative overflow-hidden"
-                    style={{
-                        background: "var(--background-secondary)",
-                        border: "1px solid var(--border)",
-                        boxShadow: "var(--shadow-lg), inset 0 1px 1px var(--card-border)",
-                    }}>
-                    {/* Top edge highlight */}
-                    <div className="absolute top-0 left-0 right-0 h-px" style={{
-                        background: "linear-gradient(90deg, transparent 10%, var(--border) 50%, transparent 90%)",
-                    }} />
-
+                <div className="relative">
                     <div className="p-7">
                         <AnimatePresence mode="wait">
                             {!isSuccess ? (
@@ -119,8 +135,8 @@ export default function SignupPage() {
                                         <>
                                             {/* Google */}
                                             <button onClick={handleGoogleSignup} disabled={loading || !isAgeVerified}
-                                                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
-                                                style={{ background: "var(--background-tertiary)", border: "1px solid var(--border)", color: "var(--foreground-secondary)" }}>
+                                                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all hover:bg-white/5 active:scale-[0.98] disabled:opacity-50"
+                                                style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--foreground-secondary)" }}>
                                                 <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
                                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                                                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -151,7 +167,7 @@ export default function SignupPage() {
                                     <form onSubmit={handleSignup} className="space-y-4">
                                         <div>
                                             <label htmlFor="s-email" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Email</label>
-                                            <input id="s-email" type="email" placeholder="you@university.edu" value={email}
+                                            <input id="s-email" type="email" placeholder="you@email.com" value={email}
                                                 onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
                                                 onFocus={() => setFocusedField("email")} onBlur={() => setFocusedField(null)}
                                                 className={inputClass} style={getInputStyle("email")} />
@@ -159,7 +175,7 @@ export default function SignupPage() {
                                         <div>
                                             <label htmlFor="s-pass" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Password</label>
                                             <div className="relative">
-                                                <input id="s-pass" type={showPassword ? "text" : "password"} placeholder="At least 6 characters" value={password}
+                                                <input id="s-pass" type={confirmPassword && !password ? "text" : (showPassword ? "text" : "password")} placeholder="At least 6 characters" value={password}
                                                     onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password"
                                                     onFocus={() => setFocusedField("pass")} onBlur={() => setFocusedField(null)}
                                                     className={`${inputClass} pr-10`} style={getInputStyle("pass")} />
@@ -178,33 +194,44 @@ export default function SignupPage() {
                                         </div>
 
                                         {/* COPPA Age Gate */}
-                                        <div className="flex items-start gap-3 mt-4 px-1">
-                                            <div className="pt-0.5">
+                                        <label className="flex items-start gap-4 mt-8 px-1 cursor-pointer group">
+                                            <div className="relative flex-shrink-0 mt-0.5">
                                                 <input 
                                                     type="checkbox" 
                                                     id="age-gate" 
+                                                    className="sr-only" 
                                                     checked={isAgeVerified}
                                                     onChange={(e) => setIsAgeVerified(e.target.checked)}
-                                                    className="w-4 h-4 rounded border-[var(--border)] bg-[var(--background-secondary)] text-[var(--accent)] focus:ring-[var(--accent-glow)] transition-all cursor-pointer"
                                                 />
+                                                <div className={`w-6 h-6 rounded-md border-2 transition-all flex items-center justify-center ${
+                                                    isAgeVerified 
+                                                        ? "bg-[#F59E0B] border-[#F59E0B]" 
+                                                        : "border-[var(--border)] bg-[var(--background-secondary)] group-hover:border-[var(--foreground-muted)]"
+                                                }`} style={{ 
+                                                    boxShadow: isAgeVerified ? "0 0 12px rgba(245,158,11,0.3)" : "none",
+                                                    // Ensure visibility even if var(--border) is faint
+                                                    borderColor: !isAgeVerified ? (resolvedTheme === "dark" ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.15)") : "#F59E0B"
+                                                }}>
+                                                    {isAgeVerified && <Check className="w-4 h-4 text-[#08080E]" strokeWidth={4} />}
+                                                </div>
                                             </div>
-                                            <label htmlFor="age-gate" className="text-[12px] text-[var(--foreground-muted)] leading-tight cursor-pointer select-none">
-                                                I confirm that I am at least 13 years of age and agree to the <button type="button" onClick={() => setShowTerms(true)} className="text-[var(--foreground)] hover:text-[var(--accent)] transition-colors underline">Terms of Use</button> and <button type="button" onClick={() => setShowPrivacy(true)} className="text-[var(--foreground)] hover:text-[var(--accent)] transition-colors underline">Privacy Policy</button>.
-                                            </label>
-                                        </div>
+                                            <span className="text-[14px] font-medium text-[var(--foreground-secondary)] leading-tight select-none pt-0.5">
+                                                I agree to the <button type="button" onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-[var(--foreground)] hover:text-[#F59E0B] transition-colors underline font-semibold">Terms of Use</button> and <button type="button" onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-[var(--foreground)] hover:text-[#F59E0B] transition-colors underline font-semibold">Privacy Policy</button>.
+                                            </span>
+                                        </label>
 
                                         {/* Credits callout */}
                                         <div className="flex items-start gap-3 px-3.5 py-3 rounded-xl mt-4 mb-2"
                                             style={{ background: "var(--accent-bg)", border: "1px solid var(--accent-glow)" }}>
                                             <span className="text-lg mt-0.5">🎁</span>
                                             <p className="text-[13px] text-[var(--foreground-secondary)] leading-relaxed">
-                                                You&apos;ll get <strong className="text-[#F59E0B]">instant access</strong> to generate flashcards, quizzes, and more.
+                                                You&apos;ll get <strong>full access</strong> to all study tools and features instantly.
                                             </p>
                                         </div>
 
                                         <button type="submit" disabled={loading || !isAgeVerified}
                                             className="w-full mt-4 py-2.5 rounded-lg font-semibold text-[14px] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                                            style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#08080E", boxShadow: "0 2px 12px rgba(245,158,11,0.2), inset 0 1px 1px rgba(255,255,255,0.15)" }}>
+                                            style={{ background: "var(--foreground)", color: "var(--background)", boxShadow: "none" }}>
                                             {loading ? (
                                                 <><Loader2 className="w-4 h-4 animate-spin" />Creating Account...</>
                                             ) : "Create Account"}

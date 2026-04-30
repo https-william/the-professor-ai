@@ -1,10 +1,12 @@
+import StandardContainer from "@/components/ui/StandardContainer";
+
 export default function SocialProof() {
   return (
     <section className="w-full py-8 md:py-12 border-y border-[var(--border)] bg-[var(--background)]/50 backdrop-blur-sm z-10 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-[var(--background)] via-transparent to-[var(--background)] z-10 pointer-events-none" />
       
-      <div className="max-w-7xl mx-auto px-5 w-full">
-        <p className="text-center text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-6">
+      <StandardContainer>
+        <p className="text-center text-[11px] font-bold tracking-[0.3em] text-[var(--foreground-secondary)] mb-6">
           Trusted by top scholars globally
         </p>
         
@@ -35,7 +37,7 @@ export default function SocialProof() {
               ].map((stat, i) => (
                 <div key={i} className="flex flex-col items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-300">
                   <span className="text-xl md:text-2xl font-black text-[var(--foreground)] tracking-tight">{stat.val}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-muted)]">{stat.label}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-secondary)]">{stat.label}</span>
                 </div>
               ))}
             </div>
@@ -65,13 +67,14 @@ export default function SocialProof() {
               ].map((stat, i) => (
                 <div key={i + "b"} className="flex flex-col items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-300">
                   <span className="text-xl md:text-2xl font-black text-[var(--foreground)] tracking-tight">{stat.val}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-muted)]">{stat.label}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-secondary)]">{stat.label}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
+      </StandardContainer>
     </section>
   );
 }
+

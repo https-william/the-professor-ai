@@ -39,16 +39,14 @@ export const InteractiveQuiz = () => {
                             key={i}
                             onClick={() => handleSelect(i)}
                             className={cn(
-                                "btn-skeuo p-3.5 text-left text-xs font-bold transition-all border-none relative overflow-hidden",
+                                "w-full p-4 text-left text-xs font-bold transition-all rounded-2xl relative overflow-hidden flex items-center gap-3",
                                 selected === i 
                                     ? (i === 1 
-                                        ? "bg-emerald-500/10 shadow-[inset_0_2px_8px_rgba(16,185,129,0.3)] text-emerald-500 border border-emerald-500/30" 
-                                        : "bg-red-500/10 shadow-[inset_0_2px_8px_rgba(239,68,68,0.3)] text-red-500 border border-red-500/30 translate-y-[1px]")
-                                    : "bg-[var(--card)]/60 text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                                        ? "bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)] scale-[1.02]" 
+                                        : "bg-red-500/10 text-red-400 ring-1 ring-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.15)] scale-[1.02]")
+                                    : "bg-transparent border border-white/5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5"
                             )}
                         >
-                            {/* Inner Bevel for unselected */}
-                            {selected !== i && <div className="absolute inset-x-0 top-0 h-px bg-[var(--foreground)]/5 pointer-events-none" />}
                             {opt}
                         </button>
                     ))}

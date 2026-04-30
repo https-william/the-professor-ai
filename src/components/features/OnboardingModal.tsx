@@ -107,11 +107,7 @@ export default function OnboardingModal() {
     // Don't mount on landing, auth pages, or if already onboarded/unauthenticated
     if (!mounted || isLanding || isAuthPage || user.hasOnboarded) return null;
     
-    // ─── CRITICAL: SIGNUP-ONLY PROTECTION ───
-    // Only show if the user's account was created in the last 2 minutes (Fresh Signup)
-    const isNewSignup = user.createdAt ? (Date.now() - new Date(user.createdAt).getTime()) < 120000 : false;
-    
-    if (!user.isAuthenticated || user.isLoading || !isNewSignup) return null;
+    if (!user.isAuthenticated || user.isLoading || user.hasOnboarded) return null;
 
     // Form data
     const [firstName, setFirstName] = useState("");

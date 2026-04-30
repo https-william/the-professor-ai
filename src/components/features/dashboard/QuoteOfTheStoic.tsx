@@ -24,7 +24,7 @@ export default function QuoteOfTheStoic() {
         <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/50 backdrop-blur-sm relative overflow-hidden group hover:border-[var(--accent)]/30 transition-all flex-1">
             <div className="flex items-center gap-2 mb-4 relative z-10">
                 <BookOpen size={13} className="text-[var(--foreground-muted)]" />
-                <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--foreground-muted)]">Daily Wisdom</span>
+                <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--foreground-secondary)]">Daily Wisdom</span>
             </div>
 
             <div className="relative z-10">
@@ -32,7 +32,7 @@ export default function QuoteOfTheStoic() {
                     &ldquo;{quote.text}&rdquo;
                 </p>
                 <div className="w-8 h-px bg-[var(--accent)]/40 mt-4 mb-2" />
-                <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--foreground-muted)]">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--foreground-secondary)]">
                     {quote.author}
                 </p>
             </div>

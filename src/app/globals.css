@@ -78,12 +78,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* ============================================
-   THE PROFESSOR — MIDNIGHT SCHOLAR DESIGN SYSTEM
-   Dark-mode default. Amber gold identity.
-   "A wizard's study at 3 AM."
-   ============================================ */
-
 /* ═══════════════════════════════════════════════════
    TAILWIND v4 CONFIGURATION
    The @theme rule is a valid Tailwind CSS v4 directive.
@@ -110,6 +104,9 @@
   --radius-3xl: 2rem;
 
   --animate-marquee: marquee 120s linear infinite;
+  --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+
+  @keyframes fade-in-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
   @keyframes shimmer {
     from { transform: translateX(-150%) skewX(-15deg); }
@@ -124,8 +121,9 @@
 }
 
 /* ============================================
-   DARK MODE — MIDNIGHT SCHOLAR (Default)
-   Volcanic almost-black, amber gold identity
+   THE PROFESSOR — MIDNIGHT SCHOLAR DESIGN SYSTEM
+   Dark-mode default. Amber gold identity.
+   "A wizard's study at 3 AM."
    ============================================ */
 
 :root {
@@ -204,6 +202,22 @@
   --glass-frost: blur(24px) saturate(200%);
   --glass-frost-heavy: blur(40px) saturate(250%);
   --btn-press-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.scholar-container {
+  width: 100%;
+  max-width: 1152px; /* max-w-6xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .scholar-container {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -302,6 +316,13 @@ select:is(:focus, :focus-visible) {
   border: none;
   outline: none;
   box-shadow: none;
+}
+
+/* ═══ IMPECCABLE FOCUS RINGS ═══ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: inherit;
 }
 
 .card input,
@@ -1581,31 +1602,26 @@ html.light .neu-inset {
    Forces all tactical surfaces to respect the 
    Midnight Scholar "puffy" aesthetic (1.5rem)
    Permanently resolves "sharp corner" regressions.
-   ============================================ */
-.glass-panel {
-  border-radius: var(--radius-2xl);
-}
-
 /* ============================================
    PLATFORM-SPECIFIC LAYOUT OVERRIDES
-   These rules interact with data-platform attributes setter in RootLayout 
-   to provide sub-millisecond layout stability before JS hydration.
    ============================================ */
 
-/* Desktop Navigation Sidebar Offset */
-html[data-platform="desktop"] .platform-main-container {
-  padding-left: 5rem; /* Equivalent to pl-20 */
+/* Desktop & Web Navigation Sidebar Offset */
+html[data-platform="desktop"] .platform-main-container,
+html[data-platform="web"] .platform-main-container {
+  padding-left: 5rem;
 }
 
 /* Mobile Navigation Bottom Offset */
 html[data-platform="mobile"] .platform-main-container {
-  padding-bottom: 5.5rem; /* Equivalent to pb-22 for Bottom Navigation */
+  padding-bottom: 5.5rem;
 }
 
 /* Base container for all pages to ensure consistent platform handling */
 .platform-main-container {
   transition: padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 
 /* ── Professor Brand Keyframes ───────────────────────────────────────────── */
 @keyframes professor-spin {

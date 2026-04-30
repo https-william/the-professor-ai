@@ -92,6 +92,11 @@ export async function PUT(req: NextRequest) {
             avatar_url: body.avatar || body.avatar_url,
             education_level: body.education_level,
             study_goal: body.study_goal,
+            study_style: body.study_style,
+            preferred_subjects: body.preferred_subjects,
+            time_commitment: body.time_commitment,
+            main_challenge: body.main_challenge,
+            ai_persona: body.ai_persona,
             has_onboarded: body.has_onboarded,
         };
 

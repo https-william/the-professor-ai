@@ -7,7 +7,7 @@ import ShareCard from "@/components/ShareCard";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import SessionComplete from "@/components/features/SessionComplete";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
-import { Share2, ChevronLeft, Lightbulb, ChildCare, CheckCircle2 } from "lucide-react";
+import { Share2, ChevronLeft, Lightbulb, Baby, CheckCircle2 } from "lucide-react";
 
 interface Flashcard {
     id?: string;
@@ -131,6 +131,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 body: JSON.stringify({ text })
             });
             const reader = res.body?.getReader();
+            if (!reader) return;
             const decoder = new TextDecoder();
             let buffer = "";
             while (true) {
@@ -207,7 +208,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                 </p>
                                 {!eli5Text[currentIndex] && (
                                     <button onClick={(e) => handleEli5(e, currentCard.back, currentIndex)} className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20 text-[10px] font-bold uppercase tracking-wider hover:bg-[#F59E0B]/20 transition-all">
-                                        <ChildCare size={14} />
+                                        <Baby size={14} />
                                         {isGeneratingEli5 ? "Simplifying..." : "ELI5"}
                                     </button>
                                 )}

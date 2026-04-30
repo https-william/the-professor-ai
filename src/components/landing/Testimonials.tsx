@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import StandardContainer from "@/components/ui/StandardContainer";
 
 export default function Testimonials() {
   const testimonials = [
@@ -24,7 +25,7 @@ export default function Testimonials() {
 
   return (
     <section className="relative w-full py-20 px-5 md:px-6 z-10 bg-[var(--background-secondary)]">
-      <div className="max-w-6xl mx-auto">
+      <StandardContainer>
         <h2 className="font-heading text-2xl md:text-4xl font-bold text-center text-[var(--foreground)] mb-12">
           Don't just take our word for it.
         </h2>
@@ -53,7 +54,8 @@ export default function Testimonials() {
             </div>
           ))}
         </div>
-      </div>
+      </StandardContainer>
     </section>
   );
 }
+

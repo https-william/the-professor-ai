@@ -42,7 +42,7 @@ export function useDuelRealtime(duelId: string | null, callbacks: {
           table: 'duel_sessions',
           filter: `duel_id=eq.${duelId}`
         },
-        (payload) => {
+        (payload : any) => {
           callbacks.onSessionUpdate?.(payload);
         }
       )
@@ -73,7 +73,7 @@ export function useRoomRealtime(roomId: string | null, callbacks: {
           table: 'lobby_rooms',
           filter: `id=eq.${roomId}`
         },
-        (payload) => {
+        (payload: any) => {
           callbacks.onRoomUpdate?.(payload);
         }
       )
@@ -85,7 +85,7 @@ export function useRoomRealtime(roomId: string | null, callbacks: {
           table: 'room_messages',
           filter: `room_id=eq.${roomId}`
         },
-        (payload) => {
+        (payload: any) => {
           callbacks.onNewMessage?.(payload);
         }
       )

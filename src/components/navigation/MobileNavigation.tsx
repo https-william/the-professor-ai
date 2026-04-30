@@ -7,15 +7,18 @@ import {
     LayoutDashboard, 
     PlusCircle, 
     Library, 
-    Swords
+    Swords,
+    User
 } from "lucide-react";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 const navItems = [
     { name: "Home", href: "/dashboard", icon: LayoutDashboard },
     { name: "Create", href: "/create", icon: PlusCircle, highlight: true },
     { name: "Arena", href: "/arena", icon: Swords },
     { name: "Library", href: "/library", icon: Library },
+    { name: "Profile", href: "/settings", icon: User },
 ];
 
 export default function MobileNavigation() {
@@ -25,7 +28,7 @@ export default function MobileNavigation() {
     if (!isMobile) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 h-20 bg-[var(--background)]/80 backdrop-blur-2xl border-t border-[var(--border)] z-[60] safe-area-bottom pb-safe flex items-center justify-around px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-[var(--background)]/80 backdrop-blur-2xl border-t border-[var(--border)] z-[60] safe-area-bottom pb-safe flex items-center justify-around px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
             {navItems.map((item) => {
                 const isActive = item.href === "/dashboard" 
                     ? pathname === "/dashboard" 
@@ -38,10 +41,10 @@ export default function MobileNavigation() {
                             href={item.href}
                             className="relative -top-6 flex flex-col items-center gap-1 group"
                         >
-                            <div className="w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--background)] flex items-center justify-center shadow-[0_8px_20px_var(--accent-glow)] active:scale-90 transition-transform">
-                                <item.icon size={28} strokeWidth={2.5} />
+                            <div className="w-14 h-14 rounded-full bg-[var(--background)] border-4 border-[var(--background)] flex items-center justify-center shadow-[0_10px_25px_rgba(0,0,0,0.3)] active:scale-90 transition-transform">
+                                <BrandLogo size="sm" className="opacity-90" />
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground)] mt-1">{item.name}</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] mt-1.5">{item.name}</span>
                         </Link>
                     );
                 }

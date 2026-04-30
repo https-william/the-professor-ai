@@ -3,6 +3,7 @@
 import React from "react";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
 import { motion, AnimatePresence } from "framer-motion";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 interface PlatformShellProps {
     children?: React.ReactNode;
@@ -30,17 +31,26 @@ class PlatformErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-8 text-center">
-          <p className="text-[var(--foreground)] font-bold text-lg">Something went wrong loading this view.</p>
-          <p className="text-[var(--foreground-muted)] text-sm max-w-md font-mono break-all">
-            {this.state.error?.message || "Unknown error"}
-          </p>
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            className="mt-4 px-6 py-2 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-sm font-bold"
-          >
-            Retry
-          </button>
+        <div className="min-h-[60vh] w-full flex flex-col items-center justify-center p-12 text-center bg-[#08080E]/40 backdrop-blur-md rounded-[2.5rem] border border-white/5 my-8">
+           <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-6 border border-white/10 shadow-2xl">
+              <BrandLogo size="md" />
+           </div>
+           
+           <h2 className="text-xl font-bold text-white mb-2 tracking-tight">This view hit a snag.</h2>
+           <p className="text-white/40 text-sm max-w-xs mx-auto mb-8 leading-relaxed font-medium">
+             The Professor encountered a minor hiccup while loading this specific view.
+           </p>
+
+           <button
+             onClick={() => window.location.reload()}
+             className="px-8 py-3.5 rounded-2xl bg-white text-[#08080E] text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-98 transition-all shadow-[0_15px_30px_rgba(255,255,255,0.05)]"
+           >
+             Reload View
+           </button>
+
+           <p className="mt-8 text-[9px] text-white/10 uppercase tracking-[0.3em] font-black">
+             PLATFORM COMPONENT ERROR
+           </p>
         </div>
       );
     }

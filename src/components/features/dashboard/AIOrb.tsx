@@ -16,20 +16,20 @@ export function AIOrb() {
                     repeat: Infinity,
                     ease: "easeInOut",
                 }}
-                className="absolute w-32 h-32 bg-indigo-500 rounded-full blur-3xl opacity-50"
+                className="absolute w-32 h-32 bg-amber-500 rounded-full blur-3xl opacity-50"
             />
 
             {/* Inner Rings */}
             <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute w-48 h-48 border border-indigo-400/20 rounded-full border-t-indigo-400/60"
+                className="absolute w-48 h-48 border border-amber-400/20 rounded-full border-t-amber-400/60"
             />
 
             <motion.div
                 animate={{ rotate: -360 }}
                 transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                className="absolute w-40 h-40 border border-purple-400/20 rounded-full border-b-purple-400/60"
+                className="absolute w-40 h-40 border border-white/20 rounded-full border-b-white/60"
             />
 
             {/* Center Point */}

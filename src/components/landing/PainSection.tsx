@@ -1,4 +1,5 @@
 import { Ghost, X } from "lucide-react";
+import StandardContainer from "@/components/ui/StandardContainer";
 
 export default function PainSection() {
   return (
@@ -7,7 +8,7 @@ export default function PainSection() {
         background: "radial-gradient(circle at 50% 0%, rgba(239,68,68,0.06) 0%, transparent 60%)",
       }} />
 
-      <div className="max-w-4xl mx-auto text-center relative z-10">
+      <StandardContainer narrow className="text-center">
         <Ghost className="w-12 h-12 text-[#EF4444]/60 mx-auto mb-6 animate-pulse" />
         
         <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[var(--foreground)]/90 mb-6 tracking-tight leading-[1.1]">
@@ -25,14 +26,17 @@ export default function PainSection() {
             { pain: "Lecture Panic", desc: "Rewatching 4-hour lectures on 2x speed hoping you absorb it by osmosis." },
             { pain: "Blind Confidence", desc: "Walking into an exam feeling 'ready' only to blank on question 1." }
           ].map((item, i) => (
-            <div key={i} className="p-6 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
-              <X size={16} strokeWidth={1.5} className="text-[#EF4444]/50 mb-3 block" />
-              <h4 className="text-[var(--foreground)]/80 font-bold mb-2 text-sm">{item.pain}</h4>
-              <p className="text-xs text-[var(--foreground-muted)] leading-relaxed">{item.desc}</p>
+            <div key={i} className="flex flex-col text-left group">
+              <div className="w-10 h-10 rounded-full bg-[#EF4444]/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500 cubic-bezier(0.175, 0.885, 0.32, 1.275)">
+                <X size={18} strokeWidth={2} className="text-[#EF4444]" />
+              </div>
+              <h3 className="text-[var(--foreground)] font-heading text-xl font-bold mb-3 tracking-tight">{item.pain}</h3>
+              <p className="text-base text-[var(--foreground-secondary)] leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
-      </div>
+      </StandardContainer>
     </section>
   );
 }
+

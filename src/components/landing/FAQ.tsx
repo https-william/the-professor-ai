@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import StandardContainer from "@/components/ui/StandardContainer";
 
 export default function FAQ() {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
@@ -31,7 +32,7 @@ export default function FAQ() {
 
   return (
     <section className="relative w-full py-20 px-5 md:px-6 z-10 bg-[var(--background)]">
-      <div className="max-w-3xl mx-auto">
+      <StandardContainer narrow>
         <h2 className="font-heading text-2xl md:text-3xl font-bold text-center text-[var(--foreground)] mb-10">
           You've got questions.
         </h2>
@@ -70,7 +71,8 @@ export default function FAQ() {
             </div>
           ))}
         </div>
-      </div>
+      </StandardContainer>
     </section>
   );
 }
+

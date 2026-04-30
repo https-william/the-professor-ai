@@ -1,22 +1,32 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, Bell, Wifi } from "lucide-react";
+import { X, Sparkles, Download } from "lucide-react";
 import { usePWA } from "@/context/PWAContext";
-
-const PERKS = [
-    { icon: Zap,  label: "Offline access, instant load" },
-    { icon: Bell, label: "Smart study reminders"        },
-    { icon: Wifi, label: "Works without internet"       },
-];
+import BrandLogo from "@/components/ui/BrandLogo";
+import { useAppPlatform } from "@/hooks/useAppPlatform";
 
 export default function PWAInstallBanner() {
     const { isInstallable, installApp } = usePWA();
+    const { isMobile } = useAppPlatform();
     const [dismissed, setDismissed] = useState(false);
-    const [mounted,   setMounted]   = useState(false);
+    const [mounted, setMounted] = useState(false);
 
-    useEffect(() => setMounted(true), []);
+    useEffect(() => {
+        setMounted(true);
+        const snoozeUntil = localStorage.getItem("pwa-banner-snooze");
+        if (snoozeUntil && Date.now() < parseInt(snoozeUntil)) {
+            setDismissed(true);
+        }
+    }, []);
+
+    const handleDismiss = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setDismissed(true);
+        // Snooze for 24 hours
+        localStorage.setItem("pwa-banner-snooze", (Date.now() + 24 * 60 * 60 * 1000).toString());
+    };
 
     if (!mounted || !isInstallable || dismissed) return null;
 
@@ -24,111 +34,82 @@ export default function PWAInstallBanner() {
         <AnimatePresence>
             <motion.div
                 key="pwa-banner"
-                initial={{ opacity: 0, y: 64, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0,  scale: 1    }}
-                exit={{    opacity: 0, y: 64, scale: 0.97 }}
-                transition={{ type: "tween", duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                className="fixed bottom-5 left-4 right-4 md:left-auto md:right-6 md:w-[340px] z-[90]"
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="fixed bottom-6 right-6 z-[95] hidden md:block"
             >
-                <div
-                    className="relative overflow-hidden rounded-2xl"
-                    style={{
-                        background: "var(--background-secondary)",
-                        border: "1px solid var(--border)",
-                        boxShadow: "0 20px 56px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
-                    }}
+                <div 
+                    className="group relative w-[280px] p-4 rounded-[2rem] bg-[var(--background-secondary)]/90 backdrop-blur-2xl border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
-                    <div
-                        className="absolute top-0 inset-x-0 h-[2px] pointer-events-none"
-                        style={{ background: "linear-gradient(90deg,transparent,var(--accent) 40%,var(--accent-light) 60%,transparent)" }}
-                    />
-                    <div
-                        className="absolute -top-10 -right-10 w-32 h-32 rounded-full pointer-events-none"
-                        style={{ background: "var(--accent)", opacity: 0.1, filter: "blur(48px)" }}
-                    />
-                    <button
-                        onClick={() => setDismissed(true)}
-                        aria-label="Dismiss"
-                        className="absolute top-3 right-3 z-20 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-                        style={{ background: "color-mix(in srgb,var(--foreground) 8%,transparent)", border: "1px solid var(--border)" }}
-                    >
-                        <X size={11} strokeWidth={2.5} style={{ color: "var(--foreground-muted)" }} />
-                    </button>
-
-                    <div className="relative z-10 p-5">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div
-                                className="w-12 h-12 shrink-0 rounded-[13px] flex items-center justify-center"
-                                style={{
-                                    background: "var(--background)",
-                                    border: "1px solid var(--border)",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                                    fontSize: "24px",
-                                }}
-                            >
-                                🎓
-                            </div>
-                            <div className="flex-1 min-w-0 pr-5">
-                                <div className="flex items-center gap-1.5 mb-0.5">
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
-                                    <span className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: "var(--accent)" }}>
-                                        Install App
-                                    </span>
+                    {/* Ambient Glow */}
+                    <div className="absolute -top-12 -right-12 w-24 h-24 bg-[var(--accent)]/10 blur-3xl rounded-full transition-opacity duration-500 group-hover:opacity-100" />
+                    
+                    <div className="relative z-10">
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-10 h-10 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] flex items-center justify-center shadow-lg shadow-black/20">
+                                    <BrandLogo size="sm" />
                                 </div>
-                                <p className="text-[14px] font-black leading-snug" style={{ color: "var(--foreground)" }}>
-                                    Study smarter, anywhere.
-                                </p>
-                                <p className="text-[11px] mt-0.5" style={{ color: "var(--foreground-muted)" }}>
-                                    Add The Professor to your home screen
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5 mb-4">
-                            {PERKS.map(({ icon: Icon, label }) => (
-                                <div key={label} className="flex items-center gap-2">
-                                    <div
-                                        className="w-5 h-5 shrink-0 rounded-md flex items-center justify-center"
-                                        style={{ background: "color-mix(in srgb,var(--accent) 12%,transparent)" }}
-                                    >
-                                        <Icon size={11} strokeWidth={2.2} style={{ color: "var(--accent)" }} />
-                                    </div>
-                                    <span className="text-[11px] font-medium" style={{ color: "var(--foreground-secondary)" }}>
-                                        {label}
-                                    </span>
+                                <div>
+                                    <h4 className="text-[13px] font-bold text-[var(--foreground)] leading-tight">The Professor — Your Study Cave</h4>
+                                    <p className="text-[10px] text-[var(--foreground-muted)] font-medium">Ace every exam. Even offline.</p>
                                 </div>
-                            ))}
-                        </div>
-
-                        <div className="flex gap-2">
-                            <motion.button
-                                whileTap={{ scale: 0.97 }}
-                                transition={{ type: "tween", duration: 0.1 }}
-                                onClick={installApp}
-                                className="flex-1 py-2.5 rounded-xl text-[13px] font-black hover:brightness-110 active:brightness-95 transition-all"
-                                style={{
-                                    background: "var(--accent)",
-                                    color: "#000",
-                                    boxShadow: "0 4px 16px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2)",
-                                }}
+                            </div>
+                            <button 
+                                onClick={handleDismiss}
+                                className="p-1 rounded-full text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 transition-all"
                             >
-                                Install Free
-                            </motion.button>
-                            <button
-                                onClick={() => setDismissed(true)}
-                                className="px-4 py-2.5 rounded-xl text-[13px] font-medium hover:brightness-110 transition-all"
-                                style={{
-                                    color: "var(--foreground-muted)",
-                                    border: "1px solid var(--border)",
-                                    background: "color-mix(in srgb,var(--foreground) 4%,transparent)",
-                                }}
-                            >
-                                Later
+                                <X size={14} />
                             </button>
                         </div>
+
+                        <div className="space-y-2 mb-4">
+                            <div className="flex items-center gap-2 text-[10px] text-[var(--foreground-secondary)] font-medium">
+                                <Sparkles size={12} className="text-[var(--accent)]" />
+                                <span>Zero distractions. Instant launch.</span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={installApp}
+                            className="w-full py-2.5 px-4 rounded-2xl bg-white text-black text-[12px] font-black uppercase tracking-wider shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        >
+                            <Download size={14} />
+                            {isMobile ? "Add to Home Screen" : "Add to Desktop"}
+                        </button>
                     </div>
                 </div>
             </motion.div>
+
+            {/* Mobile Version: Compact Monochrome Pill */}
+            {!dismissed && (
+                <motion.div
+                    initial={{ opacity: 0, y: 100 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 100 }}
+                    className="fixed bottom-6 left-6 right-6 z-[95] md:hidden"
+                >
+                <div 
+                    onClick={installApp}
+                    className="w-full p-2.5 rounded-full bg-[var(--foreground)] text-[var(--background)] shadow-[0_15px_40px_rgba(0,0,0,0.4)] flex items-center justify-between px-5 border border-white/10"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-full bg-[var(--background)] flex items-center justify-center p-1.5 shadow-sm">
+                            <BrandLogo size="xs" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.1em]">Install Official App</span>
+                    </div>
+                    <button 
+                        onClick={handleDismiss}
+                        className="p-1 rounded-full hover:bg-black/10 transition-colors"
+                    >
+                        <X size={14} className="opacity-40" />
+                    </button>
+                </div>
+                </motion.div>
+            )}
         </AnimatePresence>
     );
 }

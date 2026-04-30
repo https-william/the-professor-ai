@@ -35,7 +35,7 @@ export default function MagneticButton({
             onMouseMove={handleMouse}
             onMouseLeave={reset}
             animate={{ x, y }}
-            transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
+            transition={{ type: "tween", duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className={`inline-block ${className}`}
         >
             {children}

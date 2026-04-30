@@ -9,7 +9,7 @@ export const InteractiveSummary = () => {
     const [isRefining, setIsRefining] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    const rawText = "The dopaminergic projections from the ventral tegmental area (VTA) to the nucleus accumbens (NAc) shell constitute a core component of the reward circuitry involved in reinforcement learning. This pathway is sensitive to reward prediction errors, where deviations from expected outcomes trigger phasic firing rates that drive synaptic plasticity in medium spiny neurons.";
+    const rawText = "The reward circuitry in the brain, connecting the ventral tegmental area to the nucleus accumbens, is crucial for reinforcement learning. This pathway reacts to unexpected rewards, triggering dopamine spikes that drive synaptic changes and behavior reinforcement.";
     const refinedText = "The brain's reward pathway connects the VTA to the NAc shell. When you get a surprise win, it triggers dopamine bursts. These bursts literally rewire your brain to help you repeat that success later.";
 
     const handleRefine = () => {
@@ -66,7 +66,7 @@ export const InteractiveSummary = () => {
                            <motion.div 
                              key="raw"
                              exit={{ opacity: 0, filter: "blur(4px)" }}
-                             className="text-sm leading-relaxed text-[var(--foreground-muted)] italic font-serif"
+                             className="text-sm leading-relaxed text-[var(--foreground-secondary)] italic font-serif"
                            >
                                {rawText}
                            </motion.div>
@@ -102,7 +102,7 @@ export const InteractiveSummary = () => {
                 <div className="flex items-center gap-6 pt-4 border-t border-[var(--border)] mt-auto">
                     <div className="flex flex-col">
                         <span className="text-[8px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">Reduction</span>
-                        <span className="text-sm font-black text-[var(--foreground)]">64% <span className="text-[var(--success)]">↓</span></span>
+                        <span className="text-sm font-black text-[var(--foreground)]">64% <span className="opacity-70">↓</span></span>
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[8px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">Cognitive Load</span>

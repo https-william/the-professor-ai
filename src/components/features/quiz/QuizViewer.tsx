@@ -229,11 +229,11 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                         <button 
                             key={idx} 
                             onClick={() => setCurrentIndex(idx)}
-                            className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-[11px] font-bold transition-all ${
-                                currentIndex === idx ? 'bg-white text-black scale-110 shadow-lg' : 
-                                answers[idx] !== undefined ? 'bg-white/10 text-white border border-white/10' :
-                                flags.has(idx) ? 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20' :
-                                'bg-white/5 text-white/40'
+                            className={`h-8 min-w-[2rem] px-3 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold transition-all ${
+                                currentIndex === idx ? 'bg-[var(--foreground)] text-[var(--background)] shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 
+                                answers[idx] !== undefined ? 'bg-transparent border border-white/20 text-white' :
+                                flags.has(idx) ? 'bg-transparent border border-[#F59E0B]/50 text-[#F59E0B]' :
+                                'text-white/30 hover:bg-white/5'
                             }`}
                         >
                             {idx + 1}
@@ -260,14 +260,15 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                             const isReview = status === 'review';
                             const isCorrect = currentQuestion.correctIndex === idx;
 
-                            let styles = "w-full p-6 rounded-[24px] text-left transition-all flex items-center gap-4 group ";
-                            if (isSelected) styles += "bg-white text-black shadow-xl scale-[1.02] ";
-                            else styles += "bg-white/5 hover:bg-white/10 border border-white/5 ";
-
+                            let styles = "w-full p-5 rounded-2xl text-left transition-all flex items-center gap-4 group ";
+                            
                             if (isReview) {
-                                if (isCorrect) styles += "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 ";
-                                else if (isSelected) styles += "border-red-500/50 bg-red-500/10 text-red-400 ";
-                                else styles += "opacity-40 ";
+                                if (isCorrect) styles += "ring-1 ring-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-emerald-500/10 text-emerald-400 scale-[1.02] ";
+                                else if (isSelected) styles += "ring-1 ring-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.15)] bg-red-500/10 text-red-400 scale-[1.02] ";
+                                else styles += "bg-transparent border border-white/5 opacity-40 ";
+                            } else {
+                                if (isSelected) styles += "ring-1 ring-white/50 shadow-[0_0_20px_rgba(255,255,255,0.1)] bg-white/10 text-white scale-[1.02] ";
+                                else styles += "bg-transparent border border-white/5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 ";
                             }
 
                             return (
