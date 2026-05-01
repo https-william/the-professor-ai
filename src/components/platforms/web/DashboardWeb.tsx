@@ -122,7 +122,7 @@ export default function DashboardWeb({
         fetch('/api/library')
             .then(res => res.json())
             .then(data => {
-                if (data.success && data.generations) {
+                if (data.success && Array.isArray(data.generations)) {
                     const newStats = { flashcards: 0, quiz: 0, summary: 0 };
                     data.generations.forEach((g: any) => {
                         if (g.type === 'flashcards') newStats.flashcards++;

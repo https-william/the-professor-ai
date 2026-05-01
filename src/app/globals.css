@@ -1607,8 +1607,8 @@ html.light .neu-inset {
    ============================================ */
 
 /* Desktop & Web Navigation Sidebar Offset */
-html[data-platform="desktop"] .platform-main-container,
-html[data-platform="web"] .platform-main-container {
+/* Desktop Navigation Sidebar Offset */
+html[data-platform="desktop"] .platform-main-container {
   padding-left: 5rem;
 }
 

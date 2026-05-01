@@ -39,13 +39,13 @@ export default function DashboardPage() {
 
     // Fetch activity data
     const { data: activityData, isLoading: activityLoading } = useQuery({
-        queryKey: ['activity-history', user.id],
+        queryKey: ['activity-history', user?.id],
+        enabled: !!user?.id,
         queryFn: async () => {
             const res = await fetch("/api/user/activity-history");
             if (!res.ok) throw new Error("Network response was not ok");
             return res.json();
         },
-        enabled: !!user.id,
     });
 
     // Milestone & Celebration Logic (Side Effect)
@@ -82,26 +82,26 @@ export default function DashboardPage() {
 
     // Fetch due cards
     const { data: dueData } = useQuery({
-        queryKey: ['due-cards', user.id],
+        queryKey: ['due-cards', user?.id],
         queryFn: async () => {
             const res = await fetch("/api/user/due-cards");
             if (!res.ok) throw new Error("Network response was not ok");
             return res.json();
         },
-        enabled: !!user.id,
+        enabled: !!user?.id,
     });
     const dueCount = dueData?.totalDue || 0;
 
     // Fetch study plan
     const { data: studyPlanData, isLoading: planLoading } = useQuery({
-        queryKey: ['study-plan', user.id],
+        queryKey: ['study-plan', user?.id],
         queryFn: async () => {
             const res = await fetch("/api/ai/study-plan", { method: "POST" });
             if (!res.ok) throw new Error("Network response was not ok");
             const data = await res.json();
             return (data.plan || "") as string;
         },
-        enabled: !!user.id,
+        enabled: !!user?.id,
     });
     
     const studyPlan = studyPlanData || null;
@@ -141,6 +141,15 @@ export default function DashboardPage() {
     };
 
     const greeting = getGreeting();
+    
+    if (user.isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+                <div className="w-12 h-12 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
     const firstName = user.name?.split(" ")[0] || "Scholar";
 
     // Common props passed to each platform orchestrator
