@@ -121,12 +121,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     // Map scrollY [0, 150] to a normalized progress value [0, 1]
     const scrollYProgress = useTransform(scrollY, [0, 150], [0, 1]);
 
-    // Use percentage-based centering for zero-jitter responsive alignment
-    const headerLeft = useTransform(scrollYProgress, [0, 1], ["50%", "50%"]);
-    const headerX = useTransform(scrollYProgress, [0, 1], ["-50%", "-50%"]);
-    const headerWidth = useTransform(scrollYProgress, [0, 0.2], [isApp ? "95%" : "100%", "90%"]);
-    const headerMaxWidth = useTransform(scrollYProgress, [0, 0.2], [isApp ? "1152px" : "100vw", "1152px"]);
-
+    // Derived motion values (hoisted to avoid re-creation)
     const headerPaddingX = useTransform(scrollY, [0, 150], ["2rem", "1rem"]);
     const headerTop = useTransform(scrollY, [0, 150], ["0px", "16px"]);
     const headerPaddingBlock = useTransform(scrollY, [0, 150], ["16px", "8px"]);
@@ -134,6 +129,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const headerBgOpacity = useTransform(scrollY, [0, 150], [0, 0.98]);
     const headerBlur = useTransform(scrollY, [0, 150], [0, 24]);
     const headerScale = useTransform(scrollY, [0, 150], [1, 0.98]);
+    const headerWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", "92%"]);
 
     // Derived motion values (hoisted to avoid re-creation)
     const headerBg = useTransform(headerBgOpacity, (o) =>
@@ -198,10 +194,10 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             initial={false}
             style={{ 
                 top: headerTop,
-                left: headerLeft,
-                x: headerX,
+                left: "50%",
+                x: "-50%",
                 width: headerWidth,
-                maxWidth: headerMaxWidth,
+                maxWidth: "1152px",
                 paddingInline: headerPaddingX,
                 paddingBlock: headerPaddingBlock,
                 borderRadius: headerBorderRadius,
