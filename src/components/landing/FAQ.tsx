@@ -1,111 +1,142 @@
 "use client";
-import { useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import StandardContainer from "@/components/ui/StandardContainer";
 
-export default function FAQ() {
-  const [openIdx, setOpenIdx] = useState<number | null>(0);
-  const [searchQuery, setSearchQuery] = useState("");
+import React, { useState } from "react";
 
-  const faqs = [
-    {
-      q: "How long does it take to extract flashcards from a 200-page textbook?",
-      a: "Less than 60 seconds. Our neural engine processes massive documents almost instantly, allowing you to start studying immediately instead of waiting.",
-      popular: true
-    },
-    {
-      q: "Will my professor know I used this?",
-      a: "The Professor generates strategic study tools to help YOU learn the material, not write essays for you. It's a high-fidelity study aid, not a shortcut. Since it only quizzes you on facts from your own syllabus, it is the ultimate tool for achieving independent mastery.",
-      popular: true
-    },
-    {
-      q: "Can I upload my lecturer's messy and scanned PDF notes?",
-      a: "Yes. The Professor uses advanced document parsing that can read scanned PDFs, messy PowerPoints, and dense Word documents flawlessly, extracting only the exact syllabus requirements.",
-      popular: false
-    },
-    {
-      q: "I'm a broke student. Can I actually afford this?",
-      a: "Yes. There are no sneaky $20/month subscriptions. We use a transparent Pay-As-You-Go credit system. ₦500 gets you hundreds of decks. You only pay for the exact compute power you use to generate your materials.",
-      popular: false
-    },
-    {
-      q: "Is my uploaded data private?",
-      a: "Absolutely. Your uploads are processed instantly and are never used to train our base AI models. Your files are siloed securely so only you have access to your institutional materials.",
-      popular: false
-    }
-  ];
+const FAQS = [
+  {
+    q: "What file types can I upload?",
+    a: "PDF documents, Word files (.docx), images (JPG, PNG, WEBP) — including photos of handwritten notes — and voice recordings. If your notes exist in any readable format, The Professor can work with them. Yes, this includes WhatsApp-forwarded lecture slides.",
+  },
+  {
+    q: "Do I need to create an account before I start?",
+    a: "No. You can upload your notes and receive a preview of your study guide before creating an account. Creating a free account saves your study pack, enables streaks, and gives you access to the quiz and match game. The first generation is always free.",
+  },
+  {
+    q: "How accurate are the study guides and quizzes?",
+    a: "The Professor extracts content directly from your uploaded material — it does not hallucinate or add external information. The study guide and quiz reflect exactly what is in your notes. If your notes contain an error, the output will too. We recommend using it alongside, not instead of, your own judgment.",
+  },
+  {
+    q: "Is this considered academic dishonesty?",
+    a: "No. The Professor is a study aid — equivalent to highlighting your notes, making flashcards, or studying with a tutor. It helps you understand and recall your own material. It does not write essays, generate assignments, or produce work for submission. How you use what you learn is always your responsibility.",
+  },
+  {
+    q: "How much does it cost?",
+    a: "The basic plan is free — with a limited number of monthly generations. The premium plan (unlimited uploads, PDF export, advanced quiz settings, and study analytics) is priced for Nigerian students specifically. Semester billing is available — you pay for the exam period, not the full year. Exact pricing is on the Pricing page.",
+  },
+  {
+    q: "Does it work for science, engineering, and medical courses?",
+    a: "Yes. The Professor works for any text-based lecture content — including medical anatomy, engineering theory, law, economics, and the sciences. It does not solve mathematical equations or generate chemical formulae, but it handles concept-heavy, definition-heavy, and theory-heavy content extremely well.",
+  },
+  {
+    q: "What happens to my uploaded notes?",
+    a: "Your uploaded files are used only to generate your study pack. They are stored securely and associated only with your account. We do not sell, share, or use your notes to train our models. You can delete any uploaded document from your account at any time.",
+  },
+];
 
-  const filteredFaqs = faqs.filter(faq => 
-    faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    faq.a.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+export default function FAQSection() {
+  const [openIndex, setOpenIndex] = useState(0);
+
+  const toggle = (i: number) => {
+    setOpenIndex(openIndex === i ? -1 : i);
+  };
 
   return (
-    <section className="relative w-full py-20 px-5 md:px-6 z-10 bg-[var(--background)]">
-      <StandardContainer narrow>
-        <h2 className="font-heading text-2xl md:text-3xl font-bold text-center text-[var(--foreground)] mb-8">
-          You've got questions.
-        </h2>
-
-        {/* Search Bar */}
-        <div className="relative mb-10">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-muted)]" />
-          <input
-            type="text"
-            placeholder="Search frequently asked questions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] text-sm focus:outline-none focus:border-[var(--accent)]/50 transition-colors"
-          />
+    <section style={{
+      background: "#12121F",
+      borderTop: "0.5px solid rgba(245,240,232,0.06)",
+      borderBottom: "0.5px solid rgba(245,240,232,0.06)",
+      padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
+    }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: "48px" }}>
+          <span className="section-label" style={{ textAlign: "center" }}>FREQUENTLY ASKED</span>
+          <h2 style={{
+            fontFamily: "'Galaxie Copernicus','Source Serif 4',Georgia,serif",
+            fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)",
+            fontWeight: 500,
+            color: "#F5F0E8",
+            marginTop: 0,
+          }}>
+            Every question. Honest answers.
+          </h2>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {filteredFaqs.map((faq, i) => {
-            const originalIndex = faqs.findIndex(f => f.q === faq.q);
+        {/* Accordion */}
+        <div>
+          {FAQS.map((faq, i) => {
+            const isOpen = openIndex === i;
             return (
-              <div 
-                key={originalIndex} 
-                className={`rounded-2xl transition-colors ${openIdx === originalIndex ? 'bg-[var(--background-secondary)] border border-[var(--accent)]/30' : 'bg-transparent border border-[var(--border)] hover:bg-[var(--background-secondary)]/50'}`}
+              <div
+                key={i}
+                style={{
+                  borderBottom: i < FAQS.length - 1 ? "0.5px solid rgba(245,240,232,0.08)" : "none",
+                }}
               >
+                {/* Question */}
                 <button
-                  className="w-full text-left px-6 py-5 flex items-start justify-between focus:outline-none min-h-[60px]"
-                  onClick={() => setOpenIdx(openIdx === originalIndex ? null : originalIndex)}
+                  onClick={() => toggle(i)}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "100%",
+                    padding: "20px 0",
+                    cursor: "pointer",
+                    background: "none",
+                    border: "none",
+                    textAlign: "left",
+                  }}
+                  onMouseEnter={(e) => {
+                    const span = e.currentTarget.querySelector("span") as HTMLElement;
+                    if (span) span.style.color = "rgba(245,158,11,0.9)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const span = e.currentTarget.querySelector("span") as HTMLElement;
+                    if (span) span.style.color = "#F5F0E8";
+                  }}
                 >
-                  <div className="flex items-start gap-3 pr-4">
-                    {faq.popular && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] bg-[var(--accent)]/10 shrink-0 mt-0.5">
-                        Popular
-                      </span>
-                    )}
-                    <span className={`font-bold text-sm md:text-base ${openIdx === originalIndex ? 'text-[var(--accent)]' : 'text-[var(--foreground)]/80'}`}>
-                      {faq.q}
-                    </span>
-                  </div>
-                  <ChevronDown size={20} strokeWidth={1.5} className={`transition-transform duration-300 shrink-0 mt-0.5 ${openIdx === originalIndex ? 'rotate-180 text-[var(--accent)]' : 'text-[var(--foreground)]/40'}`} />
+                  <span style={{
+                    fontFamily: "'Outfit',sans-serif",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    color: "#F5F0E8",
+                    transition: "color 150ms ease",
+                    flex: 1,
+                    paddingRight: "16px",
+                  }}>
+                    {faq.q}
+                  </span>
+                  <svg
+                    width="20" height="20" viewBox="0 0 20 20" fill="none"
+                    style={{
+                      color: "rgba(245,240,232,0.4)",
+                      transition: "transform 200ms ease",
+                      transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
                 </button>
-                
-                <AnimatePresence>
-                  {openIdx === originalIndex && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-6 pb-6 pt-0 text-[13px] md:text-sm text-[var(--foreground-secondary)] leading-relaxed">
-                        {faq.a}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+
+                {/* Answer */}
+                <div className={`faq-answer ${isOpen ? "open" : ""}`}>
+                  <p style={{
+                    fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
+                    fontSize: "15px",
+                    color: "rgba(245,240,232,0.6)",
+                    lineHeight: 1.75,
+                    paddingBottom: isOpen ? "0" : undefined,
+                  }}>
+                    {faq.a}
+                  </p>
+                </div>
               </div>
             );
           })}
         </div>
-      </StandardContainer>
+      </div>
     </section>
   );
 }
-

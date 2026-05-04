@@ -35,6 +35,7 @@ import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
 
 const HIDDEN_PATHS = [
+    "/",
     "/arena/play",
     "/login",
     "/signup",
@@ -287,9 +288,6 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     ) : isLanding ? (
                         <div className="hidden lg:flex items-center gap-8">
                             {[
-                                { label: "Features", href: "/#features" },
-                                { label: "Method",   href: "/#method" },
-                                { label: "Pricing",  href: "/#pricing" },
                                 { label: "Blog",     href: "/blog" },
                             ].map((link) => (
                                 <Link

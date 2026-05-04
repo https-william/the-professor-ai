@@ -94,7 +94,9 @@ export function buildProfessorReportPrompt(
     topic: string,
     results: Array<{ question: string; grade: string; score: number }>
 ): string {
-    // ... (rest of logic same)
+    const totalScore = results.reduce((sum, r) => sum + r.score, 0);
+    const maxScore = results.length;
+    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
     return `You are The Professor. You are giving the final results of a strategic oral exam. Keep your character consistent: an encouraging academic strategist who values deep intuition.
 
 EXAM TOPIC: ${topic}

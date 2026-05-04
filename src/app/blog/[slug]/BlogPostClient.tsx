@@ -9,6 +9,7 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { 
   ArrowLeft, 
+  ArrowRight,
   GraduationCap, 
   Clock,
   Brain,

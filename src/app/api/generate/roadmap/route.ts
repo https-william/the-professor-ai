@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
         console.log("[Roadmap API] Calling AI...");
 
-        You are The Professor's Lead Insider Strategist. 
+        const prompt = `You are The Professor's Lead Insider Strategist. 
         Analyze the student's context and goal to generate a HIGHLY PERSONALIZED, multi-phase Mastery Roadmap that provides the "Insider Edge".
         
         STUDENT CONTEXT & GOAL:

@@ -1708,3 +1708,553 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
 .animate-ambient-drift {
   animation: ambient-drift 20s ease-in-out infinite;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE PROFESSOR — COMPLETE REDESIGN DESIGN SYSTEM
+   Landing page & onboarding-specific utilities.
+   Spec reference: DESIGN.md (May 2026)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Redesign: Button — Primary Jelly ─── */
+.btn-jelly-primary {
+  background: #F59E0B;
+  color: #08080E;
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 1.25rem;
+  border: none;
+  border-bottom: 3px solid #C47B00;
+  box-shadow: 0 10px 25px -8px rgba(245,158,11,0.4);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-bottom 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.btn-jelly-primary:hover {
+  transform: scale(1.03) translateY(-1px);
+  box-shadow: 0 14px 30px -6px rgba(245,158,11,0.5);
+}
+.btn-jelly-primary:active {
+  transform: scale(0.97) translateY(2px);
+  border-bottom-width: 1px;
+}
+.btn-jelly-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Redesign: Button — Ghost ─── */
+.btn-ghost {
+  background: transparent;
+  color: #F5F0E8;
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 20px;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(245,240,232,0.15);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.btn-ghost:hover {
+  background: rgba(245,240,232,0.05);
+  border-color: rgba(245,240,232,0.25);
+}
+
+/* ─── Redesign: Button — Indigo Secondary ─── */
+.btn-indigo {
+  background: rgba(99,102,241,0.1);
+  color: #818cf8;
+  border: 1px solid rgba(99,102,241,0.25);
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 20px;
+  border-radius: 1.25rem;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.btn-indigo:hover {
+  background: rgba(99,102,241,0.18);
+  border-color: rgba(99,102,241,0.4);
+}
+
+/* ─── Redesign: Card Base ─── */
+.card-redesign {
+  background: #12121F;
+  border: 1px solid rgba(245,240,232,0.07);
+  border-radius: 1.5rem;
+  padding: 28px 24px;
+  transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
+}
+.card-redesign:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 20px rgba(245,158,11,0.06);
+  border-color: rgba(245,240,232,0.12);
+}
+
+/* ─── Redesign: Section Label ─── */
+.section-label {
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245,158,11,0.7);
+  display: block;
+  margin-bottom: 16px;
+}
+
+/* ─── Redesign: Glass Panel ─── */
+.glass-panel-redesign {
+  background: rgba(18, 18, 31, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(245,240,232,0.08);
+}
+
+/* ─── Redesign: Scroll-Reveal Animation ─── */
+.animate-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+.animate-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Redesign: Grain Texture Overlay ─── */
+.grain-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Redesign: Input Field ─── */
+.input-redesign {
+  width: 100%;
+  background: rgba(18, 18, 31, 0.8);
+  border: 1px solid rgba(245,240,232,0.1);
+  border-radius: 1rem;
+  padding: 13px 16px;
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 14px;
+  color: #F5F0E8;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.input-redesign::placeholder {
+  color: rgba(245,240,232,0.25);
+}
+.input-redesign:focus {
+  border-color: rgba(245,158,11,0.5);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.08);
+  outline: none;
+}
+
+/* ─── Redesign: Field Label ─── */
+.field-label {
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(245,240,232,0.5);
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ─── Redesign: Format Pill ─── */
+.format-pill {
+  background: rgba(245,158,11,0.07);
+  border: 1px solid rgba(245,158,11,0.18);
+  border-radius: 9999px;
+  padding: 3px 11px;
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 11px;
+  color: rgba(245,158,11,0.7);
+  display: inline-block;
+}
+
+/* ─── Redesign: Chip Selector ─── */
+.chip {
+  background: transparent;
+  border: 1px solid rgba(245,240,232,0.12);
+  border-radius: 9999px;
+  padding: 8px 18px;
+  font-family: 'Outfit', var(--font-outfit), sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(245,240,232,0.5);
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+.chip:hover {
+  border-color: rgba(245,240,232,0.25);
+  color: rgba(245,240,232,0.8);
+}
+.chip.selected {
+  background: #F59E0B;
+  border-color: #F59E0B;
+  color: #08080E;
+  font-weight: 700;
+}
+
+/* ─── Redesign: Upload Zone ─── */
+.upload-zone {
+  width: min(540px, 90vw);
+  min-height: 168px;
+  background: rgba(18, 18, 31, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px dashed rgba(245,158,11,0.32);
+  border-radius: 1.5rem;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.04) inset, 0 24px 64px rgba(0,0,0,0.45);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 250ms ease, background 250ms ease, box-shadow 250ms ease;
+}
+.upload-zone:hover {
+  border-color: rgba(245,158,11,0.7);
+  background: rgba(18,18,31,0.8);
+  box-shadow: 0 0 32px rgba(245,158,11,0.07), 0 24px 64px rgba(0,0,0,0.45);
+}
+.upload-zone.drag-over {
+  border-style: solid;
+  border-color: #F59E0B;
+  background: rgba(245,158,11,0.03);
+  transform: scale(1.01);
+  box-shadow: 0 0 48px rgba(245,158,11,0.12);
+}
+.upload-zone.compact {
+  width: min(480px, 90vw);
+}
+
+/* ─── Redesign: Keyframes ─── */
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes scrollLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes flamePulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(245,158,11,0.3)); }
+  50% { filter: drop-shadow(0 0 16px rgba(245,158,11,0.6)); }
+}
+
+@keyframes bellSway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+
+@keyframes fieldShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+}
+
+@keyframes generateProgress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes floatUpDown {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes iconPulseScale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ─── Redesign: Ticker ─── */
+.ticker-row {
+  display: flex;
+  white-space: nowrap;
+}
+.ticker-row:hover {
+  animation-play-state: paused !important;
+}
+.ticker-track {
+  display: flex;
+  animation: scrollLeft 35s linear infinite;
+}
+.ticker-track-reverse {
+  display: flex;
+  animation: scrollLeft 28s linear infinite;
+  animation-direction: reverse;
+}
+
+/* ─── Redesign: FAQ Accordion ─── */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 350ms ease, padding-bottom 350ms ease;
+}
+.faq-answer.open {
+  max-height: 300px;
+  padding-bottom: 20px;
+}
+
+/* ─── Redesign: Edge Fade Mask ─── */
+.edge-fade-mask {
+  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+}
+
+/* ─── Redesign: Password Strength Bar ─── */
+.strength-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(245,240,232,0.1);
+  transition: background 200ms ease;
+  flex: 1;
+}
+.strength-bar.weak { background: #e05050; }
+.strength-bar.fair { background: #e59e0e; }
+.strength-bar.strong { background: #1aab76; }
+
+/* ─── Redesign: Onboarding Progress ─── */
+.onboarding-progress-track {
+  width: 280px;
+  height: 4px;
+  background: rgba(245,240,232,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.onboarding-progress-fill {
+  height: 100%;
+  background: #F59E0B;
+  border-radius: 2px;
+  transition: width 500ms ease;
+}
+
+@media (max-width: 768px) {
+  .onboarding-progress-track {
+    width: 180px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LANDING PAGE REDESIGN — Ticker, Inputs, Pills, FAQ, Buttons
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Social Proof Ticker ─── */
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: tickerScroll 40s linear infinite;
+}
+.ticker-track-reverse {
+  display: flex;
+  width: max-content;
+  animation: tickerScrollReverse 45s linear infinite;
+}
+.ticker-row:hover .ticker-track,
+.ticker-row:hover .ticker-track-reverse {
+  animation-play-state: paused;
+}
+.edge-fade-mask {
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes tickerScrollReverse {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* ─── Format Pills (How It Works, Signup) ─── */
+.format-pill {
+  display: inline-block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(245,240,232,0.45);
+  background: rgba(245,240,232,0.05);
+  border: 1px solid rgba(245,240,232,0.08);
+  border-radius: 9999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+/* ─── Input Fields (Auth Pages) ─── */
+.input-redesign {
+  width: 100%;
+  padding: 12px 16px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #F5F0E8;
+  background: rgba(18,18,31,0.7);
+  border: 1px solid rgba(245,240,232,0.1);
+  border-radius: 1rem;
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.input-redesign::placeholder {
+  color: rgba(245,240,232,0.25);
+}
+.input-redesign:focus {
+  border-color: rgba(245,158,11,0.4);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.08);
+}
+
+/* ─── Field Labels ─── */
+.field-label {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245,240,232,0.35);
+  margin-bottom: 6px;
+}
+
+/* ─── Password Strength Bars ─── */
+.strength-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 1.5px;
+  background: rgba(245,240,232,0.08);
+  transition: background 200ms ease;
+}
+.strength-bar.weak { background: #e05050; }
+.strength-bar.fair { background: #e59e0e; }
+.strength-bar.strong { background: #1aab76; }
+
+/* ─── FAQ Accordion Answers ─── */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 300ms ease, padding 300ms ease;
+  padding-bottom: 0;
+}
+.faq-answer.open {
+  max-height: 300px;
+  padding-bottom: 20px;
+}
+
+/* ─── Dot Pulse Animation (Processing) ─── */
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ─── Jelly Primary Button ─── */
+.btn-jelly-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #08080E;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  border: none;
+  border-radius: 1.25rem;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 8px 24px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-jelly-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-jelly-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn-jelly-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Ghost Button ─── */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(245,240,232,0.5);
+  background: transparent;
+  border: 1px solid rgba(245,240,232,0.1);
+  border-radius: 0.875rem;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.btn-ghost:hover {
+  color: #F5F0E8;
+  border-color: rgba(245,240,232,0.2);
+}
+
+/* ─── Indigo Button (Quiz "Next") ─── */
+.btn-indigo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #F5F0E8;
+  background: rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 0.875rem;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.btn-indigo:hover {
+  background: rgba(99,102,241,0.25);
+}

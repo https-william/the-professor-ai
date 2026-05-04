@@ -80,13 +80,10 @@ export default function OnboardingPage() {
         const pendingUploadName = localStorage.getItem("pending_upload_name");
 
         const success = await completeOnboarding({
-            university: data.university,
-            current_year: data.year,
-            exam_date: data.examDate,
+            education_level: data.year || "university",
+            study_goal: data.examDate || "exams",
             preferred_subjects: data.subjects,
-            initial_mastery_topic: pendingMastery,
-            initial_upload_name: pendingUploadName
-        });
+        } as any);
 
         if (success) {
             // Clear pending items

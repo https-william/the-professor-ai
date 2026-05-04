@@ -34,7 +34,7 @@ interface ToastStore {
     toasts: Toast[];
     isOpen: boolean;
     fetchNotifications: () => Promise<void>;
-    addToast: (message: string, type: ToastType, icon?: any, link?: string, saveToDb?: boolean) => Promise<void>;
+    addToast: (message: string, type: ToastType, icon?: any, link?: string, saveToDb?: boolean, idOverride?: string) => Promise<void>;
     removeToast: (id: string) => Promise<void>;
     markAsRead: (id: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;

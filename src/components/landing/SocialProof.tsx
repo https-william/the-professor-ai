@@ -1,94 +1,124 @@
-import StandardContainer from "@/components/ui/StandardContainer";
+"use client";
 
-export default function SocialProof() {
-  const universityStats = [
-    { val: "OAU", label: "Top Campus" },
-    { val: "UNILAG", label: "Scholarly Hub" },
-    { val: "UNIVERSITY OF IBADAN", label: "Academic Giant" },
-    { val: "COVENANT", label: "Elite Partner" },
-    { val: "BABCOCK", label: "Top Choice" },
-    { val: "ABU", label: "Northern Hub" },
-    { val: "LASU", label: "Lagos Giant" },
-    { val: "NILE", label: "Private Adopter" },
-    { val: "PAN-ATLANTIC", label: "Innovation Hub" },
-    { val: "UNIZIK", label: "Eastern Hub" },
-    { val: "BUK", label: "Strategic Partner" },
-    { val: "FUTA", label: "Tech Powerhouse" },
-    { val: "UNIBEN", label: "Academic Pillar" },
-    { val: "KWASU", label: "Rising Star" },
-    { val: "UNILORIN", label: "Excellence Hub" },
-  ];
-  
-  const globalStats = [
-    { val: "OXFORD", label: "Research Link" },
-    { val: "MIT", label: "Tech Partner" },
-    { val: "STANFORD", label: "AI Collaboration" },
-    { val: "HARVARD", label: "Scholarly Access" },
-    { val: "UCL", label: "EU Scholar Hub" },
-    { val: "ETH ZURICH", label: "Science Node" },
-    { val: "TORONTO", label: "Global Presence" },
-    { val: "NUS", label: "Asian Hub" },
-    { val: "TUM", label: "Engineering Node" },
-  ];
+import React from "react";
 
+const ROW1 = [
+  { name: "Adaeze O.", uni: "UNN", quote: "Finished ECO 201 guide in 8 minutes" },
+  { name: "Tomiwa A.", uni: "CU", quote: "The quiz exposed everything I didn't know" },
+  { name: "Emeka F.", uni: "UNILAG", quote: "More useful than 3 hours in the library" },
+  { name: "Amaka I.", uni: "UI", quote: "Shared it with my entire study group" },
+  { name: "Chisom N.", uni: "FUTA", quote: "The match game is weirdly addictive" },
+  { name: "Fatimah B.", uni: "ABU", quote: "Study guide matched what actually came out" },
+  { name: "Seun M.", uni: "LASU", quote: "My coursemates keep asking where I got this" },
+  { name: "Kelechi U.", uni: "UNIPORT", quote: "CHM 201 was going to fail me. Not anymore." },
+  { name: "Ngozi E.", uni: "OAU", quote: "I upload every lecture note now. Every single one." },
+];
+
+const ROW2 = [
+  { name: "Damilola A.", uni: "LUTH", quote: "Anatomy revision went from 6 hours to 45 mins" },
+  { name: "Obiageli C.", uni: "UNIBEN", quote: "The summary is perfect for quick revision" },
+  { name: "Hassan M.", uni: "BUK", quote: "I sent it to my whole class and they loved it" },
+  { name: "Blessing O.", uni: "FUNAAB", quote: "Quiz mode is harder than the actual exam" },
+  { name: "Akin T.", uni: "YABATECH", quote: "This is the only AI tool that gets Nigerian courses" },
+  { name: "Priscilla E.", uni: "UNILAG", quote: "Three friends signed up after I showed them mine" },
+  { name: "Rotimi B.", uni: "UI", quote: "First time I felt actually ready the night before" },
+  { name: "Miriam A.", uni: "ABU", quote: "PHY 102 finally makes sense" },
+];
+
+function getInitials(name: string) {
+  return name.split(" ").map(n => n[0]).join("").toUpperCase();
+}
+
+function TickerCard({ name, uni, quote }: { name: string; uni: string; quote: string }) {
   return (
-    <section className="w-full py-12 md:py-20 border-y border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-md z-10 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-[var(--background)] via-transparent to-[var(--background)] z-20 pointer-events-none" />
-      
-      <StandardContainer>
-        <p className="text-center text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-12 opacity-80">
-          The Global Academic Network
-        </p>
-        
-        <div className="space-y-12">
-          {/* Row 1: Forward Scroll */}
-          <div className="flex overflow-hidden relative">
-            <div className="flex whitespace-nowrap py-4 animate-marquee hover:[animation-play-state:paused] transition-all">
-              <div className="flex items-center space-x-12 px-6">
-                {universityStats.map((stat, i) => (
-                  <div key={`uni1-${i}`} className="flex flex-col items-center justify-center min-w-[140px] opacity-40 hover:opacity-100 transition-all hover:scale-110 duration-500">
-                    <span className="text-2xl md:text-3xl font-black text-[var(--foreground)] tracking-tighter">{stat.val}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--accent)] mt-1">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-              {/* Duplicated for loop */}
-              <div className="flex items-center space-x-12 px-6">
-                {universityStats.map((stat, i) => (
-                  <div key={`uni1-dup-${i}`} className="flex flex-col items-center justify-center min-w-[140px] opacity-40 hover:opacity-100 transition-all hover:scale-110 duration-500">
-                    <span className="text-2xl md:text-3xl font-black text-[var(--foreground)] tracking-tighter">{stat.val}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--accent)] mt-1">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "12px",
+      background: "rgba(18,18,31,0.85)",
+      border: "1px solid rgba(245,240,232,0.08)",
+      borderRadius: "1rem",
+      padding: "12px 18px",
+      marginRight: "12px",
+      whiteSpace: "nowrap",
+      flexShrink: 0,
+      maxWidth: "290px",
+      overflow: "hidden",
+    }}>
+      {/* Avatar */}
+      <div style={{
+        width: "34px",
+        height: "34px",
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #1c1c30, #12121F)",
+        border: "1px solid rgba(245,240,232,0.1)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}>
+        <span style={{
+          fontFamily: "'Outfit', sans-serif",
+          fontSize: "12px",
+          fontWeight: 600,
+          color: "rgba(245,240,232,0.5)",
+        }}>
+          {getInitials(name)}
+        </span>
+      </div>
 
-          {/* Row 2: Backward Scroll */}
-          <div className="flex overflow-hidden relative">
-            <div className="flex whitespace-nowrap py-4 animate-marquee-reverse hover:[animation-play-state:paused] transition-all">
-              <div className="flex items-center space-x-12 px-6">
-                {globalStats.map((stat, i) => (
-                  <div key={`global1-${i}`} className="flex flex-col items-center justify-center min-w-[160px] opacity-40 hover:opacity-100 transition-all hover:scale-110 duration-500">
-                    <span className="text-2xl md:text-3xl font-black text-[var(--foreground)] tracking-tighter">{stat.val}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--secondary)] mt-1">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-              {/* Duplicated for loop */}
-              <div className="flex items-center space-x-12 px-6">
-                {globalStats.map((stat, i) => (
-                  <div key={`global1-dup-${i}`} className="flex flex-col items-center justify-center min-w-[160px] opacity-40 hover:opacity-100 transition-all hover:scale-110 duration-500">
-                    <span className="text-2xl md:text-3xl font-black text-[var(--foreground)] tracking-tighter">{stat.val}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--secondary)] mt-1">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+      {/* Text */}
+      <div style={{ overflow: "hidden" }}>
+        <div style={{
+          fontFamily: "'Outfit', sans-serif",
+          fontSize: "12px",
+          fontWeight: 700,
+          color: "#F5F0E8",
+        }}>
+          {name} — {uni}
         </div>
-      </StandardContainer>
-    </section>
+        <div style={{
+          fontFamily: "'Tiempos Text', 'Source Serif 4', Georgia, serif",
+          fontSize: "12px",
+          color: "rgba(245,240,232,0.5)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          maxWidth: "200px",
+        }}>
+          {quote}
+        </div>
+      </div>
+    </div>
   );
 }
 
+function TickerRow({ cards, reverse }: { cards: typeof ROW1; reverse?: boolean }) {
+  return (
+    <div className="ticker-row" style={{ overflow: "hidden", position: "relative" }}>
+      <div className={reverse ? "ticker-track-reverse" : "ticker-track"}>
+        {/* Original + Duplicate for seamless loop */}
+        {[...cards, ...cards].map((card, i) => (
+          <TickerCard key={i} {...card} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function SocialProof() {
+  return (
+    <section style={{
+      background: "#08080E",
+      padding: "48px 0",
+      borderTop: "0.5px solid rgba(245,240,232,0.06)",
+      borderBottom: "0.5px solid rgba(245,240,232,0.06)",
+      overflow: "hidden",
+      position: "relative",
+    }}>
+      <div className="edge-fade-mask" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <TickerRow cards={ROW1} />
+        <TickerRow cards={ROW2} reverse />
+      </div>
+    </section>
+  );
+}
