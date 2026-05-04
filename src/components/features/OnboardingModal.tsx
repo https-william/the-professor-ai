@@ -92,24 +92,11 @@ export default function OnboardingModal() {
     const { isDesktop, isMobile, platform } = useAppPlatform();
     const router = useRouter();
     const pathname = usePathname();
+
+    // ── State Hooks ──
     const [step, setStep] = useState(1);
     const [isSaving, setIsSaving] = useState(false);
     const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // ── Pre-mount Guards ──
-    const isLanding = pathname === "/";
-    const isAuthPage = ["/login", "/signup", "/forgot-password"].includes(pathname);
-    
-    // Don't mount on landing, auth pages, or if already onboarded/unauthenticated
-    if (!mounted || isLanding || isAuthPage || user.hasOnboarded) return null;
-    
-    if (!user.isAuthenticated || user.isLoading || user.hasOnboarded) return null;
-
-    // Form data
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [username, setUsername] = useState("");
@@ -119,14 +106,15 @@ export default function OnboardingModal() {
     const [eduLevel, setEduLevel] = useState("");
     const [selectedPainPoints, setSelectedPainPoints] = useState<string[]>([]);
     const [commitment, setCommitment] = useState("");
-
-    // Animation / Fake Loading state
     const [analyzingProgress, setAnalyzingProgress] = useState(0);
     const [curriculumReady, setCurriculumReady] = useState(false);
-    
-    // Topic selection (must be declared before any early returns — Rules of Hooks)
     const [topic, setTopic] = useState("");
     const [topicError, setTopicError] = useState("");
+
+    // ── Effect Hooks ──
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Load persisted topic from landing page
     useEffect(() => {
@@ -136,11 +124,9 @@ export default function OnboardingModal() {
         }
     }, []);
 
-    const isVisible = user.isAuthenticated && !user.isLoading && !user.hasOnboarded;
-
     // Testimonial Carousel Effect
     useEffect(() => {
-        if (step === 4) { // Testimonials now integrated into commitment step or shown during analysis
+        if (step === 4) {
             const timer = setInterval(() => {
                 setTestiIndex(prev => (prev + 1) % TESTIMONIALS.length);
             }, 4000);
@@ -197,26 +183,38 @@ export default function OnboardingModal() {
         }
     }, [step, curriculumReady]);
 
-    if (user.isLoading) {
-        return (
-            <AnimatePresence>
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[200] bg-[#08080E] flex items-center justify-center"
-                >
-                     <motion.div 
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="flex flex-col items-center"
+    // ── Render Logic ──
+    const isLanding = pathname === "/";
+    const isAuthPage = ["/login", "/signup", "/forgot-password"].includes(pathname);
+    const isOnboardingRoute = pathname?.startsWith("/onboarding");
+    
+    // Don't mount on landing, auth pages, onboarding routes, or if already onboarded/unauthenticated
+    if (!mounted || isLanding || isAuthPage || isOnboardingRoute || user.hasOnboarded) return null;
+    
+    // Guard for unauthenticated or still loading user state
+    if (!user.isAuthenticated || user.isLoading) {
+        if (user.isLoading) {
+            return (
+                <AnimatePresence>
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] bg-[#08080E] flex items-center justify-center"
                     >
-                         <div className="w-12 h-12 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mb-4" />
-                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F59E0B]/50">Synchronizing Archives</span>
+                         <motion.div 
+                            animate={{ opacity: [0.4, 1, 0.4] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            className="flex flex-col items-center"
+                        >
+                             <div className="w-12 h-12 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mb-4" />
+                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F59E0B]/50">Synchronizing Archives</span>
+                        </motion.div>
                     </motion.div>
-                </motion.div>
-            </AnimatePresence>
-        );
+                </AnimatePresence>
+            );
+        }
+        return null;
     }
 
     const handleNext = async () => {
