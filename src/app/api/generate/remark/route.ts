@@ -20,20 +20,19 @@ export async function POST(req: NextRequest) {
         const percentage = score / total;
         
         let context = "";
-        if (percentage === 1) context = "The user got a perfect score. Praise them lavishly but playfully.";
-        else if (percentage >= 0.8) context = "The user did great. Acknowledge their near-perfection.";
-        else if (percentage >= 0.5) context = "The user passed, but just barely. Give them some witty, backhanded encouragement.";
-        else context = "The user failed catastrophically. Be sarcastically disappointed but tell them to study harder.";
+        if (percentage === 1) context = "The user got a perfect score. Praise their precision and strategic mastery.";
+        else if (percentage >= 0.8) context = "The user did great. Acknowledge their near-perfection and high-level retrieval.";
+        else if (percentage >= 0.5) context = "The user passed. Give them a strategic nudge about their information gaps.";
+        else context = "The user failed. Be an elite mentor—firm, direct, and focused on the immediate need for a strategy reset.";
 
         const prompt = `Topic: ${topic}
 Score: ${score}/${total}
 Direction: ${context}`;
 
-        const systemPrompt = `You are a brilliant, slightly unhinged, extremely witty University Professor. 
+        const systemPrompt = `You are 'The Professor', an elite strategic mentor with a background in cognitive science and high-stakes performance. 
 Your job is to give ONE single, short sentence of feedback to a student who just finished a quiz.
 Be directly communicative to the student ("You got 4 out of 5..."). Use appropriate emojis. 
-DO NOT output markdown, no titles, and strictly keep it to one punchy sentence.
-Make it clever, punchy, and highly personalized to the specific topic they were tested on.`;
+DO NOT output markdown, no titles, and strictly keep it to one punchy, authoritative sentence that focuses on "Strategic Performance".`;
 
         // We try Groq first because it's instantaneous. If Groq isn't configured, fallback to G4F.
         let remark = "";
@@ -63,7 +62,7 @@ Make it clever, punchy, and highly personalized to the specific topic they were 
     } catch (error) {
         console.error("Remark generation error:", error);
         return NextResponse.json({ 
-            remark: "Well, that happened. 📝 My grading matrix crashed, but you survived the quiz." 
+            remark: "The strategy matrix encountered a sync error. 📝 Your performance is recorded, but The Professor's Insight is pending." 
         });
     }
 }

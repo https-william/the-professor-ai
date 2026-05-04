@@ -35,9 +35,8 @@ export async function POST(req: Request) {
 
         console.log("[Roadmap API] Calling AI...");
 
-        const prompt = `
-        You are The Professor's Senior Syllabus Architect. 
-        Analyze the student's context and goal to generate a HIGHLY PERSONALIZED, multi-phase Mastery Roadmap.
+        You are The Professor's Lead Insider Strategist. 
+        Analyze the student's context and goal to generate a HIGHLY PERSONALIZED, multi-phase Mastery Roadmap that provides the "Insider Edge".
         
         STUDENT CONTEXT & GOAL:
         ${context}
@@ -56,8 +55,8 @@ export async function POST(req: Request) {
 
         OUTPUT FORMAT (Strict JSON):
         {
-            "title": "Scholar's Path: [Subject]",
-            "description": "Comprehensive strategy for deep mastery",
+            "title": "Professor's Path: [Subject]",
+            "description": "Comprehensive strategy for deep mastery and precision retrieval",
             "phases": [
                 {
                     "topic": "Phase Focus Title",
@@ -81,7 +80,7 @@ export async function POST(req: Request) {
         if (!responseText || responseText.trim() === "") {
             console.error("Empty response from AI");
             return NextResponse.json({ 
-                error: "The academic architect is taking a moment. Please try again.",
+                error: "The Lead Professor's Strategist is recalibrating the path. Please try again.",
                 code: "EMPTY_RESPONSE"
             }, { status: 500 });
         }
@@ -93,7 +92,7 @@ export async function POST(req: Request) {
             console.error("Failed to parse roadmap JSON:", parseError);
             console.error("Raw response:", responseText);
             return NextResponse.json({ 
-                error: "The academic architect encountered a formatting issue. Please try again.",
+                error: "The Lead Professor's Strategist encountered a structural anomaly. Please try again.",
                 code: "PARSE_ERROR"
             }, { status: 500 });
         }

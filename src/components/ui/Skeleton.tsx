@@ -184,4 +184,37 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
   );
 }
 
+// ═══════════════════════════════════════════════════
+// HERO MNEMONIC LOADING SKELETON
+// Shows the animated ABC → XYZ strike during app loads
+// ═══════════════════════════════════════════════════
+
+export function HeroLoadingSkeleton() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-5 p-10 rounded-3xl min-w-[280px]"
+      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}
+    >
+      {/* Animated ABC strike */}
+      <div className="relative">
+        <span className="font-galaxie text-3xl font-bold text-[var(--foreground-muted)] opacity-30 tracking-tight">ABC</span>
+        <svg className="absolute inset-[-15%] w-[130%] h-[130%] overflow-visible pointer-events-none" viewBox="0 0 100 40" preserveAspectRatio="none">
+          <line 
+            x1="0" y1="20" x2="100" y2="20" 
+            stroke="var(--foreground-muted)" 
+            strokeWidth="4" 
+            strokeLinecap="round"
+            className="animate-strike-draw"
+            style={{ strokeDasharray: 100, strokeDashoffset: 100 }}
+          />
+        </svg>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+        <span className="text-xs text-[var(--foreground-muted)] tracking-wide">Preparing your session...</span>
+      </div>
+    </div>
+  );
+}
+
 export { Skeleton };

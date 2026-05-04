@@ -55,7 +55,7 @@ FLASHCARD DESIGN RULES:
 2. Back (answer side): 1-3 sentences maximum. Lead with the core insight. Never pad with extra context.
 3. NO fill-in-the-blank fronts ("The mitochondria is the _____ of the cell").
 4. Distribute coverage: do NOT front-load the first sections; sample the full content.
-5. The Professor's Hook: Every card MUST include a mnemonic device or vivid analogy in the voice of a witty, warm academic. Place it at the end of the back after "💡 Professor's Hook:". Use only Standard English for these hooks (no Pidgin).
+5. Professor's Protocol: Every card MUST include a mnemonic device or vivid analogy in the voice of a strategic academic mentor. Place it at the end of the back after "💡 Professor's Protocol:". Use only Standard English for these hooks (no Pidgin).
 6. Each card must be standalone — a student who only sees this one card should understand the Q&A.
 7. Concisness is King: Use minimal tokens while maintaining max pedagogical value.
 
@@ -63,7 +63,7 @@ Return exactly a JSON array of objects with this shape:${JSON_ONLY}
 [
   {
     "front": "Conceptual question here",
-    "back": "Concise, insight-first answer. 💡 Professor's Hook: Vivid, witty analogy here.",
+    "back": "Concise, insight-first answer. 💡 Professor's Protocol: Vivid, strategic analogy here.",
     "topic": "Sub-topic label (1-3 words)"
   }
 ]`;
@@ -166,9 +166,9 @@ Return exactly a JSON array of objects with this shape:${JSON_ONLY}
 // ─── Podcast ──────────────────────────────────────────────────────────────────
 export function buildPodcastPrompt(content: string, style: string, explainStyle?: ExplainStyle): string {
     const styleInstruction: Record<string, string> = {
-        educational: "Professor A (Dr. Alex) is enthusiastic and uses vivid analogies. Professor B (Dr. Blake) is precise, occasionally skeptical, asks sharp follow-up questions. Tone: engaging lecture-style but conversational.",
-        casual: "Two friends (Alex and Blake) who happen to be studying the same subject. Natural language, jokes are welcome, tangents are fine as long as they loop back. Tone: breezy, like a commute conversation.",
-        debate: "Alex believes one interpretation; Blake challenges it. Both have valid points. They argue respectfully, conceding when the other makes a strong case. Tone: structured intellectual debate.",
+        educational: "Host A (The Professor) is strategic and uses vivid analogies to build intuition. Host B (The Analyst) is precise, occasionally skeptical, and asks sharp follow-up questions. Tone: engaging lecture-style but conversational.",
+        casual: "Two academic experts who happen to be deconstructing the same subject. Natural language, strategic asides, and tangents that reveal deeper logic. Tone: breezy but intellectually rigorous.",
+        debate: "Host A believes one interpretation; Host B challenges it. Both have valid points. They argue respectfully, conceding when the other makes a strong case. Tone: structured intellectual debate.",
     };
 
     return `You are scripting a university podcast episode.
@@ -188,22 +188,22 @@ PODCAST RULES:
 4. Include at least one "student question" moment: a host says "A student asked me recently..." and addresses a common misconception.
 5. Use real-world analogies that aren't in the source material — add genuine intellectual value.
 6. End with a memorable takeaway: 1-2 sentences that crystallize the most important insight.
-7. Speaker names must be exactly "Professor A" and "Professor B" (or "Alex" and "Blake" for casual). No other speaker names.
+7. Speaker names must be exactly "Host A" and "Host B". No other speaker names.
 8. Each line of dialogue should be 2-5 sentences. Not single words, not paragraphs.
 
 Return exactly a JSON array of objects with this shape (representing the script lines):${JSON_ONLY}
 [
-  { "speaker": "Professor A", "text": "Full spoken line here." },
-  { "speaker": "Professor B", "text": "Response here." }
+  { "speaker": "Host A", "text": "Full spoken line here." },
+  { "speaker": "Host B", "text": "Response here." }
 ]`;
 }
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 export function buildSummaryPrompt(content: string, style: string, explainStyle?: ExplainStyle): string {
     const styleInstruction: Record<string, string> = {
-        concise: "Produce a tight, exam-focused summary. Use bullet hierarchies. Bold every key term on first use. No introductory filler — start with the most important concept. Students should be able to revise from this in 10 minutes.",
+        concise: "Produce a tight, exam-focused summary. Use bullet hierarchies. Bold every key term on first use. No introductory filler — start with the most important concept. Students should be able to master this in 10 minutes.",
         detailed: "Produce a comprehensive study guide. Use H2 headings for major concepts, H3 for sub-concepts. Include context, mechanisms, and real-world applications. Aim for completeness over brevity.",
-        study: "Produce a structured study guide with: (1) Key Concepts — bulleted explanations; (2) Key Terms — glossary format; (3) Common Exam Questions — 3-5 questions a professor would ask; (4) Memory Anchors — one memorable metaphor per major concept.",
+        study: "Produce a structured study guide with: (1) Key Concepts — bulleted explanations; (2) Key Terms — glossary format; (3) Common Exam Questions — 3-5 questions The Professor would ask; (4) Memory Anchors — one memorable metaphor per major concept.",
     };
 
     return `You are a study coach with a track record of helping students go from failing to first class.

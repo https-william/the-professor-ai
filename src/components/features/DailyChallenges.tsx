@@ -214,11 +214,11 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
         const res = await fetch("/api/user/activity", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "daily_challenge", customXp: challenge.xpReward })
+          body: JSON.stringify({ type: "daily_challenge", customXp: challenge.xpReward, saveToDb: true })
         });
         
         if (res.ok) {
-           addToast(`+${challenge.xpReward} XP earned!`, "xp", Zap);
+           addToast(`+${challenge.xpReward} XP earned!`, "xp", Zap, undefined, true);
            if (onComplete) onComplete(challenge);
         } else {
            addToast("Failed to claim XP. Already processed?", "error", AlertCircle);

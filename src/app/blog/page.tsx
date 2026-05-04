@@ -3,24 +3,24 @@ import BlogClient from "./BlogClient";
 import SEOHead from "@/components/SEOHead";
 
 export const metadata: Metadata = {
-  title: "The Professor's Blog | Evidence-Based Learning Science",
-  description: "Explore the science of learning, study techniques, and AI productivity tips from the The Professor. Master active recall, spaced repetition, and more.",
+  title: "The Professor | Strategic Study Secrets & Learning Science",
+  description: "Explore the science of learning, strategic study techniques, and elite academic productivity tips from The Professor. Master the exam before it starts.",
   openGraph: {
-    title: "The Professor's Blog | Academic Insights",
-    description: "Evidence-based study techniques and the science of learning.",
+    title: "The Professor | Strategic Learning Hub",
+    description: "Elite study techniques and the science of strategic learning.",
     images: [
       {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "The Professor Blog",
+        alt: "The Professor Hub",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Professor's Blog | Study Science",
-    description: "Master your learning with academic insights.",
+    title: "The Professor | Strategic Learning Hub",
+    description: "Master your learning with strategic academic insights.",
     images: ["/logo.png"],
   },
 };

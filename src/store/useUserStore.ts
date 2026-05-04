@@ -63,6 +63,8 @@ export const defaultUser: UserState = {
     createdAt: null,
 };
 
+let isRefreshing = false;
+
 export const useUserStore = create<UserStore>()(
     persist(
         (set, get) => ({
@@ -71,7 +73,8 @@ export const useUserStore = create<UserStore>()(
             
             refreshUser: async () => {
                 // Prevent concurrent refreshes which cause AbortErrors and race conditions
-                if (get().isLoading) return;
+                if (isRefreshing) return;
+                isRefreshing = true;
                 
                 const supabase = createClient();
                 set({ isLoading: true });
@@ -154,6 +157,8 @@ export const useUserStore = create<UserStore>()(
                             set({ isLoading: false });
                         }
                     }
+                } finally {
+                    isRefreshing = false;
                 }
             }
         }),

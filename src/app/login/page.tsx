@@ -93,9 +93,9 @@ export default function LoginPage() {
                 <div className="text-center mb-10">
                     <BrandLogo size="md" className="mx-auto mb-6" />
                     <h1 className="font-galaxie text-3xl md:text-4xl font-bold text-[var(--foreground)] tracking-tight">
-                        Welcome back
+                        Enter the Workspace
                     </h1>
-                    <p className="text-sm font-medium text-[var(--foreground-secondary)] mt-2">Sign in to continue learning</p>
+                    <p className="text-sm font-medium text-[var(--foreground-secondary)] mt-2">Ready to master your material?</p>
                 </div>
 
                 {/* ═══ The Form ═══ */}

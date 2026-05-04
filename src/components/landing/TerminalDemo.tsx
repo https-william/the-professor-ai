@@ -1,32 +1,36 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 
 const CONVERSATIONS = [
   {
+    question: "Analyze the 2024 Macroeconomics Syllabus.",
+    answer:
+      "Syllabus processed. I've identified 12 core bottlenecks: 'Liquidity Traps' and 'The Phillips Curve' are your highest risk areas. I've architected a 4-day mastery path focusing on active recall for these specific gaps.",
+    type: "architect"
+  },
+  {
     question: "Explain Quantum Entanglement like I'm 5.",
     answer:
-      "Imagine you have two magic socks. You put one in your drawer and mail the other to Grandma across the ocean. When you look at yours and it's red — Grandma's is INSTANTLY red too. Nobody peeked. They just... know. That's entanglement.",
+      "Imagine you have two magic socks. You put one in your drawer and mail the other to Grandma across the ocean. When you look at yours and it's red — Grandma's is INSTANTLY red too. They stay connected, no matter how far apart. That's entanglement.",
+  },
+  {
+    question: "Build a study plan for Property Law (Unit 3).",
+    answer:
+      "Unit 3: 'Adverse Possession' detected. This requires synthesis of 4 statutes and 12 case laws. Generating 45 flashcards focused on 'Hostile Intent' and 'Continuous Use' triggers now.",
+    type: "architect"
   },
   {
     question: "What's the difference between mitosis and meiosis?",
     answer:
-      'Mitosis is a photocopy machine — one cell becomes two identical twins. Meiosis is more like shuffling a deck of cards and dealing four unique hands. That\'s why siblings look different even though they have the same parents.',
+      'Mitosis is a photocopy machine — one cell becomes two identical twins. Meiosis is more like shuffling a deck of cards and dealing four unique hands. That\'s why siblings look different even though they share DNA.',
   },
   {
-    question: "Why did Rome fall?",
+    question: "Architect a mastery path for Organic Chemistry II.",
     answer:
-      'Not one reason — it was a slow avalanche. Think of it like a Jenga tower: political corruption pulled one block, barbarian invasions pulled another, economic inflation yanked a third. Eventually there weren\'t enough blocks left to hold it up.',
-  },
-  {
-    question: "How does compound interest work?",
-    answer:
-      "Picture a snowball rolling downhill. At first it's tiny and slow. But the snow that sticks to it also collects MORE snow. After a while, it's enormous — not because you pushed harder, but because growth builds on growth. That's your money compounding.",
-  },
-  {
-    question: "Explain supply and demand simply.",
-    answer:
-      'Imagine there\'s one slice of pizza left at lunch and ten hungry students. That slice just became very valuable. Now imagine there are 50 slices and only 3 students — suddenly pizza is basically free. Price is just a tug-of-war between "how much is there" and "how badly do people want it."',
+      "Strategic Path Ready. We'll focus 60% of volume on 'Nucleophilic Substitution' and 'Aromaticity'. I've scheduled three 'Synthesis Battlefields' where you'll build molecules from scratch until it's muscle memory.",
+    type: "architect"
   },
 ];
 
@@ -119,18 +123,16 @@ export default function TerminalDemo() {
       </div>
 
       {/* User question */}
-      {(phase !== "ready") && (
         <div className="mb-4">
           <p>
-            <span className="text-[var(--secondary)] font-semibold">you</span>
+            <span className="text-[var(--foreground-muted)] font-semibold">you</span>
             <span className="opacity-20 mx-1.5">→</span>
             <span className="opacity-80">{displayedQ}</span>
             {phase === "typing-q" && (
-              <span className="inline-block w-[2px] h-[14px] bg-[var(--secondary)] ml-0.5 align-middle animate-pulse" />
+              <span className="inline-block w-[2px] h-[14px] bg-[var(--foreground-muted)] ml-0.5 align-middle animate-pulse" />
             )}
           </p>
         </div>
-      )}
 
       {/* Thinking indicator */}
       {phase === "thinking" && (
@@ -149,11 +151,24 @@ export default function TerminalDemo() {
       {(phase === "typing-a" || phase === "done") && (
         <div>
           <p>
-            <span className="text-[var(--accent)] font-semibold">professor</span>
+            <span className={cn(
+              "font-semibold transition-colors duration-500",
+              convo.type === "architect" ? "text-[var(--success)]" : "text-[var(--accent)]"
+            )}>
+              {convo.type === "architect" ? "architect" : "professor"}
+            </span>
             <span className="opacity-20 mx-1.5">→</span>
-            <span className="opacity-80">{displayedA}</span>
+            <span className={cn(
+              "transition-opacity duration-500",
+              convo.type === "architect" ? "text-[var(--foreground)] font-medium" : "opacity-80"
+            )}>
+              {displayedA}
+            </span>
             {phase === "typing-a" && (
-              <span className="inline-block w-[2px] h-[14px] bg-[var(--accent)] ml-0.5 align-middle animate-pulse" />
+              <span className={cn(
+                "inline-block w-[2px] h-[14px] ml-0.5 align-middle animate-pulse",
+                convo.type === "architect" ? "bg-[var(--success)]" : "bg-[var(--accent)]"
+              )} />
             )}
           </p>
         </div>

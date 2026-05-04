@@ -433,11 +433,43 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
           ))}
         </div>
 
+        {/* Conversion Footer */}
+        <div 
+          className="mt-20 p-8 sm:p-12 rounded-[32px] text-center relative overflow-hidden border border-[var(--accent-glow)]"
+          style={{
+            background: "linear-gradient(145deg, rgba(245,158,11,0.08), rgba(0,0,0,0.4))",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
+          }}
+        >
+          <div className="relative z-10">
+            <h3 className="font-galaxie text-2xl sm:text-3xl font-bold text-white mb-4">
+              Stop Reading. Start Mastering.
+            </h3>
+            <p className="text-[15px] text-white/50 max-w-lg mx-auto mb-8 leading-relaxed">
+              Knowledge without retrieval is just a distraction. Take this article's strategy and apply it to your own material inside the workspace.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link 
+                href="/signup" 
+                className="px-8 py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest bg-[var(--foreground)] text-[var(--background)] transition-all hover:scale-[1.02] active:scale-95 shadow-xl"
+              >
+                Experience the Exam
+              </Link>
+              <Link 
+                href="/login" 
+                className="px-8 py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-all"
+              >
+                Return to Lab
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Related Posts */}
         {related.length > 0 && (
-          <div>
-            <h3 className="font-heading text-lg font-bold text-white/60 mb-5">
-              Continue Reading
+          <div className="mt-20">
+            <h3 className="font-heading text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-8 text-center">
+              More Intelligence
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {related.map((rp) => {
@@ -446,25 +478,25 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
                   <Link
                     key={rp.slug}
                     href={`/blog/${rp.slug}`}
-                    className="group p-5 rounded-2xl transition-all duration-300 hover:translate-y-[-2px]"
+                    className="group p-6 rounded-2xl transition-all duration-400 hover:translate-y-[-4px]"
                     style={{
                       background: "rgba(255,255,255,0.02)",
                       border: "1px solid rgba(255,255,255,0.05)",
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
                     }}
                   >
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-4">
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
                         style={{ background: rp.coverGradient }}
                       >
-                        <IconComponent className="w-4 h-4 text-white" />
+                        <IconComponent className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-wider">
+                      <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">
                         {rp.category}
                       </span>
                     </div>
-                    <h4 className="text-[14px] font-bold text-[var(--foreground-secondary)] group-hover:text-[var(--foreground)] transition-colors leading-snug">
+                    <h4 className="text-[16px] font-bold text-[var(--foreground-secondary)] group-hover:text-[var(--foreground)] transition-colors leading-tight">
                       {rp.title}
                     </h4>
                   </Link>
@@ -474,6 +506,16 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
           </div>
         )}
       </article>
+
+      {/* Persistent Mobile CTA */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm sm:hidden">
+        <Link 
+          href="/signup" 
+          className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest shadow-2xl animate-fade-in-up"
+        >
+          Get Started <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
     </div>
   );
 }

@@ -94,7 +94,7 @@ export default function BillingPage() {
             popup.resumeTransaction(data.reference, {
                 onSuccess: async (transaction: any) => {
                     setIsProcessing(true);
-                    addToast(`${plan.name} Endowment Confirmed!`, 'success', 'account_balance');
+                    addToast(`${plan.name} Endowment Confirmed!`, 'success', 'account_balance', undefined, true);
                     
                     // Poll for credit update or just wait a bit and refresh
                     setTimeout(async () => {

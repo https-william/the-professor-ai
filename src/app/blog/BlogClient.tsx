@@ -295,57 +295,53 @@ export default function BlogClient() {
         <StandardContainer narrow
           className="flex items-center justify-between px-4 md:px-5 py-2 md:py-2.5 rounded-full"
           style={{
-            background: "var(--card)",
+            background: "rgba(255, 255, 255, 0.03)",
             backdropFilter: "blur(40px) saturate(180%)",
             WebkitBackdropFilter: "blur(40px) saturate(180%)",
             border: "1.5px solid var(--card-border)",
-            borderTop: "1.5px solid var(--border)",
+            borderTop: "1.5px solid rgba(255,255,255,0.1)",
             boxShadow:
-              "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)",
+              "0 12px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)",
           }}
         >
           <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
             <BrandLogo size="sm" />
-            <span className="hidden sm:block font-heading font-bold text-[var(--foreground)] tracking-tight text-[14px]">
+            <span className="hidden sm:block font-heading font-black text-[var(--foreground)] tracking-tighter text-[15px] uppercase">
               The Professor
             </span>
           </Link>
 
           {/* Floating Middle Blog Identifier */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-[var(--accent-bg)] border border-[var(--accent-glow)] rounded-full">
-            <BookOpen className="w-3 h-3 text-[var(--accent)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">Blog</span>
+          <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-3 px-4 py-1.5 bg-[var(--background)] border border-[var(--card-border)] rounded-full shadow-inner">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-80">Knowledge Hub</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/signup" 
+              className="hidden sm:flex text-[11px] font-black uppercase tracking-widest text-[var(--accent)] hover:opacity-80 transition-all"
+            >
+              Enter Workspace
+            </Link>
             <ThemeToggle variant="minimal" />
           </div>
         </StandardContainer>
       </nav>
 
-      <StandardContainer narrow className="relative z-10 pt-28 sm:pt-32">
+      <StandardContainer narrow className="relative z-10 pt-28 sm:pt-36">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-5">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center"
-              style={{
-                background:
-                  "linear-gradient(145deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))",
-                boxShadow:
-                  "inset 0 2px 3px rgba(255,255,255,0.06), inset 0 -2px 4px rgba(0,0,0,0.25), 0 4px 16px rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.1)",
-              }}
-            >
-              <Sparkles className="w-6 h-6 text-[#F59E0B]" />
-            </div>
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-[var(--accent-bg)] border border-[var(--accent-glow)]">
+            <Sparkles className="w-3 h-3 text-[var(--accent)]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">Exclusive Insights</span>
           </div>
-          <h1 className="font-heading text-3xl sm:text-[44px] font-bold text-[var(--foreground)] tracking-tight mb-3 leading-tight">
-            The Professor&apos;s Blog
+          <h1 className="font-galaxie text-4xl sm:text-[64px] font-bold text-[var(--foreground)] tracking-tight mb-6 leading-[0.95]">
+            Master Your Hall.
           </h1>
-          <p className="text-[15px] text-[var(--foreground-muted)] max-w-lg mx-auto leading-relaxed">
-            Evidence-based study techniques, academic insights, and the science
-            of learning — from your favorite AI professor.
+          <p className="text-[16px] text-[var(--foreground-muted)] max-w-xl mx-auto leading-relaxed font-medium">
+            Evidence-based strategies to experience the exam before it starts.
+            Turning passive study into <span className="text-[var(--foreground)]">unbreakable intuition.</span>
           </p>
         </div>
 
@@ -407,46 +403,31 @@ export default function BlogClient() {
 
         {/* Newsletter CTA */}
         <div
-          className="mt-16 p-8 sm:p-10 text-center relative overflow-hidden"
+          className="mt-24 p-8 sm:p-16 text-center relative overflow-hidden group"
           style={{
             ...clay.card,
-            borderRadius: "28px",
+            borderRadius: "40px",
+            background: "linear-gradient(145deg, var(--card), rgba(0,0,0,0.4))",
           }}
         >
-          <div
-            className="absolute inset-0 opacity-30"
-            style={{
-              background:
-                "radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.08) 0%, transparent 60%)",
-            }}
-          />
           <div className="relative z-10">
-            <Mail className="w-10 h-10 text-[#F59E0B]/40 mx-auto mb-4" />
-            <h3 className="font-heading text-xl sm:text-2xl font-bold text-white/80 mb-2">
-              Stay Sharp
+            <h3 className="font-galaxie text-2xl sm:text-4xl font-bold text-white mb-4">
+              Get the Professor's Edge.
             </h3>
-            <p className="text-[13px] text-white/25 max-w-md mx-auto mb-6">
-              New articles on study science, learning techniques, and AI in
-              education. No spam, just signal.
+            <p className="text-[15px] text-white/40 max-w-md mx-auto mb-10 leading-relaxed">
+              Join 12,000+ students receiving weekly deep-dives into academic leverage and AI intuition.
             </p>
-            <div className="flex items-center gap-3 max-w-sm mx-auto">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[13px] text-white/70 placeholder:text-white/15 outline-none focus:border-[#F59E0B]/30 transition-colors"
-              />
-              <button
-                className="px-5 py-3 rounded-xl text-[12px] font-bold transition-all active:scale-95 hover:translate-y-[-1px] flex-shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, #F59E0B, #D97706)",
-                  color: "#08080E",
-                  boxShadow:
-                    "inset 0 1px 2px rgba(255,255,255,0.2), 0 4px 12px rgba(245,158,11,0.25)",
-                }}
-              >
-                Subscribe
-              </button>
-            </div>
+            <Link 
+              href="/signup" 
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95"
+              style={{
+                background: "var(--foreground)",
+                color: "var(--background)",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
+              }}
+            >
+              Enter Workspace <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </StandardContainer>

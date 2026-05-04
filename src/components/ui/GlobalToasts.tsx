@@ -33,11 +33,12 @@ interface Toast {
 interface ToastStore {
     toasts: Toast[];
     isOpen: boolean;
-    addToast: (message: string, type: ToastType, icon?: any, link?: string) => void;
-    removeToast: (id: string) => void;
-    markAsRead: (id: string) => void;
-    markAllAsRead: () => void;
-    clearAll: () => void;
+    fetchNotifications: () => Promise<void>;
+    addToast: (message: string, type: ToastType, icon?: any, link?: string, saveToDb?: boolean) => Promise<void>;
+    removeToast: (id: string) => Promise<void>;
+    markAsRead: (id: string) => Promise<void>;
+    markAllAsRead: () => Promise<void>;
+    clearAll: () => Promise<void>;
     toggleCenter: () => void;
     setIsOpen: (open: boolean) => void;
 }
@@ -46,40 +47,115 @@ export const useToasts = create<ToastStore>((set, get) => ({
     toasts: [],
     isOpen: false,
     
-    addToast: (message, type, icon, link) => {
-        const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+    fetchNotifications: async () => {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (data && !error) {
+            const fetchedToasts: Toast[] = data.map((n: any) => ({
+                id: n.id,
+                message: n.message,
+                type: n.type as ToastType,
+                icon: n.icon,
+                timestamp: new Date(n.created_at),
+                read: n.read,
+                link: n.link
+            }));
+            set({ toasts: fetchedToasts });
+        }
+    },
+
+    addToast: async (message, type, icon, link, saveToDb = false, idOverride) => {
+        const id = idOverride || (Date.now().toString(36) + Math.random().toString(36).substring(2, 6));
+        const newToast: Toast = { 
+            id, 
+            message, 
+            type, 
+            icon, 
+            timestamp: new Date(),
+            read: false,
+            link 
+        };
+
         set((state) => ({ 
-            toasts: [{ 
-                id, 
-                message, 
-                type, 
-                icon, 
-                timestamp: new Date(),
-                read: false,
-                link 
-            }, ...state.toasts].slice(0, 50) // Keep last 50
+            toasts: [newToast, ...state.toasts].slice(0, 50) 
         }));
+
+        if (saveToDb) {
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data, error } = await supabase.from('notifications').insert({
+                    user_id: session.user.id,
+                    message,
+                    type,
+                    icon: typeof icon === 'string' ? icon : undefined,
+                    link,
+                    read: false
+                }).select('id').single();
+
+                if (data?.id) {
+                    // Update the local toast ID to match the DB ID
+                    set((state) => ({
+                        toasts: state.toasts.map((t) => t.id === id ? { ...t, id: data.id } : t)
+                    }));
+                }
+            }
+        }
+
         // Auto-dismiss after 8 seconds for non-important toasts
         setTimeout(() => {
-            set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+            // Only remove if it was just a transient toast (not from DB or already read)
+            // Actually, keep it in history but remove from "active" view
+            set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id || t.read) }));
         }, type === 'broadcast' ? 15000 : 8000);
     },
     
-    removeToast: (id) => set((state) => ({ 
-        toasts: state.toasts.filter((t) => t.id !== id) 
-    })),
+    removeToast: async (id) => {
+        const supabase = createClient();
+        await supabase.from('notifications').delete().eq('id', id);
+        set((state) => ({ 
+            toasts: state.toasts.filter((t) => t.id !== id) 
+        }));
+    },
     
-    markAsRead: (id) => set((state) => ({
-        toasts: state.toasts.map((t) => 
-            t.id === id ? { ...t, read: true } : t
-        )
-    })),
+    markAsRead: async (id) => {
+        const supabase = createClient();
+        await supabase.from('notifications').update({ read: true }).eq('id', id);
+        set((state) => ({
+            toasts: state.toasts.map((t) => 
+                t.id === id ? { ...t, read: true } : t
+            )
+        }));
+    },
     
-    markAllAsRead: () => set((state) => ({
-        toasts: state.toasts.map((t) => ({ ...t, read: true }))
-    })),
+    markAllAsRead: async () => {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id);
+        }
+        set((state) => ({
+            toasts: state.toasts.map((t) => ({ ...t, read: true }))
+        }));
+    },
     
-    clearAll: () => set({ toasts: [] }),
+    clearAll: async () => {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await supabase.from('notifications').delete().eq('user_id', session.user.id);
+        }
+        set({ toasts: [] });
+    },
     
     toggleCenter: () => set((state) => ({ isOpen: !state.isOpen })),
     setIsOpen: (open) => set({ isOpen: open }),
@@ -110,12 +186,28 @@ export function ToastContainer() {
 
     const unreadCount = toasts.filter(t => !t.read).length;
 
-    // Listen for Realtime Broadcasts
+    // Initial Fetch & Listen for Realtime Broadcasts
     useEffect(() => {
         const supabase = createClient();
-        const sub = supabase.channel('toast_updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload: any) => {
-                 const b = payload.new;
-                 useToasts.getState().addToast(b.message, b.type || 'broadcast', b.icon, b.link);
+        
+        // Fetch initial
+        useToasts.getState().fetchNotifications();
+
+        const sub = supabase.channel('toast_updates')
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'notifications' 
+            }, async (payload: any) => {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session && payload.new.user_id === session.user.id) {
+                    const b = payload.new;
+                    // Check if we already have this toast (to avoid duplicates from local add + realtime echo)
+                    const currentToasts = useToasts.getState().toasts;
+                    if (!currentToasts.some(t => t.id === b.id)) {
+                        useToasts.getState().addToast(b.message, b.type || 'broadcast', b.icon, b.link, false, b.id);
+                    }
+                }
             })
             .subscribe();
 

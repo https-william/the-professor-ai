@@ -54,16 +54,16 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   title: {
-    default: "The Professor | Advanced AI Study Companion",
+    default: "The Professor | Elite AI Study Strategy",
     template: "%s | The Professor",
   },
-  description: "Accelerate your learning with The Professor. Generate high-fidelity flashcards, quizzes, and academic roadmaps instantly using state-of-the-art AI.",
+  description: "Experience the exam before it starts. The Professor uses strategic AI retrieval to build your intuition from any syllabus, turning dense materials into intuitive mastery.",
   manifest: "/site.webmanifest",
-  keywords: ["AI Study Assistant", "Flashcard Generator", "AI Quiz Maker", "Academic Roadmap", "Study Tools", "The Professor"],
+  keywords: ["The Professor", "Professor AI", "AI Study Assistant", "Flashcard Generator", "AI Quiz Maker", "Strategic Learning", "Exam Simulation"],
   authors: [{ name: "The Professor Team" }],
   openGraph: {
-    title: "The Professor | Advanced AI Study Companion",
-    description: "Accelerate your learning with The Professor. Generate high-fidelity flashcards, quizzes, and academic roadmaps instantly.",
+    title: "The Professor | Elite AI Study Strategy",
+    description: "Experience the exam before it starts. Master any syllabus with strategic AI retrieval and intuitive mastery.",
     url: SITE_URL,
     siteName: "The Professor",
     images: [
@@ -79,10 +79,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Professor | Advanced AI Study Companion",
-    description: "Accelerate your learning with The Professor. Generate high-fidelity flashcards, quizzes, and academic roadmaps instantly.",
+    title: "The Professor | Elite AI Study Strategy",
+    description: "Experience the exam before it starts. Master any syllabus with strategic AI retrieval.",
     images: ["/og-image.png"],
-    creator: "@theprofessor",
+    creator: "@TheProfessorAI",
   },
   icons: {
     icon: [
@@ -106,9 +106,9 @@ const jsonLd = {
   name: "The Professor",
   url: SITE_URL,
   logo: `${SITE_URL}/favicon-32x32.png`,
-  description: "Advanced AI-powered study platform for generating flashcards, quizzes, and summaries.",
+  description: "Elite AI-powered study strategist for generating flashcards, quizzes, and strategic summaries.",
   sameAs: [
-    "https://twitter.com/theprofessor",
+    "https://twitter.com/TheProfessorAI",
     "https://github.com/the-professor-ai"
   ]
 };

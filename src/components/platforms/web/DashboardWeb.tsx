@@ -139,8 +139,8 @@ export default function DashboardWeb({
     const actions = [
         { label: "Create", desc: "Generate new material", icon: PlusCircle, href: "/create", accent: "var(--accent)" },
         { label: "Library", desc: "Your study vault", icon: Library, href: "/library", accent: "#10B981" },
-        { label: "Arena", desc: "Challenge others", icon: Swords, href: "/arena", accent: "#EF4444" },
-        { label: "Blog", desc: "Study strategies", icon: BookOpen, href: "/blog", accent: "#8B5CF6" },
+        { label: "Arena", desc: "Duel others", icon: Swords, href: "/arena", accent: "#EF4444" },
+        { label: "Blog", desc: "Study secrets", icon: BookOpen, href: "/blog", accent: "#8B5CF6" },
     ];
 
     // Recent generation types for visual variety mapped to real data
@@ -252,7 +252,7 @@ export default function DashboardWeb({
                                             <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 flex items-center justify-center"><PlusCircle size={18} className="text-[var(--accent)]" /></div>
                                             <div>
                                                 <p className="text-base font-bold text-[var(--foreground)]">Start Studying</p>
-                                                <p className="text-xs text-[var(--foreground-muted)]">Upload material or paste text to generate</p>
+                                                <p className="text-xs text-[var(--foreground-muted)]">Automate your degree in seconds</p>
                                             </div>
                                         </div>
                                         <ChevronRight size={18} className="text-[var(--accent)] opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />

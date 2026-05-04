@@ -24,6 +24,7 @@ import SocialProof from "@/components/landing/SocialProof";
 import PainSection from "@/components/landing/PainSection";
 import Testimonials from "@/components/landing/Testimonials";
 import LandingPricing from "@/components/landing/LandingPricing";
+import LandingUpload from "@/components/landing/LandingUpload";
 import FAQ from "@/components/landing/FAQ";
 import StandardContainer from "@/components/ui/StandardContainer";
 
@@ -37,7 +38,7 @@ export default function LandingPage() {
         <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
         {/* ═══════════════════════════════════════════════
-            HERO — "Learning is as simple as ~~ABC~~ XYZ."
+            HERO — "Drop your notes. Walk into any exam ready."
             Floating dance + shimmer sweep
            ═══════════════════════════════════════════════ */}
         <section className="relative flex flex-col items-center justify-center min-h-screen px-5 pt-24 md:pt-28 pb-16 md:pb-20 z-10">
@@ -46,36 +47,12 @@ export default function LandingPage() {
             <div data-header-sentinel className="absolute top-0 left-0 h-1 w-full pointer-events-none" />
             
             {/* Headline — Impeccable Typography */}
-            <h1 className="text-center leading-[1.05] mb-6 md:mb-8 animate-fade-in-up font-galaxie tracking-tight" style={{ fontSize: "clamp(3.5rem, 9vw, 8rem)" }}>
-              {/* Line 1: "Learning is as" */}
+            <h1 className="text-center leading-[1.05] mb-6 md:mb-8 animate-fade-in-up font-galaxie tracking-tight" style={{ fontSize: "clamp(3rem, 8vw, 7rem)" }}>
               <span className="block font-medium text-[var(--foreground)]">
-                Learning is as
+                Drop your notes.
               </span>
-
-              {/* Line 2: "simple as  ~~ABC~~  XYZ." */}
-              <span className="block font-bold mt-1">
-                <span
-                  style={{
-                    background: "linear-gradient(135deg, #2563EB 0%, #EA580C 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  simple as{" "}
-                </span>
-
-                {/* "ABC" — crossed out, floating */}
-                <span className="relative inline-block mx-0.5 md:mx-2 align-middle animate-float-abc" style={{ fontSize: "clamp(1.5rem, 4vw, 3rem)" }}>
-                  <span className="font-bold text-[var(--foreground)] opacity-10">ABC</span>
-                  <span
-                    className="absolute left-[-3px] right-[-3px] top-1/2 h-[2px] md:h-[3px] -rotate-12 pointer-events-none"
-                    style={{ background: "var(--foreground)", opacity: 0.2 }}
-                  />
-                </span>
-
-                {/* "XYZ." — Premium shimmer + float */}
-                <span
+              <span className="block font-bold mt-2">
+                <span 
                   className="inline-block animate-float-xyz relative"
                 >
                   <span 
@@ -88,7 +65,7 @@ export default function LandingPage() {
                       animation: "shimmer-sweep 4s linear infinite",
                     }}
                   >
-                    XYZ.
+                    Walk into any <br className="md:hidden" /> exam ready.
                   </span>
                   <span className="relative" style={{
                       background: "linear-gradient(135deg, #60A5FA 0%, #FB923C 100%)",
@@ -96,7 +73,7 @@ export default function LandingPage() {
                       WebkitTextFillColor: "transparent",
                       backgroundClip: "text",
                   }}>
-                    XYZ.
+                    Walk into any <br className="md:hidden" /> exam ready.
                   </span>
                 </span>
               </span>
@@ -113,12 +90,9 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-fade-in-up animation-delay-300 w-full sm:w-auto">
-              <Link href="/signup" className="btn-skeuo-primary text-sm md:text-base px-7 md:px-8 py-3 md:py-3.5 w-full sm:w-auto justify-center group font-bold" style={{ background: "var(--foreground)", color: "var(--background)", boxShadow: "none" }}>
-                Start Session
-                <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+            {/* Primary Action — The Upload Box */}
+            <div className="w-full max-w-2xl mx-auto animate-fade-in-up animation-delay-300">
+              <LandingUpload />
             </div>
           </StandardContainer>
 
@@ -262,113 +236,20 @@ export default function LandingPage() {
           CTA — Layered Volumetric Depth
           3 depth layers: outer glow → glass → clay content
          ═══════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════
+          FINAL CTA — The Demo
+         ═══════════════════════════════════════════════ */}
       <section className="relative w-full px-5 md:px-6 z-10" style={{ paddingBlock: "clamp(5rem, 8vw, 9rem)" }}>
         <StandardContainer narrow>
-          <div className="max-w-4xl mx-auto">
-
-            {/* Layer 1: Outer glow ring — furthest depth */}
-            <div
-              className="relative rounded-[clamp(1.5rem,3vw,2.5rem)] p-[1px]"
-              style={{
-                background: "linear-gradient(135deg, rgba(129,140,248,0.2), rgba(192,132,252,0.1), rgba(245,158,11,0.15))",
-                boxShadow: "0 30px 80px rgba(0,0,0,0.4), 0 0 60px rgba(99,102,241,0.06)",
-              }}
-            >
-              {/* Layer 2: Glass panel — mid depth */}
-              <div
-                className="relative rounded-[calc(clamp(1.5rem,3vw,2.5rem)-1px)] overflow-hidden transition-colors duration-300"
-                style={{
-                  background: "var(--background-secondary)",
-                  backdropFilter: "blur(40px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(40px) saturate(180%)",
-                }}
-              >
-                {/* Ambient top glow */}
-                <div className="absolute inset-0 pointer-events-none" style={{
-                  background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(129,140,248,0.15), transparent 70%)",
-                }} />
-
-                {/* Noise texture for depth */}
-                <div
-                  className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                  }}
-                />
-
-                {/* Layer 3: Inner clay content — closest to viewer */}
-                <div
-                  className="relative z-10 text-center"
-                  style={{ padding: "clamp(2.5rem, 6vw, 5rem) clamp(1.5rem, 4vw, 4rem)" }}
-                >
-                  {/* Floating decorative orbs */}
-                  <div className="absolute top-8 left-8 w-20 h-20 rounded-full animate-float-abc pointer-events-none"
-                    style={{ background: "var(--secondary-bg)", filter: "blur(40px)" }}
-                  />
-                  <div className="absolute bottom-12 right-12 w-28 h-28 rounded-full animate-float-xyz pointer-events-none"
-                    style={{ background: "var(--accent-bg)", filter: "blur(40px)" }}
-                  />
-
-                  <h2
-                    className="font-heading font-bold text-[var(--foreground)] leading-[1.1] tracking-tight"
-                    style={{ fontSize: "clamp(2rem, 5.5vw, 4rem)", marginBottom: "clamp(0.75rem, 2vw, 1.25rem)" }}
-                  >
-                    Your next exam
-                    <br />
-                    <span
-                      className="animate-shimmer-sweep"
-                      style={{
-                        background: "linear-gradient(90deg, #3B82F6, #F97316, #3B82F6)",
-                        backgroundSize: "200% auto",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text",
-                      }}
-                    >
-                      is not optional.
-                    </span>
-                  </h2>
-
-                  <p
-                    className="text-[var(--foreground-secondary)] max-w-md mx-auto"
-                    style={{ fontSize: "clamp(0.85rem, 1.5vw, 1rem)", marginBottom: "clamp(2rem, 4vw, 3rem)" }}
-                  >
-                    Join students who stopped highlighting and started learning.
-                  </p>
-
-                  {/* CTA buttons — clay pills */}
-                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center">
-                    <Link
-                      href="/signup"
-                      className="btn-skeuo-primary justify-center group"
-                      style={{ fontSize: "clamp(0.85rem, 1.25vw, 1rem)", padding: "clamp(0.875rem, 1.5vw, 1.1rem) clamp(1.75rem, 3.5vw, 2.75rem)" }}
-                    >
-                      Get Started for Free
-                      <Zap className="w-[18px] h-[18px] group-hover:rotate-12 transition-transform ml-1" strokeWidth={1.5} />
-                    </Link>
-                  </div>
-
-                  {/* Trust signals — embedded in the card */}
-                  <div
-                    className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[var(--foreground-muted)]"
-                    style={{ marginTop: "clamp(1.5rem, 3vw, 2.5rem)", fontSize: "clamp(0.7rem, 1vw, 0.8rem)" }}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <ShieldCheck size={14} strokeWidth={1.5} className="text-[var(--success)]" />
-                      No credit card
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Zap size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
-                      100 free credits
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Lock size={14} strokeWidth={1.5} className="text-[var(--secondary)]" />
-                      Your data stays yours
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="font-heading font-black text-[var(--foreground)] leading-[1.1] tracking-tighter mb-6" style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}>
+              Ready to kill <br className="hidden md:block" /> that exam?
+            </h2>
+            <p className="text-[var(--foreground-secondary)] max-w-md mx-auto mb-12 text-lg">
+              Upload your notes now. No account needed for your first session.
+            </p>
+            
+            <LandingUpload compact />
           </div>
         </StandardContainer>
       </section>

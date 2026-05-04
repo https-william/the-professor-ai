@@ -83,30 +83,35 @@ export default function PlatformShell({
         </>
     );
 
-    // During hydration/SSR, we render a non-displacing structural shell.
-    if (!isLoaded) {
-        return (
-            <div id="platform-shell-gate" className="contents" suppressHydrationWarning>
-                {children || loading || null}
-            </div>
-        );
-    }
-
     return (
         <PlatformErrorBoundary>
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={isDesktop ? "desktop" : isMobile ? "mobile" : "web"}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="contents"
-                    id="platform-root"
-                >
-                    {content}
-                </motion.div>
-            </AnimatePresence>
+            <div id="platform-shell-gate" className="contents" suppressHydrationWarning>
+                <AnimatePresence mode="wait">
+                    {!isLoaded ? (
+                        <motion.div
+                            key="platform-shell-loading"
+                            initial={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="contents"
+                        >
+                            {children || loading || null}
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key={isDesktop ? "desktop" : isMobile ? "mobile" : "web"}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="contents"
+                            id="platform-root"
+                        >
+                            {content}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </PlatformErrorBoundary>
     );
 }

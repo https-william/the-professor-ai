@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
@@ -13,7 +13,7 @@ import { AlertCircle, Eye, EyeOff, Loader2, CheckCircle2, Gavel, Shield, Check }
 
 type Step = 1 | 2;
 
-export default function SignupPage() {
+function SignupForm() {
     const [step, setStep] = useState<Step>(1);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -29,8 +29,16 @@ export default function SignupPage() {
     const router = useRouter();
     const { resolvedTheme } = useTheme();
     const supabase = createClient();
+    const searchParams = useSearchParams();
+    const topic = searchParams.get("topic");
+
+    const [pendingUpload, setPendingUpload] = useState<string | null>(null);
 
     useEffect(() => {
+        if (typeof window !== "undefined") {
+            setPendingUpload(localStorage.getItem("pending_upload_name"));
+        }
+
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
@@ -43,7 +51,6 @@ export default function SignupPage() {
     const handleGoogleSignup = async () => {
         setLoading(true);
         
-        // Sign out first to ensure we are creating a new account session
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             await supabase.auth.signOut();
@@ -66,7 +73,6 @@ export default function SignupPage() {
         
         setLoading(true);
 
-        // Ensure we sign out the old user before signing up the new one
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             await supabase.auth.signOut();
@@ -95,8 +101,6 @@ export default function SignupPage() {
 
     return (
         <div className="min-h-[100dvh] bg-[var(--background)] flex items-center justify-center relative overflow-hidden px-5 py-12 transition-colors duration-500">
-
-            {/* ═══ Living background ═══ */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute w-[min(600px,75vw)] h-[min(600px,75vw)] rounded-full"
                     style={{ top: "-20%", left: "-10%", background: "radial-gradient(circle, rgba(245,158,11,0.06), transparent 65%)", filter: "blur(60px)" }} />
@@ -104,22 +108,57 @@ export default function SignupPage() {
                     style={{ bottom: "-15%", right: "-10%", background: "radial-gradient(circle, rgba(99,102,241,0.06), transparent 65%)", filter: "blur(60px)" }} />
             </div>
 
-            {/* Theme toggle */}
             <ThemeToggle variant="floating" />
 
             <div className="relative z-10 w-full max-w-[400px]">
-
                 <div className="text-center mb-10">
                     <BrandLogo size="md" className="mx-auto mb-6" />
                     <h1 className="font-galaxie text-3xl md:text-4xl font-bold text-[var(--foreground)] tracking-tight">
-                        Create your account
+                        {pendingUpload ? "Save your study pack" : "Start Your Journey"}
                     </h1>
                     <p className="text-sm font-medium text-[var(--foreground-muted)] mt-2">
-                        Scholarly access on us
+                        {pendingUpload ? "Create an account to keep your progress." : "Get the Professor's edge for free."}
                     </p>
                 </div>
 
-                {/* ═══ Card ═══ */}
+                {pendingUpload && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8 p-5 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 text-center relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
+                            <Sparkles size={40} className="text-emerald-500" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-2">Progress Saved</p>
+                        <h3 className="text-sm font-bold text-[var(--foreground)]">
+                            Analysis of <span className="text-emerald-500 italic">"{pendingUpload}"</span> is ready.
+                        </h3>
+                        <p className="text-[11px] text-[var(--foreground-muted)] mt-2 leading-relaxed">
+                            Sign up now to unlock your full strategy lab.
+                        </p>
+                    </motion.div>
+                )}
+
+                {topic && !pendingUpload && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8 p-4 rounded-2xl bg-[var(--accent-bg)] border border-[var(--accent-glow)] text-center relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+                            <CheckCircle2 size={40} className="text-[var(--accent)]" />
+                        </div>
+                        <p className="text-[12px] font-black uppercase tracking-widest text-[var(--accent)] mb-1">Scholar Confirmed</p>
+                        <h3 className="text-sm font-bold text-[var(--foreground)]">
+                            Ready to master <span className="text-[var(--accent)]">{topic}</span>?
+                        </h3>
+                        <p className="text-[11px] text-[var(--foreground-muted)] mt-1 italic">
+                            Create your account to claim your full strategy lab.
+                        </p>
+                    </motion.div>
+                )}
+
                 <div className="relative">
                     <div className="p-7">
                         <AnimatePresence mode="wait">
@@ -130,10 +169,8 @@ export default function SignupPage() {
                                     exit={{ opacity: 0, y: -20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    {/* ─── STEP 1 ─── */}
                                     {step === 1 && (
                                         <>
-                                            {/* Google */}
                                             <button onClick={handleGoogleSignup} disabled={loading || !isAgeVerified}
                                                 className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium text-[14px] transition-all hover:bg-white/5 active:scale-[0.98] disabled:opacity-50"
                                                 style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--foreground-secondary)" }}>
@@ -145,7 +182,6 @@ export default function SignupPage() {
                                                 </svg>
                                                 Sign up with Google
                                             </button>
-
                                             <div className="flex items-center gap-3 my-6">
                                                 <div className="flex-1 h-px bg-[var(--border)]" />
                                                 <span className="text-[11px] text-[var(--foreground-muted)] uppercase tracking-widest">or</span>
@@ -153,8 +189,6 @@ export default function SignupPage() {
                                             </div>
                                         </>
                                     )}
-
-                                    {/* Error */}
                                     {error && (
                                         <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl mb-5 text-sm"
                                             style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.12)", color: "#f87171" }}>
@@ -162,8 +196,6 @@ export default function SignupPage() {
                                             {error}
                                         </div>
                                     )}
-
-                                    {/* Step 1 Form */}
                                     <form onSubmit={handleSignup} className="space-y-4">
                                         <div>
                                             <label htmlFor="s-email" className="block text-[11px] font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-1.5">Email</label>
@@ -192,26 +224,10 @@ export default function SignupPage() {
                                                 onFocus={() => setFocusedField("confirm")} onBlur={() => setFocusedField(null)}
                                                 className={inputClass} style={getInputStyle("confirm")} />
                                         </div>
-
-                                        {/* COPPA Age Gate */}
                                         <label className="flex items-start gap-4 mt-8 px-1 cursor-pointer group">
                                             <div className="relative flex-shrink-0 mt-0.5">
-                                                <input 
-                                                    type="checkbox" 
-                                                    id="age-gate" 
-                                                    className="sr-only" 
-                                                    checked={isAgeVerified}
-                                                    onChange={(e) => setIsAgeVerified(e.target.checked)}
-                                                />
-                                                <div className={`w-6 h-6 rounded-md border-2 transition-all flex items-center justify-center ${
-                                                    isAgeVerified 
-                                                        ? "bg-[#F59E0B] border-[#F59E0B]" 
-                                                        : "border-[var(--border)] bg-[var(--background-secondary)] group-hover:border-[var(--foreground-muted)]"
-                                                }`} style={{ 
-                                                    boxShadow: isAgeVerified ? "0 0 12px rgba(245,158,11,0.3)" : "none",
-                                                    // Ensure visibility even if var(--border) is faint
-                                                    borderColor: !isAgeVerified ? (resolvedTheme === "dark" ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.15)") : "#F59E0B"
-                                                }}>
+                                                <input type="checkbox" id="age-gate" className="sr-only" checked={isAgeVerified} onChange={(e) => setIsAgeVerified(e.target.checked)} />
+                                                <div className={`w-6 h-6 rounded-md border-2 transition-all flex items-center justify-center ${isAgeVerified ? "bg-[#F59E0B] border-[#F59E0B]" : "border-[var(--border)] bg-[var(--background-secondary)] group-hover:border-[var(--foreground-muted)]"}`} style={{ boxShadow: isAgeVerified ? "0 0 12px rgba(245,158,11,0.3)" : "none", borderColor: !isAgeVerified ? (resolvedTheme === "dark" ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.15)") : "#F59E0B" }}>
                                                     {isAgeVerified && <Check className="w-4 h-4 text-[#08080E]" strokeWidth={4} />}
                                                 </div>
                                             </div>
@@ -219,8 +235,6 @@ export default function SignupPage() {
                                                 I agree to the <button type="button" onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-[var(--foreground)] hover:text-[#F59E0B] transition-colors underline font-semibold">Terms of Use</button> and <button type="button" onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-[var(--foreground)] hover:text-[#F59E0B] transition-colors underline font-semibold">Privacy Policy</button>.
                                             </span>
                                         </label>
-
-                                        {/* Credits callout */}
                                         <div className="flex items-start gap-3 px-3.5 py-3 rounded-xl mt-4 mb-2"
                                             style={{ background: "var(--accent-bg)", border: "1px solid var(--accent-glow)" }}>
                                             <span className="text-lg mt-0.5">🎁</span>
@@ -228,16 +242,12 @@ export default function SignupPage() {
                                                 You&apos;ll get <strong>full access</strong> to all study tools and features instantly.
                                             </p>
                                         </div>
-
                                         <button type="submit" disabled={loading || !isAgeVerified}
                                             className="w-full mt-4 py-2.5 rounded-lg font-semibold text-[14px] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                                             style={{ background: "var(--foreground)", color: "var(--background)", boxShadow: "none" }}>
-                                            {loading ? (
-                                                <><Loader2 className="w-4 h-4 animate-spin" />Creating Account...</>
-                                            ) : "Create Account"}
+                                            {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Creating Account...</> : "Create Account"}
                                         </button>
                                     </form>
-
                                     <p className="text-center text-[13px] text-[var(--foreground-muted)] mt-6">
                                         Already have an account?{" "}
                                         <Link href="/login" className="text-[#F59E0B] hover:text-[#FCD34D] font-medium transition-colors">Sign in</Link>
@@ -251,11 +261,7 @@ export default function SignupPage() {
                                     className="py-12 flex flex-col items-center text-center"
                                 >
                                     <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
-                                        <motion.span 
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            className="flex items-center justify-center"
-                                        >
+                                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center justify-center">
                                             <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                                         </motion.span>
                                     </div>
@@ -273,8 +279,6 @@ export default function SignupPage() {
                         </AnimatePresence>
                     </div>
                 </div>
-
-                {/* Back links */}
                 <div className="flex items-center justify-center gap-6 mt-6">
                     <button onClick={() => setShowTerms(true)} className="text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1.5 group">
                         <Gavel className="w-[18px] h-[18px]" />
@@ -287,12 +291,22 @@ export default function SignupPage() {
                     </button>
                 </div>
             </div>
-
-            {/* Legal Modals */}
             <AnimatePresence>
                 {showPrivacy && <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />}
                 {showTerms && <TermsOfUseModal onClose={() => setShowTerms(false)} />}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+            </div>
+        }>
+            <SignupForm />
+        </Suspense>
     );
 }

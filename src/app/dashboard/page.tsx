@@ -16,6 +16,7 @@ const DashboardDesktop = dynamic(() => import("@/components/platforms/desktop/Da
 const DashboardMobile = dynamic(() => import("@/components/platforms/mobile/DashboardMobile"));
 import ShareCard from "@/components/ShareCard";
 import StreakMilestone from "@/components/features/StreakMilestone";
+import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 
 /* ═══════════════════════════════════════════════════
    HELPERS
@@ -74,7 +75,7 @@ export default function DashboardPage() {
                 }).then(() => {
                     // Only refresh user data once after the reward is posted
                     refreshUser();
-                    addToast(`Check your rewards! +${currentStreak} day Milestone reached.`, "success");
+                    addToast(`Check your rewards! +${currentStreak} day Milestone reached.`, "success", undefined, undefined, true);
                 }).catch(err => console.error("Failed to award milestone XP:", err));
             }
         }
@@ -143,11 +144,7 @@ export default function DashboardPage() {
     const greeting = getGreeting();
     
     if (user.isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-                <div className="w-12 h-12 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" />
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     const firstName = user.name?.split(" ")[0] || "Scholar";
@@ -178,7 +175,7 @@ export default function DashboardPage() {
                 web={<DashboardWeb {...dashboardProps} />}
                 desktop={<DashboardDesktop {...dashboardProps} />}
                 mobile={<DashboardMobile {...dashboardProps} />}
-                loading={<div className="min-h-screen flex items-center justify-center"><div className="w-12 h-12 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}
+                loading={<DashboardSkeleton />}
             />
 
             <StreakMilestone 

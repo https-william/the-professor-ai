@@ -13,7 +13,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
                 damping: 30,
                 mass: 1,
             }}
-            className="w-full h-full"
+            className="h-full w-full"
         >
             {children}
         </motion.div>

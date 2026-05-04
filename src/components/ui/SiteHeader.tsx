@@ -32,6 +32,7 @@ import {
     Pause
 } from "lucide-react";
 import { useTimerStore } from "@/store/useTimerStore";
+import { useAppPlatform } from "@/hooks/useAppPlatform";
 
 const HIDDEN_PATHS = [
     "/arena/play",
@@ -74,6 +75,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const { user } = useUser();
     const { theme } = useTheme();
     const { toasts, setIsOpen: setToastsOpen } = useToasts();
+    const { isDesktop } = useAppPlatform();
     const [mounted, setMounted] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -189,12 +191,15 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
 
+    // Calculate horizontal center offset if sidebar is visible (Desktop platform pages)
+    const sidebarOffset = (isApp && isDesktop) ? "2.5rem" : "0px";
+
     return (
         <motion.header
             initial={false}
             style={{ 
                 top: headerTop,
-                left: "50%",
+                left: `calc(50% + ${sidebarOffset})`,
                 x: "-50%",
                 width: headerWidth,
                 maxWidth: "1152px",
@@ -280,22 +285,22 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             </button>
                         </motion.div>
                     ) : isLanding ? (
-                        <motion.div 
-                            key="landing-nav"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            transition={{ type: "tween", duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                            className="flex items-center"
-                        >
-                            <Link
-                                href="/blog"
-                                className="btn-skeuo px-5 py-2 text-[11px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] flex items-center gap-2 transition-colors"
-                            >
-                                <BookOpen size={14} strokeWidth={1.5} />
-                                <span>Blog</span>
-                            </Link>
-                        </motion.div>
+                        <div className="hidden lg:flex items-center gap-8">
+                            {[
+                                { label: "Features", href: "/#features" },
+                                { label: "Method",   href: "/#method" },
+                                { label: "Pricing",  href: "/#pricing" },
+                                { label: "Blog",     href: "/blog" },
+                            ].map((link) => (
+                                <Link
+                                    key={link.label}
+                                    href={link.href}
+                                    className="text-[12px] font-black uppercase tracking-[0.15em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </div>
                     ) : (
                         <motion.div 
                             key="app-nav"
@@ -368,7 +373,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     </>
                 )}
 
-                {isLanding && (
+                {isLanding && !user.isAuthenticated && (
                     <motion.div 
                         layout="position"
                         transition={{ type: "tween", duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
@@ -379,6 +384,20 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             style={{ background: "var(--foreground)", color: "var(--background)", boxShadow: "none" }}
                         >
                             Login
+                        </Link>
+                    </motion.div>
+                )}
+                {isLanding && user.isAuthenticated && (
+                    <motion.div 
+                        layout="position"
+                        transition={{ type: "tween", duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                    >
+                        <Link
+                            href="/dashboard"
+                            className="btn-skeuo px-5 py-2 text-[11px] font-black uppercase tracking-widest active:scale-95 flex items-center gap-2"
+                        >
+                            <LayoutDashboard size={14} />
+                            <span>Dashboard</span>
                         </Link>
                     </motion.div>
                 )}

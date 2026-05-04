@@ -29,7 +29,7 @@ export async function generateMetadata({
   const fullUrl = `${SITE_URL}/blog/${slug}`;
 
   return {
-    title: `${post.title} | The Professor Blog`,
+    title: `${post.title} | The Professor`,
     description: post.excerpt,
     keywords: post.tags.join(", "),
     authors: [{ name: post.author }],

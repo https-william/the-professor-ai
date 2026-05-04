@@ -698,6 +698,9 @@ export function renderTemplate(templateId: string, content: ShareableContent): s
 
     // 4. Branding & Final
     svg += `
+    <g transform="translate(${width/2}, ${height - 68})">
+        <text text-anchor="middle" fill="${color.text}12" font-family="'Inter', sans-serif" font-size="10" font-weight="600" letter-spacing="0.15em">~~ABC~~ → XYZ · theprofessor.xyz</text>
+    </g>
     <g transform="translate(${width/2}, ${height - 50})">
         <text text-anchor="middle" fill="${color.text}22" font-family="'Inter', sans-serif" font-size="12" font-weight="900" letter-spacing="0.5em">THE PROFESSOR AI SYSTEM</text>
     </g>
