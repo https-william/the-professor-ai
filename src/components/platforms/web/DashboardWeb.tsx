@@ -156,7 +156,7 @@ export default function DashboardWeb({
             {/* Scroll sentinel for header pill morph */}
             <div data-header-sentinel className="absolute top-0 left-0 right-0 h-1 pointer-events-none z-50" />
 
-            <StandardContainer className="pt-16 pb-20 relative z-10">
+            <StandardContainer className="pt-24 pb-20 relative z-10">
                 <motion.div variants={stagger} initial="hidden" animate="show">
                     {/* Hero Zone */}
                     <motion.div variants={fadeUp} className="mb-8">

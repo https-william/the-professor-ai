@@ -40,19 +40,13 @@ const HIDDEN_PATHS = [
     "/login",
     "/signup",
     "/forgot-password",
-    "/blog",
-    "/flashcards",
-    "/quiz",
-    "/summary",
-    "/roadmap",
-    "/match",
 ];
 
 const MINIMAL_PATHS = [
     "/onboarding",
 ];
 
-const LANDING_PATHS = ["/", "/download"];
+const LANDING_PATHS = ["/", "/download", "/blog"];
 
 const MODES = [
     { id: "DASHBOARD", label: "Dashboard", href: "/dashboard", color: "#10B981", glow: "rgba(16,185,129,0.35)", icon: LayoutDashboard },
@@ -121,20 +115,20 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const isApp     = !isHidden && !isMinimal && !isLanding;
 
     // Map scrollY [0, 150] to transformation values
-    // Map scrollY [0, 150] to a normalized progress value [0, 1]
     const scrollYProgress = useTransform(scrollY, [0, 150], [0, 1]);
 
     // Derived motion values (hoisted to avoid re-creation)
+    // On app pages: header is always fully visible. On landing: fades in on scroll.
     const headerPaddingX = useTransform(scrollY, [0, 150], ["2rem", "1rem"]);
-    const headerTop = useTransform(scrollY, [0, 150], ["0px", "16px"]);
-    const headerPaddingBlock = useTransform(scrollY, [0, 150], ["16px", "8px"]);
+    const headerTop = useTransform(scrollY, [0, 150], ["0px", "12px"]);
+    const headerPaddingBlock = useTransform(scrollY, [0, 150], ["12px", "8px"]);
     const headerBorderRadius = useTransform(scrollY, [0, 150], ["0px", "28px"]);
     const headerBgOpacity = useTransform(scrollY, [0, 150], [0, 0.98]);
     const headerBlur = useTransform(scrollY, [0, 150], [0, 24]);
     const headerScale = useTransform(scrollY, [0, 150], [1, 0.98]);
     const headerWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", "92%"]);
 
-    // Derived motion values (hoisted to avoid re-creation)
+    // For APP pages: always use solid background (not scroll-driven)
     const headerBg = useTransform(headerBgOpacity, (o) =>
         `rgba(var(--background-secondary-rgb), ${o})`
     );
@@ -150,6 +144,19 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             ? "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)"
             : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)";
     });
+
+    // App-page fixed styles (always visible, no scroll dependency)
+    const appHeaderStyle = {
+        background: theme === "dark"
+            ? "rgba(12, 12, 22, 0.92)"
+            : "rgba(248, 248, 252, 0.92)",
+        backdropFilter: "blur(24px) saturate(180%)",
+        WebkitBackdropFilter: "blur(24px) saturate(180%)",
+        border: "1px solid var(--border)",
+        boxShadow: theme === "dark"
+            ? "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.06)"
+            : "0 4px 20px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)",
+    };
 
     const [isPill, setIsPill] = useState(false);
     useEffect(() => {
@@ -198,7 +205,19 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     return (
         <motion.header
             initial={false}
-            style={{ 
+            style={isApp ? {
+                // App pages: always visible, fixed position pill at top
+                top: "10px",
+                left: `calc(50% + ${sidebarOffset})`,
+                x: "-50%",
+                width: "calc(100% - 2rem)",
+                maxWidth: "1200px",
+                paddingInline: "1rem",
+                paddingBlock: "8px",
+                borderRadius: "28px",
+                ...appHeaderStyle,
+            } : {
+                // Landing/non-app: scroll-driven animation
                 top: headerTop,
                 left: `calc(50% + ${sidebarOffset})`,
                 x: "-50%",
