@@ -16,7 +16,9 @@ export interface BlogPost {
   coverGradient: string; // CSS gradient for the card header
   icon: string; // Material Symbols icon name
   featured?: boolean;
+  faqs?: { question: string; answer: string }[];
 }
+
 
 export const blogPosts: BlogPost[] = [
   {
@@ -32,7 +34,8 @@ You've spent all week in the library. You've highlighted half the textbook until
 
 In academia, we've been conditioned to believe that time spent equals results achieved. This is a lie. Highlighting and re-reading are "feel-good" activities. They create a "fluency illusion" where your brain recognizes the shapes of the words but has no idea how to apply the concepts. 
 
-Your professors aren't telling you this because they benefit from the status quo. It's easier to maintain a curve when 80% of the class is practicing low-leverage studying.
+Your professors aren't telling you this because they benefit from the status quo. It's easier to maintain a curve when 80% of the class is practicing low-leverage studying. You need to understand [The 'Cheat Code' to a 4.0 GPA](/blog/the-4-0-gpa-cheat-code).
+
 
 ## The Secret: Active Recall is a Blood Sport
 
@@ -56,7 +59,13 @@ Stop working hard on the wrong things. Experience the exam before it starts. Sto
     coverGradient: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
     icon: "Brain",
     featured: true,
+    faqs: [
+      { question: "What is Active Recall?", answer: "Active recall is a learning strategy where you force your brain to retrieve information from memory rather than passively reviewing notes. It is the most effective way to build long-term retention." },
+      { question: "Why is highlighting ineffective?", answer: "Highlighting creates a 'fluency illusion' where you recognize information without actually understanding or being able to retrieve it. It is a passive activity with low cognitive engagement." },
+      { question: "How does The Professor help with active recall?", answer: "The Professor automates the creation of high-fidelity exam simulations and flashcards, removing the friction of setup and allowing you to focus entirely on the retrieval process." }
+    ],
   },
+
   {
     slug: "the-4-0-gpa-cheat-code",
     title: "The 'Cheat Code' to a 4.0 GPA (That isn't actually cheating)",
@@ -70,7 +79,8 @@ The real 'winners'—the students who walk into the hall with total silence in t
 
 ## The Academic Industrial Complex is Afraid
 
-Why are universities banning AI? Because they're terrified that students will realize 90% of a degree is busywork. They want you to spend hours in the archives so they can justify the tuition. 
+Why are universities banning AI? Because they're terrified that students will realize 90% of a degree is busywork. They want you to spend hours in the archives so they can justify the tuition. You should understand [why your 12-hour cram session is a waste of time](/blog/why-cramming-doesn-t-work) before you can truly optimize.
+ 
 
 **The Professor** is the antidote. We don't do the work for you; we make the work 10x more effective.
 
@@ -92,7 +102,12 @@ Work with leverage. Get the result. Dominate the curve.
     coverGradient: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
     icon: "School",
     featured: true,
+    faqs: [
+      { question: "How should I use AI for studying?", answer: "Use AI to automate leverage—generating flashcards, summarizing dense materials, and challenging your logic—rather than using it to bypass the thinking process entirely." },
+      { question: "Can AI help me get a 4.0 GPA?", answer: "Yes, by focusing your energy on the 20% of content that matters most and automating the creation of study materials, you can achieve elite grades with significantly less effort." }
+    ],
   },
+
   {
     slug: "why-cramming-doesn-t-work",
     title: "Why your 12-hour cram session is a pathetic waste of time",
@@ -517,7 +532,12 @@ Stop stressing over WAEC and JAMB. Use AI to study smarter, not harder. Stop bei
     tags: ["WAEC", "JAMB", "CBT", "exam prep", "flashcards", "how to pass"],
     coverGradient: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
     icon: "School",
+    faqs: [
+      { question: "How to pass JAMB and WAEC?", answer: "Master the CBT environment through high-fidelity simulations and focus on active recall for core subjects like Chemistry, Physics, and Government." },
+      { question: "Can AI help with CBT exams?", answer: "Yes, AI can simulate the pressure and timing of CBTs while providing instant conceptual feedback on every mistake." }
+    ],
   },
+
   {
     slug: "ultimate-guide-to-flashcards",
     title: "The Ultimate Guide to Flashcards: Stop Memorizing, Start Learning (AI Edition)",
@@ -656,7 +676,12 @@ The system wants you to work hard. We want you to win. Get the 4.0, then go out 
     coverGradient: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
     icon: "Star",
     featured: true,
+    faqs: [
+      { question: "Is GPA really a scam?", answer: "In terms of measuring true intelligence, yes. It is a metric of compliance. However, it remains a critical gatekeeper for opportunities, which is why hacking the system is necessary." },
+      { question: "How do I hack my GPA legally?", answer: "By using 'Strategic Neglect' on low-value content and focusing entirely on the high-leverage concepts identified in your syllabus." }
+    ],
   },
+
   {
     slug: "professors-fear-ai",
     title: "Why your Professors are terrified of AI (Hint: It's because they're obsolete)",
@@ -687,7 +712,12 @@ The world is changing. Your professors are clinging to the past. You should be b
     tags: ["AI", "higher ed", "disruption", "future"],
     coverGradient: "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)",
     icon: "Science",
+    faqs: [
+      { question: "Why do professors ban AI?", answer: "Many ban it because it threatens the traditional lecture model and exposes inefficiencies in how knowledge is currently delivered and tested." },
+      { question: "How can I use AI responsibly in college?", answer: "Use it as a Socratic training partner and an efficiency tool to synthesize complex information, ensuring you still build deep personal intuition." }
+    ],
   },
+
   {
     slug: "library-is-trap",
     title: "The Library is a Productivity Trap: Why 'Grinding' is for Losers",

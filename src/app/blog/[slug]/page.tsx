@@ -6,8 +6,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BlogPostClient from "./BlogPostClient";
 import SEOHead from "@/components/SEOHead";
-import { getArticleSchema } from "@/lib/seo-schema";
+import { getArticleSchema, getFAQSchema } from "@/lib/seo-schema";
 import { getBreadcrumbSchema } from "@/components/SEOHead";
+
 
 /* ═══ Static Generation ═══ */
 export function generateStaticParams() {
@@ -95,7 +96,9 @@ export default async function BlogPostPage({
           { name: post.title, url: `/blog/${post.slug}` }
         ])} 
       />
+      {post.faqs && <SEOHead type="FAQPage" data={getFAQSchema(post.faqs)} />}
       <BlogPostClient post={post} />
+
     </>
 
   );

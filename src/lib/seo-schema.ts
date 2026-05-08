@@ -36,4 +36,18 @@ export const getArticleSchema = (post: {
   genre: "Educational Strategy",
   wordCount: post.content.split(/\s+/).length,
   articleBody: post.content.replace(/[#*`]/g, ""),
-});
+});
+
+export const getFAQSchema = (faqs: { question: string; answer: string }[]) => ({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: f.answer,
+    },
+  })),
+});
+

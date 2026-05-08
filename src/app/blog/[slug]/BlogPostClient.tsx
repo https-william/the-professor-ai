@@ -288,13 +288,34 @@ function inlineMd(text: string): string {
     .replace(
       /`(.+?)`/g,
       '<code class="px-1.5 py-0.5 rounded-md bg-[var(--background-secondary)] text-[var(--accent)] text-[13px] font-mono">$1</code>'
+    )
+    .replace(
+      /\[(.+?)\]\((.+?)\)/g,
+      '<a href="$2" class="text-[var(--accent)] font-bold hover:underline decoration-[var(--accent-glow)] decoration-2 underline-offset-4">$1</a>'
     );
 }
+
 
 /* ═══ Blog Post Client Component ═══ */
 export default function BlogPostClient({ post }: { post: BlogPost }) {
   const [copied, setCopied] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const router = useRouter();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const element = document.getElementById("main-scroll-container");
+      if (!element) return;
+      const totalHeight = element.scrollHeight - element.clientHeight;
+      const progress = (element.scrollTop / totalHeight) * 100;
+      setScrollProgress(progress);
+    };
+
+    const container = document.getElementById("main-scroll-container");
+    container?.addEventListener("scroll", handleScroll);
+    return () => container?.removeEventListener("scroll", handleScroll);
+  }, []);
+
 
   // Extract TOC headings
   const toc = useMemo(() => {
@@ -331,7 +352,14 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
 
   return (
     <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground-secondary)] pb-28 relative overflow-hidden">
+      {/* Progress Bar */}
+      <div 
+        className="fixed top-0 left-0 h-1 bg-[var(--accent)] z-[100] transition-all duration-150 ease-out"
+        style={{ width: `${scrollProgress}%`, boxShadow: "0 0 10px var(--accent-glow)" }}
+      />
+      
       {/* Ambient */}
+
       <div className="fixed inset-0 pointer-events-none z-0">
         <div
           className="absolute w-[500px] h-[500px] rounded-full animate-pulse"
@@ -484,8 +512,24 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
           {useMemo(() => renderMarkdown(post.content), [post.content])}
         </div>
 
+        {/* Professor's Verdict */}
+        <div 
+          className="mt-16 p-8 rounded-3xl border border-[var(--accent-glow)] bg-[var(--accent-bg)]/50 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Zap className="w-12 h-12 text-[var(--accent)]" />
+          </div>
+          <h3 className="text-[11px] font-black text-[var(--accent)] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+             <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+             The Professor's Verdict
+          </h3>
+          <p className="text-[15px] text-[var(--foreground-secondary)] italic leading-relaxed">
+            "Listen carefully. Information is not knowledge. Most of you are drowning in information but starving for strategy. Reading this article won't save you—only execution will. Take the frameworks above and run them through the lab. Otherwise, you're just another library zombie."
+          </p>
+        </div>
+
         {/* Tags */}
-        <div className="flex flex-wrap gap-2 mt-12 mb-16">
+        <div className="flex flex-wrap gap-2 mt-8 mb-16">
           {post.tags.map((tag) => (
             <span
               key={tag}
@@ -499,6 +543,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
             </span>
           ))}
         </div>
+
 
         {/* Conversion Footer */}
         <div 
