@@ -1,22 +1,19 @@
-export const dynamic = 'force-static';
-export const revalidate = false;
-
 import { MetadataRoute } from 'next';
 
-
-
 export default function robots(): MetadataRoute.Robots {
+  const SITE_URL = 'https://theprofessor.xyz';
+
   return {
     rules: {
       userAgent: '*',
       allow: '/',
       disallow: [
-        '/api/',
         '/dashboard/',
+        '/create/',
+        '/api/',
         '/settings/',
-        '/profile/',
       ],
     },
-    sitemap: 'https://theprofessor.xyz/sitemap.xml',
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
