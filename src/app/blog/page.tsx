@@ -28,6 +28,13 @@ export const metadata: Metadata = {
 
 
 export default function BlogPage() {
+  const globalFaqs = [
+    { question: "How does AI improve learning outcomes?", answer: "AI improves learning outcomes by providing personalized, instant feedback and automating the creation of retrieval-based study materials like flashcards and practice exams." },
+    { question: "What is the best AI for students in 2026?", answer: "The elite stack for 2026 includes The Professor AI for exam strategy, Claude 3.5 for logical reasoning, and Consensus for peer-reviewed research." },
+    { question: "Is AI in education safe?", answer: "Yes, when used as a Socratic study partner to enhance human cognition rather than a tool for academic dishonesty." },
+    { question: "How to pass WAEC and JAMB with AI?", answer: "Use AI to simulate the CBT environment and generate high-fidelity practice questions from the official syllabus." }
+  ];
+
   const getBreadcrumbSchema = () => ({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -50,7 +57,20 @@ export default function BlogPage() {
   return (
     <>
       <SEOHead type="BreadcrumbList" data={getBreadcrumbSchema()} />
+      <SEOHead type="FAQPage" data={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": globalFaqs.map(f => ({
+          "@type": "Question",
+          "name": f.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": f.answer
+          }
+        }))
+      }} />
       <BlogClient />
     </>
   );
 }
+

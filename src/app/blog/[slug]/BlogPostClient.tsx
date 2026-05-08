@@ -7,6 +7,7 @@ import type { BlogPost } from "@/lib/blog/posts";
 import { blogPosts } from "@/lib/blog/posts";
 import BrandLogo from "@/components/ui/BrandLogo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import StudyPersonaQuiz from "@/components/blog/StudyPersonaQuiz";
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -580,10 +581,14 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
 
       {/* Sidebar */}
       <aside className="hidden lg:block sticky top-28 self-start">
-        <div 
-          className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-md"
-          style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-        >
+        <div className="space-y-6">
+          <StudyPersonaQuiz />
+          
+          <div 
+            className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-md"
+            style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+          >
+
           <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">
             Table of Contents
           </h4>
@@ -619,7 +624,10 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
              </div>
           </div>
         </div>
-      </aside>
+      </div>
+    </aside>
+
+
 
     </div>
 
