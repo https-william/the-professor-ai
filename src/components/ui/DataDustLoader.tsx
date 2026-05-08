@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 /**
  * DataDustLoader — The Professor's Signature Generation Screen
  *
- * Design language: "Midnight Scholar at 3 AM"
- * - Warm amber identity, no purple
- * - Academic / archival aesthetic — ink, paper, calligraphy
+ * Design language: "Midnight Scholar"
+ * - High-performance brand blue identity
+ * - Technical aesthetic — data streams, ink, scholarly precision
  * - CSS-driven animation for reliability; Framer Motion for phrase swap
  * - Full-screen centered; passes through context-specific phrases
  */
@@ -47,8 +47,8 @@ function InkMoteCanvas() {
         };
         window.addEventListener("resize", onResize);
 
-        // Warm amber + deep teal palette — no purple
-        const COLORS = ["rgba(245,158,11,", "rgba(251,191,36,", "rgba(16,185,129,", "rgba(217,119,6,"];
+        // Brand blue + cyan palette
+        const COLORS = ["rgba(37,99,235,", "rgba(6,182,212,", "rgba(56,189,248,", "rgba(29,78,216,"];
 
         const motes = Array.from({ length: 48 }, () => ({
             x:   Math.random() * W,
@@ -73,7 +73,7 @@ function InkMoteCanvas() {
                         ctx.beginPath();
                         ctx.moveTo(motes[i].x, motes[i].y);
                         ctx.lineTo(motes[j].x, motes[j].y);
-                        ctx.strokeStyle = `rgba(245,158,11,${0.09 * (1 - d / 70)})`;
+                        ctx.strokeStyle = `rgba(37,99,235,${0.09 * (1 - d / 70)})`;
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
                     }
@@ -125,15 +125,15 @@ function OrbitRing() {
                 <circle
                     cx="48" cy="48" r="44"
                     fill="none"
-                    stroke="rgba(245,158,11,0.15)"
+                    stroke="rgba(37,99,235,0.15)"
                     strokeWidth="1"
                     strokeDasharray="12 6"
                 />
-                {/* Amber traveller node */}
+                {/* Blue traveller node */}
                 <circle
                     cx="48" cy="4" r="3.5"
-                    fill="#F59E0B"
-                    style={{ filter: "drop-shadow(0 0 6px rgba(245,158,11,0.8))" }}
+                    fill="var(--blue)"
+                    style={{ filter: "drop-shadow(0 0 6px var(--blue-glow))" }}
                 />
             </svg>
 
@@ -146,28 +146,31 @@ function OrbitRing() {
                 <circle
                     cx="28" cy="28" r="24"
                     fill="none"
-                    stroke="rgba(16,185,129,0.18)"
+                    stroke="rgba(6,182,212,0.18)"
                     strokeWidth="1"
                     strokeDasharray="4 10"
                 />
                 <circle
                     cx="28" cy="4" r="2.5"
-                    fill="#10B981"
-                    style={{ filter: "drop-shadow(0 0 5px rgba(16,185,129,0.9))" }}
+                    fill="var(--cyan)"
+                    style={{ filter: "drop-shadow(0 0 5px var(--cyan))" }}
                 />
             </svg>
 
-            {/* Core glyph — scholarly quill/ink */}
+            {/* Core glyph — scholarly pen-nib mark */}
             <div
-                className="relative z-10 w-10 h-10 rounded-2xl flex items-center justify-center"
+                className="relative z-10 w-12 h-12 rounded-2xl flex items-center justify-center"
                 style={{
-                    background: "radial-gradient(circle, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0.04) 100%)",
-                    border: "1px solid rgba(245,158,11,0.2)",
-                    boxShadow: "0 0 24px rgba(245,158,11,0.15), inset 0 1px 1px rgba(255,255,255,0.06)",
+                    background: "var(--blue-dim)",
+                    border: "1px solid var(--blue-border)",
+                    boxShadow: "0 0 24px var(--blue-glow), inset 0 1px 1px rgba(255,255,255,0.06)",
                     animation: "professor-pulse 2.4s ease-in-out infinite",
                 }}
             >
-                <span style={{ fontSize: "18px", lineHeight: 1 }}>🎓</span>
+                <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 36 L8 14 L12 10 L20 24 L28 10 L32 14 Z" fill="var(--blue)" />
+                    <path d="M20 24 V36" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" />
+                </svg>
             </div>
         </div>
     );
@@ -202,8 +205,8 @@ export default function DataDustLoader({
                     to   { transform: rotate(360deg); }
                 }
                 @keyframes professor-pulse {
-                    0%, 100% { box-shadow: 0 0 24px rgba(245,158,11,0.15), inset 0 1px 1px rgba(255,255,255,0.06); }
-                    50%       { box-shadow: 0 0 40px rgba(245,158,11,0.30), inset 0 1px 1px rgba(255,255,255,0.06); }
+                    0%, 100% { box-shadow: 0 0 24px var(--blue-glow), inset 0 1px 1px rgba(255,255,255,0.06); }
+                    50%       { box-shadow: 0 0 40px var(--blue-glow), inset 0 1px 1px rgba(255,255,255,0.06); }
                 }
                 @keyframes professor-shimmer {
                     from { transform: translateX(-100%); }
@@ -212,19 +215,19 @@ export default function DataDustLoader({
             `}</style>
 
             <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden"
-                style={{ background: "var(--background)" }}>
+                style={{ background: "var(--bg)" }}>
 
                 {/* Canvas backdrop */}
                 <div className="absolute inset-0">
                     <InkMoteCanvas />
                 </div>
 
-                {/* Radial warm glow behind the ring */}
+                {/* Radial blue glow behind the ring */}
                 <div
                     className="absolute rounded-full pointer-events-none"
                     style={{
                         width: "320px", height: "320px",
-                        background: "radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%)",
+                        background: "radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)",
                     }}
                 />
 
@@ -240,8 +243,7 @@ export default function DataDustLoader({
                     <div className="w-full text-center space-y-3">
                         {label && (
                             <p
-                                className="text-[10px] font-black uppercase tracking-[0.25em]"
-                                style={{ color: "var(--accent)", opacity: 0.7 }}
+                                className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--blue)] opacity-70"
                             >
                                 {label}
                             </p>
@@ -256,15 +258,15 @@ export default function DataDustLoader({
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{   opacity: 0, y: -8 }}
                                     transition={{ type: "tween", duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
-                                    className="text-[15px] font-semibold"
-                                    style={{ color: "var(--foreground)", fontFamily: "var(--font-tiempos, Georgia, serif)" }}
+                                    className="text-[15px] font-bold text-[var(--text)] tracking-tight"
+                                    style={{ fontFamily: "var(--font-sans)" }}
                                 >
                                     {phrase}
                                 </motion.p>
                             </AnimatePresence>
                         </div>
 
-                        {/* Animated amber progress bar */}
+                        {/* Animated blue progress bar */}
                         <div
                             className="relative h-[2px] w-48 mx-auto rounded-full overflow-hidden"
                             style={{ background: "var(--border)" }}
@@ -273,7 +275,7 @@ export default function DataDustLoader({
                                 className="absolute inset-y-0 left-0 rounded-full"
                                 style={{
                                     width: "40%",
-                                    background: "var(--accent)",
+                                    background: "var(--blue)",
                                     animation: "professor-shimmer 1.8s ease-in-out infinite",
                                 }}
                             />
@@ -293,16 +295,16 @@ export default function DataDustLoader({
                                         className="w-2 h-2 rounded-full"
                                         style={{
                                             background: done || active
-                                                ? "var(--accent)"
-                                                : "var(--foreground-muted)",
+                                                ? "var(--blue)"
+                                                : "var(--text-3)",
                                             opacity: done ? 1 : active ? 1 : 0.3,
-                                            boxShadow: active ? "0 0 8px var(--accent)" : "none",
+                                            boxShadow: active ? "0 0 8px var(--blue-glow)" : "none",
                                         }}
                                     />
                                     <span
                                         className="text-[9px] font-bold uppercase tracking-wider"
                                         style={{
-                                            color: active ? "var(--accent)" : "var(--foreground-muted)",
+                                            color: active ? "var(--blue)" : "var(--text-3)",
                                             opacity: done || active ? 1 : 0.35,
                                         }}
                                     >

@@ -21,13 +21,29 @@ import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 /* ═══════════════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════════════ */
-function getGreeting(): string {
+function getGreeting(userId?: string): string {
     const hour = new Date().getHours();
-    if (hour < 6) return "Burning the midnight oil";
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    if (hour < 21) return "Good evening";
-    return "Late night session";
+    
+    // Creative greetings
+    const morning = ["Good morning", "Rise and shine", "Ready to conquer?", "Welcome to the lab"];
+    const afternoon = ["Good afternoon", "Let's build that intuition", "Time to level up", "Midday focus mode"];
+    const evening = ["Good evening", "Evening strategy session", "Let's make some progress", "Wind down with mastery"];
+    const night = ["Burning the midnight oil", "Late night session", "Quiet hours, loud results", "The world sleeps, you learn"];
+    
+    // Pick based on user ID to keep it somewhat stable per session/day
+    let hash = 0;
+    if (userId) {
+        for (let i = 0; i < userId.length; i++) {
+            hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+        }
+    }
+    const idx = Math.abs(hash) % 4;
+
+    if (hour < 5) return night[idx];
+    if (hour < 12) return morning[idx];
+    if (hour < 17) return afternoon[idx];
+    if (hour < 22) return evening[idx];
+    return night[idx];
 }
 
 export default function DashboardPage() {
@@ -141,9 +157,9 @@ export default function DashboardPage() {
         });
     };
 
-    const greeting = getGreeting();
+    const greeting = getGreeting(user.id || undefined);
     
-    if (user.isLoading) {
+    if (user.isLoading || !user.name || user.name.includes("@")) {
         return <DashboardSkeleton />;
     }
 
@@ -166,7 +182,7 @@ export default function DashboardPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] overflow-x-hidden">
+        <main className="min-h-screen bg-transparent text-[var(--text)] overflow-x-hidden">
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
             <SEOHead type="BreadcrumbList" data={getBreadcrumbSchema([{ name: "Home", url: "/" }, { name: "Dashboard", url: "/dashboard" }])} />
 

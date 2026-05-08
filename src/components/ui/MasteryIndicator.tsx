@@ -22,9 +22,9 @@ export default function MasteryIndicator({
   const getMasteryLevel = (pct: number): { label: string; color: string } => {
     if (pct >= 90) return { label: "Mastered", color: "#10B981" };
     if (pct >= 70) return { label: "Strong", color: "#34D399" };
-    if (pct >= 50) return { label: "Learning", color: "#F59E0B" };
-    if (pct >= 25) return { label: "Developing", color: "#FBBF24" };
-    return { label: "Just Started", color: "#FB923C" };
+    if (pct >= 50) return { label: "Learning", color: "var(--blue)" };
+    if (pct >= 25) return { label: "Developing", color: "var(--cyan)" };
+    return { label: "Just Started", color: "var(--text-3)" };
   };
 
   const mastery = getMasteryLevel(percentage);
@@ -82,7 +82,7 @@ export default function MasteryIndicator({
             <span>{known} known</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+            <span className="w-2 h-2 rounded-full" style={{ background: "var(--blue)" }} />
             <span>{unknown} unknown</span>
           </div>
           <span>{total} total</span>
@@ -96,8 +96,8 @@ export default function MasteryIndicator({
 export function CompactMastery({ percentage }: { percentage: number }) {
   const getColor = (pct: number) => {
     if (pct >= 70) return "#10B981";
-    if (pct >= 40) return "#F59E0B";
-    return "#FB923C";
+    if (pct >= 40) return "var(--blue)";
+    return "var(--text-3)";
   };
 
   const color = getColor(percentage);

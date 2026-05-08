@@ -159,7 +159,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                         <ChevronLeft size={20} />
                     </button>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#F59E0B] mb-0.5">Study Mode</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-0.5">Study Mode</p>
                         <h1 className="text-sm font-bold text-[var(--foreground)] truncate max-w-[200px]">{title}</h1>
                     </div>
                 </div>
@@ -192,22 +192,22 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                     <div className={`relative w-full h-full transition-all duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                         {/* Front */}
                         <div className="absolute inset-0 rounded-[40px] bg-[var(--card-bg)] border border-white/10 p-12 flex flex-col items-center justify-center backface-hidden shadow-2xl">
-                            <p className="text-2xl font-bold text-center leading-tight tracking-tight">{currentCard.front}</p>
+                            <p className="text-2xl font-black text-center leading-tight tracking-tight text-[var(--text)]">{currentCard.front}</p>
                             <div className="absolute bottom-10 flex flex-col items-center gap-2">
-                                <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#F59E0B] transition-all" style={{ width: `${((currentIndex + 1)/flashcards.length)*100}%` }} />
+                                <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-[var(--blue)] transition-all shadow-[0_0_10px_var(--blue-glow)]" style={{ width: `${((currentIndex + 1)/flashcards.length)*100}%` }} />
                                 </div>
-                                <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-40">Tap to Flip</span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Tap to Flip</span>
                             </div>
                         </div>
                         {/* Back */}
                         <div className="absolute inset-0 rounded-[40px] bg-[var(--card-bg)] border border-white/10 p-12 flex flex-col items-center justify-center backface-hidden rotate-y-180 shadow-2xl">
                             <div className="flex flex-col items-center gap-6 w-full">
-                                <p className="text-xl font-serif text-center italic text-[#F59E0B]/90 leading-relaxed">
+                                <p className="text-xl font-sans font-bold text-center italic text-[var(--blue)] leading-relaxed">
                                     {eli5Text[currentIndex] || currentCard.back}
                                 </p>
                                 {!eli5Text[currentIndex] && (
-                                    <button onClick={(e) => handleEli5(e, currentCard.back, currentIndex)} className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20 text-[10px] font-bold uppercase tracking-wider hover:bg-[#F59E0B]/20 transition-all">
+                                    <button onClick={(e) => handleEli5(e, currentCard.back, currentIndex)} className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--blue-dim)] text-[var(--blue)] border border-[var(--blue-border)] text-[10px] font-black uppercase tracking-wider hover:bg-[var(--blue-active)] transition-all">
                                         <Baby size={14} />
                                         {isGeneratingEli5 ? "Simplifying..." : "ELI5"}
                                     </button>
@@ -218,10 +218,10 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 </motion.div>
 
                 <div className="flex items-center gap-6 mt-16 w-full max-w-sm">
-                    <button onClick={handlePrev} className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
+                    <button onClick={handlePrev} className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all border border-white/5">
                         <ChevronLeft />
                     </button>
-                    <button onClick={handleNext} className="flex-1 h-16 rounded-2xl bg-[#F59E0B] text-black font-black uppercase tracking-[0.2em] text-[11px] shadow-lg shadow-[#F59E0B]/20 active:scale-95 transition-all">
+                    <button onClick={handleNext} className="flex-1 h-16 rounded-2xl bg-[var(--blue)] text-white font-black uppercase tracking-[0.2em] text-[11px] shadow-lg shadow-[var(--blue-glow)] active:scale-95 transition-all">
                         {currentIndex === flashcards.length - 1 ? "Complete Session" : "Next Card"}
                     </button>
                 </div>

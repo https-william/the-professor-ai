@@ -14,7 +14,7 @@ export default function FinalCTA() {
 
   return (
     <section style={{
-      background: "#08080E",
+      background: "var(--bg)",
       padding: "clamp(80px, 12vw, 120px) clamp(24px, 6vw, 80px)",
       position: "relative",
       overflow: "hidden",
@@ -23,36 +23,39 @@ export default function FinalCTA() {
       <div style={{
         position: "absolute",
         inset: 0,
-        background: "radial-gradient(ellipse 80% 70% at 50% 50%, rgba(245,158,11,0.07) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 80% 70% at 50% 50%, var(--blue-glow) 0%, transparent 70%)",
         pointerEvents: "none",
+        opacity: 0.4
       }} />
 
       <div style={{ maxWidth: "720px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
-        <span className="section-label" style={{ textAlign: "center" }}>GET STARTED</span>
+        <span className="section-label" style={{ textAlign: "center", color: "var(--blue)" }}>GET STARTED</span>
 
         <h2 style={{
-          fontFamily: "'Galaxie Copernicus','Source Serif 4',Georgia,serif",
+          fontFamily: "var(--font-heading)",
           fontSize: "clamp(2rem, 5vw, 3.5rem)",
-          fontWeight: 500,
-          color: "#F5F0E8",
-          marginTop: 0,
+          fontWeight: 900,
+          color: "var(--text)",
+          marginTop: "12px",
+          letterSpacing: "-0.03em"
         }}>
-          Your exam won&apos;t wait. Neither should you.
+          Your exam won&apos;t wait. <span style={{ color: "var(--blue)" }}>Neither should you.</span>
         </h2>
 
         <p style={{
-          fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
+          fontFamily: "var(--font-sans)",
           fontSize: "16px",
-          color: "rgba(245,240,232,0.55)",
+          color: "var(--text-2)",
           maxWidth: "520px",
           margin: "16px auto 0",
           lineHeight: 1.7,
+          fontWeight: 500
         }}>
-          Upload your notes now. No account. No card. No commitment. The Professor reads, extracts, and builds — you study smarter.
+          Upload your notes now. No account. No commitment. The Professor reads, extracts, and builds — you study smarter.
         </p>
 
         {/* Upload Zone */}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "36px" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "48px" }}>
           <UploadZone compact onFileSelected={handleFileSelected} />
         </div>
 
@@ -62,30 +65,31 @@ export default function FinalCTA() {
           alignItems: "center",
           gap: "16px",
           maxWidth: "300px",
-          margin: "20px auto",
+          margin: "32px auto",
         }}>
-          <div style={{ flex: 1, height: "0.5px", background: "rgba(245,240,232,0.1)" }} />
-          <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "13px", color: "rgba(245,240,232,0.3)" }}>or</span>
-          <div style={{ flex: 1, height: "0.5px", background: "rgba(245,240,232,0.1)" }} />
+          <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>or</span>
+          <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
         </div>
 
         {/* CTA Button */}
         <Link
           href="/signup"
           className="btn-jelly-primary"
-          style={{ width: "240px", fontSize: "15px", padding: "12px 32px", textDecoration: "none" }}
+          style={{ width: "240px", fontSize: "14px", padding: "16px 32px", textDecoration: "none", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.05em" }}
         >
-          Create a free account →
+          Create Free Account →
         </Link>
 
         {/* Social proof footer */}
         <p style={{
-          fontFamily: "'Outfit',sans-serif",
+          fontFamily: "var(--font-sans)",
           fontSize: "12px",
-          color: "rgba(245,240,232,0.3)",
-          marginTop: "14px",
+          color: "var(--text-3)",
+          marginTop: "24px",
+          fontWeight: 600
         }}>
-          Joins 1,200+ Nigerian students already using The Professor
+          Join 1,200+ students already using The Professor
         </p>
       </div>
     </section>

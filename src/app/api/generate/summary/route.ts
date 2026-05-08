@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 
 import { NextRequest } from "next/server";
-import { hydraGenerateContent } from "@/lib/ai/hydra";
+import { hydraChatStream } from "@/lib/ai/hydra";
 import { createClient } from "@/lib/supabase/server";
 import { buildSummaryPrompt } from "@/lib/ai/prompts";
 import { parseSummaryResponse } from "@/lib/ai/schemas";
@@ -19,10 +19,7 @@ export async function POST(req: NextRequest) {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
-                status: 401,
-                headers: { "Content-Type": "application/json" },
-            });
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
         }
 
         // ── SaaS Guard: Enforce Plan & Credits ──────────────────────
@@ -39,10 +36,7 @@ export async function POST(req: NextRequest) {
 
         const contentResult = validateContent(body.content);
         if (!contentResult.isValid) {
-            return new Response(JSON.stringify({ error: contentResult.error || "Invalid content" }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" },
-            });
+            return new Response(JSON.stringify({ error: contentResult.error || "Invalid content" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
         const content = contentResult.sanitized!;
 
@@ -52,59 +46,87 @@ export async function POST(req: NextRequest) {
             body.explainStyle
         );
 
-        const responseText = await hydraGenerateContent(prompt, {
-            feature: "summary",
-            jsonMode: false,
-            timeoutMs: 45_000,
-        });
-
-        const summary = parseSummaryResponse(responseText);
-
-        // Generate a dynamic title via Groq
-        const title = await generateAITitle(content, 'summary');
-
-        // Update XP and Streaks
-        const stats = await recordActivity('summary', supabase, user.id);
-
-        // Save to database
-        let generationId = null;
+        let aiStream: ReadableStream;
         try {
-            const { data, error } = await supabase.from("generations").insert({
-                user_id: user.id,
-                type: "summary",
-                title,
-                content: { summary, style },
-                xp_earned: stats?.xpGained || 0
-            }).select("id").single();
-            
-            if (!error && data) {
-                generationId = data.id;
-            }
-        } catch (dbError) {
-            console.error("Failed to save generation:", dbError);
+            aiStream = await hydraChatStream(
+                "You are a master study coach. Output the requested summary in plain markdown. Generous spacing between ## sections is mandatory.",
+                [{ role: "user", content: prompt }],
+                { feature: "summary", timeoutMs: 60_000 }
+            );
+        } catch (aiError) {
+            console.error("Summary AI Error:", aiError);
+            return new Response(JSON.stringify({ error: "AI generation failed." }), {
+                status: 503,
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
-        // Deduct credits ONLY after successful completion
-        await deductCredits(supabase, user.id, 'summary');
+        const reader = aiStream.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
 
-        return new Response(JSON.stringify({
-            id: generationId,
-            summary,
-            title,
-            style,
-            xpEarned: stats?.xpGained,
-            newXpTotal: stats?.newXpTotal,
-            newStreak: stats?.newStreak
-        }), {
-            headers: { "Content-Type": "application/json" }
+        const stream = new ReadableStream({
+            async start(controller) {
+                try {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: "Distilling core concepts..." })}\n\n`));
+
+                    let fullMarkdown = "";
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value, { stream: true });
+                        fullMarkdown += chunk;
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "chunk", chunk })}\n\n`));
+                    }
+
+                    // Finalize: Titling, Stats, Saving
+                    const title = await generateAITitle(content, 'summary');
+                    const stats = await recordActivity('summary', supabase, user.id);
+
+                    let generationId = null;
+                    const { data, error: dbError } = await supabase.from("generations").insert({
+                        user_id: user.id,
+                        type: "summary",
+                        title,
+                        content: { summary: fullMarkdown, style },
+                        xp_earned: stats?.xpGained || 0
+                    }).select("id").single();
+
+                    if (data) {
+                        generationId = data.id;
+                    }
+
+                    await deductCredits(supabase, user.id, 'summary');
+
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                        status: "complete", 
+                        id: generationId, 
+                        title,
+                        xpEarned: stats?.xpGained,
+                        newXpTotal: stats?.newXpTotal,
+                        newStreak: stats?.newStreak
+                    })}\n\n`));
+
+                    controller.close();
+                } catch (error: any) {
+                    console.error("Summary Stream Error:", error);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", error: error.message })}\n\n`));
+                    controller.close();
+                }
+            }
+        });
+
+        return new Response(stream, {
+            headers: {
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            }
         });
 
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : "Failed to generate summary";
-        console.error("Summary Error:", error);
-        return new Response(JSON.stringify({ error: msg }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-        });
+        console.error("Summary Route Error:", error);
+        return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
     }
 }

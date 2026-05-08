@@ -115,15 +115,15 @@ export default function FocusTimer() {
     const progress = 1 - (timeLeft / TOTAL_TIME);
 
     return (
-        <div className="p-5 rounded-[32px] bg-[var(--card)]/50 backdrop-blur-xl border border-[var(--card-border)] relative overflow-hidden group hover:border-[var(--accent)]/30 transition-all flex flex-col h-full">
+        <div className="p-5 rounded-[32px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] relative overflow-hidden group hover:border-[var(--blue)]/30 transition-all flex flex-col h-full">
             {/* Ambient background blur */}
-            <div className={`absolute -top-10 -right-10 w-48 h-48 rounded-full blur-3xl opacity-[0.15] transition-colors duration-1000 ${mode === "focus" ? "bg-[var(--accent)]" : "bg-[var(--secondary)]"}`} />
+            <div className={`absolute -top-10 -right-10 w-48 h-48 rounded-full blur-3xl opacity-[0.15] transition-colors duration-1000 ${mode === "focus" ? "bg-[var(--blue)]" : "bg-[var(--cyan)]"}`} />
             
             <div className="flex items-center gap-2 mb-4 relative z-10">
-                <Clock size={13} className={mode === "focus" ? "text-[var(--accent)]" : "text-[var(--secondary)]"} />
-                <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--foreground-muted)]">Midnight Scholar</span>
+                <Clock size={13} className={mode === "focus" ? "text-[var(--blue)]" : "text-[var(--cyan)]"} />
+                <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--text-3)]">Midnight Scholar</span>
                 {isActive && (
-                    <span className={`ml-auto w-1.5 h-1.5 rounded-full animate-pulse ${mode === "focus" ? "bg-[var(--accent)]" : "bg-[var(--secondary)]"}`} />
+                    <span className={`ml-auto w-1.5 h-1.5 rounded-full animate-pulse ${mode === "focus" ? "bg-[var(--blue)]" : "bg-[var(--cyan)]"}`} />
                 )}
             </div>
 
@@ -143,7 +143,7 @@ export default function FocusTimer() {
                             initial={{ strokeDashoffset: 276 }}
                             animate={{ 
                                 strokeDashoffset: 276 - (276 * progress),
-                                filter: isActive ? ["drop-shadow(0 0 4px rgba(245,158,11,0.2))", "drop-shadow(0 0 12px rgba(245,158,11,0.6))", "drop-shadow(0 0 4px rgba(245,158,11,0.2))"] : "none"
+                                filter: isActive ? ["drop-shadow(0 0 4px var(--blue-glow))", "drop-shadow(0 0 12px var(--blue-glow))", "drop-shadow(0 0 4px var(--blue-glow))"] : "none"
                             }}
                             transition={{ 
                                 strokeDashoffset: { ease: "linear", duration: 1 },
@@ -152,20 +152,20 @@ export default function FocusTimer() {
                         />
                         <defs>
                             <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="var(--accent-light)" />
-                                <stop offset="100%" stopColor="var(--accent-dark)" />
+                                <stop offset="0%" stopColor="var(--blue)" />
+                                <stop offset="100%" stopColor="var(--blue-border)" />
                             </linearGradient>
                             <linearGradient id="secondary-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="var(--secondary-light)" />
-                                <stop offset="100%" stopColor="var(--secondary-dark)" />
+                                <stop offset="0%" stopColor="var(--cyan)" />
+                                <stop offset="100%" stopColor="var(--cyan-border)" />
                             </linearGradient>
                         </defs>
                     </svg>
                     <div className="absolute flex flex-col items-center justify-center">
-                        <span className="text-3xl font-black text-[var(--foreground)] tabular-nums tracking-tighter font-mono leading-none">
+                        <span className="text-3xl font-black text-[var(--text)] tabular-nums tracking-tighter font-mono leading-none">
                             {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
                         </span>
-                        <span className="text-[9px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest mt-1">
+                        <span className="text-[9px] font-black text-[var(--text-3)] uppercase tracking-widest mt-1">
                             {mode === "focus" ? "Deep Work" : "Rest Phase"}
                         </span>
                     </div>
@@ -175,14 +175,14 @@ export default function FocusTimer() {
                     <button 
                         onClick={handleToggle} 
                         className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all text-black ${
-                            mode === "focus" ? "bg-[var(--accent)] hover:bg-[var(--accent-light)] shadow-[0_0_20px_var(--accent-glow)]" : "bg-[var(--secondary)] hover:bg-[var(--secondary-light)] shadow-[0_0_20px_var(--secondary-bg)]"
+                            mode === "focus" ? "bg-[var(--blue)] hover:bg-[var(--blue-dim)] shadow-[0_0_20px_var(--blue-glow)]" : "bg-[var(--cyan)] hover:bg-[var(--cyan-dim)] shadow-[0_0_20px_var(--cyan-glow)]"
                         }`}
                     >
                         {isActive ? <Pause size={18} className="fill-current" /> : <Play size={18} className="fill-current ml-1" />}
                     </button>
                     <button 
                         onClick={handleReset} 
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--background-secondary)] border border-[var(--border)] active:scale-95 transition-all text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)]/30"
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--bg-2)] border border-[var(--border)] active:scale-95 transition-all text-[var(--text-3)] hover:text-[var(--text)] hover:border-[var(--text)]/30"
                     >
                         <RotateCcw size={16} />
                     </button>
@@ -199,15 +199,15 @@ export default function FocusTimer() {
                             exit={{ opacity: 0, y: -5 }}
                             className="text-center px-4"
                         >
-                            <p className="text-[11px] font-medium text-[var(--foreground-secondary)] italic leading-relaxed">"{quote.text}"</p>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mt-1.5">— {quote.author}</p>
+                            <p className="text-[11px] font-bold text-[var(--text-2)] italic leading-relaxed">"{quote.text}"</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-3)] mt-1.5">— {quote.author}</p>
                         </motion.div>
                     ) : mode === "break" ? (
                         <motion.div 
                             key="break-sugg"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="flex justify-center gap-3 font-mono text-[9px] uppercase tracking-widest text-[var(--secondary)] flex-wrap px-2 text-center"
+                            className="flex justify-center gap-3 font-mono text-[9px] uppercase tracking-widest text-[var(--cyan)] flex-wrap px-2 text-center"
                         >
                             <span className="flex items-center gap-1"><Coffee size={10} /> Hydrate</span>
                             <span className="flex items-center gap-1"><BookOpen size={10} /> Rest Eyes</span>
@@ -217,10 +217,10 @@ export default function FocusTimer() {
                             key="controls"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="flex justify-center gap-4 font-mono text-[9px] uppercase tracking-widest text-[var(--foreground-muted)]"
+                            className="flex justify-center gap-4 font-mono text-[9px] uppercase tracking-widest text-[var(--text-3)]"
                         >
-                            <button onClick={() => { setMode("focus"); setQuote({ text: "", author: "" }); }} className={(mode as string) === "focus" ? "text-[var(--accent)] font-bold" : "hover:text-[var(--foreground)]"}>Focus 25m</button>
-                            <button onClick={() => { setMode("break"); setQuote({ text: "", author: "" }); }} className={(mode as string) === "break" ? "text-[var(--secondary)] font-bold" : "hover:text-[var(--foreground)]"}>Break 5m</button>
+                            <button onClick={() => { setMode("focus"); setQuote({ text: "", author: "" }); }} className={(mode as string) === "focus" ? "text-[var(--blue)] font-black" : "hover:text-[var(--text)]"}>Focus 25m</button>
+                            <button onClick={() => { setMode("break"); setQuote({ text: "", author: "" }); }} className={(mode as string) === "break" ? "text-[var(--cyan)] font-black" : "hover:text-[var(--text)]"}>Break 5m</button>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -233,32 +233,32 @@ export default function FocusTimer() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
-                        className="absolute inset-0 bg-[var(--card)]/95 backdrop-blur-xl z-50 flex flex-col p-6 rounded-[32px] border border-[var(--border)]"
+                        className="absolute inset-0 bg-[var(--bg)]/95 backdrop-blur-xl z-50 flex flex-col p-6 rounded-[32px] border border-[var(--border)]"
                     >
-                        <div className="flex items-center gap-2 mb-4 text-[var(--accent)]">
+                        <div className="flex items-center gap-2 mb-4 text-[var(--blue)]">
                             <Edit3 size={16} />
                             <h4 className="text-sm font-black uppercase tracking-widest">Strategic Jotter</h4>
                         </div>
-                        <p className="text-xs text-[var(--foreground-secondary)] mb-4">What concept did you master in the last 25 minutes?</p>
+                        <p className="text-xs text-[var(--text-2)] mb-4 font-bold">What concept did you master in the last 25 minutes?</p>
                         
                         <textarea 
                             value={summaryText}
                             onChange={(e) => setSummaryText(e.target.value)}
                             placeholder="I finally understood the mechanics of..."
-                            className="w-full flex-1 bg-[var(--background-secondary)] border border-[var(--border)] rounded-2xl p-4 text-sm text-[var(--foreground)] resize-none focus:border-[var(--accent)]/50 focus:ring-1 focus:ring-[var(--accent)]/50 outline-none transition-all"
+                            className="w-full flex-1 bg-[var(--bg-2)] border border-[var(--border)] rounded-2xl p-4 text-sm text-[var(--text)] resize-none focus:border-[var(--blue)]/50 focus:ring-1 focus:ring-[var(--blue)]/50 outline-none transition-all"
                         />
                         
                         <div className="flex gap-2 mt-4">
                             <button 
                                 onClick={() => setShowSummary(false)}
-                                className="flex-1 py-3 rounded-xl font-bold text-xs bg-[var(--background-secondary)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                                className="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[var(--bg-2)] text-[var(--text-3)] hover:text-[var(--text)]"
                             >
                                 Dismiss
                             </button>
                             <button 
                                 onClick={saveSummary}
                                 disabled={!summaryText.trim()}
-                                className="flex-1 py-3 rounded-xl font-bold text-xs bg-[var(--accent)] text-black disabled:opacity-50"
+                                className="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[var(--blue)] text-black disabled:opacity-50"
                             >
                                 Log Mastery
                             </button>

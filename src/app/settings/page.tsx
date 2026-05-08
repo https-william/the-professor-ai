@@ -21,13 +21,13 @@ export default function SettingsPage() {
     };
 
     if (isLoading) return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+        <div className="min-h-screen flex items-center justify-center bg-transparent">
             <div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" />
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-amber-500/30">
+        <div className="min-h-screen bg-transparent text-[var(--foreground)] selection:bg-amber-500/30">
             {/* ═══ Header Section — Impeccable Rhythm ═══ */}
             <section className="pt-24 pb-12 md:pt-32 md:pb-16 border-b border-[var(--border)]">
                 <StandardContainer narrow>

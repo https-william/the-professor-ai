@@ -205,7 +205,7 @@ export default function DesktopSidebar() {
                             onClick={() => setShowProfileMenu(!showProfileMenu)}
                             className="w-full flex items-center gap-4 p-3 rounded-2xl border border-transparent hover:border-[var(--border)] hover:bg-[var(--foreground)]/[0.02] transition-all duration-300 group/profile"
                         >
-                            <div className="w-6 h-6 shrink-0 rounded-full bg-gradient-to-tr from-[#F59E0B] to-amber-300 flex items-center justify-center text-black font-bold text-[10px] uppercase">
+                            <div className="w-6 h-6 shrink-0 rounded-full bg-gradient-to-tr from-[var(--blue)] to-[var(--blue-light)] flex items-center justify-center text-white font-bold text-[10px] uppercase">
                                 {user?.email?.charAt(0) || <User size={14} />}
                             </div>
                             <div className="flex-1 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">

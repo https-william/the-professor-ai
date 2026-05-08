@@ -1,308 +1,532 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import BrandLogo from "@/components/ui/BrandLogo";
-import { usePWA } from "@/context/PWAContext";
+import { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
+import { useAppPlatform } from "@/hooks/useAppPlatform";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, usePathname } from "next/navigation";
 import { 
-    Loader2, 
-    ChevronRight, 
-    ChevronLeft,
+    Backpack, 
+    GraduationCap, 
+    Medal, 
+    Briefcase, 
+    Puzzle, 
+    Brain, 
+    Layers, 
+    Timer, 
+    Zap, 
+    Footprints, 
+    Dumbbell, 
+    Clock, 
+    MessageSquare, 
+    HelpCircle, 
+    Cpu, 
+    RotateCw, 
     CheckCircle2, 
-    Bell, 
-    Download,
-    GraduationCap,
-    BookOpen,
-    Target,
-    Brain,
-    Clock,
-    Zap,
-    Trophy
+    AlertCircle, 
+    Check, 
+    Users, 
+    Star, 
+    Library, 
+    Sparkles, 
+    ChevronLeft, 
+    ChevronRight, 
+    LogIn,
+    Smartphone,
+    Monitor,
+    ShieldCheck
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-
-// Types for onboarding data
-type OnboardingData = {
-    university: string;
-    year: string;
-    examDate: string;
-    subjects: string[];
+/* ═══ Neumorphic Helpers ═══ */
+const clay = {
+    card: {
+        background: "var(--card)",
+        backdropFilter: "blur(40px)",
+        WebkitBackdropFilter: "blur(40px)",
+        borderRadius: "28px",
+        border: "1px solid var(--border)",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.05)",
+    } as React.CSSProperties,
+    input: {
+        background: "var(--background)",
+        borderRadius: "16px",
+        border: "1px solid var(--border)",
+        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.05)",
+    } as React.CSSProperties,
 };
 
-const STEPS = 5;
+const EDU_LEVELS = [
+    { id: "high_school", icon: Backpack, label: "High School" },
+    { id: "undergrad", icon: GraduationCap, label: "Undergraduate" },
+    { id: "postgrad", icon: Medal, label: "Postgraduate" },
+    { id: "professional", icon: Briefcase, label: "Professional" },
+];
+
+const PAIN_POINTS = [
+    { id: "concepts", icon: Puzzle, label: "Explain complex concepts safely." },
+    { id: "recall", icon: Brain, label: "Active Recall (Flashcards/Quizzes)." },
+    { id: "synthesis", icon: Layers, label: "Synthesize long papers/textbooks." },
+    { id: "procrastination", icon: Timer, label: "I need consistency and habits." },
+];
+
+const COMMITMENT_LEVELS = [
+    { id: "15m", icon: Zap, label: "15 mins", desc: "Quick daily habit" },
+    { id: "30m", icon: Footprints, label: "30 mins", desc: "Steady progress" },
+    { id: "1hr", icon: Dumbbell, label: "1+ hour", desc: "Deep mastery" },
+];
+
+const TESTIMONIALS = [
+    { quote: "The Professor didn't just help me pass; it fundamentally changed how I understand complex algorithms.", author: "Sarah J.", role: "CS Major" },
+    { quote: "Finally, an AI that challenges me instead of just feeding me the answers. The active recall tools are game-changing.", author: "Michael T.", role: "Med Student" },
+    { quote: "I used to procrastinate reading long PDFs. Now, I upload them and battle through the material.", author: "Elena R.", role: "Ph.D Candidate" }
+];
+
+const CURRICULUM_FEATURES = [
+    { title: "Dynamic Spaced Repetition", icon: Clock, color: "var(--blue)", desc: "Optimizes memory retention automatically." },
+    { title: "Socratic Method Dialogue", icon: MessageSquare, color: "#10B981", desc: "Guides you to the answer instead of spoon-feeding." },
+    { title: "Hyper-Personalized Quizzes", icon: HelpCircle, color: "#818CF8", desc: "Tests tailored to your exact weaknesses." },
+];
 
 export default function OnboardingPage() {
-    const [step, setStep] = useState(1);
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
-    const [data, setData] = useState<OnboardingData>({
-        university: "",
-        year: "",
-        examDate: "",
-        subjects: [],
-    });
+    const { user, completeOnboarding, saveOnboardingStep } = useUser();
+    const { isDesktop, isMobile, platform } = useAppPlatform();
     const router = useRouter();
-    const supabase = createClient();
-    const { requestNotificationPermission } = usePWA();
-    const { completeOnboarding } = useUser();
+    const pathname = usePathname();
+
+    // ── State Hooks ──
+    const [step, setStep] = useState(1);
+    const [isSaving, setIsSaving] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [username, setUsername] = useState("");
+    const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+    const [testiIndex, setTestiIndex] = useState(0);
+    const [age, setAge] = useState<string>("");
+    const [eduLevel, setEduLevel] = useState("");
+    const [selectedPainPoints, setSelectedPainPoints] = useState<string[]>([]);
+    const [commitment, setCommitment] = useState("");
+    const [analyzingProgress, setAnalyzingProgress] = useState(0);
+    const [curriculumReady, setCurriculumReady] = useState(false);
+    const [topic, setTopic] = useState("");
+    const [topicError, setTopicError] = useState("");
+
+    // ── Effect Hooks ──
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Load persisted topic from landing page
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const persisted = localStorage.getItem("pending_mastery");
+            if (persisted) setTopic(persisted);
+        }
+    }, []);
+
+    // Testimonial Carousel Effect
+    useEffect(() => {
+        if (step === 4) {
+            const timer = setInterval(() => {
+                setTestiIndex(prev => (prev + 1) % TESTIMONIALS.length);
+            }, 4000);
+            return () => clearInterval(timer);
+        }
+    }, [step]);
 
     useEffect(() => {
-        const checkUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.push("/login");
-            } else {
-                setUser(user);
-                setLoading(false);
+        if (step !== 1) return;
+        if (!username || username.length < 3) {
+            setUsernameStatus("idle");
+            return;
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            setUsernameStatus("invalid");
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setUsernameStatus("checking");
+            try {
+                const res = await fetch(`/api/user/profile?username=${username.toLowerCase()}`);
+                const data = await res.json();
+                if (data.profile && data.profile.id !== user.id) {
+                    setUsernameStatus("taken");
+                } else {
+                    setUsernameStatus("available");
+                }
+            } catch {
+                setUsernameStatus("available");
             }
-        };
-        checkUser();
-    }, [router, supabase]);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [username, user.id, step]);
 
-    const handleNext = () => {
-        if (step < STEPS) setStep(step + 1);
-        else handleComplete();
-    };
+    // Analyzing Animation
+    useEffect(() => {
+        if (step === 9 && !curriculumReady) {
+            const duration = 2500;
+            const interval = 50;
+            const steps = duration / interval;
+            let currentStep = 0;
 
-    const handlePrev = () => {
-        if (step > 1) setStep(step - 1);
-    };
+            const timer = setInterval(() => {
+                currentStep++;
+                setAnalyzingProgress(Math.min((currentStep / steps) * 100, 100));
+                if (currentStep >= steps) {
+                    clearInterval(timer);
+                    setCurriculumReady(true);
+                }
+            }, interval);
+            return () => clearInterval(timer);
+        }
+    }, [step, curriculumReady]);
 
-    const handleComplete = async () => {
-        setLoading(true);
-        
-        // Claim the pending upload if it exists
-        const pendingMastery = localStorage.getItem("pending_mastery");
-        const pendingUploadName = localStorage.getItem("pending_upload_name");
-
-        const success = await completeOnboarding({
-            education_level: data.year || "university",
-            study_goal: data.examDate || "exams",
-            preferred_subjects: data.subjects,
-        } as any);
-
-        if (success) {
-            // Clear pending items
-            localStorage.removeItem("pending_mastery");
-            localStorage.removeItem("pending_upload_name");
+    // ── Render Logic ──
+    const isLanding = pathname === "/";
+    const isAuthPage = ["/login", "/signup", "/forgot-password"].includes(pathname || "");
+    
+    // Redirect if already onboarded
+    useEffect(() => {
+        if (mounted && user.hasOnboarded) {
             router.push("/dashboard");
-        } else {
-            router.push("/dashboard");
+        }
+    }, [mounted, user.hasOnboarded, router]);
+
+    // Don't mount on landing, auth pages, or if unauthenticated
+    if (!mounted || isLanding || isAuthPage || user.hasOnboarded || !user.isAuthenticated) return null;
+
+    const handleNext = async () => {
+        setIsSaving(true);
+        try {
+            if (step === 1) {
+                // Identity & Handle
+                await saveOnboardingStep({
+                    first_name: firstName.trim(),
+                    last_name: lastName.trim(),
+                    username: username.toLowerCase().trim(),
+                    alias: firstName.trim()
+                });
+                setStep(2);
+            } else if (step === 2) {
+                // Academic Profile
+                await saveOnboardingStep({
+                    age: parseInt(age),
+                    education_level: eduLevel,
+                    study_goal: JSON.stringify({ painPoints: selectedPainPoints })
+                });
+                setStep(3);
+            } else if (step === 3) {
+                // Commitment & Topic
+                if (topic && topic.length >= 3) {
+                    setStep(4);
+                    await generateInitialRoadmap();
+                } else {
+                    setTopicError("Please specify a subject to master.");
+                }
+            } else if (step === 4) {
+                // Analysis -> Finish
+                setStep(5);
+            }
+        } catch (error) {
+            console.error("Onboarding progression failed:", error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const isStepValid = () => {
-        switch (step) {
-            case 2: return data.university !== "";
-            case 3: return data.year !== "";
-            case 4: return data.examDate !== "";
-            default: return true;
+    const generateInitialRoadmap = async () => {
+        try {
+            const res = await fetch("/api/generate/roadmap", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    title: topic, 
+                    context: `User is a ${eduLevel} student focused on ${selectedPainPoints.join(", ")}. Learning Goal: Master ${topic}.` 
+                }),
+            });
+            if (res.ok) {
+                setCurriculumReady(true);
+            } else {
+                setCurriculumReady(true);
+            }
+        } catch (error) {
+            console.error("Roadmap generation failed during onboarding:", error);
+            setCurriculumReady(true);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-[100dvh] bg-[var(--background)] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--foreground)]" />
-            </div>
+    const handleFinish = async () => {
+        setIsSaving(true);
+        const combinedGoal = JSON.stringify({
+            painPoints: selectedPainPoints,
+            commitmentTime: commitment,
+            initialTopic: topic,
+            platformDetected: platform
+        });
+        await completeOnboarding({
+            alias: firstName.trim(),
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            username: username.toLowerCase().trim(),
+            age: parseInt(age),
+            education_level: eduLevel,
+            study_goal: combinedGoal
+        });
+        setIsSaving(false);
+        router.push("/dashboard");
+    };
+
+    const togglePainPoint = (id: string) => {
+        setSelectedPainPoints(prev => 
+            prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
         );
-    }
+    };
 
-    const slideVariants = {
-        enter: (direction: number) => ({ x: direction > 0 ? 100 : -100, opacity: 0, scale: 0.95 }),
-        center: { x: 0, opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 30 } as any },
-        exit: (direction: number) => ({ x: direction < 0 ? 100 : -100, opacity: 0, scale: 0.95, transition: { duration: 0.2 } })
+    // Animation Configs
+    const stepVariants = {
+        initial: { opacity: 0, scale: 0.95, y: 15 },
+        animate: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const } },
+        exit: { opacity: 0, scale: 1.02, y: -10, transition: { duration: 0.25, ease: "easeIn" as const } }
     };
 
     return (
-        <div className="min-h-[100dvh] bg-[var(--background)] flex flex-col relative overflow-hidden selection:bg-amber-500/30">
-            {/* Progress Bar */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-[var(--border)] z-50">
-                <motion.div 
-                    className="h-full bg-[var(--foreground)]"
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${(step / STEPS) * 100}%` }}
-                    transition={{ ease: "easeInOut", duration: 0.5 }}
-                />
-            </div>
+        <div className="min-h-screen w-full flex items-center justify-center p-4 overflow-hidden font-sans bg-[var(--background)] relative">
+            {/* Cinematic Ambient Blur Background */}
+            <div className="absolute inset-0 bg-[#08080E]/80 backdrop-blur-[100px]" />
+            
+            {/* Ambient Orbs */}
+            <motion.div 
+                className="absolute w-[800px] h-[800px] rounded-full mix-blend-screen opacity-20 pointer-events-none"
+                style={{ background: "radial-gradient(circle, var(--blue-dim), transparent 70%)", filter: "blur(120px)" }}
+                animate={{ scale: [1, 1.1, 1], x: [0, 40, 0], y: [0, -40, 0] }}
+                transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+            />
 
-            {/* Top Nav */}
-            <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-40">
-                {step > 1 && step < STEPS && (
-                    <button onClick={handlePrev} className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--card)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
-                        <ChevronLeft size={20} />
-                    </button>
+            {/* Modal Container */}
+            <div className="relative z-10 w-full max-w-[480px] overflow-hidden bg-[var(--card)]" style={clay.card}>
+                
+                {/* Embedded Top Progress Bar */}
+                {step > 1 && step < 6 && (
+                    <div className="absolute top-0 left-0 right-0 h-[3px] bg-[var(--bg-2)]">
+                        <div 
+                            className="h-full bg-gradient-to-r from-[var(--blue)] to-[var(--blue-light)] transition-all duration-700 ease-out shadow-[0_0_15px_var(--blue-glow)]" 
+                            style={{ width: `${((step - 1) / 5) * 100}%` }} 
+                        />
+                    </div>
                 )}
-                <div className="mx-auto">
-                    <BrandLogo size="sm" />
-                </div>
-            </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex items-center justify-center p-6 pt-24">
-                <div className="w-full max-w-lg relative">
+                <div className="px-8 py-10 min-h-[480px] flex flex-col justify-between">
                     <AnimatePresence mode="wait">
-                        <motion.div key={step} variants={slideVariants} initial="enter" animate="center" exit="exit" className="w-full">
-                            
-                            {/* STEP 1: Welcome & Context */}
-                            {step === 1 && (
-                                <div className="text-center">
-                                    <div className="w-20 h-20 mx-auto rounded-[2rem] bg-[var(--foreground)]/5 flex items-center justify-center mb-8 relative overflow-hidden group">
-                                        <div className="absolute inset-0 bg-[var(--foreground)] opacity-5 animate-pulse" />
-                                        <GraduationCap size={40} className="text-[var(--foreground)]" />
-                                    </div>
-                                    <h1 className="text-4xl font-black text-[var(--foreground)] tracking-tighter mb-4 leading-none">
-                                        Account Verified.
-                                    </h1>
-                                    <p className="text-lg text-[var(--foreground-muted)] font-medium leading-relaxed mb-12">
-                                        Your study pack for <span className="text-[var(--foreground)] font-bold italic">"{localStorage.getItem("pending_upload_name") || "your material"}"</span> is ready. Just 3 quick details to finish setting up your lab.
-                                    </p>
-                                    <button onClick={handleNext} className="w-full py-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl">
-                                        Finish Setup
-                                    </button>
+                        
+                        {/* STEP 1: IDENTITY & HANDLE */}
+                        {step === 1 && (
+                            <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col h-full justify-center">
+                                <div className="text-center mb-10">
+                                    <h2 className="font-sans text-2xl font-black text-[var(--text)] mb-2 tracking-tight">Your Scholar Profile.</h2>
+                                    <p className="text-[14px] text-[var(--text)]/40 font-medium">How should The Professor address you?</p>
                                 </div>
-                            )}
-
-                            {/* STEP 2: University */}
-                            {step === 2 && (
-                                <div className="space-y-8">
-                                    <div className="text-center">
-                                        <h2 className="text-3xl font-black text-[var(--foreground)] tracking-tight">Which University?</h2>
-                                        <p className="text-[var(--foreground-muted)] font-medium mt-2">So the Professor can adapt to your school's style.</p>
+                                <div className="space-y-4">
+                                    <div className="flex gap-4">
+                                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First Name" className="w-1/2 px-5 py-4 font-bold text-[var(--text)] outline-none placeholder:text-[var(--text)]/20 transition-all focus:border-[var(--blue)]/50" style={clay.input} />
+                                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last Name" className="w-1/2 px-5 py-4 font-bold text-[var(--text)] outline-none placeholder:text-[var(--text)]/20 transition-all focus:border-[var(--blue)]/50" style={clay.input} />
                                     </div>
-                                    <div className="space-y-3">
-                                        {["University of Lagos (UNILAG)", "Covenant University", "University of Ibadan (UI)", "Obafemi Awolowo University (OAU)", "Ahmadu Bello University (ABU)", "Other / International"].map(uni => (
-                                            <button 
-                                                key={uni}
-                                                onClick={() => { setData({...data, university: uni}); handleNext(); }}
-                                                className={cn(
-                                                    "w-full text-left p-5 rounded-2xl border-2 font-bold transition-all flex items-center justify-between group",
-                                                    data.university === uni ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--border)] bg-[var(--card)]/50 hover:border-[var(--foreground)]/30"
-                                                )}
-                                            >
-                                                <span>{uni}</span>
-                                                <ChevronRight size={18} className={cn("transition-transform group-hover:translate-x-1", data.university === uni && "opacity-0")} />
+                                    <div className="relative">
+                                        <input type="text" value={username} onChange={e => setUsername(e.target.value.toLowerCase())} placeholder="Choose a Handle (@)" className="w-full px-5 py-4 font-bold text-[var(--text)] outline-none placeholder:text-[var(--text)]/20 transition-all focus:border-[var(--blue)]/50 pr-12" style={clay.input} />
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2">
+                                            {usernameStatus === "checking" && <RotateCw size={20} className="animate-spin text-[var(--text)]/30" />}
+                                            {usernameStatus === "available" && <CheckCircle2 size={20} className="text-[#10B981] drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
+                                            {(usernameStatus === "taken" || usernameStatus === "invalid") && <AlertCircle size={20} className="text-[#EF4444]" />}
+                                        </div>
+                                    </div>
+                                    <div className="h-6 text-center mt-2">
+                                        {usernameStatus === "checking" && <p className="text-[12px] text-[var(--text)]/30 font-bold animate-pulse">Checking handle...</p>}
+                                        {usernameStatus === "available" && <p className="text-[12px] text-[#10B981] font-bold">Handle is available.</p>}
+                                        {usernameStatus === "taken" && <p className="text-[12px] text-[#EF4444] font-bold">Handle is already claimed.</p>}
+                                        {usernameStatus === "invalid" && <p className="text-[12px] text-[#EF4444] font-bold">Alphanumeric characters only.</p>}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                        
+                        {/* STEP 2: SCHOLAR CONTEXT */}
+                        {step === 2 && (
+                            <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
+                                <div className="text-center mb-6">
+                                    <h2 className="font-sans text-2xl font-black text-[var(--text)] mb-2 tracking-tight">Academic Context.</h2>
+                                    <p className="text-[14px] text-[var(--text)]/40 font-medium">Aligning difficulty to your profile.</p>
+                                </div>
+                                
+                                <div className="flex gap-4">
+                                    <input type="tel" value={age} onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Age" className="w-1/4 px-4 py-4 font-black text-[var(--text)] text-center text-xl" style={clay.input} />
+                                    <div className="flex-1 grid grid-cols-2 gap-2">
+                                        {EDU_LEVELS.map(l => (
+                                            <button key={l.id} onClick={() => setEduLevel(l.id)} className={`py-3 rounded-2xl border transition-all ${eduLevel === l.id ? 'bg-[var(--blue-dim)] border-[var(--blue)]' : 'bg-[var(--bg-2)] border-[var(--border)]'}`}>
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${eduLevel === l.id ? 'text-[var(--blue)]' : 'text-[var(--text)]/30'}`}>{l.label}</span>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-                            )}
 
-                            {/* STEP 3: Year */}
-                            {step === 3 && (
-                                <div className="space-y-8 text-center">
-                                    <div>
-                                        <h2 className="text-3xl font-black text-[var(--foreground)] tracking-tight">Current Level?</h2>
-                                        <p className="text-[var(--foreground-muted)] font-medium mt-2">To tailor the complexity of your study materials.</p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {["100L", "200L", "300L", "400L", "500L", "Postgrad"].map(lvl => (
-                                            <button 
-                                                key={lvl}
-                                                onClick={() => { setData({...data, year: lvl}); handleNext(); }}
-                                                className={cn(
-                                                    "p-8 rounded-3xl border-2 font-black text-2xl transition-all",
-                                                    data.year === lvl ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--border)] bg-[var(--card)]/50 hover:border-[var(--foreground)]/30"
-                                                )}
-                                            >
-                                                {lvl}
-                                            </button>
-                                        ))}
+                                <div className="space-y-2 pt-4">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text)]/20 pl-1">Primary Struggle Areas</p>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {PAIN_POINTS.map(p => {
+                                            const isSelected = selectedPainPoints.includes(p.id);
+                                            return (
+                                                <button key={p.id} onClick={() => togglePainPoint(p.id)} className={`w-full flex items-center p-3.5 rounded-xl border transition-all ${isSelected ? 'bg-[#10B981]/10 border-[#10B981]/30' : 'bg-[var(--bg-2)] border-[var(--border)]'}`}>
+                                                    <p.icon size={16} className={`mr-3 ${isSelected ? 'text-[#10B981]' : 'text-[var(--text)]/20'}`} />
+                                                    <span className={`text-[12px] font-bold ${isSelected ? 'text-[#10B981]' : 'text-[var(--text)]/60'}`}>{p.label}</span>
+                                                    {isSelected && <Check size={16} className="text-[#10B981] ml-auto" />}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            )}
+                            </motion.div>
+                        )}
 
-                            {/* STEP 4: Exam Date */}
-                            {step === 4 && (
-                                <div className="space-y-8 text-center">
-                                    <div>
-                                        <h2 className="text-3xl font-black text-[var(--foreground)] tracking-tight">Your Next Exam?</h2>
-                                        <p className="text-[var(--foreground-muted)] font-medium mt-2">The Professor will build a countdown strategy for you.</p>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {[
-                                            { label: "Within 2 weeks", val: "2-weeks", icon: Zap },
-                                            { label: "Next Month", val: "1-month", icon: Target },
-                                            { label: "End of Semester", val: "end-semester", icon: Clock },
-                                            { label: "Just Learning", val: "learning", icon: Brain }
-                                        ].map(opt => (
-                                            <button 
-                                                key={opt.val}
-                                                onClick={() => { setData({...data, examDate: opt.val}); handleNext(); }}
-                                                className={cn(
-                                                    "w-full text-left p-6 rounded-2xl border-2 font-bold transition-all flex items-center gap-4",
-                                                    data.examDate === opt.val ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--border)] bg-[var(--card)]/50 hover:border-[var(--foreground)]/30"
-                                                )}
-                                            >
-                                                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", data.examDate === opt.val ? "bg-[var(--background)]/20 text-[var(--background)]" : "bg-[var(--foreground)]/5 text-[var(--foreground-muted)]")}>
-                                                    <opt.icon size={20} />
-                                                </div>
-                                                <span className="text-lg">{opt.label}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* STEP 5: Viral Loop / Done */}
-                            {step === 5 && (
-                                <div className="text-center space-y-8">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center relative">
-                                        <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
-                                        <Trophy className="text-emerald-500" size={40} />
-                                    </div>
-                                    <h2 className="text-4xl font-black text-[var(--foreground)] tracking-tighter leading-none">
-                                        You're Legend Status.
+                        {/* STEP 3: COMMITMENT & TOPIC */}
+                        {step === 3 && (
+                            <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
+                                <div className="text-center mb-6">
+                                    <h2 className="font-sans text-2xl font-black text-[var(--text)] mb-2 tracking-tight">
+                                        {topic ? "Confirm your Goal." : "Strategy & Topic."}
                                     </h2>
-                                    <p className="text-[var(--foreground-muted)] font-medium text-lg leading-relaxed max-w-sm mx-auto">
-                                        Your strategy lab is built. Don't let your coursemates struggle — share the Professor with them.
+                                    <p className="text-[14px] text-[var(--text)]/40 font-medium">
+                                        {topic ? `You're mastering ${topic}.` : "What are we mastering today?"}
                                     </p>
-                                    
-                                    <div className="space-y-3 pt-4">
-                                        <button 
-                                            onClick={() => {
-                                                const text = encodeURIComponent("I'm using The Professor to kill my exams this semester. It's an AI study strategist for Nigerian students. Try it: https://theprofessor.ai");
-                                                window.open(`https://wa.me/?text=${text}`, "_blank");
-                                            }}
-                                            className="w-full py-5 rounded-2xl bg-[#25D366] text-white font-black uppercase tracking-widest text-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-                                        >
-                                            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                                            Invite my coursemates
-                                        </button>
-                                        <button onClick={handleComplete} className="w-full py-4 rounded-xl bg-transparent text-[var(--foreground-muted)] font-bold text-sm hover:text-[var(--foreground)] transition-colors">
-                                            Go to my Dashboard
-                                        </button>
-                                    </div>
                                 </div>
-                            )}
 
-                        </motion.div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {COMMITMENT_LEVELS.map(c => (
+                                        <button key={c.id} onClick={() => setCommitment(c.id)} className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${commitment === c.id ? 'bg-[var(--blue-dim)] border-[var(--blue)]' : 'bg-[var(--bg-2)] border-[var(--border)]'}`}>
+                                            <c.icon size={18} className={`mb-2 ${commitment === c.id ? 'text-[var(--blue)]' : 'text-[var(--text)]/20'}`} />
+                                            <span className={`text-[10px] font-black uppercase ${commitment === c.id ? 'text-[var(--blue)]' : 'text-[var(--text)]/40'}`}>{c.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-4 pt-4">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text)]/20 pl-1">Initial Mastery Topic</p>
+                                    <textarea 
+                                        value={topic} 
+                                        onChange={e => { setTopic(e.target.value); setTopicError(""); }}
+                                        placeholder="e.g. Molecular Biology, Advanced Calculus..." 
+                                        className="w-full px-5 py-6 font-bold text-[var(--text)] outline-none placeholder:text-[var(--text)]/10 text-center text-lg min-h-[120px] resize-none leading-relaxed" 
+                                        style={clay.input} 
+                                    />
+                                    {topicError && <p className="text-[11px] text-red-500 font-bold text-center">{topicError}</p>}
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* STEP 4: ARCHITECTING */}
+                        {step === 4 && (
+                            <motion.div key="step4" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col justify-center h-full">
+                                {!curriculumReady ? (
+                                    <div className="text-center py-12">
+                                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="w-20 h-20 mx-auto mb-10 rounded-3xl flex items-center justify-center bg-[var(--bg-2)] border border-[var(--border)] shadow-[0_0_40px_var(--blue-glow)]">
+                                            <Cpu size={40} className="text-[var(--blue)]" />
+                                        </motion.div>
+                                        <h2 className="font-sans text-xl font-black text-[var(--text)] mb-6 animate-pulse">Architecting Strategy...</h2>
+                                        <div className="h-2 w-full bg-[var(--bg-2)] rounded-full overflow-hidden max-w-[280px] mx-auto border border-[var(--border)]">
+                                            <div className="h-full bg-gradient-to-r from-[var(--blue)] to-[var(--emerald)] transition-all duration-75" style={{ width: `${analyzingProgress}%` }} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+                                        <div className="mb-8">
+                                            <Sparkles size={48} className="mx-auto mb-5 text-[var(--emerald)] drop-shadow-[0_0_20px_var(--emerald-glow)]" />
+                                            <h2 className="font-sans text-2xl font-black text-[var(--text)] mb-3 tracking-tight">Your Strategy is Ready.</h2>
+                                            <p className="text-[12px] font-black uppercase tracking-widest text-[var(--blue-text)] bg-[var(--blue-dim)] px-4 py-2 rounded-xl inline-block border border-[var(--blue-border)]">{topic}</p>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {CURRICULUM_FEATURES.map((f, i) => (
+                                                <div key={f.title} className="p-4 rounded-2xl flex items-center gap-4 bg-[var(--bg-2)] border border-[var(--border)] text-left">
+                                                    <f.icon size={24} style={{ color: f.color }} className="shrink-0" />
+                                                    <div>
+                                                        <div className="text-[13px] font-black text-[var(--text)]">{f.title}</div>
+                                                        <div className="text-[11px] text-[var(--text)]/40 font-bold">{f.desc}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {/* STEP 5: GIFT & FINISH */}
+                        {step === 5 && (
+                            <motion.div key="step5" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto">
+                                <motion.div 
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
+                                    className="w-32 h-32 mx-auto mb-10 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-amber-600 shadow-[0_20px_50px_rgba(245,158,11,0.4)] border-4 border-[var(--border)] relative"
+                                >
+                                    <Zap size={64} className="text-black" fill="currentColor" />
+                                    <div className="absolute inset-0 rounded-full animate-pulse bg-amber-400/20 blur-2xl -z-10" />
+                                </motion.div>
+                                
+                                <h2 className="font-sans text-3xl font-black text-[var(--text)] mb-4 tracking-tighter">Welcome, Scholar.</h2>
+                                <p className="text-[16px] text-[var(--text)]/60 font-medium mb-12 px-4 italic leading-relaxed">
+                                    To kickstart your journey, The Professor has assigned <span className="text-amber-500 font-black">100 Credits</span> to your archives.
+                                </p>
+                            </motion.div>
+                        )}
+
                     </AnimatePresence>
 
-                    {/* Bottom Navigation / Next Button */}
-                    {step > 1 && step < 5 && (
-                        <div className="mt-12">
+                    {/* Navigation Controls */}
+                    <div className="mt-8 pt-4 flex items-center gap-4 relative z-20">
+                        {step > 1 && step < 4 && (
+                            <button onClick={() => setStep(step - 1)} className="w-14 h-14 rounded-2xl bg-[var(--bg-2)] text-[var(--text)]/40 hover:text-[var(--text)]/90 hover:bg-white/10 transition-all border border-[var(--border)] active:scale-95 flex items-center justify-center shrink-0">
+                                <ChevronLeft size={28} />
+                            </button>
+                        )}
+                        {(step < 4 || (step === 4 && !curriculumReady)) && (
                             <button
                                 onClick={handleNext}
-                                disabled={!isStepValid()}
-                                className="w-full py-5 rounded-2xl font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-3 group disabled:opacity-20 disabled:cursor-not-allowed"
-                                style={{
-                                    background: isStepValid() ? "var(--foreground)" : "var(--background-secondary)",
-                                    color: isStepValid() ? "var(--background)" : "var(--foreground-muted)",
-                                    border: isStepValid() ? "none" : "1px solid var(--border)"
-                                }}
+                                disabled={isSaving || (step === 1 && (!firstName || !lastName || !username || usernameStatus !== "available")) || (step === 2 && (!age || parseInt(age) < 10 || !eduLevel || selectedPainPoints.length === 0)) || (step === 3 && (!commitment || !topic.trim()))}
+                                className="flex-1 h-14 rounded-2xl font-black text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:grayscale"
+                                style={{ background: "linear-gradient(135deg, var(--blue), var(--blue-dark))", color: "#fff", boxShadow: "0 10px 30px var(--blue-glow)" }}
                             >
-                                Continue
-                                <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                                {isSaving || usernameStatus === "checking" ? (
+                                    <div className="flex items-center gap-2">
+                                        <RotateCw size={20} className="animate-spin" />
+                                        <span>{usernameStatus === "checking" ? "Checking..." : "Saving..."}</span>
+                                    </div>
+                                ) : step === 3 ? "Analyze" : "Continue"}
+                                {!isSaving && usernameStatus !== "checking" && step < 3 && <ChevronRight size={22} />}
                             </button>
-                        </div>
-                    )}
+                        )}
+                        {curriculumReady && step === 4 && (
+                            <button
+                                onClick={() => setStep(5)}
+                                className="flex-1 h-14 rounded-2xl font-black text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                                style={{ background: "linear-gradient(135deg, var(--blue), var(--blue-dark))", color: "#fff", boxShadow: "0 10px 30px var(--blue-glow)" }}
+                            >
+                                Review Strategy
+                                <ChevronRight size={22} />
+                            </button>
+                        )}
+                        {step === 5 && (
+                            <button
+                                onClick={handleFinish}
+                                disabled={isSaving}
+                                className="flex-1 h-16 rounded-2xl font-black text-[15px] tracking-[0.2em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.98] px-8"
+                                style={{ background: "linear-gradient(135deg, var(--emerald), var(--emerald-border))", color: "#000", boxShadow: "0 12px 40px var(--emerald-glow)" }}
+                            >
+                                {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Claim Gift & Enter"}
+                                {!isSaving && <LogIn size={22} />}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
+

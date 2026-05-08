@@ -29,20 +29,21 @@ const TESTIMONIALS = [
 export default function TestimonialsSection() {
   return (
     <section style={{
-      background: "#08080E",
+      background: "var(--bg)",
       padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
       maxWidth: "1100px",
       margin: "0 auto",
     }}>
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: "48px" }}>
-        <span className="section-label" style={{ textAlign: "center" }}>STUDENT STORIES</span>
+        <span className="section-label" style={{ textAlign: "center", color: "var(--blue)" }}>STUDENT STORIES</span>
         <h2 style={{
-          fontFamily: "'Galaxie Copernicus','Source Serif 4',Georgia,serif",
+          fontFamily: "var(--font-heading)",
           fontSize: "clamp(1.8rem, 4vw, 3rem)",
-          fontWeight: 500,
-          color: "#F5F0E8",
-          marginTop: 0,
+          fontWeight: 900,
+          color: "var(--text)",
+          marginTop: "12px",
+          letterSpacing: "-0.03em"
         }}>
           From upload to exam-ready.
         </h2>
@@ -55,12 +56,19 @@ export default function TestimonialsSection() {
         gap: "20px",
       }}>
         {TESTIMONIALS.map((t, i) => (
-          <div key={i} className="card-redesign animate-up" style={{ transitionDelay: `${i * 100}ms` }}>
+          <div key={i} className="card-redesign animate-up" style={{ 
+            transitionDelay: `${i * 100}ms`,
+            background: "var(--bg-2)",
+            border: "1px solid var(--border)",
+            borderRadius: "24px",
+            padding: "32px"
+          }}>
             {/* Accent bar */}
             <div style={{
               width: "32px",
               height: "3px",
-              background: `rgba(245,158,11,${t.barOpacity})`,
+              background: "var(--blue)",
+              opacity: t.barOpacity,
               borderRadius: "2px",
               marginBottom: "20px",
             }} />
@@ -68,47 +76,47 @@ export default function TestimonialsSection() {
             {/* Stars */}
             <div style={{ display: "flex", gap: "2px", marginBottom: "14px" }}>
               {[...Array(5)].map((_, j) => (
-                <span key={j} style={{ color: "#F59E0B", fontSize: "14px" }}>★</span>
+                <span key={j} style={{ color: "var(--blue)", fontSize: "14px" }}>★</span>
               ))}
             </div>
 
             {/* Quote */}
             <p style={{
-              fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
-              fontSize: "16px",
-              fontWeight: 400,
-              color: "#F5F0E8",
-              lineHeight: 1.75,
+              fontFamily: "var(--font-sans)",
+              fontSize: "15px",
+              fontWeight: 500,
+              color: "var(--text)",
+              lineHeight: 1.6,
               fontStyle: "italic",
             }}>
               &ldquo;{t.quote}&rdquo;
             </p>
 
             {/* Author */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "24px" }}>
               <div style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #1c1c30, #12121F)",
-                border: "1px solid rgba(245,240,232,0.1)",
+                width: "44px",
+                height: "44px",
+                borderRadius: "14px",
+                background: "var(--blue-dim)",
+                border: "1px solid var(--blue-border)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
               }}>
                 <span style={{
-                  fontFamily: "'Outfit',sans-serif",
+                  fontFamily: "var(--font-sans)",
                   fontSize: "13px",
-                  fontWeight: 600,
-                  color: "rgba(245,240,232,0.5)",
+                  fontWeight: 800,
+                  color: "var(--blue)",
                 }}>
                   {t.initials}
                 </span>
               </div>
               <div>
-                <div style={{ fontFamily: "'Outfit',sans-serif", fontSize: "14px", fontWeight: 700, color: "#F5F0E8" }}>{t.name}</div>
-                <div style={{ fontFamily: "'Outfit',sans-serif", fontSize: "12px", color: "rgba(245,240,232,0.4)" }}>{t.detail}</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 800, color: "var(--text)" }}>{t.name}</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", fontWeight: 500 }}>{t.detail}</div>
               </div>
             </div>
           </div>

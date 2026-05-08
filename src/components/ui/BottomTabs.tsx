@@ -14,11 +14,11 @@ import {
 import { cn } from "@/lib/utils";
 
 const TABS = [
-    { id: "dashboard", label: "Home", href: "/dashboard", icon: LayoutDashboard, color: "#10B981" },
-    { id: "create", label: "Create", href: "/create", icon: Sparkles, color: "#F59E0B" },
-    { id: "library", label: "Library", href: "/library", icon: Library, color: "#10B981" },
-    { id: "hub", label: "Hub", href: "/hub", icon: Globe, color: "#8B5CF6" },
-    { id: "profile", label: "You", href: "/profile", icon: User, color: "#F59E0B" },
+    { id: "dashboard", label: "Home", href: "/dashboard", icon: LayoutDashboard, color: "var(--emerald)" },
+    { id: "create", label: "Create", href: "/create", icon: Sparkles, color: "var(--blue)" },
+    { id: "library", label: "Library", href: "/library", icon: Library, color: "var(--violet)" },
+    { id: "hub", label: "Hub", href: "/hub", icon: Globe, color: "var(--cyan)" },
+    { id: "profile", label: "You", href: "/profile", icon: User, color: "var(--blue)" },
 ];
 
 export default function BottomTabs() {
@@ -68,8 +68,8 @@ export default function BottomTabs() {
                                         layoutId="bottom-tab-active"
                                         className="absolute inset-0 rounded-2xl z-0"
                                         style={{
-                                            backgroundColor: `${tab.color}15`,
-                                            border: `1px solid ${tab.color}30`
+                                            backgroundColor: `color-mix(in srgb, ${tab.color} 15%, transparent)`,
+                                            border: `1px solid color-mix(in srgb, ${tab.color} 30%, transparent)`
                                         }}
                                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                     />
@@ -85,7 +85,7 @@ export default function BottomTabs() {
                                 )}
                                 style={{
                                     color: isActive ? tab.color : undefined,
-                                    filter: isActive ? `drop-shadow(0 0 8px ${tab.color}50)` : "none"
+                                    filter: isActive ? `drop-shadow(0 0 8px ${tab.color})` : "none"
                                 }}
                             />
                             

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getRedirectUrl } from "@/lib/api-client";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -53,7 +54,7 @@ export default function LoginPage() {
     return (
         <div style={{
             minHeight: "100dvh",
-            background: "#08080E",
+            background: "var(--bg)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -67,17 +68,18 @@ export default function LoginPage() {
                     position: "absolute",
                     top: "24px",
                     left: "24px",
-                    fontFamily: "'Outfit', sans-serif",
+                    fontFamily: "var(--font-heading)",
                     fontSize: "13px",
-                    color: "rgba(245,240,232,0.35)",
+                    fontWeight: 700,
+                    color: "var(--text-3)",
                     textDecoration: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
                     transition: "color 150ms ease",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = "#F5F0E8"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,240,232,0.35)"; }}
+                onMouseEnter={e => { e.currentTarget.style.color = "var(--text)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "var(--text-3)"; }}
             >
                 ← Back
             </Link>
@@ -86,25 +88,24 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div style={{ textAlign: "center", marginBottom: "32px" }}>
                     <div style={{
-                        width: "40px", height: "40px", borderRadius: "10px",
-                        background: "linear-gradient(135deg, #F59E0B 0%, #C47B00 100%)",
                         display: "inline-flex", alignItems: "center", justifyContent: "center",
                         marginBottom: "16px",
                     }}>
-                        <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "18px", fontWeight: 800, color: "#08080E" }}>P</span>
+                        <BrandLogo size="md" />
                     </div>
                     <h1 style={{
-                        fontFamily: "'Outfit',sans-serif",
+                        fontFamily: "var(--font-heading)",
                         fontSize: "24px",
-                        fontWeight: 700,
-                        color: "#F5F0E8",
+                        fontWeight: 900,
+                        color: "var(--text)",
+                        letterSpacing: "-0.03em"
                     }}>
                         Welcome back.
                     </h1>
                     <p style={{
-                        fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
+                        fontFamily: "var(--font-serif)",
                         fontSize: "14px",
-                        color: "rgba(245,240,232,0.5)",
+                        color: "var(--text-3)",
                         marginTop: "8px",
                     }}>
                         Continue where you left off.
@@ -117,8 +118,8 @@ export default function LoginPage() {
                     disabled={loading}
                     style={{
                         width: "100%",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(245,240,232,0.12)",
+                        background: "var(--bg-2)",
+                        border: "1px solid var(--border)",
                         borderRadius: "1.25rem",
                         padding: "12px",
                         display: "flex",
@@ -126,11 +127,11 @@ export default function LoginPage() {
                         justifyContent: "center",
                         gap: "10px",
                         cursor: "pointer",
-                        transition: "background 150ms ease, border-color 150ms ease",
+                        transition: "all 150ms ease",
                         opacity: loading ? 0.5 : 1,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.borderColor = "rgba(245,240,232,0.22)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(245,240,232,0.12)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-3)"; e.currentTarget.style.borderColor = "var(--border-2)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -138,14 +139,14 @@ export default function LoginPage() {
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "14px", fontWeight: 600, color: "#F5F0E8" }}>Continue with Google</span>
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>Continue with Google</span>
                 </button>
 
                 {/* Divider */}
                 <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "20px 0" }}>
-                    <div style={{ flex: 1, height: "0.5px", background: "rgba(245,240,232,0.1)" }} />
-                    <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "12px", color: "rgba(245,240,232,0.3)" }}>or</span>
-                    <div style={{ flex: 1, height: "0.5px", background: "rgba(245,240,232,0.1)" }} />
+                    <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-4)" }}>or</span>
+                    <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
                 </div>
 
                 {/* Error */}
@@ -186,11 +187,12 @@ export default function LoginPage() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <label htmlFor="login-pass" className="field-label" style={{ marginBottom: 0 }}>Password</label>
                             <Link href="/forgot-password" style={{
-                                fontFamily: "'Outfit',sans-serif",
+                                fontFamily: "var(--font-sans)",
                                 fontSize: "12px",
-                                color: "rgba(245,158,11,0.5)",
+                                color: "var(--blue)",
                                 textDecoration: "none",
                                 cursor: "pointer",
+                                fontWeight: 600
                             }}>
                                 Forgot password?
                             </Link>
@@ -233,14 +235,14 @@ export default function LoginPage() {
                 </form>
 
                 <p style={{
-                    fontFamily: "'Outfit',sans-serif",
+                    fontFamily: "var(--font-sans)",
                     fontSize: "13px",
-                    color: "rgba(245,240,232,0.5)",
+                    color: "var(--text-3)",
                     textAlign: "center",
                     marginTop: "20px",
                 }}>
                     New to The Professor?{" "}
-                    <Link href="/signup" style={{ color: "#F59E0B", textDecoration: "none", fontWeight: 600 }}>
+                    <Link href="/signup" style={{ color: "var(--blue)", textDecoration: "none", fontWeight: 700 }}>
                         Create a free account
                     </Link>
                 </p>

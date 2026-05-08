@@ -22,52 +22,34 @@ interface SummaryViewerProps {
     generationId?: string | null;
 }
 
-function SummaryCheckpoint({ text, onCorrect }: { text: string; onCorrect: () => void }) {
+function SummaryCheckpoint({ block, onCorrect }: { block: any; onCorrect: () => void }) {
     const [isAnswered, setIsAnswered] = useState(false);
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
-    const [isCorrect, setIsCorrect] = useState(false);
 
-    const questionData = useMemo(() => {
-        const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-        const importantSentence = sentences.find(s => s.length > 30 && s.length < 100) || sentences[0];
-        const words = importantSentence.split(" ").filter(w => w.length > 5);
-        const keyword = words[Math.floor(Math.random() * words.length)]?.replace(/[.,!]/g, "") || "this section";
-        
-        return {
-            question: `What was a key focus of this section?`,
-            options: [
-                { text: keyword, correct: true },
-                { text: "General overview", correct: false },
-                { text: "Unrelated details", correct: false }
-            ].sort(() => Math.random() - 0.5)
-        };
-    }, [text]);
-
-    const handleAnswer = (idx: number, correct: boolean) => {
+    const handleAnswer = (idx: number) => {
         if (isAnswered) return;
         setSelectedOption(idx);
-        setIsCorrect(correct);
         setIsAnswered(true);
-        if (correct) onCorrect();
+        if (idx === block.correctIndex) onCorrect();
     };
 
     return (
-        <div className="mt-8 p-8 rounded-[32px] bg-white/[0.03] border border-white/5 shadow-2xl">
+        <div className="mt-8 p-8 rounded-[32px] bg-white/[0.03] border border-white/5 shadow-2xl animate-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center gap-2 mb-6">
                 <HelpCircle size={14} className="text-[#F59E0B]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Knowledge Check</span>
             </div>
-            <p className="text-base font-bold mb-6">{questionData.question}</p>
+            <p className="text-base font-bold mb-6 leading-relaxed">{block.question}</p>
             <div className="grid gap-3">
-                {questionData.options.map((opt, i) => (
+                {block.options.map((opt: string, i: number) => (
                     <button
                         key={i}
-                        onClick={() => handleAnswer(i, opt.correct)}
+                        onClick={() => handleAnswer(i)}
                         disabled={isAnswered}
                         className={cn(
                             "w-full p-5 rounded-2xl text-left text-sm font-medium transition-all border",
                             isAnswered 
-                                ? opt.correct 
+                                ? i === block.correctIndex 
                                     ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
                                     : selectedOption === i 
                                         ? "bg-red-500/10 border-red-500/20 text-red-400" 
@@ -75,7 +57,10 @@ function SummaryCheckpoint({ text, onCorrect }: { text: string; onCorrect: () =>
                                 : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
                         )}
                     >
-                        {opt.text}
+                        <div className="flex items-center justify-between">
+                            <span>{opt}</span>
+                            {isAnswered && i === block.correctIndex && <CheckCircle2 size={16} />}
+                        </div>
                     </button>
                 ))}
             </div>
@@ -90,10 +75,24 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     const [checkpointPassed, setCheckpointPassed] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
 
-    const chapters = useMemo(() => {
+    const processedChapters = useMemo(() => {
         if (!data) return [];
-        const rawChapters = data.split(/\n## /g);
-        return rawChapters.map((c: string, i: number) => (i > 0 ? "## " + c : c));
+        const rawSections = data.split(/\n## /g);
+        return rawSections.map((s, i) => {
+            const content = i > 0 ? "## " + s : s;
+            const match = content.match(/\[KNOWLEDGE_CHECK\]\s*(\{.*\})/);
+            let checkpoint = null;
+            let cleanText = content;
+            if (match) {
+                try {
+                    checkpoint = JSON.parse(match[1]);
+                    cleanText = content.replace(/\[KNOWLEDGE_CHECK\]\s*\{.*\}/, "");
+                } catch (e) {
+                    console.error("Failed to parse knowledge check", e);
+                }
+            }
+            return { text: cleanText, checkpoint };
+        });
     }, [data]);
 
     const handleCopyLink = () => {
@@ -104,11 +103,30 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
         addToast("Link copied to clipboard", "success");
     };
 
-    if (chapters.length === 0) return null;
+    const handleFinish = () => {
+        const isSprint = sessionStorage.getItem("isExamSprint") === "true";
+        if (isSprint) {
+            // Keep content, but change type for the next tool in sprint
+            const params = JSON.parse(sessionStorage.getItem("generateParams") || "{}");
+            sessionStorage.setItem("generateParams", JSON.stringify({
+                ...params,
+                type: "flashcards",
+                count: 15,
+                difficulty: "medium"
+            }));
+            router.push("/flashcards/generate");
+            addToast("Masterclass complete. Starting Memory Drill...", "success");
+        } else {
+            router.push("/library");
+        }
+    };
+
+    if (processedChapters.length === 0) return null;
+
+    const currentChapter = processedChapters[currentSlide];
 
     return (
         <div className="min-h-screen w-full flex flex-col items-center bg-transparent">
-            {/* Header */}
             <header className="w-full max-w-5xl p-6 flex items-center justify-between z-20">
                 <div className="flex items-center gap-4">
                     <button onClick={() => router.push('/library')} className="p-2 rounded-full hover:bg-white/5 transition-colors">
@@ -134,27 +152,27 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                     exit={{ opacity: 0, y: -10 }}
                     className="flex-1 w-full max-w-3xl px-6 py-12"
                 >
-                    <div className="mb-12">
-                        <div className="flex items-center gap-3 mb-4">
+                    <div className="mb-16">
+                        <div className="flex items-center gap-3 mb-6">
                             <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">
-                                Segment {currentSlide + 1} / {chapters.length}
+                                Chapter {currentSlide + 1} / {processedChapters.length}
                             </span>
                         </div>
                         <h2 className="text-4xl font-black tracking-tight leading-tight mb-6">
-                            {currentSlide === 0 ? title : chapters[currentSlide].split("\n")[0].replace("## ", "")}
+                            {currentSlide === 0 ? title : currentChapter.text.split("\n")[0].replace("## ", "")}
                         </h2>
                     </div>
 
-                    <div className="prose prose-invert prose-emerald max-w-none mb-20">
+                    <div className="prose prose-invert prose-emerald max-w-none mb-32">
                         <Markdown>
-                            {currentSlide === 0 ? chapters[0] : chapters[currentSlide].split("\n").slice(1).join("\n")}
+                            {currentSlide === 0 ? currentChapter.text : currentChapter.text.split("\n").slice(1).join("\n")}
                         </Markdown>
                     </div>
 
-                    {((currentSlide + 1) % 2 === 0 || currentSlide === chapters.length - 1) && !checkpointPassed && (
-                        <div className="mb-20">
+                    {currentChapter.checkpoint && !checkpointPassed && (
+                        <div className="mb-32">
                             <SummaryCheckpoint 
-                                text={chapters[currentSlide]} 
+                                block={currentChapter.checkpoint} 
                                 onCorrect={() => {
                                     setCheckpointPassed(true);
                                     addToast("Insight verified!", "success");
@@ -164,7 +182,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                     )}
 
                     {checkpointPassed && (
-                        <div className="mb-20 py-16 border-t border-white/5 flex flex-col items-center animate-in fade-in zoom-in duration-700">
+                        <div className="mb-32 py-16 border-t border-white/5 flex flex-col items-center animate-in fade-in zoom-in duration-700">
                              <CheckCircle2 size={40} className="mb-4 text-emerald-500" />
                              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-emerald-500">Cognitive Alignment Secured</p>
                         </div>
@@ -186,22 +204,22 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                             Previous
                         </button>
 
-                        {currentSlide < chapters.length - 1 ? (
+                        {currentSlide < processedChapters.length - 1 ? (
                             <button 
                                 onClick={() => {
                                     setCurrentSlide(prev => prev + 1);
                                     setCheckpointPassed(false);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className="group flex items-center gap-4 bg-white text-black px-8 py-4 rounded-2xl font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/5"
+                                className="group flex items-center gap-4 bg-white text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/5"
                             >
-                                <span>Continue</span>
+                                <span>Proceed</span>
                                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         ) : (
                             <button 
-                                onClick={() => router.push("/library")}
-                                className="group flex items-center gap-4 bg-emerald-500 text-black px-8 py-4 rounded-2xl font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-xl shadow-emerald-500/10"
+                                onClick={handleFinish}
+                                className="group flex items-center gap-4 bg-emerald-500 text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-emerald-500/10"
                             >
                                 <span>Finish Masterclass</span>
                                 <CheckCircle2 size={16} />
@@ -211,7 +229,6 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                 </motion.main>
             </AnimatePresence>
 
-            {/* Floating Share/Download */}
             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
                 <button 
                     onClick={handleCopyLink}

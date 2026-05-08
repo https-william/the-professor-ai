@@ -35,7 +35,6 @@ import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
 
 const HIDDEN_PATHS = [
-    "/",
     "/arena/play",
     "/login",
     "/signup",
@@ -49,10 +48,10 @@ const MINIMAL_PATHS = [
 const LANDING_PATHS = ["/", "/download", "/blog"];
 
 const MODES = [
-    { id: "DASHBOARD", label: "Dashboard", href: "/dashboard", color: "#10B981", glow: "rgba(16,185,129,0.35)", icon: LayoutDashboard },
-    { id: "CREATE",    label: "Create",    href: "/create",    color: "#F59E0B", glow: "rgba(245,158,11,0.35)", icon: Lightbulb },
-    { id: "LIBRARY",  label: "Library",   href: "/library",   color: "#10B981", glow: "rgba(16,185,129,0.35)", icon: Library },
-    { id: "HUB",      label: "Hub",       href: "/hub",       color: "#8B5CF6", glow: "rgba(139,92,246,0.35)", icon: Users },
+    { id: "DASHBOARD", label: "Dashboard", href: "/dashboard", color: "var(--emerald)", glow: "var(--emerald-glow)", icon: LayoutDashboard },
+    { id: "CREATE",    label: "Create",    href: "/create",    color: "var(--blue)",    glow: "var(--blue-glow)",    icon: Lightbulb },
+    { id: "LIBRARY",  label: "Library",   href: "/library",   color: "var(--violet)",  glow: "var(--violet-glow)",  icon: Library },
+    { id: "HUB",      label: "Hub",       href: "/hub",       color: "var(--cyan)",    glow: "var(--cyan-glow)",    icon: Users },
 ] as const;
 
 export type AppMode = (typeof MODES)[number]["id"] | string;
@@ -117,16 +116,23 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     // Map scrollY [0, 150] to transformation values
     const scrollYProgress = useTransform(scrollY, [0, 150], [0, 1]);
 
+    // Landing-specific transformations
+    const landingPaddingX = useTransform(scrollY, [0, 150], ["2rem", "1rem"]);
+    const landingTop = useTransform(scrollY, [0, 150], ["0px", "12px"]);
+    const landingPaddingBlock = useTransform(scrollY, [0, 150], ["12px", "8px"]);
+    const landingBorderRadius = useTransform(scrollY, [0, 150], ["0px", "28px"]);
+    const landingWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", "92%"]);
+
+    // App-specific transformations (Floating Morphing)
+    const appTop = useTransform(scrollY, [0, 150], ["10px", "12px"]);
+    const appWidth = useTransform(scrollY, [0, 150], ["calc(100% - 2rem)", "92%"]);
+    const appPaddingInline = useTransform(scrollY, [0, 150], ["1.5rem", "1rem"]);
+    const appPaddingBlock = useTransform(scrollY, [0, 150], ["10px", "8px"]);
+
     // Derived motion values (hoisted to avoid re-creation)
-    // On app pages: header is always fully visible. On landing: fades in on scroll.
-    const headerPaddingX = useTransform(scrollY, [0, 150], ["2rem", "1rem"]);
-    const headerTop = useTransform(scrollY, [0, 150], ["0px", "12px"]);
-    const headerPaddingBlock = useTransform(scrollY, [0, 150], ["12px", "8px"]);
-    const headerBorderRadius = useTransform(scrollY, [0, 150], ["0px", "28px"]);
     const headerBgOpacity = useTransform(scrollY, [0, 150], [0, 0.98]);
     const headerBlur = useTransform(scrollY, [0, 150], [0, 24]);
     const headerScale = useTransform(scrollY, [0, 150], [1, 0.98]);
-    const headerWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", "92%"]);
 
     // For APP pages: always use solid background (not scroll-driven)
     const headerBg = useTransform(headerBgOpacity, (o) =>
@@ -145,23 +151,29 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)";
     });
 
-    // App-page fixed styles (always visible, no scroll dependency)
-    const appHeaderStyle = {
-        background: theme === "dark"
-            ? "rgba(12, 12, 22, 0.92)"
-            : "rgba(248, 248, 252, 0.92)",
-        backdropFilter: "blur(24px) saturate(180%)",
-        WebkitBackdropFilter: "blur(24px) saturate(180%)",
-        border: "1px solid var(--border)",
-        boxShadow: theme === "dark"
-            ? "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.06)"
-            : "0 4px 20px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)",
-    };
+    // App-page dynamic styles (morphing pill)
+    const appBgOpacity = useTransform(scrollY, [0, 60], [0.85, 0.94]);
+    const appBlur = useTransform(scrollY, [0, 60], [12, 32]);
+    const appBorderOpacity = useTransform(scrollY, [0, 60], [0.3 * 0.15, 1 * 0.15]);
+    const appSaturate = useTransform(scrollY, [0, 60], [140, 180]);
+
+    const appBg = useMotionTemplate`rgba(${theme === "dark" ? "12, 12, 22" : "248, 248, 252"}, ${appBgOpacity})`;
+    const appBackdrop = useMotionTemplate`blur(${appBlur}px) saturate(${appSaturate}%)`;
+    const appBorder = useMotionTemplate`1px solid rgba(${theme === "dark" ? "255, 255, 255" : "0, 0, 0"}, ${appBorderOpacity})`;
+    
+    const appShadow = useTransform(
+        scrollY,
+        [0, 60],
+        [
+            theme === "dark" ? "0 4px 16px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
+            theme === "dark" ? "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)" : "0 8px 30px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)"
+        ]
+    );
 
     const [isPill, setIsPill] = useState(false);
     useEffect(() => {
         return scrollY.on("change", (latest) => {
-            setIsPill(latest > 60);
+            setIsPill(latest > 40);
         });
     }, [scrollY]);
 
@@ -177,8 +189,8 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
     const activeConfig = MODES.find(m => m.id === currentMode) ?? MODES[0];
 
-    if (mounted && isHidden) return null;
-    if (!mounted && isHidden) return null;
+    if (mounted && (isHidden || isLanding)) return null;
+    if (!mounted && (isHidden || isLanding)) return null;
 
     const handleModeChange = (mode: AppMode, href: string) => {
         if (onModeChange) { onModeChange(mode); return; }
@@ -205,32 +217,20 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     return (
         <motion.header
             initial={false}
-            style={isApp ? {
-                // App pages: always visible, fixed position pill at top
-                top: "10px",
+            style={{
+                top: isApp ? appTop : landingTop,
                 left: `calc(50% + ${sidebarOffset})`,
                 x: "-50%",
-                width: "calc(100% - 2rem)",
-                maxWidth: "1200px",
-                paddingInline: "1rem",
-                paddingBlock: "8px",
-                borderRadius: "28px",
-                ...appHeaderStyle,
-            } : {
-                // Landing/non-app: scroll-driven animation
-                top: headerTop,
-                left: `calc(50% + ${sidebarOffset})`,
-                x: "-50%",
-                width: headerWidth,
-                maxWidth: "1152px",
-                paddingInline: headerPaddingX,
-                paddingBlock: headerPaddingBlock,
-                borderRadius: headerBorderRadius,
+                width: isApp ? appWidth : landingWidth,
+                maxWidth: isApp ? "1200px" : "1152px",
+                paddingInline: isApp ? appPaddingInline : landingPaddingX,
+                paddingBlock: isApp ? appPaddingBlock : landingPaddingBlock,
+                borderRadius: isApp ? "28px" : landingBorderRadius,
                 scale: headerScale,
-                backgroundColor: headerBg,
-                backdropFilter: headerBackdrop,
-                border: headerBorder,
-                boxShadow: headerShadow,
+                backgroundColor: isApp ? appBg : headerBg,
+                backdropFilter: isApp ? appBackdrop : headerBackdrop,
+                border: isApp ? appBorder : headerBorder,
+                boxShadow: isApp ? appShadow : headerShadow,
             }}
             transition={{ 
                 type: "tween",
@@ -240,37 +240,33 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             className="fixed z-[10000] grid grid-cols-[auto_1fr_auto] items-center gap-4 pointer-events-auto transition-shadow"
         >
             <div className="flex items-center gap-3">
-                <AnimatePresence>
-                    {!isApp && (
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.3 }}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <Link
+                        href={user.isAuthenticated ? "/dashboard" : "/"}
+                        className="group relative flex items-center gap-3 p-1 rounded-xl transition-all"
+                    >
+                        <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
+                            style={{
+                                background: "var(--background-secondary)",
+                                border: "1px solid var(--border)",
+                                boxShadow: "var(--shadow-sm), inset 0 1px 1px rgba(255,255,255,0.1)",
+                                color: "var(--foreground)"
+                            }}
                         >
-                            <Link
-                                href={user.isAuthenticated ? "/dashboard" : "/"}
-                                className="group relative flex items-center gap-3 p-1 rounded-xl transition-all"
-                            >
-                                <div
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
-                                    style={{
-                                        background: "var(--background-secondary)",
-                                        border: "1px solid var(--border)",
-                                        boxShadow: "var(--shadow-sm), inset 0 1px 1px rgba(255,255,255,0.1)",
-                                    }}
-                                >
-                                    <BrandLogo size="sm" />
-                                </div>
-                                {!isPill && (
-                                    <span className="hidden lg:block font-sans font-black text-[var(--foreground)] tracking-tighter text-[16px] uppercase">
-                                        The Professor
-                                    </span>
-                                )}
-                            </Link>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            <BrandLogo size="sm" />
+                        </div>
+                        {!isPill && (
+                            <span className="hidden lg:block font-sans font-black text-[var(--foreground)] tracking-tighter text-[16px] uppercase">
+                                The Professor
+                            </span>
+                        )}
+                    </Link>
+                </motion.div>
             </div>
 
             {/* ── CENTER: Context-aware nav ── */}
@@ -362,6 +358,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
             {/* ── RIGHT: Actions ── */}
             <div className="flex items-center justify-end gap-2">
+                <ThemeToggle />
                 {isApp && (
                     <>
                         <div className="hidden sm:block">
@@ -379,8 +376,8 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                 <Bell size={14} strokeWidth={2} className="text-[var(--foreground)]" />
                                 {unreadCount > 0 && (
                                     <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F59E0B] opacity-75" />
-                                        <span className="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-[#F59E0B] border border-[var(--background)] text-[8px] font-black text-[#08080E]">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--blue)] opacity-75" />
+                                        <span className="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-[var(--blue)] border border-[var(--background)] text-[8px] font-black text-white">
                                             {unreadCount > 9 ? "+" : unreadCount}
                                         </span>
                                     </span>

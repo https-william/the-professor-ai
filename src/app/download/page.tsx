@@ -103,14 +103,14 @@ export default function DownloadPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#08080E] text-[var(--foreground)] selection:bg-amber-500/30 overflow-x-hidden font-sans">
+        <div className="min-h-screen bg-[#08080E] text-[var(--foreground)] selection:bg-[var(--blue-dim)] overflow-x-hidden font-sans">
             {/* ═══ Advanced AEO/SEO Layer ═══ */}
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
             {/* Cinematic Background */}
             <div className="fixed inset-0 z-0">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(129,140,248,0.15),transparent)]" />
-                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-amber-500/5 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(37,99,235,0.15),transparent)]" />
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-[var(--blue)]/5 to-transparent" />
                 
                 {/* Floating Glimmer Line */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
@@ -151,7 +151,7 @@ export default function DownloadPage() {
                     >
                         <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter leading-[0.95]">
                             Take the Professor<br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-500 to-amber-700">Mobile. Native. Everywhere.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--blue-light)] via-[var(--blue)] to-[var(--blue-dark)]">Mobile. Native. Everywhere.</span>
                         </h1>
                         <p className="text-white/40 text-lg md:text-xl font-medium max-w-xl mx-auto leading-relaxed">
                             Cheat codes for your degree, optimized for the device in your hand. Performance is shared, focus is localized.
@@ -167,14 +167,14 @@ export default function DownloadPage() {
                         transition={{ delay: 0.2 }}
                         className="mb-20"
                     >
-                        <div className="relative p-[1px] rounded-[3rem] bg-gradient-to-br from-amber-500/40 via-white/5 to-white/5 overflow-hidden group">
+                        <div className="relative p-[1px] rounded-[3rem] bg-gradient-to-br from-[var(--blue)]/40 via-white/5 to-white/5 overflow-hidden group">
                            <div className="relative bg-[#0A0A10]/90 backdrop-blur-3xl rounded-[calc(3rem-1px)] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-16">
-                               <div className="w-24 h-24 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-inner shrink-0">
-                                   {platform === "android" ? <SmartphoneNfc size={48} className="text-amber-500" /> : <Monitor size={48} className="text-amber-500" />}
+                               <div className="w-24 h-24 rounded-3xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center shadow-inner shrink-0">
+                                   {platform === "android" ? <SmartphoneNfc size={48} className="text-[var(--blue)]" /> : <Monitor size={48} className="text-[var(--blue)]" />}
                                </div>
                                <div className="text-center md:text-left flex-1">
                                    <div className="flex flex-col md:flex-row items-center gap-3 mb-4">
-                                       <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-widest border border-amber-500/20">Recommended for You</span>
+                                       <span className="px-3 py-1 rounded-full bg-[var(--blue-dim)] text-[var(--blue)] text-[10px] font-black uppercase tracking-widest border border-[var(--blue-border)]">Recommended for You</span>
                                        <h2 className="text-2xl font-black text-white">{platform === "android" ? "The Android App" : "The Windows Client"}</h2>
                                    </div>
                                    <p className="text-white/40 font-medium mb-8 leading-relaxed max-w-lg">
@@ -187,7 +187,7 @@ export default function DownloadPage() {
                                            <Download size={20} />
                                            Get the Native App
                                        </div>
-                                       <span className="absolute -top-3 -right-6 px-3 py-1 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-full shadow-2xl rotate-12 ring-2 ring-[#08080E] animate-pulse">
+                                       <span className="absolute -top-3 -right-6 px-3 py-1 bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-2xl rotate-12 ring-2 ring-[#08080E] animate-pulse">
                                            Coming Soon!!
                                        </span>
                                    </div>
@@ -195,15 +195,15 @@ export default function DownloadPage() {
                                <div className="hidden lg:block w-px h-24 bg-white/5" />
                                <div className="hidden lg:grid grid-cols-1 gap-4">
                                    <div className="flex items-center gap-3">
-                                       <Zap size={14} className="text-amber-500" />
+                                       <Zap size={14} className="text-[var(--blue)]" />
                                        <span className="text-[11px] font-bold text-white/60">60FPS Fluid UI</span>
                                    </div>
                                    <div className="flex items-center gap-3">
-                                       <Cpu size={14} className="text-amber-500" />
+                                       <Cpu size={14} className="text-[var(--blue)]" />
                                        <span className="text-[11px] font-bold text-white/60">Neural Cache</span>
                                    </div>
                                    <div className="flex items-center gap-3">
-                                       <ShieldCheck size={14} className="text-amber-500" />
+                                       <ShieldCheck size={14} className="text-[var(--blue)]" />
                                        <span className="text-[11px] font-bold text-white/60">Encrypted Vault</span>
                                    </div>
                                </div>
@@ -248,7 +248,7 @@ export default function DownloadPage() {
                                             {p.action.label}
                                             <ChevronRight size={14} />
                                         </div>
-                                        <span className="absolute -top-2 -right-4 px-2 py-0.5 bg-amber-500 text-black text-[7px] font-black uppercase tracking-tighter rounded-full shadow-xl">
+                                        <span className="absolute -top-2 -right-4 px-2 py-0.5 bg-[var(--blue)] text-white text-[7px] font-black uppercase tracking-tighter rounded-full shadow-xl">
                                             Soon
                                         </span>
                                     </div>
@@ -261,13 +261,13 @@ export default function DownloadPage() {
                 {/* Installation Journey */}
                 <div className="max-w-xl mx-auto mb-24">
                     <div className="text-center mb-12">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500 mb-4 block">Deployment Guide</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--blue)] mb-4 block">Deployment Guide</span>
                         <h2 className="text-3xl font-black text-white">How to Install</h2>
                     </div>
                     
                     <div className="space-y-6 relative">
                         {/* Connector Line */}
-                        <div className="absolute left-[27px] top-4 bottom-4 w-px bg-gradient-to-b from-amber-500 via-white/5 to-transparent" />
+                        <div className="absolute left-[27px] top-4 bottom-4 w-px bg-gradient-to-b from-[var(--blue)] via-white/5 to-transparent" />
                         
                         {[
                             { title: "Acquire Artifact", desc: "Download the native archive (.apk or .exe) from the anchors above." },
@@ -284,7 +284,7 @@ export default function DownloadPage() {
                                 className="flex gap-6 relative z-10"
                             >
                                 <div className="w-14 h-14 rounded-2xl bg-[#0A0A10] border border-white/10 flex items-center justify-center shrink-0 shadow-2xl">
-                                    <span className="text-lg font-black text-amber-500">{i + 1}</span>
+                                    <span className="text-lg font-black text-[var(--blue)]">{i + 1}</span>
                                 </div>
                                 <div className="pt-2">
                                     <h4 className="text-[15px] font-black text-white mb-1">{step.title}</h4>
@@ -298,7 +298,7 @@ export default function DownloadPage() {
                 {/* Trust Footer */}
                 <div className="flex flex-col items-center text-center opacity-40">
                     <div className="flex gap-1 mb-4">
-                        {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" className="text-amber-500" />)}
+                        {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" className="text-[var(--blue)]" />)}
                     </div>
                     <p className="text-xs font-black uppercase tracking-widest mb-2 text-white">Direct Repository Access</p>
                     <p className="text-[10px] text-white/30 max-w-xs font-medium">Verify all binaries via the official GitHub repository releases page.</p>

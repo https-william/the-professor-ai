@@ -201,9 +201,9 @@ Return exactly a JSON array of objects with this shape (representing the script 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 export function buildSummaryPrompt(content: string, style: string, explainStyle?: ExplainStyle): string {
     const styleInstruction: Record<string, string> = {
-        concise: "Produce a tight, exam-focused summary. Use bullet hierarchies. Bold every key term on first use. No introductory filler — start with the most important concept. Students should be able to master this in 10 minutes.",
-        detailed: "Produce a comprehensive study guide. Use H2 headings for major concepts, H3 for sub-concepts. Include context, mechanisms, and real-world applications. Aim for completeness over brevity.",
-        study: "Produce a structured study guide with: (1) Key Concepts — bulleted explanations; (2) Key Terms — glossary format; (3) Common Exam Questions — 3-5 questions The Professor would ask; (4) Memory Anchors — one memorable metaphor per major concept.",
+        concise: "Produce a tight, exam-focused summary. Use bullet hierarchies. Bold ONLY the most critical terms on first use. Ensure generous spacing between sections. No introductory filler — start with the most important concept.",
+        detailed: "Produce a comprehensive study guide. Use H2 headings for major concepts, H3 for sub-concepts. Include context, mechanisms, and real-world applications. Aim for completeness over brevity. Use vertical spacing to maintain readability.",
+        study: "Produce a structured study guide with: (1) Key Concepts — bulleted explanations; (2) Key Terms — glossary format; (3) Memory Anchors — one memorable metaphor per major concept.",
     };
 
     return `You are a study coach with a track record of helping students go from failing to first class.
@@ -220,11 +220,13 @@ ${content}
 
 SUMMARY RULES:
 1. Organize by CONCEPT, not by page or section order. Group related ideas.
-2. Bold key terms on first use: **mitosis**.
-3. If the material includes numbers, dates, formulas, or names — collect them in a "Key Facts" section at the end.
-4. Do NOT start with "This document covers..." or any filler. Start with substance.
-5. Use markdown formatting: ## for major sections, **bold** for key terms, - for bullets.
-6. If there are common student misconceptions related to this content, add a "⚠️ Common Mistakes" callout.
+2. Bold only the most critical terms on first use: **mitosis**. Avoid over-bolding text; it reduces readability.
+3. Use proper markdown spacing. One blank line between paragraphs, two blank lines between major ## sections.
+4. If the material includes numbers, dates, formulas, or names — collect them in a "Key Facts" section at the end.
+5. Do NOT start with "This document covers..." or any filler. Start with substance.
+6. Use markdown formatting: ## for major sections, **bold** for key terms, - for bullets.
+7. KNOWLEDGE CHECK: At the end of EVERY major section (## section), you MUST include a contextual knowledge check block formatted EXACTLY like this:
+   [KNOWLEDGE_CHECK] {"question": "A contextually relevant question for this section?", "options": ["Correct answer", "Distractor 1", "Distractor 2"], "correctIndex": 0}
 
 Write the summary now in markdown format. Return plain markdown, not JSON.`;
 }

@@ -9,11 +9,11 @@ import RecentActivity from "@/components/features/dashboard/RecentActivity";
 import AIStudyPlan from "@/components/features/dashboard/AIStudyPlan";
 import QuickLaunchCard from "@/components/features/dashboard/QuickLaunchCard";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
-import QuoteOfTheStoic from "@/components/features/dashboard/QuoteOfTheStoic";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
+import { calculateLevel, getLevelTitle } from "@/lib/profiles-client";
+import StandardContainer from "@/components/ui/StandardContainer";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import MagneticButton from "@/components/ui/MagneticButton";
-import { calculateLevel, getLevelTitle } from "@/lib/profiles-client";
 
 interface DashboardDesktopProps {
     user: any;
@@ -64,15 +64,14 @@ export default function DashboardDesktop({
     };
 
     return (
-        <div className="w-full h-[100dvh] overflow-y-auto no-scrollbar relative font-sans bg-[var(--background)] selection:bg-[var(--accent)]/10">
+        <div className="w-full min-h-screen relative font-sans bg-[var(--bg)] selection:bg-[var(--blue-dim)] ml-14 md:ml-20">
             {/* Ultra-Premium Glassmorphic Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-[var(--accent)]/10 blur-[120px] rounded-full mix-blend-screen" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[var(--secondary)]/10 blur-[120px] rounded-full mix-blend-screen" />
-                {/* <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay" /> */}
+                <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-[var(--blue)]/10 blur-[120px] rounded-full mix-blend-screen" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[var(--blue-dim)] blur-[120px] rounded-full mix-blend-screen" />
             </div>
 
-            <div className="max-w-[1800px] mx-auto px-8 md:px-16 pt-24 pb-32 relative z-10 flex flex-col gap-8">
+            <StandardContainer className="pt-24 pb-32 relative z-10 flex flex-col gap-8" wide={true}>
                 
                 {/* ─── MASTHEAD & PRIMARY ACTION (Row 1) ─── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
@@ -81,19 +80,20 @@ export default function DashboardDesktop({
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="lg:col-span-2 p-12 rounded-[40px] border border-[var(--border)] bg-gradient-to-br from-[var(--card)] to-transparent relative overflow-hidden group flex flex-col justify-end min-h-[360px]"
+                        className="lg:col-span-2 p-12 rounded-[40px] border border-[var(--blue-border)] bg-[var(--blue-dim)] relative overflow-hidden group flex flex-col justify-end min-h-[360px]"
                     >
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-[var(--blue)] pointer-events-none group-hover:opacity-[0.06] transition-opacity"><Layers size={240} /></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-0" />
                         <div className="relative z-10 max-w-2xl">
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-6 backdrop-blur-md">
-                                <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--text)]/5 border border-[var(--border)] text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6 backdrop-blur-md">
+                                <span className="w-2 h-2 rounded-full bg-[var(--blue)] animate-pulse" />
                                 {activityData?.studyGoal ? "Active Session" : "Awaiting Orders"}
                             </div>
-                            <h1 className="text-5xl md:text-7xl font-black text-[var(--foreground)] tracking-tight mb-4 leading-[0.9]">
+                            <h1 className="text-5xl md:text-7xl font-black text-[var(--text)] tracking-tighter mb-4 leading-[0.9]">
                                 {greeting}, <br />
-                                <span className="text-[var(--accent)] drop-shadow-[0_0_30px_var(--accent-glow)]">{firstName}</span>.
+                                <span className="text-[var(--blue)] drop-shadow-[0_10px_40px_var(--blue-glow)]">{firstName}</span>.
                             </h1>
-                            <p className="text-xl text-[var(--foreground-muted)] font-medium">
+                            <p className="text-xl text-[var(--text-2)] font-medium">
                                 {activityData?.studyGoal
                                     ? formatStudyGoal(activityData.studyGoal)
                                     : "Define your study goal to begin."
@@ -108,7 +108,7 @@ export default function DashboardDesktop({
                             {dueCount > 0 ? (
                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex-1">
                                     <Link href="/review" className="block h-full group">
-                                        <div className="h-full p-8 rounded-[40px] bg-[var(--accent)] border border-[var(--accent)] relative overflow-hidden transition-all hover:shadow-[0_0_80px_var(--accent-glow)] flex flex-col justify-between">
+                                        <div className="h-full p-8 rounded-[40px] bg-[var(--blue)] border border-[var(--blue-border)] relative overflow-hidden transition-all hover:shadow-[0_0_80px_var(--blue-glow)] flex flex-col justify-between">
                                             <div className="absolute top-[-50%] right-[-20%] w-[150%] h-[150%] bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 rotate-45 transition-all duration-700 ease-out" />
                                             
                                             <div>
@@ -116,11 +116,11 @@ export default function DashboardDesktop({
                                                     Priority Task
                                                 </div>
                                                 <h3 className="text-4xl font-black text-black tracking-tighter leading-none mb-2">Resume<br/>Session</h3>
-                                                <p className="text-sm font-bold text-black/70">{dueCount} topics pending review.</p>
+                                                <p className="text-sm font-bold text-[var(--text-2)]">{dueCount} topics pending review.</p>
                                             </div>
-
+ 
                                             <MagneticButton className="self-end">
-                                                <div className="w-16 h-16 rounded-full bg-black text-[var(--accent)] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                                                <div className="w-16 h-16 rounded-full bg-black text-[var(--blue)] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
                                                     <ArrowRight size={24} strokeWidth={3} />
                                                 </div>
                                             </MagneticButton>
@@ -139,25 +139,25 @@ export default function DashboardDesktop({
                     transition={{ delay: 0.1 }}
                     className="grid grid-cols-2 md:grid-cols-4 gap-8"
                 >
-                    <div className="p-8 rounded-[40px] bg-[var(--card)]/50 backdrop-blur-xl border border-[var(--card-border)] flex flex-col justify-between group hover:bg-[var(--card)] transition-colors">
-                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-6">Scholar Level</span>
+                    <div className="p-8 rounded-[40px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between group hover:bg-[var(--bg-2)] transition-colors">
+                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6">Scholar Level</span>
                         <div className="flex items-end justify-between">
-                            <span className="text-5xl font-black text-[var(--foreground)]">{calculateLevel(user.xp)}</span>
-                            <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-tighter mb-2">{getLevelTitle(calculateLevel(user.xp))}</span>
+                            <span className="text-5xl font-black text-[var(--text)]">{calculateLevel(user.xp)}</span>
+                            <span className="text-[10px] font-bold text-[var(--blue)] uppercase tracking-tighter mb-2">{getLevelTitle(calculateLevel(user.xp))}</span>
                         </div>
                     </div>
 
-                    <div className="p-8 rounded-[40px] bg-[var(--card)]/50 backdrop-blur-xl border border-[var(--card-border)] flex flex-col justify-between group hover:bg-[var(--card)] transition-colors relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:text-[var(--accent)] transition-colors"><Flame size={120} /></div>
-                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-6 relative z-10">Current Streak</span>
+                    <div className="p-8 rounded-[40px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between group hover:bg-[var(--bg-2)] transition-colors relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:text-[var(--amber)] transition-colors"><Flame size={120} /></div>
+                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6 relative z-10">Current Streak</span>
                         <div className="flex items-end gap-2 relative z-10">
-                            <span className="text-5xl font-black text-[var(--foreground)]"><AnimatedCounter value={user.streak} /></span>
-                            <span className="text-[11px] font-bold text-[var(--foreground-muted)] mb-1.5 uppercase tracking-tighter">Days</span>
+                            <span className="text-5xl font-black text-[var(--text)]"><AnimatedCounter value={user.streak} /></span>
+                            <span className="text-[11px] font-bold text-[var(--text-3)] mb-1.5 uppercase tracking-tighter">Days</span>
                         </div>
                     </div>
 
-                    <div className="p-8 rounded-[40px] bg-[var(--card)]/50 backdrop-blur-xl border border-[var(--card-border)] flex flex-col justify-between group hover:bg-[var(--card)] transition-colors">
-                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-6">Vault Freezes</span>
+                    <div className="p-8 rounded-[40px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between group hover:bg-[var(--bg-2)] transition-colors">
+                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6">Vault Freezes</span>
                         <div className="flex items-center gap-2 pt-4">
                             {[...Array(3)].map((_, i) => {
                                 const isAvailable = i < user.streakFreezeCount;
@@ -165,19 +165,19 @@ export default function DashboardDesktop({
                                 return (
                                     <div key={i} className={`h-2 flex-1 rounded-full transition-all duration-1000 ${
                                         isAvailable 
-                                        ? isExpiring ? 'bg-cyan-600/60 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.5)]' 
-                                        : 'bg-[var(--foreground)]/5'
+                                        ? isExpiring ? 'bg-[var(--cyan-border)] shadow-[0_0_15px_var(--cyan-glow)]' : 'bg-[var(--cyan)] shadow-[0_0_20px_var(--cyan-glow)]' 
+                                        : 'bg-[var(--text)]/5'
                                     }`} />
                                 );
                             })}
                         </div>
                     </div>
 
-                    <div className="p-8 rounded-[40px] bg-[var(--card)]/50 backdrop-blur-xl border border-[var(--card-border)] flex flex-col justify-between group hover:bg-[var(--card)] transition-colors">
-                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-6">Credits</span>
+                    <div className="p-8 rounded-[40px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between group hover:bg-[var(--bg-2)] transition-colors">
+                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6">Credits</span>
                         <div className="flex items-end justify-between">
-                            <span className="text-5xl font-black text-[var(--foreground)]"><AnimatedCounter value={user.credits} /></span>
-                            <span className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-widest opacity-40 mb-2">Bal</span>
+                            <span className="text-5xl font-black text-[var(--text)]"><AnimatedCounter value={user.credits} /></span>
+                            <span className="text-[10px] font-black text-[var(--text-3)] uppercase tracking-widest opacity-70 mb-2">Bal</span>
                         </div>
                     </div>
                 </motion.div>
@@ -193,28 +193,27 @@ export default function DashboardDesktop({
                     {/* Widgets (Cols 5-8) */}
                     <div className="lg:col-span-4 space-y-8 flex flex-col">
                         <FocusTimer />
-                        <QuoteOfTheStoic />
                         <WeeklyWrappedCard />
                     </div>
 
                     {/* Toolkit & Recovery (Cols 9-12) */}
                     <div className="lg:col-span-4 flex flex-col gap-8">
-                        <div className="p-8 rounded-[40px] bg-[var(--card)] border border-[var(--border)] flex-1">
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)] mb-8">Launchpad</h3>
+                        <div className="p-8 rounded-[40px] bg-[var(--bg-2)] border border-[var(--border)] flex-1">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--text-3)] mb-8">Launchpad</h3>
                             <div className="flex flex-col gap-4">
-                                <QuickLaunchCard title="Arena" desc="Global Duels" icon="swords" href="/arena" color="var(--error)" />
-                                <QuickLaunchCard title="Create Studio" desc="Generate Study Material" icon="add_circle" href="/create" color="var(--accent)" />
-                                <QuickLaunchCard title="Library" desc="Your Decks & Plans" icon="library_books" href="/library" color="var(--secondary)" />
+                                <QuickLaunchCard title="Arena" desc="Global Duels" icon="swords" href="/arena" color="var(--crimson)" />
+                                <QuickLaunchCard title="Create Studio" desc="Generate Study Material" icon="add_circle" href="/create" color="var(--blue)" />
+                                <QuickLaunchCard title="Library" desc="Your Decks & Plans" icon="library_books" href="/library" color="var(--violet)" />
                             </div>
                         </div>
 
                         {canRecover && (
                             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                                <div className="p-8 rounded-[40px] bg-gradient-to-br from-[#F59E0B]/20 to-[#F59E0B]/5 border border-[#F59E0B]/30 relative overflow-hidden group">
+                                <div className="p-8 rounded-[40px] bg-[var(--amber-dim)] border border-[var(--amber-border)] relative overflow-hidden group">
                                     <div className="relative z-10">
-                                        <h3 className="text-xs font-black text-[#F59E0B] uppercase tracking-[0.4em] mb-4">Streak Recovery</h3>
-                                        <p className="text-sm text-[var(--foreground-muted)] mb-6 font-medium">Restore <b>{user.lastStreak} days</b> of momentum.</p>
-                                        <button onClick={handleRecover} disabled={isProcessingAction} className="w-full py-4 rounded-2xl bg-[#F59E0B] text-black font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl disabled:opacity-50">
+                                        <h3 className="text-xs font-black text-[var(--amber)] uppercase tracking-[0.4em] mb-4">Streak Recovery</h3>
+                                        <p className="text-sm text-[var(--text-3)] mb-6 font-medium">Restore <b>{user.lastStreak} days</b> of momentum.</p>
+                                        <button onClick={handleRecover} disabled={isProcessingAction} className="w-full py-4 rounded-2xl bg-[var(--amber)] text-black font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl disabled:opacity-50">
                                             Restore (3 CR)
                                         </button>
                                     </div>
@@ -224,7 +223,7 @@ export default function DashboardDesktop({
                     </div>
                 </div>
 
-            </div>
+            </StandardContainer>
         </div>
     );
 }

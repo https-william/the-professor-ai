@@ -11,7 +11,7 @@ const STEPS = [
     extra: (
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "14px" }}>
         {["PDF", "DOCX", "JPG / PNG", "Voice notes", "WhatsApp forwards"].map(f => (
-          <span key={f} className="format-pill">{f}</span>
+          <span key={f} className="format-pill" style={{ background: "var(--blue-dim)", border: "1px solid var(--blue-border)", color: "var(--blue)", fontSize: "10px", fontWeight: 800, padding: "4px 10px", borderRadius: "99px" }}>{f}</span>
         ))}
       </div>
     ),
@@ -27,7 +27,7 @@ const STEPS = [
           <div key={delay} style={{
             width: "7px", height: "7px",
             borderRadius: "50%",
-            background: "#F59E0B",
+            background: "var(--blue)",
             animation: `dotPulse 1.2s ease-in-out ${delay}ms infinite`,
           }} />
         ))}
@@ -42,7 +42,7 @@ const STEPS = [
     extra: (
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "14px" }}>
         {["Study Guide", "Summary", "Quiz", "Match Game"].map(f => (
-          <span key={f} className="format-pill">{f}</span>
+          <span key={f} className="format-pill" style={{ background: "var(--blue-dim)", border: "1px solid var(--blue-border)", color: "var(--blue)", fontSize: "10px", fontWeight: 800, padding: "4px 10px", borderRadius: "99px" }}>{f}</span>
         ))}
       </div>
     ),
@@ -54,10 +54,11 @@ const STEPS = [
     side: "left" as const,
     extra: (
       <div style={{
-        fontFamily: "'Outfit', sans-serif",
+        fontFamily: "var(--font-sans)",
         fontSize: "12px",
-        color: "rgba(245,158,11,0.6)",
+        color: "var(--amber)",
         marginTop: "14px",
+        fontWeight: 600
       }}>
         🔥 Keep your streak — The Professor will remind you
       </div>
@@ -70,7 +71,7 @@ export default function HowItWorksSection() {
     <section
       id="how-it-works"
       style={{
-        background: "#08080E",
+        background: "var(--bg)",
         padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
         maxWidth: "1100px",
         margin: "0 auto",
@@ -78,16 +79,17 @@ export default function HowItWorksSection() {
     >
       {/* Header */}
       <div style={{ textAlign: "center", maxWidth: "700px", margin: "0 auto 64px" }}>
-        <span className="section-label" style={{ textAlign: "center" }}>HOW IT WORKS</span>
+        <span className="section-label" style={{ textAlign: "center", color: "var(--blue)" }}>HOW IT WORKS</span>
         <h2 style={{
-          fontFamily: "'Galaxie Copernicus', 'Source Serif 4', Georgia, serif",
+          fontFamily: "var(--font-heading)",
           fontSize: "clamp(1.8rem, 4vw, 3rem)",
-          fontWeight: 500,
-          color: "#F5F0E8",
+          fontWeight: 900,
+          color: "var(--text)",
           textAlign: "center",
-          marginTop: 0,
+          marginTop: "12px",
+          letterSpacing: "-0.03em"
         }}>
-          From notes to exam-ready. In under <span style={{ color: "#F59E0B" }}>60 seconds.</span>
+          From notes to exam-ready. In under <span style={{ color: "var(--blue)" }}>60 seconds.</span>
         </h2>
       </div>
 
@@ -101,7 +103,7 @@ export default function HowItWorksSection() {
           width: "1px",
           top: "48px",
           bottom: "48px",
-          background: "linear-gradient(180deg, transparent 0%, rgba(245,158,11,0.2) 10%, rgba(245,158,11,0.2) 90%, transparent 100%)",
+          background: "linear-gradient(180deg, transparent 0%, var(--blue-border) 10%, var(--blue-border) 90%, transparent 100%)",
         }} />
 
         {STEPS.map((step, i) => (
@@ -122,23 +124,24 @@ export default function HowItWorksSection() {
               left: "50%",
               transform: "translateX(-50%)",
               top: "24px",
-              width: "44px",
-              height: "44px",
-              borderRadius: "50%",
-              background: "#12121F",
-              border: "2px solid rgba(245,158,11,0.35)",
+              width: "48px",
+              height: "48px",
+              borderRadius: "16px",
+              background: "var(--bg-2)",
+              border: "2px solid var(--blue-border)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               zIndex: 2,
               transition: "all 250ms ease",
               cursor: "default",
+              boxShadow: "0 0 20px var(--blue-glow)"
             }}>
               <span style={{
-                fontFamily: "'Outfit', sans-serif",
+                fontFamily: "var(--font-sans)",
                 fontSize: "16px",
-                fontWeight: 700,
-                color: "#F59E0B",
+                fontWeight: 900,
+                color: "var(--blue)",
               }}>
                 {step.num}
               </span>
@@ -148,27 +151,29 @@ export default function HowItWorksSection() {
             <div
               className="timeline-card"
               style={{
-                width: "46%",
-                background: "#12121F",
-                border: "1px solid rgba(245,240,232,0.08)",
-                borderRadius: "1.5rem",
-                padding: "28px 24px",
+                width: "44%",
+                background: "var(--bg-2)",
+                border: "1px solid var(--border)",
+                borderRadius: "24px",
+                padding: "32px",
               }}
             >
               <h3 style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: "19px",
-                fontWeight: 700,
-                color: "#F5F0E8",
-                marginBottom: "8px",
+                fontFamily: "var(--font-heading)",
+                fontSize: "20px",
+                fontWeight: 800,
+                color: "var(--text)",
+                marginBottom: "12px",
+                letterSpacing: "-0.01em"
               }}>
                 {step.title}
               </h3>
               <p style={{
-                fontFamily: "'Tiempos Text', 'Source Serif 4', Georgia, serif",
-                fontSize: "14px",
-                color: "rgba(245,240,232,0.58)",
-                lineHeight: 1.75,
+                fontFamily: "var(--font-sans)",
+                fontSize: "15px",
+                color: "var(--text-2)",
+                lineHeight: 1.6,
+                fontWeight: 400
               }}>
                 {step.body}
               </p>
@@ -195,6 +200,11 @@ export default function HowItWorksSection() {
             width: calc(100% - 60px) !important;
             margin-left: 60px;
           }
+        }
+        @keyframes dotPulse {
+          0% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.5); opacity: 1; }
+          100% { transform: scale(1); opacity: 0.5; }
         }
       `}</style>
     </section>

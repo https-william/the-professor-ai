@@ -1,118 +1,141 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useIngestStore } from "@/store/useIngestStore";
+import { useToasts } from "@/components/ui/GlobalToasts";
 import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
 import DataDustLoader from "@/components/ui/DataDustLoader";
+import StandardContainer from "@/components/ui/StandardContainer";
+import JourneyPhase from "@/components/features/create/JourneyPhase";
+import ExamSprintCard from "@/components/features/create/ExamSprintCard";
+import { cn } from "@/lib/utils";
 
 import { 
-    Loader2, 
+    X, 
     Layers, 
-    HelpCircle, 
+    Zap, 
     FileText, 
     Map as MapIcon, 
-    MessageSquare, 
-    ChevronLeft, 
-    X, 
-    ChevronRight, 
-    RotateCw, 
-    Upload, 
-    Zap, 
-    AlertTriangle 
+    ShieldAlert,
+    BrainCircuit,
+    Sword,
+    BookOpen,
+    Upload,
+    AlertTriangle
 } from "lucide-react";
 
 const MAX_CHARS = 50000;
 
-/* ═══ Claymorphic Helpers ═══ */
-const clay = {
-    card: {
-        background: "var(--card-bg, rgba(255,255,255,0.02))",
-        borderRadius: "24px",
-        border: "1px solid var(--border, rgba(255,255,255,0.06))",
-        boxShadow: "inset 0 1px 1px var(--glow, rgba(255,255,255,0.04)), 0 4px 16px rgba(0,0,0,0.1)",
-    } as React.CSSProperties,
-    input: {
-        background: "var(--card-bg, rgba(255,255,255,0.02))",
-        borderRadius: "20px",
-        border: "1px solid var(--border, rgba(255,255,255,0.06))",
-        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1)",
-    } as React.CSSProperties,
-    pill: {
-        background: "var(--card-bg, rgba(255,255,255,0.04))",
-        borderRadius: "14px",
-        boxShadow: "inset 0 1px 1px var(--glow, rgba(255,255,255,0.05)), 0 2px 6px rgba(0,0,0,0.1)",
-    } as React.CSSProperties,
-};
-
-// ─── Creator Types ────────────────────────────────────────────────────────
-const creatorTypes = [
+// ─── Phase-Based Creator Types ────────────────────────────────────────────────
+const phases = [
     {
-        id: "flashcards",
-        label: "Flashcards",
-        desc: "Turn notes into study cards you can flip through",
-        longDesc: "AI reads your material and creates question-answer pairs perfect for memorization and active recall.",
-        icon: Layers,
-        color: "#F59E0B",
-        gradient: "from-[#F59E0B] to-[#D97706]",
-        apiEndpoint: "/api/generate/flashcards",
-        cost: 1,
+        id: "understand",
+        number: 1,
+        title: "Understand",
+        tools: [
+            {
+                id: "summary",
+                label: "Distill",
+                desc: "Condense complex notes into core concepts",
+                icon: FileText,
+                color: "var(--emerald)",
+                apiEndpoint: "/api/generate/summary",
+                cost: 2,
+                popular: true,
+            },
+            {
+                id: "eli5",
+                label: "The Analogy",
+                desc: "Explain it like I'm 5 years old",
+                icon: BrainCircuit,
+                color: "var(--blue)",
+                apiEndpoint: "/api/generate/eli5",
+                cost: 1,
+            },
+        ]
     },
     {
-        id: "match",
-        label: "Match Studio",
-        desc: "Interactive drag-and-drop connections",
-        longDesc: "AI synthesizes concepts into interactive pairs for high-velocity gamified recall training.",
-        icon: Zap,
-        color: "#EF4444",
-        gradient: "from-[#EF4444] to-[#B91C1C]",
-        apiEndpoint: "/api/generate/match",
-        cost: 1,
+        id: "retain",
+        number: 2,
+        title: "Retain",
+        tools: [
+            {
+                id: "flashcards",
+                label: "Memory Cards",
+                desc: "Active recall for long-term storage",
+                icon: Layers,
+                color: "var(--blue)",
+                apiEndpoint: "/api/generate/flashcards",
+                cost: 1,
+            },
+            {
+                id: "match",
+                label: "Match Studio",
+                desc: "Gamified high-velocity concept links",
+                icon: Zap,
+                color: "var(--cyan)",
+                apiEndpoint: "/api/generate/match",
+                cost: 1,
+            },
+            {
+                id: "cornell",
+                label: "Cornell Notes",
+                desc: "Elite structured note system",
+                icon: BookOpen,
+                color: "var(--emerald)",
+                apiEndpoint: "/api/generate/summary",
+                cost: 2,
+            },
+        ]
     },
     {
-        id: "quiz",
-        label: "Practice Exam",
-        desc: "Predict what might appear on your test",
-        longDesc: "Generate realistic exam questions with multiple choice options, just like the real thing.",
-        icon: HelpCircle,
-        color: "#818CF8",
-        gradient: "from-[#818CF8] to-[#6366F1]",
-        popular: true,
-        apiEndpoint: "/api/generate/quiz",
-        cost: 2,
+        id: "test",
+        number: 3,
+        title: "Test",
+        tools: [
+            {
+                id: "quiz",
+                label: "Exam Mode",
+                desc: "Predict exactly what's on the test",
+                icon: Sword,
+                color: "var(--crimson)",
+                apiEndpoint: "/api/generate/quiz",
+                cost: 2,
+                popular: true,
+            },
+            {
+                id: "review",
+                label: "Academic Audit",
+                desc: "Find blind spots in your knowledge",
+                icon: ShieldAlert,
+                color: "var(--crimson)",
+                apiEndpoint: "/api/generate/remark",
+                cost: 2,
+            },
+        ]
     },
     {
-        id: "summary",
-        label: "Smart Summary",
-        desc: "Condense pages into key takeaways",
-        longDesc: "Get the essence of long readings in bullet points, detailed notes, or a structured study guide.",
-        icon: FileText,
-        color: "#10B981",
-        gradient: "from-[#10B981] to-[#059669]",
-        apiEndpoint: "/api/generate/summary",
-        cost: 2,
-    },
-    {
-        id: "roadmap",
-        label: "Syllabus Architect",
-        desc: "Convert chaos into a structured learning path",
-        longDesc: "AI analyzes your curriculum and breaks it down into a logical, phased implementation strategy for your degree.",
-        icon: MapIcon,
-        color: "#C084FC",
-        gradient: "from-[#C084FC] to-[#A855F7]",
-        apiEndpoint: "/api/generate/roadmap",
-        cost: 2,
-    },
+        id: "predict",
+        number: 4,
+        title: "Predict",
+        tools: [
+            {
+                id: "roadmap",
+                label: "Syllabus Architect",
+                desc: "Master your entire semester",
+                icon: MapIcon,
+                color: "var(--violet)",
+                apiEndpoint: "/api/generate/roadmap",
+                cost: 2,
+            },
+        ]
+    }
 ];
 
-interface GenerationResult {
-    type: string;
-    title: string;
-    data: any;
-}
+const allTools = phases.flatMap(p => p.tools);
 
-// ─── Configuration Options ──────────────────────────────────────────
 const countOptions = [5, 10, 20, 30, 45, 60];
 const difficultyOptions = [
     { id: "easy", label: "Novice", desc: "Basic recall & definitions", emoji: "🌱" },
@@ -140,12 +163,23 @@ const formatOptions: Record<string, { id: string, label: string, desc: string }[
     ],
     summary: [
         { id: "bullets", label: "High-Yield", desc: "Focus on facts" },
-        { id: "cornell", label: "Cornell", desc: "Structured system" },
         { id: "narrative", label: "Narrative", desc: "Prose explanation" },
     ],
     roadmap: [
         { id: "chronological", label: "Phase-based", desc: "Step-by-step" },
         { id: "thematic", label: "Thematic", desc: "Cluster-based" },
+    ],
+    eli5: [
+        { id: "analogy", label: "Vivid Analogy", desc: "Best for intuition" },
+        { id: "metaphor", label: "Poetic Metaphor", desc: "Creative links" },
+    ],
+    cornell: [
+        { id: "standard", label: "Standard", desc: "Full Cornell spec" },
+        { id: "digital", label: "Digital First", desc: "Optimized for screens" },
+    ],
+    review: [
+        { id: "gap_analysis", label: "Gap Analysis", desc: "Find what's missing" },
+        { id: "contradiction", label: "Logical Audit", desc: "Check for errors" },
     ]
 };
 
@@ -153,55 +187,61 @@ function CreatorStudio() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user } = useUser();
-    const { openModal, isProcessing } = useIngestStore();
+    const { openModal } = useIngestStore();
 
-    // Core state
     const [selectedType, setSelectedType] = useState<string | null>(null);
-
-    // Deep Link Interception
-    useEffect(() => {
-        const tool = searchParams.get('tool');
-        if (tool && ['flashcards', 'match', 'quiz', 'summary', 'roadmap'].includes(tool)) {
-            setSelectedType(tool);
-        }
-    }, [searchParams]);
-
     const [inputText, setInputText] = useState("");
-    const [dragActive, setDragActive] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState("");
     const [setupError, setSetupError] = useState<string | null>(null);
+    const [isSprintMode, setIsSprintMode] = useState(false);
 
-    // Configuration
     const [itemCount, setItemCount] = useState(10);
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
     const [timerValue, setTimerValue] = useState(600);
     const [selectedFormat, setSelectedFormat] = useState("");
 
-    // Initialize format when type changes
+    useEffect(() => {
+        const tool = searchParams.get('tool');
+        const validTools = allTools.map(t => t.id);
+        if (tool && validTools.includes(tool)) {
+            setSelectedType(tool);
+        }
+    }, [searchParams]);
+
     useEffect(() => {
         if (selectedType && formatOptions[selectedType]) {
             setSelectedFormat(formatOptions[selectedType][0].id);
         }
     }, [selectedType]);
 
-    // ─── Computed ──────────────────────────────────────────────────────────────
-    const selectedCreator = creatorTypes.find(c => c.id === selectedType);
+    const selectedCreator = allTools.find(c => c.id === selectedType);
     const charPercentage = (inputText.length / MAX_CHARS) * 100;
     const canGenerate = inputText.trim().length > 50 && selectedType;
 
-    // ─── Handlers ──────────────────────────────────────────────────────────────
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
     };
 
     const handleFileUploadRequest = () => {
+        setIsSprintMode(false);
+        openModal();
+    };
+
+    const handleExamSprint = () => {
+        sessionStorage.setItem("isExamSprint", "true");
+        setIsSprintMode(true);
         openModal();
     };
 
     const handleIngestSuccess = (text: string) => {
-        setInputText(prev => prev + (prev ? '\n\n' : '') + text.substring(0, MAX_CHARS));
+        const isSprint = sessionStorage.getItem("isExamSprint") === "true";
+        if (isSprint) {
+            setSelectedType("summary");
+            setInputText(text.substring(0, MAX_CHARS));
+        } else {
+            setInputText(prev => prev + (prev ? '\n\n' : '') + text.substring(0, MAX_CHARS));
+        }
     };
 
     const handleGenerate = () => {
@@ -219,282 +259,186 @@ function CreatorStudio() {
         router.push(`/${selectedType}/generate`);
     };
 
-    const handleDrag = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(e.type === "dragenter" || e.type === "dragover");
-    };
-
     const resetSelection = () => {
         setSelectedType(null);
         setInputText("");
         setSetupError(null);
+        sessionStorage.removeItem("isExamSprint");
+        setIsSprintMode(false);
     };
 
-    // ─── RENDER ────────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
-            {/* Ambient Background — warm amber only, no purple */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute w-[600px] h-[600px] rounded-full"
-                    style={{ top: "-10%", right: "-10%", background: "radial-gradient(circle, rgba(245,158,11,0.06), transparent 60%)", filter: "blur(80px)", animation: "professor-pulse 8s ease-in-out infinite" }} />
-                <div className="absolute w-[400px] h-[400px] rounded-full"
-                    style={{ bottom: "10%", left: "-5%", background: "radial-gradient(circle, rgba(16,185,129,0.03), transparent 60%)", filter: "blur(70px)", animation: "professor-pulse 10s ease-in-out infinite reverse" }} />
-            </div>
-
-            <div className="mx-auto flex justify-center py-4">
-                {/* Header Slot Placeholder or direct back button if needed */}
-            </div>
-
-            <main className="max-w-2xl mx-auto px-5 pt-24 pb-8 sm:pt-20 sm:pb-12 relative z-10">
-
-                {/* ══════════════════════════════════════════════════════════════════════════════════════
-                    VIEW 1: TOOL SELECTION
-                   ══════════════════════════════════════════════════════════════════════════════════════ */}
-                {!selectedType && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Welcome */}
-                        <div className="text-center mb-10">
-                            <h2 className="font-heading text-3xl sm:text-[40px] font-bold text-[var(--foreground)] tracking-tight mb-2 leading-tight">
-                                Prepare to Build
-                            </h2>
-                            <p className="text-[13px] text-[var(--foreground-muted)] max-w-sm mx-auto">
-                                Feed the AI your raw notes, and it will synthesize them into active learning materials.
+        <div className="min-h-screen bg-transparent text-[var(--foreground)] pb-28 pt-20 relative overflow-x-hidden">
+            <StandardContainer wide={!selectedType}>
+                {!selectedType ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="mb-10 sm:mb-16 text-center sm:text-left">
+                            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-4 leading-tight">
+                                The Study <span className="text-[var(--blue)]">Journey</span>
+                            </h1>
+                            <p className="text-sm sm:text-base text-[var(--foreground-muted)] font-medium leading-relaxed max-w-lg opacity-80 mx-auto sm:mx-0">
+                                Don&apos;t just read. Master. Follow the Professor&apos;s four-phase methodology to convert raw data into exam-day dominance.
                             </p>
                         </div>
 
-                        {/* Tool Cards - Bento Grid approach */}
-                        <div className="grid gap-4">
-                            {creatorTypes.map((creator) => (
-                                <button
-                                    key={creator.id}
-                                    onClick={() => {
-                                        if ((creator as any).directRoute) {
-                                            router.push((creator as any).directRoute);
-                                        } else {
-                                            setSelectedType(creator.id);
-                                        }
-                                    }}
-                                    className="w-full group relative flex items-center gap-5 p-6 text-left transition-all duration-300"
-                                    style={clay.card}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = "translateY(-3px)";
-                                        e.currentTarget.style.boxShadow = `inset 0 1px 2px rgba(255,255,255,0.06), inset 0 -1px 2px rgba(0,0,0,0.15), 0 12px 40px rgba(0,0,0,0.35), 0 0 20px ${creator.color}15`;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = "";
-                                        e.currentTarget.style.boxShadow = clay.card.boxShadow as string;
-                                    }}
-                                >
-                                    {/* Top edge highlight */}
-                                    <div className="absolute top-0 left-0 right-0 h-px"
-                                        style={{ background: `linear-gradient(90deg, transparent 10%, ${creator.color}30 50%, transparent 90%)` }} />
+                        <div className="mb-12">
+                            <ExamSprintCard onClick={handleExamSprint} />
+                        </div>
 
-                                    {/* Icon */}
-                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                                        style={{
-                                            background: `linear-gradient(145deg, ${creator.color}20, ${creator.color}05)`,
-                                            boxShadow: `inset 0 2px 3px rgba(255,255,255,0.06), inset 0 -2px 4px rgba(0,0,0,0.2), 0 4px 12px ${creator.color}20`,
-                                            border: `1px solid ${creator.color}15`,
-                                        }}>
-                                        <creator.icon size={26} strokeWidth={1.5} style={{ color: creator.color }} />
-                                    </div>
-
-                                    {/* Text */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-heading text-lg font-bold text-[var(--foreground)]">{creator.label}</h3>
-                                            {creator.popular && (
-                                                <span className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider"
-                                                    style={{ background: `${creator.color}15`, color: creator.color }}>
-                                                    Popular
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="text-[12px] text-[var(--foreground-muted)] leading-relaxed">{creator.desc}</p>
-                                    </div>
-
-                                    {/* Arrow */}
-                                    <ChevronRight size={20} strokeWidth={1.5} className="text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] group-hover:translate-x-1 transition-all shrink-0" />
-                                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {phases.map((phase) => (
+                                <JourneyPhase
+                                    key={phase.id}
+                                    number={phase.number}
+                                    title={phase.title}
+                                    tools={phase.tools}
+                                    onSelectTool={setSelectedType}
+                                />
                             ))}
                         </div>
                     </div>
-                )}
-
-                {/* ══════════════════════════════════════════════════════════════════════════════════════
-                    VIEW 2: INPUT + CONFIG
-                   ══════════════════════════════════════════════════════════════════════════════════════ */}
-                {selectedType && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-400 space-y-6">
-
-                        {/* Selected Tool Banner */}
-                        <div className="flex items-center gap-4 p-4 rounded-3xl" style={{ ...clay.card, background: "rgba(255,255,255,0.015)" }}>
+                ) : (
+                    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-400 space-y-6">
+                        <div className="flex items-center gap-4 p-4 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                                style={{ background: `${selectedCreator?.color}15`, boxShadow: `inset 0 1px 2px ${selectedCreator?.color}20` }}>
-                                {selectedCreator && <selectedCreator.icon size={20} strokeWidth={1.5} style={{ color: selectedCreator?.color }} />}
+                                style={{ background: `color-mix(in srgb, ${selectedCreator?.color}, transparent 90%)` }}>
+                                {selectedCreator && <selectedCreator.icon size={20} strokeWidth={2} style={{ color: selectedCreator?.color }} />}
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-sm font-bold text-[var(--foreground)]">{selectedCreator?.label}</h3>
-                                <p className="text-[11px] text-[var(--foreground-muted)]">{selectedCreator?.desc}</p>
+                                <h3 className="text-sm font-black text-[var(--foreground)] tracking-tight">{selectedCreator?.label}</h3>
+                                <p className="text-[11px] text-[var(--foreground-muted)] font-medium opacity-80">{selectedCreator?.desc}</p>
                             </div>
-                            <button onClick={resetSelection} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                            <button onClick={resetSelection} className="p-2 hover:bg-[var(--foreground)]/5 rounded-full transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
                                 <X size={18} />
                             </button>
                         </div>
 
-                        {/* Content Input */}
-                        <div
-                            className={`relative overflow-hidden transition-all duration-300 ${dragActive ? 'scale-[1.02]' : ''}`}
-                            style={{
-                                ...clay.card,
-                                borderColor: dragActive ? selectedCreator?.color : "rgba(255,255,255,0.06)",
-                                boxShadow: dragActive ? `0 0 0 1px ${selectedCreator?.color}, 0 8px 32px ${selectedCreator?.color}15` : clay.card.boxShadow,
-                            }}
-                            onDragEnter={handleDrag}
-                            onDragLeave={handleDrag}
-                            onDragOver={handleDrag}
-                            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }}
-                        >
+                        <div className="relative overflow-hidden rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-2xl">
                             <div className="px-5 pt-4 flex items-center justify-between">
-                                <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-70">Source Material</label>
-                                <span className={`text-[10px] font-bold ${charPercentage > 80 ? 'text-[#EF4444]' : 'text-[var(--foreground-muted)] opacity-60'}`}>
-                                    {inputText.length > 0 ? `${inputText.length.toLocaleString()} chars` : ''}
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] opacity-60">Source Material</label>
+                                <span className={`text-[10px] font-mono font-black tracking-tighter ${charPercentage > 80 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/60'}`}>
+                                    {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
                                 </span>
                             </div>
                             <div className="relative p-5">
                                 {isUploading && (
-                                    <div className="absolute inset-0 z-10 bg-[var(--background)]/85 backdrop-blur-md flex flex-col items-center justify-center rounded-xl gap-3">
-                                        {/* Inline amber orbital spinner */}
-                                        <div className="relative w-10 h-10">
-                                            <div className="absolute inset-0 rounded-full border border-[var(--accent)]/15" />
-                                            <div className="absolute inset-0 rounded-full border border-transparent border-t-[var(--accent)]" style={{ animation: "professor-spin 1.2s linear infinite" }} />
-                                            <div className="absolute inset-[6px] rounded-full border border-transparent border-t-[#10B981]" style={{ animation: "professor-spin 0.8s linear infinite reverse" }} />
+                                    <div className="absolute inset-0 z-10 bg-transparent/90 backdrop-blur-md flex flex-col items-center justify-center rounded-xl gap-4">
+                                        <div className="relative w-12 h-12">
+                                            <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
+                                            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_15px_var(--blue-glow)] animate-spin" />
                                         </div>
-                                        <p className="text-[11px] font-bold text-[var(--foreground-muted)] uppercase tracking-[0.2em]">{uploadStatus}</p>
+                                        <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.3em]">{uploadStatus}</p>
                                     </div>
                                 )}
                                 <textarea
                                     value={inputText}
                                     onChange={handleInputChange}
-                                    placeholder="Paste lecture notes, syllabus, or raw intelligence here..."
-                                    className="w-full h-48 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] placeholder:opacity-50 text-[14px] leading-relaxed outline-none"
+                                    placeholder="Paste lecture notes, syllabus, or raw data here..."
+                                    className="w-full h-56 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] placeholder:opacity-60 text-[15px] leading-relaxed outline-none font-medium"
                                     style={{ scrollbarWidth: "none" }}
                                     autoFocus
                                     disabled={isUploading}
                                 />
                             </div>
-                            <div className="px-5 pb-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.03)" }}>
+                            <div className="px-5 py-4 flex items-center justify-between bg-white/[0.02] border-t border-[var(--border)]">
                                 <button
                                     onClick={handleFileUploadRequest}
-                                    className="flex items-center gap-2 text-[12px] font-semibold text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors pt-3"
+                                    className="flex items-center gap-2 text-[11px] font-black text-[var(--foreground-muted)] hover:text-[var(--blue)] uppercase tracking-widest transition-all group"
                                 >
-                                    <Upload size={15} strokeWidth={1.5} />
+                                    <Upload size={14} strokeWidth={2} className="group-hover:-translate-y-0.5 transition-transform" />
                                     Teach The Professor
                                 </button>
                                 {inputText.length > 0 && inputText.length < 50 && (
-                                    <span className="text-[10px] font-bold text-[#F59E0B] pt-3">Minimum 50 chars required</span>
+                                    <span className="text-[10px] font-black text-[var(--amber)] uppercase tracking-tight italic">Min 50 chars required</span>
                                 )}
                             </div>
                         </div>
 
-                        {/* Config Block */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Count / Density */}
-                            <div className="p-5" style={clay.card}>
-                                <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">
-                                    {selectedType === "summary" ? "Detail Level" : "Density / Count"}
+                            <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">
+                                    {selectedType === "summary" || selectedType === "cornell" ? "Detail Level" : "Density / Count"}
                                 </label>
                                 <div className="flex flex-wrap gap-2">
-                                    {(selectedType === "summary" ? [3, 5, 8, 12] : countOptions).map((count) => (
+                                    {(selectedType === "summary" || selectedType === "cornell" ? [3, 5, 8, 12] : countOptions).map((count) => (
                                         <button
                                             key={count}
                                             onClick={() => setItemCount(count)}
-                                            className={`px-3 py-1.5 text-[11px] font-bold transition-all rounded-lg`}
-                                            style={itemCount === count ? {
-                                                background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.1))",
-                                                color: "#F59E0B", border: "1px solid rgba(245,158,11,0.2)",
-                                                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1), 0 2px 6px rgba(245,158,11,0.2)"
-                                            } : {
-                                                background: "var(--foreground-opacity-5, rgba(255,255,255,0.02))", color: "var(--foreground-muted)",
-                                                border: "1px solid var(--border)"
-                                            }}
+                                            className={cn(
+                                                "px-4 py-2 text-[11px] font-black transition-all rounded-xl border",
+                                                itemCount === count 
+                                                ? 'bg-[var(--blue)] text-white border-[var(--blue)] shadow-[0_4px_12px_var(--blue-glow)]' 
+                                                : 'bg-white/5 text-[var(--foreground-muted)] border-white/5 hover:bg-white/10'
+                                            )}
                                         >
-                                            {selectedType === "summary" ? (count < 5 ? "Concise" : count < 10 ? "Standard" : "Extensive") : count}
+                                            {selectedType === "summary" || selectedType === "cornell" ? (count < 5 ? "Concise" : count < 10 ? "Standard" : "Extensive") : count}
                                         </button>
                                     ))}
                                 </div>
                             </div>
-
-                            {/* Rigor Level */}
-                            <div className="p-5" style={clay.card}>
-                                <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Professor's Rigor</label>
+  
+                            <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">Professor&apos;s Rigor</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {difficultyOptions.map((opt) => (
                                         <button
                                             key={opt.id}
                                             onClick={() => setDifficulty(opt.id as any)}
-                                            className="p-2.5 text-left rounded-xl transition-all"
-                                            style={difficulty === opt.id ? {
-                                                background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)",
-                                            } : {
-                                                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)"
-                                            }}
+                                            className={cn(
+                                                "p-3 text-left rounded-2xl transition-all border",
+                                                difficulty === opt.id 
+                                                ? 'bg-[var(--blue)]/10 border-[var(--blue)]/40 shadow-lg' 
+                                                : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                            )}
                                         >
-                                            <div className="text-[11px] font-bold flex items-center gap-1.5 mb-1"
-                                                style={{ color: difficulty === opt.id ? "#F59E0B" : "var(--foreground-muted)" }}>
+                                            <div className={cn("text-[11px] font-black flex items-center gap-2 mb-1", difficulty === opt.id ? 'text-[var(--blue)]' : 'text-[var(--foreground)]')}>
                                                 <span>{opt.emoji}</span> {opt.label}
                                             </div>
-                                            <p className="text-[9px] text-[var(--foreground-muted)] opacity-70 px-1 truncate">{opt.desc}</p>
+                                            <p className="text-[9px] text-[var(--foreground-muted)] font-medium opacity-60 px-1 truncate leading-tight">{opt.desc}</p>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Format Selection */}
-                            {formatOptions[selectedType] && (
-                                <div className="p-5" style={clay.card}>
-                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Output Format</label>
+                            {formatOptions[selectedType || ""] && (
+                                <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">Output Format</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {formatOptions[selectedType].map((opt) => (
+                                        {formatOptions[selectedType || ""].map((opt) => (
                                             <button
                                                 key={opt.id}
                                                 onClick={() => setSelectedFormat(opt.id)}
-                                                className="p-3 text-left rounded-xl transition-all"
-                                                style={selectedFormat === opt.id ? {
-                                                    background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)",
-                                                } : {
-                                                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)"
-                                                }}
+                                                className={cn(
+                                                    "p-3 text-left rounded-2xl transition-all border",
+                                                    selectedFormat === opt.id 
+                                                    ? 'bg-[var(--cyan)]/10 border-[var(--cyan)]/40 shadow-lg' 
+                                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                                )}
                                             >
-                                                <div className="text-[11px] font-bold mb-1"
-                                                    style={{ color: selectedFormat === opt.id ? "#10B981" : "var(--foreground-muted)" }}>
+                                                <div className={cn("text-[11px] font-black mb-1", selectedFormat === opt.id ? 'text-[var(--cyan)]' : 'text-[var(--foreground)]')}>
                                                     {opt.label}
                                                 </div>
-                                                <p className="text-[9px] text-[var(--foreground-muted)] opacity-70 truncate">{opt.desc}</p>
+                                                <p className="text-[9px] text-[var(--foreground-muted)] font-medium opacity-60 truncate leading-tight">{opt.desc}</p>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Timer Selection (Only for Quiz/Match) */}
                             {(selectedType === "quiz" || selectedType === "match") && (
-                                <div className="p-5" style={clay.card}>
-                                    <label className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[var(--foreground-muted)] opacity-80 mb-3 block">Time Pressure</label>
+                                <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">Time Pressure</label>
                                     <div className="flex flex-wrap gap-2">
                                         {timerOptions.map((opt) => (
                                             <button
                                                 key={opt.id}
                                                 onClick={() => setTimerValue(opt.id)}
-                                                className="px-3 py-1.5 text-[11px] font-bold transition-all rounded-lg"
-                                                style={timerValue === opt.id ? {
-                                                    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)",
-                                                    color: "#EF4444"
-                                                } : {
-                                                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
-                                                    color: "var(--foreground-muted)"
-                                                }}
+                                                className={cn(
+                                                    "px-3 py-1.5 text-[11px] font-black transition-all rounded-xl border",
+                                                    timerValue === opt.id 
+                                                    ? 'bg-[var(--crimson)]/10 border-[var(--crimson)] text-[var(--crimson)] shadow-md' 
+                                                    : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:bg-white/10'
+                                                )}
                                             >
                                                 {opt.label}
                                             </button>
@@ -504,41 +448,38 @@ function CreatorStudio() {
                             )}
                         </div>
 
-                        {/* Generate Button */}
-                        <div className="pt-2">
+                        <div className="pt-4">
                             <button
                                 onClick={handleGenerate}
                                 disabled={!canGenerate}
-                                className={`w-full py-4 rounded-2xl font-bold text-[13px] tracking-wide transition-all flex items-center justify-center gap-2.5 relative overflow-hidden group ${
-                                    !canGenerate ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.98]'
-                                }`}
-                                style={{
-                                    background: canGenerate ? "linear-gradient(135deg, #F59E0B, #D97706)" : "var(--card)",
-                                    color: canGenerate ? "#08080E" : "var(--foreground-muted)",
-                                    boxShadow: canGenerate ? "0 4px 16px rgba(245,158,11,0.3), inset 0 2px 3px rgba(255,255,255,0.2), inset 0 -2px 3px rgba(0,0,0,0.15)" : "none",
-                                    border: canGenerate ? "none" : "1px solid var(--border)"
-                                }}
+                                className={cn(
+                                    "w-full py-5 rounded-[24px] font-black text-[14px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl",
+                                    !canGenerate 
+                                    ? 'opacity-70 cursor-not-allowed bg-[var(--bg-2)] border border-[var(--border)] text-[var(--foreground-muted)]' 
+                                    : 'bg-[var(--blue)] text-white hover:scale-[1.01] active:scale-[0.98]'
+                                )}
                             >
-                                <>
-                                    {canGenerate && (
+                                {canGenerate && (
+                                    <>
                                         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    )}
-                                    <Zap size={18} strokeWidth={1.5} />
-                                    <span className="relative z-10">Initialize Generation (-{selectedCreator?.cost} credit)</span>
-                                </>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                                    </>
+                                )}
+                                <Zap size={20} strokeWidth={2.5} className={canGenerate ? "animate-pulse" : ""} />
+                                <span className="relative z-10">Initialize Generation</span>
+                                <span className="text-[10px] opacity-60 font-mono ml-1">(-{selectedCreator?.cost} CR)</span>
                             </button>
                         </div>
 
-                        {/* Error */}
                         {setupError && (
-                            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20">
-                                <div className="flex items-center gap-2 text-[12px] font-bold text-red-400">
-                                    <AlertTriangle size={16} strokeWidth={1.5} />
+                            <div className="flex items-center justify-between p-4 rounded-[24px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
+                                <div className="flex items-center gap-3 text-[12px] font-black text-[var(--crimson)] uppercase tracking-wider">
+                                    <AlertTriangle size={18} strokeWidth={2.5} />
                                     {setupError}
                                 </div>
                                 <button
                                     onClick={() => { setSetupError(null); }}
-                                    className="px-3 py-1.5 bg-red-500/20 text-red-300 text-[10px] uppercase tracking-wider font-bold rounded-lg hover:bg-red-500/30 transition-colors"
+                                    className="px-4 py-2 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[10px] uppercase tracking-[0.2em] font-black rounded-xl hover:bg-[var(--crimson)]/30 transition-colors"
                                 >
                                     Dismiss
                                 </button>
@@ -546,9 +487,13 @@ function CreatorStudio() {
                         )}
                     </div>
                 )}
-            </main>
-            
-            <KnowledgeIngestModal onSuccess={handleIngestSuccess} />
+            </StandardContainer>
+
+            <KnowledgeIngestModal 
+                onSuccess={handleIngestSuccess} 
+                title={isSprintMode ? "Initialize Exam Sprint" : undefined}
+                description={isSprintMode ? "Upload your materials and the Professor will prepare your 10-hour survival kit." : undefined}
+            />
         </div>
     );
 }

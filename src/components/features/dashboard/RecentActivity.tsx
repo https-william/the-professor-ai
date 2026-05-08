@@ -25,14 +25,14 @@ function getTypeIcon(type: string): any {
 
 function getTypeColor(type: string): string {
     switch (type) {
-        case "flashcards": return "var(--accent)";
-        case "quiz": return "var(--secondary)";
-        case "summary": return "var(--success)";
-        case "roadmap": return "var(--error)";
-        default: return "var(--foreground-muted)";
+        case "flashcards": return "var(--blue)";
+        case "quiz": return "var(--cyan)";
+        case "summary": return "var(--amber)";
+        case "roadmap": return "var(--crimson)";
+        default: return "var(--text-3)";
     }
 }
-
+ 
 function getTypeLabel(type: string): string {
     switch (type) {
         case "flashcards": return "Flashcards";
@@ -42,7 +42,7 @@ function getTypeLabel(type: string): string {
         default: return type;
     }
 }
-
+ 
 function formatRelativeTime(dateStr: string): string {
     const date = new Date(dateStr);
     const now = new Date();
@@ -50,27 +50,27 @@ function formatRelativeTime(dateStr: string): string {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHrs = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-
+ 
     if (diffMins < 1) return "just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHrs < 24) return `${diffHrs}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
-
+ 
 export default function RecentActivity({ activities }: RecentActivityProps) {
     if (activities.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 px-6 text-center font-sans bg-[var(--foreground)]/[0.02] rounded-[32px] border border-dashed border-[var(--border)]">
-                <GraduationCap size={32} strokeWidth={1} className="text-[var(--foreground-muted)]/30 mb-4" />
-                <p className="text-[11px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">No Recent Archives</p>
-                <Link href="/create" className="mt-4 text-[10px] font-black text-[var(--accent)] hover:underline tracking-tighter italic">
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center font-sans bg-[var(--text)]/[0.02] rounded-[32px] border border-dashed border-[var(--border)]">
+                <GraduationCap size={32} strokeWidth={1} className="text-[var(--text-3)]/30 mb-4" />
+                <p className="text-[11px] font-black text-[var(--text-3)] uppercase tracking-widest">No Recent Archives</p>
+                <Link href="/create" className="mt-4 text-[10px] font-black text-[var(--blue)] hover:underline tracking-tighter italic">
                     BEGIN SCHOLARLY JOURNEY →
                 </Link>
             </div>
         );
     }
-
+ 
     return (
         <div className="space-y-4">
             <div className="space-y-1">
@@ -84,21 +84,21 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
                     >
                         <Link
                             href={`/${item.type === "quiz" ? "quiz" : item.type === "summary" ? "summary" : "flashcards"}?id=${item.id}`}
-                            className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--foreground)]/5 transition-all group border border-transparent hover:border-[var(--border)]"
+                            className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--text)]/5 transition-all group border border-transparent hover:border-[var(--border)]"
                         >
-                            <div className="w-10 h-10 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] flex items-center justify-center shrink-0 group-hover:border-[var(--accent)]/30 transition-colors">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--bg-2)] border border-[var(--border)] flex items-center justify-center shrink-0 group-hover:border-[var(--blue)]/30 transition-colors">
                                 {(() => {
                                     const IconComp = getTypeIcon(item.type);
-                                    return <IconComp size={16} strokeWidth={1.5} className="text-[var(--foreground-muted)] group-hover:text-[var(--accent)] transition-colors" />;
+                                    return <IconComp size={16} strokeWidth={2} className="text-[var(--text-3)] group-hover:text-[var(--blue)] transition-colors" />;
                                 })()}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[13px] font-bold text-[var(--foreground)] truncate transition-colors">{item.title}</p>
-                                <p className="text-[9px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] mt-0.5 opacity-60">
+                                <p className="text-[13px] font-black text-[var(--text)] truncate transition-colors">{item.title}</p>
+                                <p className="text-[9px] text-[var(--text-3)] font-black uppercase tracking-[0.2em] mt-0.5 opacity-60">
                                     {getTypeLabel(item.type)}
                                 </p>
                             </div>
-                            <span className="text-[10px] text-[var(--foreground-muted)]/60 font-black tracking-tighter italic shrink-0">
+                            <span className="text-[10px] text-[var(--text-3)]/60 font-black tracking-tighter italic shrink-0">
                                 {formatRelativeTime(item.createdAt)}
                             </span>
                         </Link>
@@ -106,7 +106,7 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
                 ))}
             </div>
             
-            <Link href="/library" className="block w-full py-3 text-center rounded-xl bg-[var(--foreground)]/[0.03] hover:bg-[var(--foreground)]/[0.06] border border-[var(--border)] text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.3em] transition-all">
+            <Link href="/library" className="block w-full py-3 text-center rounded-xl bg-[var(--bg-2)]/50 hover:bg-[var(--bg-2)] border border-[var(--border)] text-[9px] font-black text-[var(--text-3)] uppercase tracking-[0.3em] transition-all">
                 Full Archives
             </Link>
         </div>

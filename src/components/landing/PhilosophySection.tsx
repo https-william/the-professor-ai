@@ -12,8 +12,8 @@ const BLOCKS = [
     body: "Decades of cognitive science are unambiguous: the act of retrieving information — not re-reading it — is what builds durable, exam-ready memory. The Professor converts your notes into a quiz, a structured study guide, and a match game because these are the only formats that wire knowledge in rather than just passing it through your short-term memory.",
   },
   {
-    title: "We built this for late nights in Ota.",
-    body: "Not San Francisco. Every decision — the language, the features, the pricing, the upload formats — was made with one person in mind: a Nigerian university student sitting up at 3 AM with an exam in 10 hours. This is an African product, for African students, built by one of them.",
+    title: "Built for the high-stakes grind.",
+    body: "Not Silicon Valley. Every decision — the language, the features, the accessibility, the upload formats — was made with one person in mind: the student sitting up at 3 AM with an exam in 10 hours. This is a tool for the dedicated, the ambitious, and the ones who refuse to leave their grades to chance.",
   },
 ];
 
@@ -25,7 +25,7 @@ export default function PhilosophySection() {
         padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
         maxWidth: "1100px",
         margin: "0 auto",
-        background: "#08080E",
+        background: "var(--bg)",
         position: "relative",
       }}
     >
@@ -48,42 +48,44 @@ export default function PhilosophySection() {
             top: 0,
             bottom: 0,
             width: "1px",
-            background: "linear-gradient(180deg, transparent 0%, rgba(245,158,11,0.15) 20%, rgba(245,158,11,0.15) 80%, transparent 100%)",
+            background: "linear-gradient(180deg, transparent 0%, var(--blue-border) 20%, var(--blue-border) 80%, transparent 100%)",
             pointerEvents: "none",
           }}
         />
 
         {/* Left Column */}
-        <div className="animate-up" style={{ position: "sticky", top: "120px" }}>
-          <span className="section-label">OUR PHILOSOPHY</span>
+        <div className="philosophy-left-col animate-up" style={{ position: "sticky", top: "120px" }}>
+          <span className="section-label" style={{ color: "var(--blue)" }}>OUR PHILOSOPHY</span>
 
           <h2 style={{
-            fontFamily: "'Galaxie Copernicus', 'Source Serif 4', Georgia, serif",
+            fontFamily: "var(--font-heading)",
             fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
-            fontWeight: 500,
-            lineHeight: 1.2,
-            color: "#F5F0E8",
-            marginTop: 0,
+            fontWeight: 900,
+            lineHeight: 1.1,
+            color: "var(--text)",
+            marginTop: "12px",
+            letterSpacing: "-0.03em"
           }}>
             Study guides don&apos;t fail students. Studying the{" "}
-            <span style={{ color: "#F59E0B", fontStyle: "normal" }}>wrong things</span>{" "}
+            <span style={{ color: "var(--blue)", fontStyle: "normal" }}>wrong things</span>{" "}
             does.
           </h2>
 
           <div style={{
             width: "40px",
-            height: "1.5px",
-            background: "#F59E0B",
+            height: "2px",
+            background: "var(--blue)",
             borderRadius: "1px",
             marginTop: "28px",
           }} />
 
           <p style={{
-            fontFamily: "'Tiempos Text', 'Source Serif 4', Georgia, serif",
+            fontFamily: "var(--font-sans)",
             fontSize: "14px",
-            color: "rgba(245,240,232,0.45)",
-            lineHeight: 1.7,
+            color: "var(--text-3)",
+            lineHeight: 1.6,
             marginTop: "16px",
+            fontWeight: 500
           }}>
             The Professor uses your actual notes — not textbooks, not the internet — to build study tools calibrated to exactly what your lecturer taught.
           </p>
@@ -100,30 +102,33 @@ export default function PhilosophySection() {
                 transitionDelay: `${i * 150}ms`,
               }}
             >
-              {/* Amber accent line */}
+              {/* Blue accent line */}
               <div style={{
                 width: "32px",
-                height: "1.5px",
-                background: "#F59E0B",
+                height: "2px",
+                background: "var(--blue)",
                 marginBottom: "16px",
+                opacity: 0.6
               }} />
 
               <h3 style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: "17px",
-                fontWeight: 700,
-                color: "#F5F0E8",
-                marginBottom: "8px",
+                fontFamily: "var(--font-heading)",
+                fontSize: "18px",
+                fontWeight: 800,
+                color: "var(--text)",
+                marginBottom: "12px",
+                letterSpacing: "-0.01em"
               }}>
                 {block.title}
               </h3>
 
               <p style={{
-                fontFamily: "'Tiempos Text', 'Source Serif 4', Georgia, serif",
+                fontFamily: "var(--font-sans)",
                 fontSize: "15px",
-                color: "rgba(245,240,232,0.58)",
-                lineHeight: 1.75,
+                color: "var(--text-2)",
+                lineHeight: 1.65,
                 maxWidth: "580px",
+                fontWeight: 400
               }}>
                 {block.body}
               </p>
@@ -136,11 +141,17 @@ export default function PhilosophySection() {
       <style jsx>{`
         @media (max-width: 768px) {
           .philosophy-grid {
-            display: block !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 40px !important;
           }
-          .philosophy-grid > div:first-child {
+          .philosophy-left-col {
             position: static !important;
-            margin-bottom: 40px;
+            width: 100% !important;
+            margin-bottom: 20px;
+          }
+          .hidden.md\:block {
+             display: none !important;
           }
         }
       `}</style>

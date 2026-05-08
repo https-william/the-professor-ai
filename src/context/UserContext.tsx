@@ -40,14 +40,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         // Only run on client
         if (typeof window === 'undefined') return;
         
-        store.refreshUser();
+        // Use a local flag to prevent redundant initial refresh if auth listener fires immediately
+        let initialRefreshDone = false;
+        
+        const performInitialLoad = async () => {
+            if (!initialRefreshDone) {
+                initialRefreshDone = true;
+                await store.refreshUser();
+            }
+        };
+
+        performInitialLoad();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
-            store.refreshUser();
+            // refreshUser is locked internally by isRefreshing, but we can avoid the call if session is null and we aren't auth'd
+            if (event === 'SIGNED_OUT') {
+                store.updateUser({ isAuthenticated: false, id: null });
+            } else {
+                store.refreshUser();
+            }
         });
 
         return () => subscription.unsubscribe();
-    }, [supabase, store.refreshUser]);
+    }, [supabase, store.refreshUser, store.updateUser]);
 
     const addCredits = async (amount: number): Promise<boolean> => {
         try {
@@ -200,6 +215,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         isLoading: store.isLoading,
         isAuthenticated: store.isAuthenticated,
         hasOnboarded: store.hasOnboarded,
+        syncError: store.syncError,
         createdAt: store.createdAt
     };
 

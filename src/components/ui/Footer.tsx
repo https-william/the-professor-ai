@@ -1,42 +1,49 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BrandLogo from "./BrandLogo";
 import { AnimatePresence } from "framer-motion";
 import { PrivacyPolicyModal, TermsOfUseModal } from "@/components/ui/LegalModals";
 import StandardContainer from "./StandardContainer";
 
 export default function Footer() {
+  const [mounted, setMounted] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms]     = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return <div className="w-full h-12" />; // Placeholder to prevent layout shift
 
   return (
     <>
       <footer
-        className="w-full border-t mt-auto"
+        className="w-full border-t relative z-[10]"
         style={{
           background: "var(--background-secondary)",
           borderColor: "var(--border)",
         }}
       >
-        <StandardContainer className="py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <StandardContainer className="py-2 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <BrandLogo size="sm" />
+            <BrandLogo size="xs" />
             <p className="text-[11px]" style={{ color: "var(--foreground-muted)" }}>
-              AI study companion · Not an accredited institution
+              AI study companion · Strategic academic mastery
             </p>
           </div>
 
           <div className="flex items-center gap-5">
             <button
               onClick={() => setShowPrivacy(true)}
-              className="text-[11px] font-medium transition-colors hover:text-[var(--foreground)]"
+              className="text-[11px] font-medium transition-colors hover:text-[var(--foreground)] cursor-pointer"
               style={{ color: "var(--foreground-muted)" }}
             >
               Privacy
             </button>
             <button
               onClick={() => setShowTerms(true)}
-              className="text-[11px] font-medium transition-colors hover:text-[var(--foreground)]"
+              className="text-[11px] font-medium transition-colors hover:text-[var(--foreground)] cursor-pointer"
               style={{ color: "var(--foreground-muted)" }}
             >
               Terms

@@ -239,7 +239,7 @@ export default function LibraryPage() {
     const summaryCount = generations.filter(g => g.type === "summary").length;
 
     return (
-        <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] pb-28 relative overflow-hidden">
+        <div className="min-h-[100dvh] bg-transparent text-[var(--foreground)] pb-28 relative overflow-hidden">
             {/* Ambient */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute w-[500px] h-[500px] rounded-full animate-pulse"
@@ -264,12 +264,12 @@ export default function LibraryPage() {
                                 }}>
                                 <Library size={20} strokeWidth={1.5} className="text-[var(--foreground)]" />
                             </div>
-                            <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-white/15">My Library</span>
+                            <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-[var(--text-3)]">My Library</span>
                         </div>
                         <h1 className="font-serif text-3xl sm:text-[44px] font-bold italic text-[var(--foreground)] tracking-tight mb-2 leading-tight">
                             Your Study Vault
                         </h1>
-                        <p className="text-[11px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] opacity-40">Preserving scholarly progress in real-time.</p>
+                        <p className="text-[11px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] opacity-70">Preserving scholarly progress in real-time.</p>
                     </div>
                     <Link href="/create"
                         className="flex items-center gap-1.5 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-[var(--foreground)] text-[var(--background)] transition-all active:scale-[0.98] shadow-xl"
@@ -291,7 +291,7 @@ export default function LibraryPage() {
                                 <s.icon size={18} strokeWidth={2} className="text-[var(--foreground)]" />
                             </div>
                             <div className="text-3xl font-black text-[var(--foreground)] leading-none">{s.count}</div>
-                            <div className="text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-widest opacity-40 mt-2">{s.label}</div>
+                            <div className="text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-widest opacity-70 mt-2">{s.label}</div>
                         </div>
                     ))}
                 </div>
@@ -309,8 +309,8 @@ export default function LibraryPage() {
                                     boxShadow: "inset 0 1px 2px rgba(245,158,11,0.1), 0 2px 8px rgba(245,158,11,0.08)",
                                 } : {
                                     ...clay.pill,
-                                    border: "1px solid rgba(255,255,255,0.04)",
-                                    color: "rgba(255,255,255,0.25)",
+                                    border: "1px solid var(--border)",
+                                    color: "var(--text-3)",
                                 }),
                             }}>
                             <f.icon size={13} strokeWidth={1.5} />
@@ -322,7 +322,7 @@ export default function LibraryPage() {
                 {/* Search Bar */}
                 <div className="relative mb-6">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors" 
-                        style={{ color: searchQuery ? "#F59E0B" : "rgba(255,255,255,0.25)" }}>
+                        style={{ color: searchQuery ? "#F59E0B" : "var(--text-3)" }}>
                         {searchQuery.includes("type:") ? <Filter size={18} strokeWidth={1.5} /> : <Search size={18} strokeWidth={1.5} />}
                     </div>
                     <input
@@ -331,7 +331,7 @@ export default function LibraryPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setShowSearch(true)}
-                        className="w-full pl-11 pr-12 py-3.5 rounded-2xl text-sm bg-white/[0.02] border border-white/[0.06] text-white/70 placeholder:text-white/20 focus:outline-none focus:border-[#F59E0B]/30 focus:bg-white/[0.04] transition-all"
+                        className="w-full pl-11 pr-12 py-3.5 rounded-2xl text-sm bg-[var(--bg-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-3)] focus:outline-none focus:border-[#F59E0B]/30 focus:bg-[var(--bg-2)] transition-all"
                         style={{ 
                             boxShadow: searchQuery ? "0 0 20px rgba(245,158,11,0.05), inset 0 1px 2px rgba(0,0,0,0.2)" : "inset 0 1px 2px rgba(0,0,0,0.1)",
                         }}
@@ -340,7 +340,7 @@ export default function LibraryPage() {
                         {searchQuery && (
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="p-1.5 rounded-lg text-white/20 hover:text-white/50 hover:bg-white/5 transition-all"
+                                className="p-1.5 rounded-lg text-[var(--text-3)] hover:text-white/50 hover:bg-[var(--bg-2)] transition-all"
                                 title="Clear search"
                             >
                                 <X size={16} strokeWidth={1.5} />
@@ -349,7 +349,7 @@ export default function LibraryPage() {
                         <div className="w-px h-4 bg-white/10 mx-1" />
                         <button 
                             onClick={() => setSearchQuery(prev => prev.includes("type:") ? "" : "type:")}
-                            className={`p-1.5 rounded-lg transition-all ${searchQuery.includes("type:") ? "text-[#F59E0B] bg-[#F59E0B]/10" : "text-white/20 hover:text-white/40"}`}
+                            className={`p-1.5 rounded-lg transition-all ${searchQuery.includes("type:") ? "text-[#F59E0B] bg-[#F59E0B]/10" : "text-[var(--text-3)] hover:text-[var(--text-3)]"}`}
                             title="Filter by type"
                         >
                             <Tag size={18} strokeWidth={1.5} />
@@ -374,7 +374,7 @@ export default function LibraryPage() {
                     <div className="overflow-hidden" style={clay.list}>
                         {/* Top edge highlight */}
                         <div className="absolute top-0 left-0 right-0 h-px relative"
-                            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)" }} />
+                            style={{ background: "linear-gradient(90deg, transparent, var(--border), transparent)" }} />
 
                         {searchFiltered.map((item, i) => {
                             const cfg = typeConfig[item.type] ?? typeConfig.summary;
@@ -390,8 +390,8 @@ export default function LibraryPage() {
                                             toggleSelection(item.id);
                                         }}
                                         onClick={() => handleOpen(item)}
-                                        className="flex-1 flex items-center gap-4 px-5 sm:px-6 py-4 transition-all hover:bg-white/[0.015] text-left outline-none"
-                                        style={{ borderBottom: i < searchFiltered.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none" }}>
+                                        className="flex-1 flex items-center gap-4 px-5 sm:px-6 py-4 transition-all hover:bg-[var(--bg-2)] text-left outline-none"
+                                        style={{ borderBottom: i < searchFiltered.length - 1 ? "1px solid var(--border)" : "none" }}>
 
                                         {/* Selection Indicator */}
                                         <AnimatePresence>
@@ -400,7 +400,7 @@ export default function LibraryPage() {
                                                     initial={{ scale: 0, opacity: 0 }}
                                                     animate={{ scale: 1, opacity: 1 }}
                                                     exit={{ scale: 0, opacity: 0 }}
-                                                    className="w-5 h-5 rounded-lg border-2 border-white/10 flex items-center justify-center mr-1"
+                                                    className="w-5 h-5 rounded-lg border-2 border-[var(--border)] flex items-center justify-center mr-1"
                                                     style={{ 
                                                         borderColor: isSelected ? "#F59E0B" : "rgba(255,255,255,0.1)",
                                                         background: isSelected ? "#F59E0B" : "transparent"
@@ -425,7 +425,7 @@ export default function LibraryPage() {
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="text-[14px] font-bold text-[var(--foreground)] truncate group-hover:opacity-40 transition-opacity">
+                                            <span className="text-[14px] font-bold text-[var(--foreground)] truncate group-hover:opacity-70 transition-opacity">
                                                 {item.title || "Untitled Scholarly Work"}
                                             </span>
                                             <span className="text-[9px] font-extrabold uppercase tracking-[0.12em] px-2 py-0.5 rounded-md flex-shrink-0"
@@ -438,9 +438,9 @@ export default function LibraryPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2 text-[11px] text-white/15">
+                                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-3)]">
                                             {count && <span>{count}</span>}
-                                            {count && <span className="text-white/8">·</span>}
+                                            {count && <span className="text-[var(--text-3)]">·</span>}
                                             <span>{new Date(item.created_at).toLocaleDateString()}</span>
                                         </div>
                                     </div>
@@ -475,7 +475,7 @@ export default function LibraryPage() {
 
                             <div className="flex items-center gap-2">
                                 <button onClick={handleBatchExport}
-                                    className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all">
+                                    className="p-2.5 rounded-xl bg-[var(--bg-2)] hover:bg-white/10 text-white/50 hover:text-white transition-all">
                                     <FileDown size={20} strokeWidth={1.5} />
                                 </button>
                                 <button onClick={handleBatchDelete} disabled={isProcessing}
@@ -484,7 +484,7 @@ export default function LibraryPage() {
                                 </button>
                                 <div className="w-px h-6 bg-white/10 mx-1" />
                                 <button onClick={exitSelectionMode}
-                                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-[12px] font-bold transition-all">
+                                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-2)] hover:bg-white/10 text-[var(--text-3)]0 text-[12px] font-bold transition-all">
                                     Cancel
                                 </button>
                             </div>

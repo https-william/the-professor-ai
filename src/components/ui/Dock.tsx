@@ -36,12 +36,12 @@ export default function Dock() {
                 {/* Home/Dashboard */}
                 <Link href="/dashboard" className="relative group p-3 rounded-2xl hover:bg-white/10 transition-colors">
                     {isActive("/dashboard") && (
-                        <motion.div layoutId="dock-indicator" className="absolute inset-0 bg-[#F59E0B]/20 rounded-2xl z-0" />
+                        <motion.div layoutId="dock-indicator" className="absolute inset-0 bg-[var(--blue-dim)] rounded-2xl z-0" />
                     )}
                     <LayoutDashboard 
                         size={24} 
                         strokeWidth={isActive("/dashboard") ? 2 : 1.5}
-                        className={`relative z-10 transition-colors ${isActive("/dashboard") ? "text-[#F59E0B]" : "text-white/40 group-hover:text-white/80"}`} 
+                        className={`relative z-10 transition-colors ${isActive("/dashboard") ? "text-[var(--blue)]" : "text-white/40 group-hover:text-white/80"}`} 
                     />
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-white/10 backdrop-blur-md rounded-md text-[10px] uppercase font-bold text-white/90 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Home</div>
                 </Link>
@@ -49,12 +49,12 @@ export default function Dock() {
                 {/* Library (Generations) */}
                 <Link href="/library" className="relative group p-3 rounded-2xl hover:bg-white/10 transition-colors">
                     {isActive("/library") && (
-                        <motion.div layoutId="dock-indicator" className="absolute inset-0 bg-[#F59E0B]/20 rounded-2xl z-0" />
+                        <motion.div layoutId="dock-indicator" className="absolute inset-0 bg-[var(--blue-dim)] rounded-2xl z-0" />
                     )}
                     <Library 
                         size={24} 
                         strokeWidth={isActive("/library") ? 2 : 1.5}
-                        className={`relative z-10 transition-colors ${isActive("/library") ? "text-[#F59E0B]" : "text-white/40 group-hover:text-white/80"}`} 
+                        className={`relative z-10 transition-colors ${isActive("/library") ? "text-[var(--blue)]" : "text-white/40 group-hover:text-white/80"}`} 
                     />
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-white/10 backdrop-blur-md rounded-md text-[10px] uppercase font-bold text-white/90 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Library</div>
                 </Link>
@@ -62,9 +62,9 @@ export default function Dock() {
                 {/* Create Trigger */}
                 <button 
                     onClick={openModal}
-                    className="relative group p-3 mx-1 rounded-[20px] bg-gradient-to-tr from-[#F59E0B] to-[#FCD34D] shadow-lg shadow-[#F59E0B]/20 hover:shadow-[#F59E0B]/40 hover:-translate-y-1 transition-all active:scale-95"
+                    className="relative group p-3 mx-1 rounded-[20px] bg-gradient-to-tr from-[var(--blue)] to-[var(--blue-light)] shadow-lg shadow-[var(--blue-glow)] hover:shadow-[var(--blue)]/40 hover:-translate-y-1 transition-all active:scale-95"
                 >
-                    <Plus size={24} strokeWidth={2.5} className="text-[#08080E]" />
+                    <Plus size={24} strokeWidth={2.5} className="text-white" />
                 </button>
 
                 {/* Profile / Settings */}

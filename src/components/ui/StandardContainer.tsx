@@ -11,6 +11,10 @@ interface StandardContainerProps {
      * Optional narrow mode for focused content like FAQ or CTA
      */
     narrow?: boolean;
+    /**
+     * Optional wide mode for information-dense dashboards
+     */
+    wide?: boolean;
 }
 
 /**
@@ -21,13 +25,14 @@ export default function StandardContainer({
     children, 
     className,
     style,
-    narrow = false 
+    narrow = false,
+    wide = false
 }: StandardContainerProps) {
     return (
         <div 
             className={cn(
                 "mx-auto px-5 md:px-10 w-full",
-                narrow ? "max-w-4xl" : "max-w-6xl",
+                narrow ? "max-w-4xl" : wide ? "max-w-7xl" : "max-w-6xl",
                 className
             )}
             style={style}

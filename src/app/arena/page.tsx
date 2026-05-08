@@ -7,7 +7,7 @@ import ArenaClient from "./ArenaClient";
 export default function ArenaPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+            <div className="min-h-screen bg-transparent flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-[var(--error)] border-t-transparent rounded-full animate-spin" />
             </div>
         }>

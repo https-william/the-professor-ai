@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: "How much does it cost?",
-    a: "The basic plan is free — with a limited number of monthly generations. The premium plan (unlimited uploads, PDF export, advanced quiz settings, and study analytics) is priced for Nigerian students specifically. Semester billing is available — you pay for the exam period, not the full year. Exact pricing is on the Pricing page.",
+    a: "The Professor is free for students. Our mission is to democratize elite study strategies, ensuring every scholar has access to the best AI tools regardless of their budget. Unlimited uploads, active recall sets, and study analytics are all part of the core experience.",
   },
   {
     q: "Does it work for science, engineering, and medical courses?",
@@ -42,35 +42,39 @@ export default function FAQSection() {
 
   return (
     <section style={{
-      background: "#12121F",
-      borderTop: "0.5px solid rgba(245,240,232,0.06)",
-      borderBottom: "0.5px solid rgba(245,240,232,0.06)",
+      background: "var(--bg-2)",
+      borderTop: "1px solid var(--border)",
+      borderBottom: "1px solid var(--border)",
       padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
     }}>
       <div style={{ maxWidth: "720px", margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
-          <span className="section-label" style={{ textAlign: "center" }}>FREQUENTLY ASKED</span>
+        <div style={{ textAlign: "center", marginBottom: "64px" }}>
+          <span className="section-label" style={{ textAlign: "center", color: "var(--blue)" }}>FREQUENTLY ASKED</span>
           <h2 style={{
-            fontFamily: "'Galaxie Copernicus','Source Serif 4',Georgia,serif",
-            fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)",
-            fontWeight: 500,
-            color: "#F5F0E8",
-            marginTop: 0,
+            fontFamily: "var(--font-heading)",
+            fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
+            fontWeight: 900,
+            color: "var(--text)",
+            marginTop: "12px",
+            letterSpacing: "-0.03em"
           }}>
-            Every question. Honest answers.
+            Every question. <span style={{ color: "var(--blue)" }}>Honest answers.</span>
           </h2>
         </div>
 
         {/* Accordion */}
-        <div>
+        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: "32px", padding: "16px", border: "1px solid var(--border)" }}>
           {FAQS.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
               <div
                 key={i}
                 style={{
-                  borderBottom: i < FAQS.length - 1 ? "0.5px solid rgba(245,240,232,0.08)" : "none",
+                  borderBottom: i < FAQS.length - 1 ? "1px solid var(--border)" : "none",
+                  borderRadius: i === 0 ? "24px 24px 0 0" : i === FAQS.length - 1 ? "0 0 24px 24px" : "0",
+                  transition: "background 0.3s ease",
+                  background: isOpen ? "rgba(255,255,255,0.02)" : "transparent"
                 }}
               >
                 {/* Question */}
@@ -81,53 +85,58 @@ export default function FAQSection() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     width: "100%",
-                    padding: "20px 0",
+                    padding: "24px",
                     cursor: "pointer",
                     background: "none",
                     border: "none",
                     textAlign: "left",
                   }}
-                  onMouseEnter={(e) => {
-                    const span = e.currentTarget.querySelector("span") as HTMLElement;
-                    if (span) span.style.color = "rgba(245,158,11,0.9)";
-                  }}
-                  onMouseLeave={(e) => {
-                    const span = e.currentTarget.querySelector("span") as HTMLElement;
-                    if (span) span.style.color = "#F5F0E8";
-                  }}
                 >
                   <span style={{
-                    fontFamily: "'Outfit',sans-serif",
+                    fontFamily: "var(--font-sans)",
                     fontSize: "16px",
-                    fontWeight: 600,
-                    color: "#F5F0E8",
+                    fontWeight: 700,
+                    color: isOpen ? "var(--blue)" : "var(--text)",
                     transition: "color 150ms ease",
                     flex: 1,
                     paddingRight: "16px",
                   }}>
                     {faq.q}
                   </span>
-                  <svg
-                    width="20" height="20" viewBox="0 0 20 20" fill="none"
+                  <div
                     style={{
-                      color: "rgba(245,240,232,0.4)",
-                      transition: "transform 200ms ease",
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "10px",
+                      background: isOpen ? "var(--blue)" : "var(--bg-3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.3s ease",
                       transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
                       flexShrink: 0,
                     }}
                   >
-                    <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
+                    <svg
+                      width="20" height="20" viewBox="0 0 20 20" fill="none"
+                      style={{
+                        color: isOpen ? "white" : "var(--text-3)",
+                      }}
+                    >
+                      <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </div>
                 </button>
 
                 {/* Answer */}
                 <div className={`faq-answer ${isOpen ? "open" : ""}`}>
                   <p style={{
-                    fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
+                    fontFamily: "var(--font-sans)",
                     fontSize: "15px",
-                    color: "rgba(245,240,232,0.6)",
+                    color: "var(--text-2)",
                     lineHeight: 1.75,
-                    paddingBottom: isOpen ? "0" : undefined,
+                    padding: "0 24px 24px 24px",
+                    fontWeight: 500
                   }}>
                     {faq.a}
                   </p>

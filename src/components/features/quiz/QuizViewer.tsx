@@ -141,16 +141,16 @@ export default function QuizViewer({ questions, title, generationId, initialTime
 
                 <main className="max-w-xl w-full px-6 py-12 flex flex-col items-center gap-12">
                     <div className="w-full rounded-[40px] bg-white/[0.02] border border-white/5 p-12 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-[0.03] select-none text-8xl font-black border-8 border-[#EF4444] p-8 text-[#EF4444] rounded-3xl">VERIFIED</div>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-[0.03] select-none text-8xl font-black border-8 border-[var(--blue)] p-8 text-[var(--blue)] rounded-3xl">VERIFIED</div>
                         
-                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8">
-                            <GraduationCap size={32} className="text-[#F59E0B]" />
+                        <div className="w-16 h-16 rounded-2xl bg-[var(--blue-dim)] flex items-center justify-center mb-8">
+                            <GraduationCap size={32} className="text-[var(--blue)]" />
                         </div>
                         
                         <div className="flex flex-col items-center mb-8">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.4em] opacity-50 mb-2">Academic Rank</p>
+                            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--blue-text)] mb-2">Academic Rank</p>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-8xl font-black tracking-tighter text-[#F59E0B]">{percentage}</span>
+                                <span className="text-8xl font-black tracking-tighter text-[var(--blue)]">{percentage}</span>
                                 <span className="text-2xl font-bold opacity-30">%</span>
                             </div>
                         </div>
@@ -232,7 +232,7 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                             className={`h-8 min-w-[2rem] px-3 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold transition-all ${
                                 currentIndex === idx ? 'bg-[var(--foreground)] text-[var(--background)] shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 
                                 answers[idx] !== undefined ? 'bg-transparent border border-white/20 text-white' :
-                                flags.has(idx) ? 'bg-transparent border border-[#F59E0B]/50 text-[#F59E0B]' :
+                                flags.has(idx) ? 'bg-transparent border border-[var(--blue-border)] text-[var(--blue)]' :
                                 'text-white/30 hover:bg-white/5'
                             }`}
                         >
@@ -243,10 +243,10 @@ export default function QuizViewer({ questions, title, generationId, initialTime
 
                 <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4">
                     <div className="flex items-center justify-between">
-                        <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest">
+                        <span className="px-3 py-1 rounded-full bg-[var(--blue-dim)] text-[var(--blue)] border border-[var(--blue-border)] text-[10px] font-black uppercase tracking-widest">
                             Question {currentIndex + 1} / {questions.length}
                         </span>
-                        <button onClick={toggleFlag} className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${flags.has(currentIndex) ? 'text-[#F59E0B]' : 'opacity-40'}`}>
+                        <button onClick={toggleFlag} className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${flags.has(currentIndex) ? 'text-[var(--blue)]' : 'opacity-40'}`}>
                             <Flag size={14} />
                             {flags.has(currentIndex) ? 'Flagged' : 'Flag'}
                         </button>
@@ -301,7 +301,7 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                         Prev
                     </button>
                     {currentIndex === questions.length - 1 ? (
-                        <button onClick={() => setShowSubmitModal(true)} className="px-8 py-3 rounded-xl bg-[#F59E0B] text-black font-black uppercase tracking-widest text-[11px] shadow-lg shadow-[#F59E0B]/20 transition-all">
+                        <button onClick={() => setShowSubmitModal(true)} className="px-8 py-3 rounded-xl bg-[var(--blue)] text-white font-black uppercase tracking-widest text-[11px] shadow-lg shadow-[var(--blue-glow)] transition-all">
                             Finish Exam
                         </button>
                     ) : (
@@ -314,15 +314,15 @@ export default function QuizViewer({ questions, title, generationId, initialTime
 
             {showSubmitModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
-                    <div className="max-w-sm w-full bg-[#0A0A0F] border border-white/10 rounded-[40px] p-10 flex flex-col items-center text-center gap-6 shadow-2xl">
-                        <div className="w-16 h-16 rounded-2xl bg-[#F59E0B]/10 flex items-center justify-center">
-                            <FileText size={32} className="text-[#F59E0B]" />
+                    <div className="max-w-sm w-full bg-[var(--bg-2)] border border-white/10 rounded-[40px] p-10 flex flex-col items-center text-center gap-6 shadow-2xl">
+                        <div className="w-16 h-16 rounded-2xl bg-[var(--blue-dim)] flex items-center justify-center">
+                            <FileText size={32} className="text-[var(--blue)]" />
                         </div>
                         <h3 className="text-xl font-bold">Submit Assessment?</h3>
                         <p className="text-sm opacity-60">Your progress will be graded and recorded by the Professor.</p>
                         <div className="w-full flex gap-3">
                             <button onClick={() => setShowSubmitModal(false)} className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/5 font-black uppercase tracking-[0.2em] text-[10px]">Cancel</button>
-                            <button onClick={confirmSubmit} className="flex-1 py-4 rounded-2xl bg-[#F59E0B] text-black font-black uppercase tracking-[0.2em] text-[10px]">Submit</button>
+                            <button onClick={confirmSubmit} className="flex-1 py-4 rounded-2xl bg-[var(--blue)] text-white font-black uppercase tracking-[0.2em] text-[10px]">Submit</button>
                         </div>
                     </div>
                 </div>

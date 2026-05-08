@@ -25,6 +25,7 @@ export interface UserState {
     lastStreak: number;
     streakResetAt: string | null;
     isLoading: boolean;
+    syncError: boolean;
     isAuthenticated: boolean;
     hasOnboarded: boolean;
     createdAt: string | null;
@@ -58,6 +59,7 @@ export const defaultUser: UserState = {
     lastStreak: 0,
     streakResetAt: null,
     isLoading: true,
+    syncError: false,
     isAuthenticated: false,
     hasOnboarded: false,
     createdAt: null,
@@ -77,7 +79,10 @@ export const useUserStore = create<UserStore>()(
                 isRefreshing = true;
                 
                 const supabase = createClient();
-                set({ isLoading: true });
+                // Only show global loading on the first ever load, otherwise sync in background
+                if (!get().id) {
+                    set({ isLoading: true });
+                }
 
                 try {
                     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -98,7 +103,7 @@ export const useUserStore = create<UserStore>()(
         
                     try {
                         const controller = new AbortController();
-                        const id = setTimeout(() => controller.abort(), 6000); 
+                        const id = setTimeout(() => controller.abort(), 12000); 
 
                         const res = await fetch("/api/user/profile", {
                             signal: controller.signal
@@ -135,6 +140,7 @@ export const useUserStore = create<UserStore>()(
                         isAuthenticated: true,
                         hasOnboarded: profile ? !!profile.has_onboarded : get().hasOnboarded,
                         createdAt: session.user.created_at || get().createdAt || null,
+                        syncError: false,
                         // Maintain existing stats if new ones are missing
                         streakFreezeCount: profile?.streak_freeze_count ?? get().streakFreezeCount ?? 0,
                         lastStreak: profile?.last_streak ?? get().lastStreak ?? 0,
@@ -148,13 +154,13 @@ export const useUserStore = create<UserStore>()(
                     // If we get an AbortError here, it means getSession() was aborted.
                     // We should just stop loading but keep the current state (which is persisted)
                     if (error.name === 'AbortError') {
-                        set({ isLoading: false });
+                        set({ isLoading: false, syncError: true });
                     } else {
                         // For other critical errors, we still keep the current state if it's already authenticated
                         if (!get().isAuthenticated) {
-                            set({ ...defaultUser, isLoading: false, isAuthenticated: false });
+                            set({ ...defaultUser, isLoading: false, isAuthenticated: false, syncError: true });
                         } else {
-                            set({ isLoading: false });
+                            set({ isLoading: false, syncError: true });
                         }
                     }
                 } finally {
@@ -167,6 +173,9 @@ export const useUserStore = create<UserStore>()(
             partialize: (state) => ({ 
                 id: state.id, 
                 name: state.name, 
+                username: state.username,
+                firstName: state.firstName,
+                lastName: state.lastName,
                 credits: state.credits, 
                 xp: state.xp, 
                 streak: state.streak,

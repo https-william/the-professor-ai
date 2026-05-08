@@ -18,45 +18,47 @@ function StudyGuidePanel() {
     <div className="demo-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "28px" }}>
       {/* Left — Raw Input */}
       <div>
-        <p style={{ fontFamily: "'Outfit',sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "rgba(245,240,232,0.3)", textTransform: "uppercase" as const, marginBottom: "10px" }}>
-          YOUR UPLOADED NOTES
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--text-3)", textTransform: "uppercase" as const, marginBottom: "12px" }}>
+          SOURCE MATERIAL
         </p>
-        <div style={{ background: "rgba(18,18,31,0.9)", border: "1px solid rgba(245,240,232,0.08)", borderRadius: "1rem", padding: "18px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "14px" }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="#F59E0B"><rect width="12" height="12" rx="2" /></svg>
-            <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "12px", fontWeight: 600, color: "rgba(245,240,232,0.5)" }}>ECO 201 — Lecture Notes.pdf</span>
+        <div style={{ background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: "1.25rem", padding: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+            <div style={{ width: "12px", height: "12px", background: "var(--blue)", borderRadius: "3px" }} />
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", fontWeight: 700, color: "var(--text-2)" }}>ECO 201 — Lecture Notes.pdf</span>
           </div>
           {bars.map((w, i) => (
-            <div key={i} style={{ height: "9px", background: "rgba(245,240,232,0.08)", borderRadius: "4px", marginBottom: "7px", width: `${w}%` }} />
+            <div key={i} style={{ height: "8px", background: "rgba(255,255,255,0.04)", borderRadius: "4px", marginBottom: "8px", width: `${w}%` }} />
           ))}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "14px" }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#1aab76" strokeWidth="1.5" /><path d="M4 7l2 2 4-4" stroke="#1aab76" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "11px", color: "#1aab76" }}>Processed successfully</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "16px" }}>
+            <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--emerald-dim)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+               <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="var(--emerald)" strokeWidth="2"><path d="M2 5l2 2 4-4" /></svg>
+            </div>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "11px", color: "var(--emerald)", fontWeight: 700 }}>Synthesized</span>
           </div>
         </div>
       </div>
 
       {/* Right — Generated Output */}
       <div>
-        <p style={{ fontFamily: "'Outfit',sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "rgba(245,158,11,0.7)", textTransform: "uppercase" as const, marginBottom: "10px" }}>
-          GENERATED STUDY GUIDE
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "12px" }}>
+          THE PROFESSOR'S ARCHIVE
         </p>
-        <div style={{ background: "rgba(18,18,31,0.9)", border: "1px solid rgba(245,158,11,0.12)", borderRadius: "1rem", padding: "20px" }}>
-          <div style={{ fontFamily: "'Outfit',sans-serif", fontSize: "15px", fontWeight: 700, color: "#F5F0E8", marginBottom: "2px" }}>Macroeconomics — ECO 201</div>
-          <div style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "12px", color: "rgba(245,240,232,0.45)", marginBottom: "14px" }}>Chapter 3: Aggregate Demand & Supply</div>
-          <div style={{ height: "0.5px", background: "rgba(245,240,232,0.08)", marginBottom: "14px" }} />
+        <div style={{ background: "var(--bg-2)", border: "1px solid var(--blue-border)", borderRadius: "1.25rem", padding: "24px", boxShadow: "0 0 40px var(--blue-glow)" }}>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: "16px", fontWeight: 900, color: "var(--text)", marginBottom: "4px" }}>Macroeconomics — ECO 201</div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", marginBottom: "16px", fontWeight: 600 }}>Chapter 3: Aggregate Demand & Supply</div>
+          <div style={{ height: "1px", background: "var(--blue-border)", opacity: 0.3, marginBottom: "16px" }} />
           {concepts.map(c => (
-            <div key={c.n} style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "14px" }}>
-              <div style={{ width: "22px", height: "22px", borderRadius: "50%", background: "rgba(245,158,11,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>
-                <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "11px", fontWeight: 700, color: "#F59E0B" }}>{c.n}</span>
+            <div key={c.n} style={{ display: "flex", alignItems: "flex-start", gap: "14px", marginBottom: "16px" }}>
+              <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "var(--blue-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px", border: "1px solid var(--blue-border)" }}>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "11px", fontWeight: 900, color: "var(--blue)" }}>{c.n}</span>
               </div>
               <div>
-                <div style={{ fontFamily: "'Outfit',sans-serif", fontSize: "13px", fontWeight: 600, color: "#F5F0E8", marginBottom: "2px" }}>{c.name}</div>
-                <div style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "12px", color: "rgba(245,240,232,0.5)", lineHeight: 1.6 }}>{c.desc}</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "13px", fontWeight: 800, color: "var(--text)", marginBottom: "2px" }}>{c.name}</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-2)", lineHeight: 1.6, fontWeight: 500 }}>{c.desc}</div>
               </div>
             </div>
           ))}
-          <div style={{ fontFamily: "'Outfit',sans-serif", fontSize: "11px", color: "rgba(245,158,11,0.5)", fontStyle: "italic", marginTop: "4px" }}>+ 7 more key concepts</div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: "11px", color: "var(--blue-text)", fontStyle: "italic", marginTop: "8px", fontWeight: 700 }}>+ 7 more key concepts detected</div>
         </div>
       </div>
 
@@ -78,17 +80,19 @@ function SummaryPanel() {
   ];
 
   return (
-    <div style={{ maxWidth: "700px", margin: "0 auto" }}>
-      <p style={{ fontFamily: "'Outfit',sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "rgba(245,158,11,0.7)", textTransform: "uppercase" as const, marginBottom: "10px" }}>CONCISE SUMMARY</p>
-      <h3 style={{ fontFamily: "'Outfit',sans-serif", fontSize: "16px", fontWeight: 700, color: "#F5F0E8", marginBottom: "20px" }}>
-        TL;DR — What you actually need to know for this exam
+    <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "16px", textAlign: "center" }}>MASTER SUMMARY</p>
+      <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 900, color: "var(--text)", marginBottom: "24px", textAlign: "center" }}>
+        TL;DR — The Essential Exam Matrix
       </h3>
-      {paras.map((p, i) => (
-        <div key={i} style={{ marginBottom: i < paras.length - 1 ? "24px" : 0 }}>
-          <div style={{ width: "28px", height: "1.5px", background: "#F59E0B", marginBottom: "10px" }} />
-          <p style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "15px", color: "rgba(245,240,232,0.65)", lineHeight: 1.8 }}>{p}</p>
-        </div>
-      ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {paras.map((p, i) => (
+          <div key={i} style={{ padding: "20px", background: "var(--bg-2)", borderRadius: "1rem", border: "1px solid var(--border)" }}>
+            <div style={{ width: "32px", height: "2px", background: "var(--blue)", marginBottom: "12px" }} />
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: "var(--text-2)", lineHeight: 1.8, fontWeight: 500 }}>{p}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -103,59 +107,52 @@ function QuizPanel() {
   ];
 
   return (
-    <div>
-      <p className="section-label" style={{ textAlign: "center", marginBottom: "4px" }}>TEST YOURSELF</p>
-      <p style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "14px", color: "rgba(245,240,232,0.45)", textAlign: "center", marginBottom: "8px" }}>Question 2 of 12 — Macroeconomics</p>
+    <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "8px", textAlign: "center" }}>KNOWLEDGE CHECK</p>
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", textAlign: "center", marginBottom: "20px", fontWeight: 600 }}>Question 2 of 12 — Macroeconomics</p>
       {/* Progress */}
-      <div style={{ width: "100%", height: "4px", background: "rgba(245,240,232,0.08)", borderRadius: "2px", marginBottom: "24px" }}>
-        <div style={{ width: "16.7%", height: "100%", background: "#F59E0B", borderRadius: "2px" }} />
+      <div style={{ width: "100%", height: "4px", background: "var(--bg-2)", borderRadius: "2px", marginBottom: "28px" }}>
+        <div style={{ width: "16.7%", height: "100%", background: "var(--blue)", borderRadius: "2px", boxShadow: "0 0 10px var(--blue-glow)" }} />
       </div>
       {/* Question Card */}
-      <div style={{ background: "rgba(18,18,31,0.9)", border: "1px solid rgba(245,240,232,0.09)", borderRadius: "1.25rem", padding: "24px 28px" }}>
-        <p style={{ fontFamily: "'Outfit',sans-serif", fontSize: "17px", fontWeight: 600, color: "#F5F0E8", marginBottom: "20px", lineHeight: 1.4 }}>
-          Which of the following correctly describes the Multiplier Effect in macroeconomics?
+      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: "1.5rem", padding: "32px" }}>
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: "18px", fontWeight: 800, color: "var(--text)", marginBottom: "24px", lineHeight: 1.5 }}>
+          Which of the following correctly describes the Multiplier Effect?
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {options.map(opt => {
             const isCorrect = opt.state === "correct";
             return (
               <div key={opt.letter} style={{
-                background: isCorrect ? "rgba(26,171,118,0.1)" : "rgba(245,240,232,0.04)",
-                border: `1px solid ${isCorrect ? "rgba(26,171,118,0.35)" : "rgba(245,240,232,0.1)"}`,
-                borderRadius: "0.875rem",
-                padding: "13px 16px",
+                background: isCorrect ? "var(--emerald-dim)" : "rgba(255,255,255,0.02)",
+                border: `1px solid ${isCorrect ? "var(--emerald-border)" : "var(--border)"}`,
+                borderRadius: "1rem",
+                padding: "16px 20px",
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                cursor: "pointer",
+                gap: "14px",
               }}>
                 <div style={{
-                  width: "26px", height: "26px", borderRadius: "50%",
-                  background: isCorrect ? "rgba(26,171,118,0.2)" : "rgba(245,240,232,0.07)",
-                  border: `1px solid ${isCorrect ? "rgba(26,171,118,0.3)" : "rgba(245,240,232,0.12)"}`,
+                  width: "28px", height: "28px", borderRadius: "50%",
+                  background: isCorrect ? "var(--emerald)" : "rgba(255,255,255,0.05)",
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>
-                  <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "12px", fontWeight: 700, color: isCorrect ? "#34d39a" : "rgba(245,240,232,0.5)" }}>{opt.letter}</span>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", fontWeight: 900, color: isCorrect ? "#000" : "var(--text-3)" }}>{opt.letter}</span>
                 </div>
-                <span style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "14px", color: isCorrect ? "#34d39a" : "rgba(245,240,232,0.7)", flex: 1 }}>{opt.text}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: isCorrect ? "var(--emerald)" : "var(--text-2)", flex: 1, fontWeight: 600 }}>{opt.text}</span>
                 {isCorrect && (
-                  <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "10px", fontWeight: 700, color: "#1aab76", background: "rgba(26,171,118,0.12)", borderRadius: "4px", padding: "2px 7px", marginLeft: "auto", whiteSpace: "nowrap" }}>✓ Correct</span>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 900, color: "var(--emerald)", background: "rgba(16,185,129,0.1)", borderRadius: "6px", padding: "4px 8px", marginLeft: "auto", whiteSpace: "nowrap", border: "1px solid var(--emerald-border)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Verified</span>
                 )}
               </div>
             );
           })}
         </div>
         {/* Feedback */}
-        <div style={{ background: "rgba(26,171,118,0.06)", border: "1px solid rgba(26,171,118,0.15)", borderRadius: "0.875rem", padding: "12px 16px", marginTop: "16px" }}>
-          <p style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "13px", color: "rgba(26,171,118,0.85)", lineHeight: 1.6 }}>
-            The multiplier (k) = 1 ÷ (1 − MPC). With an MPC of 0.8, k = 5. An injection of ₦1,000 generates ₦5,000 of national income through successive rounds of consumption.
+        <div style={{ background: "rgba(16,185,129,0.04)", border: "1px solid var(--emerald-border)", borderRadius: "1rem", padding: "16px", marginTop: "24px" }}>
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: "var(--emerald)", lineHeight: 1.6, fontWeight: 500 }}>
+            The multiplier (k) = 1 ÷ (1 − MPC). With an MPC of 0.8, k = 5. An injection of ₦1,000 generates ₦5,000 of national income.
           </p>
         </div>
-      </div>
-      {/* Nav buttons */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
-        <button className="btn-ghost" style={{ opacity: 0.35, cursor: "not-allowed" }}>← Previous</button>
-        <button className="btn-indigo">Next Question →</button>
       </div>
     </div>
   );
@@ -175,36 +172,35 @@ function MatchGamePanel() {
   ];
 
   return (
-    <div>
-      <p className="section-label" style={{ textAlign: "center", marginBottom: "4px" }}>MATCH GAME</p>
-      <p style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "14px", color: "rgba(245,240,232,0.45)", textAlign: "center", marginBottom: "8px" }}>Match each term to its definition. 3 of 8 matched.</p>
-      <div style={{ width: "100%", height: "4px", background: "rgba(245,240,232,0.08)", borderRadius: "2px", marginBottom: "20px" }}>
-        <div style={{ width: "37.5%", height: "100%", background: "#F59E0B", borderRadius: "2px" }} />
+    <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "8px", textAlign: "center" }}>NEURO-MATCH</p>
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", textAlign: "center", marginBottom: "20px", fontWeight: 600 }}>Accelerate pattern recognition. 3 of 8 matched.</p>
+      <div style={{ width: "100%", height: "4px", background: "var(--bg-2)", borderRadius: "2px", marginBottom: "24px" }}>
+        <div style={{ width: "37.5%", height: "100%", background: "var(--blue)", borderRadius: "2px" }} />
       </div>
-      <div className="match-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+      <div className="match-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
         {cards.map((c, i) => {
           const isMatched = c.state === "matched";
           const isSelected = c.state === "selected";
           return (
             <div key={i} style={{
-              height: "88px", borderRadius: "1rem", padding: "12px",
+              height: "96px", borderRadius: "1.25rem", padding: "16px",
               display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center",
               cursor: isMatched ? "default" : "pointer",
               transition: "all 200ms",
-              background: isMatched ? "rgba(26,171,118,0.1)" : isSelected ? "rgba(245,158,11,0.1)" : "rgba(18,18,31,0.9)",
-              border: isMatched ? "1px solid rgba(26,171,118,0.3)" : isSelected ? "1.5px solid #F59E0B" : "1px solid rgba(245,240,232,0.09)",
-              color: isMatched ? "#34d39a" : isSelected ? "#F5F0E8" : "rgba(245,240,232,0.65)",
-              fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
+              background: isMatched ? "var(--emerald-dim)" : isSelected ? "var(--blue-dim)" : "var(--bg-2)",
+              border: isMatched ? "1px solid var(--emerald-border)" : isSelected ? "1.5px solid var(--blue)" : "1px solid var(--border)",
+              color: isMatched ? "var(--emerald)" : isSelected ? "var(--text)" : "var(--text-3)",
+              fontFamily: "var(--font-sans)",
+              fontWeight: 700,
               fontSize: "12px", lineHeight: 1.4,
+              boxShadow: isSelected ? "0 0 20px var(--blue-glow)" : "none"
             }}>
               {c.text}
             </div>
           );
         })}
       </div>
-      <p style={{ fontFamily: "'Outfit',sans-serif", fontSize: "12px", color: "rgba(245,158,11,0.5)", textAlign: "center", fontStyle: "italic", marginTop: "16px" }}>
-        Tap &apos;Demand-Pull Inflation&apos; and match it to its definition.
-      </p>
       <style jsx>{`
         @media (max-width: 768px) {
           .match-grid { grid-template-columns: repeat(2, 1fr) !important; }
@@ -219,48 +215,50 @@ export default function InteractiveDemo() {
 
   return (
     <section style={{
-      background: "#12121F",
-      borderTop: "0.5px solid rgba(245,240,232,0.06)",
-      borderBottom: "0.5px solid rgba(245,240,232,0.06)",
+      background: "var(--bg)",
+      borderTop: "1px solid var(--border)",
+      borderBottom: "1px solid var(--border)",
       padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
     }}>
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         {/* Header */}
         <div style={{ textAlign: "center" }}>
-          <span className="section-label" style={{ textAlign: "center" }}>SEE IT IN ACTION</span>
-          <h2 style={{ fontFamily: "'Galaxie Copernicus','Source Serif 4',Georgia,serif", fontSize: "clamp(1.8rem, 4vw, 3rem)", fontWeight: 500, color: "#F5F0E8", marginTop: 0 }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", fontWeight: 800, color: "var(--blue-text)", letterSpacing: "0.2em", textTransform: "uppercase" }}>THE ARCHIVE PREVIEW</span>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "var(--text)", marginTop: "12px", letterSpacing: "-0.03em" }}>
             Your notes. Transformed.
           </h2>
-          <p style={{ fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif", fontSize: "15px", color: "rgba(245,240,232,0.5)", marginTop: "8px" }}>
-            Demo built from a real ECO 201 lecture on Macroeconomics. Your results will come from your own notes.
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: "16px", color: "var(--text-3)", marginTop: "16px", fontWeight: 500, maxWidth: "600px", margin: "16px auto 0" }}>
+            Real ECO 201 lecture notes processed by The Professor. Your results will be tailored to your specific materials.
           </p>
         </div>
 
         {/* Tab Bar */}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "36px" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "48px" }}>
           <div style={{
             display: "inline-flex",
-            background: "rgba(8,8,14,0.7)",
-            border: "1px solid rgba(245,240,232,0.09)",
+            background: "var(--bg-2)",
+            border: "1px solid var(--border)",
             borderRadius: "9999px",
-            padding: "4px",
-            gap: "2px",
+            padding: "6px",
+            gap: "4px",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
           }}>
             {TABS.map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 style={{
-                  fontFamily: "'Outfit',sans-serif",
+                  fontFamily: "var(--font-sans)",
                   fontSize: "13px",
-                  fontWeight: activeTab === tab ? 700 : 500,
-                  color: activeTab === tab ? "#08080E" : "rgba(245,240,232,0.45)",
-                  padding: "9px 22px",
+                  fontWeight: 800,
+                  color: activeTab === tab ? "#fff" : "var(--text-3)",
+                  padding: "10px 24px",
                   borderRadius: "9999px",
-                  background: activeTab === tab ? "#F59E0B" : "transparent",
+                  background: activeTab === tab ? "var(--blue)" : "transparent",
                   border: "none",
                   cursor: "pointer",
-                  transition: "background 200ms, color 200ms",
+                  transition: "all 300ms cubic-bezier(0.16, 1, 0.3, 1)",
+                  boxShadow: activeTab === tab ? "0 4px 15px var(--blue-glow)" : "none"
                 }}
               >
                 {tab}
@@ -271,15 +269,20 @@ export default function InteractiveDemo() {
 
         {/* Demo Panel */}
         <div style={{
-          background: "#08080E",
-          border: "1px solid rgba(245,240,232,0.09)",
-          borderRadius: "1.5rem",
-          padding: "32px",
-          boxShadow: "0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,240,232,0.03) inset",
-          minHeight: "340px",
-          marginTop: "24px",
+          background: "var(--bg-2)",
+          border: "1px solid var(--border)",
+          borderRadius: "2rem",
+          padding: "40px",
+          boxShadow: "0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset",
+          minHeight: "420px",
+          marginTop: "32px",
+          position: "relative",
+          overflow: "hidden"
         }}>
-          <div key={activeTab} style={{ animation: "fadeIn 250ms ease" }}>
+          {/* Ambient Glow */}
+          <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "40%", height: "40%", background: "var(--blue-dim)", filter: "blur(100px)", opacity: 0.15, pointerEvents: "none" }} />
+          
+          <div key={activeTab} style={{ animation: "fadeIn 400ms cubic-bezier(0.16, 1, 0.3, 1)", position: "relative", zIndex: 1 }}>
             {activeTab === "Study Guide" && <StudyGuidePanel />}
             {activeTab === "Summary" && <SummaryPanel />}
             {activeTab === "Quiz" && <QuizPanel />}
@@ -290,8 +293,8 @@ export default function InteractiveDemo() {
 
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </section>

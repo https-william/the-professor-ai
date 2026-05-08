@@ -4,11 +4,12 @@ import { useEffect, useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 const TESTIMONIALS = [
-  { quote: "The quiz exposed everything I didn't know. Best study tool I've used.", author: "Tomiwa A. · 200L · Covenant", },
-  { quote: "Finished my ECO 201 guide in 8 minutes flat. Game changer.", author: "Adaeze O. · 300L · UNN", },
-  { quote: "Three friends signed up after I showed them my study pack.", author: "Priscilla E. · 200L · UNILAG", },
+  { quote: "The quiz exposed everything I didn't know. Best study tool I've used.", author: "Elena F. · Stanford University", },
+  { quote: "Finished my Biology guide in 8 minutes flat. Game changer.", author: "Liam M. · King's College London", },
+  { quote: "Three friends signed up after I showed them my study pack.", author: "Maya S. · NUS Singapore", },
 ];
 
 function SignupForm() {
@@ -85,68 +86,96 @@ function SignupForm() {
   const strengthColor = ["", "#e05050", "#e59e0e", "#1aab76"][strength];
 
   return (
-    <div style={{ minHeight: "100dvh", display: "flex", background: "#08080E" }}>
+    <div style={{ minHeight: "100dvh", display: "flex", background: "var(--bg)" }}>
       {/* Left Panel — Desktop only */}
       <div className="signup-left-panel" style={{
         width: "45%",
-        background: "#12121F",
-        borderRight: "0.5px solid rgba(245,240,232,0.07)",
+        background: "var(--bg-2)",
+        borderRight: "1px solid var(--border)",
         minHeight: "100vh",
         padding: "48px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
       }}>
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "48px" }}>
-          <div style={{
-            width: "28px", height: "28px", borderRadius: "8px",
-            background: "linear-gradient(135deg, #F59E0B 0%, #C47B00 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "14px", fontWeight: 800, color: "#08080E" }}>P</span>
+        {/* Logo & Navigation */}
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "48px", textDecoration: "none" }}>
+          <BrandLogo size="xs" />
+          <span style={{ fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 800, color: "var(--text)", letterSpacing: "0.05em", textTransform: "uppercase" }}>The Professor</span>
+        </Link>
+
+        {/* Screenshot Preview */}
+        <div style={{
+          width: "100%",
+          aspectRatio: "16/10",
+          background: "var(--bg-2)",
+          border: "1px solid var(--border)",
+          borderRadius: "1.25rem",
+          marginBottom: "40px",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.12)"
+        }}>
+          <img 
+            src="/dashboard-preview.webp" 
+            alt="The Professor Dashboard" 
+            loading="lazy"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block"
+            }}
+          />
+          {/* Window dots */}
+          <div style={{ position: "absolute", top: "12px", left: "12px", display: "flex", gap: "4px" }}>
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "rgba(128,128,128,0.2)" }} />
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "rgba(128,128,128,0.2)" }} />
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "rgba(128,128,128,0.2)" }} />
           </div>
-          <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "14px", fontWeight: 700, color: "#F5F0E8" }}>The Professor</span>
         </div>
 
         {/* Display quote */}
         <h2 style={{
-          fontFamily: "'Galaxie Copernicus','Source Serif 4',Georgia,serif",
-          fontSize: "2.2rem",
+          fontFamily: "var(--font-serif)",
+          fontSize: "1.8rem",
           fontWeight: 500,
-          color: "#F5F0E8",
-          lineHeight: 1.25,
+          color: "var(--text)",
+          lineHeight: 1.3,
+          letterSpacing: "-0.01em"
         }}>
           The last study tool you&apos;ll ever need before an exam.
         </h2>
 
         {/* Testimonial ticker */}
         <div style={{
-          background: "rgba(8,8,14,0.6)",
-          border: "1px solid rgba(245,240,232,0.08)",
+          background: "var(--bg-3)",
+          border: "1px solid var(--border)",
           borderRadius: "1rem",
           padding: "14px 16px",
           marginTop: "24px",
-          maxWidth: "320px",
+          maxWidth: "340px",
           transition: "opacity 400ms ease",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
         }}>
           <div style={{ display: "flex", gap: "2px", marginBottom: "8px" }}>
-            {[...Array(5)].map((_, j) => <span key={j} style={{ color: "#F59E0B", fontSize: "12px" }}>★</span>)}
+            {[...Array(5)].map((_, j) => <span key={j} style={{ color: "var(--blue)", fontSize: "10px" }}>★</span>)}
           </div>
           <p style={{
-            fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
+            fontFamily: "var(--font-serif)",
             fontSize: "13px",
-            color: "rgba(245,240,232,0.6)",
+            color: "var(--text-2)",
             lineHeight: 1.6,
             fontStyle: "italic",
           }}>
             &ldquo;{TESTIMONIALS[testiIndex].quote}&rdquo;
           </p>
           <p style={{
-            fontFamily: "'Outfit',sans-serif",
+            fontFamily: "var(--font-sans)",
             fontSize: "11px",
-            color: "rgba(245,240,232,0.4)",
+            color: "var(--text-4)",
             marginTop: "8px",
+            fontWeight: 600
           }}>
             {TESTIMONIALS[testiIndex].author}
           </p>
@@ -155,7 +184,7 @@ function SignupForm() {
         {/* Feature pills */}
         <div style={{ display: "flex", gap: "8px", marginTop: "32px" }}>
           {["Study Guides", "Quizzes", "Match Games"].map(f => (
-            <span key={f} className="format-pill">{f}</span>
+            <span key={f} className="format-pill" style={{ fontSize: "11px", padding: "4px 12px" }}>{f}</span>
           ))}
         </div>
       </div>
@@ -163,7 +192,7 @@ function SignupForm() {
       {/* Right Panel — Form */}
       <div style={{
         flex: 1,
-        background: "#08080E",
+        background: "var(--bg)",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
@@ -172,17 +201,18 @@ function SignupForm() {
       }}>
         <div style={{ maxWidth: "360px", margin: "0 auto", width: "100%" }}>
           <h1 style={{
-            fontFamily: "'Outfit',sans-serif",
+            fontFamily: "var(--font-heading)",
             fontSize: "26px",
-            fontWeight: 700,
-            color: "#F5F0E8",
+            fontWeight: 900,
+            color: "var(--text)",
+            letterSpacing: "-0.03em"
           }}>
             {pendingUpload ? "Save your study pack" : "Create your free account"}
           </h1>
           <p style={{
-            fontFamily: "'Tiempos Text','Source Serif 4',Georgia,serif",
+            fontFamily: "var(--font-serif)",
             fontSize: "14px",
-            color: "rgba(245,240,232,0.5)",
+            color: "var(--text-3)",
             marginBottom: "28px",
             marginTop: "8px",
           }}>
@@ -194,12 +224,12 @@ function SignupForm() {
             <div style={{
               padding: "14px 16px",
               borderRadius: "1rem",
-              background: "rgba(26,171,118,0.06)",
-              border: "1px solid rgba(26,171,118,0.15)",
+              background: "rgba(37,99,235,0.06)",
+              border: "1px solid rgba(37,99,235,0.15)",
               marginBottom: "20px",
             }}>
-              <p style={{ fontFamily: "'Outfit',sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#34d39a", marginBottom: "4px" }}>Progress Saved</p>
-              <p style={{ fontFamily: "'Outfit',sans-serif", fontSize: "13px", fontWeight: 600, color: "#F5F0E8" }}>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "var(--blue)", marginBottom: "4px" }}>Progress Saved</p>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>
                 Analysis of &ldquo;{pendingUpload}&rdquo; is ready.
               </p>
             </div>
@@ -211,8 +241,8 @@ function SignupForm() {
             disabled={loading}
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(245,240,232,0.12)",
+              background: "var(--bg-2)",
+              border: "1px solid var(--border)",
               borderRadius: "1.25rem",
               padding: "12px",
               display: "flex",
@@ -220,7 +250,7 @@ function SignupForm() {
               justifyContent: "center",
               gap: "10px",
               cursor: "pointer",
-              transition: "background 150ms ease",
+              transition: "all 150ms ease",
               opacity: loading ? 0.5 : 1,
             }}
           >
@@ -230,14 +260,14 @@ function SignupForm() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "14px", fontWeight: 600, color: "#F5F0E8" }}>Sign up with Google</span>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>Sign up with Google</span>
           </button>
 
           {/* Divider */}
           <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "20px 0" }}>
-            <div style={{ flex: 1, height: "0.5px", background: "rgba(245,240,232,0.1)" }} />
-            <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: "12px", color: "rgba(245,240,232,0.3)" }}>or</span>
-            <div style={{ flex: 1, height: "0.5px", background: "rgba(245,240,232,0.1)" }} />
+            <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-4)" }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
           </div>
 
           {/* Error */}
@@ -311,14 +341,14 @@ function SignupForm() {
 
           {/* Sign in link */}
           <p style={{
-            fontFamily: "'Outfit',sans-serif",
+            fontFamily: "var(--font-sans)",
             fontSize: "13px",
-            color: "rgba(245,240,232,0.5)",
+            color: "var(--text-3)",
             textAlign: "center",
             marginTop: "16px",
           }}>
             Already have an account?{" "}
-            <Link href="/login" style={{ color: "#F59E0B", textDecoration: "none", fontWeight: 600 }}>Sign in</Link>
+            <Link href="/login" style={{ color: "var(--blue)", textDecoration: "none", fontWeight: 700 }}>Sign in</Link>
           </p>
         </div>
       </div>

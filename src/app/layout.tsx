@@ -8,7 +8,6 @@ import { PWAProvider } from "@/context/PWAContext";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import OnboardingModal from "@/components/features/OnboardingModal";
 import FaviconSync from "@/components/ui/FaviconSync";
 import GlobalToasts from "@/components/ui/GlobalToasts";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
@@ -17,6 +16,7 @@ import PlatformLoader from "@/components/platforms/PlatformLoader";
 import PlatformShell from "@/components/platforms/PlatformShell";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import ConnectivityIndicator from "@/components/ui/ConnectivityIndicator";
+import SyncIndicator from "@/components/ui/SyncIndicator";
 import CommandPalette from "@/components/ui/CommandPalette";
 import Footer from "@/components/ui/Footer";
 import CookieBanner from "@/components/ui/CookieBanner";
@@ -24,6 +24,7 @@ import { Suspense } from "react";
 import PWAUpdateNotifier from "@/components/providers/PWAUpdateNotifier";
 import PWAInstallBanner from "@/components/ui/PWAInstallBanner";
 import SiteHeader from "@/components/ui/SiteHeader";
+import AmbientOrbs from "@/components/ui/AmbientOrbs";
 
 /* ═══ Typography Stack ═══
    Outfit → Geometric sans. Used for headings, UI chrome, user prompts.
@@ -136,24 +137,16 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
           as="style"
         />
+        {/* Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        
         <link
           id="material-symbols-stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
           rel="stylesheet"
-          media="print"
           suppressHydrationWarning
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                var link = document.getElementById('material-symbols-stylesheet');
-                if (link) {
-                  link.onload = function() { this.media = 'all'; };
-                }
-              })();
-            `
-          }}
         />
         <script
           type="application/ld+json"
@@ -197,23 +190,27 @@ export default function RootLayout({
               <ReactQueryProvider>
                 <ErrorBoundary>
                   <FaviconSync />
+
                   <GlassRefractionProvider />
                   <PlatformLoader />
                   
                   <SiteHeader showLogo={true} />
-                  <main className="platform-main-container relative h-full w-full flex flex-col bg-[var(--background)]">
-                      <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full h-full">
-                        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
-                          {children}
-                        </Suspense>
+                  <main className="platform-main-container relative h-full w-full flex flex-col">
+                      <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full h-full z-[1] flex flex-col">
+                        <AmbientOrbs />
+                        <div className="flex-1 flex flex-col">
+                          <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
+                             {children}
+                          </Suspense>
+                        </div>
                         <Footer />
                       </div>
                   </main>
   
                   {/* Mobile nav handled by PlatformLoader */}
                   <CookieBanner />
-                  <OnboardingModal />
                   <ConnectivityIndicator />
+                  <SyncIndicator />
                   <GlobalToasts />
                   <CommandPalette />
                   <PWAUpdateNotifier />
