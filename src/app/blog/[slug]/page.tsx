@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import BlogPostClient from "./BlogPostClient";
 import SEOHead from "@/components/SEOHead";
 import { getArticleSchema } from "@/lib/seo-schema";
+import { getBreadcrumbSchema } from "@/components/SEOHead";
 
 /* ═══ Static Generation ═══ */
 export function generateStaticParams() {
@@ -86,7 +87,16 @@ export default async function BlogPostPage({
   return (
     <>
       <SEOHead type="Article" data={getArticleSchema(post)} />
+      <SEOHead 
+        type="BreadcrumbList" 
+        data={getBreadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "Blog", url: "/blog" },
+          { name: post.title, url: `/blog/${post.slug}` }
+        ])} 
+      />
       <BlogPostClient post={post} />
     </>
+
   );
 }

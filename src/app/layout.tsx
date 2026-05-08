@@ -72,6 +72,9 @@ export const metadata: Metadata = {
   description: "Stop studying like a loser. The Professor uses aggressive AI retrieval to hack your brain's learning curve. Build unbreakable intuition and crush any syllabus in 10 minutes.",
   manifest: "/site.webmanifest",
   keywords: ["The Professor", "Professor AI", "AI Study Assistant", "Flashcard Generator", "AI Quiz Maker", "Strategic Learning", "Exam Simulation", "JAMB 2026", "WAEC Hacks"],
+  verification: {
+    google: "NoGNvRcrMhu-QIt_DV2RJM-xKqETasp4Fvpp7-O6mmI",
+  },
   authors: [{ name: "The Professor Team" }],
   openGraph: {
     title: "Stop Studying Like a Loser. Use The Professor AI.",

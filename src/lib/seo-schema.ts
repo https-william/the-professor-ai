@@ -5,14 +5,20 @@ export const getArticleSchema = (post: {
   date: string;
   author: string;
   slug: string;
+  tags: string[];
+  content: string;
 }) => ({
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
   headline: post.title,
   description: post.excerpt,
   image: post.image || "https://theprofessor.xyz/og-image.svg",
   datePublished: post.date,
+  dateModified: post.date,
   author: {
     "@type": "Person" as const,
     name: post.author,
+    url: "https://theprofessor.xyz",
   },
   publisher: {
     "@type": "Organization" as const,
@@ -26,10 +32,8 @@ export const getArticleSchema = (post: {
     "@type": "WebPage" as const,
     "@id": `https://theprofessor.xyz/blog/${post.slug}`,
   },
-  about: {
-    "@type": "Thing" as const,
-    name: post.title,
-  },
-  "@context": "https://schema.org",
-  "@type": "Article",
-});
+  keywords: post.tags.join(", "),
+  genre: "Educational Strategy",
+  wordCount: post.content.split(/\s+/).length,
+  articleBody: post.content.replace(/[#*`]/g, ""),
+});

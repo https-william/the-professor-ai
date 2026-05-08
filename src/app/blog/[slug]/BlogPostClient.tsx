@@ -20,8 +20,13 @@ import {
   Home,
   Zap,
   PenTool,
-  Moon
+  Moon,
+  Share2,
+  Twitter,
+  Link as LinkIcon,
+  MessageSquare
 } from "lucide-react";
+
 
 /* ═══ Icon Components Mapping ═══ */
 const IconMap = {
@@ -130,18 +135,22 @@ function renderMarkdown(md: string) {
 
     // H2
     if (line.startsWith("## ")) {
+      const title = line.slice(3);
+      const id = title.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
       elements.push(
         <h2
           key={`h2-${i}`}
-          className="font-heading font-bold text-[var(--foreground)] mt-12 mb-5 tracking-tight"
+          id={id}
+          className="font-heading font-bold text-[var(--foreground)] mt-12 mb-5 tracking-tight scroll-mt-24"
           style={{ fontSize: "var(--text-h2)" }}
         >
-          {line.slice(3)}
+          {title}
         </h2>
       );
       i++;
       continue;
     }
+
 
     // H3
     if (line.startsWith("### ")) {
@@ -284,7 +293,36 @@ function inlineMd(text: string): string {
 
 /* ═══ Blog Post Client Component ═══ */
 export default function BlogPostClient({ post }: { post: BlogPost }) {
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
+
+  // Extract TOC headings
+  const toc = useMemo(() => {
+    const headings = post.content.match(/^##\s+(.+)$/gm) || [];
+    return headings.map((h) => {
+      const text = h.replace(/^##\s+/, "");
+      const id = text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+      return { text, id };
+    });
+  }, [post.content]);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareOnTwitter = () => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`"${post.title}" - Essential intelligence from The Professor AI`);
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, "_blank");
+  };
+
+  const shareOnReddit = () => {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent(post.title);
+    window.open(`https://www.reddit.com/submit?url=${url}&title=${title}`, "_blank");
+  };
 
   // Find related posts (same category, different slug)
   const related = blogPosts
@@ -333,85 +371,113 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
           <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
             <BrandLogo size="sm" />
           </Link>
-          <ThemeToggle variant="minimal" />
+          <div className="flex items-center gap-2">
+             <button 
+                onClick={handleCopyLink}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-bg)] transition-all border border-transparent hover:border-[var(--accent-glow)]"
+             >
+                {copied ? <div className="text-[10px] font-bold">OK</div> : <LinkIcon className="w-3.5 h-3.5" />}
+             </button>
+             <ThemeToggle variant="minimal" />
+          </div>
         </div>
       </nav>
 
-      {/* Article */}
-      <article className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 pt-24 sm:pt-28">
-        {/* Hero */}
-        <div
-          className="relative overflow-hidden rounded-3xl mb-10"
-          style={{
-            boxShadow:
-              "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.06)",
-          }}
-        >
+      {/* Article Container */}
+      <div className="relative z-10 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 px-5 sm:px-6 pt-24 sm:pt-28">
+        
+        {/* Main Content Area */}
+        <article className="max-w-3xl">
+          {/* Hero */}
           <div
-            className="h-56 sm:h-72 relative flex flex-col justify-end p-6 sm:p-10"
-            style={{ background: post.coverGradient }}
+            className="relative overflow-hidden rounded-3xl mb-10"
+            style={{
+              boxShadow:
+                "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.06)",
+            }}
           >
             <div
-              className="absolute inset-0 opacity-10"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 30% 70%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 40%)",
-              }}
-            />
-            {/* Category badge */}
-            <span
-              className="relative z-10 inline-block self-start px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest mb-4"
-              style={{
-                background: "rgba(0,0,0,0.3)",
-                backdropFilter: "blur(8px)",
-                color: "var(--foreground)",
-                border: "1px solid var(--border)",
-              }}
+              className="h-56 sm:h-72 relative flex flex-col justify-end p-6 sm:p-10"
+              style={{ background: post.coverGradient }}
             >
-              {post.category}
-            </span>
-            <h1 className="relative z-10 font-heading text-2xl sm:text-4xl font-bold text-white leading-tight max-w-2xl">
-              {post.title}
-            </h1>
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(circle at 30% 70%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 40%)",
+                }}
+              />
+              <span
+                className="relative z-10 inline-block self-start px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest mb-4"
+                style={{
+                  background: "rgba(0,0,0,0.3)",
+                  backdropFilter: "blur(8px)",
+                  color: "var(--foreground)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                {post.category}
+              </span>
+              <h1 className="relative z-10 font-heading text-2xl sm:text-4xl font-bold text-white leading-tight max-w-2xl">
+                {post.title}
+              </h1>
+            </div>
           </div>
-        </div>
 
-        {/* Meta bar */}
-        <div
-          className="flex items-center justify-between mb-10 p-4 rounded-2xl"
-          style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.05)",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center"
-              style={{
-                background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
-                boxShadow: "0 2px 8px var(--accent-glow)",
-              }}
-            >
-              <GraduationCap className="w-4 h-4 text-[var(--background)]" />
+          {/* Meta bar */}
+          <div
+            className="flex items-center justify-between mb-10 p-4 rounded-2xl"
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.05)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
+                  boxShadow: "0 2px 8px var(--accent-glow)",
+                }}
+              >
+                <GraduationCap className="w-4 h-4 text-[var(--background)]" />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold text-[var(--foreground-secondary)]">
+                  {post.author}
+                </p>
+                <p className="text-[10px] text-[var(--foreground-muted)]">
+                  {new Date(post.date).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-[13px] font-bold text-[var(--foreground-secondary)]">
-                {post.author}
-              </p>
-              <p className="text-[10px] text-[var(--foreground-muted)]">
-                {new Date(post.date).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
+            <div className="flex items-center gap-4">
+              <span className="text-[12px] text-white/20 flex items-center gap-1.5 hidden sm:flex">
+                <Clock className="w-4 h-4" />
+                {post.readTime}
+              </span>
+              <div className="h-4 w-px bg-white/10 hidden sm:block" />
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={shareOnTwitter}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/20 hover:text-[var(--accent)] hover:bg-white/5 transition-all"
+                >
+                  <Twitter className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={shareOnReddit}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/20 hover:text-[var(--accent)] hover:bg-white/5 transition-all"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
-          <span className="text-[12px] text-white/20 flex items-center gap-1.5">
-            <Clock className="w-4 h-4" />
-            {post.readTime}
-          </span>
-        </div>
+
 
         {/* Content */}
         <div className="prose-professor">
@@ -465,58 +531,106 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
             </div>
           </div>
         </div>
-
-        {/* Related Posts */}
-        {related.length > 0 && (
-          <div className="mt-20">
-            <h3 className="font-heading text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-8 text-center">
-              More Intelligence
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {related.map((rp) => {
-                const IconComponent = (IconMap as any)[rp.icon] || Brain;
-                return (
-                  <Link
-                    key={rp.slug}
-                    href={`/blog/${rp.slug}`}
-                    className="group p-6 rounded-2xl transition-all duration-400 hover:translate-y-[-4px]"
-                    style={{
-                      background: "rgba(255,255,255,0.02)",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-                    }}
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center"
-                        style={{ background: rp.coverGradient }}
-                      >
-                        <IconComponent className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">
-                        {rp.category}
-                      </span>
-                    </div>
-                    <h4 className="text-[16px] font-bold text-[var(--foreground-secondary)] group-hover:text-[var(--foreground)] transition-colors leading-tight">
-                      {rp.title}
-                    </h4>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </article>
 
-      {/* Persistent Mobile CTA */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm sm:hidden">
-        <Link 
-          href="/signup" 
-          className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest shadow-2xl animate-fade-in-up"
+      {/* Sidebar */}
+      <aside className="hidden lg:block sticky top-28 self-start">
+        <div 
+          className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-md"
+          style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
         >
-          Get Started <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+          <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">
+            Table of Contents
+          </h4>
+          <nav className="space-y-4">
+            {toc.map((item) => (
+              <a 
+                key={item.id}
+                href={`#${item.id}`}
+                className="block text-[13px] text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-colors leading-snug"
+              >
+                {item.text}
+              </a>
+            ))}
+          </nav>
+
+          <div className="mt-10 pt-8 border-t border-white/5">
+             <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">
+                Share Intelligence
+             </h4>
+             <div className="flex gap-3">
+                <button 
+                  onClick={shareOnTwitter}
+                  className="flex-1 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-[var(--accent)]/10 hover:border-[var(--accent-glow)] transition-all"
+                >
+                  <Twitter className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={shareOnReddit}
+                  className="flex-1 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-[var(--accent)]/10 hover:border-[var(--accent-glow)] transition-all"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </button>
+             </div>
+          </div>
+        </div>
+      </aside>
+
     </div>
-  );
+
+    {/* Related Posts Full Width */}
+    <div className="max-w-6xl mx-auto px-5 sm:px-6 pb-28">
+      {related.length > 0 && (
+        <div className="mt-20">
+          <h3 className="font-heading text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-8 text-center">
+            More Intelligence
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {related.map((rp) => {
+              const IconComponent = (IconMap as any)[rp.icon] || Brain;
+              return (
+                <Link
+                  key={rp.slug}
+                  href={`/blog/${rp.slug}`}
+                  className="group p-6 rounded-2xl transition-all duration-400 hover:translate-y-[-4px]"
+                  style={{
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: rp.coverGradient }}
+                    >
+                      <IconComponent className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">
+                      {rp.category}
+                    </span>
+                  </div>
+                  <h4 className="text-[16px] font-bold text-[var(--foreground-secondary)] group-hover:text-[var(--foreground)] transition-colors leading-tight">
+                    {rp.title}
+                  </h4>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Persistent Mobile CTA */}
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm sm:hidden">
+      <Link 
+        href="/signup" 
+        className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest shadow-2xl animate-fade-in-up"
+      >
+        Get Started <ArrowRight className="w-4 h-4" />
+      </Link>
+    </div>
+  </div>
+);
 }
+
