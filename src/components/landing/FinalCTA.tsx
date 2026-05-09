@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import UploadZone from "./UploadZone";
 
 export default function FinalCTA() {

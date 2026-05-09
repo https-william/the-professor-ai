@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { Sparkles } from "lucide-react";
 import UploadZone from "./UploadZone";
 
 function StarField() {
