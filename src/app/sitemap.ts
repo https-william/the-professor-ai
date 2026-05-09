@@ -2,6 +2,8 @@ import { MetadataRoute } from 'next';
 import { blogPosts } from '@/lib/blog/posts';
 import { glossaryTerms } from '@/lib/blog/glossary';
 
+import { pillars } from '@/lib/blog/pillars';
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const SITE_URL = 'https://theprofessor.xyz';
 
@@ -25,7 +27,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === '' ? 1 : 0.8,
   }));
 
-  // Subject pages (pSEO)
+  // Strategic Pillars (pSEO)
+  const pillarRoutes = Object.keys(pillars).map((slug) => ({
+    url: `${SITE_URL}/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.9,
+  }));
+
+  // Subject pages
   const subjects = ['biology', 'math', 'jamb'];
   const subjectRoutes = subjects.map((sub) => ({
     url: `${SITE_URL}/best-ai-for/${sub}`,
@@ -50,5 +60,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...routes, ...subjectRoutes, ...glossary, ...posts];
+  return [...routes, ...pillarRoutes, ...subjectRoutes, ...glossary, ...posts];
 }
