@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/resources/best-ai-tools-for-students-2026',
     '/exams/jamb',
     '/exams/waec',
+    '/tools/ai-study-planner',
     '/dashboard',
     '/library',
     '/login',
@@ -22,6 +23,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
     priority: route === '' ? 1 : 0.8,
+  }));
+
+  // Subject pages (pSEO)
+  const subjects = ['biology', 'math', 'jamb'];
+  const subjectRoutes = subjects.map((sub) => ({
+    url: `${SITE_URL}/best-ai-for/${sub}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.85,
   }));
 
   // Glossary terms
@@ -40,5 +50,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...routes, ...glossary, ...posts];
+  return [...routes, ...subjectRoutes, ...glossary, ...posts];
 }

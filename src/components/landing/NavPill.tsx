@@ -60,14 +60,16 @@ export default function NavPill() {
       {/* Center — Nav Links (hidden on mobile) */}
       <div className="hidden lg:flex" style={{ alignItems: "center", gap: "2px" }}>
         {[
-          { label: "Features", href: "#features" },
+          { label: "AI Tools", href: "/tools/ai-study-planner" },
+          { label: "Glossary", href: "/glossary" },
           { label: "Blog", href: "/blog" },
-          { label: "About", href: "#about" },
+          { label: "JAMB 2026", href: "/exams/jamb" },
         ].map((link) => (
-          <a
+          <Link
             key={link.label}
             href={link.href}
             style={{
+
               fontFamily: "var(--font-sans)",
               fontSize: "13px",
               fontWeight: 600,
@@ -85,11 +87,12 @@ export default function NavPill() {
               e.currentTarget.style.color = "var(--text-3)";
               e.currentTarget.style.background = "transparent";
             }}
-          >
-            {link.label}
-          </a>
-        ))}
-      </div>
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
 
       {/* Right — Auth Buttons */}
       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>

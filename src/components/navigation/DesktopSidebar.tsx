@@ -122,7 +122,30 @@ export default function DesktopSidebar() {
                     </Link>
 
                     <Link
+                        href="/tools/ai-study-planner"
+                        className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 relative group/item ${
+                            pathname === "/tools/ai-study-planner"
+                            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+                            : "text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.03] hover:text-[var(--foreground)]"
+                        }`}
+                    >
+                        <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname === "/tools/ai-study-planner" ? "scale-110" : "group-hover/item:scale-110"}`}>
+                            <Zap size={20} strokeWidth={pathname === "/tools/ai-study-planner" ? 2.5 : 1.5} />
+                        </div>
+                        <span className={`font-sans font-bold text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap ${pathname === "/tools/ai-study-planner" ? "text-[var(--foreground)]" : ""}`}>
+                            Study Lab
+                        </span>
+                        {pathname === "/tools/ai-study-planner" && (
+                            <motion.div
+                                layoutId="sidebar-active"
+                                className="absolute left-0 w-1 h-6 bg-[var(--accent)] rounded-r-full"
+                            />
+                        )}
+                    </Link>
+
+                    <Link
                         href="/library"
+
                         className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 relative group/item ${
                             pathname === "/library"
                             ? "bg-[var(--accent)]/10 text-[var(--accent)]"

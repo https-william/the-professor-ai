@@ -583,9 +583,25 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
       <aside className="hidden lg:block sticky top-28 self-start">
         <div className="space-y-6">
           <StudyPersonaQuiz />
+
+          <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-md">
+             <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">
+                Our Frameworks
+             </h4>
+             <div className="space-y-3">
+                <Link href="/glossary/professor-recall-loop" className="block text-xs text-white/50 hover:text-[var(--accent)] transition-colors">
+                   The Professor Recall Loop
+                </Link>
+                <Link href="/glossary/neural-revision-system" className="block text-xs text-white/50 hover:text-[var(--accent)] transition-colors">
+                   Neural Revision System
+                </Link>
+             </div>
+          </div>
           
           <div 
             className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-md"
+
+
             style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
           >
 

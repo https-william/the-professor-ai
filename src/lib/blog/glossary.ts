@@ -50,5 +50,26 @@ export const glossaryTerms: GlossaryTerm[] = [
       { question: "How can I reduce cognitive load while studying?", answer: "Break complex topics into smaller 'chunks', remove digital distractions, and use tools that automate the mechanical parts of studying." }
     ],
     relatedTerms: ["active-recall", "chunking"]
+  },
+  {
+    slug: "professor-recall-loop",
+    term: "The Professor Recall Loop",
+    definition: "A proprietary learning framework that optimizes retrieval strength through iterative, high-pressure knowledge extraction.",
+    extendedDefinition: "The Professor Recall Loop is the engine inside our Strategic Study Lab. It works by: 1. Inputting raw academic material. 2. Generating high-fidelity retrieval challenges. 3. Forcing a response under timed conditions. 4. Instant logic-feedback. 5. Variable-interval repetition. It turns a 'Library Zombie' into a 'Strategic Master' by eliminating the illusion of competence.",
+    faqs: [
+      { question: "How is this different from standard flashcards?", answer: "Standard flashcards are often too simple. The Loop focuses on complex logic, derivation, and contextual application, mimicking the hardest questions in exams like the SAT or JAMB." }
+    ],
+    relatedTerms: ["active-recall", "spaced-repetition", "neural-revision-system"]
+  },
+  {
+    slug: "neural-revision-system",
+    term: "Neural Revision System",
+    definition: "An AI-powered methodology that maps academic content to the brain's natural semantic architecture.",
+    extendedDefinition: "Instead of linear reading, the Neural Revision System uses AI to identify 'hub concepts'—the 20% of information that supports the other 80%. It creates a web of interconnected knowledge, reducing the total volume of memorization required while increasing retrieval speed during high-pressure exams.",
+    faqs: [
+      { question: "Does this work for STEM subjects?", answer: "It is specifically optimized for STEM (Biology, Chemistry, Physics) where understanding the 'hub' concept is the key to solving complex derivation problems." }
+    ],
+    relatedTerms: ["professor-recall-loop", "cognitive-load"]
   }
 ];
+
