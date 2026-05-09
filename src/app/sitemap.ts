@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { blogPosts } from '@/lib/blog/posts';
+import { glossaryTerms } from '@/lib/blog/glossary';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const SITE_URL = 'https://theprofessor.xyz';
@@ -8,9 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
     '',
     '/blog',
+    '/glossary',
+    '/resources/best-ai-tools-for-students-2026',
+    '/exams/jamb',
+    '/exams/waec',
     '/dashboard',
     '/library',
-    '/hub',
     '/login',
     '/signup'
   ].map((route) => ({
@@ -18,6 +22,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
     priority: route === '' ? 1 : 0.8,
+  }));
+
+  // Glossary terms
+  const glossary = glossaryTerms.map((term) => ({
+    url: `${SITE_URL}/glossary/${term.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
   }));
 
   // Blog posts
@@ -28,5 +40,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...routes, ...posts];
+  return [...routes, ...glossary, ...posts];
 }

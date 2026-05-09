@@ -1,0 +1,27 @@
+# The Professor AI - Study Intelligence Platform
+
+The Professor is an elite AI-powered study strategist designed to transform academic performance through learning science and strategic automation.
+
+## Core Frameworks
+- Active Recall: Prioritizing retrieval over passive review.
+- Spaced Repetition: Automating the review cycle based on the forgetting curve.
+- Strategic Neglect: Focusing on the 20% of content that drives 80% of exam results.
+
+## Key Terminology
+- Library Zombie: A student who measures success by hours spent rather than concepts mastered.
+- Lab: The workspace where high-fidelity exam simulations are generated.
+- Strategic Summary: A highly compressed, logic-first distillation of dense academic material.
+
+## Primary Utility
+The platform provides tools for:
+- AI Flashcard Generation: Converting notes into retrieval challenges.
+- Exam Simulation: Creating high-fidelity practice tests from user-provided PDFs and slides.
+- Study Planning: Generating strategic schedules for exams like JAMB, WAEC, SAT, and GCSE.
+
+## Sitemap
+- /blog: Authority articles on learning science.
+- /glossary: Definitions of key learning concepts.
+- /signup: Access to the Strategic Study Lab.
+
+## Technical Identity
+The Professor AI is the "Internet's AI Study Operating System." It focuses on "AI + Student Intent" to dominate high-pressure academic environments.
