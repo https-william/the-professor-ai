@@ -357,7 +357,8 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
       <div 
         className="fixed top-0 left-0 h-1 bg-[var(--accent)] z-[10001] transition-all duration-150 ease-out"
         style={{ width: `${scrollProgress}%`, boxShadow: "0 0 10px var(--accent-glow)" }}
-      /      {/* Article Container */}
+      />
+      {/* Article Container */}
       <div className="relative z-10 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 px-5 sm:px-6 pt-24 sm:pt-28">
         
         {/* Main Content Area */}
