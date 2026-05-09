@@ -111,7 +111,7 @@ export const InteractiveSummary = ({
 
     // Parser for [KNOWLEDGE_CHECK]
     const renderContent = (text: string) => {
-        const parts = text.split(/(\[KNOWLEDGE_CHECK\]\s*\{.*?\})/gs);
+        const parts = text.split(/(\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\})/g);
         
         return parts.map((part, index) => {
             if (part.startsWith('[KNOWLEDGE_CHECK]')) {
