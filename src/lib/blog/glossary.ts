@@ -70,6 +70,37 @@ export const glossaryTerms: GlossaryTerm[] = [
       { question: "Does this work for STEM subjects?", answer: "It is specifically optimized for STEM (Biology, Chemistry, Physics) where understanding the 'hub' concept is the key to solving complex derivation problems." }
     ],
     relatedTerms: ["professor-recall-loop", "cognitive-load"]
+  },
+  {
+    slug: "jamb",
+    term: "JAMB",
+    definition: "The Joint Admissions and Matriculation Board (JAMB) is the Nigerian entrance examination board for tertiary-level institutions.",
+    extendedDefinition: "Passing JAMB in 2026 requires more than just subject knowledge; it requires familiarity with the Computer Based Test (CBT) environment and high-speed retrieval. The Professor AI simulates the JAMB interface to eliminate 'interface anxiety' and focuses your revision on the most frequently tested topics in the UTME syllabus.",
+    faqs: [
+      { question: "How many subjects do I take in JAMB?", answer: "You take four subjects: Use of English (compulsory) and three others related to your intended course of study." },
+      { question: "Can AI help me with JAMB English?", answer: "Yes, by generating practice comprehension passages and identifying patterns in Lexis and Structure questions." }
+    ],
+    relatedTerms: ["cbt", "ai-exam-prep"]
+  },
+  {
+    slug: "waec",
+    term: "WAEC",
+    definition: "The West African Examinations Council (WAEC) is an examination board established by law to determine the examinations required in the public interest in English-speaking West African countries.",
+    extendedDefinition: "The WASSCE (WAEC) is a high-stakes exam where the 'Theory' section is often the decider between an A and a C. Our Neural Revision System helps you structure your essay answers using the specific keywords and logic rubrics that WAEC examiners are trained to look for.",
+    faqs: [
+      { question: "Does WAEC use CBT?", answer: "WAEC is primarily paper-based for now, but digital tools are increasingly used for preparation and marking." }
+    ],
+    relatedTerms: ["ai-exam-prep", "neural-revision-system"]
+  },
+  {
+    slug: "cbt",
+    term: "CBT",
+    definition: "Computer Based Testing (CBT) is an assessment format where candidates enter their responses via a computer interface rather than on paper.",
+    extendedDefinition: "CBT is the standard for JAMB and many professional exams. The biggest hurdle for most students isn't the content—it's the clock and the screen. The Professor AI's 'Exam Sprint' mode is a high-fidelity CBT simulator that trains your brain to maintain logic under the digital pressure of 2026 standards.",
+    faqs: [
+      { question: "How do I get faster at CBT?", answer: "Consistent practice in a timed environment. The more your brain gets used to clicking and thinking in a digital UI, the lower your cognitive load becomes during the real exam." }
+    ],
+    relatedTerms: ["jamb", "ai-exam-prep", "cognitive-load"]
   }
 ];
 

@@ -1,4 +1,5 @@
 import type { Buffer } from "node:buffer";
+import { extractTextWithGemini } from "./ai/vision";
 
 export type ParseResult = {
     text: string;
@@ -121,16 +122,27 @@ export async function parseDocument(
     // ── IMAGE SUPPORT ──
     else if (mimeType.startsWith("image/") || ["jpg", "jpeg", "png", "webp"].includes(ext)) {
         fileType = "IMAGE";
-        throw new Error("Local OCR is not supported. Please ensure the Python MarkItDown service is running to process images.");
+        throw new Error("Image processing (OCR) is currently disabled. Please upload text-based PDFs or Office documents.");
     } 
     // ── PDF ──
     else if (mimeType === "application/pdf" || ext === "pdf") {
         fileType = "PDF";
         const { text: rawText, isScanned } = await parsePDF(buffer);
         
-        if (isScanned) {
-            throw new Error("This PDF appears to be scanned or contains mainly images. Please ensure the Python MarkItDown service is running for high-fidelity OCR.");
+        if (isScanned && rawText.length === 0) {
+            // AI OCR Fallback disabled for now due to API versioning inconsistencies
+            /*
+            if (process.env.GEMINI_API_KEY) {
+                console.log(`[Parser] PDF appears scanned. Attempting Gemini OCR for ${fileName}...`);
+                text = await extractTextWithGemini(buffer, "application/pdf");
+            } else {
+                throw new Error("This PDF appears to be images only. Please upload the original Office file (.pptx, .docx) if available, or ensure the Python service is running.");
+            }
+            */
+            throw new Error("This PDF appears to be images only (no selectable text). Please upload the original .pptx or .docx file for perfect extraction.");
         } else {
+            // Even if it's flagged as "scanned" (low text ratio), if we have SOME text, 
+            // it's better to return it as a fallback than to fail entirely.
             text = rawText;
         }
     } 

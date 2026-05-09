@@ -355,78 +355,22 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
     <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground-secondary)] pb-28 relative overflow-hidden">
       {/* Progress Bar */}
       <div 
-        className="fixed top-0 left-0 h-1 bg-[var(--accent)] z-[100] transition-all duration-150 ease-out"
+        className="fixed top-0 left-0 h-1 bg-[var(--accent)] z-[10001] transition-all duration-150 ease-out"
         style={{ width: `${scrollProgress}%`, boxShadow: "0 0 10px var(--accent-glow)" }}
-      />
-      
-      {/* Ambient */}
-
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div
-          className="absolute w-[500px] h-[500px] rounded-full animate-pulse"
-          style={{
-            top: "-10%",
-            right: "-10%",
-            background:
-              "radial-gradient(circle, var(--accent-glow), transparent 60%)",
-            filter: "blur(80px)",
-            animationDuration: "8s",
-          }}
-        />
-      </div>
-
-      {/* Nav */}
-      <nav className="fixed top-0 w-full z-50 px-3 md:px-4 py-3 md:py-4">
-        <div
-          className="max-w-3xl mx-auto flex items-center justify-between px-4 md:px-5 py-2 md:py-2.5 rounded-full"
-          style={{
-            background: "var(--background-secondary)",
-            backdropFilter: "blur(40px) saturate(180%)",
-            WebkitBackdropFilter: "blur(40px) saturate(180%)",
-            border: "1.5px solid var(--border)",
-            boxShadow:
-              "var(--shadow-lg), inset 0 1px 1px var(--card-border)",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/blog")}
-              className="flex items-center gap-1.5 text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)] transition-colors text-[12px] font-semibold"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Blog
-            </button>
-          </div>
-          <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-            <BrandLogo size="sm" />
-          </Link>
-          <div className="flex items-center gap-2">
-             <button 
-                onClick={handleCopyLink}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-bg)] transition-all border border-transparent hover:border-[var(--accent-glow)]"
-             >
-                {copied ? <div className="text-[10px] font-bold">OK</div> : <LinkIcon className="w-3.5 h-3.5" />}
-             </button>
-             <ThemeToggle variant="minimal" />
-          </div>
-        </div>
-      </nav>
-
-      {/* Article Container */}
+      /      {/* Article Container */}
       <div className="relative z-10 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 px-5 sm:px-6 pt-24 sm:pt-28">
         
         {/* Main Content Area */}
         <article className="max-w-3xl">
           {/* Hero */}
           <div
-            className="relative overflow-hidden rounded-3xl mb-10"
+            className="scholar-card relative overflow-hidden mb-10"
             style={{
-              boxShadow:
-                "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.06)",
+              borderRadius: "32px",
             }}
           >
             <div
-              className="h-56 sm:h-72 relative flex flex-col justify-end p-6 sm:p-10"
+              className="h-56 sm:h-80 relative flex flex-col justify-end p-6 sm:p-12"
               style={{ background: post.coverGradient }}
             >
               <div
@@ -447,7 +391,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
               >
                 {post.category}
               </span>
-              <h1 className="relative z-10 font-heading text-2xl sm:text-4xl font-bold text-white leading-tight max-w-2xl">
+              <h1 className="relative z-10 font-heading text-3xl sm:text-5xl font-bold text-white leading-[0.95] tracking-tight max-w-2xl">
                 {post.title}
               </h1>
             </div>
@@ -455,27 +399,23 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
 
           {/* Meta bar */}
           <div
-            className="flex items-center justify-between mb-10 p-4 rounded-2xl"
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.05)",
-            }}
+            className="flex items-center justify-between mb-12 p-5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm"
           >
             <div className="flex items-center gap-3">
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center"
                 style={{
                   background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
                   boxShadow: "0 2px 8px var(--accent-glow)",
                 }}
               >
-                <GraduationCap className="w-4 h-4 text-[var(--background)]" />
+                <GraduationCap className="w-5 h-5 text-[var(--background)]" />
               </div>
               <div>
-                <p className="text-[13px] font-bold text-[var(--foreground-secondary)]">
+                <p className="text-[14px] font-bold text-[var(--foreground)]">
                   {post.author}
                 </p>
-                <p className="text-[10px] text-[var(--foreground-muted)]">
+                <p className="text-[11px] text-[var(--foreground-muted)] uppercase tracking-wider">
                   {new Date(post.date).toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
@@ -484,22 +424,22 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-[12px] text-white/20 flex items-center gap-1.5 hidden sm:flex">
+            <div className="flex items-center gap-6">
+              <span className="text-[12px] text-[var(--foreground-muted)] flex items-center gap-1.5 hidden sm:flex">
                 <Clock className="w-4 h-4" />
                 {post.readTime}
               </span>
-              <div className="h-4 w-px bg-white/10 hidden sm:block" />
-              <div className="flex items-center gap-2">
+              <div className="h-4 w-px bg-[var(--border)] hidden sm:block" />
+              <div className="flex items-center gap-3">
                 <button 
                   onClick={shareOnTwitter}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/20 hover:text-[var(--accent)] hover:bg-white/5 transition-all"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-bg)] transition-all border border-transparent hover:border-[var(--accent-glow)]"
                 >
                   <Twitter className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={shareOnReddit}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/20 hover:text-[var(--accent)] hover:bg-white/5 transition-all"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-bg)] transition-all border border-transparent hover:border-[var(--accent-glow)]"
                 >
                   <MessageSquare className="w-4 h-4" />
                 </button>
@@ -515,7 +455,8 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
 
         {/* Professor's Verdict */}
         <div 
-          className="mt-16 p-8 rounded-3xl border border-[var(--accent-glow)] bg-[var(--accent-bg)]/50 relative overflow-hidden group"
+          className="scholar-card mt-16 p-8 border border-[var(--accent-glow)] bg-[var(--accent-bg)]/30 relative overflow-hidden group"
+          style={{ borderRadius: "24px" }}
         >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Zap className="w-12 h-12 text-[var(--accent)]" />
@@ -524,21 +465,17 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
              The Professor's Verdict
           </h3>
-          <p className="text-[15px] text-[var(--foreground-secondary)] italic leading-relaxed">
+          <p className="text-[17px] text-[var(--foreground-secondary)] italic leading-relaxed font-medium">
             "Listen carefully. Information is not knowledge. Most of you are drowning in information but starving for strategy. Reading this article won't save you—only execution will. Take the frameworks above and run them through the lab. Otherwise, you're just another library zombie."
           </p>
         </div>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-2 mt-8 mb-16">
+        <div className="flex flex-wrap gap-2 mt-10 mb-20">
           {post.tags.map((tag) => (
             <span
               key={tag}
-              className="px-3 py-1.5 rounded-xl text-[11px] font-semibold text-white/25"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.04)",
-              }}
+              className="px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-[var(--foreground-muted)] bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--accent-glow)] hover:text-[var(--accent)] transition-all cursor-default"
             >
               #{tag}
             </span>
@@ -548,29 +485,29 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
 
         {/* Conversion Footer */}
         <div 
-          className="mt-20 p-8 sm:p-12 rounded-[32px] text-center relative overflow-hidden border border-[var(--accent-glow)]"
+          className="scholar-card mt-24 p-10 sm:p-16 text-center relative overflow-hidden border border-[var(--accent-glow)]"
           style={{
-            background: "linear-gradient(145deg, rgba(245,158,11,0.08), rgba(0,0,0,0.4))",
-            boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
+            borderRadius: "40px",
+            background: "linear-gradient(165deg, var(--card), var(--background))",
           }}
         >
           <div className="relative z-10">
-            <h3 className="font-galaxie text-2xl sm:text-3xl font-bold text-white mb-4">
+            <h3 className="font-galaxie text-3xl sm:text-5xl font-bold text-[var(--foreground)] mb-6 tracking-tight leading-none">
               Stop Reading. Start Mastering.
             </h3>
-            <p className="text-[15px] text-white/50 max-w-lg mx-auto mb-8 leading-relaxed">
+            <p className="text-[17px] text-[var(--foreground-muted)] max-w-xl mx-auto mb-12 leading-relaxed">
               Knowledge without retrieval is just a distraction. Take this article's strategy and apply it to your own material inside the workspace.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link 
                 href="/signup" 
-                className="px-8 py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest bg-[var(--foreground)] text-[var(--background)] transition-all hover:scale-[1.02] active:scale-95 shadow-xl"
+                className="btn-jelly"
               >
                 Experience the Exam
               </Link>
               <Link 
                 href="/login" 
-                className="px-8 py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-all"
+                className="btn-skeuo px-8 py-4"
               >
                 Return to Lab
               </Link>
@@ -580,32 +517,28 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
       </article>
 
       {/* Sidebar */}
-      <aside className="hidden lg:block sticky top-28 self-start">
-        <div className="space-y-6">
-          <StudyPersonaQuiz />
+      <aside className="hidden lg:block sticky top-28 self-start space-y-6">
+        <StudyPersonaQuiz />
 
-          <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-md">
-             <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">
-                Our Frameworks
-             </h4>
-             <div className="space-y-3">
-                <Link href="/glossary/professor-recall-loop" className="block text-xs text-white/50 hover:text-[var(--accent)] transition-colors">
-                   The Professor Recall Loop
-                </Link>
-                <Link href="/glossary/neural-revision-system" className="block text-xs text-white/50 hover:text-[var(--accent)] transition-colors">
-                   Neural Revision System
-                </Link>
-             </div>
-          </div>
-          
-          <div 
-            className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-md"
+        <div className="glass-panel p-6 rounded-3xl">
+           <h4 className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.2em] mb-4 opacity-50">
+              Our Frameworks
+           </h4>
+           <div className="space-y-3">
+              <Link href="/glossary/professor-recall-loop" className="block text-[13px] font-medium text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-colors">
+                 The Professor Recall Loop
+              </Link>
+              <Link href="/glossary/neural-revision-system" className="block text-[13px] font-medium text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-colors">
+                 Neural Revision System
+              </Link>
+           </div>
+        </div>
+        
+        <div 
+          className="glass-panel p-6 rounded-3xl"
+        >
 
-
-            style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-          >
-
-          <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">
+          <h4 className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.2em] mb-6 opacity-50">
             Table of Contents
           </h4>
           <nav className="space-y-4">
@@ -613,59 +546,54 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
               <a 
                 key={item.id}
                 href={`#${item.id}`}
-                className="block text-[13px] text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-colors leading-snug"
+                className="block text-[13px] font-medium text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-colors leading-snug"
               >
                 {item.text}
               </a>
             ))}
           </nav>
 
-          <div className="mt-10 pt-8 border-t border-white/5">
-             <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">
+          <div className="mt-10 pt-8 border-t border-[var(--border)]">
+             <h4 className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.2em] mb-4 opacity-50">
                 Share Intelligence
              </h4>
              <div className="flex gap-3">
                 <button 
                   onClick={shareOnTwitter}
-                  className="flex-1 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-[var(--accent)]/10 hover:border-[var(--accent-glow)] transition-all"
+                  className="flex-1 btn-skeuo py-2.5 px-0"
                 >
                   <Twitter className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={shareOnReddit}
-                  className="flex-1 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-[var(--accent)]/10 hover:border-[var(--accent-glow)] transition-all"
+                  className="flex-1 btn-skeuo py-2.5 px-0"
                 >
                   <MessageSquare className="w-4 h-4" />
                 </button>
              </div>
           </div>
         </div>
-      </div>
-    </aside>
-
-
+      </aside>
 
     </div>
 
     {/* Related Posts Full Width */}
     <div className="max-w-6xl mx-auto px-5 sm:px-6 pb-28">
       {related.length > 0 && (
-        <div className="mt-20">
-          <h3 className="font-heading text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-8 text-center">
+        <div className="mt-24">
+          <h3 className="font-heading text-[11px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.3em] mb-10 text-center opacity-40">
             More Intelligence
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {related.map((rp) => {
               const IconComponent = (IconMap as any)[rp.icon] || Brain;
               return (
                 <Link
                   key={rp.slug}
                   href={`/blog/${rp.slug}`}
-                  className="group p-6 rounded-2xl transition-all duration-400 hover:translate-y-[-4px]"
+                  className="scholar-card group p-6 transition-all duration-400 hover:translate-y-[-4px]"
                   style={{
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.05)",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                    borderRadius: "24px",
                   }}
                 >
                   <div className="flex items-center gap-3 mb-4">
@@ -675,7 +603,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
                     >
                       <IconComponent className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">
+                    <span className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">
                       {rp.category}
                     </span>
                   </div>
@@ -689,7 +617,6 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
         </div>
       )}
     </div>
-
     {/* Persistent Mobile CTA */}
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm sm:hidden">
       <Link 

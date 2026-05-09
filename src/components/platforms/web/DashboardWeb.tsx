@@ -151,15 +151,18 @@ export default function DashboardWeb({
             <StandardContainer className="pt-24 pb-20 relative z-10">
                 <motion.div variants={stagger} initial="hidden" animate="show">
                     {/* Hero Zone */}
-                    <motion.div variants={fadeUp} className="mb-8">
-                        <div className="relative p-6 sm:p-8 rounded-3xl overflow-hidden bg-[var(--blue-dim)] border border-[var(--blue-border)]">
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={120} /></div>
+                    <motion.div variants={fadeUp} className="mb-10">
+                        <div className="scholar-card relative p-8 sm:p-12 overflow-hidden border-[var(--blue-border)]" style={{ borderRadius: "32px", background: "linear-gradient(165deg, var(--blue-dim), var(--bg))" }}>
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.05] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
                             <div className="relative z-10">
-                                <p className="font-mono text-[10px] uppercase tracking-[0.5em] text-[var(--text-3)] mb-1.5">{dateStr}</p>
-                                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--text)] leading-tight mb-3">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                                    <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[var(--blue-text)] font-bold">{dateStr}</span>
+                                </div>
+                                <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--text)] leading-[0.95] mb-6">
                                     {greeting}, <span className="text-[var(--blue)]">{firstName}</span>
                                 </h1>
-                                <p className="text-sm text-[var(--text-2)] italic font-sans max-w-md">
+                                <p className="text-[17px] text-[var(--text-2)] italic font-medium max-w-xl leading-relaxed">
                                     &ldquo;{dailyLine}&rdquo;
                                 </p>
                             </div>
@@ -167,41 +170,41 @@ export default function DashboardWeb({
                     </motion.div>
 
                     {/* Stat Ribbon */}
-                    <motion.div variants={fadeUp} className="mb-6 flex flex-wrap gap-2">
+                    <motion.div variants={fadeUp} className="mb-8 flex flex-wrap gap-4">
                         {[
                             { icon: Zap, label: "XP", value: user.xp?.toLocaleString(), sub: `Lvl ${level} · ${title}`, color: "var(--blue)" },
                             { icon: Flame, label: "Streak", value: `${user.streak}d`, sub: user.streak > 0 ? "Active" : "Start today", color: "var(--amber)" },
                             { icon: Shield, label: "Freezes", value: user.streakFreezeCount, sub: "Protection", color: "var(--cyan)" },
                             { icon: Coins, label: "Credits", value: user.credits, sub: "Available", color: "var(--violet)" },
                         ].map(({ icon: Icon, label, value, sub, color }) => (
-                            <div key={label} className="flex items-center gap-3 px-2 py-2.5 transition-all group flex-1 min-w-[140px] border-b border-transparent hover:border-[var(--border)]">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color}, transparent 90%)` }}>
-                                    <Icon size={14} style={{ color }} className="opacity-80 group-hover:opacity-100 transition-opacity" />
+                            <div key={label} className="scholar-card flex items-center gap-4 px-5 py-4 transition-all group flex-1 min-w-[180px]" style={{ borderRadius: "20px" }}>
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: `color-mix(in srgb, ${color}, transparent 90%)`, border: `1px solid color-mix(in srgb, ${color}, transparent 80%)` }}>
+                                    <Icon size={16} style={{ color }} className="opacity-80 group-hover:opacity-100 transition-opacity" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="font-mono text-sm font-black text-[var(--text)] tabular-nums leading-tight">{value}</p>
-                                    <p className="text-[9px] text-[var(--text-3)] uppercase tracking-wider leading-tight">{sub}</p>
+                                    <p className="font-mono text-lg font-black text-[var(--text)] tabular-nums leading-tight">{value}</p>
+                                    <p className="text-[10px] text-[var(--text-3)] uppercase tracking-wider leading-tight font-bold">{sub}</p>
                                 </div>
                             </div>
                         ))}
                     </motion.div>
 
                     {/* Level Progress */}
-                    <motion.div variants={fadeUp} className="mb-6">
-                        <div className="flex items-center gap-3 py-3 border-t border-b border-[var(--border)]">
-                            <div className="flex items-center gap-2 shrink-0">
-                                <Sparkles size={12} className="text-[var(--blue)]" />
-                                <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-3)]">Level {level}</span>
+                    <motion.div variants={fadeUp} className="mb-10">
+                        <div className="flex items-center gap-4 py-4 border-t border-b border-[var(--border)]">
+                            <div className="flex items-center gap-2.5 shrink-0">
+                                <Sparkles size={14} className="text-[var(--blue)]" />
+                                <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--text-2)] font-bold">Level {level}</span>
                             </div>
-                            <div className="flex-1 h-1.5 bg-[var(--text-4)] rounded-full overflow-hidden">
+                            <div className="flex-1 h-2 bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${progress}%` }}
                                     transition={{ duration: 1, ease: [0.25, 1, 0.5, 1], delay: 0.2 }}
-                                    className="h-full rounded-full bg-[var(--blue)]"
+                                    className="h-full rounded-full bg-[var(--blue)] shadow-[0_0_12px_var(--blue-glow)]"
                                 />
                             </div>
-                            <span className="font-mono text-[10px] text-[var(--text-3)] tabular-nums shrink-0">{xpToNext > 0 ? `${xpToNext.toLocaleString()} XP left` : "Max!"}</span>
+                            <span className="font-mono text-[11px] text-[var(--text-3)] tabular-nums shrink-0 font-bold">{xpToNext > 0 ? `${xpToNext.toLocaleString()} XP left` : "Max!"}</span>
                         </div>
                     </motion.div>
 
@@ -210,153 +213,164 @@ export default function DashboardWeb({
                         {dueCount > 0 && (
                             <motion.div variants={fadeUp} className="mb-4">
                                 <Link href="/review" className="group block">
-                                    <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-[var(--blue-dim)] border border-[var(--blue-border)] hover:bg-[var(--blue-dim)]/20 transition-all">
-                                        <div className="flex items-center gap-2.5">
-                                            <span className="w-2 h-2 rounded-full bg-[var(--blue)] animate-pulse shadow-[0_0_6px_var(--blue)]" />
-                                            <span className="text-sm font-bold text-[var(--blue-text)]">{dueCount} concepts due for review</span>
+                                    <div className="scholar-card flex items-center justify-between gap-4 px-6 py-4 border-[var(--blue-border)] bg-[var(--blue-dim)] hover:translate-x-1" style={{ borderRadius: "20px" }}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-[var(--blue)] animate-pulse shadow-[0_0_10px_var(--blue)]" />
+                                            <span className="text-[15px] font-bold text-[var(--blue-text)]">{dueCount} concepts require your intelligence</span>
                                         </div>
-                                        <ArrowRight size={14} className="text-[var(--blue)] group-hover:translate-x-0.5 transition-transform" />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[11px] font-black uppercase tracking-widest text-[var(--blue)] opacity-50 group-hover:opacity-100 transition-opacity">Enter Review</span>
+                                            <ArrowRight size={16} className="text-[var(--blue)]" />
+                                        </div>
                                     </div>
                                 </Link>
                             </motion.div>
                         )}
                         {canRecover && (
                             <motion.div variants={fadeUp} className="mb-4">
-                                <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-[var(--amber-dim)] border border-[var(--amber-border)]">
-                                    <div className="flex items-center gap-2.5">
-                                        <HistoryIcon size={13} className="text-[var(--amber)]" />
-                                        <span className="text-sm text-[var(--text-2)]">Restore <b className="text-[var(--text)]">{user.lastStreak}d</b> streak</span>
+                                <div className="scholar-card flex items-center justify-between gap-4 px-6 py-4 border-[var(--amber-border)] bg-[var(--amber-dim)]" style={{ borderRadius: "20px" }}>
+                                    <div className="flex items-center gap-3">
+                                        <HistoryIcon size={16} className="text-[var(--amber)]" />
+                                        <span className="text-[15px] text-[var(--text-2)] font-medium">Restore <b className="text-[var(--text)] font-black">{user.lastStreak}d</b> streak loop</span>
                                     </div>
-                                    <button onClick={handleRecover} disabled={isProcessingAction} className="px-3 py-1.5 rounded-lg bg-[var(--amber)] text-black text-[10px] font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all disabled:opacity-50">Restore · 3 CR</button>
+                                    <button onClick={handleRecover} disabled={isProcessingAction} className="btn-skeuo-primary px-5 py-2 text-[10px] bg-[var(--amber)] text-black font-black border-b-[3px] border-[var(--amber-dark)]">Restore · 3 CR</button>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
                     {/* Main Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Col 1+2: Workspace */}
-                        <div className="lg:col-span-2 flex flex-col gap-4">
+                        <div className="lg:col-span-2 flex flex-col gap-6">
                             <Link href="/create" className="group block">
-                                <div className="relative p-6 rounded-2xl overflow-hidden transition-all hover:scale-[1.02] bg-[var(--bg-2)]/30 border border-transparent hover:border-[var(--blue-border)]">
-                                    <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full blur-[50px] opacity-20 bg-[var(--blue)]" />
+                                <div className="scholar-card relative p-8 transition-all hover:scale-[1.01] bg-gradient-to-br from-[var(--bg-2)]/40 to-transparent" style={{ borderRadius: "28px" }}>
+                                    <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full blur-[80px] opacity-10 bg-[var(--blue)] group-hover:opacity-20 transition-opacity" />
                                     <div className="relative z-10 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-[var(--blue-dim)] flex items-center justify-center"><PlusCircle size={18} className="text-[var(--blue)]" /></div>
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-14 h-14 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                <PlusCircle size={28} className="text-[var(--blue)]" />
+                                            </div>
                                             <div>
-                                                <p className="text-base font-bold text-[var(--text)]">Start Studying</p>
-                                                <p className="text-xs text-[var(--text-2)]">Automate your degree in seconds</p>
+                                                <p className="text-xl font-black text-[var(--text)] tracking-tight">Initiate Study Cycle</p>
+                                                <p className="text-sm text-[var(--text-2)] font-medium">Synthesize new intelligence in seconds</p>
                                             </div>
                                         </div>
-                                        <ChevronRight size={18} className="text-[var(--blue)] opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                                        <div className="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center group-hover:border-[var(--blue-border)] transition-colors">
+                                            <ChevronRight size={20} className="text-[var(--blue)] opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                                        </div>
                                     </div>
                                 </div>
                             </Link>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 {actions.map(({ label, desc, icon: Icon, href, accent }) => (
                                     <Link key={label} href={href} className="group">
-                                        <div className="p-4 rounded-2xl h-full transition-all hover:-translate-y-1 bg-transparent hover:bg-[var(--bg-2)]/50 border border-transparent hover:border-[var(--border)]">
-                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: `color-mix(in srgb, ${accent}, transparent 90%)` }}>
-                                                <Icon size={14} strokeWidth={1.8} style={{ color: accent }} />
+                                        <div className="scholar-card p-5 h-full transition-all hover:-translate-y-1.5" style={{ borderRadius: "20px" }}>
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 shadow-sm" style={{ background: `color-mix(in srgb, ${accent}, transparent 90%)`, border: `1px solid color-mix(in srgb, ${accent}, transparent 80%)` }}>
+                                                <Icon size={18} strokeWidth={2} style={{ color: accent }} />
                                             </div>
-                                            <p className="text-[12px] font-bold text-[var(--text)] leading-tight">{label}</p>
-                                            <p className="text-[9px] text-[var(--text-2)] leading-tight mt-0.5">{desc}</p>
+                                            <p className="text-[14px] font-black text-[var(--text)] leading-tight mb-1">{label}</p>
+                                            <p className="text-[10px] text-[var(--text-3)] leading-snug font-medium">{desc}</p>
                                         </div>
                                     </Link>
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="p-4 bg-transparent border-t border-[var(--border)]">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-1.5">
-                                            <Flame size={12} className="text-[var(--amber)]" />
-                                            <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--text-3)]">This Week</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="p-6 border-t border-[var(--border)]">
+                                    <div className="flex items-center justify-between mb-5">
+                                        <div className="flex items-center gap-2">
+                                            <Flame size={14} className="text-[var(--amber)]" />
+                                            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Persistence Loop</span>
                                         </div>
-                                        <span className="font-mono text-[10px] font-bold text-[var(--amber)] tabular-nums">{user.streak}d</span>
+                                        <span className="font-mono text-sm font-black text-[var(--amber)] tabular-nums">{user.streak}d</span>
                                     </div>
-                                    <div className="flex gap-1.5 w-full">
+                                    <div className="flex gap-2 w-full">
                                         {weekDays.map((day, i) => (
-                                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                                                <div className={`w-full aspect-square rounded-lg flex items-center justify-center relative transition-all ${day.active ? "bg-[var(--amber)] shadow-[0_2px_8px_var(--amber-glow)]" : day.isToday ? "border border-dashed border-[var(--amber-border)]" : "bg-[var(--text-4)]"}`}>
-                                                    <span className={`text-[9px] font-black ${day.active ? "text-[#000]" : day.isToday ? "text-[var(--amber)]" : "text-[var(--text-3)]/40"}`}>{day.label}</span>
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                                                <div className={`w-full aspect-square rounded-xl flex items-center justify-center relative transition-all ${day.active ? "bg-[var(--amber)] shadow-[0_4px_12px_var(--amber-glow)] border-t border-white/20" : day.isToday ? "border-2 border-dashed border-[var(--amber-border)]" : "bg-[var(--text-4)] opacity-50"}`}>
+                                                    <span className={`text-[10px] font-black ${day.active ? "text-[#000]" : day.isToday ? "text-[var(--amber)]" : "text-[var(--text-3)]/40"}`}>{day.label}</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="p-4 bg-transparent border-t border-[var(--border)]">
-                                    <div className="flex items-center gap-1.5 mb-3">
-                                        <Target size={12} className="text-[var(--emerald)]" />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--text-3)]">Recent Activity</span>
+                                <div className="p-6 border-t border-[var(--border)]">
+                                    <div className="flex items-center gap-2 mb-5">
+                                        <Target size={14} className="text-[var(--emerald)]" />
+                                        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Neural Balance</span>
                                     </div>
-                                    <div className="space-y-2.5">
+                                    <div className="space-y-4">
                                         {recentTypes.map(({ type, icon: Icon, color, label, count }) => (
-                                            <div key={type} className="flex items-center gap-2.5">
-                                                <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color}, transparent 90%)` }}>
-                                                    <Icon size={11} style={{ color }} />
+                                            <div key={type} className="flex items-center gap-3">
+                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-sm" style={{ background: `color-mix(in srgb, ${color}, transparent 90%)`, border: `1px solid color-mix(in srgb, ${color}, transparent 80%)` }}>
+                                                    <Icon size={13} style={{ color }} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="h-1 bg-[var(--text-4)] rounded-full overflow-hidden">
-                                                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(5, (count / totalGenerations) * 100)}%` }} transition={{ duration: 1, delay: 0.3, ease: [0.175, 0.885, 0.32, 1.275] }} className="h-full rounded-full" style={{ background: color }} />
+                                                    <div className="h-1.5 bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
+                                                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(5, (count / totalGenerations) * 100)}%` }} transition={{ duration: 1, delay: 0.3, ease: [0.175, 0.885, 0.32, 1.275] }} className="h-full rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
                                                     </div>
                                                 </div>
-                                                <span className="font-mono text-[9px] text-[var(--text-3)] uppercase tracking-wider shrink-0">{label}</span>
+                                                <span className="font-mono text-[9px] text-[var(--text-3)] uppercase tracking-wider shrink-0 font-bold">{label}</span>
                                             </div>
                                         ))}
                                     </div>
-                                    <Link href="/analytics" className="mt-3 flex items-center gap-1.5 text-[9px] text-[var(--text-3)] hover:text-[var(--text)] transition-colors uppercase tracking-wider font-bold">
-                                        <span>Full Analytics</span>
-                                        <ArrowRight size={9} />
+                                    <Link href="/analytics" className="mt-5 flex items-center gap-2 text-[10px] text-[var(--text-3)] hover:text-[var(--blue)] transition-colors uppercase tracking-[0.2em] font-black">
+                                        <span>Examine Full Data</span>
+                                        <ArrowRight size={10} />
                                     </Link>
                                 </div>
                             </div>
                         </div>
 
                         {/* Col 3: Focus Panel */}
-                        <div className="flex flex-col gap-4">
-                            <div className="p-6 rounded-3xl relative overflow-hidden bg-[var(--bg-2)]/20 border border-[var(--border)]">
-                                <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[60px] opacity-15 transition-colors duration-1000 ${timerMode === "focus" ? "bg-[var(--blue)]" : "bg-[var(--cyan)]"}`} />
-                                <div className="flex items-center gap-2 mb-4 relative z-10">
-                                    <Clock size={12} className={timerMode === "focus" ? "text-[var(--blue)]" : "text-[var(--cyan)]"} />
-                                    <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--text-3)]">Pomodoro</span>
-                                    {timerActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--crimson)] animate-pulse" />}
+                        <div className="flex flex-col gap-6">
+                            <div className="scholar-card p-8 relative overflow-hidden" style={{ borderRadius: "32px" }}>
+                                <div className={`absolute -top-16 -right-16 w-40 h-40 rounded-full blur-[80px] opacity-15 transition-colors duration-1000 ${timerMode === "focus" ? "bg-[var(--blue)]" : "bg-[var(--cyan)]"}`} />
+                                <div className="flex items-center gap-2 mb-6 relative z-10">
+                                    <Clock size={14} className={timerMode === "focus" ? "text-[var(--blue)]" : "text-[var(--cyan)]"} />
+                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Deep Work Engine</span>
+                                    {timerActive && <span className="ml-auto w-2 h-2 rounded-full bg-[var(--crimson)] animate-pulse shadow-[0_0_8px_var(--crimson)]" />}
                                 </div>
-                                <div className="flex flex-col items-center py-2 relative z-10">
-                                    <div className="relative w-28 h-28 mb-4">
+                                <div className="flex flex-col items-center py-4 relative z-10">
+                                    <div className="relative w-36 h-36 mb-6">
                                         <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                            <circle cx="50" cy="50" r="42" fill="transparent" stroke="var(--border)" strokeWidth="2.5" opacity="0.3" />
-                                            <motion.circle cx="50" cy="50" r="42" fill="transparent" stroke={timerMode === "focus" ? "var(--blue)" : "var(--cyan)"} strokeWidth="3.5" strokeLinecap="round" strokeDasharray={264} initial={{ strokeDashoffset: 264 }} animate={{ strokeDashoffset: 264 - (264 * timerProgress) }} transition={{ ease: "linear", duration: 1 }} />
+                                            <circle cx="50" cy="50" r="44" fill="transparent" stroke="var(--border)" strokeWidth="3" opacity="0.2" />
+                                            <motion.circle cx="50" cy="50" r="44" fill="transparent" stroke={timerMode === "focus" ? "var(--blue)" : "var(--cyan)"} strokeWidth="4" strokeLinecap="round" strokeDasharray={276} initial={{ strokeDashoffset: 276 }} animate={{ strokeDashoffset: 276 - (276 * timerProgress) }} transition={{ ease: "linear", duration: 1 }} />
                                         </svg>
                                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className="text-xl font-black text-[var(--text)] tabular-nums font-mono leading-none">{timerMins.toString().padStart(2, "0")}:{timerSecs.toString().padStart(2, "0")}</span>
-                                            <span className="text-[8px] text-[var(--text-3)] uppercase tracking-wider mt-1">{timerMode}</span>
+                                            <span className="text-3xl font-black text-[var(--text)] tabular-nums font-mono leading-none tracking-tighter">{timerMins.toString().padStart(2, "0")}:{timerSecs.toString().padStart(2, "0")}</span>
+                                            <span className="text-[10px] text-[var(--text-3)] uppercase tracking-[0.2em] font-bold mt-2">{timerMode}</span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => setTimerActive(!timerActive)} className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--text-4)] border border-[var(--border)] active:scale-95 transition-all text-[var(--text)] hover:bg-[var(--blue)] hover:text-[#fff] hover:border-transparent">{timerActive ? <Pause size={14} className="fill-current" /> : <Play size={14} className="fill-current ml-0.5" />}</button>
-                                        <button onClick={() => { setTimerActive(false); setTimerMode("focus"); setTimerLeft(25 * 60); }} className="w-9 h-9 rounded-xl flex items-center justify-center bg-transparent border border-[var(--border)] active:scale-95 transition-all text-[var(--text-3)] hover:text-[var(--text)]"><RotateCcw size={12} /></button>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => setTimerActive(!timerActive)} className="btn-skeuo w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--text-4)] border-[var(--border)]">
+                                            {timerActive ? <Pause size={18} className="fill-current" /> : <Play size={18} className="fill-current ml-1" />}
+                                        </button>
+                                        <button onClick={() => { setTimerActive(false); setTimerMode("focus"); setTimerLeft(25 * 60); }} className="btn-skeuo w-12 h-12 rounded-2xl flex items-center justify-center bg-transparent border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text)]">
+                                            <RotateCcw size={16} />
+                                        </button>
                                     </div>
-                                    <div className="mt-3 flex gap-3">
-                                        <button onClick={() => { setTimerMode("focus"); setTimerLeft(25 * 60); setTimerActive(false); }} className={`font-mono text-[9px] uppercase tracking-widest transition-colors ${timerMode === "focus" ? "text-[var(--text)]" : "text-[var(--text-3)] hover:text-[var(--text)]"}`}>25m Focus</button>
-                                        <button onClick={() => { setTimerMode("break"); setTimerLeft(5 * 60); setTimerActive(false); }} className={`font-mono text-[9px] uppercase tracking-widest transition-colors ${timerMode === "break" ? "text-[var(--text)]" : "text-[var(--text-3)] hover:text-[var(--text)]"}`}>5m Break</button>
+                                    <div className="mt-6 flex gap-4">
+                                        <button onClick={() => { setTimerMode("focus"); setTimerLeft(25 * 60); setTimerActive(false); }} className={`font-mono text-[10px] uppercase tracking-widest font-bold transition-all ${timerMode === "focus" ? "text-[var(--blue)]" : "text-[var(--text-3)] hover:text-[var(--text)]"}`}>25m Focus</button>
+                                        <button onClick={() => { setTimerMode("break"); setTimerLeft(5 * 60); setTimerActive(false); }} className={`font-mono text-[10px] uppercase tracking-widest font-bold transition-all ${timerMode === "break" ? "text-[var(--cyan)]" : "text-[var(--text-3)] hover:text-[var(--text)]"}`}>5m Break</button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="p-5 bg-transparent border-t border-[var(--border)]">
-                                <div className="flex items-center gap-1.5 mb-3">
-                                    <Shield size={12} className="text-cyan-400" />
-                                    <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-[var(--foreground-muted)]">Streak Insurance</span>
+                            <div className="scholar-card p-6 border-[var(--cyan-border)] bg-[var(--cyan-dim)]/20" style={{ borderRadius: "24px" }}>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Shield size={14} className="text-cyan-400" />
+                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--foreground-muted)] font-bold">Academic Shield</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm font-bold text-[var(--foreground)]">{user.streakFreezeCount} <span className="text-[var(--foreground-muted)] font-normal">banked</span></p>
-                                        <p className="text-[9px] text-[var(--foreground-muted)]">Protects your streak on missed days</p>
+                                        <p className="text-[16px] font-black text-[var(--foreground)]">{user.streakFreezeCount} <span className="text-[var(--foreground-muted)] font-medium opacity-50 uppercase text-[10px] tracking-wider">Banked</span></p>
+                                        <p className="text-[11px] text-[var(--foreground-muted)] font-medium mt-0.5 leading-tight">Protects your persistence loop</p>
                                     </div>
-                                    <button onClick={handleBuyFreeze} disabled={isProcessingAction || user.credits < 5} className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 active:scale-95 transition-all disabled:opacity-60">Buy · 5 CR</button>
+                                    <button onClick={handleBuyFreeze} disabled={isProcessingAction || user.credits < 5} className="btn-skeuo px-4 py-2 text-[9px] font-black uppercase tracking-widest bg-cyan-500/10 border-cyan-500/20 text-cyan-400">Secure · 5 CR</button>
                                 </div>
                             </div>
                         </div>

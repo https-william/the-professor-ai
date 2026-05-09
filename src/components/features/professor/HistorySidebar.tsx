@@ -60,8 +60,8 @@ export function HistorySidebar({ isOpen, onClose }: HistorySidebarProps) {
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         className="fixed left-0 top-0 bottom-0 w-80 bg-[#0A0A0A] border-r border-white/10 z-50 flex flex-col shadow-2xl"
                     >
-                        <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                            <h2 className="font-serif font-bold text-lg text-white/90">Archives</h2>
+                        <div className="p-4 border-b border-white/5 flex items-center justify-center">
+                            <h2 className="font-serif font-bold text-lg text-white/90">History</h2>
                             <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
                                 <X className="w-5 h-5" />
                             </Button>
@@ -72,7 +72,7 @@ export function HistorySidebar({ isOpen, onClose }: HistorySidebarProps) {
                                 {/* Section: Chats (Mocked for now) */}
                                 <div>
                                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                                        <MessageSquare className="w-3 h-3" /> Recent Lectures
+                                        <MessageSquare className="w-3 h-3" /> Recent Chats
                                     </h3>
                                     <div className="space-y-1">
                                         <div className="p-2 rounded-lg bg-white/5 text-sm text-gray-300 hover:bg-white/10 cursor-pointer transition-colors truncate">
@@ -84,7 +84,7 @@ export function HistorySidebar({ isOpen, onClose }: HistorySidebarProps) {
                                 {/* Section: Files */}
                                 <div>
                                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                                        <FileText className="w-3 h-3" /> Knowledge Base
+                                        <FileText className="w-3 h-3" /> Your Documents
                                     </h3>
 
                                     {isLoading ? (
@@ -118,7 +118,7 @@ export function HistorySidebar({ isOpen, onClose }: HistorySidebarProps) {
                                 {/* Section: Exams (Mocked) */}
                                 <div>
                                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                                        <GraduationCap className="w-3 h-3" /> Exam Records
+                                        <GraduationCap className="w-3 h-3" /> Quiz Scores
                                     </h3>
                                     <p className="text-xs text-muted-foreground italic px-2">No exams taken yet.</p>
                                 </div>

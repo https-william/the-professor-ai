@@ -58,60 +58,145 @@ export default function NavPill() {
       </Link>
 
       {/* Center — Nav Links (hidden on mobile) */}
-      <div className="hidden lg:flex" style={{ alignItems: "center", gap: "2px" }}>
+      <div className="hidden lg:flex" style={{ alignItems: "center", gap: "4px" }}>
         {[
           { label: "AI Tools", href: "/tools/ai-study-planner" },
-          { label: "Glossary", href: "/glossary" },
+          { label: "Resources", href: "/exams", dropdown: [
+            { label: "JAMB 2026", href: "/exams/jamb" },
+            { label: "WAEC 2026", href: "/exams/waec" },
+            { label: "SAT Guide", href: "/exams/sat" },
+            { label: "Glossary", href: "/glossary" },
+          ]},
           { label: "Blog", href: "/blog" },
-          { label: "JAMB 2026", href: "/exams/jamb" },
         ].map((link) => (
-          <Link
-            key={link.label}
-            href={link.href}
-            style={{
-
-              fontFamily: "var(--font-sans)",
-              fontSize: "13px",
-              fontWeight: 600,
-              color: "var(--text-3)",
-              padding: "6px 14px",
-              borderRadius: "9999px",
-              textDecoration: "none",
-              transition: "all 150ms ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text)";
-              e.currentTarget.style.background = "var(--border-2)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-3)";
-              e.currentTarget.style.background = "transparent";
-            }}
+          <div key={link.label} className="relative group">
+            <Link
+              href={link.href}
+              className="nav-link-pill"
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: "12px",
+                fontWeight: 800,
+                color: "var(--text-3)",
+                padding: "8px 16px",
+                borderRadius: "9999px",
+                textDecoration: "none",
+                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                display: "block"
+              }}
             >
               {link.label}
             </Link>
-          ))}
-        </div>
-
+            
+            {link.dropdown && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <div style={{
+                  background: "var(--bg-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "16px",
+                  padding: "8px",
+                  minWidth: "160px",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                  backdropFilter: "blur(12px)"
+                }}>
+                  {link.dropdown.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      style={{
+                        display: "block",
+                        padding: "10px 16px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "var(--text-2)",
+                        textDecoration: "none",
+                        borderRadius: "10px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.03em"
+                      }}
+                      className="hover:bg-[var(--border)] hover:text-[var(--text)] transition-all"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* Right — Auth Buttons */}
-      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <ThemeToggle />
         {user.isAuthenticated ? (
-          <Link href="/dashboard" className="btn-skeuo-blue" style={{ fontSize: "13px", padding: "8px 20px", borderRadius: "99px", textDecoration: "none" }}>
-            Dashboard
+          <Link 
+            href="/dashboard" 
+            className="btn-skeuo-blue" 
+            style={{ 
+              fontSize: "11px", 
+              padding: "6px 16px", 
+              borderRadius: "99px", 
+              textDecoration: "none",
+              fontWeight: 900,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em"
+            }}
+          >
+            Go to Hub
           </Link>
         ) : (
           <>
-            <Link href="/login" className="btn-ghost" style={{ fontSize: "13px", padding: "8px 16px", color: "var(--text-2)", fontWeight: 700, textDecoration: "none" }}>
+            <Link 
+              href="/login" 
+              style={{ 
+                fontSize: "12px", 
+                padding: "10px 18px", 
+                color: "var(--text-2)", 
+                fontWeight: 800, 
+                textDecoration: "none",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em"
+              }}
+              className="hover:text-[var(--text)] transition-colors active:scale-90"
+            >
               Sign In
             </Link>
-            <Link href="/signup" className="btn-skeuo-blue" style={{ fontSize: "12px", padding: "8px 20px", borderRadius: "99px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.05em", textDecoration: "none" }}>
-              Sign Up Free
+            <Link 
+              href="/signup" 
+              className="btn-skeuo-blue" 
+              style={{ 
+                fontSize: "11px", 
+                padding: "6px 16px", 
+                borderRadius: "99px", 
+                fontWeight: 900, 
+                textTransform: "uppercase", 
+                letterSpacing: "0.05em", 
+                textDecoration: "none" 
+              }}
+            >
+              Get Started
             </Link>
           </>
         )}
       </div>
+
+      <style jsx>{`
+        .nav-link-pill:hover {
+          color: var(--text) !important;
+          background: var(--border-2);
+          transform: translateY(-1px);
+        }
+        .nav-link-pill:active {
+          transform: scale(0.85);
+          background: var(--border-3);
+        }
+        .btn-skeuo-blue:active {
+          transform: scale(0.85) !important;
+        }
+      `}</style>
     </nav>
   );
 }

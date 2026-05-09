@@ -39,9 +39,9 @@ export const newsItems: NewsItem[] = [
   {
     id: "news-4",
     category: "AI in Ed",
-    title: "The Professor reaches 15k active campus scholars",
-    summary: "OAU, UNILAG, and Covenant University lead the wave of AI adoption in West African higher education.",
-    source: "Campus Journal",
-    date: "Apr 12, 2026"
+    title: "Regional Trends: AI-Assisted Retrieval on the Rise",
+    summary: "New reports indicate a significant increase in students across West African universities adopting AI-native retrieval strategies to combat exam anxiety and improve recall accuracy.",
+    source: "Academic Sentinel",
+    date: "May 02, 2026"
   }
 ];

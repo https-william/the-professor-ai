@@ -6,6 +6,7 @@ export type PillarData = {
   content: {
     hero: { title: string; subtitle: string };
     sections: { title: string; body: string; list?: string[] }[];
+    faqs?: { q: string; a: string }[];
     cta: { title: string; subtitle: string; label: string };
   };
 };
@@ -230,6 +231,76 @@ export const pillars: Record<string, PillarData> = {
         { title: "The Finals Loop", body: "Using AI to compress 12 weeks of lectures into 3 days of high-fidelity recall." }
       ],
       cta: { title: "Crush your finals.", subtitle: "Join university students worldwide.", label: "Start Revision" }
+    }
+  },
+  "best-ai-for-debate-topics": {
+    slug: "best-ai-for-debate-topics",
+    title: "Best AI for Debating (2026) | Logical Fallacies & Rhetoric",
+    description: "Use AI to build bulletproof arguments. Identify logical fallacies and master the art of rhetoric for debate tournaments.",
+    keywords: ["ai for debate", "best ai for arguments", "debate topic generator ai"],
+    content: {
+      hero: { title: "Bulletproof Arguments: AI for Debate", subtitle: "Using large language models to stress-test your logic and refine your rhetoric." },
+      sections: [
+        { title: "The Counter-Argument Engine", body: "Don't just write your point. Ask the AI to play devil's advocate and tear your logic apart before your opponent does." },
+        { title: "Fallacy Detection", body: "Train your AI to scan your opening statements for ad hominem, straw man, and slippery slope fallacies." }
+      ],
+      faqs: [
+        { q: "Can AI help me win a debate?", a: "Yes, by providing diverse perspectives and identifying weaknesses in your logic that you might have missed." },
+        { q: "What is the best AI for debate prep?", a: "Claude 3.5 Sonnet is currently the gold standard for logical consistency and nuanced argumentation." }
+      ],
+      cta: { title: "Win the debate.", subtitle: "Join the debate lab and start winning.", label: "Start Prep" }
+    }
+  },
+  "how-to-study-with-active-recall-ai": {
+    slug: "how-to-study-with-active-recall-ai",
+    title: "How to Study with Active Recall AI | The Science of Memory",
+    description: "Active recall is the #1 study technique. Learn how to automate it using The Professor's AI-native frameworks.",
+    keywords: ["active recall ai", "how to use active recall", "automated flashcards ai"],
+    content: {
+      hero: { title: "Active Recall: Automated & Optimized", subtitle: "Moving from passive highlighting to high-velocity retrieval practice." },
+      sections: [
+        { title: "The Retrieval Loop", body: "The brain only remembers what it struggles to retrieve. AI facilitates this struggle without the burnout." }
+      ],
+      faqs: [
+        { q: "Why is active recall better than re-reading?", a: "Re-reading creates an 'illusion of competence' where you recognize words but can't retrieve the concepts. Active recall builds neural pathways." },
+        { q: "How often should I do active recall?", a: "Daily for new information, then at increasing intervals using Spaced Repetition (SRS)." }
+      ],
+      cta: { title: "Start Retrieving.", subtitle: "Automate your active recall loops now.", label: "Start Now" }
+    }
+  },
+  "ai-in-education-pros-and-cons": {
+    slug: "ai-in-education-pros-and-cons",
+    title: "AI in Education: The 2026 Debate | Pros, Cons & Future",
+    description: "Is AI destroying education or evolving it? A balanced look at the pros and cons of AI in the classroom.",
+    keywords: ["ai in education pros and cons", "is ai bad for students", "future of ai in school"],
+    content: {
+      hero: { title: "The AI Education Debate: 2026", subtitle: "Navigating the ethical and practical implications of AI-native learning." },
+      sections: [
+        { title: "The Pros: Hyper-Personalization", body: "AI provides 1-on-1 tutoring at zero marginal cost, democratizing elite education." },
+        { title: "The Cons: Cognitive Atrophy", body: "If students use AI to skip the 'struggle' of learning, they lose the ability to think critically." }
+      ],
+      faqs: [
+        { q: "Is AI replacing teachers?", a: "No, but it is replacing the 'lecturer' role. Teachers are evolving into 'academic coaches' and facilitators." },
+        { q: "Is using AI cheating?", a: "Using it to generate answers is cheating; using it to explain concepts and test your knowledge is the ultimate study hack." }
+      ],
+      cta: { title: "Join the Future.", subtitle: "Learn to use AI ethically and effectively.", label: "Join the Lab" }
+    }
+  },
+  "how-to-summarize-academic-papers-ai": {
+    slug: "how-to-summarize-academic-papers-ai",
+    title: "How to Summarize Academic Papers with AI | Research Mastery",
+    description: "Master the art of research. Use AI to distill 50-page academic papers into 5-minute strategic briefs.",
+    keywords: ["summarize academic papers ai", "ai for research", "how to read research papers fast"],
+    content: {
+      hero: { title: "Research Mastery: The Distillation Loop", subtitle: "Extracting pure insight from the noise of academic publication." },
+      sections: [
+        { title: "The Structural Scan", body: "Use AI to identify the methodology, core findings, and limitations of any paper in seconds." }
+      ],
+      faqs: [
+        { q: "Can AI accurately summarize complex research?", a: "Yes, if provided with the full text and specific extraction prompts like 'summarize the methodology and primary data results'." },
+        { q: "What is the best tool for research papers?", a: "The Professor's 'Distill' tool is optimized for academic hierarchy and logical flow." }
+      ],
+      cta: { title: "Start Researching.", subtitle: "Master your thesis in half the time.", label: "Start Distilling" }
     }
   }
 };

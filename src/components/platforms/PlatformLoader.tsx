@@ -14,7 +14,7 @@ export default function PlatformLoader() {
     const pathname = usePathname();
     const { isDesktop, isMobile, isWeb, isLoaded } = useAppPlatform();
 
-    const HIDDEN_PATHS = ["/login", "/signup", "/forgot-password", "/onboarding", "/blog"];
+    const HIDDEN_PATHS = ["/login", "/signup", "/forgot-password", "/onboarding", "/blog", "/library/pack"];
     const shouldHideNav = HIDDEN_PATHS.some(p => pathname.startsWith(p)) || pathname === "/";
 
     useEffect(() => {

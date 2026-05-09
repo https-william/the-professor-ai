@@ -79,15 +79,6 @@ const phases = [
                 apiEndpoint: "/api/generate/match",
                 cost: 1,
             },
-            {
-                id: "cornell",
-                label: "Cornell Notes",
-                desc: "Elite structured note system",
-                icon: BookOpen,
-                color: "var(--emerald)",
-                apiEndpoint: "/api/generate/summary",
-                cost: 2,
-            },
         ]
     },
     {
@@ -105,33 +96,8 @@ const phases = [
                 cost: 2,
                 popular: true,
             },
-            {
-                id: "review",
-                label: "Academic Audit",
-                desc: "Find blind spots in your knowledge",
-                icon: ShieldAlert,
-                color: "var(--crimson)",
-                apiEndpoint: "/api/generate/remark",
-                cost: 2,
-            },
         ]
     },
-    {
-        id: "predict",
-        number: 4,
-        title: "Predict",
-        tools: [
-            {
-                id: "roadmap",
-                label: "Syllabus Architect",
-                desc: "Master your entire semester",
-                icon: MapIcon,
-                color: "var(--violet)",
-                apiEndpoint: "/api/generate/roadmap",
-                cost: 2,
-            },
-        ]
-    }
 ];
 
 const allTools = phases.flatMap(p => p.tools);
@@ -165,23 +131,13 @@ const formatOptions: Record<string, { id: string, label: string, desc: string }[
         { id: "bullets", label: "High-Yield", desc: "Focus on facts" },
         { id: "narrative", label: "Narrative", desc: "Prose explanation" },
     ],
-    roadmap: [
-        { id: "chronological", label: "Phase-based", desc: "Step-by-step" },
-        { id: "thematic", label: "Thematic", desc: "Cluster-based" },
-    ],
     eli5: [
         { id: "analogy", label: "Vivid Analogy", desc: "Best for intuition" },
         { id: "metaphor", label: "Poetic Metaphor", desc: "Creative links" },
     ],
-    cornell: [
-        { id: "standard", label: "Standard", desc: "Full Cornell spec" },
-        { id: "digital", label: "Digital First", desc: "Optimized for screens" },
-    ],
-    review: [
-        { id: "gap_analysis", label: "Gap Analysis", desc: "Find what's missing" },
-        { id: "contradiction", label: "Logical Audit", desc: "Check for errors" },
-    ]
 };
+
+import StudyPackCommandCenter from "@/components/features/create/StudyPackCommandCenter";
 
 function CreatorStudio() {
     const router = useRouter();
@@ -195,6 +151,7 @@ function CreatorStudio() {
     const [uploadStatus, setUploadStatus] = useState("");
     const [setupError, setSetupError] = useState<string | null>(null);
     const [isSprintMode, setIsSprintMode] = useState(false);
+    const [isGeneratingPack, setIsGeneratingPack] = useState(false);
 
     const [itemCount, setItemCount] = useState(10);
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
@@ -217,7 +174,7 @@ function CreatorStudio() {
 
     const selectedCreator = allTools.find(c => c.id === selectedType);
     const charPercentage = (inputText.length / MAX_CHARS) * 100;
-    const canGenerate = inputText.trim().length > 50 && selectedType;
+    const canGenerate = inputText.trim().length > 50 && (selectedType || isSprintMode);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
@@ -237,7 +194,7 @@ function CreatorStudio() {
     const handleIngestSuccess = (text: string) => {
         const isSprint = sessionStorage.getItem("isExamSprint") === "true";
         if (isSprint) {
-            setSelectedType("summary");
+            setIsSprintMode(true);
             setInputText(text.substring(0, MAX_CHARS));
         } else {
             setInputText(prev => prev + (prev ? '\n\n' : '') + text.substring(0, MAX_CHARS));
@@ -245,7 +202,14 @@ function CreatorStudio() {
     };
 
     const handleGenerate = () => {
-        if (!inputText.trim() || !selectedType) return;
+        if (!inputText.trim()) return;
+
+        if (isSprintMode) {
+            setIsGeneratingPack(true);
+            return;
+        }
+
+        if (!selectedType) return;
         
         sessionStorage.setItem("generateParams", JSON.stringify({
             content: inputText,
@@ -265,18 +229,43 @@ function CreatorStudio() {
         setSetupError(null);
         sessionStorage.removeItem("isExamSprint");
         setIsSprintMode(false);
+        setIsGeneratingPack(false);
     };
 
+    if (isGeneratingPack) {
+        return (
+            <div className="min-h-screen bg-transparent pt-20">
+                <StandardContainer wide>
+                    <div className="mb-8">
+                        <button 
+                            onClick={() => setIsGeneratingPack(false)}
+                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2"
+                        >
+                            <X size={14} /> Cancel Generation
+                        </button>
+                    </div>
+                    <StudyPackCommandCenter 
+                        sourceText={inputText} 
+                        onComplete={(id) => router.push(`/library/pack/${id}`)} 
+                    />
+                </StandardContainer>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-transparent text-[var(--foreground)] pb-28 pt-20 relative overflow-x-hidden">
-            <StandardContainer wide={!selectedType}>
+        <div className="bg-[#fcfbf9] text-[var(--foreground)] pb-28 pt-24 relative">
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--blue-glow)] opacity-[0.03] rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--blue-glow)] opacity-[0.02] rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+            <StandardContainer wide>
                 {!selectedType ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="mb-10 sm:mb-16 text-center sm:text-left">
-                            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-4 leading-tight">
+                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                        <div className="mb-12 sm:mb-20 text-center sm:text-left">
+                            <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-6 leading-[0.9] text-[#1a1a1a]">
                                 The Study <span className="text-[var(--blue)]">Journey</span>
                             </h1>
-                            <p className="text-sm sm:text-base text-[var(--foreground-muted)] font-medium leading-relaxed max-w-lg opacity-80 mx-auto sm:mx-0">
+                            <p className="text-base sm:text-lg text-[var(--foreground-muted)] font-bold leading-relaxed max-w-xl opacity-70 mx-auto sm:mx-0">
                                 Don&apos;t just read. Master. Follow the Professor&apos;s four-phase methodology to convert raw data into exam-day dominance.
                             </p>
                         </div>
@@ -285,7 +274,7 @@ function CreatorStudio() {
                             <ExamSprintCard onClick={handleExamSprint} />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {phases.map((phase) => (
                                 <JourneyPhase
                                     key={phase.id}
@@ -298,127 +287,127 @@ function CreatorStudio() {
                         </div>
                     </div>
                 ) : (
-                    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-400 space-y-6">
-                        <div className="flex items-center gap-4 p-4 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                                style={{ background: `color-mix(in srgb, ${selectedCreator?.color}, transparent 90%)` }}>
-                                {selectedCreator && <selectedCreator.icon size={20} strokeWidth={2} style={{ color: selectedCreator?.color }} />}
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-400 space-y-6">
+                        <div className="flex items-center gap-4 p-5 rounded-[32px] bg-white border border-[var(--border)] shadow-xl">
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                                style={{ background: `color-mix(in srgb, ${selectedCreator?.color}, transparent 92%)`, border: `1px solid color-mix(in srgb, ${selectedCreator?.color}, transparent 80%)` }}>
+                                {selectedCreator && <selectedCreator.icon size={24} strokeWidth={2.2} style={{ color: selectedCreator?.color }} />}
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-sm font-black text-[var(--foreground)] tracking-tight">{selectedCreator?.label}</h3>
-                                <p className="text-[11px] text-[var(--foreground-muted)] font-medium opacity-80">{selectedCreator?.desc}</p>
+                                <h3 className="text-[15px] font-black text-[#1a1a1a] tracking-tight">{selectedCreator?.label}</h3>
+                                <p className="text-[12px] text-[var(--foreground-muted)] font-bold opacity-70">{selectedCreator?.desc}</p>
                             </div>
-                            <button onClick={resetSelection} className="p-2 hover:bg-[var(--foreground)]/5 rounded-full transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
-                                <X size={18} />
+                            <button onClick={resetSelection} className="p-3 hover:bg-[#1a1a1a]/5 rounded-full transition-colors text-[var(--foreground-muted)] hover:text-[#1a1a1a]">
+                                <X size={20} />
                             </button>
                         </div>
 
-                        <div className="relative overflow-hidden rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-2xl">
-                            <div className="px-5 pt-4 flex items-center justify-between">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] opacity-60">Source Material</label>
-                                <span className={`text-[10px] font-mono font-black tracking-tighter ${charPercentage > 80 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/60'}`}>
+                        <div className="relative overflow-hidden rounded-[40px] bg-white border border-[var(--border)] shadow-2xl">
+                            <div className="px-6 pt-5 flex items-center justify-between">
+                                <label className="text-[11px] font-black uppercase tracking-[0.3em] text-[#1a1a1a] opacity-30">Source Material</label>
+                                <span className={`text-[11px] font-mono font-black tracking-tighter ${charPercentage > 80 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
                                     {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
                                 </span>
                             </div>
-                            <div className="relative p-5">
+                            <div className="relative p-6">
                                 {isUploading && (
-                                    <div className="absolute inset-0 z-10 bg-transparent/90 backdrop-blur-md flex flex-col items-center justify-center rounded-xl gap-4">
-                                        <div className="relative w-12 h-12">
+                                    <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center rounded-[32px] gap-4">
+                                        <div className="relative w-14 h-14">
                                             <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
-                                            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_15px_var(--blue-glow)] animate-spin" />
+                                            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)] animate-spin" />
                                         </div>
-                                        <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.3em]">{uploadStatus}</p>
+                                        <p className="text-[11px] font-black text-[#1a1a1a] uppercase tracking-[0.4em]">{uploadStatus}</p>
                                     </div>
                                 )}
                                 <textarea
                                     value={inputText}
                                     onChange={handleInputChange}
                                     placeholder="Paste lecture notes, syllabus, or raw data here..."
-                                    className="w-full h-56 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] placeholder:opacity-60 text-[15px] leading-relaxed outline-none font-medium"
+                                    className="w-full h-64 px-1 py-1 resize-none bg-transparent text-[#1a1a1a] placeholder:text-[var(--foreground-muted)] placeholder:opacity-40 text-[16px] leading-relaxed outline-none font-bold"
                                     style={{ scrollbarWidth: "none" }}
                                     autoFocus
                                     disabled={isUploading}
                                 />
                             </div>
-                            <div className="px-5 py-4 flex items-center justify-between bg-white/[0.02] border-t border-[var(--border)]">
+                            <div className="px-6 py-5 flex items-center justify-between bg-[#fcfbf9] border-t border-[var(--border)]">
                                 <button
                                     onClick={handleFileUploadRequest}
-                                    className="flex items-center gap-2 text-[11px] font-black text-[var(--foreground-muted)] hover:text-[var(--blue)] uppercase tracking-widest transition-all group"
+                                    className="flex items-center gap-3 text-[12px] font-black text-[var(--blue)] hover:text-[var(--blue-dark)] uppercase tracking-[0.2em] transition-all group"
                                 >
-                                    <Upload size={14} strokeWidth={2} className="group-hover:-translate-y-0.5 transition-transform" />
+                                    <Upload size={16} strokeWidth={2.5} className="group-hover:-translate-y-1 transition-transform" />
                                     Teach The Professor
                                 </button>
                                 {inputText.length > 0 && inputText.length < 50 && (
-                                    <span className="text-[10px] font-black text-[var(--amber)] uppercase tracking-tight italic">Min 50 chars required</span>
+                                    <span className="text-[11px] font-black text-[var(--amber)] uppercase tracking-tight italic">Min 50 chars required</span>
                                 )}
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">
-                                    {selectedType === "summary" || selectedType === "cornell" ? "Detail Level" : "Density / Count"}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="p-6 rounded-[32px] bg-white border border-[var(--border)] shadow-xl">
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1a1a1a] opacity-30 mb-5 block">
+                                    Density / Count
                                 </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {(selectedType === "summary" || selectedType === "cornell" ? [3, 5, 8, 12] : countOptions).map((count) => (
+                                <div className="flex flex-wrap gap-2.5">
+                                    {countOptions.map((count) => (
                                         <button
                                             key={count}
                                             onClick={() => setItemCount(count)}
                                             className={cn(
-                                                "px-4 py-2 text-[11px] font-black transition-all rounded-xl border",
+                                                "px-5 py-2.5 text-[12px] font-black transition-all rounded-2xl border",
                                                 itemCount === count 
-                                                ? 'bg-[var(--blue)] text-white border-[var(--blue)] shadow-[0_4px_12px_var(--blue-glow)]' 
-                                                : 'bg-white/5 text-[var(--foreground-muted)] border-white/5 hover:bg-white/10'
+                                                ? 'bg-[var(--blue)] text-white border-[var(--blue)] shadow-[0_8px_16px_-4px_rgba(59,130,246,0.5)]' 
+                                                : 'bg-[#fcfbf9] text-[var(--foreground-muted)] border-[var(--border)] hover:bg-[var(--border)]'
                                             )}
                                         >
-                                            {selectedType === "summary" || selectedType === "cornell" ? (count < 5 ? "Concise" : count < 10 ? "Standard" : "Extensive") : count}
+                                            {count}
                                         </button>
                                     ))}
                                 </div>
                             </div>
   
-                            <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">Professor&apos;s Rigor</label>
-                                <div className="grid grid-cols-2 gap-2">
+                            <div className="p-6 rounded-[32px] bg-white border border-[var(--border)] shadow-xl">
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1a1a1a] opacity-30 mb-5 block">Professor&apos;s Rigor</label>
+                                <div className="grid grid-cols-2 gap-2.5">
                                     {difficultyOptions.map((opt) => (
                                         <button
                                             key={opt.id}
                                             onClick={() => setDifficulty(opt.id as any)}
                                             className={cn(
-                                                "p-3 text-left rounded-2xl transition-all border",
+                                                "p-4 text-left rounded-[20px] transition-all border",
                                                 difficulty === opt.id 
-                                                ? 'bg-[var(--blue)]/10 border-[var(--blue)]/40 shadow-lg' 
-                                                : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                                ? 'bg-[var(--blue)]/5 border-[var(--blue)]/30 shadow-md scale-[1.02]' 
+                                                : 'bg-[#fcfbf9] border-[var(--border)] hover:bg-[var(--border)]'
                                             )}
                                         >
-                                            <div className={cn("text-[11px] font-black flex items-center gap-2 mb-1", difficulty === opt.id ? 'text-[var(--blue)]' : 'text-[var(--foreground)]')}>
+                                            <div className={cn("text-[12px] font-black flex items-center gap-2 mb-1.5", difficulty === opt.id ? 'text-[var(--blue)]' : 'text-[#1a1a1a]')}>
                                                 <span>{opt.emoji}</span> {opt.label}
                                             </div>
-                                            <p className="text-[9px] text-[var(--foreground-muted)] font-medium opacity-60 px-1 truncate leading-tight">{opt.desc}</p>
+                                            <p className="text-[10px] text-[var(--foreground-muted)] font-bold opacity-60 leading-tight">{opt.desc}</p>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             {formatOptions[selectedType || ""] && (
-                                <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">Output Format</label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                <div className="p-6 rounded-[32px] bg-white border border-[var(--border)] shadow-xl">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1a1a1a] opacity-30 mb-5 block">Output Format</label>
+                                    <div className="grid grid-cols-2 gap-2.5">
                                         {formatOptions[selectedType || ""].map((opt) => (
                                             <button
                                                 key={opt.id}
                                                 onClick={() => setSelectedFormat(opt.id)}
                                                 className={cn(
-                                                    "p-3 text-left rounded-2xl transition-all border",
+                                                    "p-4 text-left rounded-[20px] transition-all border",
                                                     selectedFormat === opt.id 
-                                                    ? 'bg-[var(--cyan)]/10 border-[var(--cyan)]/40 shadow-lg' 
-                                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                                    ? 'bg-[var(--cyan)]/5 border-[var(--cyan)]/30 shadow-md scale-[1.02]' 
+                                                    : 'bg-[#fcfbf9] border-[var(--border)] hover:bg-[var(--border)]'
                                                 )}
                                             >
-                                                <div className={cn("text-[11px] font-black mb-1", selectedFormat === opt.id ? 'text-[var(--cyan)]' : 'text-[var(--foreground)]')}>
+                                                <div className={cn("text-[12px] font-black mb-1.5", selectedFormat === opt.id ? 'text-[var(--cyan)]' : 'text-[#1a1a1a]')}>
                                                     {opt.label}
                                                 </div>
-                                                <p className="text-[9px] text-[var(--foreground-muted)] font-medium opacity-60 truncate leading-tight">{opt.desc}</p>
+                                                <p className="text-[10px] text-[var(--foreground-muted)] font-bold opacity-60 leading-tight">{opt.desc}</p>
                                             </button>
                                         ))}
                                     </div>
@@ -426,18 +415,18 @@ function CreatorStudio() {
                             )}
 
                             {(selectedType === "quiz" || selectedType === "match") && (
-                                <div className="p-5 rounded-3xl bg-[var(--bg-2)] border border-[var(--border)] shadow-xl">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60 mb-4 block">Time Pressure</label>
-                                    <div className="flex flex-wrap gap-2">
+                                <div className="p-6 rounded-[32px] bg-white border border-[var(--border)] shadow-xl">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1a1a1a] opacity-30 mb-5 block">Time Pressure</label>
+                                    <div className="flex flex-wrap gap-2.5">
                                         {timerOptions.map((opt) => (
                                             <button
                                                 key={opt.id}
                                                 onClick={() => setTimerValue(opt.id)}
                                                 className={cn(
-                                                    "px-3 py-1.5 text-[11px] font-black transition-all rounded-xl border",
+                                                    "px-4 py-2 text-[12px] font-black transition-all rounded-2xl border",
                                                     timerValue === opt.id 
-                                                    ? 'bg-[var(--crimson)]/10 border-[var(--crimson)] text-[var(--crimson)] shadow-md' 
-                                                    : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:bg-white/10'
+                                                    ? 'bg-[var(--crimson)] text-white border-[var(--crimson)] shadow-[0_8px_16px_-4px_rgba(220,38,38,0.3)]' 
+                                                    : 'bg-[#fcfbf9] border-[var(--border)] text-[var(--foreground-muted)] hover:bg-[var(--border)]'
                                                 )}
                                             >
                                                 {opt.label}
@@ -491,8 +480,10 @@ function CreatorStudio() {
 
             <KnowledgeIngestModal 
                 onSuccess={handleIngestSuccess} 
+                onStartSprint={handleGenerate}
                 title={isSprintMode ? "Initialize Exam Sprint" : undefined}
                 description={isSprintMode ? "Upload your materials and the Professor will prepare your 10-hour survival kit." : undefined}
+                isSprint={isSprintMode}
             />
         </div>
     );

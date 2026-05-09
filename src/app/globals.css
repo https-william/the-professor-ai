@@ -95,6 +95,33 @@
 }
 
 /* ═══════════════════════════════════════════════════
+   THE PROFESSOR — ATMOSPHERIC DEPTH & FLAT 2.0
+   Reintroducing physics, lighting, and texture.
+   ═══════════════════════════════════════════════════ */
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.gradient-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 0% 0%, var(--blue-dim) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, var(--violet-dim) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, var(--emerald-dim) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, var(--amber-dim) 0%, transparent 50%);
+  filter: blur(80px);
+  opacity: 0.4;
+}
+
+/* ═══════════════════════════════════════════════════
    TAILWIND v4 CONFIGURATION
    The @theme rule is a valid Tailwind CSS v4 directive.
    Ignore any IDE warnings regarding "Unknown at rule @theme".
@@ -180,11 +207,11 @@
 
 :root {
   /* ─── BACKGROUNDS ─── */
-  --bg:             #050505;
-  --bg-2:           #0D0D0D;
-  --bg-3:           #141414;
-  --bg-4:           #1A1A1A;
-  --bg-5:           #222222;
+  --bg:             #040406;
+  --bg-2:           #09090C;
+  --bg-3:           #0E0E12;
+  --bg-4:           #14141A;
+  --bg-5:           #1C1C24;
 
   /* ─── PRIMARY: BLUE (replaces amber as the brand/action color) ─── */
   --blue:           #2563EB;
@@ -243,9 +270,10 @@
   --orb-opacity:    0.3;
 
   /* ─── BORDERS ─── */
-  --border:         rgba(242, 237, 228, 0.07);
-  --border-2:       rgba(242, 237, 228, 0.13);
-  --border-3:       rgba(242, 237, 228, 0.22);
+  --border:         rgba(255, 255, 255, 0.05);
+  --border-2:       rgba(255, 255, 255, 0.08);
+  --border-3:       rgba(255, 255, 255, 0.15);
+  --border-hover:   rgba(255, 255, 255, 0.25);
 
   /* ─── TYPOGRAPHY ─── */
   --font-display:   var(--font-outfit), 'Outfit', 'Helvetica Neue', sans-serif;
@@ -253,12 +281,20 @@
   --font-serif:     var(--font-source-serif), Georgia, serif;
   --font-mono-raw:  var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
 
+  /* ─── FLAT 2.0 DEPTH SYSTEM ─── */
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.4), 0 1px 1px rgba(0,0,0,0.3);
+  --shadow-md:      0 4px 10px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4);
+  --shadow-lg:      0 12px 30px rgba(0,0,0,0.6), 0 4px 10px rgba(0,0,0,0.5);
+  --shadow-xl:      0 32px 64px rgba(0,0,0,0.8), 0 16px 20px rgba(0,0,0,0.6);
+  --shadow-inner:   inset 0 2px 4px 0 rgba(0,0,0,0.3);
+  --shadow-outline: 0 0 0 3px var(--blue-border);
+
   /* ─── RADIUS ─── */
-  --r-sm:   8px;
-  --r-md:   12px;
-  --r-lg:   16px;
-  --r-xl:   20px;
-  --r-2xl:  24px;
+  --r-sm:   10px;
+  --r-md:   14px;
+  --r-lg:   18px;
+  --r-xl:   24px;
+  --r-2xl:  32px;
   --r-pill: 9999px;
 
   /* ─── COMPATIBILITY ALIASES ─── */
@@ -268,6 +304,7 @@
   --foreground-muted: var(--text-3);
   --accent:         var(--blue);
   --card:           var(--bg-2);
+  --card-border:    var(--border);
   
   /* Legacy/Platform Compatibility */
   --accent-light: var(--blue-light);
@@ -289,6 +326,7 @@
   /* Transitions — Spring physics simulation */
   --transition-jelly: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .scholar-container {
@@ -321,29 +359,31 @@
    ============================================ */
 
 html.light {
-  --bg:    #F0EBE0;
-  --bg-2:  #E8E1D4;
-  --bg-3:  #FFFFFF;
-  --bg-4:  #F5F0E8;
-  --bg-5:  #EDE6D8;
-  --text:           #1C1917;
-  --text-2:         rgba(28, 25, 23, 0.85);
-  --text-3:         rgba(28, 25, 23, 0.70);
-  --text-4:         rgba(28, 25, 23, 0.25);
-  --orb-opacity:    0.6;
-  --border:         rgba(28, 25, 23, 0.12);
-  --border-2:       rgba(28, 25, 23, 0.15);
-  --border-3:       rgba(28, 25, 23, 0.25);
+  --bg:    #F8F9FA;
+  --bg-2:  #FFFFFF;
+  --bg-3:  #F1F3F5;
+  --bg-4:  #E9ECEF;
+  --bg-5:  #DEE2E6;
+  --text:           #020617; /* Slate-950 - Absolute clarity */
+  --text-2:         #0f172a; /* Slate-900 */
+  --text-3:         #1e293b; /* Slate-800 */
+  --text-4:         #64748b; /* Slate-500 */
+  --orb-opacity:    0.4;
+  --border:         rgba(15, 23, 42, 0.12);
+  --border-2:       rgba(15, 23, 42, 0.18);
+  --border-3:       rgba(15, 23, 42, 0.25);
   --blue-dim:       rgba(37, 99, 235, 0.08);
-  --blue-glow:      rgba(37, 99, 235, 0.10);
-  --bg-glow:        rgba(37, 99, 235, 0.05);
+  --blue-glow:      rgba(37, 99, 235, 0.12);
+  --bg-glow:        rgba(37, 99, 235, 0.04);
 
   --background:     var(--bg);
+  --background-secondary: var(--bg-3);
   --foreground:     var(--text);
   --foreground-secondary: var(--text-2);
   --foreground-muted: var(--text-3);
   --accent:         var(--blue);
   --card:           var(--bg-2);
+  --card-border:    var(--border);
 }
 
 /* ============================================
@@ -352,6 +392,8 @@ html.light {
 
 html {
   scroll-behavior: smooth;
+  overflow: hidden;
+  height: 100%;
 }
 
 body {
@@ -364,6 +406,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  position: fixed;
 }
 
 h1,
@@ -425,19 +471,51 @@ select:is(:focus, :focus-visible) {
   box-shadow: var(--shadow-md);
 }
 
-/* Scholar Card — amber glow on hover */
+/* Scholar Card — Flat 2.0 Elevation */
 .scholar-card {
   background-color: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
+  transition: var(--transition-bounce);
+  position: relative;
+  overflow: hidden;
+}
+
+.scholar-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .scholar-card:hover {
-  border-color: rgba(245, 158, 11, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.08);
-  transform: translateY(-2px);
+  border-color: var(--blue-border);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-4px) scale(1.01);
+}
+
+.scholar-card:hover::before {
+  opacity: 1;
+}
+
+/* Bento Grid System */
+.bento-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.bento-item {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
 }
 
 /* Glass card */
@@ -1973,10 +2051,10 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
 .upload-zone {
   width: min(540px, 90vw);
   min-height: 168px;
-  background: rgba(18, 18, 31, 0.6);
+  background: var(--background-secondary);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1.5px dashed rgba(245,158,11,0.32);
+  border: 1.5px dashed var(--blue-border);
   border-radius: 1.5rem;
   padding: 32px 28px;
   display: flex;

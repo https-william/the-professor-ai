@@ -6,6 +6,8 @@ interface IngestFile {
   status: 'reading' | 'learning' | 'success' | 'error';
   progress: number;
   errorMessage?: string;
+  file?: File; // Store the actual file object
+  text?: string; // Store the parsed text
 }
 
 interface IngestState {
@@ -35,6 +37,7 @@ export const useIngestStore = create<IngestState>((set) => ({
         name: f.name,
         status: 'reading' as const,
         progress: 0,
+        file: f,
       }))
     ],
     isProcessing: true,

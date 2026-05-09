@@ -29,21 +29,6 @@ import {
 } from "lucide-react";
 import NewsFeed from "@/components/blog/NewsFeed";
 
-/* ═══ Claymorphic Helpers ═══ */
-const clay = {
-  card: {
-    background: "var(--card)",
-    borderRadius: "24px",
-    border: "1px solid var(--card-border)",
-    boxShadow: "var(--shadow-lg), inset 0 1px 1px var(--card-border)",
-  } as React.CSSProperties,
-  pill: {
-    background: "var(--background-secondary)",
-    borderRadius: "14px",
-    boxShadow: "var(--shadow-sm), inset 0 1px 1px var(--card-border)",
-  } as React.CSSProperties,
-};
-
 /* ═══ Icon Components Mapping ═══ */
 const IconMap = {
   Brain,
@@ -64,11 +49,9 @@ function FeaturedCard({ post }: { post: BlogPost }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="group block relative overflow-hidden transition-all duration-500 hover:translate-y-[-4px]"
+      className="scholar-card group block relative transition-all duration-500 hover:translate-y-[-4px]"
       style={{
-        ...clay.card,
-        borderRadius: "28px",
-        boxShadow: "var(--shadow-xl), inset 0 1px 1px var(--card-border)",
+        borderRadius: "32px",
       }}
     >
       {/* Gradient Header */}
@@ -159,8 +142,7 @@ function BlogCard({ post }: { post: BlogPost }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="group block relative overflow-hidden transition-all duration-400 hover:translate-y-[-3px]"
-      style={clay.card}
+      className="scholar-card group block relative transition-all duration-400 hover:translate-y-[-3px]"
     >
       {/* Top accent line */}
       <div
@@ -172,12 +154,7 @@ function BlogCard({ post }: { post: BlogPost }) {
         {/* Category + Read time */}
         <div className="flex items-center justify-between mb-4">
           <span
-            className="text-[10px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-1 rounded-lg"
-            style={{
-              ...clay.pill,
-              border: "1px solid var(--border)",
-              color: "var(--foreground-muted)",
-            }}
+            className="text-[10px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-1 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)]"
           >
             {post.category}
           </span>
@@ -210,14 +187,14 @@ function BlogCard({ post }: { post: BlogPost }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between pl-[60px]">
-          <p className="text-[11px] text-white/15">
+          <p className="text-[11px] text-[var(--foreground-muted)] opacity-30">
             {new Date(post.date).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric",
             })}
           </p>
-          <ArrowRight className="w-4 h-4 text-white/10 group-hover:text-white/40 group-hover:translate-x-1 transition-all" />
+          <ArrowRight className="w-4 h-4 text-[var(--foreground-muted)] opacity-20 group-hover:text-[var(--accent)] group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
         </div>
       </div>
     </Link>
@@ -290,45 +267,6 @@ export default function BlogClient() {
         />
       </div>
 
-      {/* Navigation - Minimal and Floating */}
-      <nav className="fixed top-0 w-full z-50 px-3 md:px-4 py-3 md:py-4">
-        <StandardContainer narrow
-          className="flex items-center justify-between px-4 md:px-5 py-2 md:py-2.5 rounded-full"
-          style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            backdropFilter: "blur(40px) saturate(180%)",
-            WebkitBackdropFilter: "blur(40px) saturate(180%)",
-            border: "1.5px solid var(--card-border)",
-            borderTop: "1.5px solid rgba(255,255,255,0.1)",
-            boxShadow:
-              "0 12px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)",
-          }}
-        >
-          <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-            <BrandLogo size="sm" />
-            <span className="hidden sm:block font-heading font-black text-[var(--foreground)] tracking-tighter text-[15px] uppercase">
-              The Professor
-            </span>
-          </Link>
-
-          {/* Floating Middle Blog Identifier */}
-          <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-3 px-4 py-1.5 bg-[var(--background)] border border-[var(--card-border)] rounded-full shadow-inner">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-80">Knowledge Hub</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/signup" 
-              className="hidden sm:flex text-[11px] font-black uppercase tracking-widest text-[var(--accent)] hover:opacity-80 transition-all"
-            >
-              Enter Workspace
-            </Link>
-            <ThemeToggle variant="minimal" />
-          </div>
-        </StandardContainer>
-      </nav>
-
       <StandardContainer narrow className="relative z-10 pt-28 sm:pt-36">
         {/* Header */}
         <div className="text-center mb-16">
@@ -346,26 +284,24 @@ export default function BlogClient() {
         </div>
 
         {/* Category Filter */}
-        <div className="flex gap-2 mb-10 overflow-x-auto pb-2 scrollbar-hide justify-center flex-wrap">
+        <div className="flex gap-3 mb-12 overflow-x-auto pb-4 scrollbar-hide justify-center flex-wrap">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all duration-200"
+              className={`btn-skeuo flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[12px] font-bold whitespace-nowrap transition-all duration-200 ${
+                activeCategory === cat 
+                  ? "bg-[var(--accent-bg)] border-[var(--accent-glow)] text-[var(--accent)]" 
+                  : "bg-[var(--background-secondary)] text-[var(--foreground-muted)]"
+              }`}
               style={
                 activeCategory === cat
                   ? {
-                      background: "var(--accent-bg)",
-                      border: "1px solid var(--accent-glow)",
+                      borderColor: "var(--accent-glow)",
                       color: "var(--accent)",
-                      boxShadow:
-                        "inset 0 1px 2px var(--accent-glow), 0 2px 8px var(--accent-glow)",
+                      boxShadow: "0 8px 20px var(--accent-glow), inset 0 1px 1px rgba(255,255,255,0.1)",
                     }
-                  : {
-                      ...clay.pill,
-                      border: "1px solid var(--border)",
-                      color: "var(--foreground-muted)",
-                    }
+                  : {}
               }
             >
               {cat}
@@ -375,7 +311,7 @@ export default function BlogClient() {
 
         {/* Featured Posts */}
         {activeCategory === "All" && featured.length > 0 && (
-          <div className="grid gap-6 mb-10">
+          <div className="grid gap-6 mb-12">
             {featured.map((post) => (
               <FeaturedCard key={post.slug} post={post} />
             ))}
@@ -384,7 +320,7 @@ export default function BlogClient() {
 
         {/* Show featured in filter if not "All" */}
         {activeCategory !== "All" && featuredInFilter.length > 0 && (
-          <div className="grid gap-6 mb-10">
+          <div className="grid gap-6 mb-12">
             {featuredInFilter.map((post) => (
               <FeaturedCard key={post.slug} post={post} />
             ))}
@@ -392,39 +328,38 @@ export default function BlogClient() {
         )}
 
         {/* All Posts Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {(activeCategory === "All" ? blogPosts.filter(p => !p.featured) : nonFeaturedPosts).map((post) => (
             <BlogCard key={post.slug} post={post} />
           ))}
         </div>
 
         {/* News Engine Section */}
-        <NewsFeed />
+        <div className="mt-16">
+          <NewsFeed />
+        </div>
 
         {/* Newsletter CTA */}
         <div
-          className="mt-24 p-8 sm:p-16 text-center relative overflow-hidden group"
+          className="scholar-card mt-24 p-8 sm:p-20 text-center relative overflow-hidden group"
           style={{
-            ...clay.card,
-            borderRadius: "40px",
-            background: "linear-gradient(145deg, var(--card), rgba(0,0,0,0.4))",
+            borderRadius: "48px",
+            background: "linear-gradient(165deg, var(--card), var(--background))",
           }}
         >
           <div className="relative z-10">
-            <h3 className="font-galaxie text-2xl sm:text-4xl font-bold text-white mb-4">
+            <div className="w-16 h-16 rounded-3xl bg-[var(--accent-bg)] border border-[var(--accent-glow)] flex items-center justify-center mx-auto mb-8 shadow-2xl">
+              <Sparkles className="w-8 h-8 text-[var(--accent)]" />
+            </div>
+            <h3 className="font-galaxie text-3xl sm:text-5xl font-bold text-[var(--foreground)] mb-6 tracking-tight leading-none">
               Get the Professor's Edge.
             </h3>
-            <p className="text-[15px] text-white/40 max-w-md mx-auto mb-10 leading-relaxed">
-              Join 12,000+ students receiving weekly deep-dives into academic leverage and AI intuition.
+            <p className="text-[17px] text-[var(--foreground-muted)] max-w-xl mx-auto mb-12 leading-relaxed">
+              Join the elite circle of students receiving weekly deep-dives into <span className="text-[var(--foreground)] font-bold">academic leverage</span> and <span className="text-[var(--foreground)] font-bold">AI intuition.</span>
             </p>
             <Link 
               href="/signup" 
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95"
-              style={{
-                background: "var(--foreground)",
-                color: "var(--background)",
-                boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
-              }}
+              className="btn-jelly inline-flex items-center gap-3"
             >
               Enter Workspace <ArrowRight className="w-4 h-4" />
             </Link>

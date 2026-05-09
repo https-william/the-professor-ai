@@ -61,7 +61,7 @@ export default function DesktopSidebar() {
         router.push('/login');
     };
 
-    const HIDDEN_PATHS = ["/login", "/signup", "/forgot-password", "/onboarding"];
+    const HIDDEN_PATHS = ["/login", "/signup", "/forgot-password", "/onboarding", "/library/pack"];
     const isHidden = HIDDEN_PATHS.some(p => pathname.startsWith(p)) || pathname === "/" || !isDesktop;
 
     if (isHidden) return null;

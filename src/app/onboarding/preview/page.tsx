@@ -201,7 +201,7 @@ export default function PreviewPage() {
                 ))}
              </div>
              <p className="text-[var(--foreground-muted)] font-medium text-sm">
-                Join <span className="text-[var(--foreground)] font-black">1,240 students</span> already mastering their courses this semester.
+                Join <span className="text-[var(--foreground)] font-black">hundreds of students</span> already mastering their courses this semester.
              </p>
           </div>
 

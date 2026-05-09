@@ -41,6 +41,74 @@ const subjects: Record<string, SubjectData> = {
     ],
     hacks: ["CBT interface desensitization", "Time-pressure sprints", "Use of English strategy"],
     faq: [{ q: "What is the best AI for JAMB 2026?", a: "The Professor AI is the only platform with a dedicated JAMB 2026 strategy engine." }]
+  },
+  waec: {
+    name: "WAEC (WASSCE)",
+    intent: "mastering the West African curriculum and marking scheme",
+    bestTools: [
+      { name: "The Professor AI", why: "Syllabus-locked extraction and essay plan generation." },
+      { name: "MySchool", why: "Verified past question database." }
+    ],
+    hacks: ["Marking scheme analysis", "Essay logic structuring", "Objective speed runs"],
+    faq: [{ q: "Can AI help with WAEC practicals?", a: "It provides the underlying theory and step-by-step logic expected by WAEC examiners." }]
+  },
+  sat: {
+    name: "SAT Prep",
+    intent: "dominating the Digital SAT with adaptive logic and speed",
+    bestTools: [
+      { name: "Khan Academy", why: "Official partner for foundational practice." },
+      { name: "The Professor AI", why: "Aggressive logic drills for the Reading & Writing modules." }
+    ],
+    hacks: ["Contextual vocabulary hacking", "Math logic shortcuts", "Desmos mastery"],
+    faq: [{ q: "Is the SAT still relevant?", a: "In 2026, it remains the gold standard for global university benchmarking." }]
+  },
+  gcse: {
+    name: "GCSE & A Levels",
+    intent: "achieving Grade 9/A* performance through curriculum mastery",
+    bestTools: [
+      { name: "Save My Exams", why: "Topic-specific practice papers." },
+      { name: "The Professor AI", why: "Forcing active recall on specific exam board specifications (AQA, OCR, Edexcel)." }
+    ],
+    hacks: ["Specification-locked revision", "Keyword extraction for marks", "Spaced recall cycles"],
+    faq: [{ q: "Does AI know the AQA spec?", a: "The Professor AI can be locked to specific PDF specifications to ensure total alignment." }]
+  },
+  medical: {
+    name: "Medical Students",
+    intent: "managing the cognitive load of anatomy, pharmacology, and pathology",
+    bestTools: [
+      { name: "Osmosis", why: "High-quality visual learning." },
+      { name: "The Professor AI", why: "Turning massive clinical textbooks into high-fidelity diagnostic simulations." }
+    ],
+    hacks: ["Pathology logic mapping", "Drug mechanism mnemonics", "Case-study simulations"],
+    faq: [{ q: "Can AI replace medical textbooks?", a: "No, but it acts as a high-speed extractor for the core logic buried in those textbooks." }]
+  },
+  engineering: {
+    name: "Engineering",
+    intent: "mastering physical principles, complex math, and systems design",
+    bestTools: [
+      { name: "Wolfram Alpha", why: "Computational engine for complex calculus." },
+      { name: "The Professor AI", why: "De-jargonizing physical principles and thermal dynamics." }
+    ],
+    hacks: ["First-principles derivation", "Formula relationship mapping", "System stress-testing"],
+    faq: [{ q: "Can AI help with CAD logic?", a: "It can explain the underlying geometric and physical constraints of a design." }]
+  },
+  "college-prep": {
+    name: "College Prep",
+    intent: "bridging the gap between high school and university rigor",
+    bestTools: [
+      { name: "The Professor AI", why: "Teaching the 'Strategic Study' mindset before you reach campus." }
+    ],
+    hacks: ["Note-taking architecture", "Time-block strategy", "Academic writing logic"],
+    faq: [{ q: "When should I start college prep?", a: "The earlier you build the 'Academic Weapon' mindset, the easier your first year will be." }]
+  },
+  "exam-anxiety": {
+    name: "Exam Anxiety",
+    intent: "building the psychological calm that comes from total competence",
+    bestTools: [
+      { name: "The Professor AI", why: "Simulating the exam environment until the fear vanishes." }
+    ],
+    hacks: ["Exposure therapy via quizzes", "Confidence building sprints", "Logic grounding"],
+    faq: [{ q: "Does AI help with stress?", a: "Preparation is the best antidote to anxiety. Competence breeds calm." }]
   }
 };
 
@@ -50,46 +118,48 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({ params }: { params: { subject: string } }): Promise<Metadata> {
-  const data = subjects[params.subject];
+export async function generateMetadata({ params }: { params: Promise<{ subject: string }> }): Promise<Metadata> {
+  const { subject } = await params;
+  const data = subjects[subject];
   if (!data) return { title: "Subject Not Found" };
 
   return {
     title: `Best AI for ${data.name} Students (2026) | Elite Revision Guide`,
     description: `How to use AI for ${data.name} to study 3x faster. Discover the best tools for ${data.intent}.`,
-    keywords: [`best ai for ${params.subject}`, `${params.subject} study tools`, "ai revision guide"],
+    keywords: [`best ai for ${subject}`, `${data.name} study tools`, "ai revision guide"],
   };
 }
 
-export default function SubjectSEOPage({ params }: { params: { subject: string } }) {
-  const data = subjects[params.subject];
+export default async function SubjectSEOPage({ params }: { params: Promise<{ subject: string }> }) {
+  const { subject } = await params;
+  const data = subjects[subject];
   if (!data) notFound();
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-white pt-24 pb-20">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pt-24 pb-20">
       <div className="max-w-4xl mx-auto px-6">
         <header className="mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-bg)]/20 border border-[var(--accent-glow)] text-[var(--accent)] text-[10px] font-black uppercase tracking-widest mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-bg)] border border-[var(--accent-glow)] text-[var(--accent)] text-[10px] font-black uppercase tracking-widest mb-6">
              <Trophy className="w-3 h-3" /> Subject Authority
           </div>
-          <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight text-[var(--foreground)]">
              Best AI for {data.name} Students (2026)
           </h1>
-          <p className="text-xl text-white/50 leading-relaxed">
+          <p className="text-xl text-[var(--foreground-muted)] leading-relaxed font-medium">
              In 2026, general AI is not enough. You need specific logic for {data.intent}. Here is the strategist's guide to dominating {data.name}.
           </p>
         </header>
 
         {/* Tools List */}
         <section className="space-y-6 mb-20">
-           <h2 className="text-2xl font-bold mb-8">The Recommended Stack</h2>
+           <h2 className="text-2xl font-bold mb-8 text-[var(--foreground)]">The Recommended Stack</h2>
            {data.bestTools.map((tool, i) => (
-             <div key={i} className="p-8 rounded-3xl border border-white/5 bg-white/[0.02] flex flex-col md:flex-row justify-between items-center gap-6">
+             <div key={i} className="p-8 rounded-3xl border border-[var(--border)] bg-[var(--background-secondary)] flex flex-col md:flex-row justify-between items-center gap-6 shadow-[var(--shadow-sm)]">
                 <div>
                    <h3 className="text-xl font-bold mb-1 text-[var(--accent)]">{tool.name}</h3>
-                   <p className="text-sm text-white/50">{tool.why}</p>
+                   <p className="text-sm text-[var(--foreground-muted)]">{tool.why}</p>
                 </div>
-                <Link href="/signup" className="px-6 py-3 rounded-xl bg-white text-black font-black uppercase text-xs tracking-widest hover:scale-105 transition-all">
+                <Link href="/signup" className="px-6 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all">
                    Try Tool
                 </Link>
              </div>
@@ -99,21 +169,21 @@ export default function SubjectSEOPage({ params }: { params: { subject: string }
         {/* The Hacks */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
            {data.hacks.map((hack, i) => (
-             <div key={i} className="p-6 rounded-3xl border border-white/5 bg-white/[0.01]">
+             <div key={i} className="p-6 rounded-3xl border border-[var(--border)] bg-[var(--background-secondary)] hover:border-[var(--accent-glow)] transition-all">
                 <Zap className="w-6 h-6 text-[var(--accent)] mb-4" />
-                <h4 className="font-bold mb-2">{hack}</h4>
-                <p className="text-xs text-white/30">Strategically implemented via the 'Professor Recall Loop'.</p>
+                <h4 className="font-bold mb-2 text-[var(--foreground)]">{hack}</h4>
+                <p className="text-xs text-[var(--foreground-muted)] opacity-60">Strategically implemented via the 'Professor Recall Loop'.</p>
              </div>
            ))}
         </section>
 
         {/* Conversion */}
-        <div className="p-12 rounded-[40px] bg-[var(--accent-bg)]/20 border border-[var(--accent-glow)] text-center">
-           <h2 className="text-3xl font-black mb-6 uppercase">Ready to dominate {data.name}?</h2>
-           <p className="text-white/50 mb-10 max-w-lg mx-auto">
+        <div className="p-12 rounded-[40px] bg-[var(--accent-bg)] border border-[var(--accent-glow)] text-center">
+           <h2 className="text-3xl font-black mb-6 uppercase text-[var(--accent)]">Ready to dominate {data.name}?</h2>
+           <p className="text-[var(--foreground-muted)] mb-10 max-w-lg mx-auto font-medium">
               Join the elite circle of students who use AI as a weapon, not a crutch.
            </p>
-           <Link href="/signup" className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:scale-105 transition-all">
+           <Link href="/signup" className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl">
               Join the Lab <ArrowRight className="w-4 h-4" />
            </Link>
         </div>

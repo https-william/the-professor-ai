@@ -77,12 +77,12 @@ export default function ProfileClient({ profile: initialProfile, username: initi
     if (error || !profile) {
         return (
             <div className="min-h-screen bg-[#06060B] flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-20 h-20 rounded-3xl bg-white/[0.02] border border-white/10 flex items-center justify-center mb-10 shadow-2xl">
-                    <span className="material-symbols-outlined text-4xl text-white/10">person_off</span>
+                <div className="w-20 h-20 rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] flex items-center justify-center mb-10 shadow-2xl">
+                    <span className="material-symbols-outlined text-4xl text-[var(--foreground-muted)]">person_off</span>
                 </div>
                 <h2 className="text-2xl font-black mb-4">Scholar Identification Failed</h2>
-                <p className="text-sm text-white/30 mb-10 max-w-xs">{error || "The profile you are looking for has been archived or does not exist."}</p>
-                <Link href="/" className="px-8 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/40 font-black tracking-widest text-[10px] uppercase transition-all hover:bg-white/10">
+                <p className="text-sm text-[var(--foreground-muted)] mb-10 max-w-xs">{error || "The profile you are looking for has been archived or does not exist."}</p>
+                <Link href="/" className="px-8 py-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] font-black tracking-widest text-[10px] uppercase transition-all hover:bg-[var(--background-tertiary)]">
                     Return to Campus
                 </Link>
             </div>
@@ -90,7 +90,7 @@ export default function ProfileClient({ profile: initialProfile, username: initi
     }
 
     return (
-        <div className="min-h-screen bg-[#06060B] text-white/90 selection:bg-amber-500/30 overflow-hidden relative">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-amber-500/30 overflow-hidden relative">
             {/* Ambient Aurora */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-[var(--accent)]/5 rounded-full blur-[120px]" />
@@ -126,8 +126,8 @@ export default function ProfileClient({ profile: initialProfile, username: initi
                             </div>
                         </div>
 
-                        <h1 className="text-3xl font-black text-white/95 mb-1 tracking-tight">{profile.full_name || username}</h1>
-                        <p className="text-sm font-bold text-white/20 mb-8 uppercase tracking-[0.2em]">@{username}</p>
+                        <h1 className="text-3xl font-black text-[var(--foreground)] mb-1 tracking-tight">{profile.full_name || username}</h1>
+                        <p className="text-sm font-bold text-[var(--foreground-muted)] mb-8 uppercase tracking-[0.2em]">@{username}</p>
 
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 gap-4 mb-10">
@@ -163,7 +163,7 @@ export default function ProfileClient({ profile: initialProfile, username: initi
 
                 {/* Call to Action for Visitors */}
                 <div className="mt-12 text-center">
-                    <p className="text-sm text-[var(--foreground-muted)] mb-6 font-medium italic">"The elite study tools used by millions of scholars worldwide."</p>
+                    <p className="text-sm text-[var(--foreground-muted)] mb-6 font-medium italic">"The elite study tools used by hundreds of scholars across the globe."</p>
                     <Link 
                         href="/signup" 
                         className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[var(--foreground)]/[0.04] border border-[var(--border)] hover:bg-[var(--foreground)]/[0.08] transition-all hover:scale-105 active:scale-95 group"
@@ -174,8 +174,8 @@ export default function ProfileClient({ profile: initialProfile, username: initi
                 </div>
 
                 {/* Footer Refinement */}
-                <div className="mt-24 pt-8 border-t border-white/5 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/10">The Professor Academic Integrity Network</p>
+                <div className="mt-24 pt-8 border-t border-[var(--border)] text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)]">The Professor Academic Integrity Network</p>
                 </div>
             </main>
         </div>

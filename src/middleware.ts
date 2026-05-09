@@ -31,8 +31,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // This will refresh the session if it's expired
-  await supabase.auth.getUser()
+  // Only refresh session for specific paths to boost marketing page performance
+  const protectedPaths = ['/dashboard', '/onboarding', '/api/user', '/settings'];
+  const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
+
+  if (isProtected) {
+    await supabase.auth.getUser();
+  }
 
   return response
 }
@@ -44,8 +49,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - Public marketing routes (added to skip middleware overhead)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|blog|exams|glossary|best-ai-for|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

@@ -29,7 +29,9 @@ import {
     Settings,
     CreditCard,
     Play,
-    Pause
+    Pause,
+    ChevronDown,
+    Sparkles
 } from "lucide-react";
 import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
@@ -39,13 +41,19 @@ const HIDDEN_PATHS = [
     "/login",
     "/signup",
     "/forgot-password",
+    "/",
+    "/blog",
+    "/exams",
+    "/glossary",
+    "/best-ai-for",
+    "/tools"
 ];
 
 const MINIMAL_PATHS = [
     "/onboarding",
 ];
 
-const LANDING_PATHS = ["/", "/download", "/blog"];
+const LANDING_PATHS = []; // No longer using SiteHeader for landing
 
 const MODES = [
     { id: "DASHBOARD", label: "Dashboard", href: "/dashboard", color: "var(--emerald)", glow: "var(--emerald-glow)", icon: LayoutDashboard },
@@ -72,7 +80,9 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const { isDesktop } = useAppPlatform();
     const [mounted, setMounted] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showResourcesMenu, setShowResourcesMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const resourcesRef = useRef<HTMLDivElement>(null);
 
     const { isActive, timeLeft, mode, pauseTimer, startTimer } = useTimerStore();
 
@@ -81,6 +91,9 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
         const handleClickOutside = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
                 setShowUserMenu(false);
+            }
+            if (resourcesRef.current && !resourcesRef.current.contains(e.target as Node)) {
+                setShowResourcesMenu(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -100,41 +113,41 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
         container.addEventListener("scroll", updateScroll, { passive: true });
         updateScroll();
         
-        // Safety sync for initial render
-        setTimeout(updateScroll, 100);
-        setTimeout(updateScroll, 1000);
-        
         return () => container.removeEventListener("scroll", updateScroll);
     }, [scrollY]);
 
     /* ── Classify the current route ── */
-    const isHidden  = HIDDEN_PATHS.some(p => pathname.startsWith(p));
+    const isHidden  = HIDDEN_PATHS.some(p => p === "/" ? pathname === "/" : pathname.startsWith(p));
     const isMinimal = MINIMAL_PATHS.some(p => pathname === p);
-    const isLanding = LANDING_PATHS.includes(pathname);
+    const isLanding = LANDING_PATHS.includes(pathname) || 
+                      pathname.startsWith("/blog/") || 
+                      pathname.startsWith("/exams/") || 
+                      pathname.startsWith("/glossary/") || 
+                      pathname.startsWith("/best-ai-for/") ||
+                      pathname.startsWith("/tools/");
     const isApp     = !isHidden && !isMinimal && !isLanding;
 
     // Map scrollY [0, 150] to transformation values
     const scrollYProgress = useTransform(scrollY, [0, 150], [0, 1]);
 
     // Landing-specific transformations
-    const landingPaddingX = useTransform(scrollY, [0, 150], ["2rem", "1rem"]);
-    const landingTop = useTransform(scrollY, [0, 150], ["0px", "12px"]);
-    const landingPaddingBlock = useTransform(scrollY, [0, 150], ["12px", "8px"]);
-    const landingBorderRadius = useTransform(scrollY, [0, 150], ["0px", "28px"]);
-    const landingWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", "92%"]);
+    const landingPaddingX = useTransform(scrollY, [0, 150], ["2rem", "1.5rem"]);
+    const landingTop = useTransform(scrollY, [0, 150], ["0px", "16px"]);
+    const landingPaddingBlock = useTransform(scrollY, [0, 150], ["16px", "10px"]);
+    const landingBorderRadius = useTransform(scrollY, [0, 150], ["0px", "32px"]);
+    const landingWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", "94%"]);
 
     // App-specific transformations (Floating Morphing)
-    const appTop = useTransform(scrollY, [0, 150], ["10px", "12px"]);
-    const appWidth = useTransform(scrollY, [0, 150], ["calc(100% - 2rem)", "92%"]);
-    const appPaddingInline = useTransform(scrollY, [0, 150], ["1.5rem", "1rem"]);
-    const appPaddingBlock = useTransform(scrollY, [0, 150], ["10px", "8px"]);
+    const appTop = useTransform(scrollY, [0, 150], ["10px", "16px"]);
+    const appWidth = useTransform(scrollY, [0, 150], ["calc(100% - 2.5rem)", "94%"]);
+    const appPaddingInline = useTransform(scrollY, [0, 150], ["1.5rem", "1.2rem"]);
+    const appPaddingBlock = useTransform(scrollY, [0, 150], ["12px", "10px"]);
 
-    // Derived motion values (hoisted to avoid re-creation)
+    // Derived motion values
     const headerBgOpacity = useTransform(scrollY, [0, 150], [0, 0.98]);
     const headerBlur = useTransform(scrollY, [0, 150], [0, 24]);
     const headerScale = useTransform(scrollY, [0, 150], [1, 0.98]);
 
-    // For APP pages: always use solid background (not scroll-driven)
     const headerBg = useTransform(headerBgOpacity, (o) =>
         `rgba(var(--background-secondary-rgb), ${o})`
     );
@@ -151,24 +164,20 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)";
     });
 
-    // App-page dynamic styles (morphing pill)
-    const appBgOpacity = useTransform(scrollY, [0, 60], [0.85, 0.94]);
-    const appBlur = useTransform(scrollY, [0, 60], [12, 32]);
-    const appBorderOpacity = useTransform(scrollY, [0, 60], [0.3 * 0.15, 1 * 0.15]);
-    const appSaturate = useTransform(scrollY, [0, 60], [140, 180]);
+    // App-page dynamic styles
+    const appBgOpacity = useTransform(scrollY, [0, 60], [0.9, 0.96]);
+    const appBlur = useTransform(scrollY, [0, 60], [16, 32]);
+    const appBorderOpacity = useTransform(scrollY, [0, 60], [0.1, 0.2]);
+    const appSaturate = useTransform(scrollY, [0, 60], [150, 200]);
 
-    const appBg = useMotionTemplate`rgba(${theme === "dark" ? "12, 12, 22" : "248, 248, 252"}, ${appBgOpacity})`;
+    const appBg = useMotionTemplate`rgba(${theme === "dark" ? "10, 10, 20" : "250, 250, 255"}, ${appBgOpacity})`;
     const appBackdrop = useMotionTemplate`blur(${appBlur}px) saturate(${appSaturate}%)`;
     const appBorder = useMotionTemplate`1px solid rgba(${theme === "dark" ? "255, 255, 255" : "0, 0, 0"}, ${appBorderOpacity})`;
     
-    const appShadow = useTransform(
-        scrollY,
-        [0, 60],
-        [
-            theme === "dark" ? "0 4px 16px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
-            theme === "dark" ? "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)" : "0 8px 30px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)"
-        ]
-    );
+    const appShadow = useTransform(scrollY, [0, 60], [
+        theme === "dark" ? "0 4px 20px rgba(0,0,0,0.2)" : "0 4px 15px rgba(0,0,0,0.05)",
+        theme === "dark" ? "0 20px 50px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)" : "0 10px 40px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.8)"
+    ]);
 
     const [isPill, setIsPill] = useState(false);
     useEffect(() => {
@@ -179,7 +188,6 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
     const unreadCount = toasts.filter(t => !t.read).length;
 
-    /* ── Auto-detect active mode from pathname ── */
     const currentMode: string = activeMode ?? (() => {
         if (pathname.startsWith("/hub"))      return "HUB";
         if (pathname.startsWith("/library"))  return "LIBRARY";
@@ -187,10 +195,8 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
         return "DASHBOARD";
     })();
 
-    const activeConfig = MODES.find(m => m.id === currentMode) ?? MODES[0];
-
-    if (mounted && (isHidden || isLanding)) return null;
-    if (!mounted && (isHidden || isLanding)) return null;
+    if (mounted && isHidden) return null;
+    if (!mounted) return null;
 
     const handleModeChange = (mode: AppMode, href: string) => {
         if (onModeChange) { onModeChange(mode); return; }
@@ -200,7 +206,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     if (isMinimal) {
         return (
             <header className="fixed top-0 left-0 right-0 z-[10000] flex items-center justify-between px-6 py-4">
-                <Link href="/" className="flex items-center gap-2.5">
+                <Link href="/" className="flex items-center gap-2.5 active:scale-95 transition-transform">
                     <BrandLogo size="sm" />
                 </Link>
                 <ThemeToggle />
@@ -210,9 +216,8 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
-
-    // Calculate horizontal center offset if sidebar is visible (Desktop platform pages)
-    const sidebarOffset = (isApp && isDesktop) ? "2.5rem" : "0px";
+    const isPackPage = pathname.startsWith("/library/pack");
+    const sidebarOffset = (isApp && isDesktop && !isPackPage) ? "2.5rem" : "0px";
 
     return (
         <motion.header
@@ -222,117 +227,117 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 left: `calc(50% + ${sidebarOffset})`,
                 x: "-50%",
                 width: isApp ? appWidth : landingWidth,
-                maxWidth: isApp ? "1200px" : "1152px",
+                maxWidth: "1280px",
                 paddingInline: isApp ? appPaddingInline : landingPaddingX,
                 paddingBlock: isApp ? appPaddingBlock : landingPaddingBlock,
-                borderRadius: isApp ? "28px" : landingBorderRadius,
+                borderRadius: isApp ? "32px" : landingBorderRadius,
                 scale: headerScale,
                 backgroundColor: isApp ? appBg : headerBg,
                 backdropFilter: isApp ? appBackdrop : headerBackdrop,
                 border: isApp ? appBorder : headerBorder,
                 boxShadow: isApp ? appShadow : headerShadow,
             }}
-            transition={{ 
-                type: "tween",
-                ease: [0.16, 1, 0.3, 1],
-                duration: 0.4
-            }}
-            className="fixed z-[10000] grid grid-cols-[auto_1fr_auto] items-center gap-4 pointer-events-auto transition-shadow"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed z-[10000] grid grid-cols-[auto_1fr_auto] items-center gap-4 pointer-events-auto"
         >
             <div className="flex items-center gap-3">
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
+                <Link
+                    href={user.isAuthenticated ? "/dashboard" : "/"}
+                    className="group relative flex items-center gap-3 p-1 rounded-xl transition-all active:scale-95"
                 >
-                    <Link
-                        href={user.isAuthenticated ? "/dashboard" : "/"}
-                        className="group relative flex items-center gap-3 p-1 rounded-xl transition-all"
+                    <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-[var(--background-secondary)] border border-[var(--border)] shadow-[var(--shadow-sm)] group-hover:border-[var(--accent)] group-hover:shadow-[0_0_15px_var(--accent-glow)]"
                     >
-                        <div
-                            className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
-                            style={{
-                                background: "var(--background-secondary)",
-                                border: "1px solid var(--border)",
-                                boxShadow: "var(--shadow-sm), inset 0 1px 1px rgba(255,255,255,0.1)",
-                                color: "var(--foreground)"
-                            }}
-                        >
-                            <BrandLogo size="sm" />
-                        </div>
-                        {!isPill && (
-                            <span className="hidden lg:block font-sans font-black text-[var(--foreground)] tracking-tighter text-[16px] uppercase">
-                                The Professor
-                            </span>
-                        )}
-                    </Link>
-                </motion.div>
+                        <BrandLogo size="sm" />
+                    </div>
+                    {!isPill && (
+                        <span className="hidden lg:block font-sans font-black text-[var(--foreground)] tracking-tighter text-[16px] uppercase">
+                            The Professor
+                        </span>
+                    )}
+                </Link>
             </div>
 
             {/* ── CENTER: Context-aware nav ── */}
-            <div className="flex items-center justify-center pointer-events-auto">
+            <div className="flex items-center justify-center">
                 <AnimatePresence mode="wait">
                     {isPill && (isActive || timeLeft < (mode === "focus" ? 25*60 : 5*60)) ? (
                         <motion.div
                             key="stealth-timer"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ type: "tween", duration: 0.3 }}
-                            className="flex items-center gap-3 px-4 py-1.5 rounded-full"
-                            style={{
-                                background: "var(--background-tertiary)",
-                                border: mode === "focus" ? "1px solid var(--accent)" : "1px solid var(--secondary)",
-                                boxShadow: mode === "focus" ? "0 0 10px var(--accent-glow)" : "0 0 10px var(--secondary-bg)",
-                            }}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="flex items-center gap-3 px-5 py-2 rounded-full bg-[var(--background-tertiary)] border border-[var(--accent)] shadow-[0_0_15px_var(--accent-glow)]"
                         >
                             <span className="flex h-2 w-2 relative">
-                                {isActive && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${mode === "focus" ? "bg-[var(--accent)]" : "bg-[var(--secondary)]"}`} />}
-                                <span className={`relative inline-flex rounded-full h-2 w-2 ${mode === "focus" ? "bg-[var(--accent)]" : "bg-[var(--secondary)]"}`} />
+                                {isActive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />}
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]" />
                             </span>
                             <span className="font-mono font-black tabular-nums tracking-tighter text-sm text-[var(--foreground)]">
                                 {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
                             </span>
-                            <button 
-                                onClick={() => isActive ? pauseTimer() : startTimer()} 
-                                className="ml-2 hover:text-[var(--foreground)] text-[var(--foreground-muted)] transition-colors"
-                            >
-                                {isActive ? <Pause size={14} className="fill-current" /> : <Play size={14} className="fill-current ml-0.5" />}
-                            </button>
                         </motion.div>
                     ) : isLanding ? (
-                        <div className="hidden lg:flex items-center gap-8">
-                            {[
-                                { label: "Blog",     href: "/blog" },
-                            ].map((link) => (
-                                <Link
-                                    key={link.label}
-                                    href={link.href}
-                                    className="text-[12px] font-black uppercase tracking-[0.15em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                        <div className="hidden lg:flex items-center gap-10">
+                            <Link
+                                href="/blog"
+                                className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all hover:scale-110 active:scale-90"
+                            >
+                                Blog
+                            </Link>
+                            
+                            <div className="relative" ref={resourcesRef}>
+                                <button
+                                    onClick={() => setShowResourcesMenu(!showResourcesMenu)}
+                                    className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all flex items-center gap-2 hover:scale-110 active:scale-[0.85]"
                                 >
-                                    {link.label}
-                                </Link>
-                            ))}
+                                    Resources <ChevronDown size={12} className={cn("transition-transform", showResourcesMenu && "rotate-180")} />
+                                </button>
+                                
+                                <AnimatePresence>
+                                    {showResourcesMenu && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            className="absolute left-1/2 -translate-x-1/2 mt-6 w-64 rounded-[32px] p-3 bg-[var(--background-secondary)]/95 backdrop-blur-2xl border border-[var(--border)] shadow-2xl z-[10001]"
+                                        >
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {[
+                                                    { label: "Exam Guides", href: "/exams/jamb", icon: BookOpen },
+                                                    { label: "Study Persona Quiz", href: "/blog?quiz=true", icon: Sparkles },
+                                                    { label: "Study Glossary", href: "/glossary", icon: Library },
+                                                    { label: "AI Study Planner", href: "/tools/ai-study-planner", icon: Zap },
+                                                    { label: "Best Tools", href: "/best-ai-study-tools", icon: LayoutDashboard },
+                                                ].map((item) => (
+                                                    <Link
+                                                        key={item.label}
+                                                        href={item.href}
+                                                        onClick={() => setShowResourcesMenu(false)}
+                                                        className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--foreground)]/[0.05] transition-all group active:scale-[0.98]"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-xl bg-[var(--background)] flex items-center justify-center border border-[var(--border)] group-hover:border-[var(--accent)] group-hover:text-[var(--accent)] transition-all">
+                                                            <item.icon size={18} />
+                                                        </div>
+                                                        <span className="text-sm font-black text-[var(--foreground)] tracking-tight">{item.label}</span>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     ) : (
                         <motion.div 
-                            key="app-nav"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            transition={{ type: "tween", duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                            className="hidden md:flex items-center rounded-full p-1"
-                            style={{
-                                background: "var(--background-tertiary)",
-                                border: "1px solid var(--border)",
-                                boxShadow: "var(--shadow-sm)",
-                            }}
+                            className="hidden md:flex items-center rounded-full p-1.5 bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner"
+                            layout
                         >
                             {MODES.map((modeConfig) => (
                                 <button
                                     key={modeConfig.id}
                                     onClick={() => handleModeChange(modeConfig.id as AppMode, modeConfig.href)}
-                                    className={`relative px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-all ${
+                                    className={`relative px-5 py-2 rounded-full text-[12px] font-black tracking-tight transition-all active:scale-[0.85] hover:scale-[1.02] ${
                                         currentMode === modeConfig.id
                                             ? "text-[var(--background)]"
                                             : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
@@ -341,12 +346,12 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     {currentMode === modeConfig.id && (
                                         <motion.div
                                             layoutId="active-pill"
-                                            className="absolute inset-0 bg-[var(--foreground)] rounded-full"
-                                            transition={{ type: "tween", duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                                            className="absolute inset-0 bg-[var(--foreground)] rounded-full shadow-lg"
+                                            transition={{ type: "spring", stiffness: 400, damping: 35 }}
                                         />
                                     )}
-                                    <span className="relative z-10 flex items-center gap-2">
-                                        <modeConfig.icon size={12} strokeWidth={2.5} />
+                                    <span className="relative z-10 flex items-center gap-2.5">
+                                        <modeConfig.icon size={14} strokeWidth={2.5} />
                                         {modeConfig.label}
                                     </span>
                                 </button>
@@ -357,72 +362,43 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             </div>
 
             {/* ── RIGHT: Actions ── */}
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-3">
                 <ThemeToggle />
                 {isApp && (
-                    <>
-                        <div className="hidden sm:block">
-                            <DailyChallenges />
-                        </div>
-
-                        <MagneticButton>
-                            <motion.button
-                                layoutId="header-notifications"
-                                whileTap={{ y: 0.5, boxShadow: "inset 0 4px 10px rgba(0,0,0,0.3)" }}
-                                onClick={() => setToastsOpen(true)}
-                                className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-all bg-[var(--background-secondary)] border border-[var(--border)] shadow-[0_4px_10px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                                aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
-                            >
-                                <Bell size={14} strokeWidth={2} className="text-[var(--foreground)]" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--blue)] opacity-75" />
-                                        <span className="relative flex items-center justify-center rounded-full h-3.5 w-3.5 bg-[var(--blue)] border border-[var(--background)] text-[8px] font-black text-white">
-                                            {unreadCount > 9 ? "+" : unreadCount}
-                                        </span>
-                                    </span>
-                                )}
-                            </motion.button>
-                        </MagneticButton>
-                    </>
+                    <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setToastsOpen(true)}
+                        className="relative flex items-center justify-center w-10 h-10 rounded-xl transition-all bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--accent)] shadow-sm active:shadow-inner"
+                    >
+                        <Bell size={16} strokeWidth={2.5} className="text-[var(--foreground)]" />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
+                                <span className="relative flex items-center justify-center rounded-full h-4 w-4 bg-[var(--accent)] text-[9px] font-black text-white">
+                                    {unreadCount}
+                                </span>
+                            </span>
+                        )}
+                    </motion.button>
                 )}
 
                 {isLanding && !user.isAuthenticated && (
-                    <motion.div 
-                        layout="position"
-                        transition={{ type: "tween", duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                    <Link
+                        href="/login"
+                        className="px-6 py-2.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-[0.85] transition-all shadow-xl"
                     >
-                        <Link
-                            href="/login"
-                            className="btn-skeuo-primary px-5 py-2 text-[11px] font-black uppercase tracking-widest active:scale-95"
-                            style={{ background: "var(--foreground)", color: "var(--background)", boxShadow: "none" }}
-                        >
-                            Login
-                        </Link>
-                    </motion.div>
+                        Login
+                    </Link>
                 )}
-                {isLanding && user.isAuthenticated && (
-                    <motion.div 
-                        layout="position"
-                        transition={{ type: "tween", duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                    >
-                        <Link
-                            href="/dashboard"
-                            className="btn-skeuo px-5 py-2 text-[11px] font-black uppercase tracking-widest active:scale-95 flex items-center gap-2"
-                        >
-                            <LayoutDashboard size={14} />
-                            <span>Dashboard</span>
-                        </Link>
-                    </motion.div>
-                )}
+                
                 {user.isAuthenticated && (
                     <div className="relative" ref={menuRef}>
                         <motion.button
-                            whileTap={{ scale: 0.95 }}
+                            whileTap={{ scale: 0.9 }}
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all bg-[var(--background-secondary)] border border-[var(--border)] shadow-[var(--shadow-sm),inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-[0.98]"
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--accent)] shadow-sm"
                         >
-                            <span className="text-lg">{user.avatar || "🎓"}</span>
+                            <span className="text-xl">{user.avatar || "🎓"}</span>
                         </motion.button>
 
                         <AnimatePresence>
@@ -431,26 +407,24 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    transition={{ type: "tween", duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                    className="absolute right-0 mt-3 w-56 rounded-2xl p-2 z-[10001] bg-[var(--background-secondary)]/95 backdrop-blur-xl border border-[var(--border)] shadow-[0_20px_40px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+                                    className="absolute right-0 mt-4 w-60 rounded-[32px] p-3 bg-[var(--background-secondary)]/95 backdrop-blur-2xl border border-[var(--border)] shadow-2xl z-[10001]"
                                 >
-                                    <div className="px-3 py-2.5 mb-2 border-b border-[var(--border)]">
-                                        <p className="text-xs font-black text-[var(--foreground-muted)] uppercase tracking-widest mb-0.5">Account</p>
-                                        <p className="text-sm font-bold text-[var(--foreground)] truncate">{user.name || "Student"}</p>
+                                    <div className="px-4 py-4 mb-2 border-b border-[var(--border)]">
+                                        <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-widest mb-1">Scholar</p>
+                                        <p className="text-sm font-black text-[var(--foreground)] truncate">{user.name || "Student"}</p>
                                     </div>
 
                                     {[
                                         { label: "Profile", icon: User, href: "/settings" },
-                                        { label: "Settings", icon: Settings, href: "/settings" },
                                         { label: "Billing", icon: CreditCard, href: "/settings" },
                                     ].map((item) => (
                                         <Link
                                             key={item.label}
                                             href={item.href}
                                             onClick={() => setShowUserMenu(false)}
-                                            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.03] transition-all"
+                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.05] transition-all active:scale-95"
                                         >
-                                            <item.icon size={16} strokeWidth={2} />
+                                            <item.icon size={16} />
                                             {item.label}
                                         </Link>
                                     ))}
@@ -458,14 +432,13 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     <button
                                         onClick={async () => {
                                             const supabase = createClient();
-                                            await fetch('/api/auth/signout', { method: 'POST' });
                                             await supabase.auth.signOut();
                                             router.push("/login");
                                             setShowUserMenu(false);
                                         }}
-                                        className="w-full flex items-center gap-3 px-3 py-2 mt-2 rounded-xl text-sm font-medium text-red-500/70 hover:text-red-500 hover:bg-red-500/5 transition-all"
+                                        className="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-2xl text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all active:scale-95"
                                     >
-                                        <LogOut size={16} strokeWidth={2} />
+                                        <LogOut size={16} />
                                         Sign Out
                                     </button>
                                 </motion.div>
@@ -477,3 +450,4 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
         </motion.header>
     );
 }
+

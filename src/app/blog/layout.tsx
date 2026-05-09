@@ -52,10 +52,17 @@ export const metadata: Metadata = {
   },
 };
 
+import BlogHeader from "@/components/blog/BlogHeader";
+
 export default function BlogLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <BlogHeader />
+      {children}
+    </>
+  );
 }

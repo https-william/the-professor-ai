@@ -10,8 +10,9 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const data = pillars[params.slug];
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const data = pillars[slug];
   if (!data) return { title: "Not Found" };
 
   return {
@@ -26,8 +27,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default function PillarPage({ params }: { params: { slug: string } }) {
-  const data = pillars[params.slug];
+export default async function PillarPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const data = pillars[slug];
   if (!data) notFound();
 
   return (
@@ -93,17 +95,44 @@ export default function PillarPage({ params }: { params: { slug: string } }) {
         </div>
 
         {/* FAQ Schema for AEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": (data.content.faqs || [
+                { q: "Is this AI study guide free?", a: "Yes, our strategic pillars are free for all students aiming for academic dominance." },
+                { q: "Will these tools work for my specific exam?", a: "Our frameworks are optimized for logic-heavy exams like WAEC, JAMB, SAT, and USMLE." }
+              ]).map(faq => ({
+                "@type": "Question",
+                "name": faq.q,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": faq.a
+                }
+              }))
+            }),
+          }}
+        />
+
         <section className="mt-32 pt-24 border-t border-white/5">
-           <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-12 text-center">Frequently Asked Questions</h3>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                 <h4 className="font-bold text-[var(--accent)]">Is this AI study guide free?</h4>
-                 <p className="text-sm text-white/40">Yes, our strategic pillars are free for all students aiming for academic dominance.</p>
-              </div>
-              <div className="space-y-4">
-                 <h4 className="font-bold text-[var(--accent)]">Will these tools work for my specific exam?</h4>
-                 <p className="text-sm text-white/40">Our frameworks are optimized for logic-heavy exams like WAEC, JAMB, SAT, and USMLE.</p>
-              </div>
+           <h3 className="text-[10px] font-black text-[var(--accent)] uppercase tracking-[0.3em] mb-12 text-center">Frequently Asked Questions</h3>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+              {(data.content.faqs || [
+                { q: "Is this AI study guide free?", a: "Yes, our strategic pillars are free for all students aiming for academic dominance." },
+                { q: "Will these tools work for my specific exam?", a: "Our frameworks are optimized for logic-heavy exams like WAEC, JAMB, SAT, and USMLE." }
+              ]).map((faq, i) => (
+                <div key={i} className="group p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-[var(--accent)]/30 transition-all">
+                   <h4 className="font-black text-white text-lg mb-4 flex items-start gap-3">
+                      <span className="text-[var(--accent)] mt-1">Q.</span>
+                      {faq.q}
+                   </h4>
+                   <p className="text-[15px] text-white/50 leading-relaxed pl-7">
+                      {faq.a}
+                   </p>
+                </div>
+              ))}
            </div>
         </section>
       </div>

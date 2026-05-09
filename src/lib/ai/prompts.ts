@@ -55,15 +55,15 @@ FLASHCARD DESIGN RULES:
 2. Back (answer side): 1-3 sentences maximum. Lead with the core insight. Never pad with extra context.
 3. NO fill-in-the-blank fronts ("The mitochondria is the _____ of the cell").
 4. Distribute coverage: do NOT front-load the first sections; sample the full content.
-5. Professor's Protocol: Every card MUST include a mnemonic device or vivid analogy in the voice of a strategic academic mentor. Place it at the end of the back after "💡 Professor's Protocol:". Use only Standard English for these hooks (no Pidgin).
+5. Professor's Tip: Every card MUST include a mnemonic device or vivid analogy in the voice of a warm, approachable Professor. Place it at the end of the back after "💡 Professor's Tip:". Use only Standard English for these hooks (no Pidgin).
 6. Each card must be standalone — a student who only sees this one card should understand the Q&A.
-7. Concisness is King: Use minimal tokens while maintaining max pedagogical value.
+7. Conciseness is King: Use minimal tokens while maintaining max pedagogical value.
 
 Return exactly a JSON array of objects with this shape:${JSON_ONLY}
 [
   {
     "front": "Conceptual question here",
-    "back": "Concise, insight-first answer. 💡 Professor's Protocol: Vivid, strategic analogy here.",
+    "back": "Concise, insight-first answer. 💡 Professor's Tip: Vivid analogy or memory hook here.",
     "topic": "Sub-topic label (1-3 words)"
   }
 ]`;
@@ -148,7 +148,7 @@ QUESTION DESIGN RULES:
 3. Vary question types: definition (20%), application (40%), comparison (20%), analysis (20%).
 4. correctIndex: 0-based index of the correct option in the options array.
 5. Shuffle correct answers — do not always place correct answer at index 0 or 1.
-6. explanation: 1-2 sentences explaining WHY the correct answer is right and why the main distractor is wrong.
+6. analogy: A 1-2 sentence vivid memory hook or analogy in the voice of a warm Professor to help the student remember the concept after a mistake.
 7. Cover the full breadth of the content — not just the introduction.
 
 Return exactly a JSON array of objects with this shape:${JSON_ONLY}
@@ -157,7 +157,7 @@ Return exactly a JSON array of objects with this shape:${JSON_ONLY}
     "question": "Full question text ending with a question mark?",
     "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
     "correctIndex": 2,
-    "explanation": "Option C is correct because... Option A is tempting because...",
+    "analogy": "Think of it like a library. If you don't have an index, you're just wandering through stacks of paper...",
     "topic": "Sub-topic being tested"
   }
 ]`;
@@ -166,7 +166,7 @@ Return exactly a JSON array of objects with this shape:${JSON_ONLY}
 // ─── Podcast ──────────────────────────────────────────────────────────────────
 export function buildPodcastPrompt(content: string, style: string, explainStyle?: ExplainStyle): string {
     const styleInstruction: Record<string, string> = {
-        educational: "Host A (The Professor) is strategic and uses vivid analogies to build intuition. Host B (The Analyst) is precise, occasionally skeptical, and asks sharp follow-up questions. Tone: engaging lecture-style but conversational.",
+        educational: "Host A (The Professor) is friendly and uses simple analogies to build understanding. Host B (The Student) is curious, asks common-sense questions, and clarifies complex points. Tone: like an easy-to-follow coffee shop conversation.",
         casual: "Two academic experts who happen to be deconstructing the same subject. Natural language, strategic asides, and tangents that reveal deeper logic. Tone: breezy but intellectually rigorous.",
         debate: "Host A believes one interpretation; Host B challenges it. Both have valid points. They argue respectfully, conceding when the other makes a strong case. Tone: structured intellectual debate.",
     };
@@ -201,9 +201,9 @@ Return exactly a JSON array of objects with this shape (representing the script 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 export function buildSummaryPrompt(content: string, style: string, explainStyle?: ExplainStyle): string {
     const styleInstruction: Record<string, string> = {
-        concise: "Produce a tight, exam-focused summary. Use bullet hierarchies. Bold ONLY the most critical terms on first use. Ensure generous spacing between sections. No introductory filler — start with the most important concept.",
-        detailed: "Produce a comprehensive study guide. Use H2 headings for major concepts, H3 for sub-concepts. Include context, mechanisms, and real-world applications. Aim for completeness over brevity. Use vertical spacing to maintain readability.",
-        study: "Produce a structured study guide with: (1) Key Concepts — bulleted explanations; (2) Key Terms — glossary format; (3) Memory Anchors — one memorable metaphor per major concept.",
+        concise: "Produce a tight, exam-focused summary. Use bullet hierarchies. Bold ONLY the most critical terms on first use. Ensure generous spacing between sections (two blank lines). No introductory filler — start with the most important concept.",
+        detailed: "Produce a complete, easy-to-read study guide (aim for 1500-2000 words if the source allows). This should feel like a full 2-page review. Use ### headings for ALL major concepts to ensure they are visually distinct. Include clear examples, context, and every important fact from the source. Use lots of vertical spacing between paragraphs and sections to avoid 'text walls'.",
+        study: "Produce a structured study guide equivalent to a full page of notes. Includes: (1) Concept Deep-Dive — paragraph-level explanations with bolded terms; (2) Simple Glossary — term/definition pairs; (3) Memory Hooks — vivid Professor-style analogies.",
     };
 
     return `You are a study coach with a track record of helping students go from failing to first class.
@@ -218,17 +218,18 @@ CONTENT:
 ${content}
 </REPRESENTATIVE_STUDY_MATERIAL_DATA>
 
-SUMMARY RULES:
+SUMMARY FORMATTING RULES:
 1. Organize by CONCEPT, not by page or section order. Group related ideas.
-2. Bold only the most critical terms on first use: **mitosis**. Avoid over-bolding text; it reduces readability.
-3. Use proper markdown spacing. One blank line between paragraphs, two blank lines between major ## sections.
-4. If the material includes numbers, dates, formulas, or names — collect them in a "Key Facts" section at the end.
-5. Do NOT start with "This document covers..." or any filler. Start with substance.
-6. Use markdown formatting: ## for major sections, **bold** for key terms, - for bullets.
-7. KNOWLEDGE CHECK: At the end of EVERY major section (## section), you MUST include a contextual knowledge check block formatted EXACTLY like this:
-   [KNOWLEDGE_CHECK] {"question": "A contextually relevant question for this section?", "options": ["Correct answer", "Distractor 1", "Distractor 2"], "correctIndex": 0}
+2. Bold only the most critical terms on first use: **mitosis**.
+3. USE HEADINGS AGGRESSIVELY: Use ### for every new sub-topic.
+4. SPACING IS CRITICAL: Use two blank lines between major sections to prevent monotone 'text walls'.
+5. If the material includes numbers, dates, formulas, or names — collect them in a "Key Facts" section at the end.
+6. Do NOT start with "This document covers..." or any filler. Start with substance.
+7. Use markdown formatting: ### for major sections, **bold** for key terms, - for bullets.
+8. KNOWLEDGE CHECK: At the end of EVERY major section (### section), you MUST include a contextual knowledge check block formatted EXACTLY like this:
+   [KNOWLEDGE_CHECK] {"question": "A simple question for this section?", "options": ["Correct answer", "Wrong answer 1", "Wrong answer 2"], "correctIndex": 0}
 
-Write the summary now in markdown format. Return plain markdown, not JSON.`;
+Write the summary now in markdown format. Return plain markdown, not JSON. Use simple, friendly language throughout.`;
 }
 
 // ─── Mind Map ─────────────────────────────────────────────────────────────────
@@ -265,4 +266,27 @@ Return JSON with this exact shape (array of branches):${JSON_ONLY}
 
 Use this color palette for branches (cycle through as needed):
 ["#F59E0B", "#6366F1", "#10B981", "#EF4444", "#8B5CF6", "#3B82F6", "#F97316"]`;
+}
+
+// ─── Roadmap ──────────────────────────────────────────────────────────────────
+export function buildRoadmapPrompt(content: string): string {
+    return `You are a helpful study mentor. 
+Generate a clear and simple Study Plan for this topic.
+
+TOPIC SOURCE:
+${content.substring(0, 10000)}
+
+OBJECTIVE:
+Create a friendly study guide that identifies:
+1. Common Blindspots (areas that are easy to miss).
+2. Common Mistakes (pitfalls to avoid).
+3. Most Important Topics (the 20% that gives 80% of the results).
+4. A quick study schedule to follow.
+
+OUTPUT FORMAT (Strict JSON):${JSON_ONLY}
+{
+    "roadmap": "### Study Plan\\n\\n#### 1. Common Mistakes...\\n\\n#### 2. Key Focus Areas...\\n\\n#### 3. Your Schedule..."
+}
+
+CRITICAL: DO NOT use nested JSON objects for the study schedule or topics. Everything MUST be contained within a single markdown-formatted string inside the "roadmap" key.`;
 }

@@ -78,18 +78,20 @@ export default function HowItWorksSection() {
       }}
     >
       {/* Header */}
-      <div style={{ textAlign: "center", maxWidth: "700px", margin: "0 auto 64px" }}>
-        <span className="section-label" style={{ textAlign: "center", color: "var(--blue)" }}>HOW IT WORKS</span>
+      <div style={{ textAlign: "center", maxWidth: "800px", margin: "0 auto 80px" }}>
+        <span className="section-label mb-6" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>HOW IT WORKS</span>
         <h2 style={{
           fontFamily: "var(--font-heading)",
-          fontSize: "clamp(1.8rem, 4vw, 3rem)",
+          fontSize: "clamp(2.2rem, 5vw, 4rem)",
           fontWeight: 900,
-          color: "var(--text)",
+          color: "var(--foreground)",
           textAlign: "center",
           marginTop: "12px",
-          letterSpacing: "-0.03em"
+          lineHeight: 0.95,
+          letterSpacing: "-0.04em"
         }}>
-          From notes to exam-ready. In under <span style={{ color: "var(--blue)" }}>60 seconds.</span>
+          From notes to exam-ready. <br />
+          In under <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>60 seconds.</span>
         </h2>
       </div>
 
@@ -100,7 +102,7 @@ export default function HowItWorksSection() {
           position: "absolute",
           left: "50%",
           transform: "translateX(-50%)",
-          width: "1px",
+          width: "2px",
           top: "48px",
           bottom: "48px",
           background: "linear-gradient(180deg, transparent 0%, var(--blue-border) 10%, var(--blue-border) 90%, transparent 100%)",
@@ -109,12 +111,12 @@ export default function HowItWorksSection() {
         {STEPS.map((step, i) => (
           <div
             key={i}
-            className="timeline-step animate-up"
+            className="timeline-step animate-up group"
             style={{
               position: "relative",
               display: "flex",
               justifyContent: step.side === "right" ? "flex-end" : "flex-start",
-              marginBottom: i < STEPS.length - 1 ? "80px" : 0,
+              marginBottom: i < STEPS.length - 1 ? "100px" : 0,
               transitionDelay: `${i * 150}ms`,
             }}
           >
@@ -124,22 +126,22 @@ export default function HowItWorksSection() {
               left: "50%",
               transform: "translateX(-50%)",
               top: "24px",
-              width: "48px",
-              height: "48px",
-              borderRadius: "16px",
-              background: "var(--bg-2)",
-              border: "2px solid var(--blue-border)",
+              width: "56px",
+              height: "56px",
+              borderRadius: "20px",
+              background: "var(--blue-dim)",
+              border: "1px solid var(--blue-border)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              zIndex: 2,
-              transition: "all 250ms ease",
+              zIndex: 10,
+              transition: "all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)",
               cursor: "default",
-              boxShadow: "0 0 20px var(--blue-glow)"
+              boxShadow: "0 0 25px var(--blue-glow)"
             }}>
               <span style={{
-                fontFamily: "var(--font-sans)",
-                fontSize: "16px",
+                fontFamily: "var(--font-mono)",
+                fontSize: "18px",
                 fontWeight: 900,
                 color: "var(--blue)",
               }}>
@@ -149,31 +151,30 @@ export default function HowItWorksSection() {
 
             {/* Step Content Card */}
             <div
-              className="timeline-card"
+              className="scholar-card"
               style={{
                 width: "44%",
-                background: "var(--bg-2)",
-                border: "1px solid var(--border)",
-                borderRadius: "24px",
-                padding: "32px",
+                padding: "40px",
+                borderRadius: "32px",
               }}
             >
               <h3 style={{
                 fontFamily: "var(--font-heading)",
-                fontSize: "20px",
-                fontWeight: 800,
-                color: "var(--text)",
-                marginBottom: "12px",
-                letterSpacing: "-0.01em"
+                fontSize: "24px",
+                fontWeight: 900,
+                color: "var(--foreground)",
+                marginBottom: "16px",
+                letterSpacing: "-0.02em"
               }}>
                 {step.title}
               </h3>
               <p style={{
                 fontFamily: "var(--font-sans)",
-                fontSize: "15px",
-                color: "var(--text-2)",
+                fontSize: "16px",
+                color: "var(--foreground-secondary)",
                 lineHeight: 1.6,
-                fontWeight: 400
+                fontWeight: 500,
+                opacity: 0.8
               }}>
                 {step.body}
               </p>

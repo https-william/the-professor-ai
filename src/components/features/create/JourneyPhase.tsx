@@ -23,43 +23,41 @@ interface JourneyPhaseProps {
 
 export default function JourneyPhase({ number, title, tools, onSelectTool, className }: JourneyPhaseProps) {
     return (
-        <div className={cn("space-y-4", className)}>
-            <div className="flex items-center gap-3 mb-2 px-2">
-                <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                    <span className="text-[10px] font-black opacity-40">{number}</span>
-                </div>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] opacity-60">
-                    Phase {number}: {title}
+        <div className={cn("space-y-6", className)}>
+            <div className="flex items-center gap-4 px-2 mb-4">
+                <span className="text-[14px] font-black text-[#1a1a1a] opacity-30">{number}</span>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1a1a1a] opacity-40">
+                    PHASE {number}: {title}
                 </h3>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid gap-4">
                 {tools.map((tool) => (
                     <button
                         key={tool.id}
                         onClick={() => onSelectTool(tool.id)}
-                        className="group relative w-full flex items-center gap-4 p-4 text-left transition-all duration-300 rounded-[24px] bg-[var(--bg-2)]/40 backdrop-blur-md border border-[var(--border)] hover:border-[var(--blue)]/40 hover:bg-[var(--bg-2)]/60 hover:translate-y-[-1px] hover:shadow-xl"
+                        className="group relative w-full flex items-center gap-5 p-6 text-left transition-all duration-500 rounded-[32px] bg-white border border-[var(--border)] hover:border-[var(--blue)]/30 hover:translate-y-[-4px] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] active:translate-y-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]"
                     >
                         <div 
-                            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all group-hover:scale-110"
+                            className="w-14 h-14 rounded-[22px] flex items-center justify-center shrink-0 transition-all group-hover:scale-105"
                             style={{
-                                background: `color-mix(in srgb, ${tool.color}, transparent 90%)`,
-                                border: `1px solid color-mix(in srgb, ${tool.color}, transparent 80%)`,
+                                background: `color-mix(in srgb, ${tool.color}, transparent 94%)`,
+                                border: `1px solid color-mix(in srgb, ${tool.color}, transparent 85%)`,
                             }}
                         >
-                            <tool.icon size={18} strokeWidth={2.5} style={{ color: tool.color }} />
+                            <tool.icon size={26} strokeWidth={2.2} style={{ color: tool.color }} />
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <h4 className="text-[13px] font-black tracking-tight">{tool.label}</h4>
+                            <div className="flex items-center gap-3 mb-1">
+                                <h4 className="text-[15px] font-black tracking-tight text-[#1a1a1a]">{tool.label}</h4>
                                 {tool.popular && (
-                                    <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20">
-                                        Popular
+                                    <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20">
+                                        POPULAR
                                     </span>
                                 )}
                             </div>
-                            <p className="text-[10px] text-[var(--foreground-muted)] font-medium leading-tight opacity-70 truncate">
+                            <p className="text-[12px] text-[var(--foreground-muted)] font-bold leading-tight opacity-70">
                                 {tool.desc}
                             </p>
                         </div>

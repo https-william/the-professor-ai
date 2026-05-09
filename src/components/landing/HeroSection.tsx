@@ -119,33 +119,32 @@ export default function HeroSection() {
         maxWidth: "1100px",
         flexGrow: 1,
         justifyContent: "center",
-        gap: "clamp(24px, 5vh, 48px)" // Systematic spacing
+        gap: "clamp(32px, 6vh, 64px)" 
       }}>
 
         {/* Top Group: Badge + Headline + Subheadline */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: "clamp(12px, 3vh, 24px)" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: "clamp(16px, 4vh, 32px)" }}>
           {/* Pre-Headline Badge */}
           <div
-            className="animate-up"
+            className="animate-up glass-panel"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "8px",
-              background: "rgba(37,99,235,0.08)",
-              border: "1px solid rgba(37,99,235,0.22)",
+              gap: "10px",
+              padding: "8px 24px",
               borderRadius: "9999px",
-              padding: "6px 18px",
             }}
           >
-            <span style={{ width: "7px", height: "7px", background: "var(--blue)", borderRadius: "50%", flexShrink: 0 }} />
+            <div className="w-2 h-2 rounded-full bg-[var(--blue)] animate-pulse shadow-[0_0_8px_var(--blue)]" />
             <span style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "var(--text-2)",
-              letterSpacing: "0.04em",
+              fontFamily: "var(--font-mono)",
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "var(--blue-text)",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
             }}>
-              Strategic AI · Built for the 3 AM grind
+              Strategic AI · Scholarly Workspace
             </span>
           </div>
 
@@ -156,16 +155,16 @@ export default function HeroSection() {
               textAlign: "center",
               maxWidth: "1000px",
               fontFamily: "var(--font-heading)",
-              fontSize: "clamp(2.5rem, 10vw, 5.5rem)", 
+              fontSize: "clamp(3rem, 11vw, 6.5rem)", 
               fontWeight: 900,
-              lineHeight: 0.95,
+              lineHeight: 0.9,
               color: "var(--foreground)",
-              letterSpacing: "-0.04em",
+              letterSpacing: "-0.05em",
             }}
           >
             Drop your notes.<br />
             Walk into any exam{" "}
-            <span style={{ color: "var(--blue)" }}>ready.</span>
+            <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>ready.</span>
           </h1>
 
           {/* Sub-Headline */}
@@ -173,15 +172,16 @@ export default function HeroSection() {
             className="animate-up"
             style={{
               textAlign: "center",
-              maxWidth: "560px",
+              maxWidth: "580px",
               fontFamily: "var(--font-sans)",
-              fontSize: "clamp(1rem, 2vw, 1.15rem)",
+              fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)",
               fontWeight: 500,
-              color: "var(--text-2)",
-              lineHeight: 1.5,
+              color: "var(--foreground-secondary)",
+              lineHeight: 1.6,
+              opacity: 0.8,
             }}
           >
-            Upload your material and get an elite study guide, summary, quiz, and active-recall game — in seconds.
+            Upload your material and get an elite study guide, summary, and active-recall game — <span className="text-[var(--foreground)] font-bold">in seconds.</span>
           </p>
         </div>
 
@@ -190,7 +190,7 @@ export default function HeroSection() {
           className="animate-up" 
           style={{ 
             width: "100%",
-            maxWidth: "540px",
+            maxWidth: "580px",
             transitionDelay: "150ms" 
           }}
         >
@@ -199,38 +199,29 @@ export default function HeroSection() {
 
         {/* Trust Bar */}
         <div
-          className="animate-up"
+          className="animate-up flex items-center justify-center flex-wrap gap-4 sm:gap-10 opacity-40 hover:opacity-100 transition-opacity"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexWrap: "wrap",
-            gap: "12px 24px",
             transitionDelay: "300ms",
           }}
         >
           {[
-            "No account required to start",
-            "1,200+ students mastered",
-            "Privacy-first strategy",
+            "Instant Start",
+            "Scholarly Precision",
+            "Privacy First",
           ].map((item, i) => (
-            <span key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div key={i} className="flex items-center gap-3">
+              <Sparkles size={12} className="text-[var(--blue)]" />
               <span style={{
-                width: "6px", height: "6px",
-                background: "var(--blue)",
-                borderRadius: "50%",
-                flexShrink: 0,
-                opacity: 0.6
-              }} />
-              <span style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: "12px",
-                fontWeight: 500,
-                color: "var(--text-3)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "10px",
+                fontWeight: 900,
+                color: "var(--foreground-muted)",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
               }}>
                 {item}
               </span>
-            </span>
+            </div>
           ))}
         </div>
       </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIngestStore } from "@/store/useIngestStore";
-import { X, Upload, CheckCircle2, Loader2, AlertCircle, Sparkles, MessageCircle, Type } from "lucide-react";
+import { X, Upload, CheckCircle2, Loader2, AlertCircle, Sparkles, MessageCircle, Type, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /* ═══ Claymorphic style helpers ═══ */
 const clay = {
@@ -30,128 +31,98 @@ const clay = {
         fontSize: "14px",
         padding: "16px",
         width: "100%",
-        minHeight: "120px",
+        minHeight: "100px",
     } as React.CSSProperties,
 };
 
 interface KnowledgeIngestModalProps {
     onSuccess?: (text: string) => void;
+    onStartSprint?: () => void;
     title?: string;
     description?: string;
+    isSprint?: boolean;
 }
 
-export default function KnowledgeIngestModal({ onSuccess, title, description }: KnowledgeIngestModalProps) {
+export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, description, isSprint }: KnowledgeIngestModalProps) {
     const { isModalOpen, closeModal, queue, addFiles, updateFileStatus } = useIngestStore();
     const [dragActive, setDragActive] = useState(false);
     const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
     const [pastedText, setPastedText] = useState("");
     const [isPasting, setIsPasting] = useState(false);
+    const processedIds = useRef<Set<string>>(new Set());
 
-    const uploadWithXHR = (url: string, formData: FormData, id: string, phaseWeight: number, baseProgress: number): Promise<any> => {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', url);
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * phaseWeight);
-                    updateFileStatus(id, url.includes('parse') ? 'reading' : 'learning', baseProgress + percent);
-                }
-            };
-            xhr.onload = () => {
-                let responseData;
-                try {
-                    responseData = JSON.parse(xhr.responseText);
-                } catch {
-                    return reject(new Error("Invalid server response"));
-                }
-                if (xhr.status >= 200 && xhr.status < 300) resolve(responseData);
-                else reject(new Error(responseData?.error || "Upload failed"));
-            };
-            xhr.onerror = () => reject(new Error("Network error during upload"));
-            xhr.send(formData);
-        });
-    };
+    const hasSuccess = queue.some(item => item.status === 'success');
+    const isProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
 
-    // ─── SEQUENTIAL PROCESSOR ───────────────────────────────────
-    const processQueue = useCallback(async (filesWithIds: {file: File, id: string}[]) => {
-        for (const {file, id} of filesWithIds) {
+    // Real Processor
+    useEffect(() => {
+        const processNext = async () => {
+            const nextItem = queue.find(item => item.status === 'reading' && !processedIds.current.has(item.id));
+            if (!nextItem || !nextItem.file) return;
+
+            processedIds.current.add(nextItem.id);
+
             try {
-                // 1. Reading Phase (Parsing) - sweeps 0 to 50%
-                updateFileStatus(id, 'reading', 0);
-                const parseForm = new FormData();
-                parseForm.append('file', file);
-                
-                const parseData = await uploadWithXHR('/api/parse', parseForm, id, 50, 0);
-                
-                // Send text to caller (e.g. Creator Studio)
-                if (onSuccess) onSuccess(parseData.text);
+                // Initial progress bump
+                updateFileStatus(nextItem.id, 'reading', 20);
 
-                // 2. Learning Phase (Vectorizing) - sweeps 50 to 100%
-                updateFileStatus(id, 'learning', 50);
-                const ingestForm = new FormData();
-                ingestForm.append('file', file);
-                
-                const ingestData = await uploadWithXHR('/api/library/ingest', ingestForm, id, 50, 50);
+                const formData = new FormData();
+                formData.append("file", nextItem.file);
 
-                updateFileStatus(id, 'success', 100);
+                const res = await fetch("/api/parse", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const result = await res.json().catch(() => ({ error: "Parser failed to respond" }));
+                
+                if (!res.ok || result.error) {
+                    throw new Error(result.error || "Failed to process document");
+                }
+
+                updateFileStatus(nextItem.id, 'success', 100);
+                
+                // Store the text in the component's parent or store
+                if (onSuccess && result.text) {
+                    onSuccess(result.text);
+                }
             } catch (err: any) {
-                updateFileStatus(id, 'error', 0, err.message);
+                console.error("Ingestion Error:", err);
+                updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to parse file");
             }
+        };
+
+        if (isProcessing) {
+            processNext();
         }
-    }, [updateFileStatus, onSuccess]);
+    }, [queue, isProcessing, updateFileStatus, onSuccess]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const files = Array.from(e.target.files);
-            const filesWithIds = files.map(f => ({ file: f, id: Math.random().toString(36).substring(7) }));
-            addFiles(files, filesWithIds.map(f => f.id));
-            processQueue(filesWithIds);
-        }
+        if (e.target.files) addFiles(Array.from(e.target.files));
     };
 
     const onDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            const files = Array.from(e.dataTransfer.files);
-            const filesWithIds = files.map(f => ({ file: f, id: Math.random().toString(36).substring(7) }));
-            addFiles(files, filesWithIds.map(f => f.id));
-            processQueue(filesWithIds);
-        }
+        if (e.dataTransfer.files) addFiles(Array.from(e.dataTransfer.files));
     };
 
     const handleTextSubmit = async () => {
-        if (!pastedText.trim() || isPasting) return;
+        if (!pastedText.trim()) return;
         setIsPasting(true);
-
-        const id = "pasted_" + Math.random().toString(36).substring(7);
-        const virtualFile = new File([pastedText], "Pasted Content.txt", { type: "text/plain" });
+        const tempId = Math.random().toString(36).substring(7);
         
-        // Add to queue manually for UI feedback
-        addFiles([virtualFile], [id]);
+        // Add as a virtual file to the queue
+        addFiles([new File([pastedText], "Pasted Knowledge.txt")], [tempId]);
+        setPastedText("");
+        setIsPasting(false);
+    };
 
-        try {
-            // Simulated local "reading" for text
-            updateFileStatus(id, 'reading', 0);
-            await new Promise(r => setTimeout(r, 800));
-            updateFileStatus(id, 'reading', 50);
-            
-            if (onSuccess) onSuccess(pastedText);
-
-            // Ingest to library
-            updateFileStatus(id, 'learning', 60);
-            const ingestForm = new FormData();
-            ingestForm.append('file', virtualFile);
-            
-            await uploadWithXHR('/api/library/ingest', ingestForm, id, 40, 60);
-            updateFileStatus(id, 'success', 100);
-            setPastedText("");
-            setActiveTab('upload');
-        } catch (err: any) {
-            updateFileStatus(id, 'error', 0, err.message);
-        } finally {
-            setIsPasting(false);
+    const handleStartAction = () => {
+        if (isSprint && onStartSprint) {
+            onStartSprint();
         }
+        closeModal();
     };
 
     return (
@@ -164,59 +135,70 @@ export default function KnowledgeIngestModal({ onSuccess, title, description }: 
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={closeModal}
-                    className="absolute inset-0 bg-[#06060B]/80 backdrop-blur-sm"
+                    className="absolute inset-0 bg-black/60 backdrop-blur-md"
                 />
 
                 {/* Modal Container */}
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="relative w-full max-w-lg overflow-hidden"
-                    style={clay.modal}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    className="relative w-full max-w-lg overflow-hidden border border-[var(--border)] shadow-2xl flex flex-col max-h-[85vh]"
+                    style={{
+                        background: "var(--background)",
+                        borderRadius: "32px",
+                    }}
                 >
                     {/* Header */}
-                    <div className="p-6 flex items-center justify-between border-b border-white/5">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[var(--blue-dim)] flex items-center justify-center border border-[var(--blue-border)]">
-                                <Sparkles className="w-5 h-5 text-[var(--blue)]" />
+                    <div className="p-6 flex items-center justify-between border-b border-[var(--border)] shrink-0">
+                        <div className="flex items-center gap-4">
+                            <div className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center border transition-all",
+                                isSprint ? "bg-[var(--blue)] border-[var(--blue)] text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]" : "bg-[var(--accent-bg)] border-[var(--accent-glow)] text-[var(--accent)]"
+                            )}>
+                                {isSprint ? <Zap className="w-5 h-5 fill-current" /> : <Sparkles className="w-5 h-5" />}
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-[var(--text)] tracking-tight">
-                                    {title || "Share Notes"}
+                                <h3 className="text-lg font-black text-[var(--foreground)] tracking-tight">
+                                    {title || (isSprint ? "Exam Sprint" : "Share Notes")}
                                 </h3>
-                                <p className="text-[10px] uppercase font-black tracking-widest text-[var(--text-3)]">
+                                <p className="text-[10px] uppercase font-black tracking-[0.2em] text-[var(--foreground-muted)]">
                                     {description || "Upload study materials for your Professor"}
                                 </p>
                             </div>
                         </div>
-                        <button onClick={closeModal} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text)] hover:bg-white/5 transition-all">
+                        <button onClick={closeModal} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    {/* Content */}
-                    <div className="p-6 space-y-6">
+                    {/* Content Area (Scrollable) */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                         {/* Tabs */}
-                        <div className="flex gap-2 p-1 bg-white/5 rounded-2xl">
+                        <div className="flex gap-2 p-1 bg-[var(--background-secondary)] rounded-2xl border border-[var(--border)]">
                             <button 
                                 onClick={() => setActiveTab('upload')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'upload' ? 'bg-[var(--blue)] text-white shadow-lg' : 'text-white/30 hover:text-white/60'}`}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === 'upload' ? 'bg-[var(--foreground)] text-[var(--background)] shadow-lg scale-[1.02]' : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                )}
                             >
-                                <Upload className="w-3.5 h-3.5" />
+                                <Upload className="w-3.5 h-3.5" strokeWidth={3} />
                                 Upload File
                             </button>
                             <button 
                                 onClick={() => setActiveTab('text')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'text' ? 'bg-[var(--blue)] text-white shadow-lg' : 'text-white/30 hover:text-white/60'}`}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === 'text' ? 'bg-[var(--foreground)] text-[var(--background)] shadow-lg scale-[1.02]' : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                )}
                             >
-                                <Type className="w-3.5 h-3.5" />
+                                <Type className="w-3.5 h-3.5" strokeWidth={3} />
                                 Paste Text
                             </button>
                         </div>
                         
                         {activeTab === 'upload' ? (
-                            /* Dropzone */
                             <label 
                                 onDragEnter={() => setDragActive(true)}
                                 onDragLeave={() => setDragActive(false)}
@@ -225,23 +207,23 @@ export default function KnowledgeIngestModal({ onSuccess, title, description }: 
                                 className="block cursor-pointer group"
                             >
                                 <div 
-                                    style={{
-                                        ...clay.dropzone,
-                                        borderColor: dragActive ? 'var(--blue)' : 'var(--border)',
-                                        background: dragActive ? 'var(--blue-dim)' : 'rgba(255,255,255,0.02)',
-                                    }}
-                                    className="p-10 flex flex-col items-center justify-center text-center transition-all"
+                                    className={cn(
+                                        "p-10 flex flex-col items-center justify-center text-center transition-all rounded-3xl border-2 border-dashed group-hover:border-[var(--blue)]/50 group-active:scale-[0.98]",
+                                        dragActive ? "bg-[var(--blue-dim)] border-[var(--blue)]" : "bg-[var(--background-secondary)] border-[var(--border)]"
+                                    )}
                                 >
-                                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                        <Upload className={`w-8 h-8 ${dragActive ? 'text-[var(--blue)]' : 'text-white/20'}`} />
+                                    <div className={cn(
+                                        "w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all shadow-xl",
+                                        dragActive ? "bg-[var(--blue)] text-white scale-110" : "bg-[var(--background)] text-[var(--blue)] group-hover:scale-105"
+                                    )}>
+                                        <Upload className="w-8 h-8" strokeWidth={3} />
                                     </div>
-                                    <h4 className="text-[15px] font-bold text-white/70 mb-1">Drop notes here</h4>
-                                    <p className="text-[11px] text-white/20 uppercase tracking-widest font-black">Any document, image, or voice</p>
+                                    <h4 className="text-lg font-black text-[var(--foreground)] mb-1">Drop notes here</h4>
+                                    <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-[0.2em] font-black">Any document, image, or voice</p>
                                     <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
                                 </div>
                             </label>
                         ) : (
-                            /* Text Input */
                             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <textarea
                                     style={clay.textarea}
@@ -249,80 +231,95 @@ export default function KnowledgeIngestModal({ onSuccess, title, description }: 
                                     value={pastedText}
                                     onChange={(e) => setPastedText(e.target.value)}
                                     disabled={isPasting}
-                                    className="custom-scrollbar"
+                                    className="custom-scrollbar bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground)]"
                                 />
                                 <button
                                     onClick={handleTextSubmit}
                                     disabled={!pastedText.trim() || isPasting}
-                                    className={`w-full py-4 rounded-2xl font-black text-[12px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 ${!pastedText.trim() || isPasting ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'bg-[var(--blue)] text-white hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_24px_rgba(59,130,246,0.3)]'}`}
-                                >
-                                    {isPasting ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Sparkles className="w-4 h-4" />
+                                    className={cn(
+                                        "w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
+                                        !pastedText.trim() || isPasting ? 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)] opacity-50' : 'bg-[var(--blue)] text-white hover:scale-[1.01] active:scale-[0.98] shadow-[0_8px_24px_rgba(59,130,246,0.3)]'
                                     )}
-                                    Initialize Ingestion
+                                >
+                                    {isPasting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    Process Material
                                 </button>
                             </div>
                         )}
 
                         {/* File Queue */}
                         {queue.length > 0 && (
-                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-3 pb-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/20">Professor's Thoughts</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)]">Professor's Analysis</span>
                                 </div>
                                 
                                 {queue.map((item) => (
-                                    <div key={item.id} className="p-4 rounded-2xl bg-[var(--bg-3)] border border-white/5 space-y-3 flex gap-4 items-start">
-                                        <div className="w-8 h-8 rounded-full bg-[var(--blue-dim)] flex items-center justify-center shrink-0 border border-[var(--blue-border)]">
-                                            <MessageCircle className="w-4 h-4 text-[var(--blue)]" />
+                                    <div key={item.id} className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] flex gap-4 items-start animate-in slide-in-from-bottom-2 duration-300 shadow-sm">
+                                        <div className="w-10 h-10 rounded-xl bg-[var(--background)] flex items-center justify-center shrink-0 border border-[var(--border)]">
+                                            <MessageCircle className="w-5 h-5 text-[var(--blue)]" />
                                         </div>
-                                        <div className="flex-1 mt-1">
+                                        <div className="flex-1 min-w-0">
                                             {item.status === 'success' ? (
-                                                <p className="text-[13px] font-medium text-white/90 leading-relaxed">
-                                                    "Alright! I have completely understood <span className="text-[var(--blue)] font-bold">{item.name}</span>! What would you like to build from it?"
+                                                <p className="text-sm font-bold text-[var(--foreground)] leading-snug truncate">
+                                                    "Mastered <span className="text-[var(--blue)]">{item.name}</span>."
                                                 </p>
                                             ) : item.status === 'error' ? (
-                                                <p className="text-[13px] font-medium text-red-400/90 leading-relaxed">
-                                                    "I ran into an issue reading <span className="font-bold">{item.name}</span>: {item.errorMessage}"
+                                                <p className="text-sm font-bold text-[var(--crimson)] leading-snug">
+                                                    {item.errorMessage || `Failed to read ${item.name}`}
                                                 </p>
                                             ) : (
-                                                <div className="flex flex-col gap-2 w-full pr-4">
-                                                    <p className="text-[13px] font-medium text-white/70 leading-relaxed italic flex items-center gap-2">
-                                                        "{item.status === 'reading' ? 'Uploading & reading' : 'Learning'} <span className="text-white/90 font-bold">{item.name}</span>..."
-                                                        {item.progress !== 100 && <Loader2 className="w-3 h-3 text-[var(--blue)] animate-spin shrink-0" />}
-                                                    </p>
-                                                    
-                                                    {/* Custom Live Progress Bar */}
-                                                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mt-1 max-w-[200px]">
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="text-sm font-bold text-[var(--foreground)] leading-snug animate-pulse truncate">
+                                                            Reading <span className="italic">{item.name}</span>...
+                                                        </p>
+                                                        <span className="text-[10px] font-black text-[var(--blue)]">{item.progress}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-[var(--background)] rounded-full h-1.5 overflow-hidden border border-[var(--border)] shadow-inner">
                                                         <motion.div 
                                                             initial={{ width: 0 }}
                                                             animate={{ width: `${item.progress}%` }}
-                                                            className="h-full bg-[var(--blue)] rounded-full"
+                                                            className="h-full bg-[var(--blue)] rounded-full shadow-[0_0_8px_var(--blue-glow)]"
                                                         />
                                                     </div>
-                                                    <p className="text-[10px] font-bold text-[var(--blue)]/80">{item.progress}%</p>
                                                 </div>
                                             )}
                                         </div>
-                                        {item.status === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-1" />}
-                                        {item.status === 'error' && <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-1" />}
+                                        {item.status === 'success' && <CheckCircle2 className="w-5 h-5 text-[var(--emerald)] shrink-0" />}
+                                        {item.status === 'error' && <AlertCircle className="w-5 h-5 text-[var(--crimson)] shrink-0" />}
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    {/* Footer */}
-                    <div className="p-6 bg-white/[0.02] flex items-center justify-between">
-                         <p className="text-[10px] text-white/20 italic">For your privacy, uploaded materials disappear after 7 days.</p>
-                         <button 
-                            onClick={closeModal}
-                            className="px-6 py-2.5 rounded-xl text-[12px] font-bold text-white/40 hover:text-white/80 transition-colors bg-white/5 hover:bg-white/10"
-                         >
-                            Dismiss
-                         </button>
+                    {/* Footer (Fixed) */}
+                    <div className="p-6 bg-[var(--background-secondary)] border-t border-[var(--border)] flex items-center justify-between gap-4 shrink-0">
+                         <div className="hidden sm:flex items-center gap-2 text-[9px] text-[var(--foreground-muted)] font-black uppercase tracking-widest opacity-60">
+                             <Zap className="w-3 h-3 text-[var(--blue)]" /> Secure Link
+                         </div>
+                         <div className="flex items-center gap-3 flex-1 sm:flex-none">
+                            <button 
+                                onClick={closeModal}
+                                className="flex-1 sm:flex-none px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest text-[var(--foreground-muted)] transition-all hover:text-[var(--foreground)] active:scale-[0.95]"
+                            >
+                                Dismiss
+                            </button>
+                            <button 
+                                onClick={handleStartAction}
+                                disabled={isProcessing || (!hasSuccess && isSprint)}
+                                className={cn(
+                                    "flex-1 sm:flex-none px-10 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.95]",
+                                    isProcessing || (!hasSuccess && isSprint)
+                                    ? "bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)] opacity-50 cursor-not-allowed"
+                                    : "bg-[var(--blue)] text-white hover:scale-[1.05] shadow-[0_8px_32px_rgba(59,130,246,0.4)]"
+                                )}
+                            >
+                                {isSprint ? "START SPRINT" : "BEGIN SESSION"}
+                                <Sparkles className="w-4 h-4 fill-current" />
+                            </button>
+                         </div>
                     </div>
                 </motion.div>
             </div>

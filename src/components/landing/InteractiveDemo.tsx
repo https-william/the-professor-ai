@@ -215,50 +215,54 @@ export default function InteractiveDemo() {
 
   return (
     <section style={{
-      background: "var(--bg)",
-      borderTop: "1px solid var(--border)",
-      borderBottom: "1px solid var(--border)",
-      padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
+      background: "transparent",
+      padding: "clamp(100px, 15vw, 160px) clamp(24px, 6vw, 80px)",
+      position: "relative"
     }}>
-      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ textAlign: "center" }}>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", fontWeight: 800, color: "var(--blue-text)", letterSpacing: "0.2em", textTransform: "uppercase" }}>THE ARCHIVE PREVIEW</span>
-          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, color: "var(--text)", marginTop: "12px", letterSpacing: "-0.03em" }}>
-            Your notes. Transformed.
+        <div style={{ textAlign: "center", marginBottom: "64px" }}>
+          <span className="section-label mb-6" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>INTERACTIVE PREVIEW</span>
+          <h2 style={{ 
+            fontFamily: "var(--font-heading)", 
+            fontSize: "clamp(2.5rem, 6vw, 4.5rem)", 
+            fontWeight: 900, 
+            color: "var(--foreground)", 
+            lineHeight: 0.9,
+            letterSpacing: "-0.04em" 
+          }}>
+            Your notes. <br />
+            <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>Transformed.</span>
           </h2>
-          <p style={{ fontFamily: "var(--font-sans)", fontSize: "16px", color: "var(--text-3)", marginTop: "16px", fontWeight: 500, maxWidth: "600px", margin: "16px auto 0" }}>
+          <p style={{ 
+            fontFamily: "var(--font-sans)", 
+            fontSize: "clamp(1rem, 1.5vw, 1.25rem)", 
+            color: "var(--foreground-secondary)", 
+            marginTop: "24px", 
+            fontWeight: 500, 
+            maxWidth: "640px", 
+            margin: "24px auto 0",
+            opacity: 0.7
+          }}>
             Real ECO 201 lecture notes processed by The Professor. Your results will be tailored to your specific materials.
           </p>
         </div>
 
         {/* Tab Bar */}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "48px" }}>
-          <div style={{
-            display: "inline-flex",
-            background: "var(--bg-2)",
-            border: "1px solid var(--border)",
-            borderRadius: "9999px",
-            padding: "6px",
-            gap: "4px",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
-          }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "40px" }}>
+          <div className="glass-panel p-2 flex gap-2" style={{ borderRadius: "9999px" }}>
             {TABS.map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
+                className={activeTab === tab ? "btn-skeuo text-[var(--blue)] px-8 py-3" : "px-8 py-3 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"}
                 style={{
-                  fontFamily: "var(--font-sans)",
-                  fontSize: "13px",
-                  fontWeight: 800,
-                  color: activeTab === tab ? "#fff" : "var(--text-3)",
-                  padding: "10px 24px",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  fontWeight: 900,
                   borderRadius: "9999px",
-                  background: activeTab === tab ? "var(--blue)" : "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "all 300ms cubic-bezier(0.16, 1, 0.3, 1)",
-                  boxShadow: activeTab === tab ? "0 4px 15px var(--blue-glow)" : "none"
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase"
                 }}
               >
                 {tab}
@@ -268,21 +272,16 @@ export default function InteractiveDemo() {
         </div>
 
         {/* Demo Panel */}
-        <div style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border)",
-          borderRadius: "2rem",
-          padding: "40px",
-          boxShadow: "0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset",
-          minHeight: "420px",
-          marginTop: "32px",
-          position: "relative",
-          overflow: "hidden"
+        <div className="scholar-card relative overflow-hidden" style={{
+          padding: "clamp(32px, 5vw, 64px)",
+          borderRadius: "48px",
+          background: "linear-gradient(165deg, var(--bg-2), var(--bg))",
+          minHeight: "500px",
         }}>
           {/* Ambient Glow */}
-          <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "40%", height: "40%", background: "var(--blue-dim)", filter: "blur(100px)", opacity: 0.15, pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "50%", height: "50%", background: "var(--blue-dim)", filter: "blur(120px)", opacity: 0.1, pointerEvents: "none" }} />
           
-          <div key={activeTab} style={{ animation: "fadeIn 400ms cubic-bezier(0.16, 1, 0.3, 1)", position: "relative", zIndex: 1 }}>
+          <div key={activeTab} className="relative z-10" style={{ animation: "fadeIn 500ms cubic-bezier(0.16, 1, 0.3, 1)" }}>
             {activeTab === "Study Guide" && <StudyGuidePanel />}
             {activeTab === "Summary" && <SummaryPanel />}
             {activeTab === "Quiz" && <QuizPanel />}
@@ -293,7 +292,7 @@ export default function InteractiveDemo() {
 
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>

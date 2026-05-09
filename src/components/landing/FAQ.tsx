@@ -42,29 +42,30 @@ export default function FAQSection() {
 
   return (
     <section style={{
-      background: "var(--bg-2)",
-      borderTop: "1px solid var(--border)",
-      borderBottom: "1px solid var(--border)",
-      padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
+      background: "transparent",
+      padding: "clamp(100px, 15vw, 160px) clamp(24px, 6vw, 80px)",
+      position: "relative"
     }}>
-      <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "64px" }}>
-          <span className="section-label" style={{ textAlign: "center", color: "var(--blue)" }}>FREQUENTLY ASKED</span>
+        <div style={{ textAlign: "center", marginBottom: "80px" }}>
+          <span className="section-label mb-6" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>FREQUENTLY ASKED</span>
           <h2 style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
+            fontSize: "clamp(2.2rem, 5vw, 4rem)",
             fontWeight: 900,
-            color: "var(--text)",
+            color: "var(--foreground)",
             marginTop: "12px",
-            letterSpacing: "-0.03em"
+            lineHeight: 0.95,
+            letterSpacing: "-0.04em"
           }}>
-            Every question. <span style={{ color: "var(--blue)" }}>Honest answers.</span>
+            Every question. <br />
+            <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>Honest answers.</span>
           </h2>
         </div>
 
         {/* Accordion */}
-        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: "32px", padding: "16px", border: "1px solid var(--border)" }}>
+        <div className="scholar-card overflow-hidden" style={{ borderRadius: "40px", padding: "16px" }}>
           {FAQS.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
@@ -72,9 +73,11 @@ export default function FAQSection() {
                 key={i}
                 style={{
                   borderBottom: i < FAQS.length - 1 ? "1px solid var(--border)" : "none",
-                  borderRadius: i === 0 ? "24px 24px 0 0" : i === FAQS.length - 1 ? "0 0 24px 24px" : "0",
-                  transition: "background 0.3s ease",
-                  background: isOpen ? "rgba(255,255,255,0.02)" : "transparent"
+                  transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                  background: isOpen ? "var(--bg-2)" : "transparent",
+                  borderRadius: isOpen ? "24px" : "0",
+                  marginTop: isOpen && i > 0 ? "8px" : "0",
+                  marginBottom: isOpen && i < FAQS.length - 1 ? "8px" : "0",
                 }}
               >
                 {/* Question */}
@@ -85,7 +88,7 @@ export default function FAQSection() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     width: "100%",
-                    padding: "24px",
+                    padding: "32px",
                     cursor: "pointer",
                     background: "none",
                     border: "none",
@@ -93,50 +96,51 @@ export default function FAQSection() {
                   }}
                 >
                   <span style={{
-                    fontFamily: "var(--font-sans)",
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    color: isOpen ? "var(--blue)" : "var(--text)",
-                    transition: "color 150ms ease",
+                    fontFamily: "var(--font-heading)",
+                    fontSize: "18px",
+                    fontWeight: 900,
+                    color: isOpen ? "var(--foreground)" : "var(--foreground-muted)",
+                    transition: "color 300ms ease",
                     flex: 1,
-                    paddingRight: "16px",
+                    paddingRight: "24px",
+                    letterSpacing: "-0.01em"
                   }}>
                     {faq.q}
                   </span>
                   <div
+                    className={isOpen ? "btn-skeuo" : "w-10 h-10 rounded-xl bg-[var(--bg-3)] border border-[var(--border)]"}
                     style={{
-                      width: "32px",
-                      height: "32px",
-                      borderRadius: "10px",
-                      background: isOpen ? "var(--blue)" : "var(--bg-3)",
+                      width: "40px",
+                      height: "40px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      transition: "all 0.3s ease",
-                      transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
+                      transition: "all 0.4s ease",
+                      transform: isOpen ? "rotate(135deg)" : "rotate(0deg)",
                       flexShrink: 0,
                     }}
                   >
-                    <svg
-                      width="20" height="20" viewBox="0 0 20 20" fill="none"
-                      style={{
-                        color: isOpen ? "white" : "var(--text-3)",
-                      }}
-                    >
-                      <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
+                    <Plus size={20} className={isOpen ? "text-[var(--blue)]" : "text-[var(--foreground-muted)]"} />
                   </div>
                 </button>
 
                 {/* Answer */}
-                <div className={`faq-answer ${isOpen ? "open" : ""}`}>
+                <div 
+                  style={{
+                    maxHeight: isOpen ? "500px" : "0",
+                    overflow: "hidden",
+                    transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                    opacity: isOpen ? 1 : 0
+                  }}
+                >
                   <p style={{
                     fontFamily: "var(--font-sans)",
-                    fontSize: "15px",
-                    color: "var(--text-2)",
-                    lineHeight: 1.75,
-                    padding: "0 24px 24px 24px",
-                    fontWeight: 500
+                    fontSize: "16px",
+                    color: "var(--foreground-secondary)",
+                    lineHeight: 1.7,
+                    padding: "0 32px 32px 32px",
+                    fontWeight: 500,
+                    opacity: 0.8
                   }}>
                     {faq.a}
                   </p>

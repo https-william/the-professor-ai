@@ -179,7 +179,7 @@ const PROFESSOR_TIPS = [
     "Consistency beats intensity. 10 minutes every day > 5 hours once a week.",
     "The 'Feynman Technique' (simplifying) is your best friend for complex topics.",
     "Sleep is where memories are consolidated. Don't skip your rest!",
-    "Take a 5-minute breather now. Your brain needs time to process the payload."
+    "Take a 5-minute breather now. Your brain needs time to process new info."
 ];
 
 export default function SessionComplete({

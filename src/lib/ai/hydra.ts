@@ -131,10 +131,26 @@ export async function hydraGenerateContent(
 function cleanJson(text: string): string {
     if (!text) return text;
     let cleaned = text.trim();
-    if (cleaned.startsWith("```")) {
-        cleaned = cleaned.replace(/^```[a-z]*\n/i, "");
-        cleaned = cleaned.replace(/\n```$/m, "");
+    
+    // Remove markdown code fences if present
+    if (cleaned.includes("```")) {
+        cleaned = cleaned.replace(/```[a-z]*\n?/gi, "");
+        cleaned = cleaned.replace(/```/g, "");
     }
+    
+    // Find the first and last brackets to extract the pure JSON object/array
+    const firstBrace = cleaned.indexOf("{");
+    const firstBracket = cleaned.indexOf("[");
+    const start = (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) ? firstBrace : firstBracket;
+    
+    const lastBrace = cleaned.lastIndexOf("}");
+    const lastBracket = cleaned.lastIndexOf("]");
+    const end = (lastBrace !== -1 && (lastBracket === -1 || lastBrace > lastBracket)) ? lastBrace : lastBracket;
+
+    if (start !== -1 && end !== -1 && end > start) {
+        return cleaned.substring(start, end + 1);
+    }
+    
     return cleaned.trim();
 }
 

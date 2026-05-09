@@ -151,10 +151,9 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
           as="style"
         />
-        {/* Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
         
         <link
           id="material-symbols-stylesheet"
@@ -210,15 +209,17 @@ export default function RootLayout({
                   
                   <SiteHeader showLogo={true} />
                   <main className="platform-main-container relative h-full w-full flex flex-col">
-                      <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full h-full z-[1] flex flex-col">
-                        <AmbientOrbs />
-                        <div className="flex-1 flex flex-col">
-                          <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><div className="w-10 h-10 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
-                             {children}
-                          </Suspense>
-                        </div>
-                        <Footer />
+                    <div className="noise-overlay" />
+                    <AmbientOrbs />
+                    
+                    <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full z-[1] flex flex-col">
+                      <div className="flex-1 flex flex-col relative z-[2]">
+                        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
+                          {children}
+                        </Suspense>
                       </div>
+                      <Footer />
+                    </div>
                   </main>
   
                   {/* Mobile nav handled by PlatformLoader */}

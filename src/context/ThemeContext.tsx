@@ -17,7 +17,7 @@ function getSystemTheme(): "light" | "dark" {
     if (typeof window !== "undefined") {
         return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
-    return "dark"; // Default to dark (Midnight Scholar)
+    return "light"; // Default to light mode
 }
 
 function getStoredTheme(): Theme {
@@ -27,12 +27,12 @@ function getStoredTheme(): Theme {
             return stored;
         }
     }
-    return "dark"; // First-time visitors get Midnight Scholar dark mode
+    return "light"; // First-time visitors get light mode
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [theme, setThemeState] = useState<Theme>("dark");
-    const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
+    const [theme, setThemeState] = useState<Theme>("light");
+    const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
     const [mounted, setMounted] = useState(false);
 
     // Initial mount - read from storage
@@ -91,7 +91,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }, [resolvedTheme, setTheme]);
 
     // Note: We no longer return null here to prevent "Double-Null" hydration blackouts.
-    // The documents will render with the resolvedTheme (default dark) immediately.
+    // The documents will render with the resolvedTheme (default light) immediately.
 
     return (
         <ThemeContext.Provider value={{ theme, resolvedTheme, toggleTheme, setTheme }}>

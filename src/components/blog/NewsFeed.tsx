@@ -20,22 +20,26 @@ export default function NewsFeed() {
         {newsItems.map((news) => (
           <div 
             key={news.id}
-            className="p-5 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] shadow-[var(--shadow-sm)] hover:border-[var(--accent-glow)] transition-all group"
+            className="scholar-card p-6 transition-all group"
+            style={{ borderRadius: "20px" }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded bg-[var(--background-tertiary)] text-[var(--foreground-muted)] border border-[var(--border)]">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)]">
                 {news.category}
               </span>
-              <span className="text-[10px] text-white/10">{news.date}</span>
+              <span className="text-[10px] text-[var(--foreground-muted)] opacity-50">{news.date}</span>
             </div>
-            <h3 className="text-sm font-bold text-[var(--foreground-secondary)] line-clamp-1 mb-2 group-hover:text-[var(--foreground)] transition-colors">
+            <h3 className="text-[15px] font-bold text-[var(--foreground-secondary)] line-clamp-1 mb-3 group-hover:text-[var(--foreground)] transition-colors">
               {news.title}
             </h3>
             <p className="text-[12px] text-[var(--foreground-muted)] leading-relaxed line-clamp-2">
               {news.summary}
             </p>
-            <div className="mt-4 pt-4 border-t border-[var(--border)] italic text-[10px] text-white/5">
-              Source: {news.source}
+            <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center justify-between">
+              <span className="italic text-[10px] text-[var(--foreground-muted)] opacity-30">
+                Source: {news.source}
+              </span>
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </div>
         ))}

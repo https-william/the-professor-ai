@@ -9,8 +9,8 @@ export default function GlossaryPage() {
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground-secondary)] pt-24 pb-20">
       <div className="max-w-4xl mx-auto px-6">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Study Intelligence Glossary</h1>
-          <p className="text-lg text-white/50 max-w-2xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-black text-[var(--foreground)] mb-4 tracking-tight">Study Intelligence Glossary</h1>
+          <p className="text-lg text-[var(--foreground-muted)] max-w-2xl mx-auto font-medium">
             The semantic foundation of elite learning. Master the definitions that drive academic dominance.
           </p>
         </div>

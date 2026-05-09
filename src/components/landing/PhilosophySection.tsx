@@ -55,83 +55,80 @@ export default function PhilosophySection() {
 
         {/* Left Column */}
         <div className="philosophy-left-col animate-up" style={{ position: "sticky", top: "120px" }}>
-          <span className="section-label" style={{ color: "var(--blue)" }}>OUR PHILOSOPHY</span>
+          <span className="section-label mb-6" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>OUR PHILOSOPHY</span>
 
           <h2 style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
+            fontSize: "clamp(2rem, 4vw, 3.5rem)",
             fontWeight: 900,
-            lineHeight: 1.1,
-            color: "var(--text)",
+            lineHeight: 0.95,
+            color: "var(--foreground)",
             marginTop: "12px",
-            letterSpacing: "-0.03em"
+            letterSpacing: "-0.04em"
           }}>
             Study guides don&apos;t fail students. Studying the{" "}
-            <span style={{ color: "var(--blue)", fontStyle: "normal" }}>wrong things</span>{" "}
+            <span style={{ color: "var(--blue)", textShadow: "0 0 20px var(--blue-glow)" }}>wrong things</span>{" "}
             does.
           </h2>
 
           <div style={{
-            width: "40px",
+            width: "48px",
             height: "2px",
             background: "var(--blue)",
             borderRadius: "1px",
-            marginTop: "28px",
+            marginTop: "32px",
           }} />
 
           <p style={{
             fontFamily: "var(--font-sans)",
-            fontSize: "14px",
-            color: "var(--text-3)",
+            fontSize: "16px",
+            color: "var(--foreground-secondary)",
             lineHeight: 1.6,
-            marginTop: "16px",
-            fontWeight: 500
+            marginTop: "24px",
+            fontWeight: 500,
+            opacity: 0.7
           }}>
             The Professor uses your actual notes — not textbooks, not the internet — to build study tools calibrated to exactly what your lecturer taught.
           </p>
         </div>
 
         {/* Right Column */}
-        <div>
+        <div className="space-y-12">
           {BLOCKS.map((block, i) => (
             <div
               key={i}
-              className="animate-up"
+              className="animate-up group"
               style={{
-                marginBottom: i < BLOCKS.length - 1 ? "40px" : 0,
                 transitionDelay: `${i * 150}ms`,
               }}
             >
-              {/* Blue accent line */}
-              <div style={{
-                width: "32px",
-                height: "2px",
-                background: "var(--blue)",
-                marginBottom: "16px",
-                opacity: 0.6
-              }} />
+              <div className="flex items-start gap-6">
+                <div className="shrink-0 w-10 h-10 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center group-hover:scale-110 transition-transform">
+                   <Sparkles size={16} className="text-[var(--blue)]" />
+                </div>
+                <div>
+                  <h3 className="mb-4" style={{
+                    fontFamily: "var(--font-heading)",
+                    fontSize: "22px",
+                    fontWeight: 900,
+                    color: "var(--foreground)",
+                    letterSpacing: "-0.02em"
+                  }}>
+                    {block.title}
+                  </h3>
 
-              <h3 style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "18px",
-                fontWeight: 800,
-                color: "var(--text)",
-                marginBottom: "12px",
-                letterSpacing: "-0.01em"
-              }}>
-                {block.title}
-              </h3>
-
-              <p style={{
-                fontFamily: "var(--font-sans)",
-                fontSize: "15px",
-                color: "var(--text-2)",
-                lineHeight: 1.65,
-                maxWidth: "580px",
-                fontWeight: 400
-              }}>
-                {block.body}
-              </p>
+                  <p style={{
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "16px",
+                    color: "var(--foreground-muted)",
+                    lineHeight: 1.6,
+                    maxWidth: "520px",
+                    fontWeight: 500
+                  }}>
+                    {block.body}
+                  </p>
+                </div>
+              </div>
             </div>
           ))}
         </div>

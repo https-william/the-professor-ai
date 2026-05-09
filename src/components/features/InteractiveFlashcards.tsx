@@ -3,51 +3,65 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Brain, Lightbulb } from "lucide-react";
+import { ChevronLeft, ChevronRight, Brain, Lightbulb, Share2, CheckCircle2 } from "lucide-react";
+import { useToasts } from "@/components/ui/GlobalToasts";
 
-const INITIAL_CARDS = [
-  { 
-    id: 1, 
-    question: "Action Potential", 
-    answer: "A rapid electrical pulse that travels along a neuron.", 
-    hook: "Think of it like a falling line of dominos—once the first one goes (threshold), the signal is unstoppable."
-  },
-  { 
-    id: 2, 
-    question: "Neural Plasticity", 
-    answer: "The brain's ability to reorganize itself by forming new connections.", 
-    hook: "Imagine a forest path; the more you walk it, the clearer it gets. Your brain literally paves the roads you use most."
-  },
-  { 
-    id: 3, 
-    question: "Active Recall", 
-    answer: "Testing yourself instead of just re-reading notes.", 
-    hook: "It's like weightlifting for your neurons. Looking at a barbell doesn't build muscle—you have to lift it (recall) to see results."
-  },
-];
-
-export const InteractiveFlashcards = () => {
+export const InteractiveFlashcards = ({
+  cards = [
+    {
+      front: "Action Potential",
+      back: "A rapid electrical pulse that travels along a neuron. 💡 Tip: Think of it like a falling line of dominos—once the first one goes (threshold), the signal is unstoppable.",
+      topic: "Topic"
+    }
+  ],
+  onFinish
+}: {
+  cards?: Array<{
+    front: string;
+    back: string;
+    topic?: string;
+  }>;
+  onFinish?: (stats: { totalCards: number }) => void;
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [direction, setDirection] = useState(0);
+  const { addToast } = useToasts();
 
   const handleNext = () => {
+    if (currentIndex === cards.length - 1) {
+      if (onFinish) onFinish({ totalCards: cards.length });
+      addToast("Activity Complete! You've mastered all cards.", "success");
+      return;
+    }
     setDirection(1);
     setIsFlipped(false);
-    setCurrentIndex((prev) => (prev + 1) % INITIAL_CARDS.length);
+    setCurrentIndex((prev) => (prev + 1) % cards.length);
   };
 
   const handlePrev = () => {
     setDirection(-1);
     setIsFlipped(false);
-    setCurrentIndex((prev) => (prev - 1 + INITIAL_CARDS.length) % INITIAL_CARDS.length);
+    setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
   };
 
-  const currentCard = INITIAL_CARDS[currentIndex];
+  const handleShareSection = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    navigator.clipboard.writeText(url);
+    addToast("Flashcards link copied to clipboard!", "success");
+  };
+
+  const currentCard = cards[currentIndex];
+
+  // Extract hook if available
+  const backParts = currentCard.back.split("💡");
+  const answer = backParts[0].trim();
+  const hook = backParts[1] ? backParts[1].replace(/Professor's Protocol:|Protocol:/i, "").trim() : "Focus on the core relationship here.";
 
   return (
-    <div className="relative w-full h-[520px] flex flex-col items-center justify-center p-4 md:p-6 cursor-default overflow-visible">
-      <div className="relative w-full max-w-[360px] h-[450px] perspective-1200">
+    <div className="relative w-full h-[440px] md:h-[520px] flex flex-col items-center justify-center p-4 md:p-6 cursor-default overflow-visible">
+      <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[420px] md:h-[500px] perspective-1200">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentIndex}
@@ -60,16 +74,16 @@ export const InteractiveFlashcards = () => {
             onClick={() => setIsFlipped(!isFlipped)}
           >
             {/* Card Content */}
-            <motion.div 
-               animate={{ rotateY: isFlipped ? 180 : 0 }}
-               transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
-               className="w-full h-full relative transform-style-3d group"
+            <motion.div
+              animate={{ rotateY: isFlipped ? 180 : 0 }}
+              transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+              className="w-full h-full relative transform-style-3d group"
             >
               {/* Front Side */}
               <div className={cn(
                 "absolute inset-0 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center backface-hidden",
-                "bg-[var(--card)]/40 backdrop-blur-3xl border border-[var(--foreground)]/10 shadow-2xl overflow-hidden",
-                "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-[var(--foreground)]/10 before:to-transparent before:pointer-events-none"
+                "bg-[var(--card)] border border-[var(--foreground)]/10 shadow-xl overflow-hidden transform-gpu translate-z-0",
+                "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-[var(--foreground)]/5 before:to-transparent before:pointer-events-none"
               )}>
                 {/* Refraction Streak */}
                 <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent pointer-events-none shimmer-streak" />
@@ -77,44 +91,50 @@ export const InteractiveFlashcards = () => {
                 <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 mb-6 shadow-inner relative z-10">
                   <Brain size={32} strokeWidth={1.5} className="text-[var(--accent)]" />
                 </div>
-                <h4 className="text-xl font-black text-[var(--foreground)] leading-tight tracking-tight mb-4 relative z-10">
-                  {currentCard.question}
+                <div className="mb-2">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)] bg-[var(--accent)]/10 px-2 py-0.5 rounded-md">
+                    {currentCard.topic || "Active Recall"}
+                  </span>
+                </div>
+                <h4 className="text-xl md:text-3xl font-black text-[var(--foreground)] leading-tight tracking-tight mb-4 relative z-10">
+                  {currentCard.front}
                 </h4>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--background)]/50 border border-[var(--border)] relative z-10">
-                   <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Click to Reveal</span>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background)]/80 border border-[var(--border-2)] relative z-10 shadow-lg">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] sm:hidden">Tap to flip</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] hidden sm:block">Click to flip</span>
                 </div>
               </div>
 
               {/* Back Side */}
               <div className={cn(
-                "absolute inset-0 rounded-[2.5rem] py-6 px-6 md:py-8 md:px-7 flex flex-col items-center justify-center text-center backface-hidden rotate-y-180 overflow-hidden",
-                "bg-[var(--background-secondary)]/90 backdrop-blur-3xl border border-[var(--accent)]/40 shadow-[0_0_50px_rgba(245,158,11,0.15)]"
+                "absolute inset-0 rounded-[2.5rem] py-6 px-6 md:py-8 md:px-7 flex flex-col items-center justify-center text-center backface-hidden rotate-y-180 overflow-hidden transform-gpu translate-z-0",
+                "bg-[var(--background-secondary)] border border-[var(--accent)]/30 shadow-2xl"
               )}>
                 {/* Refraction Streak (Back) */}
                 <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent pointer-events-none shimmer-streak" />
 
                 <div className="flex flex-col h-full relative z-10 w-full pt-4">
-                   <div className="mb-4 overflow-y-auto max-h-[140px] pr-2 scrollbar-thin scrollbar-thumb-[var(--accent)]/20">
-                      <p className="text-[13px] md:text-[14px] font-medium leading-relaxed text-[var(--foreground)]">
-                        {currentCard.answer}
+                  <div className="mb-4 overflow-y-auto max-h-[160px] md:max-h-[200px] pr-2 scrollbar-none">
+                    <p className="text-[13px] md:text-[18px] font-medium leading-relaxed text-[var(--foreground)]">
+                      {answer}
+                    </p>
+                  </div>
+
+                  <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent mb-4" />
+
+                  <div className="flex-1 min-h-0 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col">
+                    <div className="flex items-center gap-2 mb-2 shrink-0">
+                      <div className="w-5 h-5 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20">
+                        <Lightbulb size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
+                      </div>
+                      <span className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.1em] text-[var(--accent)]">Professor&apos;s Tip</span>
+                    </div>
+                    <div className="overflow-y-auto pr-1 scrollbar-none">
+                      <p className="text-[11px] md:text-[15px] italic leading-relaxed text-[var(--foreground-secondary)]">
+                        &quot;{hook}&quot;
                       </p>
-                   </div>
-                   
-                   <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent mb-4" />
-                   
-                   <div className="flex-1 min-h-0 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col">
-                      <div className="flex items-center gap-2 mb-2 shrink-0">
-                         <div className="w-5 h-5 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20">
-                            <Lightbulb size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
-                         </div>
-                         <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] text-[var(--accent)]">Professor&apos;s Hook</span>
-                      </div>
-                      <div className="overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[var(--accent)]/10">
-                        <p className="text-[11px] md:text-[12px] italic leading-relaxed text-[var(--foreground-secondary)]">
-                          &quot;{currentCard.hook}&quot;
-                        </p>
-                      </div>
-                   </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -123,15 +143,44 @@ export const InteractiveFlashcards = () => {
       </div>
 
       <div className="flex items-center gap-4 mt-8">
-        <button onClick={handlePrev} className="btn-skeuo w-12 h-12 flex items-center justify-center group active:scale-95">
-          <ChevronLeft size={20} strokeWidth={1.5} className="group-hover:-translate-x-0.5 transition-transform" />
+        <button onClick={handlePrev} className="btn-skeuo px-5 py-4 flex items-center gap-3 group active:scale-95 shadow-[0_12px_40px_rgba(0,0,0,0.15)] border-[var(--border-3)]">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] group-hover:-translate-x-1 transition-transform">
+            <path d="m15 18-6-6 6-6" />
+            <path d="M17 12H9" className="opacity-40" />
+          </svg>
+          <span className="text-[11px] font-black uppercase tracking-widest text-[var(--foreground)]">Prev</span>
         </button>
-        <div className="px-5 py-2.5 rounded-2xl bg-[var(--background)]/40 border border-[var(--border)] shadow-inner flex flex-col items-center min-w-[130px] backdrop-blur-md">
-          <span className="text-[7px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-0.5 opacity-60">Memory Slate</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">Active Review</span>
+        <div className="flex items-center gap-2">
+          <div className="px-6 py-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border-2)] shadow-lg flex flex-col items-center min-w-[150px]">
+            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-0.5 opacity-80">Memory Cards</span>
+            <span className="text-[12px] font-black uppercase tracking-widest text-[var(--accent)]">Card {currentIndex + 1} / {cards.length}</span>
+          </div>
+          <button
+            onClick={handleShareSection}
+            className="w-14 h-14 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border-2)] flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-all active:scale-95 shadow-lg"
+            title="Share Flashcards"
+          >
+            <Share2 size={20} strokeWidth={2} />
+          </button>
         </div>
-        <button onClick={handleNext} className="btn-skeuo w-12 h-12 flex items-center justify-center group active:scale-95">
-          <ChevronRight size={20} strokeWidth={1.5} className="group-hover:translate-x-0.5 transition-transform" />
+        <button onClick={handleNext} className={cn(
+          "btn-skeuo px-5 py-4 flex items-center gap-3 group active:scale-95 shadow-[0_12px_40px_rgba(0,0,0,0.15)] border-[var(--border-3)] transition-all",
+          currentIndex === cards.length - 1 && "bg-[var(--blue)] border-[var(--blue-light)]/30 text-white shadow-[0_12px_40px_rgba(37,99,235,0.2)]"
+        )}>
+          <span className={cn(
+            "text-[11px] font-black uppercase tracking-widest",
+            currentIndex === cards.length - 1 ? "text-white" : "text-[var(--foreground)]"
+          )}>
+            {currentIndex === cards.length - 1 ? "Finish Session" : "Next"}
+          </span>
+          {currentIndex === cards.length - 1 ? (
+            <CheckCircle2 size={18} className="text-white" />
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] group-hover:translate-x-1 transition-transform">
+              <path d="m9 18 6-6-6-6" />
+              <path d="M7 12h8" className="opacity-40" />
+            </svg>
+          )}
         </button>
       </div>
     </div>
