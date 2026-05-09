@@ -53,7 +53,7 @@ const MINIMAL_PATHS = [
     "/onboarding",
 ];
 
-const LANDING_PATHS = []; // No longer using SiteHeader for landing
+const LANDING_PATHS: string[] = []; // No longer using SiteHeader for landing
 
 const MODES = [
     { id: "DASHBOARD", label: "Dashboard", href: "/dashboard", color: "var(--emerald)", glow: "var(--emerald-glow)", icon: LayoutDashboard },
