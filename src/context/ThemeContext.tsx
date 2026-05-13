@@ -27,12 +27,12 @@ function getStoredTheme(): Theme {
             return stored;
         }
     }
-    return "light"; // First-time visitors get light mode
+    return "dark"; // Default to dark mode for The Professor
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [theme, setThemeState] = useState<Theme>("light");
-    const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+    const [theme, setThemeState] = useState<Theme>("dark");
+    const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
     const [mounted, setMounted] = useState(false);
 
     // Initial mount - read from storage

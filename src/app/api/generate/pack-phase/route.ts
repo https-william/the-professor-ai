@@ -5,7 +5,8 @@ import {
     buildSummaryPrompt,
     buildFlashcardsPrompt, 
     buildQuizPrompt,
-    buildRoadmapPrompt
+    buildRoadmapPrompt,
+    guardContentSize
 } from "@/lib/ai/prompts";
 import { MASTER_SYSTEM_PROMPT } from "@/lib/ai/professor-prompt";
 
@@ -19,6 +20,8 @@ export async function POST(req: NextRequest) {
         if (!packId || !phaseId || !sourceText) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
+
+        const { content: safeContent, wasTruncated } = guardContentSize(sourceText);
 
         // 1. Check if already generated
         const { data: pack, error: fetchError } = await supabase
@@ -39,17 +42,17 @@ export async function POST(req: NextRequest) {
 
         switch (phaseId) {
             case "distill":
-                prompt = buildSummaryPrompt(sourceText, "detailed");
+                prompt = buildSummaryPrompt(safeContent, "detailed");
                 jsonMode = false; // Summary is markdown
                 break;
             case "retain":
-                prompt = buildFlashcardsPrompt(sourceText, 10, "medium");
+                prompt = buildFlashcardsPrompt(safeContent, 10, "medium");
                 break;
             case "test":
-                prompt = buildQuizPrompt(sourceText, 15, "medium");
+                prompt = buildQuizPrompt(safeContent, 15, "medium");
                 break;
             case "predict":
-                prompt = buildRoadmapPrompt(sourceText);
+                prompt = buildRoadmapPrompt(safeContent);
                 break;
             default:
                 return NextResponse.json({ error: "Invalid phase" }, { status: 400 });

@@ -77,14 +77,27 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      const todayIso = today.toISOString();
+
+      // Get generations (creations)
       const { data: todayGenerations } = await supabase
         .from("generations")
         .select("type")
         .eq("user_id", user?.id)
-        .gte("created_at", today.toISOString());
+        .gte("created_at", todayIso);
 
-      const flashcardsToday = todayGenerations?.filter((g: { type: string }) => g.type === "flashcards").length || 0;
-      const quizzesToday = todayGenerations?.filter((g: { type: string }) => g.type === "quiz").length || 0;
+      const flashcardsCreatedToday = todayGenerations?.filter((g: { type: string }) => g.type === "flashcards").length || 0;
+      const quizzesCreatedToday = todayGenerations?.filter((g: { type: string }) => g.type === "quiz").length || 0;
+
+      // Get activities (completions/reviews)
+      const { data: todayActivities } = await supabase
+        .from("user_activity")
+        .select("activity_type")
+        .eq("user_id", user?.id)
+        .gte("created_at", todayIso);
+
+      const flashcardSessions = todayActivities?.filter((a: any) => a.activity_type === "flashcards").length || 0;
+      const quizSessions = todayActivities?.filter((a: any) => a.activity_type === "quiz").length || 0;
 
       const { data: stats } = await supabase
         .from("social_stats")
@@ -92,7 +105,7 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
         .eq("user_id", user?.id)
         .maybeSingle();
 
-      const todayStr = today.toISOString().split("T")[0];
+      const todayStr = todayIso.split("T")[0];
       const claimsKey = `daily_claims_${user?.id}_${todayStr}`;
       const claimedStr = localStorage.getItem(claimsKey);
       const claimedIds: string[] = claimedStr ? JSON.parse(claimedStr) : [];
@@ -103,22 +116,22 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
           title: "Flashcard Factory",
           description: "Generate 5 flashcard decks today",
           target: 5,
-          current: Math.min(flashcardsToday, 5),
+          current: Math.min(flashcardsCreatedToday, 5),
           xpReward: 50,
           icon: "style",
           type: "generate",
-          completed: flashcardsToday >= 5,
+          completed: flashcardsCreatedToday >= 5,
         },
         {
           id: "2",
           title: "Quiz Master",
           description: "Take 3 practice quizzes today",
           target: 3,
-          current: Math.min(quizzesToday, 3),
+          current: Math.min(quizSessions, 3),
           xpReward: 75,
           icon: "quiz",
           type: "generate",
-          completed: quizzesToday >= 3,
+          completed: quizSessions >= 3,
         },
         {
           id: "3",
@@ -134,13 +147,13 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
         {
           id: "4",
           title: "Review Session",
-          description: "Review 10 flashcards (Placeholder calculation for UI)",
-          target: 10,
-          current: Math.min(flashcardsToday * 2, 10),
+          description: "Complete 5 flashcard sessions",
+          target: 5,
+          current: Math.min(flashcardSessions, 5),
           xpReward: 40,
           icon: "rate_review",
           type: "review",
-          completed: flashcardsToday * 2 >= 10,
+          completed: flashcardSessions >= 5,
         },
         {
           id: "5",

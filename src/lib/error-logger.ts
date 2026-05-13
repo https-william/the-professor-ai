@@ -35,7 +35,7 @@ export function logParserError(
     log("error", "parser.error", {
         fileType,
         fileSizeMB: +(fileSizeBytes / 1024 / 1024).toFixed(2),
-        errorMessage: errorMessage.substring(0, 500),
+        errorMessage: String(errorMessage).substring(0, 500),
     });
 }
 
@@ -63,7 +63,7 @@ export function logAIError(
     log("error", "ai.error", {
         provider,
         feature,
-        errorMessage: errorMessage.substring(0, 500),
+        errorMessage: String(errorMessage).substring(0, 500),
         durationMs,
     });
 }
@@ -91,6 +91,6 @@ export function logAPIError(
     log("error", "api.error", {
         route,
         statusCode,
-        errorMessage: errorMessage.substring(0, 500),
+        errorMessage: String(errorMessage).substring(0, 500),
     });
 }

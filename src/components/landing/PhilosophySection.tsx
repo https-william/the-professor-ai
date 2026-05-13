@@ -5,16 +5,16 @@ import { Sparkles } from "lucide-react";
 
 const BLOCKS = [
   {
-    title: "The fluency illusion is real.",
-    body: "Reading your notes feels like learning. It isn't. Your brain recognizes material it has already seen and mistakes that recognition for mastery. Every student who has ever studied hard and still blanked in the exam hall knows this feeling. Recognition and recall are not the same cognitive process — and only one of them works when an invigilator is watching.",
+    title: "Kill the 'Fluency Illusion'.",
+    body: "Reading notes feels like learning. It isn't. Your brain just recognizes the page. The Professor forces you to retrieve knowledge, which is the only way to build durable, exam-ready memory.",
   },
   {
-    title: "Active recall is the only thing that works.",
-    body: "Decades of cognitive science are unambiguous: the act of retrieving information — not re-reading it — is what builds durable, exam-ready memory. The Professor converts your notes into a quiz, a structured study guide, and a match game because these are the only formats that wire knowledge in rather than just passing it through your short-term memory.",
+    title: "Active Recall or Bust.",
+    body: "Retrieve, don't re-read. We convert your notes into high-stakes quizzes and active-recall games because that's how you wire knowledge in, rather than letting it pass through.",
   },
   {
-    title: "Built for the high-stakes grind.",
-    body: "Not Silicon Valley. Every decision — the language, the features, the accessibility, the upload formats — was made with one person in mind: the student sitting up at 3 AM with an exam in 10 hours. This is a tool for the dedicated, the ambitious, and the ones who refuse to leave their grades to chance.",
+    title: "Built for the 3 AM Grind.",
+    body: "Designed for the student sitting up with an exam in 10 hours. This isn't just another AI tool; it's a strategic advantage for the ambitious who refuse to leave their grades to chance.",
   },
 ];
 

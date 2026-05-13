@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import EndowmentModal from "@/components/modals/EndowmentModal";
@@ -8,12 +8,14 @@ import DataDustLoader from "@/components/ui/DataDustLoader";
 import AuthInterceptor from "@/components/ui/AuthInterceptor";
 import { motion, AnimatePresence } from "framer-motion";
 import SessionComplete from "@/components/features/SessionComplete";
-import { X, Clock, Trophy, RotateCcw, Zap } from "lucide-react";
+import { X, Clock, RotateCcw, Zap, CheckCircle2, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   MATCH GAME â€” "Puzzle Board" Redesign
-   Vision: Duolingo-meets-Linear. Clean, tactile, satisfying.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════════════════════
+   MATCH GAME — Flat 2.0 Redesign
+   Vision: Numbered index cards on a corkboard. Tap term → tap definition.
+   Color coding: neutral → selected (accent ring) → matched (struck) → wrong (shake+red).
+   ════════════════════════════════════════════════════════════════════ */
 
 interface MatchPair {
     id: string;
@@ -30,25 +32,34 @@ function shuffleArray<T>(arr: T[]): T[] {
     return copy;
 }
 
+// Flat 2.0 card colors — subtle tinted surfaces, not garish
+const CARD_TINTS = [
+    { bg: "rgba(59,130,246,0.06)", border: "rgba(59,130,246,0.18)", text: "#3b82f6" },
+    { bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.18)", text: "#10b981" },
+    { bg: "rgba(168,85,247,0.06)", border: "rgba(168,85,247,0.18)", text: "#a855f7" },
+    { bg: "rgba(245,158,11,0.06)", border: "rgba(245,158,11,0.18)", text: "#f59e0b" },
+    { bg: "rgba(239,68,68,0.06)", border: "rgba(239,68,68,0.18)", text: "#ef4444" },
+    { bg: "rgba(20,184,166,0.06)", border: "rgba(20,184,166,0.18)", text: "#14b8a6" },
+    { bg: "rgba(249,115,22,0.06)", border: "rgba(249,115,22,0.18)", text: "#f97316" },
+    { bg: "rgba(99,102,241,0.06)", border: "rgba(99,102,241,0.18)", text: "#6366f1" },
+];
+
 export default function MatchGamePage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, refreshUser } = useUser();
 
-    // Core state
     const [pairs, setPairs] = useState<MatchPair[]>([]);
     const [shuffledTerms, setShuffledTerms] = useState<{ id: string; text: string }[]>([]);
     const [shuffledDefs, setShuffledDefs] = useState<{ id: string; text: string }[]>([]);
     const [title, setTitle] = useState("Match Game");
     const [loading, setLoading] = useState(true);
 
-    // Generation
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [isEndowmentOpen, setIsEndowmentOpen] = useState(false);
     const hasStartedGeneration = useRef(false);
 
-    // Game state
     const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
     const [selectedDef, setSelectedDef] = useState<string | null>(null);
     const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
@@ -57,23 +68,18 @@ export default function MatchGamePage() {
     const [combo, setCombo] = useState(0);
     const [bestCombo, setBestCombo] = useState(0);
 
-    // Timer
     const [startTime, setStartTime] = useState<number>(0);
     const [elapsed, setElapsed] = useState(0);
     const [gameOver, setGameOver] = useState(false);
-
-    // Celebration
     const [showCelebration, setShowCelebration] = useState(false);
     const [sessionStats, setSessionStats] = useState({ xp: 0, streak: 0, incremented: false });
 
-    // Derived
     const progress = pairs.length > 0 ? (matchedIds.size / pairs.length) * 100 : 0;
 
-    // â”€â”€â”€ INIT: Load from session or generate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── INIT ──────────────────────────────────────────────────────────
     useEffect(() => {
         const init = async () => {
             const mode = searchParams.get("mode");
-
             if (mode === "generate") {
                 if (hasStartedGeneration.current) return;
                 const paramsStr = sessionStorage.getItem("generateParams");
@@ -81,34 +87,27 @@ export default function MatchGamePage() {
                 hasStartedGeneration.current = true;
                 const params = JSON.parse(paramsStr);
                 sessionStorage.removeItem("generateParams");
-
                 setIsGenerating(true);
                 setGenerationError(null);
-
                 try {
                     const response = await fetch("/api/generate/match", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ...params, count: params.count || 8 }),
                     });
-
                     if (!response.ok) {
                         const errorData = await response.json().catch(() => ({}));
                         if (response.status === 402 || errorData.code === "INSUFFICIENT_CREDITS") {
-                            setIsEndowmentOpen(true);
-                            setIsGenerating(false);
-                            return;
+                            setIsEndowmentOpen(true); setIsGenerating(false); return;
                         }
-                        throw new Error(errorData.error || "Generation failed");
+                        throw new Error(errorData.error || "Generation failed. Your notes may be too large — try splitting them into smaller sections.");
                     }
-
                     const data = await response.json();
                     const matchPairs = (data.pairs || []).map((p: any, i: number) => ({
                         id: `pair_${i}`,
                         term: p.term || p.front,
                         definition: p.definition || p.back,
                     }));
-
                     initGame(matchPairs, data.title || "Match Game");
                 } catch (err: any) {
                     setGenerationError(err.message);
@@ -122,7 +121,6 @@ export default function MatchGamePage() {
                     const data = JSON.parse(stored);
                     const cards = data.cards || [];
                     if (cards.length < 3) { router.push("/create"); return; }
-
                     const matchPairs = shuffleArray(cards).slice(0, Math.min(8, cards.length)).map((card: any, i: number) => ({
                         id: `pair_${i}`,
                         term: card.front || card.term,
@@ -141,63 +139,46 @@ export default function MatchGamePage() {
         setShuffledDefs(shuffleArray(gamePairs.map(p => ({ id: p.id, text: p.definition }))));
         setTitle(gameTitle);
         setMatchedIds(new Set());
-        setMistakes(0);
-        setCombo(0);
-        setBestCombo(0);
+        setMistakes(0); setCombo(0); setBestCombo(0);
         setGameOver(false);
         setStartTime(Date.now());
         setLoading(false);
     }
 
-    // â”€â”€â”€ TIMER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── TIMER ──────────────────────────────────────────────────────────
     useEffect(() => {
         if (loading || gameOver) return;
-        const interval = setInterval(() => {
-            setElapsed(Math.floor((Date.now() - startTime) / 1000));
-        }, 250);
+        const interval = setInterval(() => setElapsed(Math.floor((Date.now() - startTime) / 1000)), 250);
         return () => clearInterval(interval);
     }, [loading, gameOver, startTime]);
 
-    // â”€â”€â”€ MATCH LOGIC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── MATCH LOGIC ────────────────────────────────────────────────────
     useEffect(() => {
         if (!selectedTerm || !selectedDef) return;
-
         if (selectedTerm === selectedDef) {
-            // Correct!
             const newMatched = new Set([...matchedIds, selectedTerm]);
             setMatchedIds(newMatched);
             const newCombo = combo + 1;
             setCombo(newCombo);
             if (newCombo > bestCombo) setBestCombo(newCombo);
-            setSelectedTerm(null);
-            setSelectedDef(null);
-
-            if (newMatched.size === pairs.length) {
-                handleGameComplete();
-            }
+            setSelectedTerm(null); setSelectedDef(null);
+            if (newMatched.size === pairs.length) handleGameComplete();
         } else {
-            // Wrong
             setWrongPair({ term: selectedTerm, def: selectedDef });
             setMistakes(prev => prev + 1);
             setCombo(0);
-            setTimeout(() => {
-                setWrongPair(null);
-                setSelectedTerm(null);
-                setSelectedDef(null);
-            }, 500);
+            setTimeout(() => { setWrongPair(null); setSelectedTerm(null); setSelectedDef(null); }, 500);
         }
     }, [selectedTerm, selectedDef]);
 
-    // â”€â”€â”€ GAME COMPLETE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── GAME COMPLETE ──────────────────────────────────────────────────
     const handleGameComplete = useCallback(async () => {
         setGameOver(true);
         const finalTime = Math.floor((Date.now() - startTime) / 1000);
         setElapsed(finalTime);
-
         const speedBonus = Math.max(0, 15 - Math.floor(finalTime / 10));
         const mistakePenalty = Math.min(mistakes * 2, 10);
         const totalXp = Math.max(5, 10 + speedBonus - mistakePenalty);
-
         try {
             const actRes = await fetch("/api/user/activity", {
                 method: "POST",
@@ -206,81 +187,151 @@ export default function MatchGamePage() {
             });
             if (actRes.ok) {
                 const { stats } = await actRes.json();
-                setSessionStats({
-                    xp: stats?.xpGained || totalXp,
-                    streak: stats?.newStreak || user.streak || 0,
-                    incremented: stats?.streakIncremented || false,
-                });
+                setSessionStats({ xp: stats?.xpGained || totalXp, streak: stats?.newStreak || user.streak || 0, incremented: stats?.streakIncremented || false });
                 refreshUser();
             }
         } catch {}
-
         setShowCelebration(true);
     }, [startTime, mistakes, user, refreshUser]);
 
-    // â”€â”€â”€ RESTART â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const handleRestart = () => {
-        initGame(pairs, title);
-    };
+    const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
-    // â”€â”€â”€ HANDLERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const handleTermClick = (id: string) => {
-        if (matchedIds.has(id) || gameOver || wrongPair) return;
-        setSelectedTerm(id === selectedTerm ? null : id);
-    };
-
-    const handleDefClick = (id: string) => {
-        if (matchedIds.has(id) || gameOver || wrongPair) return;
-        setSelectedDef(id === selectedDef ? null : id);
-    };
-
-    const formatTime = (s: number) => {
-        const m = Math.floor(s / 60);
-        const sec = s % 60;
-        return `${m}:${sec.toString().padStart(2, "0")}`;
-    };
-
-    // â”€â”€â”€ RATING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const getRating = () => {
-        if (mistakes === 0) return { stars: 3, label: "Perfect" };
-        if (mistakes <= 2) return { stars: 2, label: "Great" };
-        return { stars: 1, label: "Good" };
-    };
-
-    // â”€â”€â”€ RENDER: Loading & Error States â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── LOADING / ERROR STATES ─────────────────────────────────────────
     if (isGenerating) {
         return (
             <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
-                <DataDustLoader label="Building Match Board" phrases={["Synthesizing concept pairs...", "Calibrating difficulty...", "Generating match connections...", "Finalising your board..."]} />
+                <DataDustLoader label="Building Match Board" phrases={["Synthesizing concept pairs...", "Calibrating difficulty...", "Generating connections...", "Almost ready..."]} />
             </div>
         );
     }
 
     if (loading && !isGenerating) {
         return generationError ? (
-            <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
+            <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6 gap-4">
                 {generationError.toLowerCase().includes("unauthorized") ? (
                     <AuthInterceptor />
                 ) : (
-                    <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center max-w-sm">
-                        <p className="font-bold mb-1">Generation Failed</p>
-                        <p className="text-xs opacity-80">{generationError}</p>
+                    <div className="p-6 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] max-w-sm w-full text-center space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
+                            <XCircle size={22} className="text-red-400" />
+                        </div>
+                        <p className="font-bold text-[var(--foreground)]">Generation Failed</p>
+                        <p className="text-[12px] text-[var(--foreground-muted)] leading-relaxed">{generationError}</p>
+                        <button onClick={() => router.push("/create")} className="btn-skeuo w-full py-3 text-[11px] font-black uppercase tracking-widest">
+                            Back to Create
+                        </button>
                     </div>
                 )}
             </div>
         ) : (
-            <DataDustLoader label="Loading Match Board" phrases={["Preparing your board...", "Shuffling pairs...", "Almost ready..."]} />
+            <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                <DataDustLoader label="Loading Match Board" phrases={["Preparing your board...", "Shuffling pairs...", "Almost ready..."]} />
+            </div>
         );
     }
 
+    // ── RATING ────────────────────────────────────────────────────────
+    const getRating = () => {
+        if (mistakes === 0) return { bars: 3, label: "Perfect" };
+        if (mistakes <= 2) return { bars: 2, label: "Great" };
+        return { bars: 1, label: "Good" };
+    };
     const rating = getRating();
 
-    // â”€â”€â”€ RENDER: Game Board â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── RENDER: Card component ─────────────────────────────────────────
+    const MatchCard = ({
+        id, text, side, pairIndex
+    }: {
+        id: string; text: string; side: "term" | "def"; pairIndex: number;
+    }) => {
+        const isMatched = matchedIds.has(id);
+        const isSelected = side === "term" ? selectedTerm === id : selectedDef === id;
+        const isWrong = side === "term" ? wrongPair?.term === id : wrongPair?.def === id;
+        const tint = CARD_TINTS[pairIndex % CARD_TINTS.length];
+
+        // Find the pair number for the matched indicator
+        const pairNum = pairs.findIndex(p => p.id === id) + 1;
+
+        return (
+            <motion.button
+                onClick={() => {
+                    if (isMatched || gameOver || wrongPair) return;
+                    if (side === "term") setSelectedTerm(id === selectedTerm ? null : id);
+                    else setSelectedDef(id === selectedDef ? null : id);
+                }}
+                disabled={isMatched || !!gameOver}
+                layout
+                animate={isWrong ? { x: [0, -6, 6, -4, 4, 0] } : {}}
+                transition={{ duration: 0.35 }}
+                className="w-full text-left group"
+            >
+                <div
+                    className={cn(
+                        "relative px-3.5 py-3 rounded-xl border-2 transition-all duration-200 min-h-[56px] flex items-center gap-2.5",
+                        isMatched
+                            ? "opacity-35 scale-[0.97]"
+                            : isWrong
+                            ? "border-red-500/50 bg-red-500/8 scale-[0.98]"
+                            : isSelected
+                            ? "scale-[1.02] shadow-lg"
+                            : "border-[var(--border)] bg-[var(--foreground)]/[0.02] hover:bg-[var(--foreground)]/[0.04] hover:border-[var(--foreground)]/15 active:scale-[0.98]"
+                    )}
+                    style={
+                        isMatched ? {
+                            background: tint.bg,
+                            borderColor: tint.border,
+                        } : isSelected ? {
+                            background: tint.bg,
+                            borderColor: tint.border,
+                            boxShadow: `0 0 20px ${tint.text}20`,
+                        } : {}
+                    }
+                >
+                    {/* Number badge */}
+                    {isMatched ? (
+                        <div
+                            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[9px] font-black"
+                            style={{ background: tint.bg, border: `1px solid ${tint.border}`, color: tint.text }}
+                        >
+                            {pairNum}
+                        </div>
+                    ) : isSelected ? (
+                        <div
+                            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                            style={{ background: tint.bg, border: `1.5px solid ${tint.text}` }}
+                        >
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: tint.text }} />
+                        </div>
+                    ) : (
+                        <div className="w-5 h-5 rounded-md bg-[var(--foreground)]/5 border border-[var(--border)] shrink-0" />
+                    )}
+
+                    <span
+                        className={cn(
+                            "text-[11px] sm:text-[12px] font-semibold leading-snug flex-1",
+                            isMatched ? "line-through" : "",
+                            isWrong ? "text-red-400" : ""
+                        )}
+                        style={isMatched || isSelected ? { color: tint.text } : {}}
+                    >
+                        {text}
+                    </span>
+
+                    {isMatched && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}>
+                            <CheckCircle2 size={13} style={{ color: tint.text }} className="shrink-0" />
+                        </motion.div>
+                    )}
+                </div>
+            </motion.button>
+        );
+    };
+
     return (
         <div className="h-[100dvh] bg-[var(--background)] flex flex-col overflow-hidden relative">
 
-            {/* â”€â”€ Top Bar â”€â”€ */}
-            <div className="shrink-0 px-4 py-3 flex items-center justify-between border-b border-[var(--border)]/50">
+            {/* ── Top Bar ── */}
+            <div className="shrink-0 px-4 py-3 flex items-center justify-between border-b border-[var(--border)]/40">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.back()}
@@ -290,22 +341,20 @@ export default function MatchGamePage() {
                     </button>
                     <div>
                         <p className="text-xs font-bold text-[var(--foreground)] leading-tight">Match</p>
-                        <p className="text-[9px] text-[var(--foreground-muted)] truncate max-w-[160px]">{title}</p>
+                        <p className="text-[9px] text-[var(--foreground-muted)] truncate max-w-[140px]">{title}</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Combo indicator */}
+                    {/* Combo badge */}
                     <AnimatePresence>
                         {combo >= 2 && (
                             <motion.div
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0, opacity: 0 }}
+                                initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
                                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--accent)]/15 border border-[var(--accent)]/30"
                             >
                                 <Zap size={10} className="text-[var(--accent)]" />
-                                <span className="text-[10px] font-black text-[var(--accent)] tabular-nums">{combo}Ã—</span>
+                                <span className="text-[10px] font-black text-[var(--accent)] tabular-nums">{combo}×</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -316,193 +365,80 @@ export default function MatchGamePage() {
                         <span className="font-mono text-[11px] font-bold text-[var(--foreground)] tabular-nums">{formatTime(elapsed)}</span>
                     </div>
 
-                    {/* Score */}
+                    {/* Score pill */}
                     <div className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                        <span className="font-mono text-[11px] font-bold text-emerald-400 tabular-nums">
-                            {matchedIds.size}/{pairs.length}
-                        </span>
+                        <span className="font-mono text-[11px] font-bold text-emerald-400 tabular-nums">{matchedIds.size}/{pairs.length}</span>
                     </div>
 
-                    {/* Restart */}
-                    <button
-                        onClick={handleRestart}
-                        className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 flex items-center justify-center hover:bg-[var(--foreground)]/10 transition-colors"
-                    >
+                    <button onClick={() => initGame(pairs, title)} className="w-8 h-8 rounded-xl bg-[var(--foreground)]/5 flex items-center justify-center hover:bg-[var(--foreground)]/10 transition-colors">
                         <RotateCcw size={12} className="text-[var(--foreground-muted)]" />
                     </button>
                 </div>
             </div>
 
-            {/* â”€â”€ Progress Bar â”€â”€ */}
-            <div className="w-full h-[3px] bg-[var(--foreground)]/5 shrink-0">
+            {/* ── Progress Bar ── */}
+            <div className="w-full h-[2px] bg-[var(--foreground)]/5 shrink-0">
                 <motion.div
-                    className="h-full bg-gradient-to-r from-[var(--accent)] to-emerald-400 rounded-r-full"
+                    className="h-full bg-gradient-to-r from-emerald-400 to-[var(--accent)] rounded-r-full"
                     animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                 />
             </div>
 
-            {/* â”€â”€ Instruction hint â”€â”€ */}
-            <AnimatePresence>
-                {matchedIds.size === 0 && !selectedTerm && !selectedDef && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className="shrink-0 text-center py-2"
-                    >
-                        <p className="text-[10px] text-[var(--foreground-muted)]/60 uppercase tracking-[0.3em] font-bold">
-                            Tap a term, then its definition
-                        </p>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* â”€â”€ Game Grid â”€â”€ */}
-            <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3">
+            {/* ── Column headers ── */}
+            <div className="shrink-0 px-3 sm:px-6 pt-3 pb-1">
                 <div className="max-w-3xl mx-auto grid grid-cols-2 gap-3 sm:gap-4">
-
-                    {/* LEFT: Terms */}
-                    <div className="flex flex-col gap-2">
-                        <p className="text-[8px] font-black text-[var(--foreground-muted)]/40 uppercase tracking-[0.4em] px-1 mb-1">Terms</p>
-                        {shuffledTerms.map(({ id, text }) => {
-                            const isMatched = matchedIds.has(id);
-                            const isSelected = selectedTerm === id;
-                            const isWrong = wrongPair?.term === id;
-
-                            return (
-                                <motion.button
-                                    key={`term-${id}`}
-                                    onClick={() => handleTermClick(id)}
-                                    disabled={isMatched}
-                                    layout
-                                    className="w-full text-left relative overflow-hidden"
-                                    animate={isWrong ? { x: [0, -4, 4, -3, 3, 0] } : {}}
-                                    transition={{ duration: 0.35 }}
-                                >
-                                    <div
-                                        className={`px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-xl border transition-all duration-200 ${
-                                            isMatched
-                                                ? "bg-emerald-500/8 border-emerald-500/20 opacity-50"
-                                                : isWrong
-                                                ? "bg-red-500/10 border-red-500/30"
-                                                : isSelected
-                                                ? "bg-[var(--accent)]/10 border-[var(--accent)]/40 shadow-[0_0_16px_var(--accent-glow)]"
-                                                : "bg-[var(--foreground)]/[0.02] border-[var(--border)] hover:border-[var(--foreground)]/15 hover:bg-[var(--foreground)]/[0.04]"
-                                        }`}
-                                    >
-                                        <span className={`text-[12px] sm:text-[13px] font-semibold leading-snug ${
-                                            isMatched ? "text-emerald-400/60 line-through" :
-                                            isSelected ? "text-[var(--accent)]" :
-                                            isWrong ? "text-red-400" :
-                                            "text-[var(--foreground)]/80"
-                                        }`}>
-                                            {text}
-                                        </span>
-                                        {isMatched && (
-                                            <motion.span
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center"
-                                            >
-                                                <span className="text-emerald-400 text-[8px]">âœ“</span>
-                                            </motion.span>
-                                        )}
-                                    </div>
-                                </motion.button>
-                            );
-                        })}
-                    </div>
-
-                    {/* RIGHT: Definitions */}
-                    <div className="flex flex-col gap-2">
-                        <p className="text-[8px] font-black text-[var(--foreground-muted)]/40 uppercase tracking-[0.4em] px-1 mb-1">Definitions</p>
-                        {shuffledDefs.map(({ id, text }) => {
-                            const isMatched = matchedIds.has(id);
-                            const isSelected = selectedDef === id;
-                            const isWrong = wrongPair?.def === id;
-
-                            return (
-                                <motion.button
-                                    key={`def-${id}`}
-                                    onClick={() => handleDefClick(id)}
-                                    disabled={isMatched}
-                                    layout
-                                    className="w-full text-left relative overflow-hidden"
-                                    animate={isWrong ? { x: [0, -4, 4, -3, 3, 0] } : {}}
-                                    transition={{ duration: 0.35 }}
-                                >
-                                    <div
-                                        className={`px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-xl border transition-all duration-200 ${
-                                            isMatched
-                                                ? "bg-emerald-500/8 border-emerald-500/20 opacity-50"
-                                                : isWrong
-                                                ? "bg-red-500/10 border-red-500/30"
-                                                : isSelected
-                                                ? "bg-amber-500/10 border-amber-500/35 shadow-[0_0_16px_rgba(245,158,11,0.08)]"
-                                                : "bg-[var(--foreground)]/[0.02] border-[var(--border)] hover:border-[var(--foreground)]/15 hover:bg-[var(--foreground)]/[0.04]"
-                                        }`}
-                                    >
-                                        <span className={`text-[11px] sm:text-[12px] leading-snug ${
-                                            isMatched ? "text-emerald-400/60 line-through" :
-                                            isSelected ? "text-amber-400" :
-                                            isWrong ? "text-red-400" :
-                                            "text-[var(--foreground-muted)]"
-                                        }`}>
-                                            {text}
-                                        </span>
-                                        {isMatched && (
-                                            <motion.span
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center"
-                                            >
-                                                <span className="text-emerald-400 text-[8px]">âœ“</span>
-                                            </motion.span>
-                                        )}
-                                    </div>
-                                </motion.button>
-                            );
-                        })}
-                    </div>
+                    <p className="text-[8px] font-black text-[var(--foreground-muted)]/40 uppercase tracking-[0.4em] px-1">Terms</p>
+                    <p className="text-[8px] font-black text-[var(--foreground-muted)]/40 uppercase tracking-[0.4em] px-1">Definitions</p>
                 </div>
             </div>
 
-            {/* â”€â”€ Bottom Stats Bar â”€â”€ */}
-            <div className="shrink-0 px-4 py-2.5 border-t border-[var(--border)]/30 bg-[var(--background)]">
-                <div className="max-w-3xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-[var(--foreground-muted)] uppercase tracking-wider">Mistakes</span>
-                            <span className={`font-mono text-[11px] font-bold tabular-nums ${mistakes === 0 ? "text-emerald-400" : "text-red-400"}`}>
-                                {mistakes}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-[var(--foreground-muted)] uppercase tracking-wider">Best Combo</span>
-                            <span className="font-mono text-[11px] font-bold text-[var(--accent)] tabular-nums">{bestCombo}Ã—</span>
-                        </div>
+            {/* ── Game Grid ── */}
+            <div className="flex-1 overflow-y-auto px-3 sm:px-6 pb-3">
+                <div className="max-w-3xl mx-auto grid grid-cols-2 gap-2 sm:gap-3">
+                    {/* Terms column */}
+                    <div className="flex flex-col gap-2">
+                        {shuffledTerms.map(({ id, text }, idx) => (
+                            <MatchCard key={`term-${id}`} id={id} text={text} side="term" pairIndex={pairs.findIndex(p => p.id === id)} />
+                        ))}
                     </div>
-
-                    {/* Star rating preview */}
-                    <div className="flex items-center gap-0.5">
-                        {[1, 2, 3].map(star => (
-                            <div
-                                key={star}
-                                className={`w-3 h-3 rounded-sm transition-colors ${
-                                    star <= rating.stars
-                                        ? "bg-[var(--accent)]"
-                                        : "bg-[var(--foreground)]/10"
-                                }`}
-                            />
+                    {/* Definitions column */}
+                    <div className="flex flex-col gap-2">
+                        {shuffledDefs.map(({ id, text }, idx) => (
+                            <MatchCard key={`def-${id}`} id={id} text={text} side="def" pairIndex={pairs.findIndex(p => p.id === id)} />
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* â”€â”€ Modals â”€â”€ */}
-            <EndowmentModal 
-                isOpen={isEndowmentOpen} 
+            {/* ── Bottom Stats Bar ── */}
+            <div className="shrink-0 px-4 py-2.5 border-t border-[var(--border)]/30 bg-[var(--background)]">
+                <div className="max-w-3xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] text-[var(--foreground-muted)] uppercase tracking-wider">Mistakes</span>
+                            <span className={cn("font-mono text-[11px] font-bold tabular-nums", mistakes === 0 ? "text-emerald-400" : "text-red-400")}>
+                                {mistakes}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] text-[var(--foreground-muted)] uppercase tracking-wider">Best Combo</span>
+                            <span className="font-mono text-[11px] font-bold text-[var(--accent)] tabular-nums">{bestCombo}×</span>
+                        </div>
+                    </div>
+                    {/* Rating bars */}
+                    <div className="flex items-center gap-1">
+                        {[1, 2, 3].map(bar => (
+                            <div key={bar} className={cn("w-3 h-3 rounded-sm transition-colors", bar <= rating.bars ? "bg-[var(--accent)]" : "bg-[var(--foreground)]/10")} />
+                        ))}
+                        <span className="text-[9px] font-black text-[var(--foreground-muted)] ml-1.5">{rating.label}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Modals ── */}
+            <EndowmentModal
+                isOpen={isEndowmentOpen}
                 onClose={() => setIsEndowmentOpen(false)}
                 currentCredits={user.credits}
                 requiredCredits={1}
@@ -510,10 +446,7 @@ export default function MatchGamePage() {
 
             <SessionComplete
                 isVisible={showCelebration}
-                onDismiss={() => {
-                    setShowCelebration(false);
-                    router.back();
-                }}
+                onDismiss={() => { setShowCelebration(false); router.back(); }}
                 xpEarned={sessionStats.xp}
                 streak={sessionStats.streak}
                 streakIncremented={sessionStats.incremented}
@@ -525,4 +458,3 @@ export default function MatchGamePage() {
         </div>
     );
 }
-

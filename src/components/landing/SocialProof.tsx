@@ -99,7 +99,10 @@ function TickerCard({ name, uni, quote }: { name: string; uni: string; quote: st
 function TickerRow({ cards, reverse }: { cards: typeof ROW1; reverse?: boolean }) {
   return (
     <div className="ticker-row" style={{ overflow: "hidden", position: "relative" }}>
-      <div className={reverse ? "ticker-track-reverse" : "ticker-track"}>
+      <div 
+        className={reverse ? "ticker-track-reverse" : "ticker-track"}
+        style={{ willChange: "transform" }}
+      >
         {/* Original + Duplicate for seamless loop */}
         {[...cards, ...cards].map((card, i) => (
           <TickerCard key={i} {...card} />
@@ -110,14 +113,6 @@ function TickerRow({ cards, reverse }: { cards: typeof ROW1; reverse?: boolean }
 }
 
 export default function SocialProof() {
-  const [mounted, setMounted] = React.useState(false);
-  
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
   return (
     <section style={{
       background: "var(--bg)",
@@ -126,6 +121,7 @@ export default function SocialProof() {
       borderBottom: "1px solid var(--border)",
       overflow: "hidden",
       position: "relative",
+      contain: "content",
     }}>
       <div className="edge-fade-mask" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <TickerRow cards={ROW1} />
@@ -134,3 +130,4 @@ export default function SocialProof() {
     </section>
   );
 }
+

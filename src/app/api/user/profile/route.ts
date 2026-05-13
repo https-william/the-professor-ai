@@ -98,6 +98,11 @@ export async function PUT(req: NextRequest) {
             main_challenge: body.main_challenge,
             ai_persona: body.ai_persona,
             has_onboarded: body.has_onboarded,
+            notification_email: body.notification_email,
+            notification_push: body.notification_push,
+            daily_goal_minutes: body.daily_goal_minutes,
+            difficulty_preference: body.difficulty_preference,
+            theme_preference: body.theme_preference,
         };
 
         // Remove undefined keys

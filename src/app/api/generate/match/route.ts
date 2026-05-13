@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { hydraGenerateContent } from "@/lib/ai/hydra";
 import { validateContent, validateCount, validateDifficulty, safeErrorResponse } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/server";
-import { buildMatchPrompt } from "@/lib/ai/prompts";
+import { buildMatchPrompt, guardContentSize } from "@/lib/ai/prompts";
 import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 import { generateAITitle } from "@/lib/ai/titling";
 import { recordActivity } from "@/lib/xp";
@@ -32,12 +32,14 @@ export async function POST(req: NextRequest) {
         if (!contentResult.isValid) {
             return safeErrorResponse(contentResult.error || "Invalid content");
         }
-        const content = contentResult.sanitized!;
+        const rawContent = contentResult.sanitized!;
+        const { content } = guardContentSize(rawContent);
+
         const { value: count } = validateCount(body.count, 8);
         const difficulty = validateDifficulty(body.difficulty);
 
         const prompt = buildMatchPrompt(
-            content.substring(0, 40_000),
+            content,
             count,
             difficulty,
             body.explainStyle

@@ -9,7 +9,7 @@ import RecentActivity from "@/components/features/dashboard/RecentActivity";
 import AIStudyPlan from "@/components/features/dashboard/AIStudyPlan";
 import QuickLaunchCard from "@/components/features/dashboard/QuickLaunchCard";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
-import QuoteOfTheStoic from "@/components/features/dashboard/QuoteOfTheStoic";
+import ProfessorsWisdom from "@/components/features/dashboard/ProfessorsWisdom";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import { calculateLevel } from "@/lib/profiles-client";
@@ -67,8 +67,8 @@ export default function DashboardMobile({
                             {activityData?.studyGoal ? "Active Session" : "Awaiting Orders"}
                         </div>
                         <h1 className="text-4xl font-black text-[var(--text)] tracking-tighter mb-2 leading-[0.9]">
-                            {greeting}, <br />
-                            <span className="text-[var(--blue)] drop-shadow-[0_8px_20px_var(--blue-glow)]">{firstName}</span>.
+                            {greeting}{greeting.match(/[?!]$/) ? "" : ","} <br />
+                            <span className="text-[var(--blue)] drop-shadow-[0_8px_20px_var(--blue-glow)]">{firstName}</span>
                         </h1>
                     </div>
                 </motion.div>
@@ -142,7 +142,7 @@ export default function DashboardMobile({
                 <div className="space-y-6 mt-4">
                     <XPGauge xp={user.xp} />
                     <FocusTimer />
-                    <QuoteOfTheStoic />
+                    <ProfessorsWisdom />
                     <WeeklyWrappedCard />
                 </div>
 
@@ -151,7 +151,7 @@ export default function DashboardMobile({
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Launchpad</span>
                     <div className="grid grid-cols-1 gap-3">
                         <QuickLaunchCard title="Arena" desc="Global Duels" icon="swords" href="/arena" color="var(--crimson)" />
-                        <QuickLaunchCard title="Create Studio" desc="Generate Material" icon="add_circle" href="/create" color="var(--blue)" />
+                        <QuickLaunchCard title="Create Studio" desc="Just the good parts" icon="add_circle" href="/create" color="var(--blue)" />
                     </div>
                 </div>
 

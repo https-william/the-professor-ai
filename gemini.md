@@ -45,27 +45,23 @@
 - **Files:** `src/app/dashboard/page.tsx`
 - **Lesson:** The `PlatformErrorBoundary` inside `PlatformShell.tsx` silently swallows errors and renders `null`. When debugging "stuck loading" states, check the browser console for component-level crashes FIRST. Also always verify that all React hooks used in a file are actually imported.
 
-### Digital Aesthetics Policy
+### Digital Aesthetics & Brand Voice Policy
 DISTILLED_AESTHETICS_PROMPT = """
 <frontend_aesthetics>
-You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
- 
-Typography: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics.
- 
-Color & Theme: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes. Draw from IDE themes and cultural aesthetics for inspiration.
- 
-Motion: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions.
- 
-Backgrounds: Create atmosphere and depth rather than defaulting to solid colors. Layer CSS gradients, use geometric patterns, or add contextual effects that match the overall aesthetic.
- 
-Avoid generic AI-generated aesthetics:
-- Overused font families (Inter, Roboto, Arial, system fonts)
-- Clichéd color schemes (particularly purple gradients on white backgrounds)
-- Predictable layouts and component patterns
-- Cookie-cutter design that lacks context-specific character
- 
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. You still tend to converge on common choices (Space Grotesk, for example) across generations. Avoid this: it is critical that you think outside the box!
+... (previous aesthetics rules)
 </frontend_aesthetics>
+
+<brand_voice_tone>
+1. **Core Identity**: The Professor AI | Your notes. Just the good parts.
+2. **Persona**: Witty, warm, approachably brilliant. Like a mentor you'd grab coffee with.
+3. **Tone**: Conversational "Coffee-Shop" style. Casual but intellectually rigorous.
+4. **Vocabulary Restrictions**: 
+   - NEVER use: aggressive, mastery, strategic, offensive, dominance, crush, hack (unless very casual), obsolete.
+   - PREFER: simple, easy, smart, pass, get your time back, just the good parts, ace.
+5. **Social Proof**: Use natural Nigerian names (Tunde, Amaka, Ifeanyi, Bolu) rather than generic "Users" or "Universities". Focus on lifestyle wins (saving time, getting sleep) over "academic dominance".
+6. **Sentence Structure**: Short, punchy, declarative. Avoid jargon.
+7. **Subtle Humor**: Inject lighthearted, relatable wit. Use "Your bed misses you" or "more time to ignore your group chat" rather than dry corporate speak.
+</brand_voice_tone>
 """
 
 ### Branding: B&W Pen Tip Migration

@@ -4,6 +4,7 @@ import React from "react";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
 import { motion, AnimatePresence } from "framer-motion";
 import BrandLogo from "@/components/ui/BrandLogo";
+import ProfessorCeremony from "@/components/ui/ProfessorCeremony";
 
 interface PlatformShellProps {
     children?: React.ReactNode;
@@ -95,15 +96,17 @@ export default function PlatformShell({
                             transition={{ duration: 0.2 }}
                             className="contents"
                         >
-                            {children || loading || null}
+                            <div className="fixed inset-0 z-50 bg-[#08080E] flex items-center justify-center">
+                                <ProfessorCeremony />
+                            </div>
                         </motion.div>
                     ) : (
                         <motion.div
                             key={isDesktop ? "desktop" : isMobile ? "mobile" : "web"}
-                            initial={{ opacity: 0 }}
+                            initial={{ opacity: 1 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
+                            transition={{ duration: 0.2 }}
                             className="contents"
                             id="platform-root"
                         >

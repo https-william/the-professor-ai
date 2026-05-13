@@ -6,7 +6,7 @@ authors = ["The Professor Academy"]
 edition = "2021"
 
 [package.metadata.bundle]
-identifier = "com.theprofessor.app"
+identifier = "com.theprofessor.xyz"
 
 [lib]
 name = "the_professor_lib"

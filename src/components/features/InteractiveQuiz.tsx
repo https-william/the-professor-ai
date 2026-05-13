@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Zap, Share2, CheckCircle2, Clock, BarChart3, ChevronRight, ChevronLeft } from "lucide-react";
+import { Zap, Share2, CheckCircle2, XCircle, Clock, ChevronRight, AlertCircle } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 
 export const InteractiveQuiz = ({ 
@@ -12,7 +12,8 @@ export const InteractiveQuiz = ({
             question: "Why does a figure skater spin faster when they pull their arms in?",
             options: ["A: Linear Velocity", "B: Angular Momentum", "C: Centripetal Acceleration", "D: Inertial Framing"],
             correctIndex: 1,
-            analogy: "Think of it like a garden hose. If you narrow the opening, the water must rush out faster to keep the same amount flowing."
+            analogy: "Think of it like a garden hose. If you narrow the opening, the water must rush out faster.",
+            explanation: "Conservation of angular momentum means spinning radius and speed are inversely linked."
         }
     ],
     onFinish
@@ -77,17 +78,22 @@ export const InteractiveQuiz = ({
     };
 
     const renderResults = () => {
-        const results = Object.entries(answers).map(([idx, selectedIdx]) => {
-            const question = questions[parseInt(idx)];
-            return {
-                isCorrect: selectedIdx === question.correctIndex,
-                question
-            };
-        });
+        const results = questions.map((q, idx) => ({
+            question: q,
+            selectedIdx: answers[idx],
+            isCorrect: answers[idx] === q.correctIndex,
+            wasAnswered: answers[idx] !== undefined,
+        }));
 
         const totalCorrect = results.filter(r => r.isCorrect).length;
         const scorePercent = Math.round((totalCorrect / questions.length) * 100);
-        const wrongAnswers = questions.filter((q, idx) => answers[idx] === undefined || answers[idx] !== q.correctIndex);
+        const skipped = results.filter(r => !r.wasAnswered).length;
+
+        const scoreLabel =
+            scorePercent === 100 ? "Perfect — no cap." :
+            scorePercent >= 70 ? "Solid. You dey try." :
+            scorePercent >= 50 ? "Almost there sha." :
+            "We need to review this one.";
 
         return (
             <motion.div 
@@ -95,47 +101,137 @@ export const InteractiveQuiz = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="flex-1 flex flex-col gap-3 overflow-hidden"
             >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
-                    <div className="p-4 rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner text-center relative overflow-hidden">
-                        <div className="relative z-10">
-                            <div className="w-14 h-14 rounded-full border-4 border-[var(--accent)]/20 flex items-center justify-center mx-auto mb-2 shadow-xl">
-                                <span className="text-xl font-black text-[var(--foreground)]">{scorePercent}%</span>
-                            </div>
-                            <h3 className="text-sm font-black text-[var(--foreground)] uppercase italic tracking-tight">Mastery Score</h3>
-                        </div>
+                {/* Score header */}
+                <div className="grid grid-cols-3 gap-2 shrink-0">
+                    <div className="p-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center">
+                        <div className="text-xl font-black text-[var(--foreground)]">{scorePercent}%</div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mt-0.5">Score</div>
                     </div>
-
-                    <div className="p-4 rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner text-center relative overflow-hidden">
-                        <div className="relative z-10 flex flex-col items-center justify-center h-full">
-                            <Clock size={20} className="text-[var(--accent)] mb-1" />
-                            <span className="text-lg font-black text-[var(--foreground)]">{timeString}</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Time Taken</span>
+                    <div className="p-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center">
+                        <div className="flex items-center justify-center gap-1">
+                            <span className="text-lg font-black text-emerald-400">{totalCorrect}</span>
+                            <span className="text-xs text-[var(--foreground-muted)] font-bold">/ {questions.length}</span>
                         </div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mt-0.5">Correct</div>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center">
+                        <div className="flex items-center justify-center gap-1">
+                            <Clock size={12} className="text-[var(--foreground-muted)]" />
+                            <span className="text-sm font-black text-[var(--foreground)]">{timeString}</span>
+                        </div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mt-0.5">Time</div>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-1 scrollbar-none space-y-4">
-                    <div className="flex items-center gap-2 mb-2 px-2">
-                        <Zap size={14} className="text-[var(--accent)]" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Professor's Review</span>
+                {/* Professor verdict */}
+                <div className="px-4 py-2.5 rounded-2xl bg-[var(--accent)]/5 border border-[var(--accent)]/10 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Zap size={12} className="text-[var(--accent)] shrink-0" />
+                        <p className="text-[11px] font-bold italic text-[var(--foreground-muted)]">{scoreLabel}</p>
                     </div>
-                    
-                    {wrongAnswers.length > 0 ? (
-                        wrongAnswers.map((q, i) => (
-                            <div key={i} className="p-5 rounded-3xl bg-[var(--background)] border border-[var(--border)] shadow-sm">
-                                <h5 className="text-[13px] font-bold text-[var(--foreground)] mb-3 leading-tight">{q.question}</h5>
-                                <div className="p-4 rounded-2xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
-                                    <p className="text-[11px] md:text-[13px] italic text-[var(--foreground-secondary)] leading-relaxed">
-                                        &quot;{q.analogy || q.explanation || "Focus on the core principle here."}&quot;
-                                    </p>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="p-10 rounded-[2.5rem] bg-[var(--emerald)]/5 border border-[var(--emerald)]/20 text-center">
-                            <p className="text-[15px] font-bold text-[var(--emerald)] italic">Perfect score! The Professor is impressed by your mastery.</p>
-                        </div>
+                </div>
+
+                {/* Per-question breakdown */}
+                <div className="flex items-center gap-2 px-1 shrink-0">
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Question Breakdown</span>
+                    {skipped > 0 && (
+                        <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
+                            {skipped} skipped
+                        </span>
                     )}
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-1 scrollbar-none space-y-2">
+                    {results.map((r, i) => (
+                        <div
+                            key={i}
+                            className={cn(
+                                "p-4 rounded-2xl border transition-all",
+                                r.isCorrect
+                                    ? "bg-emerald-500/5 border-emerald-500/20"
+                                    : r.wasAnswered
+                                    ? "bg-red-500/5 border-red-500/20"
+                                    : "bg-amber-500/5 border-amber-500/20"
+                            )}
+                        >
+                            {/* Question header */}
+                            <div className="flex items-start gap-3 mb-2">
+                                <div className={cn(
+                                    "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                                    r.isCorrect ? "bg-emerald-500/20" : r.wasAnswered ? "bg-red-500/20" : "bg-amber-500/20"
+                                )}>
+                                    {r.isCorrect ? (
+                                        <CheckCircle2 size={12} className="text-emerald-400" />
+                                    ) : r.wasAnswered ? (
+                                        <XCircle size={12} className="text-red-400" />
+                                    ) : (
+                                        <AlertCircle size={12} className="text-amber-400" />
+                                    )}
+                                </div>
+                                <p className="text-[12px] font-bold text-[var(--foreground)] leading-snug flex-1">
+                                    {i + 1}. {r.question.question}
+                                </p>
+                            </div>
+
+                            {/* Options breakdown */}
+                            <div className="space-y-1 ml-8">
+                                {r.question.options.map((opt, optIdx) => {
+                                    const isCorrectOpt = optIdx === r.question.correctIndex;
+                                    const isSelectedOpt = optIdx === r.selectedIdx;
+                                    const isWrongSelected = isSelectedOpt && !isCorrectOpt;
+
+                                    return (
+                                        <div
+                                            key={optIdx}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-2 border",
+                                                isCorrectOpt
+                                                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                                    : isWrongSelected
+                                                    ? "bg-red-500/10 border-red-500/30 text-red-400"
+                                                    : "bg-transparent border-transparent text-[var(--foreground-muted)]/50"
+                                            )}
+                                        >
+                                            <span className={cn(
+                                                "w-4 h-4 rounded flex items-center justify-center text-[8px] font-black border shrink-0",
+                                                isCorrectOpt ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" :
+                                                isWrongSelected ? "bg-red-500/20 border-red-500/30 text-red-400" :
+                                                "bg-white/5 border-white/10"
+                                            )}>
+                                                {String.fromCharCode(65 + optIdx)}
+                                            </span>
+                                            {opt}
+                                            {isCorrectOpt && <CheckCircle2 size={10} className="ml-auto text-emerald-400 shrink-0" />}
+                                            {isWrongSelected && <XCircle size={10} className="ml-auto text-red-400 shrink-0" />}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Explanation / analogy if wrong or skipped */}
+                            {(!r.isCorrect) && (r.question.explanation || r.question.analogy) && (
+                                <div className="mt-3 ml-8 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+                                    {r.question.explanation && (
+                                        <p className="text-[11px] font-bold text-[var(--foreground-muted)] mb-1">
+                                            ✅ {r.question.explanation}
+                                        </p>
+                                    )}
+                                    {r.question.analogy && (
+                                        <p className="text-[10px] italic text-[var(--foreground-muted)]/70">
+                                            💡 {r.question.analogy}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Identity nudge */}
+                    <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center">
+                        <p className="text-[11px] font-bold italic text-[var(--foreground-muted)]">
+                            We don't just cram here — we understand. That's the difference sha.
+                        </p>
+                    </div>
                 </div>
 
                 <button 
@@ -145,7 +241,7 @@ export const InteractiveQuiz = ({
                         time: timeString,
                         total: questions.length
                     })}
-                    className="btn-skeuo-primary w-full py-5 text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 shrink-0"
+                    className="btn-skeuo-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 shrink-0"
                 >
                     <CheckCircle2 size={18} /> Finalize Session
                 </button>
@@ -239,7 +335,7 @@ export const InteractiveQuiz = ({
                                 "text-[10px] font-black uppercase tracking-widest",
                                 currentIdx === questions.length - 1 ? "text-white" : "text-[var(--foreground)]"
                             )}>
-                                {currentIdx === questions.length - 1 ? "Finish Exam" : "Next"}
+                                {currentIdx === questions.length - 1 ? "Finish" : "Next"}
                             </span>
                             {currentIdx === questions.length - 1 ? (
                                 <CheckCircle2 size={18} className="text-white" />

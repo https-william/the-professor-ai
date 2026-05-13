@@ -299,7 +299,7 @@ export default function StudyPackPage() {
                 const summaryText = typeof data === 'string' ? data : (data.summary ? (typeof data.summary === 'string' ? data.summary : JSON.stringify(data.summary)) : "No summary available.");
                 return (
                     <InteractiveSummary
-                        rawText={sourceText.substring(0, 1000) + "..."}
+                        rawText={String(sourceText).substring(0, 1000) + "..."}
                         refinedText={summaryText}
                         autoReveal={true}
                     />

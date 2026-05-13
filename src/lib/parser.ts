@@ -122,7 +122,16 @@ export async function parseDocument(
     // ── IMAGE SUPPORT ──
     else if (mimeType.startsWith("image/") || ["jpg", "jpeg", "png", "webp"].includes(ext)) {
         fileType = "IMAGE";
-        throw new Error("Image processing (OCR) is currently disabled. Please upload text-based PDFs or Office documents.");
+        const base64 = buffer.toString('base64');
+        return {
+            text: "",
+            wordCount: 0,
+            fileType: "IMAGE",
+            isMultimodal: true,
+            // @ts-ignore - Adding images for frontend OCR flow
+            images: [{ data: base64, ext: ext || 'png' }],
+            isOcrRequired: true
+        };
     } 
     // ── PDF ──
     else if (mimeType === "application/pdf" || ext === "pdf") {

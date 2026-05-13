@@ -7,7 +7,7 @@ import {
     ArrowRight, Flame, Zap, Shield, Coins, PlusCircle,
     Library, BookOpen, Swords, Play, Pause, RotateCcw,
     Clock, Target, Sparkles, History as HistoryIcon,
-    ChevronRight, BrainCircuit, Layers, FileText
+    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp
 } from "lucide-react";
 import { calculateLevel, getLevelTitle, getLevelProgress } from "@/lib/profiles-client";
 
@@ -40,7 +40,7 @@ const stagger = {
     show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
 };
 const fadeUp = {
-    hidden: { opacity: 0, y: 14 },
+    hidden: { opacity: 0, y: 8 },
     show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
@@ -160,7 +160,7 @@ export default function DashboardWeb({
                                     <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[var(--blue-text)] font-bold">{dateStr}</span>
                                 </div>
                                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--text)] leading-[0.95] mb-6">
-                                    {greeting}, <span className="text-[var(--blue)]">{firstName}</span>
+                                    {greeting}{greeting.match(/[?!]$/) ? "" : ","} <span className="text-[var(--blue)]">{firstName}</span>
                                 </h1>
                                 <p className="text-[17px] text-[var(--text-2)] italic font-medium max-w-xl leading-relaxed">
                                     &ldquo;{dailyLine}&rdquo;
@@ -252,8 +252,8 @@ export default function DashboardWeb({
                                                 <PlusCircle size={28} className="text-[var(--blue)]" />
                                             </div>
                                             <div>
-                                                <p className="text-xl font-black text-[var(--text)] tracking-tight">Initiate Study Cycle</p>
-                                                <p className="text-sm text-[var(--text-2)] font-medium">Synthesize new intelligence in seconds</p>
+                                                <p className="text-xl font-black text-[var(--text)] tracking-tight">Start a new session</p>
+                                                <p className="text-sm text-[var(--text-2)] font-medium">Turn your notes into just the good parts.</p>
                                             </div>
                                         </div>
                                         <div className="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center group-hover:border-[var(--blue-border)] transition-colors">
@@ -282,7 +282,7 @@ export default function DashboardWeb({
                                     <div className="flex items-center justify-between mb-5">
                                         <div className="flex items-center gap-2">
                                             <Flame size={14} className="text-[var(--amber)]" />
-                                            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Persistence Loop</span>
+                                            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Momentum</span>
                                         </div>
                                         <span className="font-mono text-sm font-black text-[var(--amber)] tabular-nums">{user.streak}d</span>
                                     </div>
@@ -297,29 +297,43 @@ export default function DashboardWeb({
                                     </div>
                                 </div>
 
-                                <div className="p-6 border-t border-[var(--border)]">
-                                    <div className="flex items-center gap-2 mb-5">
-                                        <Target size={14} className="text-[var(--emerald)]" />
-                                        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Neural Balance</span>
-                                    </div>
-                                    <div className="space-y-4">
-                                        {recentTypes.map(({ type, icon: Icon, color, label, count }) => (
-                                            <div key={type} className="flex items-center gap-3">
-                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-sm" style={{ background: `color-mix(in srgb, ${color}, transparent 90%)`, border: `1px solid color-mix(in srgb, ${color}, transparent 80%)` }}>
-                                                    <Icon size={13} style={{ color }} />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="h-1.5 bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
-                                                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(5, (count / totalGenerations) * 100)}%` }} transition={{ duration: 1, delay: 0.3, ease: [0.175, 0.885, 0.32, 1.275] }} className="h-full rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                                <div className="scholar-card p-6 min-h-[200px] flex flex-col justify-between" style={{ borderRadius: "28px" }}>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-6">
+                                            <Target size={16} className="text-[var(--emerald)]" />
+                                            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Knowledge Mix</span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {recentTypes.map((item, idx) => (
+                                                <div key={idx} className="space-y-1.5">
+                                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-[var(--text-3)]">
+                                                        <div className="flex items-center gap-2">
+                                                            <item.icon size={12} style={{ color: item.color }} />
+                                                            <span>{item.label}</span>
+                                                        </div>
+                                                        <span className="font-mono">{item.count}</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${(item.count / totalGenerations) * 100}%` }}
+                                                            transition={{ duration: 1, ease: "easeOut" }}
+                                                            className="h-full"
+                                                            style={{ backgroundColor: item.color }}
+                                                        />
                                                     </div>
                                                 </div>
-                                                <span className="font-mono text-[9px] text-[var(--text-3)] uppercase tracking-wider shrink-0 font-bold">{label}</span>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                    <Link href="/analytics" className="mt-5 flex items-center gap-2 text-[10px] text-[var(--text-3)] hover:text-[var(--blue)] transition-colors uppercase tracking-[0.2em] font-black">
-                                        <span>Examine Full Data</span>
-                                        <ArrowRight size={10} />
+                                    <Link href="/analytics" className="mt-8 flex items-center justify-between p-4 rounded-2xl bg-[var(--text)]/5 border border-[var(--border)] hover:border-[var(--blue-border)] hover:bg-[var(--blue-dim)] group transition-all shrink-0">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--blue)] group-hover:scale-110 transition-transform shadow-sm">
+                                                <TrendingUp size={14} />
+                                            </div>
+                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] group-hover:text-[var(--text)] transition-colors">Examine Full Data</span>
+                                        </div>
+                                        <ArrowRight size={14} className="text-[var(--text-3)] group-hover:text-[var(--blue)] group-hover:translate-x-1 transition-all" />
                                     </Link>
                                 </div>
                             </div>
@@ -331,7 +345,7 @@ export default function DashboardWeb({
                                 <div className={`absolute -top-16 -right-16 w-40 h-40 rounded-full blur-[80px] opacity-15 transition-colors duration-1000 ${timerMode === "focus" ? "bg-[var(--blue)]" : "bg-[var(--cyan)]"}`} />
                                 <div className="flex items-center gap-2 mb-6 relative z-10">
                                     <Clock size={14} className={timerMode === "focus" ? "text-[var(--blue)]" : "text-[var(--cyan)]"} />
-                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Deep Work Engine</span>
+                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Deep Focus</span>
                                     {timerActive && <span className="ml-auto w-2 h-2 rounded-full bg-[var(--crimson)] animate-pulse shadow-[0_0_8px_var(--crimson)]" />}
                                 </div>
                                 <div className="flex flex-col items-center py-4 relative z-10">
@@ -363,12 +377,12 @@ export default function DashboardWeb({
                             <div className="scholar-card p-6 border-[var(--cyan-border)] bg-[var(--cyan-dim)]/20" style={{ borderRadius: "24px" }}>
                                 <div className="flex items-center gap-2 mb-4">
                                     <Shield size={14} className="text-cyan-400" />
-                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--foreground-muted)] font-bold">Academic Shield</span>
+                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--foreground-muted)] font-bold">Safety Net</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-[16px] font-black text-[var(--foreground)]">{user.streakFreezeCount} <span className="text-[var(--foreground-muted)] font-medium opacity-50 uppercase text-[10px] tracking-wider">Banked</span></p>
-                                        <p className="text-[11px] text-[var(--foreground-muted)] font-medium mt-0.5 leading-tight">Protects your persistence loop</p>
+                                        <p className="text-[11px] text-[var(--foreground-muted)] font-medium mt-0.5 leading-tight">Keep your streak alive when life happens.</p>
                                     </div>
                                     <button onClick={handleBuyFreeze} disabled={isProcessingAction || user.credits < 5} className="btn-skeuo px-4 py-2 text-[9px] font-black uppercase tracking-widest bg-cyan-500/10 border-cyan-500/20 text-cyan-400">Secure · 5 CR</button>
                                 </div>

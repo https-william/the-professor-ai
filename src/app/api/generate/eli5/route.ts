@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { hydraChatStream } from "@/lib/ai/hydra";
+import { guardContentSize } from "@/lib/ai/prompts";
 import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 
 export async function POST(req: NextRequest) {
@@ -30,10 +31,14 @@ export async function POST(req: NextRequest) {
 
         await deductCredits(supabase, user.id, 'chat');
 
-        const systemPrompt = "You are 'The Professor', an elite academic strategist. Your task is to 'Explain Like I'm 5' (ELI5). The user will provide a complex academic or technical excerpt. Explain the core concept using a brilliant, intuitive, and simple everyday analogy in the voice of a strategic mentor. Be extremely concise (maximum 3 sentences). Do not use markdown headers.";
+        const { content: safeContent, wasTruncated } = guardContentSize(text);
+        
+        const systemPrompt = `You are 'The Professor', an elite academic strategist. Nigerian academic energy. First-person plural. 
+        Your task is to 'Explain Like I'm 5' (ELI5). Use a brilliant, intuitive, and simple everyday analogy. 
+        Be extremely concise (maximum 3-4 sentences). End with: "Simple as ABC sha."`;
         
         const messages = [
-            { role: "user", content: `Explain this to me simply: ${text.substring(0, 5000)}` }
+            { role: "user", content: `Explain this to me simply: ${safeContent}` }
         ];
 
         const stream = await hydraChatStream(systemPrompt, messages, {
@@ -46,6 +51,7 @@ export async function POST(req: NextRequest) {
                 "Content-Type": "text/event-stream",
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
+                "X-Content-Truncated": wasTruncated ? "true" : "false"
             }
         });
 

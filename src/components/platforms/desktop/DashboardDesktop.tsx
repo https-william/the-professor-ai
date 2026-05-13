@@ -90,8 +90,8 @@ export default function DashboardDesktop({
                                 {activityData?.studyGoal ? "Active Session" : "Awaiting Orders"}
                             </div>
                             <h1 className="text-5xl md:text-7xl font-black text-[var(--text)] tracking-tighter mb-4 leading-[0.9]">
-                                {greeting}, <br />
-                                <span className="text-[var(--blue)] drop-shadow-[0_10px_40px_var(--blue-glow)]">{firstName}</span>.
+                                {greeting}{greeting.match(/[?!]$/) ? "" : ","} <br />
+                                <span className="text-[var(--blue)] drop-shadow-[0_10px_40px_var(--blue-glow)]">{firstName}</span>
                             </h1>
                             <p className="text-xl text-[var(--text-2)] font-medium">
                                 {activityData?.studyGoal
@@ -202,7 +202,7 @@ export default function DashboardDesktop({
                             <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--text-3)] mb-8">Launchpad</h3>
                             <div className="flex flex-col gap-4">
                                 <QuickLaunchCard title="Arena" desc="Global Duels" icon="swords" href="/arena" color="var(--crimson)" />
-                                <QuickLaunchCard title="Create Studio" desc="Generate Study Material" icon="add_circle" href="/create" color="var(--blue)" />
+                                <QuickLaunchCard title="Create Studio" desc="Just the good parts" icon="add_circle" href="/create" color="var(--blue)" />
                                 <QuickLaunchCard title="Library" desc="Your Decks & Plans" icon="library_books" href="/library" color="var(--violet)" />
                             </div>
                         </div>

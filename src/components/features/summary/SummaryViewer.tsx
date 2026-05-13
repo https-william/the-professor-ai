@@ -13,8 +13,10 @@ import {
     Share2, 
     Download, 
     CheckCircle2,
-    ArrowRight
+    ArrowRight,
+    Loader2
 } from "lucide-react";
+import { exportToPDF } from "@/lib/pdf-bridge";
 
 interface SummaryViewerProps {
     data: string;
@@ -74,6 +76,32 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     const [currentSlide, setCurrentSlide] = useState(0);
     const [checkpointPassed, setCheckpointPassed] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+
+    const fullMarkdownContent = useMemo(() => {
+        if (!data) return "";
+        // Clean up knowledge check markers for the export
+        return data.replace(/\[KNOWLEDGE_CHECK\]\s*\{.*\}/g, "");
+    }, [data]);
+
+    const handleExportPDF = async () => {
+        if (isExporting) return;
+        setIsExporting(true);
+        addToast("Preparing high-fidelity export...", "info");
+
+        try {
+            await exportToPDF("summary-export-container", {
+                title: title,
+                filename: `The_Professor_${title.replace(/\s+/g, '_')}`,
+                author: "The Professor AI"
+            });
+            addToast("PDF Export successful", "success");
+        } catch (error) {
+            addToast("Failed to generate PDF", "error");
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const processedChapters = useMemo(() => {
         if (!data) return [];
@@ -163,10 +191,25 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                         </h2>
                     </div>
 
-                    <div className="prose prose-invert prose-emerald max-w-none mb-32">
-                        <Markdown>
-                            {currentSlide === 0 ? currentChapter.text : currentChapter.text.split("\n").slice(1).join("\n")}
-                        </Markdown>
+                    <div className="mb-32">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={currentSlide}
+                                initial="hidden"
+                                animate="visible"
+                                variants={{
+                                    visible: {
+                                        transition: {
+                                            staggerChildren: 0.1
+                                        }
+                                    }
+                                }}
+                            >
+                                <Markdown className="reveal-ceremony">
+                                    {currentSlide === 0 ? currentChapter.text : currentChapter.text.split("\n").slice(1).join("\n")}
+                                </Markdown>
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
 
                     {currentChapter.checkpoint && !checkpointPassed && (
@@ -211,7 +254,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                                     setCheckpointPassed(false);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className="group flex items-center gap-4 bg-white text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/5"
+                                className="group flex items-center gap-4 bg-[var(--accent)] text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-amber-500/10"
                             >
                                 <span>Proceed</span>
                                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -238,9 +281,31 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                     <span>{copySuccess ? "Copied!" : "Share Link"}</span>
                 </button>
                 <div className="w-[1px] h-4 bg-white/10 mx-1" />
-                <button className="p-3 rounded-full hover:bg-white/5 transition-colors" title="Download PDF">
-                    <Download size={16} className="opacity-40" />
+                <button 
+                    onClick={handleExportPDF}
+                    disabled={isExporting}
+                    className="p-3 rounded-full hover:bg-white/5 transition-colors disabled:opacity-50" 
+                    title="Download PDF"
+                >
+                    {isExporting ? (
+                        <Loader2 size={16} className="animate-spin text-[var(--accent)]" />
+                    ) : (
+                        <Download size={16} className="opacity-40 hover:opacity-100 transition-opacity" />
+                    )}
                 </button>
+            </div>
+
+            {/* Hidden Export Container */}
+            <div className="fixed left-[-9999px] top-0 pointer-events-none">
+                <div id="summary-export-container" className="w-[800px] bg-[#040406] text-[#F2EDE4] p-20 font-sans">
+                    <div className="mb-20 pb-10 border-b border-white/10">
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-4">Official Synthesis Report</p>
+                        <h1 className="text-5xl font-black tracking-tight leading-tight">{title}</h1>
+                    </div>
+                    <div className="prose prose-invert prose-amber max-w-none">
+                        <Markdown>{fullMarkdownContent}</Markdown>
+                    </div>
+                </div>
             </div>
         </div>
     );

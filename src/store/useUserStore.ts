@@ -29,6 +29,11 @@ export interface UserState {
     isAuthenticated: boolean;
     hasOnboarded: boolean;
     createdAt: string | null;
+    notificationEmail: boolean;
+    notificationPush: boolean;
+    dailyGoalMinutes: number;
+    difficultyPreference: string;
+    themePreference: string;
 }
 
 export interface UserStore extends UserState {
@@ -63,6 +68,11 @@ export const defaultUser: UserState = {
     isAuthenticated: false,
     hasOnboarded: false,
     createdAt: null,
+    notificationEmail: true,
+    notificationPush: true,
+    dailyGoalMinutes: 30,
+    difficultyPreference: "medium",
+    themePreference: "dark",
 };
 
 let isRefreshing = false;
@@ -145,6 +155,11 @@ export const useUserStore = create<UserStore>()(
                         streakFreezeCount: profile?.streak_freeze_count ?? get().streakFreezeCount ?? 0,
                         lastStreak: profile?.last_streak ?? get().lastStreak ?? 0,
                         streakResetAt: profile?.streak_reset_at ?? get().streakResetAt ?? null,
+                        notificationEmail: profile?.notification_email ?? get().notificationEmail ?? true,
+                        notificationPush: profile?.notification_push ?? get().notificationPush ?? true,
+                        dailyGoalMinutes: profile?.daily_goal_minutes ?? get().dailyGoalMinutes ?? 30,
+                        difficultyPreference: profile?.difficulty_preference ?? get().difficultyPreference ?? "medium",
+                        themePreference: profile?.theme_preference ?? get().themePreference ?? "dark",
                     });
 
                 } catch (error: any) {
@@ -179,7 +194,12 @@ export const useUserStore = create<UserStore>()(
                 credits: state.credits, 
                 xp: state.xp, 
                 streak: state.streak,
-                streakFreezeCount: state.streakFreezeCount
+                streakFreezeCount: state.streakFreezeCount,
+                notificationEmail: state.notificationEmail,
+                notificationPush: state.notificationPush,
+                dailyGoalMinutes: state.dailyGoalMinutes,
+                difficultyPreference: state.difficultyPreference,
+                themePreference: state.themePreference
             }),
         }
     )

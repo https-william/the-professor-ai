@@ -145,7 +145,7 @@ export default function HeroSection() {
               letterSpacing: "0.2em",
               textTransform: "uppercase",
             }}>
-              Strategic AI · Scholarly Workspace
+              The Professor AI · Study Less
             </span>
           </div>
 
@@ -156,33 +156,30 @@ export default function HeroSection() {
               textAlign: "center",
               maxWidth: "1000px",
               fontFamily: "var(--font-heading)",
-              fontSize: "clamp(3rem, 11vw, 6.5rem)", 
+              fontSize: "clamp(2.5rem, 9vw, 5.5rem)", 
               fontWeight: 900,
-              lineHeight: 0.9,
+              lineHeight: 1.0,
               color: "var(--foreground)",
-              letterSpacing: "-0.05em",
+              letterSpacing: "-0.04em",
             }}
           >
-            Drop your notes.<br />
-            Walk into any exam{" "}
-            <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>ready.</span>
+            Your notes.<br />
+            Just the <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>good parts.</span>
           </h1>
-
-          {/* Sub-Headline */}
           <p
             className="animate-up"
             style={{
               textAlign: "center",
-              maxWidth: "580px",
+              maxWidth: "540px",
               fontFamily: "var(--font-sans)",
-              fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)",
+              fontSize: "clamp(1rem, 2.2vw, 1.15rem)",
               fontWeight: 500,
               color: "var(--foreground-secondary)",
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               opacity: 0.8,
             }}
           >
-            Upload your material and get an elite study guide, summary, and active-recall game — <span className="text-[var(--foreground)] font-bold">in seconds.</span>
+            Uni is a lot, we get it. Drop your notes here and we'll turn them into simple study guides so you can actually enjoy your day. Your bed misses you.
           </p>
         </div>
 
@@ -198,32 +195,74 @@ export default function HeroSection() {
           <UploadZone onFileSelected={handleFileSelected} />
         </div>
 
-        {/* Trust Bar */}
+        {/* Social Proof Ticker */}
         <div
-          className="animate-up flex items-center justify-center flex-wrap gap-4 sm:gap-10 opacity-40 hover:opacity-100 transition-opacity"
+          className="animate-up"
           style={{
+            width: "100%",
+            overflow: "hidden",
+            position: "relative",
+            padding: "20px 0",
             transitionDelay: "300ms",
+            maskImage: "linear-gradient(to right, transparent, black 15%, black 85%, transparent)",
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 15%, black 85%, transparent)"
           }}
         >
-          {[
-            "Instant Start",
-            "Scholarly Precision",
-            "Privacy First",
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <Sparkles size={12} className="text-[var(--blue)]" />
-              <span style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "10px",
-                fontWeight: 900,
-                color: "var(--foreground-muted)",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-              }}>
-                {item}
-              </span>
-            </div>
-          ))}
+          <div className="flex gap-12 whitespace-nowrap animate-ticker">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="flex gap-12 items-center">
+                {[
+                  { name: "Tunde", action: "aced his mid-terms" },
+                  { name: "Amaka", action: "saved 4 hours today" },
+                  { name: "Ifeanyi", action: "turned 50 slides into 5 pages" },
+                  { name: "Bolu", action: "is finally sleeping 8 hours" },
+                  { name: "Chinelo", action: "passed her nursing exam" },
+                  { name: "Femi", action: "crushed his SAT prep" },
+                  { name: "Zainab", action: "summarized 30 lectures" },
+                  { name: "Emeka", action: "is ready for his finals" },
+                  { name: "Adaeze", action: "made a law guide in seconds" },
+                  { name: "Chidi", action: "finished his JAMB revision" },
+                  { name: "Bolaji", action: "understands his math now" },
+                  { name: "Funke", action: "saved her whole weekend" }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 px-4 py-2 rounded-full glass-panel-sm" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{
+                      fontFamily: "var(--font-sans)",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "var(--foreground)",
+                    }}>
+                      {item.name}
+                    </span>
+                    <span style={{
+                      fontFamily: "var(--font-sans)",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      color: "var(--foreground-muted)",
+                      opacity: 0.7
+                    }}>
+                      {item.action}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <style jsx>{`
+            @keyframes ticker {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+            .animate-ticker {
+              display: flex;
+              width: fit-content;
+              animation: ticker 40s linear infinite;
+            }
+            .animate-ticker:hover {
+              animation-play-state: paused;
+            }
+          `}</style>
         </div>
       </div>
 

@@ -75,7 +75,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const router = useRouter();
     const pathname = usePathname();
     const { user } = useUser();
-    const { theme } = useTheme();
+    const { resolvedTheme } = useTheme();
     const { toasts, setIsOpen: setToastsOpen } = useToasts();
     const { isDesktop } = useAppPlatform();
     const [mounted, setMounted] = useState(false);
@@ -159,7 +159,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     );
     const headerShadow = useTransform(headerBgOpacity, (o) => {
         if (o < 0.1) return "none";
-        return theme === "dark"
+        return resolvedTheme === "dark"
             ? "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)"
             : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)";
     });
@@ -170,13 +170,13 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const appBorderOpacity = useTransform(scrollY, [0, 60], [0.1, 0.2]);
     const appSaturate = useTransform(scrollY, [0, 60], [150, 200]);
 
-    const appBg = useMotionTemplate`rgba(${theme === "dark" ? "10, 10, 20" : "250, 250, 255"}, ${appBgOpacity})`;
+    const appBg = useMotionTemplate`rgba(${resolvedTheme === "dark" ? "10, 10, 20" : "250, 250, 255"}, ${appBgOpacity})`;
     const appBackdrop = useMotionTemplate`blur(${appBlur}px) saturate(${appSaturate}%)`;
-    const appBorder = useMotionTemplate`1px solid rgba(${theme === "dark" ? "255, 255, 255" : "0, 0, 0"}, ${appBorderOpacity})`;
+    const appBorder = useMotionTemplate`1px solid rgba(${resolvedTheme === "dark" ? "255, 255, 255" : "0, 0, 0"}, ${appBorderOpacity})`;
     
     const appShadow = useTransform(scrollY, [0, 60], [
-        theme === "dark" ? "0 4px 20px rgba(0,0,0,0.2)" : "0 4px 15px rgba(0,0,0,0.05)",
-        theme === "dark" ? "0 20px 50px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)" : "0 10px 40px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.8)"
+        resolvedTheme === "dark" ? "0 4px 20px rgba(0,0,0,0.2)" : "0 4px 15px rgba(0,0,0,0.05)",
+        resolvedTheme === "dark" ? "0 20px 50px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)" : "0 10px 40px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.8)"
     ]);
 
     const [isPill, setIsPill] = useState(false);
@@ -300,7 +300,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            className="absolute left-1/2 -translate-x-1/2 mt-6 w-64 rounded-[32px] p-3 bg-[var(--background-secondary)]/95 backdrop-blur-2xl border border-[var(--border)] shadow-2xl z-[10001]"
+                                            className="absolute left-1/2 -translate-x-1/2 mt-6 w-64 rounded-[32px] p-3 bg-[var(--bg-3)] border border-[var(--border)] shadow-2xl z-[10001]"
                                         >
                                             <div className="grid grid-cols-1 gap-2">
                                                 {[
@@ -407,7 +407,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute right-0 mt-4 w-60 rounded-[32px] p-3 bg-[var(--background-secondary)]/95 backdrop-blur-2xl border border-[var(--border)] shadow-2xl z-[10001]"
+                                    className="absolute right-0 mt-4 w-60 rounded-[32px] p-3 bg-[var(--bg-3)] border border-[var(--border)] shadow-2xl z-[10001]"
                                 >
                                     <div className="px-4 py-4 mb-2 border-b border-[var(--border)]">
                                         <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-widest mb-1">Scholar</p>

@@ -1,8 +1,9 @@
 /**
  * Hydra AI System — Multi-provider resilience.
+ * Optimized for stability, error recovery, and context management.
  */
 
-import { callOpenAICompatible, callOpenAICompatibleStream, AI_PROVIDERS } from "./providers";
+import { callOpenAICompatible, callOpenAICompatibleStream } from "./providers";
 import { logAIError, logAISuccess } from "@/lib/error-logger";
 
 export const FEATURE_TEMPERATURES: Record<string, number> = {
@@ -18,6 +19,12 @@ const CHUNK_THRESHOLD = 32_000;
 const CHUNK_SIZE      = 28_000;
 const CHUNK_OVERLAP   = 2_000;
 
+/** 
+ * Safety limit for total prompt size (system + user). 
+ * Prevents 413 Request Too Large errors.
+ */
+const MAX_TOTAL_CHARS = 38_000; 
+
 function chunkContent(content: string): string[] {
     if (content.length <= CHUNK_THRESHOLD) return [content];
     const chunks: string[] = [];
@@ -29,6 +36,18 @@ function chunkContent(content: string): string[] {
     return chunks;
 }
 
+/**
+ * Validates and truncates total request size to prevent 413 errors.
+ */
+function validateRequestSize(system: string, user: string): { sys: string, usr: string, truncated: boolean } {
+    const total = system.length + user.length;
+    if (total <= MAX_TOTAL_CHARS) return { sys: system, usr: user, truncated: false };
+    
+    // Prioritize system prompt, truncate user content
+    const allowedUserChars = MAX_TOTAL_CHARS - system.length - 100;
+    const usr = user.slice(0, Math.max(0, allowedUserChars)) + "\n\n[...content truncated for size safety...]";
+    return { sys: system, usr, truncated: true };
+}
 
 export interface HydraOptions {
     feature?: string;
@@ -47,7 +66,6 @@ export async function hydraGenerateContent(
         feature = "default",
         jsonMode = false,
         timeoutMs = 30_000,
-        model = "llama-3.3-70b-versatile",
         systemPrompt,
     } = options;
 
@@ -61,68 +79,42 @@ export async function hydraGenerateContent(
             : "You are The Professor — a senior academic mentor. Be precise, insightful, and clear."
     );
 
+    // Guard against 413 Request Too Large
+    const { sys, usr } = validateRequestSize(sysPrompt, prompt);
+
     const errors: string[] = [];
     const startTime = Date.now();
 
-    // 1. Groq
-    if (process.env.GROQ_API_KEY) {
+    // Provider Rotation logic with detailed error handling
+    const providers: Array<"groq" | "cerebras" | "trinity" | "ollamafree"> = ["groq", "cerebras", "trinity"];
+    if (process.env.OLLAMAFREE_ENABLED === "true") providers.push("ollamafree");
+
+    for (const provider of providers) {
         try {
-            const result = await callOpenAICompatible("groq", [
-                { role: "system", content: sysPrompt },
-                { role: "user",   content: prompt },
+            const result = await callOpenAICompatible(provider, [
+                { role: "system", content: sys },
+                { role: "user",   content: usr },
             ], { temperature, timeoutMs });
-            logAISuccess("groq", feature, Date.now() - startTime);
+            
+            logAISuccess(provider, feature, Date.now() - startTime);
             return cleanJson(result);
         } catch (error: any) {
-            errors.push(`Groq: ${error.message}`);
+            const statusMatch = error.message.match(/(\d{3})/);
+            const status = statusMatch ? statusMatch[1] : "ERR";
+            
+            let message = error.message;
+            if (status === "413") message = "Payload too large. Truncating further might be needed.";
+            if (status === "429") message = "Rate limited. Moving to next provider.";
+            if (status === "401") message = "Auth failure (API Key issue). Moving to next provider.";
+            if (status === "404") message = "Model not found. Moving to next provider.";
+            
+            errors.push(`${provider} (${status}): ${message}`);
+            logAIError(provider, feature, error);
+            console.warn(`Hydra: ${provider} failed. Trying next... Reason: ${message}`);
         }
     }
 
-    // 2. Cerebras
-    if (process.env.CEREBRAS_API_KEY) {
-        try {
-            const result = await callOpenAICompatible("cerebras", [
-                { role: "system", content: sysPrompt },
-                { role: "user",   content: prompt },
-            ], { temperature, timeoutMs });
-            logAISuccess("cerebras", feature, Date.now() - startTime);
-            return cleanJson(result);
-        } catch (error: any) {
-            errors.push(`Cerebras: ${error.message}`);
-        }
-    }
-
-    // 3. OpenRouter (Trinity) - High priority for structured content
-    if (process.env.OPENROUTER_API_KEY) {
-        try {
-            console.log(`Hydra: Trinity [${feature}] ...`);
-            const result = await callOpenAICompatible("trinity", [
-                { role: "system", content: sysPrompt },
-                { role: "user",   content: prompt },
-            ], { temperature, timeoutMs });
-            logAISuccess("trinity", feature, Date.now() - startTime);
-            return cleanJson(result);
-        } catch (error: any) {
-            errors.push(`Trinity: ${error.message}`);
-        }
-    }
-
-    // 4. OllamaFree
-    if (process.env.OLLAMAFREE_ENABLED === "true") {
-        try {
-            const result = await callOpenAICompatible("ollamafree", [
-                { role: "system", content: sysPrompt },
-                { role: "user",   content: prompt },
-            ], { temperature, timeoutMs: 20_000 });
-            logAISuccess("ollamafree", feature, Date.now() - startTime);
-            return cleanJson(result);
-        } catch (error: any) {
-            errors.push(`OllamaFree: ${error.message}`);
-        }
-    }
-
-
-    throw new Error(`All providers failed: ${errors.join(" | ")}`);
+    throw new Error(`All providers failed:\n${errors.map(e => `• ${e}`).join("\n")}\n\nOya, try again with smaller notes or check your connection sha.`);
 }
 
 /**
@@ -168,20 +160,30 @@ export async function hydraGenerateWithChunking(
 }
 
 export async function hydraGenerateStream(prompt: string, options: HydraOptions = {}): Promise<ReadableStream> {
-    const { feature = "default", timeoutMs = 45_000, model = "llama-3.3-70b-versatile", systemPrompt } = options;
+    const { feature = "default", timeoutMs = 45_000, systemPrompt } = options;
     const temperature = options.temperature ?? FEATURE_TEMPERATURES[feature] ?? FEATURE_TEMPERATURES.default;
     const sysPrompt = systemPrompt ?? "You are an expert AI assistant. Output JSON only.";
     
+    const { sys, usr } = validateRequestSize(sysPrompt, prompt);
+
     const tryStream = async (p: any): Promise<Response | null> => {
         try {
-            return await callOpenAICompatibleStream(p, [{ role: "system", content: sysPrompt }, { role: "user", content: prompt }], { temperature, timeoutMs });
-        } catch { return null; }
+            return await callOpenAICompatibleStream(p, [{ role: "system", content: sys }, { role: "user", content: usr }], { temperature, timeoutMs });
+        } catch (e: any) { 
+            console.warn(`Hydra Stream [${p}] failed: ${e.message}`);
+            return null; 
+        }
     };
 
     let resp = null;
-    if (process.env.GROQ_API_KEY) resp = await tryStream("groq");
-    if (!resp && process.env.OPENROUTER_API_KEY) resp = await tryStream("trinity");
-    if (!resp) throw new Error("Streaming failed");
+    const providers: Array<"groq" | "trinity"> = ["groq", "trinity"];
+    
+    for (const p of providers) {
+        resp = await tryStream(p);
+        if (resp) break;
+    }
+
+    if (!resp) throw new Error("Our streaming server is catching heat sha. Please try again in a moment.");
 
     const reader = resp.body!.getReader();
     const encoder = new TextEncoder();
@@ -236,19 +238,32 @@ export async function hydraGenerateStream(prompt: string, options: HydraOptions 
 }
 
 export async function hydraChatStream(systemPrompt: string, messages: any[], options: HydraOptions = {}): Promise<ReadableStream> {
-    const { feature = "chat", timeoutMs = 45_000, model = "llama-3.3-70b-versatile" } = options;
+    const { feature = "chat", timeoutMs = 45_000 } = options;
     const temperature = options.temperature ?? FEATURE_TEMPERATURES[feature] ?? FEATURE_TEMPERATURES.default;
+
+    // Chat context management
+    const lastMsg = messages[messages.length - 1];
+    const { sys, usr } = validateRequestSize(systemPrompt, lastMsg.content);
+    messages[messages.length - 1].content = usr;
 
     const tryStream = async (p: any): Promise<Response | null> => {
         try {
-            return await callOpenAICompatibleStream(p, [{ role: "system", content: systemPrompt }, ...messages], { temperature, timeoutMs });
-        } catch { return null; }
+            return await callOpenAICompatibleStream(p, [{ role: "system", content: sys }, ...messages], { temperature, timeoutMs });
+        } catch (e: any) { 
+            console.warn(`Hydra ChatStream [${p}] failed: ${e.message}`);
+            return null; 
+        }
     };
 
     let resp = null;
-    if (!resp && process.env.GROQ_API_KEY) resp = await tryStream("groq");
-    if (!resp && process.env.OPENROUTER_API_KEY) resp = await tryStream("trinity");
-    if (!resp) throw new Error("Chat sequence failed");
+    const providers: Array<"groq" | "trinity"> = ["groq", "trinity"];
+    
+    for (const p of providers) {
+        resp = await tryStream(p);
+        if (resp) break;
+    }
+
+    if (!resp) throw new Error("All chat providers failed. Oya, let's take a break and try again.");
 
     const isSSE = resp.headers.get("content-type")?.includes("text/event-stream");
     if (!isSSE) return resp.body!;

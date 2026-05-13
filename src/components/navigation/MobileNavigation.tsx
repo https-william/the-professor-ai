@@ -15,10 +15,10 @@ import BrandLogo from "@/components/ui/BrandLogo";
 
 const navItems = [
     { name: "Home", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Create", href: "/create", icon: PlusCircle, highlight: true },
+    { name: "Create", href: "/create", icon: PlusCircle },
     { name: "Arena", href: "/arena", icon: Swords },
     { name: "Library", href: "/library", icon: Library },
-    { name: "Profile", href: "/settings", icon: User },
+    { name: "Profile", href: "/profile", icon: User },
 ];
 
 export default function MobileNavigation() {
@@ -28,50 +28,65 @@ export default function MobileNavigation() {
     if (!isMobile) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 h-16 bg-[var(--background)]/80 backdrop-blur-2xl border-t border-[var(--border)] z-[60] safe-area-bottom pb-safe flex items-center justify-around px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-6 left-4 right-4 h-18 bg-[var(--background-secondary)]/90 backdrop-blur-2xl border border-[var(--border)] z-[60] rounded-[2.5rem] flex items-center justify-around px-2 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
             {navItems.map((item) => {
                 const isActive = item.href === "/dashboard" 
-                    ? pathname === "/dashboard" 
+                    ? (pathname === "/dashboard" || pathname === "/") 
                     : pathname.startsWith(item.href);
                 
-                if (item.highlight) {
-                    return (
-                        <Link 
-                            key={item.name} 
-                            href={item.href}
-                            className="relative -top-6 flex flex-col items-center gap-1 group"
-                        >
-                            <div className="w-14 h-14 rounded-full bg-[var(--background)] border-4 border-[var(--background)] flex items-center justify-center shadow-[0_10px_25px_rgba(0,0,0,0.3)] active:scale-90 transition-transform">
-                                <BrandLogo size="sm" className="opacity-90" />
-                            </div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] mt-1.5">{item.name}</span>
-                        </Link>
-                    );
-                }
-
                 return (
                     <Link
                         key={item.name}
                         href={item.href}
-                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${
-                            isActive ? "text-[var(--accent)] scale-110" : "text-[var(--foreground-muted)] active:scale-95"
-                        }`}
+                        className={cn(
+                            "relative flex flex-col items-center justify-center transition-all duration-500",
+                            isActive ? "w-16 h-16 -mt-10" : "w-12 h-12"
+                        )}
                     >
-                        <div className="relative">
-                            <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
-                            {isActive && (
-                                <motion.div 
-                                    layoutId="mobilenav-active"
-                                    className="absolute -bottom-1 left-1.5 right-1.5 h-0.5 bg-[var(--accent)] rounded-full"
-                                />
+                        {isActive && (
+                            <motion.div
+                                layoutId="active-fab-bg"
+                                className="absolute inset-0 rounded-full bg-[var(--background)] border-4 border-[var(--background-secondary)] shadow-[0_10px_30px_var(--accent-glow)] z-0"
+                                transition={{ type: "spring", bounce: 0.3, duration: 0.6 }}
+                            />
+                        )}
+
+                        <div className="relative z-10 flex flex-col items-center">
+                            {isActive ? (
+                                <motion.div
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="flex flex-col items-center"
+                                >
+                                    <BrandLogo size="sm" className="mb-1" />
+                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--accent)] leading-none">
+                                        {item.name}
+                                    </span>
+                                </motion.div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-1 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                                    <item.icon size={18} strokeWidth={2} />
+                                    <span className="text-[8px] font-black uppercase tracking-widest leading-none">
+                                        {item.name}
+                                    </span>
+                                </div>
                             )}
                         </div>
-                        <span className={`text-[10px] font-bold tracking-tight ${isActive ? "text-[var(--foreground)]" : ""}`}>
-                            {item.name}
-                        </span>
+
+                        {isActive && (
+                            <motion.div 
+                                layoutId="active-glow"
+                                className="absolute -bottom-1 w-1 h-1 bg-[var(--accent)] rounded-full shadow-[0_0_10px_var(--accent-glow)]"
+                            />
+                        )}
                     </Link>
                 );
             })}
         </div>
     );
+}
+
+// Helper for class names since it might not be imported in this file
+function cn(...classes: any[]) {
+    return classes.filter(Boolean).join(' ');
 }

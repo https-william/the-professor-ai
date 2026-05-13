@@ -47,7 +47,7 @@ export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
     trinity: {
         name: 'Trinity (OpenRouter Free)',
         baseUrl: 'https://openrouter.ai/api/v1',
-        model: 'meta-llama/llama-3.1-8b-instruct:free', // 100% Free on OpenRouter
+        model: 'google/gemini-2.0-flash-lite-preview-02-05:free', // Fast & Stable Free model
         envKey: 'OPENROUTER_API_KEY',
         bestFor: 'Cost-Effective High Performance',
     },
@@ -61,7 +61,7 @@ export const AI_PROVIDERS: Record<AIProvider, ProviderConfig> = {
     cerebras: {
         name: 'Cerebras',
         baseUrl: 'https://api.cerebras.ai/v1',
-        model: 'llama3.1-70b',
+        model: 'llama-3.3-70b',
         envKey: 'CEREBRAS_API_KEY',
         bestFor: 'Real-time tutoring',
     },
@@ -147,7 +147,7 @@ export async function callOpenAICompatible(
 
         if (provider === 'trinity') {
             headers['Authorization'] = `Bearer ${apiKey}`;
-            headers['HTTP-Referer'] = 'https://the-professor.app';
+            headers['HTTP-Referer'] = 'https://theprofessor.xyz';
             headers['X-Title'] = 'The Professor';
         }
 
@@ -242,7 +242,7 @@ export async function callOpenAICompatibleStream(
         }
 
         if (provider === 'trinity') {
-            headers['HTTP-Referer'] = 'https://the-professor.app';
+            headers['HTTP-Referer'] = 'https://theprofessor.xyz';
             headers['X-Title'] = 'The Professor';
         }
 

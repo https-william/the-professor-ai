@@ -25,8 +25,7 @@ export default function FinalCTA() {
           <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={200} /></div>
           
           <div className="relative z-10 flex flex-col items-center">
-            <span className="section-label mb-6" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>THE FINAL CHAPTER</span>
-
+            <span className="section-label mb-6" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>GET STARTED</span>
             <h2 className="mb-8" style={{
               fontFamily: "var(--font-heading)",
               fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
@@ -36,10 +35,9 @@ export default function FinalCTA() {
               letterSpacing: "-0.04em",
               maxWidth: "800px"
             }}>
-              Your exam won&apos;t wait. <br />
-              <span style={{ color: "var(--blue)", textShadow: "0 0 40px var(--blue-glow)" }}>Neither should you.</span>
+              Ready to take <br />
+              <span style={{ color: "var(--blue)", textShadow: "0 0 40px var(--blue-glow)" }}>a break?</span>
             </h2>
-
             <p style={{
               fontFamily: "var(--font-sans)",
               fontSize: "clamp(1rem, 1.5vw, 1.25rem)",
@@ -50,7 +48,7 @@ export default function FinalCTA() {
               fontWeight: 500,
               opacity: 0.8
             }}>
-              Upload your material and get an elite study guide, summary, and active-recall game — <span className="text-[var(--foreground)] font-bold">in seconds.</span>
+              Drop your notes here and get <span className="text-[var(--blue)] font-bold">just the good parts</span>. You've got better things to do than re-reading notes all night. Like literally anything else.
             </p>
 
             {/* Upload Zone */}
@@ -77,21 +75,24 @@ export default function FinalCTA() {
             </div>
 
             {/* Social proof footer */}
-            <div className="mt-16 pt-8 border-t border-[var(--border)] w-full max-w-md flex items-center justify-center gap-3">
+            <div className="mt-16 pt-8 border-t border-[var(--border)] w-full max-w-md flex flex-col items-center gap-4">
               <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-[var(--bg)] bg-[var(--text-4)]" />
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-[var(--bg)] bg-[var(--text-4)] flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-full bg-[var(--blue-dim)] flex items-center justify-center text-[10px] font-black text-[var(--blue)]">
+                      {["T", "A", "I", "B", "C"][i-1]}
+                    </div>
+                  </div>
                 ))}
               </div>
               <p style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "10px",
+                fontFamily: "var(--font-sans)",
+                fontSize: "13px",
                 color: "var(--foreground-muted)",
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase"
+                fontWeight: 600,
+                opacity: 0.8
               }}>
-                Hundreds of Scholars Active
+                Tunde, Amaka, Ifeanyi and 400+ others are acing their classes with us.
               </p>
             </div>
           </div>

@@ -1,26 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIngestStore } from "@/store/useIngestStore";
+import { performOCR } from "@/lib/ocr-bridge";
 import { X, Upload, CheckCircle2, Loader2, AlertCircle, Sparkles, MessageCircle, Type, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ═══ Claymorphic style helpers ═══ */
 const clay = {
-    modal: {
-        background: "var(--bg-2)",
-        backdropFilter: "blur(20px)",
-        borderRadius: "32px",
-        border: "1px solid var(--border)",
-        boxShadow: "inset 0 1px 1px rgba(255, 255, 255, 0.05), inset 0 -1px 2px rgba(0, 0, 0, 0.3), 0 24px 64px rgba(0, 0, 0, 0.5)",
-    } as React.CSSProperties,
-    dropzone: {
-        background: "rgba(255, 255, 255, 0.02)",
-        borderRadius: "24px",
-        border: "2px dashed var(--blue-border)",
-        transition: "all 0.3s ease",
-    } as React.CSSProperties,
     textarea: {
         background: "rgba(255, 255, 255, 0.02)",
         borderRadius: "20px",
@@ -54,6 +42,18 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
     const hasSuccess = queue.some(item => item.status === 'success');
     const isProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
 
+    // Prevent scroll when open
+    useEffect(() => {
+        if (isModalOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "unset";
+        }
+        return () => {
+            document.body.style.overflow = "unset";
+        };
+    }, [isModalOpen]);
+
     // Real Processor
     useEffect(() => {
         const processNext = async () => {
@@ -80,11 +80,19 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                     throw new Error(result.error || "Failed to process document");
                 }
 
+                let finalWeightText = result.text || "";
+
+                if (result.isOcrRequired && result.images) {
+                    updateFileStatus(nextItem.id, 'learning', 50); // Show OCR phase
+                    console.log("[Parser] OCR Phase Started for images:", result.images.length);
+                    const ocrText = await performOCR(result.images);
+                    finalWeightText = `${result.baseText || ""}\n\n${ocrText}`;
+                }
+
                 updateFileStatus(nextItem.id, 'success', 100);
                 
-                // Store the text in the component's parent or store
-                if (onSuccess && result.text) {
-                    onSuccess(result.text);
+                if (onSuccess && finalWeightText) {
+                    onSuccess(finalWeightText);
                 }
             } catch (err: any) {
                 console.error("Ingestion Error:", err);
@@ -111,8 +119,6 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
         if (!pastedText.trim()) return;
         setIsPasting(true);
         const tempId = Math.random().toString(36).substring(7);
-        
-        // Add as a virtual file to the queue
         addFiles([new File([pastedText], "Pasted Knowledge.txt")], [tempId]);
         setPastedText("");
         setIsPasting(false);
@@ -219,7 +225,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                         <Upload className="w-8 h-8" strokeWidth={3} />
                                     </div>
                                     <h4 className="text-lg font-black text-[var(--foreground)] mb-1">Drop notes here</h4>
-                                    <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-[0.2em] font-black">Any document, image, or voice</p>
+                                    <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-[0.2em] font-black">PDF, PPTX, DOCX, or Images</p>
                                     <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
                                 </div>
                             </label>

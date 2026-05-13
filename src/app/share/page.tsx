@@ -17,7 +17,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
             title: "Shared Academic Content",
             description: "High-rigor study materials prepared by The Professor.",
             type: "article",
-            images: ["/logo.png"],
+            images: ["/logo.svg"],
         }
     };
 }

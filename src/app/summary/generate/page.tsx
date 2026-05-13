@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import DataDustLoader from "@/components/ui/DataDustLoader";
+import ProfessorCeremony from "@/components/ui/ProfessorCeremony";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import EndowmentModal from "@/components/modals/EndowmentModal";
 import { useUser } from "@/context/UserContext";
@@ -130,21 +131,18 @@ export default function SummaryGenerate() {
             </div>
 
             <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
-                <DataDustLoader />
+                <ProfessorCeremony />
                 
-                <div className="w-full bg-white/5 h-1 rounded-full mt-12 mb-4 overflow-hidden border border-white/5">
+                <div className="w-full bg-white/5 h-1 rounded-full mt-8 mb-4 overflow-hidden border border-white/5">
                     <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
-                        className="h-full bg-[var(--blue)] shadow-[0_0_15px_var(--blue-glow)]"
+                        className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
                     />
                 </div>
 
                 <div className="text-center">
-                    <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)] opacity-50 mb-2">
-                        {status === "initializing" ? "Calibrating Neural Net..." : "Distilling Masterclass..."}
-                    </p>
-                    <p className="text-[10px] font-mono font-black text-[var(--blue)] opacity-80">
+                    <p className="text-[10px] font-mono font-black text-white/20">
                         {progress}% Complete
                     </p>
                 </div>

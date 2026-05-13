@@ -24,13 +24,32 @@ import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 function getGreeting(userId?: string): string {
     const hour = new Date().getHours();
     
-    // Creative greetings
-    const morning = ["Good morning", "Rise and shine", "Ready to conquer?", "Welcome to the lab"];
-    const afternoon = ["Good afternoon", "Let's build that intuition", "Time to level up", "Midday focus mode"];
-    const evening = ["Good evening", "Evening strategy session", "Let's make some progress", "Wind down with mastery"];
-    const night = ["Burning the midnight oil", "Late night session", "Quiet hours, loud results", "The world sleeps, you learn"];
+    // Professor-style greetings (Coffee-Shop Casual)
+    const morning = [
+        "Rise and shine. It's early sha, but the coffee is fresh and your brain is ready",
+        "Morning session? Oya, let's turn these notes into something you actually remember",
+        "Early bird energy. You're up before the group chat, and that's a win",
+        "Good morning. Let's make today remarkably easy on your future self"
+    ];
+    const afternoon = [
+        "Midday check-in. How's the caffeine levels holding up?",
+        "Afternoon shift. Let's tackle that one concept that's been bugging you",
+        "Hope your lunch was solid. Oya, let's get back to it—just the good parts",
+        "Strategic break? Or strategic study? Either way, I'm here for it"
+    ];
+    const evening = [
+        "Evening session. Let's wrap this up so you can actually have a life tonight",
+        "Sunset scholars. The hard part is over sha, now we just refine",
+        "Good evening. Ready to distill some knowledge and then call it a day",
+        "Wind down mode. Let's look at the highlights and then close the laptop"
+    ];
+    const night = [
+        "Midnight oil? I hope you're doing this for you and not a deadline",
+        "Late night wisdom. The world is quiet, perfect for those 'A-ha!' moments",
+        "Still awake? Oya, let's make these last few minutes count so you can sleep",
+        "2 AM energy? You're built different. Let's secure the bag and go to bed"
+    ];
     
-    // Pick based on user ID to keep it somewhat stable per session/day
     let hash = 0;
     if (userId) {
         for (let i = 0; i < userId.length; i++) {

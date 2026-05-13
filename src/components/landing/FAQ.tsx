@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 const FAQS = [
   {
     q: "What file types can I upload?",
-    a: "PDF documents, Word files (.docx), images (JPG, PNG, WEBP) — including photos of handwritten notes — and voice recordings. If your notes exist in any readable format, The Professor can work with them. Yes, this includes WhatsApp-forwarded lecture slides.",
+    a: "PDF documents, PowerPoint slides (.pptx), Word files (.docx), and images (JPG, PNG, WEBP) — including photos of handwritten notes. If your notes exist in any readable format, The Professor can work with them. Yes, this includes WhatsApp-forwarded lecture slides.",
   },
   {
     q: "Do I need to create an account before I start?",

@@ -35,8 +35,8 @@ export default function NavPill() {
         height: "56px",
         padding: "0 8px 0 20px",
         background: scrolled ? "var(--bg-2)" : "var(--background)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         border: `1px solid ${scrolled ? "var(--border)" : "var(--border-2)"}`,
         borderRadius: "9999px",
         boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,0.1), 0 1px 0 var(--border) inset" : "none",
@@ -44,9 +44,9 @@ export default function NavPill() {
       }}
     >
       {/* Left — Logo */}
-      <Link href="/" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none" }}>
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
         <BrandLogo size="xs" />
-        <span style={{
+        <span className="hidden sm:inline" style={{
           fontFamily: "var(--font-heading)",
           fontSize: "14px",
           fontWeight: 900,
@@ -57,28 +57,28 @@ export default function NavPill() {
         </span>
       </Link>
 
-      {/* Center — Nav Links (hidden on mobile) */}
-      <div className="hidden lg:flex" style={{ alignItems: "center", gap: "4px" }}>
+      {/* Center — Nav Links */}
+      <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
         {[
-          { label: "AI Tools", href: "/tools/ai-study-planner" },
-          { label: "Resources", href: "/exams", dropdown: [
+          { label: "AI Tools", href: "/tools/ai-study-planner", className: "hidden lg:flex" },
+          { label: "Resources", href: "/exams", className: "hidden lg:flex", dropdown: [
             { label: "JAMB 2026", href: "/exams/jamb" },
             { label: "WAEC 2026", href: "/exams/waec" },
             { label: "SAT Guide", href: "/exams/sat" },
             { label: "Glossary", href: "/glossary" },
           ]},
-          { label: "Blog", href: "/blog" },
+          { label: "Blog", href: "/blog", className: "flex" },
         ].map((link) => (
-          <div key={link.label} className="relative group">
+          <div key={link.label} className={`relative group ${link.className}`}>
             <Link
               href={link.href}
               className="nav-link-pill"
               style={{
                 fontFamily: "var(--font-sans)",
-                fontSize: "12px",
+                fontSize: "11px",
                 fontWeight: 800,
                 color: "var(--text-3)",
-                padding: "8px 16px",
+                padding: "8px 12px",
                 borderRadius: "9999px",
                 textDecoration: "none",
                 transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",

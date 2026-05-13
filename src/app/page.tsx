@@ -3,14 +3,9 @@
 import React, { useEffect } from "react";
 import NavPill from "@/components/landing/NavPill";
 import HeroSection from "@/components/landing/HeroSection";
-import PhilosophySection from "@/components/landing/PhilosophySection";
-import SocialProof from "@/components/landing/SocialProof";
-import PainSection from "@/components/landing/PainSection";
-import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import InteractiveDemo from "@/components/landing/InteractiveDemo";
-import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import FAQSection from "@/components/landing/FAQ";
 import FinalCTA from "@/components/landing/FinalCTA";
+import TheManifesto from "@/components/landing/TheManifesto";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -37,13 +32,8 @@ export default function LandingPage() {
     <>
       <NavPill />
       <HeroSection />
-      <PhilosophySection />
-      <SocialProof />
-      <PainSection />
-      <HowItWorksSection />
+      <TheManifesto />
       <InteractiveDemo />
-      <TestimonialsSection />
-      <FAQSection />
       <FinalCTA />
     </>
   );

@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 import { hydraGenerateStream } from "@/lib/ai/hydra";
 import { validateContent, validateCount, validateDifficulty, safeErrorResponse } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/server";
-import { buildFlashcardsPrompt } from "@/lib/ai/prompts";
+import { buildFlashcardsPrompt, guardContentSize, LARGE_CONTENT_THRESHOLD } from "@/lib/ai/prompts";
 import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 import { generateAITitle } from "@/lib/ai/titling";
 import { recordActivity } from "@/lib/xp";
@@ -36,13 +36,18 @@ export async function POST(req: NextRequest) {
         if (!contentResult.isValid) {
             return safeErrorResponse(contentResult.error || "Invalid content");
         }
-        const content = contentResult.sanitized!;
+        const rawContent = contentResult.sanitized!;
+        const { content, wasTruncated } = guardContentSize(rawContent);
+
+        if (rawContent.length > LARGE_CONTENT_THRESHOLD) {
+            console.info(`[Flashcards] Large content detected: ${rawContent.length} chars. Truncated: ${wasTruncated}.`);
+        }
 
         const { value: count } = validateCount(body.count, 10);
         const difficulty = validateDifficulty(body.difficulty);
 
         const prompt = buildFlashcardsPrompt(
-            content.substring(0, 40_000),
+            content,
             count,
             difficulty,
             body.explainStyle
@@ -54,9 +59,13 @@ export async function POST(req: NextRequest) {
                 feature: "flashcards",
                 timeoutMs: 45_000,
             });
-        } catch (aiError) {
+        } catch (aiError: any) {
             console.error("Flashcard AI Error:", aiError);
-            return new Response(JSON.stringify({ error: "AI generation failed." }), {
+            const isContextOverflow = aiError?.message?.toLowerCase().includes("context") || aiError?.message?.toLowerCase().includes("token");
+            const userMsg = isContextOverflow
+                ? "Your notes are too large for a single retention session sha. Break them down so we can focus properly."
+                : "The Professor is taking a break. Try again in a few seconds.";
+            return new Response(JSON.stringify({ error: userMsg }), {
                 status: 503,
                 headers: { "Content-Type": "application/json" }
             });
@@ -69,7 +78,7 @@ export async function POST(req: NextRequest) {
         const stream = new ReadableStream({
             async start(controller) {
                 try {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: `Creating ${count} flashcards...` })}\n\n`));
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: `Creating ${count} flashcards...`, wasTruncated })}\n\n`));
 
                     const generatedCards: any[] = [];
                     let title = "Generated Flashcards";

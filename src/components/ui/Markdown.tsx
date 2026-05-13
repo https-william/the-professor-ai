@@ -1,42 +1,90 @@
+"use client";
+
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import remarkBreaks from "remark-breaks";
+import "katex/dist/katex.min.css";
 import { Sparkles } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
-const mdComponents = {
-    h1: ({node, ...props}: any) => <h1 className="text-2xl font-black text-[var(--foreground)] mb-6 mt-2 tracking-tight" {...props} />,
-    h2: ({node, ...props}: any) => <h2 className="text-lg font-bold text-[var(--foreground)] mb-4 mt-10 flex items-center gap-3 border-b border-[var(--border)] pb-2" {...props} />,
-    h3: ({node, ...props}: any) => <h3 className="text-base font-bold text-[var(--foreground)] mb-3 mt-8" {...props} />,
-    h4: ({node, ...props}: any) => <h4 className="text-sm font-bold text-[var(--foreground)] mb-2 mt-6 uppercase tracking-wider" {...props} />,
-    p: ({node, ...props}: any) => <p className="mb-6 leading-relaxed text-base text-[var(--foreground-secondary)] opacity-90" {...props} />,
-    ul: ({node, ...props}: any) => <ul className="mb-8 space-y-3 list-none" {...props} />,
-    ol: ({node, ...props}: any) => <ol className="mb-8 space-y-4 list-decimal pl-5" {...props} />,
-    li: ({node, ...props}: any) => (
-        <li className="flex gap-3 text-base text-[var(--foreground-secondary)] items-start" {...props}>
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] mt-2.5 flex-shrink-0 opacity-40" />
-            <span className="opacity-90">{props.children}</span>
-        </li>
-    ),
-    strong: ({node, ...props}: any) => <strong className="font-black text-[var(--foreground)]" {...props} />,
-    code: ({node, ...props}: any) => <code className="px-1.5 py-0.5 rounded bg-[var(--foreground)]/5 font-mono text-[12px] text-[var(--blue)]" {...props} />,
-    blockquote: ({node, ...props}: any) => (
-        <blockquote className="border-l-2 border-[var(--blue)]/50 pl-4 py-2 my-8 italic text-[var(--foreground-muted)] bg-[var(--blue)]/5 rounded-r-xl" {...props} />
-    ),
+const revealVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: { duration: 0.5, ease: "circOut" }
+    }
 };
 
-export default function Markdown({ children }: { children: string }) {
+const mdComponents = {
+    h1: ({node, ...props}: any) => <motion.h1 variants={revealVariants} className="text-3xl font-black text-white mb-8 mt-4 tracking-tighter bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent" {...props} />,
+    h2: ({node, ...props}: any) => <motion.h2 variants={revealVariants} className="text-xl font-bold text-white mb-6 mt-12 flex items-center gap-3 border-b border-white/5 pb-3" {...props} />,
+    h3: ({node, ...props}: any) => <motion.h3 variants={revealVariants} className="text-lg font-bold text-white/90 mb-4 mt-10" {...props} />,
+    h4: ({node, ...props}: any) => <motion.h4 variants={revealVariants} className="text-sm font-bold text-white/60 mb-2 mt-8 uppercase tracking-[0.2em]" {...props} />,
+    p: ({node, ...props}: any) => <motion.p variants={revealVariants} className="mb-8 leading-relaxed text-[17px] text-white/80 font-medium" {...props} />,
+    ul: ({node, ...props}: any) => <motion.ul variants={revealVariants} className="mb-10 space-y-4 list-none" {...props} />,
+    ol: ({node, ...props}: any) => <motion.ol variants={revealVariants} className="mb-10 space-y-5 list-decimal pl-6 text-white/70" {...props} />,
+    li: ({node, ...props}: any) => (
+        <motion.li variants={revealVariants} className="flex gap-4 text-base text-white/70 items-start group" {...props}>
+            <span className="w-1.5 h-1.5 rounded-full bg-white/20 mt-2.5 flex-shrink-0 group-hover:bg-white/40 transition-colors" />
+            <span className="opacity-90 leading-relaxed">{props.children}</span>
+        </motion.li>
+    ),
+    strong: ({node, ...props}: any) => <strong className="font-black text-white" {...props} />,
+    code: ({node, ...props}: any) => (
+        <code className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 font-mono text-[13px] text-amber-200" {...props} />
+    ),
+    blockquote: ({node, ...props}: any) => (
+        <motion.blockquote variants={revealVariants} className="border-l-4 border-white/10 pl-6 py-4 my-10 italic text-white/50 bg-white/[0.02] rounded-r-3xl" {...props} />
+    ),
+    table: ({node, ...props}: any) => (
+        <motion.div variants={revealVariants} className="overflow-x-auto my-12 rounded-[2rem] border border-white/5 bg-white/[0.01] backdrop-blur-sm">
+            <table className="min-w-full divide-y divide-white/10" {...props} />
+        </motion.div>
+    ),
+    th: ({node, ...props}: any) => <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-white/30" {...props} />,
+    td: ({node, ...props}: any) => <td className="px-8 py-5 text-sm text-white/60 border-t border-white/5" {...props} />,
+};
+
+export default function Markdown({ children, className }: { children: string, className?: string }) {
     return (
-        <div className="!font-tiempos">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+        <div className={cn("selection:bg-white/10 selection:text-white", className)}>
+            <ReactMarkdown 
+                remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]} 
+                rehypePlugins={[rehypeKatex]}
+                components={mdComponents}
+            >
                 {children}
             </ReactMarkdown>
             
+            {/* The "Identity Nudge" styling for the footer if it exists */}
+            {children.includes("That's the difference sha.") && (
+                <motion.div 
+                    variants={revealVariants}
+                    className="mt-20 pt-10 border-t border-white/5 flex flex-col items-center text-center opacity-30 hover:opacity-100 transition-opacity duration-700"
+                >
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-black text-white/40 mb-2">
+                        Strategic Verification Complete
+                    </p>
+                    <div className="w-1 h-1 rounded-full bg-white/20" />
+                </motion.div>
+            )}
+
             {/* AI Transparency Watermark */}
-            <div className="mt-16 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-center gap-2 text-[10px] text-[var(--foreground-muted)] opacity-40 select-none">
-                <Sparkles size={12} className="text-[var(--blue)]" />
-                <p className="leading-tight font-black uppercase tracking-widest">
-                    AI-generated Synthesis • Verify critical facts
-                </p>
-            </div>
+            {!children.includes("That's the difference sha.") && (
+                <motion.div 
+                    variants={revealVariants}
+                    className="mt-20 pt-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-center gap-3 text-[9px] text-white/20 select-none"
+                >
+                    <Sparkles size={12} className="text-white/20" />
+                    <p className="leading-tight font-black uppercase tracking-[0.3em]">
+                        AI-Generated Synthesis • Verify critical facts
+                    </p>
+                </motion.div>
+            )}
         </div>
     );
 }

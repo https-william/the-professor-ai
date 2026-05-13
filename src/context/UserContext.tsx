@@ -101,13 +101,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const incrementStreak = async () => {
         try {
-            const res = await fetch("/api/user/profile", {
-                method: "PUT",
+            // Trigger server-side streak logic via activity API
+            const res = await fetch("/api/user/activity", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ streak: store.streak + 1 }),
+                body: JSON.stringify({ type: "daily_challenge" }),
             });
             if (res.ok) {
-                store.updateUser({ streak: store.streak + 1 });
+                await store.refreshUser();
             }
         } catch (error) {
             console.error("Error incrementing streak:", error);
@@ -216,7 +217,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: store.isAuthenticated,
         hasOnboarded: store.hasOnboarded,
         syncError: store.syncError,
-        createdAt: store.createdAt
+        createdAt: store.createdAt,
+        notificationEmail: store.notificationEmail,
+        notificationPush: store.notificationPush,
+        dailyGoalMinutes: store.dailyGoalMinutes,
+        difficultyPreference: store.difficultyPreference,
+        themePreference: store.themePreference
     };
 
     return (

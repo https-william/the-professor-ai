@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from "next/server";
 import { hydraChatStream } from "@/lib/ai/hydra";
 import { createClient } from "@/lib/supabase/server";
-import { buildSummaryPrompt } from "@/lib/ai/prompts";
+import { buildSummaryPrompt, guardContentSize, LARGE_CONTENT_THRESHOLD } from "@/lib/ai/prompts";
 import { parseSummaryResponse } from "@/lib/ai/schemas";
 import { validateContent } from "@/lib/validation";
 import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
@@ -38,10 +38,15 @@ export async function POST(req: NextRequest) {
         if (!contentResult.isValid) {
             return new Response(JSON.stringify({ error: contentResult.error || "Invalid content" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
-        const content = contentResult.sanitized!;
+        const rawContent = contentResult.sanitized!;
+        const { content, wasTruncated } = guardContentSize(rawContent);
+
+        if (rawContent.length > LARGE_CONTENT_THRESHOLD) {
+            console.info(`[Summary] Large content detected: ${rawContent.length} chars. Truncated: ${wasTruncated}.`);
+        }
 
         const prompt = buildSummaryPrompt(
-            content.substring(0, 45_000),
+            content,
             style,
             body.explainStyle
         );
@@ -53,11 +58,14 @@ export async function POST(req: NextRequest) {
                 [{ role: "user", content: prompt }],
                 { feature: "summary", timeoutMs: 60_000 }
             );
-        } catch (aiError) {
+        } catch (aiError: any) {
             console.error("Summary AI Error:", aiError);
-            return new Response(JSON.stringify({ error: "AI generation failed." }), {
-                status: 503,
-                headers: { "Content-Type": "application/json" }
+            const isContextOverflow = aiError?.message?.toLowerCase().includes("context") || aiError?.message?.toLowerCase().includes("token");
+            const userMsg = isContextOverflow
+                ? "Your notes are too large for a single distill session sha. Split them into smaller sections and try again."
+                : "The Professor is momentarily busy. Try again in a few seconds.";
+            return new Response(JSON.stringify({ error: userMsg }), {
+                status: 503, headers: { "Content-Type": "application/json" }
             });
         }
 
@@ -68,7 +76,7 @@ export async function POST(req: NextRequest) {
         const stream = new ReadableStream({
             async start(controller) {
                 try {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: "Distilling core concepts..." })}\n\n`));
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: "Distilling core concepts...", wasTruncated })}\n\n`));
 
                     let fullMarkdown = "";
                     while (true) {

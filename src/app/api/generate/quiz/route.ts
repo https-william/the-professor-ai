@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 import { hydraGenerateStream } from "@/lib/ai/hydra";
 import { validateContent, validateCount, validateDifficulty, safeErrorResponse } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/server";
-import { buildQuizPrompt } from "@/lib/ai/prompts";
+import { buildQuizPrompt, guardContentSize, LARGE_CONTENT_THRESHOLD } from "@/lib/ai/prompts";
 import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 import { generateAITitle } from "@/lib/ai/titling";
 import { recordActivity } from "@/lib/xp";
@@ -36,13 +36,19 @@ export async function POST(req: NextRequest) {
         if (!contentResult.isValid) {
             return safeErrorResponse(contentResult.error || "Invalid content");
         }
-        const content = contentResult.sanitized!;
+        const rawContent = contentResult.sanitized!;
+        const { content, wasTruncated } = guardContentSize(rawContent);
+
+        // Pre-flight size warning: if notes are large, warn before generation starts
+        if (rawContent.length > LARGE_CONTENT_THRESHOLD) {
+            console.info(`[Quiz] Large content detected: ${rawContent.length} chars. Truncated: ${wasTruncated}.`);
+        }
 
         const { value: count } = validateCount(body.count, 10);
         const difficulty = validateDifficulty(body.difficulty);
 
         const prompt = buildQuizPrompt(
-            content.substring(0, 40_000),
+            content,
             count,
             difficulty,
             body.explainStyle
@@ -54,9 +60,13 @@ export async function POST(req: NextRequest) {
                 feature: "quiz",
                 timeoutMs: 60_000,
             });
-        } catch (aiError) {
+        } catch (aiError: any) {
             console.error("Quiz AI Error:", aiError);
-            return new Response(JSON.stringify({ error: "AI generation failed." }), {
+            const isContextOverflow = aiError?.message?.toLowerCase().includes("context") || aiError?.message?.toLowerCase().includes("token");
+            const userMsg = isContextOverflow
+                ? "Your notes are too large for a single quiz session sha. Break them into smaller sections and try again — we process up to ~40,000 characters at once."
+                : "The Professor is momentarily busy. Try again in a few seconds.";
+            return new Response(JSON.stringify({ error: userMsg }), {
                 status: 503,
                 headers: { "Content-Type": "application/json" }
             });
@@ -69,7 +79,7 @@ export async function POST(req: NextRequest) {
         const stream = new ReadableStream({
             async start(controller) {
                 try {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: `Creating ${count} questions (${difficulty})...` })}\n\n`));
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: `Creating ${count} questions (${difficulty})...`, wasTruncated })}\n\n`));
 
                     const generatedQuestions: any[] = [];
                     let title = "Generated Quiz";

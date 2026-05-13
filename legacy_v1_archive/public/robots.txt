@@ -1,9 +1,0 @@
-# The Professor - AI Study Tool
-# https://www.theprofessor.xyz
-
-User-agent: *
-Allow: /
-Disallow: /admin
-
-# Sitemap location
-Sitemap: https://www.theprofessor.xyz/sitemap.xml

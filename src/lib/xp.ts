@@ -20,17 +20,17 @@ export async function recordActivity(
 
     if (!targetUserId) return null;
 
-    // 1. Calculate XP based on activity
+    // 1. Calculate XP based on activity (Boosted for better progression feel)
     const xpMap: Record<string, number> = {
-        quiz: 10,
-        flashcards: 5,
-        summary: 3,
-        roadmap: 15,
-        daily_challenge: 0
+        quiz: 50,
+        flashcards: 30,
+        summary: 20,
+        roadmap: 100,
+        daily_challenge: 25
     };
     const xpToAdd = customXp !== undefined ? customXp : (xpMap[type] || 0);
 
-    // 2. Fetch current profile stats (including streak freeze)
+    // 2. Fetch current profile stats
     const { data: profile } = await supabase
         .from("profiles")
         .select("xp_total, current_streak, last_study_date, streak_freeze_count")
@@ -39,35 +39,40 @@ export async function recordActivity(
 
     if (!profile) return null;
 
-    // 3. Streak Logic (UTC Date based) with Freeze Support
+    // 3. Robust Date-Based Streak Logic
     const now = new Date();
-    const today = now.toISOString().split('T')[0]; // "YYYY-MM-DD"
+    // Get local date in "YYYY-MM-DD" format (using local time to match user expectation)
+    // For now we'll stick to UTC split for consistency, but compare full day differences
+    const todayStr = now.toISOString().split('T')[0];
     
     let newStreak = profile.current_streak || 0;
     let freezeUsed = false;
     let streakReset = false;
-    const lastDate = profile.last_study_date;
+    const lastDateStr = profile.last_study_date;
     const freezeCount = profile.streak_freeze_count || 0;
 
-    if (!lastDate) {
-        // First ever activity
+    if (!lastDateStr) {
         newStreak = 1;
     } else {
-        const last = new Date(lastDate);
-        const diffTime = now.getTime() - last.getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        // Parse dates as "YYYY-MM-DD" at midnight to get clean day differences
+        const today = new Date(todayStr);
+        const last = new Date(lastDateStr);
+        
+        const diffTime = today.getTime() - last.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-        if (today === lastDate) {
-            // Already studied today, keep streak as is
+        if (diffDays === 0) {
+            // Already studied today according to the date string
+            // Keep current streak
         } else if (diffDays === 1) {
-            // Studied yesterday, increment streak
+            // Studied exactly yesterday
             newStreak += 1;
         } else if (diffDays === 2 && freezeCount > 0) {
-            // Missed exactly 1 day but have a streak freeze
-            newStreak += 1; // Continue streak
+            // Missed one day, but have a freeze
+            newStreak += 1;
             freezeUsed = true;
-        } else if (diffDays > 1) {
-            // Missed too many days, reset streak
+        } else {
+            // Missed too many days or no freeze available
             newStreak = 1;
             streakReset = true;
         }

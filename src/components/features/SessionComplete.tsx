@@ -13,8 +13,12 @@ import {
     Lightbulb,
     Trophy as TrophyIcon,
     Timer,
-    Target
+    Target,
+    Share2,
+    Check
 } from "lucide-react";
+import ShareCard from "@/components/ShareCard";
+import { useUser } from "@/context/UserContext";
 
 const ICON_MAP: Record<string, any> = {
   style: Layers,
@@ -140,6 +144,8 @@ export interface SessionCompleteProps {
     extraStat?: { label: string; value: string; icon: string };
     /** Where to go for "Continue studying" */
     continueHref?: string;
+    /** The items studied (optional, for ShareCard) */
+    items?: any[];
 }
 
 const typeConfig = {
@@ -192,9 +198,12 @@ export default function SessionComplete({
     title,
     extraStat,
     continueHref = "/dashboard",
+    items = [],
 }: SessionCompleteProps) {
+    const { user } = useUser();
     const [particles, setParticles] = useState<Particle[]>([]);
     const [tip, setTip] = useState("");
+    const [isShareOpen, setIsShareOpen] = useState(false);
     const config = typeConfig[type];
 
     useEffect(() => {
@@ -404,6 +413,14 @@ export default function SessionComplete({
                                         {config.suggestLabel}
                                     </Link>
 
+                                    <button
+                                        onClick={() => setIsShareOpen(true)}
+                                        className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.97] bg-white/[0.03] border border-white/10 text-white/70 hover:bg-white/5"
+                                    >
+                                        <Share2 size={18} strokeWidth={1.5} />
+                                        Share Performance
+                                    </button>
+
                                     <Link
                                         href={continueHref}
                                         onClick={onDismiss}
@@ -417,6 +434,18 @@ export default function SessionComplete({
                     </motion.div>
                 </motion.div>
             )}
+
+            <ShareCard 
+                isOpen={isShareOpen}
+                onClose={() => setIsShareOpen(false)}
+                data={{ 
+                    title: title || config.label, 
+                    count: extraStat?.value || 0, 
+                    type: type === 'flashcards' ? 'Flashcards' : type === 'quiz' ? 'Quiz' : 'Summary', 
+                    user: user?.name || "Scholar",
+                    items: items
+                }}
+            />
         </AnimatePresence>
     );
 }

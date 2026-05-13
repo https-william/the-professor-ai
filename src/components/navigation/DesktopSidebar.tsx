@@ -39,7 +39,7 @@ export default function DesktopSidebar() {
     const router = useRouter();
     const { isDesktop } = useAppPlatform();
     const { user } = useUser();
-    const { theme, toggleTheme } = useTheme();
+    const { theme, resolvedTheme, toggleTheme } = useTheme();
     const { isInstallable, installApp } = usePWA();
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -67,7 +67,7 @@ export default function DesktopSidebar() {
     if (isHidden) return null;
 
     return (
-        <aside className="fixed left-0 top-0 bottom-0 w-14 md:w-20 md:hover:w-64 group bg-[var(--background)]/80 backdrop-blur-2xl border-r border-[var(--border)] z-50 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.1)]">
+        <aside className="fixed left-0 top-0 bottom-0 w-14 md:w-20 md:hover:w-64 group bg-[var(--background)]/90 backdrop-blur-lg border-r border-[var(--border)] z-50 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.1)]">
             <div className="flex flex-col h-full py-4 md:py-8">
                 {/* Logo Section */}
                 <div className="px-2 md:px-5 mb-6 md:mb-8 flex justify-center">
@@ -174,10 +174,10 @@ export default function DesktopSidebar() {
                         className="w-full flex items-center gap-4 p-3 rounded-2xl text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.03] hover:text-[var(--foreground)] transition-all duration-300"
                     >
                         <div className="shrink-0 w-6 h-6 flex items-center justify-center">
-                            {theme === "dark" ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
+                            {resolvedTheme === "dark" ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
                         </div>
                         <span className="font-sans font-bold text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                            {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
                         </span>
                     </button>
 

@@ -72,7 +72,7 @@ export default function UploadZone({ compact, onFileSelected }: UploadZoneProps)
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.pptx"
         className="hidden"
         onChange={handleFileChange}
       />
@@ -129,7 +129,7 @@ export default function UploadZone({ compact, onFileSelected }: UploadZoneProps)
         color: "var(--text-3)",
         marginTop: "6px"
       }}>
-        PDF · Word · Images · Audio
+        PDF · PPTX · Word · Images
       </p>
 
       <div style={{

@@ -10,7 +10,7 @@ const STEPS = [
     side: "right" as const,
     extra: (
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "14px" }}>
-        {["PDF", "DOCX", "JPG / PNG", "Voice notes", "WhatsApp forwards"].map(f => (
+        {["PDF", "DOCX", "PPTX", "JPG / PNG", "WhatsApp forwards"].map(f => (
           <span key={f} className="format-pill" style={{ background: "var(--blue-dim)", border: "1px solid var(--blue-border)", color: "var(--blue)", fontSize: "10px", fontWeight: 800, padding: "4px 10px", borderRadius: "99px" }}>{f}</span>
         ))}
       </div>

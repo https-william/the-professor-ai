@@ -40,7 +40,7 @@ export default function BottomTabs() {
             <div 
                 className={cn(
                     "mx-auto max-w-md w-full pointer-events-auto",
-                    "bg-[var(--background-secondary)]/70 backdrop-blur-3xl saturate-150",
+                    "bg-[var(--background-secondary)]/85 backdrop-blur-lg",
                     "border border-[var(--border)]",
                     "rounded-[2.5rem] shadow-2xl",
                     "flex items-center justify-around p-2",

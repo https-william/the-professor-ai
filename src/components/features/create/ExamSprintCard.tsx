@@ -35,7 +35,7 @@ export default function ExamSprintCard({ onClick }: ExamSprintCardProps) {
                 </div>
 
                 <div className="px-12 py-5 rounded-full bg-white border border-[var(--blue)]/20 text-[var(--blue)] font-black text-sm uppercase tracking-[0.3em] shadow-[0_15px_30px_-10px_rgba(59,130,246,0.3)] transition-all group-hover:bg-[var(--blue)] group-hover:text-white group-hover:scale-105 active:scale-95 group-hover:shadow-[0_20px_40px_-10px_rgba(59,130,246,0.5)]">
-                    Initialize
+                    I'm ready
                 </div>
             </div>
         </button>

@@ -37,9 +37,9 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen w-full flex items-center justify-center p-6 bg-[#08080E] relative overflow-hidden">
-          {/* Subtle atmospheric depth */}
-          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/5 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-amber-500/5 rounded-full blur-[120px]" />
+          {/* Atmospheric depth — Restored brand vibrancy */}
+          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-500/10 rounded-full blur-[140px] animate-pulse" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-amber-500/10 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '1s' }} />
 
           <motion.div 
             initial={{ opacity: 0, y: 15, scale: 0.98 }}

@@ -30,7 +30,7 @@ export default function Eli5Viewer() {
     if (!content) return null;
 
     return (
-        <div className="min-h-screen bg-[#fcfbf9] text-[var(--foreground)] py-24 relative overflow-hidden">
+        <div className="min-h-screen bg-[var(--bg)] text-[var(--foreground)] py-24 relative overflow-hidden">
             {/* Ambient Background */}
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--blue-glow)] opacity-[0.03] rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             
@@ -40,12 +40,12 @@ export default function Eli5Viewer() {
                     <div className="flex items-center justify-between">
                         <button 
                             onClick={() => router.push('/create')}
-                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[#1a1a1a] transition-all"
+                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all"
                         >
                             <ChevronLeft size={16} /> Return to Studio
                         </button>
                         <div className="flex items-center gap-3">
-                            <button onClick={handleCopy} className="p-3 rounded-full bg-white border border-[var(--border)] shadow-sm hover:shadow-md transition-all">
+                            <button onClick={handleCopy} className="p-3 rounded-full bg-[var(--card)] border border-[var(--border)] shadow-sm hover:shadow-md transition-all">
                                 <Share2 size={16} className="text-[var(--foreground-muted)]" />
                             </button>
                         </div>
@@ -55,7 +55,7 @@ export default function Eli5Viewer() {
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="relative p-12 sm:p-16 rounded-[48px] bg-white border border-[var(--border)] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] overflow-hidden"
+                        className="relative p-12 sm:p-16 rounded-[48px] bg-[var(--card)] border border-[var(--border)] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] overflow-hidden"
                     >
                         {/* Decorative Background Elements */}
                         <div className="absolute top-0 right-0 p-10 opacity-[0.03]">
@@ -69,7 +69,7 @@ export default function Eli5Viewer() {
                             
                             <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--blue)] mb-6">The Analogy</h2>
                             
-                            <p className="text-2xl sm:text-3xl font-black text-[#1a1a1a] leading-tight tracking-tight mb-12 italic font-serif">
+                            <p className="text-2xl sm:text-3xl font-black text-[var(--foreground)] leading-tight tracking-tight mb-12 italic font-serif">
                                 "{content.text}"
                             </p>
                             
@@ -86,7 +86,7 @@ export default function Eli5Viewer() {
                     <div className="flex flex-col items-center gap-6">
                         <button 
                             onClick={() => router.push('/create')}
-                            className="group flex items-center gap-4 bg-[#1a1a1a] text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-2xl"
+                            className="group flex items-center gap-4 bg-[var(--foreground)] text-[var(--background)] px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-2xl"
                         >
                             <span>Initialize New Journey</span>
                             <CheckCircle2 size={18} className="text-[var(--blue)]" />

@@ -1,11 +1,10 @@
-const CACHE_NAME = 'professor-v1';
+const CACHE_NAME = 'professor-v2';
 const STATIC_ASSETS = [
   '/',
   '/offline',
   '/favicon.ico',
   '/site.webmanifest',
-  '/web-app-manifest-192x192.png',
-  '/web-app-manifest-512x512.png'
+  '/logo.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -92,8 +91,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: data.body,
-    icon: '/web-app-manifest-192x192.png',
-    badge: '/favicon-16x16.png',
+    icon: '/logo.svg',
+    badge: '/logo.svg',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/'

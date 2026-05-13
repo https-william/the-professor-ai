@@ -25,7 +25,7 @@ export const getArticleSchema = (post: {
     name: "The Professor",
     logo: {
       "@type": "ImageObject" as const,
-      url: "https://theprofessor.xyz/logo.png",
+      url: "https://theprofessor.xyz/logo.svg",
     },
   },
   mainEntityOfPage: {

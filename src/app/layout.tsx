@@ -66,19 +66,19 @@ export const metadata: Metadata = {
     },
   },
   title: {
-    default: "The Professor | The AI Study Tool Your College Hates",
+    default: "The Professor AI | Your notes. Just the good parts.",
     template: "%s | The Professor",
   },
-  description: "Stop studying like a loser. The Professor uses aggressive AI retrieval to hack your brain's learning curve. Build unbreakable intuition and crush any syllabus in 10 minutes.",
+  description: "Stop the study grind. The Professor AI turns your overwhelming notes into simple study guides and quizzes instantly. Get your time back and actually understand your material.",
   manifest: "/site.webmanifest",
-  keywords: ["The Professor", "Professor AI", "AI Study Assistant", "Flashcard Generator", "AI Quiz Maker", "Strategic Learning", "Exam Simulation", "JAMB 2026", "WAEC Hacks"],
+  keywords: ["The Professor", "Professor AI", "Study Less", "AI Study Tool", "Flashcard Generator", "AI Quiz Maker", "JAMB 2026", "WAEC 2026", "Simple Study Guides"],
   verification: {
     google: "NoGNvRcrMhu-QIt_DV2RJM-xKqETasp4Fvpp7-O6mmI",
   },
   authors: [{ name: "The Professor Team" }],
   openGraph: {
-    title: "Stop Studying Like a Loser. Use The Professor AI.",
-    description: "The academic system is designed to make you fail. We're here to help you cheat the system (legally) and master any degree in record time.",
+    title: "The Professor AI | Your notes. Just the good parts.",
+    description: "Uni is a lot, we get it. We turn your notes into simple study guides so you can actually enjoy your day.",
     url: SITE_URL,
     siteName: "The Professor AI",
     images: [
@@ -94,24 +94,21 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "The AI Study Tool Your Professors are Terrified Of",
-    description: "Experience the exam before it starts. Crush any syllabus with the power of aggressive AI retrieval.",
+    title: "The Professor AI | Your notes. Just the good parts.",
+    description: "Experience your notes, but faster. Get your time back with AI-powered study guides.",
     images: ["/og-image.png"],
     creator: "@TheProfessorAI",
   },
   icons: {
     icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
-      { url: "/favicons/dark/favicon-32x32.png", sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: dark)" },
-      { url: "/favicons/dark/favicon-16x16.png", sizes: "16x16", type: "image/png", media: "(prefers-color-scheme: dark)" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png" },
-      { url: "/favicons/dark/apple-touch-icon.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/logo.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/logo.svg",
   },
 };
 
@@ -190,7 +187,23 @@ export default function RootLayout({
                      html.classList.add('is-mobile');
                   }
                 };
+                
+                var initTheme = function() {
+                  try {
+                    var theme = localStorage.getItem('theme');
+                    var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+                    if (!theme) theme = 'system';
+                    
+                    var resolved = theme;
+                    if (theme === 'system') resolved = supportDarkMode ? 'dark' : 'light';
+                    
+                    document.documentElement.classList.remove('light', 'dark');
+                    document.documentElement.classList.add(resolved);
+                  } catch (e) {}
+                };
+
                 updatePlatformAttribute();
+                initTheme();
               })();
             `,
           }}
@@ -212,9 +225,9 @@ export default function RootLayout({
                     <div className="noise-overlay" />
                     <AmbientOrbs />
                     
-                    <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full z-[1] flex flex-col">
+                    <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full z-[1] flex flex-col" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', transform: 'translateZ(0)' }}>
                       <div className="flex-1 flex flex-col relative z-[2]">
-                        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-4 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" /></div>}>
+                        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" /></div>}>
                           {children}
                         </Suspense>
                       </div>
