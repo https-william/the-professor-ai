@@ -87,7 +87,7 @@ export async function recordActivity(
     const updateData: Record<string, any> = {
         xp_total: (profile.xp_total || 0) + xpToAdd,
         current_streak: newStreak,
-        last_study_date: today,
+        last_study_date: todayStr,
     };
 
     // Consume freeze if used
