@@ -99,22 +99,23 @@ export async function hydraGenerateContent(
             logAISuccess(provider, feature, Date.now() - startTime);
             return cleanJson(result);
         } catch (error: any) {
-            const statusMatch = error.message.match(/(\d{3})/);
+            const errorMessage = error?.message || String(error) || "Unknown error";
+            const statusMatch = errorMessage.match(/(\d{3})/);
             const status = statusMatch ? statusMatch[1] : "ERR";
             
-            let message = error.message;
+            let message = errorMessage;
             if (status === "413") message = "Payload too large. Truncating further might be needed.";
             if (status === "429") message = "Rate limited. Moving to next provider.";
             if (status === "401") message = "Auth failure (API Key issue). Moving to next provider.";
             if (status === "404") message = "Model not found. Moving to next provider.";
             
             errors.push(`${provider} (${status}): ${message}`);
-            logAIError(provider, feature, error);
+            logAIError(provider, feature, errorMessage);
             console.warn(`Hydra: ${provider} failed. Trying next... Reason: ${message}`);
         }
     }
 
-    throw new Error(`All providers failed:\n${errors.map(e => `• ${e}`).join("\n")}\n\nOya, try again with smaller notes or check your connection sha.`);
+    throw new Error(`All providers failed:\n${errors.map(e => `• ${e}`).join("\n")}\n\nPlease try again with smaller notes or check your connection.`);
 }
 
 /**
@@ -183,7 +184,7 @@ export async function hydraGenerateStream(prompt: string, options: HydraOptions 
         if (resp) break;
     }
 
-    if (!resp) throw new Error("Our streaming server is catching heat sha. Please try again in a moment.");
+    if (!resp) throw new Error("Our streaming server is currently unavailable. Please try again in a moment.");
 
     const reader = resp.body!.getReader();
     const encoder = new TextEncoder();
@@ -263,7 +264,7 @@ export async function hydraChatStream(systemPrompt: string, messages: any[], opt
         if (resp) break;
     }
 
-    if (!resp) throw new Error("All chat providers failed. Oya, let's take a break and try again.");
+    if (!resp) throw new Error("All chat providers failed. Please try again in a moment.");
 
     const isSSE = resp.headers.get("content-type")?.includes("text/event-stream");
     if (!isSSE) return resp.body!;

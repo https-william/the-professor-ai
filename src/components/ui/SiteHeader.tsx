@@ -38,6 +38,8 @@ import { useAppPlatform } from "@/hooks/useAppPlatform";
 
 const HIDDEN_PATHS = [
     "/arena/play",
+    "/library/pack",
+    "/library/pack",
     "/login",
     "/signup",
     "/forgot-password",

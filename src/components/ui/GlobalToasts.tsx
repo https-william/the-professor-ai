@@ -391,7 +391,7 @@ export default function GlobalToasts() {
                             initial={{ opacity: 0, x: 20, scale: 0.9 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                            className={`pointer-events-auto relative overflow-hidden p-4 rounded-2xl backdrop-blur-xl border ${typeStyles[toast.type].border} ${typeStyles[toast.type].bg} shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center gap-4 group`}
+                            className={`pointer-events-auto relative overflow-hidden p-4 rounded-2xl border backdrop-blur-xl bg-[var(--bg)]/90 ${typeStyles[toast.type].border} ${typeStyles[toast.type].bg} shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center gap-4 group`}
                         >
                             <div className={`absolute top-0 left-0 w-1 h-full ${typeStyles[toast.type].iconColor.replace('text-', 'bg-')}`} />
                             
@@ -406,7 +406,7 @@ export default function GlobalToasts() {
                             </div>
                             
                             <div className="flex-1 pr-4">
-                                <p className="text-[13px] font-bold text-white/90 leading-tight">{toast.message}</p>
+                                <p className="text-[13px] font-bold text-[var(--foreground)] leading-tight">{toast.message}</p>
                             </div>
 
                             <button 

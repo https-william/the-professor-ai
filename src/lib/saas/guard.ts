@@ -6,7 +6,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 export async function canUserGenerate(
     supabase: SupabaseClient,
     userId: string,
-    feature: 'flashcards' | 'quiz' | 'summary' | 'roadmap' | 'chat'
+    feature: 'flashcards' | 'quiz' | 'summary' | 'roadmap' | 'chat' | 'mind-map' | 'podcast'
 ): Promise<{ allowed: boolean; reason?: string; creditsLeft?: number }> {
     // 1. Fetch user profile
     const { data: profile, error } = await supabase
@@ -60,7 +60,7 @@ export async function canUserGenerate(
 export async function deductCredits(
     supabase: SupabaseClient,
     userId: string,
-    feature: 'flashcards' | 'quiz' | 'summary' | 'roadmap' | 'chat'
+    feature: 'flashcards' | 'quiz' | 'summary' | 'roadmap' | 'chat' | 'mind-map' | 'podcast'
 ): Promise<void> {
     // Skip deduction since OpenRouter is free
     // This allows users with 0 credits to continue generating content

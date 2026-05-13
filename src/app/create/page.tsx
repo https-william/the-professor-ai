@@ -288,7 +288,11 @@ function CreatorStudio() {
                                     number={phase.number}
                                     title={phase.title}
                                     tools={phase.tools}
-                                    onSelectTool={setSelectedType}
+                                    onSelectTool={(type) => { 
+                                        setSelectedType(type); 
+                                        sessionStorage.removeItem("isExamSprint"); 
+                                        setIsSprintMode(false); 
+                                    }}
                                 />
                             ))}
                         </div>

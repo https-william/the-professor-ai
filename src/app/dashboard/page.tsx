@@ -26,27 +26,27 @@ function getGreeting(userId?: string): string {
     
     // Professor-style greetings (Coffee-Shop Casual)
     const morning = [
-        "Rise and shine. It's early sha, but the coffee is fresh and your brain is ready",
-        "Morning session? Oya, let's turn these notes into something you actually remember",
+        "Rise and shine. The coffee is fresh and your brain is ready",
+        "Morning session. Let's turn these notes into something you actually remember",
         "Early bird energy. You're up before the group chat, and that's a win",
         "Good morning. Let's make today remarkably easy on your future self"
     ];
     const afternoon = [
         "Midday check-in. How's the caffeine levels holding up?",
         "Afternoon shift. Let's tackle that one concept that's been bugging you",
-        "Hope your lunch was solid. Oya, let's get back to it—just the good parts",
+        "Hope your lunch was solid. Let's get back to it—just the good parts",
         "Strategic break? Or strategic study? Either way, I'm here for it"
     ];
     const evening = [
         "Evening session. Let's wrap this up so you can actually have a life tonight",
-        "Sunset scholars. The hard part is over sha, now we just refine",
+        "Sunset scholars. The hard part is over, now we just refine",
         "Good evening. Ready to distill some knowledge and then call it a day",
         "Wind down mode. Let's look at the highlights and then close the laptop"
     ];
     const night = [
         "Midnight oil? I hope you're doing this for you and not a deadline",
         "Late night wisdom. The world is quiet, perfect for those 'A-ha!' moments",
-        "Still awake? Oya, let's make these last few minutes count so you can sleep",
+        "Still awake? Let's make these last few minutes count so you can sleep",
         "2 AM energy? You're built different. Let's secure the bag and go to bed"
     ];
     

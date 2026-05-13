@@ -200,12 +200,24 @@ export default function StudyPackPage() {
                 })
             });
 
+            if (!res.ok) {
+                let errorMsg = "Generation failed";
+                try {
+                    const errorData = await res.json();
+                    if (typeof errorData?.error === "string") errorMsg = errorData.error;
+                } catch {
+                    try { errorMsg = await res.text(); } catch {}
+                }
+                throw new Error(errorMsg);
+            }
+
             const result = await res.json();
             if (result.success) {
                 setPhasesData(prev => ({ ...prev, [phase.id]: result.data }));
                 setIsPerforming(true);
             } else {
-                throw new Error(result.error);
+                const errorMsg = typeof result.error === "string" ? result.error : "Generation failed";
+                throw new Error(errorMsg);
             }
         } catch (err: any) {
             console.error("Phase Generation Error:", err);

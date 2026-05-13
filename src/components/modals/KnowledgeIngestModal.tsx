@@ -46,8 +46,12 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
     useEffect(() => {
         if (isModalOpen) {
             document.body.style.overflow = "hidden";
+            const mainContainer = document.getElementById("main-scroll-container");
+            if (mainContainer) mainContainer.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "unset";
+            const mainContainer = document.getElementById("main-scroll-container");
+            if (mainContainer) mainContainer.style.overflow = "unset";
         }
         return () => {
             document.body.style.overflow = "unset";
@@ -125,7 +129,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
     };
 
     const handleStartAction = () => {
-        if (isSprint && onStartSprint) {
+        if (onStartSprint) {
             onStartSprint();
         }
         closeModal();
@@ -314,15 +318,15 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                             </button>
                             <button 
                                 onClick={handleStartAction}
-                                disabled={isProcessing || (!hasSuccess && isSprint)}
+                                disabled={isProcessing || !hasSuccess}
                                 className={cn(
                                     "flex-1 sm:flex-none px-10 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.95]",
-                                    isProcessing || (!hasSuccess && isSprint)
+                                    isProcessing || !hasSuccess
                                     ? "bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)] opacity-50 cursor-not-allowed"
                                     : "bg-[var(--blue)] text-white hover:scale-[1.05] shadow-[0_8px_32px_rgba(59,130,246,0.4)]"
                                 )}
                             >
-                                {isSprint ? "START SPRINT" : "BEGIN SESSION"}
+                                {isSprint ? "START SPRINT" : "GENERATE"}
                                 <Sparkles className="w-4 h-4 fill-current" />
                             </button>
                          </div>

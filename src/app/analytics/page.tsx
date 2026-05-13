@@ -53,11 +53,12 @@ const stagger = {
 
 const fadeUp = {
     hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }
 };
 
 export default function AnalyticsPage() {
-    const { user, isLoading: userLoading } = useUser();
+    const { user } = useUser();
+    const userLoading = user.isLoading;
     const shareCardRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -242,7 +243,7 @@ export default function AnalyticsPage() {
         link.download = `professor-report-${user?.name?.toLowerCase().replace(/\s+/g, '-') || 'scholar'}.png`;
         link.href = shareImage;
         link.click();
-        toast.success("Downloaded! Go viral sha. 🚀");
+        toast.success("Downloaded! Your report is ready. 🚀");
     };
 
     const handleWebShare = async () => {
@@ -337,7 +338,7 @@ export default function AnalyticsPage() {
     // Professor's Logic for Take & Tip
     const getProfessorTake = () => {
         if (user.streak > 14) return "Elite consistency. You're basically outperforming the algorithm at this point. Keep this energy.";
-        if (user.xp > 5000) return "You've built quite the knowledge vault here. Don't take my job sha, but you're doing great.";
+        if (user.xp > 5000) return "You've built quite the knowledge vault here. Don't worry, your progress speaks for itself.";
         if (totalGenerations > 50) return "The sheer volume of your notes is impressive. Let's make sure we're actually reviewing them.";
         return "Early days, but the foundations are looking solid. Consistency is the only hack that actually works.";
     };
