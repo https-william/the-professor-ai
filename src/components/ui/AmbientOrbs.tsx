@@ -23,9 +23,11 @@ export default function AmbientOrbs() {
         className="absolute top-[-20%] left-[-15%] w-[70vw] h-[70vw] rounded-full mix-blend-normal animate-ambient-drift-1"
         style={{
           background: "radial-gradient(circle, var(--blue), transparent 70%)",
-          filter: "blur(100px)",
-          opacity: "calc(var(--orb-opacity) * 0.5)",
+          filter: "blur(60px)",
+          opacity: "calc(var(--orb-opacity) * 0.4)",
           willChange: "transform",
+          transform: "translate3d(0,0,0)",
+          backfaceVisibility: "hidden",
           contain: "strict",
         }}
       />
@@ -33,9 +35,11 @@ export default function AmbientOrbs() {
         className="absolute bottom-[-20%] right-[-15%] w-[80vw] h-[80vw] rounded-full mix-blend-normal animate-ambient-drift-2"
         style={{
           background: "radial-gradient(circle, #F59E0B, transparent 70%)",
-          filter: "blur(120px)",
-          opacity: "calc(var(--orb-opacity) * 0.4)",
+          filter: "blur(80px)",
+          opacity: "calc(var(--orb-opacity) * 0.35)",
           willChange: "transform",
+          transform: "translate3d(0,0,0)",
+          backfaceVisibility: "hidden",
           contain: "strict",
         }}
       />

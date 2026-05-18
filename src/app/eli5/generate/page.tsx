@@ -89,7 +89,7 @@ export default function Eli5Generate() {
                 </p>
                 <button 
                     onClick={() => router.push("/create")}
-                    className="w-full max-w-xs py-4 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest"
+                    className="w-full max-w-xs py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest"
                 >
                     Return to Studio
                 </button>

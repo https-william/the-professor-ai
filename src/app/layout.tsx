@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Source_Serif_4 } from "next/font/google";
+import { Outfit, Source_Serif_4, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { UserProvider } from "@/context/UserContext";
@@ -23,8 +23,11 @@ import CookieBanner from "@/components/ui/CookieBanner";
 import { Suspense } from "react";
 import PWAUpdateNotifier from "@/components/providers/PWAUpdateNotifier";
 import PWAInstallBanner from "@/components/ui/PWAInstallBanner";
+import ProfessorTour from "@/components/features/ProfessorTour";
 import SiteHeader from "@/components/ui/SiteHeader";
+import NavigationLoader from "@/components/ui/NavigationLoader";
 import AmbientOrbs from "@/components/ui/AmbientOrbs";
+import MotionConfigProvider from "@/components/providers/MotionConfigProvider";
 
 /* ═══ Typography Stack ═══
    Outfit → Geometric sans. Used for headings, UI chrome, user prompts.
@@ -45,6 +48,12 @@ const sourceSerif = Source_Serif_4({
   display: "swap",
   style: ["normal", "italic"],
   adjustFontFallback: true,
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
 });
 
 const SITE_URL = "https://theprofessor.xyz";
@@ -118,7 +127,7 @@ const jsonLd = {
   name: "The Professor",
   url: SITE_URL,
   logo: `${SITE_URL}/favicon-32x32.png`,
-  description: "Elite AI-powered study strategist for generating flashcards, quizzes, and strategic summaries.",
+  description: "Elite AI-powered study mentor for generating flashcards, quizzes, and smart summaries.",
   sameAs: [
     "https://twitter.com/TheProfessorAI",
     "https://github.com/the-professor-ai"
@@ -139,18 +148,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable} w-full h-full`} suppressHydrationWarning>
+    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} w-full h-full overflow-x-hidden`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
-          as="style"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
         
         <link
           id="material-symbols-stylesheet"
@@ -162,6 +163,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js-bundle/3.38.1/minified.js" noModule suppressHydrationWarning />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -209,43 +211,45 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased transition-colors duration-300 w-full h-full m-0 p-0" suppressHydrationWarning>
+      <body className="font-sans antialiased transition-colors duration-300 w-full h-full m-0 p-0 overflow-x-hidden" suppressHydrationWarning>
         <ThemeProvider>
           <PWAProvider>
             <UserProvider>
               <ReactQueryProvider>
                 <ErrorBoundary>
-                  <FaviconSync />
+                  <MotionConfigProvider>
+                    <FaviconSync />
 
-                  <GlassRefractionProvider />
-                  <PlatformLoader />
-                  
-                  <SiteHeader showLogo={true} />
-                  <main className="platform-main-container relative h-full w-full flex flex-col">
-                    <div className="noise-overlay" />
-                    <AmbientOrbs />
+                    <GlassRefractionProvider />
+                    <PlatformLoader />
                     
-                    <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full z-[1] flex flex-col" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', transform: 'translateZ(0)' }}>
-                      <div className="flex-1 flex flex-col relative z-[2]">
-                        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" /></div>}>
-                          {children}
-                        </Suspense>
-                      </div>
-                      <Footer />
+                    <SiteHeader showLogo={true} />
+                    <NavigationLoader />
+                    <main className="platform-main-container relative h-full w-full flex flex-col overflow-x-hidden">
+                      <div className="noise-overlay" />
+                      <AmbientOrbs />
+                      
+                      <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full z-[1] flex flex-col" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+                    <div className="flex-1 flex flex-col relative z-[10]">
+                      {children}
                     </div>
-                  </main>
-  
-                  {/* Mobile nav handled by PlatformLoader */}
-                  <CookieBanner />
-                  <ConnectivityIndicator />
-                  <SyncIndicator />
-                  <GlobalToasts />
-                  <CommandPalette />
-                  <PWAUpdateNotifier />
-                  <PWAInstallBanner />
-                  <ServiceWorkerRegistrar />
-                  <Analytics />
-                  <SpeedInsights />
+                        <Footer />
+                      </div>
+                    </main>
+    
+                    {/* Mobile nav handled by PlatformLoader */}
+                    <CookieBanner />
+                    <ConnectivityIndicator />
+                    <SyncIndicator />
+                    <GlobalToasts />
+                    <CommandPalette />
+                    <PWAUpdateNotifier />
+                    <PWAInstallBanner />
+                    <ProfessorTour />
+                    <ServiceWorkerRegistrar />
+                    <Analytics />
+                    <SpeedInsights />
+                  </MotionConfigProvider>
                 </ErrorBoundary>
               </ReactQueryProvider>
             </UserProvider>

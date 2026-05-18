@@ -3,25 +3,13 @@
 import { useEffect, useState } from "react";
 import { Coffee } from "lucide-react";
 
-const quotes = [
-    { text: "Don't worry about being perfect. Worry about being finished. Your bed misses you.", author: "The Professor" },
-    { text: "A 20-minute nap is better than a 2-hour panic. Trust me on this one.", author: "The Professor" },
-    { text: "Study less, but study better. Life is too short for re-reading the same paragraph 40 times.", author: "The Professor" },
-    { text: "You've got this. And if you don't, I've got your notes. We'll figure it out together.", author: "The Professor" },
-    { text: "The secret to passing? Knowing when to close the laptop and go for a walk.", author: "The Professor" },
-    { text: "Your notes aren't supposed to be a novel. Let's just get to the good parts.", author: "The Professor" },
-    { text: "Grades matter, but so does your sanity. Take a break, grab a coffee.", author: "The Professor" },
-    { text: "Recall is king. Your highlighter is just a glorified crayon. Use it wisely.", author: "The Professor" },
-    { text: "If you can't explain it simply, you're just hiding behind big words. I see you.", author: "The Professor" }
-];
+import { PROFESSOR_WISDOM, getDailyWisdom } from "@/lib/wisdom";
 
 export default function ProfessorsWisdom() {
-    const [quote, setQuote] = useState(quotes[0]);
+    const [quote, setQuote] = useState(PROFESSOR_WISDOM[0]);
  
     useEffect(() => {
-        // Pick daily based on Date hash
-        const day = new Date().getDay();
-        setQuote(quotes[day % quotes.length]);
+        setQuote(getDailyWisdom());
     }, []);
  
     return (

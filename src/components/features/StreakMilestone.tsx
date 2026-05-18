@@ -9,7 +9,8 @@ import {
     Swords, 
     Landmark, 
     GraduationCap, 
-    Zap 
+    Zap,
+    Flame 
 } from "lucide-react";
 
 const MODERN_ICON_MAP: Record<string, any> = {
@@ -18,6 +19,7 @@ const MODERN_ICON_MAP: Record<string, any> = {
     swords: Swords,
     account_balance: Landmark,
     school: GraduationCap,
+    flame: Flame,
 };
 
 interface StreakMilestoneProps {
@@ -36,10 +38,10 @@ interface MilestoneConfig {
 
 const MILESTONE_CONFIGS: Record<number, MilestoneConfig> = {
     7: {
-        name: "Caffeine Habit",
-        description: "One week down. You're starting to smell like fresh roasted beans and intellectual curiosity.",
-        icon: "coffee",
-        color: "#8B5E3C",
+        name: "Unstoppable Momentum",
+        description: "One week down. You've officially built an unbreakable study rhythm—pure focus, zero distractions, and unstoppable momentum.",
+        icon: "flame",
+        color: "#F59E0B",
         bonusXp: 25,
     },
     14: {
@@ -58,7 +60,7 @@ const MILESTONE_CONFIGS: Record<number, MilestoneConfig> = {
     },
     60: {
         name: "Tenured",
-        description: "Sixty days. You're part of the furniture now. The archives recognize your stride. Mastery is becoming your default state.",
+        description: "Sixty days. You're part of the furniture now. The archives recognize your stride. Excellence is becoming your default state.",
         icon: "account_balance",
         color: "#10B981",
         bonusXp: 200,
@@ -92,7 +94,7 @@ export default function StreakMilestone({ count, isVisible, onClose }: StreakMil
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    className="fixed inset-0 z-[110] flex items-center justify-center p-6"
+                    className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -108,7 +110,7 @@ export default function StreakMilestone({ count, isVisible, onClose }: StreakMil
                     {/* Ambient Glow */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden">
                         <motion.div 
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-20"
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full opacity-20"
                             style={{ 
                                 background: `radial-gradient(circle, ${config.color}, transparent 70%)`,
                                 filter: 'blur(80px)'
@@ -123,22 +125,22 @@ export default function StreakMilestone({ count, isVisible, onClose }: StreakMil
 
                     {/* Content Card */}
                     <motion.div
-                        className="relative z-10 w-full max-w-lg"
+                        className="relative z-10 w-full max-w-sm sm:max-w-md my-auto"
                         initial={{ scale: 0.9, y: 20, opacity: 0 }}
                         animate={{ scale: 1, y: 0, opacity: 1 }}
                         exit={{ scale: 0.9, y: 10, opacity: 0 }}
                         transition={{ type: "spring", damping: 20, stiffness: 200 }}
                     >
-                        <div className="rounded-[40px] p-[1px] overflow-hidden" style={{ background: `linear-gradient(135deg, ${config.color}40, rgba(255,255,255,0.05))` }}>
-                            <div className="bg-[#0A0A0F]/90 backdrop-blur-3xl rounded-[39px] p-8 md:p-12 flex flex-col items-center text-center">
+                        <div className="rounded-[32px] sm:rounded-[40px] p-[1px] overflow-hidden shadow-2xl" style={{ background: `linear-gradient(135deg, ${config.color}40, rgba(255,255,255,0.05))` }}>
+                            <div className="bg-[#0A0A0F]/90 backdrop-blur-3xl rounded-[31px] sm:rounded-[39px] p-6 sm:p-8 md:p-10 flex flex-col items-center text-center">
                                 
                                 {/* Badge Icon */}
                                 <motion.div
-                                    className="w-24 h-24 rounded-[32px] flex items-center justify-center mb-8 relative"
+                                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-[20px] sm:rounded-[28px] flex items-center justify-center mb-5 sm:mb-6 relative"
                                     style={{ 
                                         background: `${config.color}15`,
                                         border: `1px solid ${config.color}30`,
-                                        boxShadow: `0 0 40px ${config.color}20`
+                                        boxShadow: `0 0 30px ${config.color}20`
                                     }}
                                     initial={{ rotate: -20, scale: 0 }}
                                     animate={{ rotate: 0, scale: 1 }}
@@ -146,12 +148,12 @@ export default function StreakMilestone({ count, isVisible, onClose }: StreakMil
                                 >
                                     {(() => {
                                         const IconComp = MODERN_ICON_MAP[config.icon];
-                                        return <IconComp size={48} strokeWidth={1.5} style={{ color: config.color }} />;
+                                        return <IconComp className="w-8 h-8 sm:w-10 sm:h-10" strokeWidth={1.8} style={{ color: config.color }} />;
                                     })()}
                                     
                                     {/* Pulsing Ring */}
                                     <motion.div 
-                                        className="absolute inset-[-8px] rounded-[36px] border-2 pointer-events-none"
+                                        className="absolute inset-[-6px] rounded-[24px] sm:rounded-[34px] border-2 pointer-events-none"
                                         style={{ borderColor: `${config.color}20` }}
                                         animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
                                         transition={{ duration: 2, repeat: Infinity }}
@@ -159,41 +161,41 @@ export default function StreakMilestone({ count, isVisible, onClose }: StreakMil
                                 </motion.div>
 
                                 {/* Streak Number */}
-                                <div className="mb-2">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Milestone Reached</span>
+                                <div className="mb-1.5 sm:mb-2">
+                                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Milestone Reached</span>
                                 </div>
-                                <h2 className="text-6xl font-black mb-4 tracking-tighter" style={{ color: config.color }}>
+                                <h2 className="text-4xl sm:text-5xl font-black mb-3 tracking-tight" style={{ color: config.color }}>
                                     {count} Day Streak
                                 </h2>
 
                                 {/* Milestone Name */}
-                                <div className="px-5 py-2 rounded-full mb-6" style={{ background: `${config.color}10`, border: `1px solid ${config.color}20` }}>
-                                    <span className="text-sm font-black uppercase tracking-widest" style={{ color: config.color }}>
+                                <div className="px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-5" style={{ background: `${config.color}10`, border: `1px solid ${config.color}20` }}>
+                                    <span className="text-xs sm:text-sm font-black uppercase tracking-wider sm:tracking-widest" style={{ color: config.color }}>
                                         Achievement: {config.name}
                                     </span>
                                 </div>
 
                                 {/* Description */}
-                                <p className="text-white/60 font-serif italic text-lg leading-relaxed mb-10 max-w-sm">
+                                <p className="text-white/70 font-serif italic text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 max-w-xs sm:max-w-sm">
                                     "{config.description}"
                                 </p>
 
                                 {/* Reward & Button */}
-                                <div className="w-full space-y-4">
-                                    <div className="flex items-center justify-center gap-2 mb-2">
+                                <div className="w-full space-y-3 sm:space-y-4">
+                                    <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
                                         <div className="h-px flex-1 bg-white/5" />
-                                        <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Reward Unlocked</span>
+                                        <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase tracking-widest">Reward Unlocked</span>
                                         <div className="h-px flex-1 bg-white/5" />
                                     </div>
                                     
-                                    <div className="flex items-center justify-center gap-3 py-4 rounded-3xl bg-white/5 border border-white/5 mb-6">
-                                        <Zap size={24} strokeWidth={1.5} className="text-[#F59E0B]" />
-                                        <span className="text-2xl font-black text-white">+{config.bonusXp} XP</span>
+                                    <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-3.5 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/5 mb-4 sm:mb-5">
+                                        <Zap size={20} strokeWidth={1.8} className="text-[#F59E0B]" />
+                                        <span className="text-lg sm:text-xl font-black text-white">+{config.bonusXp} XP</span>
                                     </div>
 
                                     <button 
                                         onClick={onClose}
-                                        className="w-full py-5 rounded-[24px] font-bold text-sm tracking-widest uppercase transition-all active:scale-[0.98] shadow-2xl"
+                                        className="w-full py-3.5 sm:py-4 rounded-[18px] sm:rounded-[20px] font-black text-xs sm:text-sm tracking-wider sm:tracking-widest uppercase transition-all active:scale-[0.98] shadow-xl hover:bg-white/90"
                                         style={{ 
                                             background: "white", 
                                             color: "#06060B"

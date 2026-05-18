@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "The Professor | Strategic Study Secrets & Learning Science",
+  title: "The Professor | Smart Study Secrets & Learning Science",
   description:
-    "Evidence-based study techniques, academic insights, and the science of strategic learning. Active recall, spaced repetition, the Feynman technique, and more — from The Professor.",
+    "Evidence-based study techniques, academic insights, and the science of smart learning. Active recall, spaced repetition, the Feynman technique, and more — from The Professor.",
   keywords: [
     "study techniques",
     "active recall",
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     "learning strategies",
   ].join(", "),
   openGraph: {
-    title: "The Professor | Strategic Learning Hub",
+    title: "The Professor | Smart Learning Hub",
     description:
-      "Elite study techniques and the science of intuitive mastery. Transform how you study with strategic AI tools.",
+      "Elite study techniques and the science of intuitive understanding. Transform how you study with smart AI tools.",
     type: "website",
     locale: "en_US",
     alternateLocale: ["en_GB", "es_ES", "fr_FR"],
@@ -40,8 +40,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Professor | Strategic Learning Hub",
-    description: "Elite study techniques and the science of intuitive mastery.",
+    title: "The Professor | Smart Learning Hub",
+    description: "Elite study techniques and the science of intuitive understanding.",
     site: "@TheProfessorAI",
     creator: "@TheProfessorAI",
     images: ["https://theprofessor.xyz/og-image.svg"],

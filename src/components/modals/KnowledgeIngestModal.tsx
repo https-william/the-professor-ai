@@ -58,6 +58,52 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
         };
     }, [isModalOpen]);
 
+    // High-Anticipation Loading Phrases & Trickle State
+    const loadingPhrases = [
+        "Skimming the abstract...",
+        "Reviewing notes & parsing tables...",
+        "Translating academic jargon into plain English...",
+        "Connecting the dots across chapters...",
+        "Distilling high-yield survival concepts...",
+        "Almost there. Polishing the wisdom..."
+    ];
+    const [trickleProgress, setTrickleProgress] = useState<Record<string, number>>({});
+    const [phraseIndex, setPhraseIndex] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        const readingItems = queue.filter(item => item.status === 'reading' || item.status === 'learning');
+        if (readingItems.length === 0) return;
+
+        const interval = setInterval(() => {
+            setTrickleProgress(prev => {
+                const next = { ...prev };
+                readingItems.forEach(item => {
+                    const current = next[item.id] || item.progress || 20;
+                    if (current < 90) {
+                        next[item.id] = current + Math.floor(Math.random() * 6) + 2;
+                    }
+                });
+                return next;
+            });
+        }, 400);
+
+        const phraseInterval = setInterval(() => {
+            setPhraseIndex(prev => {
+                const next = { ...prev };
+                readingItems.forEach(item => {
+                    const current = next[item.id] || 0;
+                    next[item.id] = (current + 1) % loadingPhrases.length;
+                });
+                return next;
+            });
+        }, 2500);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(phraseInterval);
+        };
+    }, [queue]);
+
     // Real Processor
     useEffect(() => {
         const processNext = async () => {
@@ -138,7 +184,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
     return (
         <AnimatePresence>
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[100005] flex items-center justify-center p-4">
                 {/* Backdrop */}
                 <motion.div 
                     initial={{ opacity: 0 }}
@@ -281,17 +327,22 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                             ) : (
                                                 <div className="space-y-3">
                                                     <div className="flex items-center justify-between">
-                                                        <p className="text-sm font-bold text-[var(--foreground)] leading-snug animate-pulse truncate">
-                                                            Reading <span className="italic">{item.name}</span>...
-                                                        </p>
-                                                        <span className="text-[10px] font-black text-[var(--blue)]">{item.progress}%</span>
+                                                        <div className="flex items-center gap-2 truncate pr-2">
+                                                            <Loader2 className="w-4 h-4 text-[var(--blue)] animate-spin shrink-0" />
+                                                            <p className="text-xs font-bold text-[var(--foreground)] leading-snug truncate">
+                                                                {loadingPhrases[phraseIndex[item.id] || 0]} <span className="italic text-[var(--foreground-muted)]">({item.name})</span>
+                                                            </p>
+                                                        </div>
+                                                        <span className="text-[10px] font-mono font-black text-[var(--blue)]">{trickleProgress[item.id] || item.progress || 20}%</span>
                                                     </div>
-                                                    <div className="w-full bg-[var(--background)] rounded-full h-1.5 overflow-hidden border border-[var(--border)] shadow-inner">
+                                                    <div className="w-full bg-[var(--background)] rounded-full h-2 overflow-hidden border border-[var(--border)] shadow-inner relative">
                                                         <motion.div 
                                                             initial={{ width: 0 }}
-                                                            animate={{ width: `${item.progress}%` }}
-                                                            className="h-full bg-[var(--blue)] rounded-full shadow-[0_0_8px_var(--blue-glow)]"
+                                                            animate={{ width: `${trickleProgress[item.id] || item.progress || 20}%` }}
+                                                            transition={{ type: "spring", stiffness: 60, damping: 15 }}
+                                                            className="h-full bg-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
                                                         />
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
                                                     </div>
                                                 </div>
                                             )}

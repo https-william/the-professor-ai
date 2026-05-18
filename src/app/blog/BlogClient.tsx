@@ -223,7 +223,7 @@ export default function BlogClient() {
         "name": "What is the best study technique for exam preparation?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "The Professor recommends Active Recall and Spaced Repetition as the most evidence-based techniques for long-term retention and mastery according to learning science."
+          "text": "The Professor recommends Active Recall and Spaced Repetition as the most evidence-based techniques for long-term retention and understanding according to learning science."
         }
       },
       {
@@ -275,7 +275,7 @@ export default function BlogClient() {
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">Exclusive Insights</span>
           </div>
           <h1 className="font-galaxie text-4xl sm:text-[64px] font-bold text-[var(--foreground)] tracking-tight mb-6 leading-[0.95]">
-            Master Your Hall.
+            Ace Your Hall.
           </h1>
           <p className="text-[16px] text-[var(--foreground-muted)] max-w-xl mx-auto leading-relaxed font-medium">
             Evidence-based strategies to experience the exam before it starts.

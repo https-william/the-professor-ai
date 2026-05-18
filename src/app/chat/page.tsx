@@ -230,7 +230,7 @@ function ChatTool() {
                                             ) : (
                                                 <div className="markdown-prose w-full">
                                                     <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                        {msg.content}
+                                                        {typeof msg.content === 'string' ? msg.content.replace(/[ \t]+:[ \t]*/g, ': ').replace(/:[ \t]+/g, ': ') : msg.content}
                                                     </ReactMarkdown>
                                                 </div>
                                             )}

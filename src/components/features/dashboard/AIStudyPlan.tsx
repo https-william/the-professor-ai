@@ -7,16 +7,16 @@ import Markdown from "@/components/ui/Markdown";
 import Link from "next/link";
 
 interface AIStudyPlanProps {
-    plan: string | null;
-    loading: boolean;
+    studyPlan: string | null;
+    planLoading: boolean;
 }
 
-export default function AIStudyPlan({ plan, loading }: AIStudyPlanProps) {
+export default function AIStudyPlan({ studyPlan, planLoading }: AIStudyPlanProps) {
     const [expanded, setExpanded] = useState(false);
  
-    if (loading) {
+    if (planLoading) {
         return (
-            <div className="w-full p-12 flex flex-col items-center justify-center min-h-[300px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] rounded-[40px] transition-all">
+            <div className="w-full p-12 flex flex-col items-center justify-center min-h-[250px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] rounded-[40px] transition-all">
                 <div className="relative">
                     <motion.div 
                         animate={{ rotate: 360 }} 
@@ -27,12 +27,22 @@ export default function AIStudyPlan({ plan, loading }: AIStudyPlanProps) {
                         <Brain size={24} className="text-[var(--blue)] animate-pulse" />
                     </div>
                 </div>
-                <p className="mt-8 text-[10px] font-black text-[var(--text-3)] uppercase tracking-[0.4em] animate-pulse font-sans">Synthesizing Curriculum...</p>
+                <p className="mt-8 text-xs font-black text-[var(--text-2)] uppercase tracking-widest animate-pulse font-sans">Brewing your custom study matrix...</p>
+                <p className="mt-2 text-[10px] text-[var(--text-3)] text-center max-w-xs">The Professor is analyzing your onboarding goals to craft the perfect strategy.</p>
             </div>
         );
     }
  
-    if (!plan) return null;
+    if (!studyPlan) {
+        return (
+            <div className="w-full p-10 flex flex-col items-center justify-center min-h-[200px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] rounded-[40px] transition-all text-center">
+                <Brain size={32} className="text-[var(--text-3)] mb-4" />
+                <h3 className="text-sm font-bold text-[var(--text)] uppercase tracking-wider mb-1">AI Study Strategist</h3>
+                <p className="text-xs text-[var(--text-3)] max-w-md mb-6">Its real job is to analyze your education level and study goals to build an actionable, personalized roadmap. Configure your Groq API key to unlock this feature.</p>
+                <Link href="/settings" className="px-4 py-2 rounded-xl bg-[var(--blue)] text-black font-black text-[10px] uppercase tracking-wider hover:opacity-90 transition-opacity">Configure Groq API Key</Link>
+            </div>
+        );
+    }
  
     return (
         <div className="w-full p-10 relative overflow-hidden bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] rounded-[40px] transition-all group">
@@ -45,7 +55,7 @@ export default function AIStudyPlan({ plan, loading }: AIStudyPlanProps) {
                     }`}
                 >
                     <div className="dashboard-markdown prose-neutral prose-invert md:prose-lg max-w-none">
-                        <Markdown>{plan}</Markdown>
+                        <Markdown>{studyPlan}</Markdown>
                     </div>
                 </div>
  

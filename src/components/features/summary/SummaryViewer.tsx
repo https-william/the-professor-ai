@@ -81,7 +81,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     const fullMarkdownContent = useMemo(() => {
         if (!data) return "";
         // Clean up knowledge check markers for the export
-        return data.replace(/\[KNOWLEDGE_CHECK\]\s*\{.*\}/g, "");
+        return data.replace(/\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\}/g, "");
     }, [data]);
 
     const handleExportPDF = async () => {
@@ -105,21 +105,12 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
 
     const processedChapters = useMemo(() => {
         if (!data) return [];
-        const rawSections = data.split(/\n## /g);
+        // Completely strip out [KNOWLEDGE_CHECK] and its trailing JSON block from the data before splitting
+        const cleanData = data.replace(/\[KNOWLEDGE_CHECK\][\s\S]*?(\n\n|\n#|$)/g, "\n\n");
+        const rawSections = cleanData.split(/\n## /g);
         return rawSections.map((s, i) => {
-            const content = i > 0 ? "## " + s : s;
-            const match = content.match(/\[KNOWLEDGE_CHECK\]\s*(\{.*\})/);
-            let checkpoint = null;
-            let cleanText = content;
-            if (match) {
-                try {
-                    checkpoint = JSON.parse(match[1]);
-                    cleanText = content.replace(/\[KNOWLEDGE_CHECK\]\s*\{.*\}/, "");
-                } catch (e) {
-                    console.error("Failed to parse knowledge check", e);
-                }
-            }
-            return { text: cleanText, checkpoint };
+            const cleanText = i > 0 ? "## " + s : s;
+            return { text: cleanText, checkpoint: null };
         });
     }, [data]);
 
@@ -135,15 +126,17 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
         const isSprint = sessionStorage.getItem("isExamSprint") === "true";
         if (isSprint) {
             // Keep content, but change type for the next tool in sprint
+            const sprintContent = sessionStorage.getItem("examSprintContent") || "";
             const params = JSON.parse(sessionStorage.getItem("generateParams") || "{}");
             sessionStorage.setItem("generateParams", JSON.stringify({
                 ...params,
+                content: sprintContent,
                 type: "flashcards",
                 count: 15,
                 difficulty: "medium"
             }));
             router.push("/flashcards/generate");
-            addToast("Masterclass complete. Starting Memory Drill...", "success");
+            addToast("Summary complete. Starting Memory Drill...", "success");
         } else {
             router.push("/library");
         }
@@ -264,7 +257,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                                 onClick={handleFinish}
                                 className="group flex items-center gap-4 bg-emerald-500 text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-emerald-500/10"
                             >
-                                <span>Finish Masterclass</span>
+                                <span>Finish Summary</span>
                                 <CheckCircle2 size={16} />
                             </button>
                         )}

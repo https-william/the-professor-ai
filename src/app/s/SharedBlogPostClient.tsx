@@ -92,7 +92,7 @@ export default function SharedGenerationClient({ generation: initialGeneration }
                                     ),
                                 }}
                             >
-                                {textSections}
+                                {typeof textSections === 'string' ? textSections.replace(/[ \t]+:[ \t]*/g, ': ').replace(/:[ \t]+/g, ': ') : textSections}
                             </ReactMarkdown>
                         </article>
                     </div>
@@ -125,7 +125,7 @@ export default function SharedGenerationClient({ generation: initialGeneration }
                                         strong: ({node, ...props}) => <strong className="font-bold text-[var(--foreground)]" {...props} />,
                                     }}
                                 >
-                                    {section.content || section.text || JSON.stringify(section)}
+                                    {typeof (section.content || section.text || JSON.stringify(section)) === 'string' ? String(section.content || section.text || JSON.stringify(section)).replace(/[ \t]+:[ \t]*/g, ': ').replace(/:[ \t]+/g, ': ') : (section.content || section.text || JSON.stringify(section))}
                                 </ReactMarkdown>
                             </div>
                         </div>

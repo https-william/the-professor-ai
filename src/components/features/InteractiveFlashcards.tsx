@@ -14,7 +14,8 @@ export const InteractiveFlashcards = ({
       topic: "Topic"
     }
   ],
-  onFinish
+  onFinish,
+  onRetry
 }: {
   cards?: Array<{
     front: string;
@@ -22,6 +23,7 @@ export const InteractiveFlashcards = ({
     topic?: string;
   }>;
   onFinish?: (stats: { totalCards: number }) => void;
+  onRetry?: () => void;
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -52,15 +54,34 @@ export const InteractiveFlashcards = ({
     addToast("Flashcards link copied to clipboard!", "success");
   };
 
-  const currentCard = cards[currentIndex];
+  if (!cards || !cards.length || !cards[currentIndex]) {
+    return (
+      <div className="w-full min-h-[400px] flex flex-col items-center justify-center p-6 text-center cursor-default gap-6">
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--foreground)] mb-2">No flashcards available</p>
+          <p className="text-[10px] text-[var(--foreground-muted)] font-bold">Please try generating this phase again.</p>
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="px-6 py-3 rounded-2xl bg-[var(--blue)] text-white font-black text-[11px] uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Regenerate Flashcards
+          </button>
+        )}
+      </div>
+    );
+  }
 
-  // Extract hook if available
-  const backParts = currentCard.back.split("💡");
+  const currentCard = cards[currentIndex];
+  const backText = currentCard.back || "No definition available. 💡 Tip: Try generating this card again.";
+  const backParts = backText.split("💡");
   const answer = backParts[0].trim();
   const hook = backParts[1] ? backParts[1].replace(/Professor's Protocol:|Protocol:/i, "").trim() : "Focus on the core relationship here.";
 
   return (
-    <div className="relative w-full h-[440px] md:h-[520px] flex flex-col items-center justify-center p-4 md:p-6 cursor-default overflow-visible">
+    <div className="relative w-full min-h-[440px] md:min-h-[520px] flex flex-col items-center justify-center p-2 sm:p-4 cursor-default overflow-visible">
       <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[420px] md:h-[500px] perspective-1200">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div

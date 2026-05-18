@@ -16,7 +16,7 @@ export default function XPGauge({ xp }: XPGaugeProps) {
  
     const levelTitles: Record<number, string> = {
         1: "Novice", 2: "Apprentice", 3: "Student", 4: "Scholar",
-        5: "Adept", 6: "Expert", 7: "Master", 8: "Sage",
+        5: "Adept", 6: "Expert", 7: "Elite", 8: "Sage",
         9: "Professor", 10: "Luminary",
     };
     const levelTitle = levelTitles[Math.min(level, 10)] || "Legend";
@@ -49,7 +49,7 @@ export default function XPGauge({ xp }: XPGaugeProps) {
                 </div>
                 <h3 className="text-base font-black text-[var(--text)] tracking-tight font-sans">{xp.toLocaleString()} XP</h3>
                 <p className="text-[10px] text-[var(--text-3)] font-black opacity-60 uppercase tracking-tighter">
-                    {Math.pow(level, 2) * 100 - xp > 0 ? `${(Math.pow(level, 2) * 100 - xp).toLocaleString()} XP to Next Level` : "Mastery Peak Reached"}
+                    {Math.pow(level, 2) * 100 - xp > 0 ? `${(Math.pow(level, 2) * 100 - xp).toLocaleString()} XP to Next Level` : "Study Peak Reached"}
                 </p>
             </div>
         </div>

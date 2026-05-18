@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'The Professor AI',
     short_name: 'Professor',
-    description: 'Cheat codes for your degree — AI-powered flashcards, quizzes, summaries & more.',
+    description: 'Your notes. Just the good parts. Turn overwhelming lectures into simple study guides and instant quizzes. Get your sleep back and reclaim your free time.',
     start_url: '/dashboard',
     scope: '/',
     display: 'standalone',
@@ -39,17 +39,17 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     screenshots: [
       {
-        src: '/dashboard-preview.webp',
-        sizes: '1280x720',
-        type: 'image/webp',
+        src: '/web-app-manifest-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
         form_factor: 'wide',
-        label: 'The Professor Dashboard'
+        label: 'The Professor AI Logo'
       },
       {
-        src: '/dashboard-preview.webp',
-        sizes: '1280x720',
-        type: 'image/webp',
-        label: 'The Professor Dashboard'
+        src: '/web-app-manifest-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        label: 'The Professor AI Logo'
       }
     ]
   };

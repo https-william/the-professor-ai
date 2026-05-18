@@ -11,7 +11,7 @@ export default function ExamSprintCard({ onClick }: ExamSprintCardProps) {
     return (
         <button
             onClick={onClick}
-            className="group relative w-full p-10 rounded-[48px] overflow-hidden transition-all duration-700 hover:translate-y-[-4px] active:scale-[0.98] border border-[var(--border)] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] bg-white/80 backdrop-blur-xl"
+            className="group relative w-full p-10 rounded-[48px] overflow-hidden transition-all duration-700 hover:translate-y-[-4px] active:scale-[0.98] border border-[var(--border)] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] bg-[var(--card)]/80 backdrop-blur-xl"
         >
             {/* Ambient Depth */}
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--blue-dim)]/5 to-transparent opacity-50" />
@@ -23,7 +23,7 @@ export default function ExamSprintCard({ onClick }: ExamSprintCardProps) {
                 </div>
                 <div className="flex-1">
                     <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
-                        <h2 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Exam Sprint</h2>
+                        <h2 className="text-3xl font-black tracking-tight text-[var(--foreground)]">Exam Sprint</h2>
                         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] shadow-sm">
                             <Sparkles size={14} className="fill-current" />
                             <span className="text-[11px] font-black uppercase tracking-[0.2em]">High Stakes</span>
@@ -34,7 +34,7 @@ export default function ExamSprintCard({ onClick }: ExamSprintCardProps) {
                     </p>
                 </div>
 
-                <div className="px-12 py-5 rounded-full bg-white border border-[var(--blue)]/20 text-[var(--blue)] font-black text-sm uppercase tracking-[0.3em] shadow-[0_15px_30px_-10px_rgba(59,130,246,0.3)] transition-all group-hover:bg-[var(--blue)] group-hover:text-white group-hover:scale-105 active:scale-95 group-hover:shadow-[0_20px_40px_-10px_rgba(59,130,246,0.5)]">
+                <div className="px-12 py-5 rounded-full bg-[var(--background)] border border-[var(--blue)]/20 text-[var(--blue)] font-black text-sm uppercase tracking-[0.3em] shadow-[0_15px_30px_-10px_rgba(59,130,246,0.3)] transition-all group-hover:bg-[var(--blue)] group-hover:text-white group-hover:scale-105 active:scale-95 group-hover:shadow-[0_20px_40px_-10px_rgba(59,130,246,0.5)]">
                     I'm ready
                 </div>
             </div>

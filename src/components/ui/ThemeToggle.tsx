@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
@@ -34,7 +34,6 @@ function ThemeButton({ theme, toggleTheme }: { theme: string; toggleTheme: () =>
 
     return (
         <motion.button
-            layout="position"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
             className="relative flex items-center justify-center w-9 h-9 rounded-xl overflow-hidden group active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-transform"
@@ -44,8 +43,6 @@ function ThemeButton({ theme, toggleTheme }: { theme: string; toggleTheme: () =>
                 border:        "1px solid var(--border)",
                 boxShadow:     "0 4px 10px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.1)",
             }}
-            /* No spring — same tween as the pill header */
-            transition={{ layout: { type: "tween", duration: 0.4, ease: [0.23, 1, 0.32, 1] } }}
             whileTap={{ scale: 0.96 }}
         >
             {/* Subtle tinted backdrop */}
@@ -61,10 +58,10 @@ function ThemeButton({ theme, toggleTheme }: { theme: string; toggleTheme: () =>
             <AnimatePresence mode="popLayout" initial={false}>
                 <motion.div
                     key={theme}
-                    initial={{ opacity: 0, y: mounted ? -8 : 0, rotate: -30 }}
-                    animate={{ opacity: 1, y: 0, rotate: 0 }}
-                    exit={{   opacity: 0, y: 8,  rotate:  30 }}
-                    transition={{ type: "tween", duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+                    initial={{ opacity: 0, scale: mounted ? 0.8 : 1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ type: "tween", duration: 0.15, ease: "easeOut" }}
                     className="relative flex items-center justify-center"
                     style={{
                         color: theme === "dark"

@@ -39,12 +39,12 @@ export default async function PillarPage({ params }: { params: Promise<{ slug: s
         <nav className="mb-12 text-[10px] font-black uppercase tracking-widest text-white/20 flex items-center gap-2">
            <Link href="/" className="hover:text-white transition-colors">The Professor</Link>
            <span>/</span>
-           <span className="text-[var(--accent)]">Strategic Pillar</span>
+           <span className="text-[var(--accent)]">Study Pillar</span>
         </nav>
 
         <header className="mb-20">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-bg)]/20 border border-[var(--accent-glow)] text-[var(--accent)] text-[10px] font-black uppercase tracking-widest mb-8">
-             <Sparkles className="w-3 h-3" /> 2026 Strategic Guide
+             <Sparkles className="w-3 h-3" /> 2026 Study Guide
           </div>
           <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[0.95] tracking-tight">
              {data.content.hero.title}
@@ -102,7 +102,7 @@ export default async function PillarPage({ params }: { params: Promise<{ slug: s
               "@context": "https://schema.org",
               "@type": "FAQPage",
               "mainEntity": (data.content.faqs || [
-                { q: "Is this AI study guide free?", a: "Yes, our strategic pillars are free for all students aiming for academic dominance." },
+                { q: "Is this AI study guide free?", a: "Yes, our study pillars are free for all students aiming for academic success." },
                 { q: "Will these tools work for my specific exam?", a: "Our frameworks are optimized for logic-heavy exams like WAEC, JAMB, SAT, and USMLE." }
               ]).map(faq => ({
                 "@type": "Question",
@@ -120,7 +120,7 @@ export default async function PillarPage({ params }: { params: Promise<{ slug: s
            <h3 className="text-[10px] font-black text-[var(--accent)] uppercase tracking-[0.3em] mb-12 text-center">Frequently Asked Questions</h3>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
               {(data.content.faqs || [
-                { q: "Is this AI study guide free?", a: "Yes, our strategic pillars are free for all students aiming for academic dominance." },
+                { q: "Is this AI study guide free?", a: "Yes, our study pillars are free for all students aiming for academic success." },
                 { q: "Will these tools work for my specific exam?", a: "Our frameworks are optimized for logic-heavy exams like WAEC, JAMB, SAT, and USMLE." }
               ]).map((faq, i) => (
                 <div key={i} className="group p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-[var(--accent)]/30 transition-all">

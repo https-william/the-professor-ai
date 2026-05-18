@@ -20,11 +20,11 @@ const examRegistry: Record<string, ExamData> = {
     name: "JAMB",
     fullName: "Joint Admissions and Matriculation Board (UTME)",
     year: "2026",
-    description: "The 2026 JAMB season is expected to be the most competitive yet. Success requires more than reading—it requires CBT mastery and strategic retrieval.",
+    description: "The 2026 JAMB season is expected to be the most competitive yet. Success requires more than reading—it requires CBT excellence and smart retrieval.",
     difficulty: "High",
     silos: [
       { title: "CBT Simulation", points: ["Timed practice under exam conditions", "Interface desensitization", "Automatic marking & correction"] },
-      { title: "Syllabus Mastery", points: ["Use of English intensive drills", "Subject-specific retrieval loops", "Past question trend analysis"] }
+      { title: "Syllabus Excellence", points: ["Use of English intensive drills", "Subject-specific retrieval loops", "Past question trend analysis"] }
     ],
     cta: "Secure your 300+ score"
   },
@@ -69,7 +69,7 @@ const examRegistry: Record<string, ExamData> = {
     description: "Grade 9 performance is a result of strategy, not just effort. Align your revision with the 2026 exam board specs.",
     difficulty: "High",
     silos: [
-      { title: "Exam Board Locking", points: ["AQA specification mastery", "Edexcel pattern recognition", "OCR logic drills"] }
+      { title: "Exam Board Locking", points: ["AQA specification excellence", "Edexcel pattern recognition", "OCR logic drills"] }
     ],
     cta: "Unlock Grade 9"
   }

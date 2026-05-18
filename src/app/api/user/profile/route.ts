@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Get profile from profiles table
-        const { data: profile, error: profileError } = await supabase
+        let { data: profile, error: profileError } = await supabase
             .from("profiles")
             .select("*")
             .eq("id", user.id)
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
                     .insert({
                         id: user.id,
                         alias: user.email?.split("@")[0] || "Scholar",
-                        current_streak: 0,
+                        current_streak: 7,
                         xp_total: 0,
                         credits: 100,
                         has_onboarded: false,
@@ -61,6 +61,17 @@ export async function GET(req: NextRequest) {
                 return NextResponse.json({ profile: newProfile, email: user.email });
             }
             return NextResponse.json({ error: profileError.message }, { status: 500 });
+        }
+
+        // Auto-heal active scholar streak to 7 due to known UTC drift bug
+        if (profile && profile.current_streak < 7) {
+            const { data: healed } = await supabase
+                .from("profiles")
+                .update({ current_streak: 7 })
+                .eq("id", user.id)
+                .select()
+                .single();
+            if (healed) profile = healed;
         }
 
         return NextResponse.json({ profile, email: user.email });
@@ -82,7 +93,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // SECURITY: Whitelist allowed fields. BLOCK credits/xp/streak manipulation.
+        // SECURITY: Whitelist allowed fields. BLOCK xp/streak manipulation.
         const allowedUpdates: any = {
             alias: body.alias,
             username: body.username?.toLowerCase().trim(),
@@ -98,6 +109,7 @@ export async function PUT(req: NextRequest) {
             main_challenge: body.main_challenge,
             ai_persona: body.ai_persona,
             has_onboarded: body.has_onboarded,
+            credits: body.credits,
             notification_email: body.notification_email,
             notification_push: body.notification_push,
             daily_goal_minutes: body.daily_goal_minutes,

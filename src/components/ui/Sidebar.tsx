@@ -11,7 +11,8 @@ import {
     Settings,
     HelpCircle,
     ChevronRight,
-    GraduationCap
+    GraduationCap,
+    Trophy
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 
@@ -23,6 +24,7 @@ const navItems = [
 
 const bottomItems = [
     { label: "Settings", href: "/settings", icon: Settings },
+    { label: "Achievements", href: "/achievements", icon: Trophy },
     { label: "Help & Support", href: "/help", icon: HelpCircle },
 ];
 

@@ -6,7 +6,6 @@ import { Layers, Zap, ArrowRight, Calendar, History as HistoryIcon, Flame } from
 import XPGauge from "@/components/features/dashboard/XPGauge";
 import StreakCalendar from "@/components/features/dashboard/StreakCalendar";
 import RecentActivity from "@/components/features/dashboard/RecentActivity";
-import AIStudyPlan from "@/components/features/dashboard/AIStudyPlan";
 import QuickLaunchCard from "@/components/features/dashboard/QuickLaunchCard";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
@@ -26,7 +25,6 @@ interface DashboardDesktopProps {
     handleRecover: () => void;
     canRecover: boolean;
     isProcessingAction: boolean;
-    handleBuyFreeze: () => void;
     handleShare: () => void;
 }
 
@@ -41,7 +39,6 @@ export default function DashboardDesktop({
     handleRecover,
     canRecover,
     isProcessingAction,
-    handleBuyFreeze,
     handleShare
 }: DashboardDesktopProps) {
     const formatStudyGoal = (goalStr: any) => {
@@ -64,7 +61,7 @@ export default function DashboardDesktop({
     };
 
     return (
-        <div className="w-full min-h-screen relative font-sans bg-[var(--bg)] selection:bg-[var(--blue-dim)] ml-14 md:ml-20">
+        <div className="w-full min-h-screen relative font-sans bg-[var(--bg)] selection:bg-[var(--blue-dim)]">
             {/* Ultra-Premium Glassmorphic Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-[var(--blue)]/10 blur-[120px] rounded-full mix-blend-screen" />
@@ -80,14 +77,16 @@ export default function DashboardDesktop({
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="lg:col-span-2 p-12 rounded-[40px] border border-[var(--blue-border)] bg-[var(--blue-dim)] relative overflow-hidden group flex flex-col justify-end min-h-[360px]"
+                        className="lg:col-span-2 p-12 rounded-[40px] border border-[var(--border)] bg-[var(--background-secondary)] shadow-xl relative overflow-hidden group flex flex-col justify-end min-h-[360px]"
                     >
-                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-[var(--blue)] pointer-events-none group-hover:opacity-[0.06] transition-opacity"><Layers size={240} /></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-0" />
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.05] text-[var(--blue)] pointer-events-none group-hover:opacity-[0.08] transition-opacity"><Layers size={240} /></div>
                         <div className="relative z-10 max-w-2xl">
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--text)]/5 border border-[var(--border)] text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6 backdrop-blur-md">
-                                <span className="w-2 h-2 rounded-full bg-[var(--blue)] animate-pulse" />
-                                {activityData?.studyGoal ? "Active Session" : "Awaiting Orders"}
+                            <div className="flex flex-wrap items-center gap-3 mb-6">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--text)]/5 border border-[var(--border)] text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] backdrop-blur-md shadow-sm">
+                                    <span className="w-2 h-2 rounded-full bg-[var(--blue)] animate-pulse" />
+                                    {activityData?.studyGoal ? "Active Session" : "Awaiting Orders"}
+                                </div>
+                                <FocusTimer widget={true} />
                             </div>
                             <h1 className="text-5xl md:text-7xl font-black text-[var(--text)] tracking-tighter mb-4 leading-[0.9]">
                                 {greeting}{greeting.match(/[?!]$/) ? "" : ","} <br />
@@ -137,7 +136,7 @@ export default function DashboardDesktop({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="grid grid-cols-2 md:grid-cols-4 gap-8"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-8"
                 >
                     <div className="p-8 rounded-[40px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between group hover:bg-[var(--bg-2)] transition-colors">
                         <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6">Scholar Level</span>
@@ -153,23 +152,6 @@ export default function DashboardDesktop({
                         <div className="flex items-end gap-2 relative z-10">
                             <span className="text-5xl font-black text-[var(--text)]"><AnimatedCounter value={user.streak} /></span>
                             <span className="text-[11px] font-bold text-[var(--text-3)] mb-1.5 uppercase tracking-tighter">Days</span>
-                        </div>
-                    </div>
-
-                    <div className="p-8 rounded-[40px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between group hover:bg-[var(--bg-2)] transition-colors">
-                        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] mb-6">Vault Freezes</span>
-                        <div className="flex items-center gap-2 pt-4">
-                            {[...Array(3)].map((_, i) => {
-                                const isAvailable = i < user.streakFreezeCount;
-                                const isExpiring = isAvailable && i === user.streakFreezeCount - 1;
-                                return (
-                                    <div key={i} className={`h-2 flex-1 rounded-full transition-all duration-1000 ${
-                                        isAvailable 
-                                        ? isExpiring ? 'bg-[var(--cyan-border)] shadow-[0_0_15px_var(--cyan-glow)]' : 'bg-[var(--cyan)] shadow-[0_0_20px_var(--cyan-glow)]' 
-                                        : 'bg-[var(--text)]/5'
-                                    }`} />
-                                );
-                            })}
                         </div>
                     </div>
 
@@ -192,21 +174,11 @@ export default function DashboardDesktop({
 
                     {/* Widgets (Cols 5-8) */}
                     <div className="lg:col-span-4 space-y-8 flex flex-col">
-                        <FocusTimer />
                         <WeeklyWrappedCard />
                     </div>
 
                     {/* Toolkit & Recovery (Cols 9-12) */}
                     <div className="lg:col-span-4 flex flex-col gap-8">
-                        <div className="p-8 rounded-[40px] bg-[var(--bg-2)] border border-[var(--border)] flex-1">
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--text-3)] mb-8">Launchpad</h3>
-                            <div className="flex flex-col gap-4">
-                                <QuickLaunchCard title="Arena" desc="Global Duels" icon="swords" href="/arena" color="var(--crimson)" />
-                                <QuickLaunchCard title="Create Studio" desc="Just the good parts" icon="add_circle" href="/create" color="var(--blue)" />
-                                <QuickLaunchCard title="Library" desc="Your Decks & Plans" icon="library_books" href="/library" color="var(--violet)" />
-                            </div>
-                        </div>
-
                         {canRecover && (
                             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                                 <div className="p-8 rounded-[40px] bg-[var(--amber-dim)] border border-[var(--amber-border)] relative overflow-hidden group">

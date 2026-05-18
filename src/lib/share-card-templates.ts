@@ -49,7 +49,7 @@ export const SHARE_CARD_TEMPLATES = [
             <path d="M 280 1000 L 800 1000" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="2" stroke-dasharray="10 10"/>
 
             <text x="540" y="1120" text-anchor="middle" fill="#FFFFFF" fill-opacity="0.9" font-family="Inter, sans-serif" font-size="34" font-weight="600">The Professor <tspan fill="#F4845F">AI</tspan></text>
-            <text x="540" y="1180" text-anchor="middle" fill="#FFFFFF" fill-opacity="0.4" font-family="Inter, sans-serif" font-size="22" font-weight="500">Mastered on {{date}} · {{user}}</text>
+            <text x="540" y="1180" text-anchor="middle" fill="#FFFFFF" fill-opacity="0.4" font-family="Inter, sans-serif" font-size="22" font-weight="500">Completed on {{date}} · {{user}}</text>
         </svg>`
     },
     {

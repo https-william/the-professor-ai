@@ -23,7 +23,7 @@ export const glossaryTerms: GlossaryTerm[] = [
     slug: "spaced-repetition",
     term: "Spaced Repetition",
     definition: "Spaced repetition is an evidence-based learning technique that involves increasing the intervals of time between subsequent reviews of previously learned material.",
-    extendedDefinition: "Spaced repetition leverages the 'Forgetting Curve'. By reviewing information at specific intervals (e.g., 1 day, 7 days, 30 days), you reset the curve and move the information deeper into long-term storage. The Professor AI automates this scheduling so you spend zero time planning and 100% of your time mastering.",
+    extendedDefinition: "Spaced repetition leverages the 'Forgetting Curve'. By reviewing information at specific intervals (e.g., 1 day, 7 days, 30 days), you reset the curve and move the information deeper into long-term storage. The Professor AI automates this scheduling so you spend zero time planning and 100% of your time learning.",
     faqs: [
       { question: "What is the forgetting curve?", answer: "The forgetting curve is a mathematical formula that describes the rate at which information is forgotten after it is initially learned." },
       { question: "How does AI help with spaced repetition?", answer: "AI can dynamically adjust your review schedule based on how difficult you found a specific question, ensuring you focus on your weakest areas." }
@@ -55,7 +55,7 @@ export const glossaryTerms: GlossaryTerm[] = [
     slug: "professor-recall-loop",
     term: "The Professor Recall Loop",
     definition: "A proprietary learning framework that optimizes retrieval strength through iterative, high-pressure knowledge extraction.",
-    extendedDefinition: "The Professor Recall Loop is the engine inside our Strategic Study Lab. It works by: 1. Inputting raw academic material. 2. Generating high-fidelity retrieval challenges. 3. Forcing a response under timed conditions. 4. Instant logic-feedback. 5. Variable-interval repetition. It turns a 'Library Zombie' into a 'Strategic Master' by eliminating the illusion of competence.",
+    extendedDefinition: "The Professor Recall Loop is the engine inside our Smart Study Lab. It works by: 1. Inputting raw academic material. 2. Generating high-fidelity retrieval challenges. 3. Forcing a response under timed conditions. 4. Instant logic-feedback. 5. Variable-interval repetition. It turns a 'Library Zombie' into a 'Smart Scholar' by eliminating the illusion of competence.",
     faqs: [
       { question: "How is this different from standard flashcards?", answer: "Standard flashcards are often too simple. The Loop focuses on complex logic, derivation, and contextual application, mimicking the hardest questions in exams like the SAT or JAMB." }
     ],

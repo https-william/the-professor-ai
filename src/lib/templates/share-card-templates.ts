@@ -14,7 +14,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ────── TYPES ────── */
-export type ContentType = "flashcard" | "quiz" | "summary" | "chat" | "mastery";
+export type ContentType = "flashcard" | "quiz" | "summary" | "chat" | "breakdown";
 
 export interface ShareableContent {
   type: ContentType;
@@ -178,7 +178,7 @@ export const LAYOUT_PRIMITIVES: LayoutPrimitive[] = [
     description: "Multi-layered glass refraction with vibrant depth",
     gridTemplate: "relative flex items-center justify-center p-12",
     zones: 3,
-    bestFor: ["flashcard", "quiz", "summary", "mastery"],
+    bestFor: ["flashcard", "quiz", "summary", "breakdown"],
   },
 ];
 
@@ -558,7 +558,7 @@ export function renderTemplate(templateId: string, content: ShareableContent): s
                 <text x="${innerW/2}" y="${innerH*0.25}" text-anchor="middle" fill="${color.text}" font-family="${typo.headingFont}" font-size="${60 * typo.headingScale}" font-weight="${typo.headingWeight}">${wrapSvgText(content.title, innerW/2, 0, innerW * 0.8, 60)}</text>
                 <text x="${innerW/2}" y="${innerH/2 + 40}" text-anchor="middle" fill="${color.accent}" font-family="${typo.bodyFont}" font-size="160" font-weight="900">${content.data.count || content.topics[0] || '100%'}</text>
                 <text x="${innerW/2}" y="${innerH/2 + 120}" text-anchor="middle" fill="${color.text}88" font-family="${typo.bodyFont}" font-size="24" font-weight="700" letter-spacing="0.2em">${content.type.toUpperCase()}</text>
-                <text x="${innerW/2}" y="${innerH - 60}" text-anchor="middle" fill="${color.textMuted}" font-family="${typo.bodyFont}" font-size="20">Mastered by ${content.author || 'Scholar'} · ${new Date().toLocaleDateString()}</text>
+                <text x="${innerW/2}" y="${innerH - 60}" text-anchor="middle" fill="${color.textMuted}" font-family="${typo.bodyFont}" font-size="20">Completed by ${content.author || 'Scholar'} · ${new Date().toLocaleDateString()}</text>
             </g>
             `;
             break;

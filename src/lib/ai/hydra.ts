@@ -3,7 +3,7 @@
  * Optimized for stability, error recovery, and context management.
  */
 
-import { callOpenAICompatible, callOpenAICompatibleStream } from "./providers";
+import { AIProvider, callOpenAICompatible, callOpenAICompatibleStream } from "./providers";
 import { logAIError, logAISuccess } from "@/lib/error-logger";
 
 export const FEATURE_TEMPERATURES: Record<string, number> = {
@@ -86,8 +86,7 @@ export async function hydraGenerateContent(
     const startTime = Date.now();
 
     // Provider Rotation logic with detailed error handling
-    const providers: Array<"groq" | "cerebras" | "trinity" | "ollamafree"> = ["groq", "cerebras", "trinity"];
-    if (process.env.OLLAMAFREE_ENABLED === "true") providers.push("ollamafree");
+    const providers: Array<AIProvider> = ['groq'];
 
     for (const provider of providers) {
         try {
@@ -177,7 +176,7 @@ export async function hydraGenerateStream(prompt: string, options: HydraOptions 
     };
 
     let resp = null;
-    const providers: Array<"groq" | "trinity"> = ["groq", "trinity"];
+    const providers: Array<AIProvider> = ['groq'];
     
     for (const p of providers) {
         resp = await tryStream(p);
@@ -257,7 +256,7 @@ export async function hydraChatStream(systemPrompt: string, messages: any[], opt
     };
 
     let resp = null;
-    const providers: Array<"groq" | "trinity"> = ["groq", "trinity"];
+    const providers: Array<AIProvider> = ['groq'];
     
     for (const p of providers) {
         resp = await tryStream(p);

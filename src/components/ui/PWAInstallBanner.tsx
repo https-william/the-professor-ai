@@ -53,8 +53,8 @@ export default function PWAInstallBanner() {
                                     <BrandLogo size="sm" />
                                 </div>
                                 <div>
-                                    <h4 className="text-[13px] font-bold text-[var(--foreground)] leading-tight">The Professor — Your Study Cave</h4>
-                                    <p className="text-[10px] text-[var(--foreground-muted)] font-medium">Ace every exam. Even offline.</p>
+                                    <h4 className="text-[13px] font-bold text-[var(--foreground)] leading-tight">Your Study Cave</h4>
+                                    <p className="text-[10px] text-[var(--foreground-muted)] font-medium">Your notes. Even offline. Just the good parts.</p>
                                 </div>
                             </div>
                             <button 
@@ -74,16 +74,16 @@ export default function PWAInstallBanner() {
 
                         <button
                             onClick={installApp}
-                            className="w-full py-2.5 px-4 rounded-2xl bg-white text-black text-[12px] font-black uppercase tracking-wider shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            className="w-full py-2.5 px-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[12px] font-black uppercase tracking-wider shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
                             <Download size={14} />
-                            {isMobile ? "Add to Home Screen" : "Add to Desktop"}
+                            {isMobile ? "Save to Home" : "Save for Offline"}
                         </button>
                     </div>
                 </div>
             </motion.div>
 
-            {/* Mobile Version: Compact Monochrome Pill */}
+            {/* Mobile Version: Compact Pill */}
             {!dismissed && (
                 <motion.div
                     initial={{ opacity: 0, y: 100 }}
@@ -92,20 +92,23 @@ export default function PWAInstallBanner() {
                     className="fixed bottom-6 left-6 right-6 z-[95] md:hidden"
                 >
                 <div 
-                    onClick={installApp}
-                    className="w-full p-2.5 rounded-full bg-[var(--foreground)] text-[var(--background)] shadow-[0_15px_40px_rgba(0,0,0,0.4)] flex items-center justify-between px-5 border border-white/10"
+                    className="w-full p-3 rounded-full bg-[var(--foreground)] text-[var(--background)] shadow-[0_15px_40px_rgba(0,0,0,0.4)] flex items-center justify-between px-5 border border-white/10"
                 >
-                    <div className="flex items-center gap-3">
+                    <button
+                        onClick={installApp}
+                        className="flex items-center gap-3 flex-1"
+                    >
                         <div className="w-7 h-7 rounded-full bg-[var(--background)] flex items-center justify-center p-1.5 shadow-sm">
                             <BrandLogo size="xs" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.1em]">Install Official App</span>
-                    </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.05em]">Your Study Cave, Offline</span>
+                    </button>
                     <button 
-                        onClick={handleDismiss}
-                        className="p-1 rounded-full hover:bg-black/10 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
+                        className="p-2 rounded-full hover:bg-black/10 transition-colors ml-2"
+                        aria-label="Dismiss"
                     >
-                        <X size={14} className="opacity-40" />
+                        <X size={16} className="opacity-60" />
                     </button>
                 </div>
                 </motion.div>

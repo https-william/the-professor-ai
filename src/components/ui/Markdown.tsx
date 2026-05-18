@@ -20,56 +20,60 @@ const revealVariants = {
 };
 
 const mdComponents = {
-    h1: ({node, ...props}: any) => <motion.h1 variants={revealVariants} className="text-3xl font-black text-white mb-8 mt-4 tracking-tighter bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent" {...props} />,
-    h2: ({node, ...props}: any) => <motion.h2 variants={revealVariants} className="text-xl font-bold text-white mb-6 mt-12 flex items-center gap-3 border-b border-white/5 pb-3" {...props} />,
-    h3: ({node, ...props}: any) => <motion.h3 variants={revealVariants} className="text-lg font-bold text-white/90 mb-4 mt-10" {...props} />,
-    h4: ({node, ...props}: any) => <motion.h4 variants={revealVariants} className="text-sm font-bold text-white/60 mb-2 mt-8 uppercase tracking-[0.2em]" {...props} />,
-    p: ({node, ...props}: any) => <motion.p variants={revealVariants} className="mb-8 leading-relaxed text-[17px] text-white/80 font-medium" {...props} />,
+    h1: ({node, ...props}: any) => <motion.h1 variants={revealVariants} className="text-3xl font-black text-[var(--foreground)] mb-8 mt-4 tracking-tighter" {...props} />,
+    h2: ({node, ...props}: any) => <motion.h2 variants={revealVariants} className="text-xl font-bold text-[var(--foreground)] mb-6 mt-12 flex items-center gap-3 border-b border-[var(--border)] pb-3" {...props} />,
+    h3: ({node, ...props}: any) => <motion.h3 variants={revealVariants} className="text-lg font-bold text-[var(--foreground)]/90 mb-4 mt-10" {...props} />,
+    h4: ({node, ...props}: any) => <motion.h4 variants={revealVariants} className="text-sm font-bold text-[var(--foreground-muted)] mb-2 mt-8 uppercase tracking-[0.2em]" {...props} />,
+    p: ({node, ...props}: any) => <motion.p variants={revealVariants} className="mb-8 leading-relaxed text-[17px] text-[var(--foreground)]/80 font-medium" {...props} />,
     ul: ({node, ...props}: any) => <motion.ul variants={revealVariants} className="mb-10 space-y-4 list-none" {...props} />,
-    ol: ({node, ...props}: any) => <motion.ol variants={revealVariants} className="mb-10 space-y-5 list-decimal pl-6 text-white/70" {...props} />,
+    ol: ({node, ...props}: any) => <motion.ol variants={revealVariants} className="mb-10 space-y-5 list-decimal pl-6 text-[var(--foreground-muted)]" {...props} />,
     li: ({node, ...props}: any) => (
-        <motion.li variants={revealVariants} className="flex gap-4 text-base text-white/70 items-start group" {...props}>
-            <span className="w-1.5 h-1.5 rounded-full bg-white/20 mt-2.5 flex-shrink-0 group-hover:bg-white/40 transition-colors" />
+        <motion.li variants={revealVariants} className="flex gap-4 text-base text-[var(--foreground-muted)] items-start group" {...props}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--foreground)]/20 mt-2.5 flex-shrink-0 group-hover:bg-[var(--foreground)]/40 transition-colors" />
             <span className="opacity-90 leading-relaxed">{props.children}</span>
         </motion.li>
     ),
-    strong: ({node, ...props}: any) => <strong className="font-black text-white" {...props} />,
+    strong: ({node, ...props}: any) => <strong className="font-black text-[var(--foreground)]" {...props} />,
     code: ({node, ...props}: any) => (
-        <code className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 font-mono text-[13px] text-amber-200" {...props} />
+        <code className="px-2 py-0.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--border)] font-mono text-[13px] text-[var(--blue)] font-bold" {...props} />
     ),
     blockquote: ({node, ...props}: any) => (
-        <motion.blockquote variants={revealVariants} className="border-l-4 border-white/10 pl-6 py-4 my-10 italic text-white/50 bg-white/[0.02] rounded-r-3xl" {...props} />
+        <motion.blockquote variants={revealVariants} className="border-l-4 border-[var(--border)] pl-6 py-4 my-10 italic text-[var(--foreground-muted)] bg-[var(--foreground)]/[0.02] rounded-r-3xl" {...props} />
     ),
     table: ({node, ...props}: any) => (
-        <motion.div variants={revealVariants} className="overflow-x-auto my-12 rounded-[2rem] border border-white/5 bg-white/[0.01] backdrop-blur-sm">
-            <table className="min-w-full divide-y divide-white/10" {...props} />
+        <motion.div variants={revealVariants} className="overflow-x-auto my-12 rounded-[2rem] border border-[var(--border)] bg-[var(--foreground)]/[0.01] backdrop-blur-sm">
+            <table className="min-w-full divide-y divide-[var(--border)]" {...props} />
         </motion.div>
     ),
-    th: ({node, ...props}: any) => <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-white/30" {...props} />,
-    td: ({node, ...props}: any) => <td className="px-8 py-5 text-sm text-white/60 border-t border-white/5" {...props} />,
+    th: ({node, ...props}: any) => <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]" {...props} />,
+    td: ({node, ...props}: any) => <td className="px-8 py-5 text-sm text-[var(--foreground)]/60 border-t border-[var(--border)]" {...props} />,
 };
 
 export default function Markdown({ children, className }: { children: string, className?: string }) {
+    const cleanChildren = children
+        .replace(/[ \t]+:[ \t]*/g, ': ')
+        .replace(/:[ \t]+/g, ': ');
+
     return (
-        <div className={cn("selection:bg-white/10 selection:text-white", className)}>
+        <div className={cn("selection:bg-[var(--foreground)]/10 selection:text-[var(--foreground)]", className)}>
             <ReactMarkdown 
                 remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]} 
                 rehypePlugins={[rehypeKatex]}
                 components={mdComponents}
             >
-                {children}
+                {cleanChildren}
             </ReactMarkdown>
             
             {/* The "Identity Nudge" styling for the footer if it exists */}
             {children.includes("That's the difference sha.") && (
                 <motion.div 
                     variants={revealVariants}
-                    className="mt-20 pt-10 border-t border-white/5 flex flex-col items-center text-center opacity-30 hover:opacity-100 transition-opacity duration-700"
+                    className="mt-20 pt-10 border-t border-[var(--border)] flex flex-col items-center text-center opacity-30 hover:opacity-100 transition-opacity duration-700"
                 >
-                    <p className="text-[9px] uppercase tracking-[0.5em] font-black text-white/40 mb-2">
-                        Strategic Verification Complete
+                    <p className="text-[9px] uppercase tracking-[0.5em] font-black text-[var(--foreground-muted)] mb-2">
+                        Verification Complete
                     </p>
-                    <div className="w-1 h-1 rounded-full bg-white/20" />
+                    <div className="w-1 h-1 rounded-full bg-[var(--foreground)]/20" />
                 </motion.div>
             )}
 
@@ -77,9 +81,9 @@ export default function Markdown({ children, className }: { children: string, cl
             {!children.includes("That's the difference sha.") && (
                 <motion.div 
                     variants={revealVariants}
-                    className="mt-20 pt-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-center gap-3 text-[9px] text-white/20 select-none"
+                    className="mt-20 pt-10 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-center gap-3 text-[9px] text-[var(--foreground-muted)] select-none"
                 >
-                    <Sparkles size={12} className="text-white/20" />
+                    <Sparkles size={12} className="text-[var(--foreground-muted)]" />
                     <p className="leading-tight font-black uppercase tracking-[0.3em]">
                         AI-Generated Synthesis • Verify critical facts
                     </p>

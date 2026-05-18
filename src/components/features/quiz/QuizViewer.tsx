@@ -176,10 +176,10 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                     </div>
 
                     <div className="w-full flex flex-col gap-4">
-                        <button onClick={() => { setStatus('review'); setCurrentIndex(0); }} className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-[0.2em] text-[11px] hover:bg-white/90 transition-all">
+                        <button onClick={() => { setStatus('review'); setCurrentIndex(0); }} className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 transition-all">
                             Review Answers
                         </button>
-                        <button onClick={() => router.push('/library')} className="w-full py-4 rounded-2xl bg-white/5 border border-white/5 font-black uppercase tracking-[0.2em] text-[11px] hover:bg-white/10 transition-all">
+                        <button onClick={() => router.push('/library')} className="w-full py-4 rounded-2xl bg-[var(--bg-3)] border border-[var(--border)] font-black uppercase tracking-[0.2em] text-[11px] hover:bg-[var(--bg-4)] transition-all">
                             Back to Library
                         </button>
                     </div>
@@ -305,7 +305,7 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                             Finish Exam
                         </button>
                     ) : (
-                        <button onClick={() => setCurrentIndex(prev => prev + 1)} className="px-8 py-3 rounded-xl bg-white text-black font-black uppercase tracking-widest text-[11px] transition-all">
+                        <button onClick={() => setCurrentIndex(prev => prev + 1)} className="px-8 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest text-[11px] transition-all">
                             Next
                         </button>
                     )}

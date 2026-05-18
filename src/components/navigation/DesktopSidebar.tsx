@@ -21,7 +21,8 @@ import {
     LogOut,
     ChevronUp,
     Sun,
-    Moon
+    Moon,
+    Trophy
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { usePWA } from "@/context/PWAContext";
@@ -214,6 +215,10 @@ export default function DesktopSidebar() {
                                         <Link href="/settings" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-[var(--foreground-secondary)] hover:bg-[var(--foreground)]/5 hover:text-[var(--foreground)] transition-colors">
                                             <Settings size={16} />
                                             Settings & Preferences
+                                        </Link>
+                                        <Link href="/achievements" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-bold text-[var(--amber)] hover:bg-[var(--amber)]/10 transition-colors">
+                                            <Trophy size={16} />
+                                            Trophy Room & Achievements
                                         </Link>
                                         <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-500 hover:bg-red-500/10 transition-colors">
                                             <LogOut size={16} />

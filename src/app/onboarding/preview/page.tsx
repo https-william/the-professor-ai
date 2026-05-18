@@ -29,7 +29,7 @@ export default function PreviewPage() {
   }, []);
 
   const TABS = [
-    { id: "summary", label: "Strategic Summary", icon: FileText },
+    { id: "summary", label: "Study Summary", icon: FileText },
     { id: "flashcards", label: "Flashcards", icon: Zap, locked: true },
     { id: "exam", label: "Mock Exam", icon: Target, locked: true },
     { id: "match", label: "Match Game", icon: Gamepad2, locked: true },
@@ -56,7 +56,7 @@ export default function PreviewPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-4xl md:text-5xl font-black text-[var(--foreground)] tracking-tight leading-none mb-4"
               >
-                Your Master Plan is Ready.
+                Your Smart Plan is Ready.
               </motion.h1>
               <p className="text-[var(--foreground-muted)] font-medium text-lg">
                 The Professor has extracted <span className="text-[var(--foreground)]">42 concepts</span> and <span className="text-[var(--foreground)]">12 potential exam questions</span> from <span className="italic">"{fileName}"</span>.
@@ -124,7 +124,7 @@ export default function PreviewPage() {
                         <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
                           <FileText size={20} />
                         </div>
-                        <h2 className="text-xl font-bold text-[var(--foreground)]">Strategic Summary</h2>
+                        <h2 className="text-xl font-bold text-[var(--foreground)]">Study Summary</h2>
                       </div>
                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)]">Read time: 6m</span>
                     </div>
@@ -133,7 +133,7 @@ export default function PreviewPage() {
                       <div className="space-y-2">
                         <h3 className="text-lg font-black text-[var(--foreground)]">1. Executive Overview</h3>
                         <p className="text-[var(--foreground-muted)] leading-relaxed">
-                          This material covers the foundational principles of <span className="text-[var(--foreground)]">Strategic Financial Management</span>. The Professor has identified three recurring themes that UNILAG examiners love to focus on...
+                          This material covers the foundational principles of <span className="text-[var(--foreground)]">Advanced Financial Management</span>. The Professor has identified three recurring themes that UNILAG examiners love to focus on...
                         </p>
                       </div>
 
@@ -171,7 +171,7 @@ export default function PreviewPage() {
                           <div className="w-16 h-16 rounded-full bg-[var(--foreground)] text-[var(--background)] flex items-center justify-center mb-6 shadow-2xl">
                              <Lock size={32} />
                           </div>
-                          <h3 className="text-2xl font-black text-[var(--foreground)] mb-3">Master the full material</h3>
+                          <h3 className="text-2xl font-black text-[var(--foreground)] mb-3">Unlock the full material</h3>
                           <p className="text-[var(--foreground-muted)] max-w-sm mb-8 font-medium">
                             The Professor has generated 12 more pages of summaries, flashcards, and a full mock exam based on your notes.
                           </p>
@@ -201,7 +201,7 @@ export default function PreviewPage() {
                 ))}
              </div>
              <p className="text-[var(--foreground-muted)] font-medium text-sm">
-                Join <span className="text-[var(--foreground)] font-black">hundreds of students</span> already mastering their courses this semester.
+                Join <span className="text-[var(--foreground)] font-black">hundreds of students</span> already acing their courses this semester.
              </p>
           </div>
 

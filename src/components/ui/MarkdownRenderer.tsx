@@ -28,6 +28,10 @@ export default function MarkdownRenderer({
     className,
     isStreaming = false 
 }: MarkdownRendererProps) {
+    const cleanContent = content
+        .replace(/[ \t]+:[ \t]*/g, ': ')
+        .replace(/:[ \t]+/g, ': ');
+
     return (
         <div className={cn(
             "prose prose-invert max-w-none transition-all duration-300",
@@ -69,7 +73,7 @@ export default function MarkdownRenderer({
                     td: ({ node, ...props }) => <td className="px-6 py-4 text-sm text-white/70 border-t border-white/5" {...props} />,
                 }}
             >
-                {content}
+                {cleanContent}
             </ReactMarkdown>
             
             {/* The "Identity Nudge" styling for the footer if it exists */}

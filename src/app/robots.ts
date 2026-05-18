@@ -1,19 +1,12 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const SITE_URL = 'https://theprofessor.xyz';
-
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: [
-        '/dashboard/',
-        '/create/',
-        '/api/',
-        '/settings/',
-      ],
+      disallow: ['/admin/', '/debug/', '/private/'],
     },
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    sitemap: 'https://theprofessor.xyz/sitemap.xml',
   };
 }

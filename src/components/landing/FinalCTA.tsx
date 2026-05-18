@@ -14,7 +14,7 @@ export default function FinalCTA() {
   };
 
   return (
-    <section style={{
+    <section id="get-started" style={{
       background: "transparent",
       padding: "clamp(100px, 15vw, 160px) clamp(24px, 6vw, 80px)",
       position: "relative",
@@ -80,7 +80,7 @@ export default function FinalCTA() {
                 {[1, 2, 3, 4, 5].map(i => (
                   <div key={i} className="w-10 h-10 rounded-full border-2 border-[var(--bg)] bg-[var(--text-4)] flex items-center justify-center overflow-hidden">
                     <div className="w-full h-full bg-[var(--blue-dim)] flex items-center justify-center text-[10px] font-black text-[var(--blue)]">
-                      {["T", "A", "I", "B", "C"][i-1]}
+                      {["C", "F", "K", "N", "E"][i-1]}
                     </div>
                   </div>
                 ))}
@@ -92,7 +92,7 @@ export default function FinalCTA() {
                 fontWeight: 600,
                 opacity: 0.8
               }}>
-                Tunde, Amaka, Ifeanyi and 400+ others are acing their classes with us.
+                Chinedu, Fatima, Kunle, Nkechi and 400+ others are acing their classes with us.
               </p>
             </div>
           </div>

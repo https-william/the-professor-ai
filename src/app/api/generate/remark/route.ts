@@ -20,41 +20,31 @@ export async function POST(req: NextRequest) {
         const percentage = score / total;
         
         let context = "";
-        if (percentage === 1) context = "The user got a perfect score. Praise their precision and strategic mastery.";
+        if (percentage === 1) context = "The user got a perfect score. Praise their precision and excellent understanding.";
         else if (percentage >= 0.8) context = "The user did great. Acknowledge their near-perfection and high-level retrieval.";
-        else if (percentage >= 0.5) context = "The user passed. Give them a strategic nudge about their information gaps.";
-        else context = "The user failed. Be an elite mentor—firm, direct, and focused on the immediate need for a strategy reset.";
+        else if (percentage >= 0.5) context = "The user passed. Give them a smart nudge about their information gaps.";
+        else context = "The user failed. Be an elite mentor—firm, direct, and focused on the immediate need for a study reset.";
 
         const prompt = `Topic: ${topic}
 Score: ${score}/${total}
 Direction: ${context}`;
 
-        const systemPrompt = `You are 'The Professor', an elite strategic mentor with a background in cognitive science and high-stakes performance. 
+        const systemPrompt = `You are 'The Professor', an elite mentor with a background in cognitive science and high-stakes performance. 
 Your job is to give ONE single, short sentence of feedback to a student who just finished a quiz.
 Be directly communicative to the student ("You got 4 out of 5..."). Use appropriate emojis. 
-DO NOT output markdown, no titles, and strictly keep it to one punchy, authoritative sentence that focuses on "Strategic Performance".`;
+DO NOT output markdown, no titles, and strictly keep it to one punchy, authoritative sentence that focuses on "Smart Study Habits".`;
 
-        // We try Groq first because it's instantaneous. If Groq isn't configured, fallback to G4F.
+        // We use Groq strictly for speed and rotation.
         let remark = "";
         
         try {
-            if (process.env.GROQ_API_KEY) {
-                remark = await callOpenAICompatible("groq", [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: prompt }
-                ], { temperature: 0.8, maxTokens: 150, timeoutMs: 5000 });
-            } else {
-                remark = await callOpenAICompatible("ollamafree", [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: prompt }
-                ], { temperature: 0.8, maxTokens: 150, timeoutMs: 10000 });
-            }
-        } catch (e) {
-            // Last resort fallback
-            remark = await callOpenAICompatible("g4f", [
+            remark = await callOpenAICompatible("groq", [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: prompt }
             ], { temperature: 0.8, maxTokens: 150, timeoutMs: 15000 });
+        } catch (e) {
+            console.error("Groq remark generation failed on all keys:", e);
+            remark = "Flawless genius. Your bed misses you now.";
         }
 
         return NextResponse.json({ remark: remark.trim() });
@@ -62,7 +52,7 @@ DO NOT output markdown, no titles, and strictly keep it to one punchy, authorita
     } catch (error) {
         console.error("Remark generation error:", error);
         return NextResponse.json({ 
-            remark: "The strategy matrix encountered a sync error. 📝 Your performance is recorded, but The Professor's Insight is pending." 
+            remark: "The study lab encountered a sync error. 📝 Your performance is recorded, but The Professor's Insight is pending." 
         });
     }
 }

@@ -5,14 +5,14 @@ import BrandLogo from "@/components/ui/BrandLogo";
 
 export const metadata: Metadata = {
   title: "2026 AI Exam Guides | WAEC, JAMB, NECO, SAT & GCSE Preparation",
-  description: "Strategic AI-powered preparation guides for major 2026 regional and international exams.",
+  description: "Smart AI-powered preparation guides for major 2026 regional and international exams.",
 };
 
 const exams = [
   {
     slug: "jamb",
     name: "JAMB 2026",
-    description: "Dominating the Computer Based Test (CBT) with AI simulations.",
+    description: "Acing the Computer Based Test (CBT) with AI simulations.",
     color: "from-emerald-500/20 to-emerald-900/20",
     border: "border-emerald-500/20",
     icon: Trophy
@@ -20,7 +20,7 @@ const exams = [
   {
     slug: "waec",
     name: "WAEC 2026",
-    description: "Mastering the marking scheme with logic-based essay prep.",
+    description: "Understanding the marking scheme with logic-based essay prep.",
     color: "from-blue-500/20 to-blue-900/20",
     border: "border-blue-500/20",
     icon: GraduationCap
@@ -53,7 +53,7 @@ export default function ExamsPage() {
           </div>
           <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight">The 2026 <br/> Exam Vault</h1>
           <p className="text-xl text-[var(--foreground-muted)] max-w-2xl mx-auto font-medium">
-            Strategic AI blueprints for every major milestone. Don't just study—execute with a marking-scheme-aware strategy.
+            Smart AI blueprints for every major milestone. Don't just study—execute with a marking-scheme-aware plan.
           </p>
         </header>
 

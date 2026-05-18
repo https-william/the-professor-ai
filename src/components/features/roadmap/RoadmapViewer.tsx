@@ -60,7 +60,7 @@ export default function RoadmapViewer({ phases, title, generationId }: RoadmapVi
                     <span className="text-[10px] font-black uppercase tracking-[0.5em] opacity-20 mb-4 block">Architectural Thesis</span>
                     <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-tight mb-8">{title}</h2>
                     <p className="text-lg opacity-40 font-medium leading-relaxed max-w-2xl">
-                        This syllabus represents an optimized cognitive path through the material, structured for maximum retention and sequential mastery.
+                        This syllabus represents an optimized cognitive path through the material, structured for maximum retention and sequential progression.
                     </p>
                 </div>
 

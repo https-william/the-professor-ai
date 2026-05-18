@@ -30,6 +30,8 @@ export default function SettingsPage() {
     const supabase = createClient();
 
     const [isSaving, setIsSaving] = useState(false);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [newName, setNewName] = useState(user?.name || "");
 
     const handleSignOut = async () => {
         await fetch('/api/auth/signout', { method: 'POST' });
@@ -38,6 +40,15 @@ export default function SettingsPage() {
     };
 
     const updatePref = async (key: string, value: any) => {
+        if (key === 'alias') {
+            updateUser({ name: value });
+            if (typeof window !== "undefined") {
+                localStorage.setItem('user_display_name', value);
+            }
+        } else {
+            const storeKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+            updateUser({ [storeKey]: value });
+        }
         setIsSaving(true);
         try {
             const res = await fetch("/api/user/profile", {
@@ -47,16 +58,12 @@ export default function SettingsPage() {
             });
 
             if (res.ok) {
-                // Map frontend camelCase to backend snake_case for the local store if needed,
-                // but refreshUser is better. For now, just update local state.
-                const storeKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-                updateUser({ [storeKey]: value });
                 addToast("Setting synchronized", "success");
             } else {
-                addToast("Failed to sync setting", "error");
+                addToast("Failed to sync setting to cloud (saved locally)", "info");
             }
         } catch (error) {
-            addToast("Sync error", "error");
+            addToast("Saved locally (will sync when online)", "info");
         } finally {
             setIsSaving(false);
         }
@@ -89,12 +96,41 @@ export default function SettingsPage() {
                         
                         <div className="glass-panel p-3 pl-5 rounded-2xl flex items-center gap-4 border border-[var(--border)] shadow-xl">
                             <div className="text-right">
-                                <p className="text-xs font-bold text-[var(--foreground)]">{user?.name || "Scholar"}</p>
-                                <p className="text-[10px] text-[var(--accent)] font-black uppercase tracking-wider">Lifelong Scholar</p>
+                                {isEditingName ? (
+                                    <input 
+                                        autoFocus
+                                        value={newName}
+                                        onChange={(e) => setNewName(e.target.value)}
+                                        onBlur={() => {
+                                            if (newName !== user.name) updatePref('alias', newName);
+                                            setIsEditingName(false);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                if (newName !== user.name) updatePref('alias', newName);
+                                                setIsEditingName(false);
+                                            }
+                                        }}
+                                        className="bg-transparent text-right text-xs font-bold text-[var(--foreground)] border-b border-[var(--accent)] outline-none w-24"
+                                    />
+                                ) : (
+                                    <p 
+                                        onClick={() => {
+                                            setNewName(user?.name || "");
+                                            setIsEditingName(true);
+                                        }}
+                                        className="text-xs font-bold text-[var(--foreground)] cursor-pointer hover:text-[var(--accent)] transition-colors"
+                                    >
+                                        {user?.name || "Scholar"}
+                                    </p>
+                                )}
+                                <p className="text-[10px] text-[var(--accent)] font-black uppercase tracking-wider">
+                                    {isEditingName ? "What should the professor call you?" : "Lifelong Scholar"}
+                                </p>
                             </div>
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[var(--accent)] to-amber-300 flex items-center justify-center text-black font-black text-sm relative group overflow-hidden shadow-lg shadow-amber-500/20">
                                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                                <span className="relative z-10">{user?.avatar || (user?.email?.[0] || "S").toUpperCase()}</span>
+                                <span className="relative z-10">{user?.avatar?.startsWith('http') ? <img src={user.avatar} className="w-full h-full object-cover" /> : (user?.avatar || (user?.email?.[0] || "S").toUpperCase())}</span>
                             </div>
                         </div>
                     </div>

@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect } from 'react';
 import { 
@@ -18,7 +19,7 @@ import {
     ArrowRight 
 } from 'lucide-react';
 
-type ToastType = 'success' | 'error' | 'xp' | 'info' | 'achievement' | 'challenge' | 'broadcast';
+type ToastType = 'success' | 'error' | 'xp' | 'info' | 'achievement' | 'challenge' | 'broadcast' | 'warn';
 
 interface Toast {
     id: string;
@@ -32,6 +33,7 @@ interface Toast {
 
 interface ToastStore {
     toasts: Toast[];
+    activeToastIds: string[];
     isOpen: boolean;
     fetchNotifications: () => Promise<void>;
     addToast: (message: string, type: ToastType, icon?: any, link?: string, saveToDb?: boolean, idOverride?: string) => Promise<void>;
@@ -45,12 +47,20 @@ interface ToastStore {
 
 export const useToasts = create<ToastStore>((set, get) => ({
     toasts: [],
+    activeToastIds: [],
     isOpen: false,
     
     fetchNotifications: async () => {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        if (!session) {
+            if (typeof window !== 'undefined') {
+                const local = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+                const parsed = local.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
+                set({ toasts: parsed });
+            }
+            return;
+        }
 
         const { data, error } = await supabase
             .from('notifications')
@@ -69,7 +79,24 @@ export const useToasts = create<ToastStore>((set, get) => ({
                 read: n.read,
                 link: n.link
             }));
-            set({ toasts: fetchedToasts });
+
+            let localOnly: Toast[] = [];
+            if (typeof window !== 'undefined') {
+                const local = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+                const parsedLocal = local.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
+                localOnly = parsedLocal.filter((n: Toast) => !fetchedToasts.some(ft => ft.id === n.id));
+            }
+
+            const merged = [...localOnly, ...fetchedToasts].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 50);
+
+            set({ toasts: merged });
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('local_notifications', JSON.stringify(merged));
+            }
+        } else if (typeof window !== 'undefined') {
+            const local = JSON.parse(localStorage.getItem('local_notifications') || '[]');
+            const parsed = local.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
+            set({ toasts: parsed });
         }
     },
 
@@ -85,9 +112,16 @@ export const useToasts = create<ToastStore>((set, get) => ({
             link 
         };
 
-        set((state) => ({ 
-            toasts: [newToast, ...state.toasts].slice(0, 50) 
-        }));
+        set((state) => {
+            const updated = [newToast, ...state.toasts].slice(0, 50);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('local_notifications', JSON.stringify(updated));
+            }
+            return { 
+                toasts: updated,
+                activeToastIds: [id, ...state.activeToastIds].slice(0, 3)
+            };
+        });
 
         if (saveToDb) {
             const supabase = createClient();
@@ -103,38 +137,45 @@ export const useToasts = create<ToastStore>((set, get) => ({
                 }).select('id').single();
 
                 if (data?.id) {
-                    // Update the local toast ID to match the DB ID
-                    set((state) => ({
-                        toasts: state.toasts.map((t) => t.id === id ? { ...t, id: data.id } : t)
-                    }));
+                    set((state) => {
+                        const updated = state.toasts.map((t) => t.id === id ? { ...t, id: data.id } : t);
+                        if (typeof window !== 'undefined') {
+                            localStorage.setItem('local_notifications', JSON.stringify(updated));
+                        }
+                        return { toasts: updated };
+                    });
                 }
             }
         }
 
-        // Auto-dismiss after 8 seconds for non-important toasts
+        // Auto-dismiss inline popup after 8 seconds (but keep in persistent Notification Center)
         setTimeout(() => {
-            // Only remove if it was just a transient toast (not from DB or already read)
-            // Actually, keep it in history but remove from "active" view
-            set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id || t.read) }));
+            set((state) => ({ activeToastIds: state.activeToastIds.filter((activeId) => activeId !== id) }));
         }, type === 'broadcast' ? 15000 : 8000);
     },
     
     removeToast: async (id) => {
         const supabase = createClient();
         await supabase.from('notifications').delete().eq('id', id);
-        set((state) => ({ 
-            toasts: state.toasts.filter((t) => t.id !== id) 
-        }));
+        set((state) => {
+            const updated = state.toasts.filter((t) => t.id !== id);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('local_notifications', JSON.stringify(updated));
+            }
+            return { toasts: updated, activeToastIds: state.activeToastIds.filter((activeId) => activeId !== id) };
+        });
     },
     
     markAsRead: async (id) => {
         const supabase = createClient();
         await supabase.from('notifications').update({ read: true }).eq('id', id);
-        set((state) => ({
-            toasts: state.toasts.map((t) => 
-                t.id === id ? { ...t, read: true } : t
-            )
-        }));
+        set((state) => {
+            const updated = state.toasts.map((t) => t.id === id ? { ...t, read: true } : t);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('local_notifications', JSON.stringify(updated));
+            }
+            return { toasts: updated };
+        });
     },
     
     markAllAsRead: async () => {
@@ -143,9 +184,13 @@ export const useToasts = create<ToastStore>((set, get) => ({
         if (session) {
             await supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id);
         }
-        set((state) => ({
-            toasts: state.toasts.map((t) => ({ ...t, read: true }))
-        }));
+        set((state) => {
+            const updated = state.toasts.map((t) => ({ ...t, read: true }));
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('local_notifications', JSON.stringify(updated));
+            }
+            return { toasts: updated };
+        });
     },
     
     clearAll: async () => {
@@ -154,7 +199,10 @@ export const useToasts = create<ToastStore>((set, get) => ({
         if (session) {
             await supabase.from('notifications').delete().eq('user_id', session.user.id);
         }
-        set({ toasts: [] });
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('local_notifications', JSON.stringify([]));
+        }
+        set({ toasts: [], activeToastIds: [] });
     },
     
     toggleCenter: () => set((state) => ({ isOpen: !state.isOpen })),
@@ -164,6 +212,7 @@ export const useToasts = create<ToastStore>((set, get) => ({
 const typeStyles: Record<ToastType, { bg: string, iconColor: string, border: string, glow: string }> = {
     success: { bg: 'bg-emerald-500/10', iconColor: 'text-emerald-400', border: 'border-emerald-500/20', glow: 'shadow-[0_0_20px_rgba(34,197,94,0.15)]' },
     error: { bg: 'bg-rose-500/10', iconColor: 'text-rose-400', border: 'border-rose-500/20', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.15)]' },
+    warn: { bg: 'bg-yellow-500/10', iconColor: 'text-yellow-400', border: 'border-yellow-500/20', glow: 'shadow-[0_0_20px_rgba(234,179,8,0.15)]' },
     xp: { bg: 'bg-amber-500/10', iconColor: 'text-amber-400', border: 'border-amber-500/20', glow: 'shadow-[0_0_20px_rgba(245,158,11,0.15)]' },
     info: { bg: 'bg-indigo-500/10', iconColor: 'text-indigo-400', border: 'border-indigo-500/20', glow: 'shadow-[0_0_20px_rgba(99,102,241,0.15)]' },
     achievement: { bg: 'bg-purple-500/10', iconColor: 'text-purple-400', border: 'border-purple-500/20', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.15)]' },
@@ -174,6 +223,7 @@ const typeStyles: Record<ToastType, { bg: string, iconColor: string, border: str
 const defaultIcons: Record<ToastType, any> = {
     success: CheckCircle2,
     error: AlertCircle,
+    warn: AlertCircle,
     xp: Zap,
     info: Info,
     achievement: Trophy,
@@ -183,6 +233,7 @@ const defaultIcons: Record<ToastType, any> = {
 
 export function ToastContainer() {
     const { toasts, removeToast, isOpen, setIsOpen, markAsRead } = useToasts();
+    const router = useRouter();
 
     const unreadCount = toasts.filter(t => !t.read).length;
 
@@ -192,6 +243,40 @@ export function ToastContainer() {
         
         // Fetch initial
         useToasts.getState().fetchNotifications();
+
+        // Check for unclaimed unlocked achievements
+        const checkUnclaimedAchievements = () => {
+            if (typeof window !== "undefined") {
+                const claimedMap = JSON.parse(localStorage.getItem("claimed_achievements") || "{}");
+                // Check unlocked achievements from initial list (streak-7, elite-midnight)
+                const unlocked = [
+                    { id: "streak-7", title: "Prometheus Flame", xp: 250 },
+                    { id: "elite-midnight", title: "Midnight Scholar", xp: 500 }
+                ];
+                unlocked.forEach(ach => {
+                    if (!claimedMap[ach.id]) {
+                        const currentToasts = useToasts.getState().toasts;
+                        const msg = `🏆 Unclaimed Reward: ${ach.title} (+${ach.xp} XP)`;
+                        if (!currentToasts.some(t => t.message === msg)) {
+                            useToasts.getState().addToast(msg, "achievement", undefined, "/achievements", false, ach.id);
+                        }
+                    } else {
+                        // If claimed, remove the toast if present
+                        const currentToasts = useToasts.getState().toasts;
+                        const existing = currentToasts.find(t => t.id === ach.id);
+                        if (existing) {
+                            useToasts.getState().removeToast(ach.id);
+                        }
+                    }
+                });
+            }
+        };
+
+        checkUnclaimedAchievements();
+
+        if (typeof window !== "undefined") {
+            window.addEventListener("achievements_updated", checkUnclaimedAchievements);
+        }
 
         const sub = supabase.channel('toast_updates')
             .on('postgres_changes', { 
@@ -213,6 +298,9 @@ export function ToastContainer() {
 
         return () => {
             supabase.removeChannel(sub);
+            if (typeof window !== "undefined") {
+                window.removeEventListener("achievements_updated", checkUnclaimedAchievements);
+            }
         };
     }, []);
 
@@ -227,7 +315,7 @@ export function ToastContainer() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100010]"
                             onClick={() => setIsOpen(false)}
                         />
                         
@@ -237,39 +325,46 @@ export function ToastContainer() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 100 }}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                            className="fixed top-0 right-0 h-full w-full max-w-md z-[101] bg-[#0C0C16]/95 backdrop-blur-2xl border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.5)]"
+                            className="fixed top-0 right-0 h-full w-[calc(100%-2.5rem)] sm:w-full max-w-md z-[100011] bg-[var(--bg-2)]/90 backdrop-blur-[40px] border-l border-[var(--border)] shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col"
                         >
                             {/* Header */}
-                            <div className="sticky top-0 z-10 p-6 border-b border-white/10" style={{ background: "linear-gradient(to bottom, #0C0C16, #0C0C16/95)" }}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold text-white">Notifications</h2>
+                            <div className="sticky top-0 z-10 p-6 border-b border-[var(--border)] bg-[var(--bg-2)]/50 backdrop-blur-xl flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center text-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)]">
+                                            <Megaphone size={20} />
+                                        </div>
+                                        <h2 className="text-xl font-black tracking-tight text-[var(--foreground)]">Notifications</h2>
+                                    </div>
                                     <button
                                         onClick={() => setIsOpen(false)}
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors"
+                                        className="w-10 h-10 rounded-2xl bg-[var(--bg-3)] border border-[var(--border)] flex items-center justify-center text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-white/10 transition-all active:scale-95"
                                     >
-                                        <X size={20} strokeWidth={1.5} className="text-white/60" />
+                                        <X size={20} strokeWidth={1.5} />
                                     </button>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-white/50">{unreadCount} unread</span>
-                                    <button 
-                                        onClick={() => useToasts.getState().markAllAsRead()}
-                                        className="text-xs text-[#F59E0B] hover:underline"
-                                    >
-                                        Mark all read
-                                    </button>
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-xs font-bold text-[var(--foreground-muted)]">{unreadCount} unread</span>
+                                    {toasts.length > 0 && (
+                                        <button 
+                                            onClick={() => useToasts.getState().markAllAsRead()}
+                                            className="text-xs font-black text-[var(--amber)] hover:underline tracking-wider uppercase"
+                                        >
+                                            Mark all read
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Notifications List */}
-                            <div className="overflow-y-auto h-[calc(100%-120px)] p-4 space-y-3">
+                            <div className="overflow-y-auto flex-1 p-6 space-y-4 custom-scrollbar">
                                 {toasts.length === 0 ? (
-                                    <div className="text-center py-16">
-                                        <div className="flex justify-center mb-4">
-                                            <BellOff size={48} strokeWidth={1.5} className="text-white/20" />
+                                    <div className="text-center py-24 px-6 flex flex-col items-center justify-center my-auto h-full">
+                                        <div className="w-20 h-20 rounded-3xl bg-[var(--bg-3)] border border-[var(--border)] flex items-center justify-center mb-6 shadow-inner text-[var(--foreground)]/20">
+                                            <BellOff size={36} strokeWidth={1.5} />
                                         </div>
-                                        <p className="text-white/40 text-sm">No notifications yet</p>
-                                        <p className="text-white/20 text-xs mt-2">We'll notify you when something happens!</p>
+                                        <p className="text-[var(--foreground)]/60 font-black text-base tracking-tight mb-2">No notifications yet</p>
+                                        <p className="text-[var(--foreground-muted)] text-xs max-w-xs leading-relaxed mx-auto">We'll notify you when you unlock achievements, earn XP, or conquer study milestones!</p>
                                     </div>
                                 ) : (
                                     toasts.map((toast) => (
@@ -280,39 +375,46 @@ export function ToastContainer() {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, x: -100 }}
                                             className={`
-                                                relative p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.02]
-                                                ${typeStyles[toast.type].bg}
+                                                relative p-5 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] border backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] bg-[var(--bg)]/80
                                                 ${typeStyles[toast.type].border}
                                                 ${typeStyles[toast.type].glow}
-                                                ${toast.read ? 'opacity-60' : ''}
+                                                ${toast.read ? 'opacity-50 grayscale-[40%]' : ''}
                                             `}
-                                            onClick={() => markAsRead(toast.id)}
+                                            onClick={() => {
+                                                markAsRead(toast.id);
+                                                if (toast.link) {
+                                                    router.push(toast.link);
+                                                    setIsOpen(false);
+                                                }
+                                            }}
                                         >
                                             {/* Unread indicator */}
                                             {!toast.read && (
-                                                <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[#F59E0B]" />
+                                                <div className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-[var(--amber)] shadow-[0_0_10px_var(--amber)] animate-pulse" />
                                             )}
                                             
-                                            <div className="flex items-start gap-3">
+                                            <div className="flex items-start gap-4">
                                                 <div className={`
-                                                    w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+                                                    w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border border-white/5
                                                     ${typeStyles[toast.type].bg.replace('/10', '/20')}
                                                 `}>
                                                     {(() => {
                                                         const IconComp = toast.icon || defaultIcons[toast.type];
                                                         if (typeof IconComp === 'string') {
-                                                            return <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{IconComp}</span>;
+                                                            return <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>{IconComp}</span>;
                                                         }
-                                                        return <IconComp size={18} strokeWidth={1.5} className={typeStyles[toast.type].iconColor} />;
+                                                        return <IconComp size={22} strokeWidth={1.5} className={typeStyles[toast.type].iconColor} />;
                                                     })()}
                                                 </div>
                                                 
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-white/90 line-clamp-2">
+                                                <div className="flex-1 min-w-0 pr-4">
+                                                    <p className="text-sm font-bold text-[var(--foreground)] leading-snug line-clamp-3 mb-1.5">
                                                         {toast.message}
                                                     </p>
-                                                    <p className="text-xs text-white/40 mt-1">
-                                                        {formatTimeAgo(toast.timestamp)}
+                                                    <p className="text-[11px] font-mono text-[var(--foreground-muted)] flex items-center gap-1.5">
+                                                        <span>{formatTimeAgo(toast.timestamp)}</span>
+                                                        <span>•</span>
+                                                        <span className="capitalize text-[var(--blue-text)]">{toast.type}</span>
                                                     </p>
                                                 </div>
                                                 
@@ -321,22 +423,28 @@ export function ToastContainer() {
                                                         e.stopPropagation();
                                                         removeToast(toast.id);
                                                     }}
-                                                    className="text-white/20 hover:text-white/40 transition-colors"
+                                                    className="text-[var(--foreground)]/20 hover:text-[var(--foreground)]/60 transition-colors p-1 rounded-lg hover:bg-white/5"
                                                 >
-                                                    <X size={16} strokeWidth={1.5} />
+                                                    <X size={18} strokeWidth={1.5} />
                                                 </button>
                                             </div>
 
                                             {/* Link if present */}
                                             {toast.link && (
-                                                <Link 
-                                                    href={toast.link}
-                                                    className="mt-3 inline-flex items-center gap-1 text-xs text-[#F59E0B] hover:underline"
-                                                    onClick={(e) => e.stopPropagation()}
+                                                <button 
+                                                    className="mt-4 inline-flex items-center gap-2 text-xs font-black text-[var(--amber)] hover:underline uppercase tracking-wider bg-[var(--amber)]/10 px-3 py-1.5 rounded-xl border border-[var(--amber)]/20"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        markAsRead(toast.id);
+                                                        if (toast.link) {
+                                                            router.push(toast.link);
+                                                        }
+                                                        setIsOpen(false);
+                                                    }}
                                                 >
-                                                    <span>View</span>
-                                                    <ArrowRight size={12} strokeWidth={1.5} />
-                                                </Link>
+                                                    <span>View Details</span>
+                                                    <ArrowRight size={14} strokeWidth={1.5} />
+                                                </button>
                                             )}
                                         </motion.div>
                                     ))
@@ -345,10 +453,10 @@ export function ToastContainer() {
 
                             {/* Footer */}
                             {toasts.length > 0 && (
-                                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10" style={{ background: "linear-gradient(to top, #0C0C16, #0C0C16/95)" }}>
+                                <div className="p-6 border-t border-[var(--border)] bg-[var(--bg-2)]/50 backdrop-blur-xl mt-auto">
                                     <button 
                                         onClick={() => useToasts.getState().clearAll()}
-                                        className="w-full py-2 rounded-xl text-sm text-white/40 hover:text-white/60 transition-colors"
+                                        className="w-full h-14 rounded-2xl bg-[var(--bg-3)] border border-[var(--border)] text-xs font-black text-[var(--foreground)]/50 hover:text-[var(--foreground)] hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm"
                                     >
                                         Clear all notifications
                                     </button>
@@ -377,13 +485,13 @@ function formatTimeAgo(date: Date): string {
 
 // Keep backward compatibility - also render inline toasts
 export default function GlobalToasts() {
-    const { toasts, removeToast, isOpen, setIsOpen } = useToasts();
-    const activeToasts = toasts.slice(0, 3);
+    const { toasts, activeToastIds, removeToast, isOpen, setIsOpen } = useToasts();
+    const activeToasts = toasts.filter(t => activeToastIds.includes(t.id)).slice(0, 3);
 
     return (
         <>
             {/* Inline Toasts (for immediate feedback) */}
-            <div className="fixed top-20 right-6 z-[100] flex flex-col gap-3 pointer-events-none w-full max-w-[320px]">
+            <div className="fixed top-20 right-6 z-[100012] flex flex-col gap-3 pointer-events-none w-full max-w-[320px]">
                 <AnimatePresence>
                     {activeToasts.map((toast) => (
                         <motion.div

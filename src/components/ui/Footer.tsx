@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import BrandLogo from "./BrandLogo";
 import { AnimatePresence } from "framer-motion";
 import { PrivacyPolicyModal, TermsOfUseModal } from "@/components/ui/LegalModals";
@@ -9,6 +10,7 @@ export default function Footer() {
   const [mounted, setMounted] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms]     = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -16,10 +18,20 @@ export default function Footer() {
 
   if (!mounted) return <div className="w-full h-12" />; // Placeholder to prevent layout shift
 
+  // Only show Footer on public marketing/informational routes
+  const isPublicRoute = pathname === "/" || 
+                        pathname.startsWith("/blog") || 
+                        pathname.startsWith("/legal") ||
+                        pathname.startsWith("/login") ||
+                        pathname.startsWith("/signup") || 
+                        pathname.startsWith("/forgot-password");
+
+  if (!isPublicRoute) return null;
+
   return (
     <>
       <footer
-        className="w-full border-t relative z-[10]"
+        className="w-full border-t relative z-[1]"
         style={{
           background: "var(--background-secondary)",
           borderColor: "var(--border)",
@@ -29,7 +41,7 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <BrandLogo size="xs" />
             <p className="text-[11px]" style={{ color: "var(--foreground-muted)" }}>
-              AI study companion · Strategic academic mastery
+              AI study companion · Smart academic success
             </p>
           </div>
 

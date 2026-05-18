@@ -181,7 +181,7 @@ const typeConfig = {
 const PROFESSOR_TIPS = [
     "Active recall is 2x more effective than passive reading. Keep testing yourself!",
     "Spaced repetition works best when you review *just* as you're about to forget.",
-    "Try explaining this concept to someone else. Teaching is the ultimate mastery.",
+    "Try explaining this concept to someone else. Teaching is the best way to learn.",
     "Consistency beats intensity. 10 minutes every day > 5 hours once a week.",
     "The 'Feynman Technique' (simplifying) is your best friend for complex topics.",
     "Sleep is where memories are consolidated. Don't skip your rest!",
@@ -204,7 +204,24 @@ export default function SessionComplete({
     const [particles, setParticles] = useState<Particle[]>([]);
     const [tip, setTip] = useState("");
     const [isShareOpen, setIsShareOpen] = useState(false);
-    const config = typeConfig[type];
+    
+    const isSprint = typeof window !== "undefined" ? sessionStorage.getItem("isExamSprint") === "true" : false;
+    const baseConfig = typeConfig[type];
+    const config = isSprint && type === "flashcards" ? {
+        ...baseConfig,
+        label: "Memory Drill Complete",
+        suggestion: "Memory Drill complete. Take the final Mock Exam to complete your Exam Sprint!",
+        suggestLabel: "Start Final Mock Exam",
+        suggestIcon: "quiz",
+        suggestHref: "#",
+    } : isSprint && type === "quiz" ? {
+        ...baseConfig,
+        label: "Exam Sprint Complete!",
+        suggestion: "You have completed the Exam Sprint! The Professor is exceptionally proud of your smart work.",
+        suggestLabel: "Return to Library",
+        suggestIcon: "emoji_events",
+        suggestHref: "/library",
+    } : baseConfig;
 
     useEffect(() => {
         if (isVisible) {
@@ -397,21 +414,58 @@ export default function SessionComplete({
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.8 }}
                                 >
-                                    <Link
-                                        href={config.suggestHref}
-                                        className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${config.color}, ${config.color}CC)`,
-                                            color: "#06060B",
-                                            boxShadow: `0 8px 24px ${config.color}30`,
-                                        }}
-                                    >
-                                        {(() => {
-                                            const IconComp = ICON_MAP[config.suggestIcon] || HelpCircle;
-                                            return <IconComp size={18} strokeWidth={1.5} />;
-                                        })()}
-                                        {config.suggestLabel}
-                                    </Link>
+                                    {isSprint && type === "flashcards" ? (
+                                        <button
+                                            onClick={() => {
+                                                const sprintContent = sessionStorage.getItem("examSprintContent") || "";
+                                                const params = JSON.parse(sessionStorage.getItem("generateParams") || "{}");
+                                                sessionStorage.setItem("generateParams", JSON.stringify({
+                                                    ...params,
+                                                    content: sprintContent,
+                                                    type: "quiz",
+                                                    count: 10,
+                                                    difficulty: "medium"
+                                                }));
+                                                onDismiss();
+                                                window.location.href = "/quiz/generate";
+                                            }}
+                                            className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${config.color}, ${config.color}CC)`,
+                                                color: "#06060B",
+                                                boxShadow: `0 8px 24px ${config.color}30`,
+                                            }}
+                                        >
+                                            {(() => {
+                                                const IconComp = ICON_MAP[config.suggestIcon] || HelpCircle;
+                                                return <IconComp size={18} strokeWidth={1.5} />;
+                                            })()}
+                                            {config.suggestLabel}
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href={config.suggestHref}
+                                            onClick={() => {
+                                                if (isSprint && type === "quiz") {
+                                                    sessionStorage.removeItem("isExamSprint");
+                                                    sessionStorage.removeItem("examSprintContent");
+                                                }
+                                                onDismiss();
+                                            }}
+                                            className="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${config.color}, ${config.color}CC)`,
+                                                color: "#06060B",
+                                                boxShadow: `0 8px 24px ${config.color}30`,
+                                            }}
+                                        >
+                                            {(() => {
+                                                const IconComp = ICON_MAP[config.suggestIcon] || HelpCircle;
+                                                return <IconComp size={18} strokeWidth={1.5} />;
+                                            })()}
+                                            {config.suggestLabel}
+                                        </Link>
+                                    )}
 
                                     <button
                                         onClick={() => setIsShareOpen(true)}
@@ -423,7 +477,13 @@ export default function SessionComplete({
 
                                     <Link
                                         href={continueHref}
-                                        onClick={onDismiss}
+                                        onClick={() => {
+                                            if (isSprint && type === "quiz") {
+                                                sessionStorage.removeItem("isExamSprint");
+                                                sessionStorage.removeItem("examSprintContent");
+                                            }
+                                            onDismiss();
+                                        }}
                                         className="w-full py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest text-white/25 hover:text-white/40 transition-colors flex items-center justify-center"
                                     >
                                         Back to Dashboard

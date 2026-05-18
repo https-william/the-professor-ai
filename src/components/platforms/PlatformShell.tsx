@@ -87,33 +87,7 @@ export default function PlatformShell({
     return (
         <PlatformErrorBoundary>
             <div id="platform-shell-gate" className="contents" suppressHydrationWarning>
-                <AnimatePresence mode="wait">
-                    {!isLoaded ? (
-                        <motion.div
-                            key="platform-shell-loading"
-                            initial={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="contents"
-                        >
-                            <div className="fixed inset-0 z-50 bg-[#08080E] flex items-center justify-center">
-                                <ProfessorCeremony />
-                            </div>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key={isDesktop ? "desktop" : isMobile ? "mobile" : "web"}
-                            initial={{ opacity: 1 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="contents"
-                            id="platform-root"
-                        >
-                            {content}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {content}
             </div>
         </PlatformErrorBoundary>
     );

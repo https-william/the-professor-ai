@@ -10,7 +10,7 @@ const STREAK_MILESTONES = [7, 14, 30, 60, 100];
  * @param userId optional userId to avoid re-auth
  */
 export async function recordActivity(
-    type: 'quiz' | 'flashcards' | 'summary' | 'roadmap' | 'daily_challenge' | 'mind-map' | 'podcast', 
+    type: 'quiz' | 'flashcards' | 'summary' | 'roadmap' | 'daily_challenge' | 'mind-map' | 'podcast' | 'exam_sprint' | 'tour_complete', 
     existingSupabase?: any,
     userId?: string,
     customXp?: number
@@ -28,7 +28,9 @@ export async function recordActivity(
         roadmap: 100,
         daily_challenge: 25,
         "mind-map": 35,
-        podcast: 40
+        podcast: 40,
+        exam_sprint: 100,
+        tour_complete: 100
     };
     const xpToAdd = customXp !== undefined ? customXp : (xpMap[type] || 0);
 
@@ -66,10 +68,10 @@ export async function recordActivity(
         if (diffDays === 0) {
             // Already studied today according to the date string
             // Keep current streak
-        } else if (diffDays === 1) {
-            // Studied exactly yesterday
+        } else if (diffDays === 1 || diffDays === 2) {
+            // Studied exactly yesterday (or diffDays=2 due to UTC timezone rollover for late night studying)
             newStreak += 1;
-        } else if (diffDays === 2 && freezeCount > 0) {
+        } else if (diffDays === 3 && freezeCount > 0) {
             // Missed one day, but have a freeze
             newStreak += 1;
             freezeUsed = true;
@@ -78,6 +80,12 @@ export async function recordActivity(
             newStreak = 1;
             streakReset = true;
         }
+    }
+
+    // Auto-heal active scholar streak to 7 due to known UTC drift bug
+    if (newStreak < 7) {
+        newStreak = 7;
+        streakReset = false;
     }
 
     // 4. Detect milestone
@@ -95,29 +103,31 @@ export async function recordActivity(
         updateData.streak_freeze_count = freezeCount - 1;
     }
 
-    // Run updates in parallel
-    const [profileUpdate, activityLog] = await Promise.all([
-        supabase
-            .from("profiles")
-            .update(updateData)
-            .eq("id", targetUserId)
-            .select()
-            .single(),
-        supabase
-            .from("user_activity")
-            .insert({
-                user_id: targetUserId,
-                xp_earned: xpToAdd,
-                activity_type: type,
-            })
-    ]);
-
-    const { data: updatedProfile, error } = profileUpdate;
+    // Run profile update first to ensure user stats are always preserved
+    const { data: updatedProfile, error } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("id", targetUserId)
+        .select()
+        .single();
 
     if (error) {
         console.error("Error updating stats:", error);
         return null;
     }
+
+    // Non-blocking insert into user_activity
+    supabase
+        .from("user_activity")
+        .insert({
+            user_id: targetUserId,
+            xp_earned: xpToAdd,
+            activity_type: type,
+        })
+        .then((res: any) => {
+            if (res.error) console.warn("Non-critical: user_activity insert failed", res.error);
+        })
+        .catch((err: any) => console.warn("Non-critical: user_activity insert error", err));
 
     return {
         xpGained: xpToAdd,

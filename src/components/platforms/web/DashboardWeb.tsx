@@ -7,7 +7,7 @@ import {
     ArrowRight, Flame, Zap, Shield, Coins, PlusCircle,
     Library, BookOpen, Swords, Play, Pause, RotateCcw,
     Clock, Target, Sparkles, History as HistoryIcon,
-    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp
+    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Trophy
 } from "lucide-react";
 import { calculateLevel, getLevelTitle, getLevelProgress } from "@/lib/profiles-client";
 
@@ -22,18 +22,19 @@ interface DashboardWebProps {
     handleRecover: () => void;
     canRecover: boolean;
     isProcessingAction: boolean;
-    handleBuyFreeze: () => void;
     handleShare?: () => void;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
    "COMMAND CENTER" DASHBOARD
    Aesthetic: Arc Browser Ã— Raycast Ã— Linear
    Philosophy: Dense information, zero clutter, ambient energy
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  */
 
 // Import education tip
 import { getDailyTip } from "@/lib/education-tips";
+import FocusTimer from "@/components/features/dashboard/FocusTimer";
+import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
 
 const stagger = {
     hidden: {},
@@ -47,8 +48,8 @@ const fadeUp = {
 import StandardContainer from "@/components/ui/StandardContainer";
 
 export default function DashboardWeb({
-    user, activityData, dueCount, greeting, firstName,
-    handleRecover, canRecover, isProcessingAction, handleBuyFreeze,
+    user, activityData, dueCount, studyPlan, planLoading, greeting, firstName,
+    handleRecover, canRecover, isProcessingAction,
 }: DashboardWebProps) {
 
     const level = calculateLevel(user.xp);
@@ -84,28 +85,7 @@ export default function DashboardWeb({
         });
     }, [activityData]);
 
-    // Focus Timer (embedded)
-    const [timerLeft, setTimerLeft] = useState(25 * 60);
-    const [timerActive, setTimerActive] = useState(false);
-    const [timerMode, setTimerMode] = useState<"focus" | "break">("focus");
-
-    useEffect(() => {
-        if (!timerActive || timerLeft <= 0) return;
-        const iv = setInterval(() => setTimerLeft(t => t - 1), 1000);
-        return () => clearInterval(iv);
-    }, [timerActive, timerLeft]);
-
-    useEffect(() => {
-        if (timerLeft === 0) {
-            setTimerActive(false);
-            if (timerMode === "focus") { setTimerMode("break"); setTimerLeft(5 * 60); }
-            else { setTimerMode("focus"); setTimerLeft(25 * 60); }
-        }
-    }, [timerLeft, timerMode]);
-
-    const timerMins = Math.floor(timerLeft / 60);
-    const timerSecs = timerLeft % 60;
-    const timerProgress = 1 - (timerLeft / (timerMode === "focus" ? 25 * 60 : 5 * 60));
+    // Focus Timer moved to widget
 
     // Fetch library stats for recent activity
     const [libStats, setLibStats] = useState({ flashcards: 0, quiz: 0, summary: 0 });
@@ -152,12 +132,15 @@ export default function DashboardWeb({
                 <motion.div variants={stagger} initial="hidden" animate="show">
                     {/* Hero Zone */}
                     <motion.div variants={fadeUp} className="mb-10">
-                        <div className="scholar-card relative p-8 sm:p-12 overflow-hidden border-[var(--blue-border)]" style={{ borderRadius: "32px", background: "linear-gradient(165deg, var(--blue-dim), var(--bg))" }}>
+                        <div className="scholar-card relative p-8 sm:p-12 overflow-hidden bg-[var(--background-secondary)] border border-[var(--border)] shadow-xl" style={{ borderRadius: "32px" }}>
                             <div className="absolute top-0 right-0 p-8 opacity-[0.05] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
                             <div className="relative z-10">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                    <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[var(--blue-text)] font-bold">{dateStr}</span>
+                                <div className="flex flex-wrap items-center gap-3 mb-6">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold">{dateStr}</span>
+                                    </div>
+                                    <FocusTimer widget={true} />
                                 </div>
                                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--text)] leading-[0.95] mb-6">
                                     {greeting}{greeting.match(/[?!]$/) ? "" : ","} <span className="text-[var(--blue)]">{firstName}</span>
@@ -174,7 +157,6 @@ export default function DashboardWeb({
                         {[
                             { icon: Zap, label: "XP", value: user.xp?.toLocaleString(), sub: `Lvl ${level} · ${title}`, color: "var(--blue)" },
                             { icon: Flame, label: "Streak", value: `${user.streak}d`, sub: user.streak > 0 ? "Active" : "Start today", color: "var(--amber)" },
-                            { icon: Shield, label: "Freezes", value: user.streakFreezeCount, sub: "Protection", color: "var(--cyan)" },
                             { icon: Coins, label: "Credits", value: user.credits, sub: "Available", color: "var(--violet)" },
                         ].map(({ icon: Icon, label, value, sub, color }) => (
                             <div key={label} className="scholar-card flex items-center gap-4 px-5 py-4 transition-all group flex-1 min-w-[180px]" style={{ borderRadius: "20px" }}>
@@ -297,43 +279,58 @@ export default function DashboardWeb({
                                     </div>
                                 </div>
 
-                                <div className="scholar-card p-6 min-h-[200px] flex flex-col justify-between" style={{ borderRadius: "28px" }}>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-6">
-                                            <Target size={16} className="text-[var(--emerald)]" />
-                                            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Knowledge Mix</span>
+                                <div className="scholar-card p-6 min-h-[200px] flex flex-col justify-between relative overflow-hidden group" style={{ borderRadius: "28px" }}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/10 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/20 transition-colors" />
+                                    <div className="relative z-10">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-2">
+                                                <Trophy size={16} className="text-[var(--amber)]" />
+                                                <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Trophy Room</span>
+                                            </div>
+                                            <span className="px-2 py-0.5 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] font-mono text-[10px] font-black">3 Unlocked</span>
                                         </div>
                                         <div className="space-y-4">
-                                            {recentTypes.map((item, idx) => (
-                                                <div key={idx} className="space-y-1.5">
-                                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-[var(--text-3)]">
-                                                        <div className="flex items-center gap-2">
-                                                            <item.icon size={12} style={{ color: item.color }} />
-                                                            <span>{item.label}</span>
-                                                        </div>
-                                                        <span className="font-mono">{item.count}</span>
+                                            <div className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)]">
+                                                <div className="w-10 h-10 rounded-xl bg-[var(--amber)]/20 border border-[var(--amber)]/40 flex items-center justify-center text-[var(--amber)] shrink-0 shadow-[0_0_15px_var(--amber-glow)] animate-bounce">
+                                                    <Flame size={20} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="text-xs font-black text-[var(--text)] truncate">Prometheus Flame</p>
+                                                        <span className="text-[10px] font-mono text-[var(--amber)] font-black">100%</span>
                                                     </div>
-                                                    <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden">
-                                                        <motion.div
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${(item.count / totalGenerations) * 100}%` }}
-                                                            transition={{ duration: 1, ease: "easeOut" }}
-                                                            className="h-full"
-                                                            style={{ backgroundColor: item.color }}
-                                                        />
+                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-1.5">Maintain a 7-day scholarly streak</p>
+                                                    <div className="h-1 w-full bg-[var(--text-4)] rounded-full overflow-hidden">
+                                                        <div className="h-full bg-[var(--amber)] w-full shadow-[0_0_8px_var(--amber)]" />
                                                     </div>
                                                 </div>
-                                            ))}
+                                            </div>
+
+                                            <div className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] opacity-80">
+                                                <div className="w-10 h-10 rounded-xl bg-[var(--blue)]/20 border border-[var(--blue)]/40 flex items-center justify-center text-[var(--blue)] shrink-0 shadow-[0_0_15px_var(--blue-glow)]">
+                                                    <Zap size={20} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="text-xs font-black text-[var(--text)] truncate">Neural Architect</p>
+                                                        <span className="text-[10px] font-mono text-[var(--blue)] font-black">50%</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-1.5">Generate 10 study packs</p>
+                                                    <div className="h-1 w-full bg-[var(--text-4)] rounded-full overflow-hidden">
+                                                        <div className="h-full bg-[var(--blue)] w-1/2 shadow-[0_0_8px_var(--blue)]" />
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <Link href="/analytics" className="mt-8 flex items-center justify-between p-4 rounded-2xl bg-[var(--text)]/5 border border-[var(--border)] hover:border-[var(--blue-border)] hover:bg-[var(--blue-dim)] group transition-all shrink-0">
+                                    <Link href="/achievements" className="mt-8 relative z-10 flex items-center justify-between p-4 rounded-2xl bg-[var(--text)]/5 border border-[var(--border)] hover:border-[var(--amber-border)] hover:bg-[var(--amber-dim)] group/btn transition-all shrink-0">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--blue)] group-hover:scale-110 transition-transform shadow-sm">
-                                                <TrendingUp size={14} />
+                                            <div className="w-8 h-8 rounded-lg bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--amber)] group-hover/btn:scale-110 transition-transform shadow-sm">
+                                                <Trophy size={14} />
                                             </div>
-                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] group-hover:text-[var(--text)] transition-colors">Examine Full Data</span>
+                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] group-hover/btn:text-[var(--text)] transition-colors">Claim Achievements</span>
                                         </div>
-                                        <ArrowRight size={14} className="text-[var(--text-3)] group-hover:text-[var(--blue)] group-hover:translate-x-1 transition-all" />
+                                        <ArrowRight size={14} className="text-[var(--text-3)] group-hover/btn:text-[var(--amber)] group-hover/btn:translate-x-1 transition-all" />
                                     </Link>
                                 </div>
                             </div>
@@ -341,52 +338,7 @@ export default function DashboardWeb({
 
                         {/* Col 3: Focus Panel */}
                         <div className="flex flex-col gap-6">
-                            <div className="scholar-card p-8 relative overflow-hidden" style={{ borderRadius: "32px" }}>
-                                <div className={`absolute -top-16 -right-16 w-40 h-40 rounded-full blur-[80px] opacity-15 transition-colors duration-1000 ${timerMode === "focus" ? "bg-[var(--blue)]" : "bg-[var(--cyan)]"}`} />
-                                <div className="flex items-center gap-2 mb-6 relative z-10">
-                                    <Clock size={14} className={timerMode === "focus" ? "text-[var(--blue)]" : "text-[var(--cyan)]"} />
-                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Deep Focus</span>
-                                    {timerActive && <span className="ml-auto w-2 h-2 rounded-full bg-[var(--crimson)] animate-pulse shadow-[0_0_8px_var(--crimson)]" />}
-                                </div>
-                                <div className="flex flex-col items-center py-4 relative z-10">
-                                    <div className="relative w-36 h-36 mb-6">
-                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                            <circle cx="50" cy="50" r="44" fill="transparent" stroke="var(--border)" strokeWidth="3" opacity="0.2" />
-                                            <motion.circle cx="50" cy="50" r="44" fill="transparent" stroke={timerMode === "focus" ? "var(--blue)" : "var(--cyan)"} strokeWidth="4" strokeLinecap="round" strokeDasharray={276} initial={{ strokeDashoffset: 276 }} animate={{ strokeDashoffset: 276 - (276 * timerProgress) }} transition={{ ease: "linear", duration: 1 }} />
-                                        </svg>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className="text-3xl font-black text-[var(--text)] tabular-nums font-mono leading-none tracking-tighter">{timerMins.toString().padStart(2, "0")}:{timerSecs.toString().padStart(2, "0")}</span>
-                                            <span className="text-[10px] text-[var(--text-3)] uppercase tracking-[0.2em] font-bold mt-2">{timerMode}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => setTimerActive(!timerActive)} className="btn-skeuo w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--text-4)] border-[var(--border)]">
-                                            {timerActive ? <Pause size={18} className="fill-current" /> : <Play size={18} className="fill-current ml-1" />}
-                                        </button>
-                                        <button onClick={() => { setTimerActive(false); setTimerMode("focus"); setTimerLeft(25 * 60); }} className="btn-skeuo w-12 h-12 rounded-2xl flex items-center justify-center bg-transparent border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text)]">
-                                            <RotateCcw size={16} />
-                                        </button>
-                                    </div>
-                                    <div className="mt-6 flex gap-4">
-                                        <button onClick={() => { setTimerMode("focus"); setTimerLeft(25 * 60); setTimerActive(false); }} className={`font-mono text-[10px] uppercase tracking-widest font-bold transition-all ${timerMode === "focus" ? "text-[var(--blue)]" : "text-[var(--text-3)] hover:text-[var(--text)]"}`}>25m Focus</button>
-                                        <button onClick={() => { setTimerMode("break"); setTimerLeft(5 * 60); setTimerActive(false); }} className={`font-mono text-[10px] uppercase tracking-widest font-bold transition-all ${timerMode === "break" ? "text-[var(--cyan)]" : "text-[var(--text-3)] hover:text-[var(--text)]"}`}>5m Break</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="scholar-card p-6 border-[var(--cyan-border)] bg-[var(--cyan-dim)]/20" style={{ borderRadius: "24px" }}>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Shield size={14} className="text-cyan-400" />
-                                    <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--foreground-muted)] font-bold">Safety Net</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[16px] font-black text-[var(--foreground)]">{user.streakFreezeCount} <span className="text-[var(--foreground-muted)] font-medium opacity-50 uppercase text-[10px] tracking-wider">Banked</span></p>
-                                        <p className="text-[11px] text-[var(--foreground-muted)] font-medium mt-0.5 leading-tight">Keep your streak alive when life happens.</p>
-                                    </div>
-                                    <button onClick={handleBuyFreeze} disabled={isProcessingAction || user.credits < 5} className="btn-skeuo px-4 py-2 text-[9px] font-black uppercase tracking-widest bg-cyan-500/10 border-cyan-500/20 text-cyan-400">Secure · 5 CR</button>
-                                </div>
-                            </div>
+                            <WeeklyWrappedCard />
                         </div>
                     </div>
                 </motion.div>

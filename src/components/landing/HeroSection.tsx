@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Sparkles } from "lucide-react";
-import UploadZone from "./UploadZone";
+import { Sparkles, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 function StarField() {
   const stars = useMemo(() => {
@@ -64,13 +64,6 @@ function StarField() {
 }
 
 export default function HeroSection() {
-  const handleFileSelected = (file: File) => {
-    // Store file reference and navigate to processing
-    if (typeof window !== "undefined") {
-      localStorage.setItem("pending_upload_name", file.name);
-    }
-    window.location.href = "/signup";
-  };
 
   return (
     <section
@@ -127,7 +120,7 @@ export default function HeroSection() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: "clamp(16px, 4vh, 32px)" }}>
           {/* Pre-Headline Badge */}
           <div
-            className="animate-up glass-panel"
+            className="animate-up visible-immediate glass-panel"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -151,7 +144,7 @@ export default function HeroSection() {
 
           {/* Main Headline */}
           <h1
-            className="animate-up"
+            className="animate-up visible-immediate"
             style={{
               textAlign: "center",
               maxWidth: "1000px",
@@ -167,7 +160,7 @@ export default function HeroSection() {
             Just the <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>good parts.</span>
           </h1>
           <p
-            className="animate-up"
+            className="animate-up visible-immediate"
             style={{
               textAlign: "center",
               maxWidth: "540px",
@@ -183,16 +176,27 @@ export default function HeroSection() {
           </p>
         </div>
 
-        {/* Upload Drop Zone Container */}
+        {/* CTA Group */}
         <div 
-          className="animate-up" 
+          className="animate-up flex flex-col sm:flex-row items-center gap-6" 
           style={{ 
-            width: "100%",
-            maxWidth: "580px",
             transitionDelay: "150ms" 
           }}
         >
-          <UploadZone onFileSelected={handleFileSelected} />
+          <a
+            href="#get-started"
+            className="btn-jelly-primary px-10 py-5 text-[15px]"
+            style={{ textDecoration: "none" }}
+          >
+            Get Started <ArrowRight size={18} className="ml-2" />
+          </a>
+          <Link
+            href="/about"
+            className="btn-ghost px-8 py-4 text-[14px] border-[var(--blue-border)]"
+            style={{ textDecoration: "none", color: "var(--foreground-secondary)" }}
+          >
+            How it works
+          </Link>
         </div>
 
         {/* Social Proof Ticker */}
@@ -217,7 +221,7 @@ export default function HeroSection() {
                   { name: "Ifeanyi", action: "turned 50 slides into 5 pages" },
                   { name: "Bolu", action: "is finally sleeping 8 hours" },
                   { name: "Chinelo", action: "passed her nursing exam" },
-                  { name: "Femi", action: "crushed his SAT prep" },
+                  { name: "Femi", action: "aced his SAT prep" },
                   { name: "Zainab", action: "summarized 30 lectures" },
                   { name: "Emeka", action: "is ready for his finals" },
                   { name: "Adaeze", action: "made a law guide in seconds" },

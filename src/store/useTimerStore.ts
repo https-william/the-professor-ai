@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type TimerMode = "focus" | "break";
+export type TimerMode = "focus" | "shortBreak" | "longBreak";
 
 interface TimerState {
     timeLeft: number;
@@ -21,7 +21,8 @@ interface TimerActions {
 }
 
 const DEFAULT_FOCUS_TIME = 25 * 60;
-const DEFAULT_BREAK_TIME = 5 * 60;
+const DEFAULT_SHORT_BREAK_TIME = 5 * 60;
+const DEFAULT_LONG_BREAK_TIME = 15 * 60;
 
 export const useTimerStore = create<TimerState & TimerActions>()(
     persist(
@@ -37,7 +38,7 @@ export const useTimerStore = create<TimerState & TimerActions>()(
             
             resetTimer: () => set({ 
                 isActive: false, 
-                timeLeft: get().mode === "focus" ? DEFAULT_FOCUS_TIME : DEFAULT_BREAK_TIME,
+                timeLeft: get().mode === "focus" ? DEFAULT_FOCUS_TIME : get().mode === "shortBreak" ? DEFAULT_SHORT_BREAK_TIME : DEFAULT_LONG_BREAK_TIME,
                 lastTickTime: null 
             }),
             
@@ -46,10 +47,6 @@ export const useTimerStore = create<TimerState & TimerActions>()(
                 if (!state.isActive || state.timeLeft <= 0) return;
                 
                 const now = Date.now();
-                // We typically just decrement by 1 if ticking every second, 
-                // but doing it explicitly based on time delta adds precision.
-                // However, for standard UX, decrementing by 1 per tick is fine,
-                // as `syncHydration` handles large gaps.
                 set({ 
                     timeLeft: Math.max(0, state.timeLeft - 1),
                     lastTickTime: now 
@@ -58,7 +55,7 @@ export const useTimerStore = create<TimerState & TimerActions>()(
             
             setMode: (mode: TimerMode) => set({ 
                 mode, 
-                timeLeft: mode === "focus" ? DEFAULT_FOCUS_TIME : DEFAULT_BREAK_TIME,
+                timeLeft: mode === "focus" ? DEFAULT_FOCUS_TIME : mode === "shortBreak" ? DEFAULT_SHORT_BREAK_TIME : DEFAULT_LONG_BREAK_TIME,
                 isActive: false,
                 lastTickTime: null
             }),

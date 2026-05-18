@@ -3,16 +3,14 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import StandardContainer from "@/components/ui/StandardContainer";
-import { Layers, Zap, ArrowRight, Flame, Brain, Calendar } from "lucide-react";
+import { Layers, Zap, ArrowRight, Flame, Brain, Calendar, Sparkles, Coins } from "lucide-react";
 import XPGauge from "@/components/features/dashboard/XPGauge";
-import RecentActivity from "@/components/features/dashboard/RecentActivity";
-import AIStudyPlan from "@/components/features/dashboard/AIStudyPlan";
-import QuickLaunchCard from "@/components/features/dashboard/QuickLaunchCard";
-import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import ProfessorsWisdom from "@/components/features/dashboard/ProfessorsWisdom";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
-import { calculateLevel } from "@/lib/profiles-client";
+import { calculateLevel, getLevelTitle } from "@/lib/profiles-client";
+import { getDailyTip } from "@/lib/education-tips";
+import FocusTimer from "@/components/features/dashboard/FocusTimer";
 
 interface DashboardMobileProps {
     user: any;
@@ -25,7 +23,6 @@ interface DashboardMobileProps {
     handleRecover: () => void;
     canRecover: boolean;
     isProcessingAction: boolean;
-    handleBuyFreeze: () => void;
     handleShare: () => void;
 }
 
@@ -40,9 +37,14 @@ export default function DashboardMobile({
     handleRecover,
     canRecover,
     isProcessingAction,
-    handleBuyFreeze,
     handleShare,
 }: DashboardMobileProps) {
+    const level = calculateLevel(user.xp);
+    const title = getLevelTitle(level);
+    const today = new Date();
+    const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    const dailyLine = getDailyTip(user.id || "");
+
     return (
         <div className="w-full relative font-sans bg-[var(--bg)] selection:bg-[var(--blue-dim)] pt-24 pb-32">
             {/* Ultra-Premium Glassmorphic Background */}
@@ -53,32 +55,37 @@ export default function DashboardMobile({
 
             <StandardContainer className="relative z-10 flex flex-col gap-6">
                 
-                {/* ─── MASTHEAD (Banner) ─── */}
+                {/* ─── 1. MASTHEAD (Greeting Banner) ─── */}
                 <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-8 rounded-[36px] border border-[var(--blue-border)] bg-[var(--blue-dim)] relative overflow-hidden group flex flex-col justify-end min-h-[280px]"
+                    className="p-8 rounded-[36px] border border-[var(--border)] bg-[var(--background-secondary)] shadow-xl relative overflow-hidden group flex flex-col justify-end min-h-[260px]"
                 >
-                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Layers size={140} /></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-0" />
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.05] text-[var(--blue)] pointer-events-none"><Sparkles size={140} /></div>
                     <div className="relative z-10">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] mb-4 backdrop-blur-md">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                            {activityData?.studyGoal ? "Active Session" : "Awaiting Orders"}
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--text)]/5 border border-[var(--border)] text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] backdrop-blur-md shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                                <span className="font-mono font-bold">{dateStr}</span>
+                            </div>
+                            <FocusTimer widget={true} />
                         </div>
-                        <h1 className="text-4xl font-black text-[var(--text)] tracking-tighter mb-2 leading-[0.9]">
+                        <h1 className="text-4xl font-black text-[var(--text)] tracking-tighter mb-4 leading-[0.9]">
                             {greeting}{greeting.match(/[?!]$/) ? "" : ","} <br />
                             <span className="text-[var(--blue)] drop-shadow-[0_8px_20px_var(--blue-glow)]">{firstName}</span>
                         </h1>
+                        <p className="text-sm text-[var(--text-2)] italic font-medium leading-relaxed">
+                            &ldquo;{dailyLine}&rdquo;
+                        </p>
                     </div>
                 </motion.div>
 
-                {/* ─── ACTION CENTER ─── */}
+                {/* ─── 2. ACTION CENTER (Urgent Tasks) ─── */}
                 <AnimatePresence>
                     {dueCount > 0 && (
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                             <Link href="/review" className="block w-full">
-                                <div className="p-6 rounded-[36px] bg-[var(--blue)] border border-[var(--blue-border)] relative overflow-hidden flex items-center justify-between">
+                                <div className="p-6 rounded-[36px] bg-[var(--blue)] border border-[var(--blue-border)] relative overflow-hidden flex items-center justify-between shadow-lg">
                                     <div>
                                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/20 text-[9px] font-black uppercase tracking-[0.2em] text-black mb-3">
                                             Priority Task
@@ -93,82 +100,75 @@ export default function DashboardMobile({
                             </Link>
                         </motion.div>
                     )}
+                    {canRecover && (
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                            <button 
+                                onClick={handleRecover}
+                                disabled={isProcessingAction}
+                                className="w-full p-6 rounded-[32px] bg-[var(--amber-dim)] border border-[var(--amber-border)] flex items-center justify-between active:scale-[0.98] transition-all relative overflow-hidden shadow-lg disabled:opacity-50"
+                            >
+                                <div className="flex flex-col items-start gap-1 relative z-10">
+                                    <span className="text-[9px] font-black text-[var(--amber)] uppercase tracking-[0.2em]">Streak Rescue</span>
+                                    <span className="text-base font-bold text-[var(--text)]">Restore {user.lastStreak} Days</span>
+                                </div>
+                                <div className="px-4 py-2 bg-[var(--amber)] text-black rounded-xl text-xs font-black shadow-lg relative z-10">3 CR</div>
+                            </button>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
 
-                {/* ─── VITAL STATS GRID ─── */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="p-6 rounded-[32px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] mb-4">Level</span>
-                        <div className="flex items-end justify-between">
-                            <span className="text-4xl font-black text-[var(--text)]">{calculateLevel(user.xp)}</span>
+                {/* ─── 3. VITAL STATS RIBBON ─── */}
+                <div className="space-y-4 mt-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Vital Stats</span>
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="p-5 rounded-[28px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between">
+                            <div className="flex items-center gap-1.5 mb-3 text-[var(--blue)]">
+                                <Zap size={14} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)]">Level</span>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-[var(--text)]">{level}</span>
+                                <span className="text-[9px] font-bold text-[var(--text-3)] truncate">· {title.split(" ")[0]}</span>
+                            </div>
                         </div>
-                    </div>
- 
-                    <div className="p-6 rounded-[32px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-[var(--amber)]"><Flame size={80} /></div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] mb-4 relative z-10">Streak</span>
-                        <div className="flex items-end gap-1.5 relative z-10">
-                            <span className="text-4xl font-black text-[var(--text)]"><AnimatedCounter value={user.streak} /></span>
-                            <span className="text-[10px] font-bold text-[var(--text-3)] mb-1 uppercase tracking-tighter">Days</span>
+    
+                        <div className="p-5 rounded-[28px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-3 opacity-[0.05] text-[var(--amber)]"><Flame size={50} /></div>
+                            <div className="flex items-center gap-1.5 mb-3 text-[var(--amber)] relative z-10">
+                                <Flame size={14} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)]">Streak</span>
+                            </div>
+                            <div className="flex items-baseline gap-1 relative z-10">
+                                <span className="text-2xl font-black text-[var(--text)]"><AnimatedCounter value={user.streak} /></span>
+                                <span className="text-[9px] font-bold text-[var(--text-3)] uppercase tracking-tighter">Days</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="p-6 rounded-[32px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] mb-4">Freezes</span>
-                        <div className="flex items-center gap-1.5 pt-2">
-                            {[...Array(3)].map((_, i) => {
-                                const isAvailable = i < user.streakFreezeCount;
-                                const isExpiring = isAvailable && i === user.streakFreezeCount - 1;
-                                return (
-                                    <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-1000 ${
-                                        isAvailable 
-                                        ? isExpiring ? 'bg-[var(--cyan-border)] shadow-[0_0_10px_var(--cyan-glow)]' : 'bg-[var(--cyan)] shadow-[0_0_15px_var(--cyan-glow)]' 
-                                        : 'bg-[var(--text)]/5'
-                                    }`} />
-                                );
-                            })}
-                        </div>
-                    </div>
- 
-                    <div className="p-6 rounded-[32px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] mb-4">Credits</span>
-                        <div className="flex items-end justify-between">
-                            <span className="text-4xl font-black text-[var(--text)]"><AnimatedCounter value={user.credits} /></span>
+                        <div className="p-5 rounded-[28px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between">
+                            <div className="flex items-center gap-1.5 mb-3 text-[var(--violet)]">
+                                <Coins size={14} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)]">Credits</span>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-[var(--text)]"><AnimatedCounter value={user.credits} /></span>
+                                <span className="text-[9px] font-bold text-[var(--text-3)] uppercase tracking-tighter">Bal</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* ─── INSIGHTS & TOOLING ─── */}
-                <div className="space-y-6 mt-4">
-                    <XPGauge xp={user.xp} />
-                    <FocusTimer />
+                {/* ─── 4. PROFESSOR'S WISDOM ─── */}
+                <div className="space-y-6 mt-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Professor&apos;s Wisdom</span>
                     <ProfessorsWisdom />
+                </div>
+
+                {/* ─── 5. PROGRESS & INSIGHTS ─── */}
+                <div className="space-y-6 mt-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Progress & Insights</span>
+                    <XPGauge xp={user.xp} />
                     <WeeklyWrappedCard />
                 </div>
-
-                {/* ─── LAUNCHPAD ─── */}
-                <div className="space-y-4 mt-6">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Launchpad</span>
-                    <div className="grid grid-cols-1 gap-3">
-                        <QuickLaunchCard title="Arena" desc="Global Duels" icon="swords" href="/arena" color="var(--crimson)" />
-                        <QuickLaunchCard title="Create Studio" desc="Just the good parts" icon="add_circle" href="/create" color="var(--blue)" />
-                    </div>
-                </div>
-
-                {/* ─── RECOVERY WIDGET ─── */}
-                {canRecover && (
-                    <button 
-                        onClick={handleRecover}
-                        disabled={isProcessingAction}
-                        className="w-full p-6 rounded-[32px] bg-[var(--amber-dim)] border border-[var(--amber-border)] flex items-center justify-between active:scale-[0.98] transition-all relative overflow-hidden mt-6 disabled:opacity-50"
-                    >
-                        <div className="flex flex-col items-start gap-1 relative z-10">
-                            <span className="text-[9px] font-black text-[var(--amber)] uppercase tracking-[0.2em]">Streak Rescue</span>
-                            <span className="text-base font-bold text-[var(--text)]">Restore {user.lastStreak} Days</span>
-                        </div>
-                        <div className="px-4 py-2 bg-[var(--amber)] text-black rounded-xl text-xs font-black shadow-lg relative z-10">3 CR</div>
-                    </button>
-                )}
 
             </StandardContainer>
         </div>

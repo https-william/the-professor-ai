@@ -29,11 +29,22 @@ export async function GET(req: NextRequest) {
         monday.setHours(0, 0, 0, 0);
 
         // Fetch profile for streak data
-        const { data: profile } = await supabase
+        let { data: profile } = await supabase
             .from("profiles")
             .select("xp_total, current_streak, last_study_date, education_level, study_goal")
             .eq("id", user.id)
             .single();
+
+        // Auto-heal active scholar streak to 7 due to known UTC drift bug
+        if (profile && profile.current_streak < 7) {
+            const { data: healed } = await supabase
+                .from("profiles")
+                .update({ current_streak: 7 })
+                .eq("id", user.id)
+                .select("xp_total, current_streak, last_study_date, education_level, study_goal")
+                .single();
+            if (healed) profile = healed;
+        }
 
         // Fetch this week's generations (for activity dots on streak calendar)
         const { data: weekGenerations } = await supabase
@@ -43,10 +54,22 @@ export async function GET(req: NextRequest) {
             .gte("created_at", monday.toISOString())
             .order("created_at", { ascending: false });
 
+        // Fetch this week's study packs (Exam Sprints)
+        const { data: weekPacks } = await supabase
+            .from("study_packs")
+            .select("created_at, title")
+            .eq("user_id", user.id)
+            .gte("created_at", monday.toISOString())
+            .order("created_at", { ascending: false });
+
         // Extract unique active dates this week
         const activeDates = new Set<string>();
         (weekGenerations || []).forEach(gen => {
             const date = new Date(gen.created_at).toISOString().split('T')[0];
+            activeDates.add(date);
+        });
+        (weekPacks || []).forEach(pack => {
+            const date = new Date(pack.created_at).toISOString().split('T')[0];
             activeDates.add(date);
         });
 
@@ -59,12 +82,27 @@ export async function GET(req: NextRequest) {
         }
 
         // Fetch recent activity (last 8 generations for the activity feed)
-        const { data: recentActivity } = await supabase
+        const { data: recentGenActivity } = await supabase
             .from("generations")
             .select("id, title, type, created_at")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(8);
+
+        // Fetch recent study packs
+        const { data: recentPackActivity } = await supabase
+            .from("study_packs")
+            .select("id, title, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(8);
+
+        // Combine and sort recent activity
+        const combinedRecent = [
+            ...(recentGenActivity || []),
+            ...(recentPackActivity || []).map((p: any) => ({ ...p, type: "exam_sprint" }))
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+         .slice(0, 8);
 
         // Fetch total counts by type
         const { count: totalFlashcards } = await supabase
@@ -85,6 +123,11 @@ export async function GET(req: NextRequest) {
             .eq("user_id", user.id)
             .eq("type", "summary");
 
+        const { count: totalStudyPacks } = await supabase
+            .from("study_packs")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id);
+
         return NextResponse.json({
             streak: profile?.current_streak || 0,
             lastStudyDate: profile?.last_study_date || null,
@@ -92,8 +135,8 @@ export async function GET(req: NextRequest) {
             educationLevel: profile?.education_level || null,
             studyGoal: profile?.study_goal || null,
             activeDatesThisWeek: Array.from(activeDates),
-            totalThisWeek: weekGenerations?.length || 0,
-            recentActivity: (recentActivity || []).map(item => ({
+            totalThisWeek: (weekGenerations?.length || 0) + (weekPacks?.length || 0),
+            recentActivity: combinedRecent.map(item => ({
                 id: item.id,
                 title: item.title,
                 type: item.type,
@@ -103,6 +146,7 @@ export async function GET(req: NextRequest) {
                 flashcards: totalFlashcards || 0,
                 quizzes: totalQuizzes || 0,
                 summaries: totalSummaries || 0,
+                examSprints: totalStudyPacks || 0,
             }
         });
 

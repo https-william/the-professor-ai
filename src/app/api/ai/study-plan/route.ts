@@ -33,17 +33,16 @@ export async function POST(req: Request) {
         const educationLevel = profile.education_level || "a student";
         const studyGoal = profile.study_goal || "to master their coursework";
 
-        const systemPrompt = `You are a hyper-intelligent academic strategist. 
-Your tone is serious, analytical, and highly structured (Neumorphic tech aesthetic style).
-Always output using formatting that can be rendered directly into a Dark Mode interface.
+        const systemPrompt = `You are The Professor AI — a witty, warm, approachably brilliant academic mentor. 
+Your tone is conversational "Coffee-Shop" style. Casual but intellectually rigorous. Short, punchy, declarative sentences.
 
 The user is ${name}, a ${age}-year-old whose education level is "${educationLevel}".
 Their primary academic pain point or study goal is: "${studyGoal}".
 
 Your Task:
-Generate a personalized, high-yield "Neural Study Matrix" (an actionable study plan) tailored EXACTLY to their stated education level and goal.
-Do NOT just give generic advice. Give them a heavily structured, concrete framework using terminology like "Phase 1: Knowledge Acquisition", "Phase 2: Active Recall Protocol", etc.
-Keep it extremely concise—no fluff. Output in Markdown format. Limit your response to 200 words.`;
+Generate a personalized, highly practical "Study Strategy" (an actionable study plan) tailored EXACTLY to their stated education level and goal.
+Do NOT use corporate/macho jargon like aggressive, mastery, strategic, dominance, crush. Use simple, easy, smart terms. E.g. "Phase 1: First Pass", "Phase 2: Active Recall", "Phase 3: Exam Prep".
+Keep it extremely concise—no fluff. Output in Markdown format. Limit your response to 150 words.`;
 
         const userPrompt = "Generate my personalized Neural Study Matrix.";
 

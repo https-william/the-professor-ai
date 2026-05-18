@@ -113,17 +113,26 @@ export const useUserStore = create<UserStore>()(
         
                     try {
                         const controller = new AbortController();
-                        const id = setTimeout(() => controller.abort(), 12000); 
+                        const id = setTimeout(() => controller.abort(), 5000); 
 
                         const res = await fetch("/api/user/profile", {
+                            headers: session.access_token ? {
+                                Authorization: `Bearer ${session.access_token}`
+                            } : undefined,
                             signal: controller.signal
                         });
                         clearTimeout(id);
 
                         if (res.ok) {
-                            const data = await res.json();
-                            profile = data.profile;
-                            email = data.email || email;
+                            const contentType = res.headers.get("content-type");
+                            if (contentType && contentType.includes("application/json")) {
+                                const data = await res.json();
+                                profile = data.profile;
+                                email = data.email || email;
+                            } else {
+                                const text = await res.text();
+                                console.warn("[UserStore] Expected JSON profile but got HTML fallback:", text.slice(0, 100));
+                            }
                         }
                     } catch (fetchError: any) {
                         if (fetchError.name === 'AbortError') {
@@ -133,16 +142,23 @@ export const useUserStore = create<UserStore>()(
                         }
                     }
         
+                    let localDisplayName = "";
+                    if (typeof window !== "undefined") {
+                        localDisplayName = localStorage.getItem("user_display_name") || "";
+                    }
+
                     // Apply state with session data as baseline to prevent "logout on fail"
                     set({
                         id: session.user.id,
                         email: email || session.user.email || "",
-                        name: profile?.alias || profile?.first_name || session.user.email?.split("@")[0] || get().name || "Scholar",
+                        name: localDisplayName || profile?.alias || profile?.first_name || get().name || session.user.email?.split("@")[0] || "Scholar",
                         firstName: profile?.first_name || get().firstName || "",
                         lastName: profile?.last_name || get().lastName || "",
                         username: profile?.username || get().username || "",
                         age: profile?.age || get().age || 0,
-                        avatar: profile?.avatar_url || (session.user.email?.[0] || "S").toUpperCase(),
+                        avatar: (profile?.avatar_url && (profile.avatar_url.startsWith("http") || profile.avatar_url.includes("://"))) 
+                            ? profile.avatar_url 
+                            : (session.user.email?.[0] || "S").toUpperCase(),
                         streak: profile?.current_streak ?? profile?.streak ?? get().streak ?? 0,
                         credits: profile?.credits ?? get().credits ?? 100,
                         xp: profile?.xp_total ?? profile?.xp ?? get().xp ?? 0,

@@ -12,6 +12,8 @@ import JourneyPhase from "@/components/features/create/JourneyPhase";
 import ExamSprintCard from "@/components/features/create/ExamSprintCard";
 import { cn } from "@/lib/utils";
 import ProfessorCeremony from "@/components/ui/ProfessorCeremony";
+import GuestSignupModal from "@/components/ui/GuestSignupModal";
+import { createClient } from "@/lib/supabase/client";
 
 import { 
     X, 
@@ -49,7 +51,7 @@ const phases = [
             {
                 id: "eli5",
                 label: "Vivid Analogy",
-                desc: "Explain it like we're grabbing coffee. Simple and clear.",
+                desc: "Explain it like we're having a conversation. Simple and clear.",
                 icon: BrainCircuit,
                 color: "var(--blue)",
                 apiEndpoint: "/api/generate/eli5",
@@ -108,7 +110,7 @@ const difficultyOptions = [
     { id: "easy", label: "Chilled", desc: "Basic recall & definitions", emoji: "🌱" },
     { id: "medium", label: "Scholar", desc: "Conceptual understanding", emoji: "📜" },
     { id: "difficult", label: "Advanced", desc: "Application & analysis", emoji: "🏛️" },
-    { id: "nightmare", label: "Professor", desc: "Strict rigor. Coffee required.", emoji: "🎓" },
+    { id: "nightmare", label: "Professor", desc: "Strict rigor. Deep focus required.", emoji: "🎓" },
 ];
 
 const timerOptions = [
@@ -143,8 +145,9 @@ import StudyPackCommandCenter from "@/components/features/create/StudyPackComman
 function CreatorStudio() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user } = useUser();
+    const { user, spendCredits } = useUser();
     const { openModal } = useIngestStore();
+    const supabase = createClient();
 
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [inputText, setInputText] = useState("");
@@ -158,6 +161,16 @@ function CreatorStudio() {
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
     const [timerValue, setTimerValue] = useState(600);
     const [selectedFormat, setSelectedFormat] = useState("");
+    const [showGuestModal, setShowGuestModal] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && !user.isAuthenticated && !user.isLoading) {
+            const isGuest = sessionStorage.getItem("shared_view") === "true";
+            if (isGuest) {
+                setShowGuestModal(true);
+            }
+        }
+    }, [user.isAuthenticated, user.isLoading]);
 
     useEffect(() => {
         const tool = searchParams.get('tool');
@@ -204,17 +217,78 @@ function CreatorStudio() {
         }
     };
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         if (!inputText.trim()) return;
 
+        const customTitle = sessionStorage.getItem("customGenerationTitle") || "";
+
         if (isSprintMode) {
+            // Deduct credits for Exam Sprint (10 credits)
+            if (user.isAuthenticated) {
+                const success = await spendCredits(10);
+                if (!success) {
+                    setSetupError("Insufficient credits for Exam Sprint. Please acquire more credits.");
+                    return;
+                }
+            }
+
+            sessionStorage.setItem("examSprintContent", inputText);
             setIsGeneratingPack(true);
+
+            const createPack = async () => {
+                const packId = crypto.randomUUID();
+                const cleanTitle = customTitle || (inputText.trim() ? inputText.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : `STUDY PACK: ${new Date().toLocaleDateString()}`);
+                
+                try {
+                    const { data: { user: authUser } } = await supabase.auth.getUser();
+                    if (!authUser) {
+                        const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                        offlinePacks[packId] = {
+                            id: packId,
+                            title: cleanTitle,
+                            source_text: inputText,
+                            phases_data: {},
+                            user_id: "guest",
+                            savedAt: Date.now()
+                        };
+                        localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
+                        router.push(`/library/pack/${packId}?sprint=true`);
+                        return;
+                    }
+
+                    const { error: dbError } = await supabase.from("study_packs").insert({
+                        id: packId,
+                        user_id: authUser.id,
+                        title: cleanTitle,
+                        description: "Comprehensive exam survival kit generated from your notes.",
+                        source_text: inputText,
+                        phases_data: {},
+                    });
+
+                    if (dbError) throw dbError;
+
+                    router.push(`/library/pack/${packId}?sprint=true`);
+                } catch (err) {
+                    console.error("Failed to create pack in DB, falling back to offline storage:", err);
+                    const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                    offlinePacks[packId] = {
+                        id: packId,
+                        title: cleanTitle,
+                        source_text: inputText,
+                        phases_data: {},
+                        user_id: "guest",
+                        savedAt: Date.now()
+                    };
+                    localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
+                    router.push(`/library/pack/${packId}?sprint=true`);
+                }
+            };
+
+            createPack();
             return;
         }
 
         if (!selectedType) return;
-        
-        const customTitle = sessionStorage.getItem("customGenerationTitle") || "";
         
         sessionStorage.setItem("generateParams", JSON.stringify({
             content: inputText,
@@ -223,7 +297,7 @@ function CreatorStudio() {
             timer: timerValue,
             format: selectedFormat,
             type: selectedType,
-            title: customTitle // Experience Architecture: Naming the Mission
+            title: customTitle
         }));
         
         router.push(`/${selectedType}/generate`);
@@ -234,6 +308,7 @@ function CreatorStudio() {
         setInputText("");
         setSetupError(null);
         sessionStorage.removeItem("isExamSprint");
+        sessionStorage.removeItem("examSprintContent");
         sessionStorage.removeItem("customGenerationTitle");
         setIsSprintMode(false);
         setIsGeneratingPack(false);
@@ -241,27 +316,24 @@ function CreatorStudio() {
 
     if (isGeneratingPack) {
         return (
-            <div className="min-h-screen bg-transparent pt-20">
-                <StandardContainer wide>
-                    <div className="mb-8">
+            <div className="min-h-screen bg-transparent pt-20 flex flex-col items-center justify-center">
+                <StandardContainer>
+                    <div className="mb-8 text-center">
                         <button 
                             onClick={() => setIsGeneratingPack(false)}
-                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2"
+                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-2"
                         >
                             <X size={14} /> Cancel Generation
                         </button>
                     </div>
-                    <StudyPackCommandCenter 
-                        sourceText={inputText} 
-                        onComplete={(id) => router.push(`/library/pack/${id}`)} 
-                    />
+                    <ProfessorCeremony className="w-full py-12" />
                 </StandardContainer>
             </div>
         );
     }
 
     return (
-        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-28 pt-24 relative">
+        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-12 pt-24 relative">
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--blue-glow)] opacity-[0.03] rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--blue-glow)] opacity-[0.02] rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
@@ -322,7 +394,7 @@ function CreatorStudio() {
                             </div>
                             <div className="relative p-6">
                                 {isUploading && (
-                                    <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center rounded-[32px] gap-4">
+                                    <div className="absolute inset-0 z-10 bg-[var(--bg)]/80 backdrop-blur-md flex flex-col items-center justify-center rounded-[32px] gap-4">
                                         <div className="relative w-14 h-14">
                                             <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
                                             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)] animate-spin" />
@@ -449,15 +521,15 @@ function CreatorStudio() {
                         </div>
 
                         {/* Endowment Layer: The Mission */}
-                        <div className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 shadow-xl">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white opacity-30 mb-5 block">The Mission</label>
+                        <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl">
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-5 block">The Mission</label>
                             <input 
                                 type="text"
                                 defaultValue={sessionStorage.getItem("lastSprintName") || ""}
                                 placeholder="e.g., 'Bio-Chem Final Push' or 'Law 101 Ace'"
-                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold text-white placeholder:text-white/20 focus:border-white/20 focus:bg-white/[0.07] outline-none transition-all sprint-title-input"
+                                className="w-full bg-[var(--bg-3)] border border-[var(--border)] rounded-2xl px-6 py-4 text-sm font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 focus:border-[var(--accent)]/30 focus:bg-[var(--bg-4)] outline-none transition-all sprint-title-input"
                             />
-                            <p className="mt-4 text-[9px] text-white/20 font-bold uppercase tracking-widest leading-relaxed">
+                            <p className="mt-4 text-[9px] text-[var(--foreground-muted)]/40 font-bold uppercase tracking-widest leading-relaxed">
                                 Give your session a name. It helps you focus when things get tough.
                             </p>
                         </div>
@@ -474,8 +546,8 @@ function CreatorStudio() {
                                 className={cn(
                                     "w-full py-5 rounded-[24px] font-black text-[14px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl",
                                     !canGenerate 
-                                    ? 'opacity-70 cursor-not-allowed bg-white/5 border border-white/5 text-white/20' 
-                                    : 'bg-white text-black hover:scale-[1.01] active:scale-[0.98]'
+                                    ? 'opacity-70 cursor-not-allowed bg-[var(--bg-3)] border border-[var(--border)] text-[var(--foreground-muted)]/40' 
+                                    : 'bg-[var(--foreground)] text-[var(--background)] hover:scale-[1.01] active:scale-[0.98]'
                                 )}
                             >
                                 {canGenerate && (
@@ -514,6 +586,11 @@ function CreatorStudio() {
                 title={isSprintMode ? "Exam Sprint" : undefined}
                 description={isSprintMode ? "Upload your materials and the Professor will prepare your 10-hour survival kit." : undefined}
                 isSprint={isSprintMode}
+            />
+
+            <GuestSignupModal
+                isOpen={showGuestModal}
+                onClose={() => setShowGuestModal(false)}
             />
         </div>
     );

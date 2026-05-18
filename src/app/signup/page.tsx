@@ -104,36 +104,7 @@ function SignupForm() {
           <span style={{ fontFamily: "var(--font-heading)", fontSize: "13px", fontWeight: 800, color: "var(--text)", letterSpacing: "0.05em", textTransform: "uppercase" }}>The Professor</span>
         </Link>
 
-        {/* Screenshot Preview */}
-        <div style={{
-          width: "100%",
-          aspectRatio: "16/10",
-          background: "var(--bg-2)",
-          border: "1px solid var(--border)",
-          borderRadius: "1.25rem",
-          marginBottom: "40px",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.12)"
-        }}>
-          <img 
-            src="/dashboard-preview.webp" 
-            alt="The Professor Dashboard" 
-            loading="lazy"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block"
-            }}
-          />
-          {/* Window dots */}
-          <div style={{ position: "absolute", top: "12px", left: "12px", display: "flex", gap: "4px" }}>
-            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "rgba(128,128,128,0.2)" }} />
-            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "rgba(128,128,128,0.2)" }} />
-            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "rgba(128,128,128,0.2)" }} />
-          </div>
-        </div>
+
 
         {/* Display quote */}
         <h2 style={{

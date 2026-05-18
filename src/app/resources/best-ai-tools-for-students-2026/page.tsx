@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const tools = [
   {
     name: "The Professor AI",
-    category: "Strategic Study & Exams",
+    category: "Smart Study & Exams",
     bestFor: "Retrieval Practice, Exam Simulation, High-Fidelity Flashcards",
     rating: "9.9/10",
     pros: ["100% syllabus alignment", "Zero-distraction UI", "Advanced active recall engine"],
@@ -47,7 +47,7 @@ export default function PillarPage() {
              Best AI Tools for Students (2026): The Elite Stack
           </h1>
           <p className="text-xl text-white/50 max-w-3xl mx-auto leading-relaxed">
-             Stop using general-purpose bots for specialized academic combat. This is the definitive list of AI utilities that will actually improve your grades, not just your GPT dependencies.
+             Stop using general-purpose bots for specialized academic study. This is the definitive list of AI utilities that will actually improve your grades, not just your GPT dependencies.
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default function PillarPage() {
                  <tr className="border-b border-white/5">
                     <th className="p-6 text-sm font-black uppercase text-white/30">Tool</th>
                     <th className="p-6 text-sm font-black uppercase text-white/30">Primary Intent</th>
-                    <th className="p-6 text-sm font-black uppercase text-white/30">Strategic Grade</th>
+                    <th className="p-6 text-sm font-black uppercase text-white/30">Smart Grade</th>
                  </tr>
               </thead>
               <tbody>
@@ -91,7 +91,7 @@ export default function PillarPage() {
                        
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
-                             <h4 className="text-sm font-bold text-white mb-4">Strategic Wins</h4>
+                             <h4 className="text-sm font-bold text-white mb-4">Key Wins</h4>
                              <ul className="space-y-3">
                                 {tool.pros.map((pro, j) => (
                                    <li key={j} className="flex items-start gap-3 text-sm text-white/50">
@@ -125,7 +125,7 @@ export default function PillarPage() {
            <div className="relative z-10">
               <h2 className="text-3xl md:text-5xl font-bold text-[var(--background)] mb-6">Experience the Evolution</h2>
               <p className="text-[var(--background)]/70 max-w-2xl mx-auto mb-10 text-lg">
-                 Stop reading about the tools. Start using the one built for academic dominance. 
+                 Stop reading about the tools. Start using the one built for academic success. 
               </p>
               <Link href="/signup" className="inline-block px-12 py-5 rounded-3xl bg-[var(--background)] text-white font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all">
                  Join the Lab

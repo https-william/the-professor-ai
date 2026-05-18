@@ -31,7 +31,8 @@ import {
     Play,
     Pause,
     ChevronDown,
-    Sparkles
+    Sparkles,
+    Trophy
 } from "lucide-react";
 import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
@@ -79,7 +80,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const { user } = useUser();
     const { resolvedTheme } = useTheme();
     const { toasts, setIsOpen: setToastsOpen } = useToasts();
-    const { isDesktop } = useAppPlatform();
+    const { isDesktop, isMobile } = useAppPlatform();
     const [mounted, setMounted] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showResourcesMenu, setShowResourcesMenu] = useState(false);
@@ -133,17 +134,17 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const scrollYProgress = useTransform(scrollY, [0, 150], [0, 1]);
 
     // Landing-specific transformations
-    const landingPaddingX = useTransform(scrollY, [0, 150], ["2rem", "1.5rem"]);
     const landingTop = useTransform(scrollY, [0, 150], ["0px", "16px"]);
+    const landingPaddingX = useTransform(scrollY, [0, 150], isMobile ? ["1rem", "0.75rem"] : ["2rem", "1.5rem"]);
     const landingPaddingBlock = useTransform(scrollY, [0, 150], ["16px", "10px"]);
     const landingBorderRadius = useTransform(scrollY, [0, 150], ["0px", "32px"]);
-    const landingWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", "94%"]);
+    const landingWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", isMobile ? "calc(100vw - 2.5rem)" : "94%"]);
 
     // App-specific transformations (Floating Morphing)
-    const appTop = useTransform(scrollY, [0, 150], ["10px", "16px"]);
-    const appWidth = useTransform(scrollY, [0, 150], ["calc(100% - 2.5rem)", "94%"]);
-    const appPaddingInline = useTransform(scrollY, [0, 150], ["1.5rem", "1.2rem"]);
-    const appPaddingBlock = useTransform(scrollY, [0, 150], ["12px", "10px"]);
+    const appTop = useTransform(scrollY, [0, 150], ["10px", isMobile ? "12px" : "16px"]);
+    const appWidth = useTransform(scrollY, [0, 150], ["calc(100% - 2rem)", "min(600px, 90%)"]);
+    const appPaddingInline = useTransform(scrollY, [0, 150], isMobile ? ["0.75rem", "0.75rem"] : ["1.5rem", "1.2rem"]);
+    const appPaddingBlock = useTransform(scrollY, [0, 150], isMobile ? ["6px", "6px"] : ["12px", "10px"]);
 
     // Derived motion values
     const headerBgOpacity = useTransform(scrollY, [0, 150], [0, 0.98]);
@@ -178,7 +179,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     
     const appShadow = useTransform(scrollY, [0, 60], [
         resolvedTheme === "dark" ? "0 4px 20px rgba(0,0,0,0.2)" : "0 4px 15px rgba(0,0,0,0.05)",
-        resolvedTheme === "dark" ? "0 20px 50px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)" : "0 10px 40px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.8)"
+        resolvedTheme === "dark" ? "0 20px 50px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1)" : "0 10px 40px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.8)"
     ]);
 
     const [isPill, setIsPill] = useState(false);
@@ -197,8 +198,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
         return "DASHBOARD";
     })();
 
-    if (mounted && isHidden) return null;
-    if (!mounted) return null;
+    if (isHidden) return null;
 
     const handleModeChange = (mode: AppMode, href: string) => {
         if (onModeChange) { onModeChange(mode); return; }
@@ -218,42 +218,48 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
-    const isPackPage = pathname.startsWith("/library/pack");
-    const sidebarOffset = (isApp && isDesktop && !isPackPage) ? "2.5rem" : "0px";
+    const sidebarOffset = "0px";
 
     return (
         <motion.header
+            suppressHydrationWarning
             initial={false}
             style={{
                 top: isApp ? appTop : landingTop,
                 left: `calc(50% + ${sidebarOffset})`,
                 x: "-50%",
-                width: isApp ? appWidth : landingWidth,
-                maxWidth: "1280px",
+                width: isApp ? "100%" : landingWidth,
+                maxWidth: isApp ? "1200px" : "840px",
                 paddingInline: isApp ? appPaddingInline : landingPaddingX,
                 paddingBlock: isApp ? appPaddingBlock : landingPaddingBlock,
-                borderRadius: isApp ? "32px" : landingBorderRadius,
+                borderRadius: isApp ? "0px" : landingBorderRadius,
                 scale: headerScale,
-                backgroundColor: isApp ? appBg : headerBg,
-                backdropFilter: isApp ? appBackdrop : headerBackdrop,
-                border: isApp ? appBorder : headerBorder,
-                boxShadow: isApp ? appShadow : headerShadow,
+                backgroundColor: isApp ? "transparent" : headerBg,
+                backdropFilter: isApp ? "none" : headerBackdrop,
+                border: isApp ? "none" : headerBorder,
+                boxShadow: isApp ? "none" : headerShadow,
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed z-[10000] grid grid-cols-[auto_1fr_auto] items-center gap-4 pointer-events-auto"
+            className={cn(
+                "fixed z-[10000] items-center pointer-events-none [&>div]:pointer-events-auto transition-all duration-300",
+                isApp ? "flex items-center justify-between gap-4 w-full" : "grid grid-cols-[auto_1fr_auto] gap-1.5 md:gap-4"
+            )}
         >
             <div className="flex items-center gap-3">
                 <Link
                     href={user.isAuthenticated ? "/dashboard" : "/"}
-                    className="group relative flex items-center gap-3 p-1 rounded-xl transition-all active:scale-95"
+                    className={cn(
+                        "group relative flex items-center gap-2.5 p-1.5 md:pr-4 rounded-full transition-all active:scale-95",
+                        isApp ? "bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)] hover:shadow-[0_0_15px_var(--accent-glow)]" : "hover:bg-[var(--foreground)]/[0.08]"
+                    )}
                 >
                     <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-[var(--background-secondary)] border border-[var(--border)] shadow-[var(--shadow-sm)] group-hover:border-[var(--accent)] group-hover:shadow-[0_0_15px_var(--accent-glow)]"
+                        className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all bg-[var(--background)] border border-[var(--border)] shadow-sm group-hover:border-[var(--accent)] group-hover:shadow-[0_0_15px_var(--accent-glow)]"
                     >
                         <BrandLogo size="sm" />
                     </div>
                     {!isPill && (
-                        <span className="hidden lg:block font-sans font-black text-[var(--foreground)] tracking-tighter text-[16px] uppercase">
+                        <span className="hidden lg:block font-sans font-black text-[var(--foreground)] tracking-tighter text-sm uppercase">
                             The Professor
                         </span>
                     )}
@@ -269,7 +275,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="flex items-center gap-3 px-5 py-2 rounded-full bg-[var(--background-tertiary)] border border-[var(--accent)] shadow-[0_0_15px_var(--accent-glow)]"
+                            className="flex items-center gap-3 px-5 py-2 rounded-full bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--accent)] shadow-[0_0_15px_var(--accent-glow)]"
                         >
                             <span className="flex h-2 w-2 relative">
                                 {isActive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />}
@@ -321,7 +327,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                                         <div className="w-10 h-10 rounded-xl bg-[var(--background)] flex items-center justify-center border border-[var(--border)] group-hover:border-[var(--accent)] group-hover:text-[var(--accent)] transition-all">
                                                             <item.icon size={18} />
                                                         </div>
-                                                        <span className="text-sm font-black text-[var(--foreground)] tracking-tight">{item.label}</span>
+                                                        <span className="text-sm font-black text-[var font-black text-[var(--foreground)] tracking-tight">{item.label}</span>
                                                     </Link>
                                                 ))}
                                             </div>
@@ -330,53 +336,37 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                 </AnimatePresence>
                             </div>
                         </div>
-                    ) : (
-                        <motion.div 
-                            className="hidden md:flex items-center rounded-full p-1.5 bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner"
-                            layout
-                        >
-                            {MODES.map((modeConfig) => (
-                                <button
-                                    key={modeConfig.id}
-                                    onClick={() => handleModeChange(modeConfig.id as AppMode, modeConfig.href)}
-                                    className={`relative px-5 py-2 rounded-full text-[12px] font-black tracking-tight transition-all active:scale-[0.85] hover:scale-[1.02] ${
-                                        currentMode === modeConfig.id
-                                            ? "text-[var(--background)]"
-                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
-                                    }`}
-                                >
-                                    {currentMode === modeConfig.id && (
-                                        <motion.div
-                                            layoutId="active-pill"
-                                            className="absolute inset-0 bg-[var(--foreground)] rounded-full shadow-lg"
-                                            transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10 flex items-center gap-2.5">
-                                        <modeConfig.icon size={14} strokeWidth={2.5} />
-                                        {modeConfig.label}
-                                    </span>
-                                </button>
-                            ))}
-                        </motion.div>
-                    )}
+                    ) : null}
                 </AnimatePresence>
             </div>
 
             {/* ── RIGHT: Actions ── */}
-            <div className="flex items-center justify-end gap-3">
-                <ThemeToggle />
+            <div className="flex items-center justify-end gap-1.5 md:gap-2.5">
+                {user.isAuthenticated && (
+                    <div className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
+                        isApp ? "bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)]" : "bg-[var(--background)] border border-[var(--border)]"
+                    )} title="Available Credits">
+                        <Zap size={14} className="text-[var(--amber)] animate-pulse w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <span className="font-mono text-[11px] md:text-xs font-bold text-[var(--foreground)] tabular-nums">
+                            {user.credits ?? 100}
+                        </span>
+                    </div>
+                )}
+                <div className="hidden sm:block">
+                    <ThemeToggle />
+                </div>
                 {isApp && (
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setToastsOpen(true)}
-                        className="relative flex items-center justify-center w-10 h-10 rounded-xl transition-all bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--accent)] shadow-sm active:shadow-inner"
+                        className="relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full transition-all bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)] hover:shadow-[0_0_15px_var(--accent-glow)] active:scale-95"
                     >
-                        <Bell size={16} strokeWidth={2.5} className="text-[var(--foreground)]" />
+                        <Bell size={15} strokeWidth={2.5} className="text-[var(--foreground)] w-3.5 h-3.5 md:w-4 md:h-4" />
                         {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 md:h-4 md:w-4">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
-                                <span className="relative flex items-center justify-center rounded-full h-4 w-4 bg-[var(--accent)] text-[9px] font-black text-white">
+                                <span className="relative flex items-center justify-center rounded-full h-3.5 w-3.5 md:h-4 md:w-4 bg-[var(--accent)] text-[8px] md:text-[9px] font-black text-white">
                                     {unreadCount}
                                 </span>
                             </span>
@@ -398,9 +388,33 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--accent)] shadow-sm"
+                            className={cn(
+                                "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all border border-[var(--border)] shadow-sm overflow-hidden active:scale-95",
+                                isApp ? "bg-[var(--background-secondary)] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)] hover:shadow-[0_0_15px_var(--accent-glow)]" : "hover:border-[var(--accent)]"
+                            )}
                         >
-                            <span className="text-xl">{user.avatar || "🎓"}</span>
+                            {user.avatar && user.avatar.length > 2 ? (
+                                <img 
+                                    src={user.avatar} 
+                                    alt="User" 
+                                    className="w-full h-full object-cover rounded-full"
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = "none";
+                                        target.src = "";
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                            const fallback = document.createElement("span");
+                                            fallback.className = "text-xl leading-none";
+                                            fallback.textContent = "🎓";
+                                            parent.appendChild(fallback);
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <span className="text-base md:text-xl leading-none">🎓</span>
+                            )}
                         </motion.button>
 
                         <AnimatePresence>
@@ -419,6 +433,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     {[
                                         { label: "Profile", icon: User, href: "/settings" },
                                         { label: "Billing", icon: CreditCard, href: "/settings" },
+                                        { label: "Achievements", icon: Trophy, href: "/achievements" },
                                     ].map((item) => (
                                         <Link
                                             key={item.label}

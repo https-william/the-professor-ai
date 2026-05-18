@@ -99,7 +99,7 @@ export const InteractiveQuiz = ({
             <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex-1 flex flex-col gap-3 overflow-hidden"
+                className="w-full flex flex-col gap-3 overflow-visible"
             >
                 {/* Score header */}
                 <div className="grid grid-cols-3 gap-2 shrink-0">
@@ -141,7 +141,7 @@ export const InteractiveQuiz = ({
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-1 scrollbar-none space-y-2">
+                <div className="w-full space-y-2 overflow-visible">
                     {results.map((r, i) => (
                         <div
                             key={i}
@@ -229,7 +229,7 @@ export const InteractiveQuiz = ({
                     {/* Identity nudge */}
                     <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center">
                         <p className="text-[11px] font-bold italic text-[var(--foreground-muted)]">
-                            We don't just cram here — we understand. That's the difference sha.
+                            Your notes. Just the good parts.
                         </p>
                     </div>
                 </div>
@@ -250,11 +250,11 @@ export const InteractiveQuiz = ({
     };
 
     return (
-        <div className="relative w-full h-full p-1 sm:p-2 flex flex-col items-center cursor-default overflow-hidden">
+        <div className="relative w-full min-h-full p-1 sm:p-2 flex flex-col items-center cursor-default overflow-visible">
             {showResults ? renderResults() : (
                 <>
                     {/* Question Area */}
-                    <div className="flex-1 w-full flex flex-col gap-3 relative z-10 overflow-y-auto pr-1 scrollbar-none">
+                    <div className="w-full flex flex-col gap-3 relative z-10 overflow-visible">
                         <div className="p-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner shrink-0">
                             <div className="flex items-center justify-between mb-1.5">
                                 <span className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
@@ -298,7 +298,7 @@ export const InteractiveQuiz = ({
                     </div>
 
                     {/* Quiz Navigation */}
-                    <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-[var(--border)] shrink-0">
+                    <div className="w-full flex items-center justify-between gap-3 mt-4 pt-3 border-t border-[var(--border)] shrink-0">
                         <button 
                             onClick={handlePrev} 
                             disabled={currentIdx === 0}

@@ -3,12 +3,12 @@ import BlogClient from "./BlogClient";
 import SEOHead from "@/components/SEOHead";
 
 export const metadata: Metadata = {
-  title: "Intelligence Hub | The Professor AI Strategic Learning",
-  description: "Stop studying harder. Start studying smarter. Elite learning science, academic productivity hacks, and strategic exam dominance from The Professor.",
-  keywords: ["study tips", "active recall", "spaced repetition", "exam hacks", "jamb", "waec", "productivity", "learning science", "how to pass exams"],
+  title: "Intelligence Hub | The Professor AI Smart Learning",
+  description: "Stop studying harder. Start studying smarter. Smart learning science, academic productivity tips, and exam success from The Professor.",
+  keywords: ["study tips", "active recall", "spaced repetition", "exam prep", "jamb", "waec", "productivity", "learning science", "how to pass exams"],
   openGraph: {
-    title: "Intelligence Hub | Strategic Learning Science",
-    description: "Elite study techniques and the science of strategic learning. Master the exam before it starts.",
+    title: "Intelligence Hub | Smart Learning Science",
+    description: "Smart study techniques and the science of effective learning. Understand the exam before it starts.",
     images: [
       {
         url: "/logo.png",
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Professor | Strategic Intelligence Hub",
-    description: "Master your learning with strategic academic insights.",
+    title: "The Professor | Smart Intelligence Hub",
+    description: "Improve your learning with smart academic insights.",
     images: ["/logo.png"],
   },
 };

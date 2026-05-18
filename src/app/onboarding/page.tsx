@@ -17,10 +17,6 @@ import {
     Zap, 
     Footprints, 
     Dumbbell, 
-    Clock, 
-    MessageSquare, 
-    HelpCircle, 
-    Cpu, 
     RotateCw, 
     CheckCircle2, 
     AlertCircle, 
@@ -32,9 +28,7 @@ import {
     ChevronLeft, 
     ChevronRight, 
     LogIn,
-    Smartphone,
-    Monitor,
-    ShieldCheck
+    Trophy,
 } from "lucide-react";
 
 /* ═══ Neumorphic Helpers ═══ */
@@ -72,20 +66,10 @@ const PAIN_POINTS = [
 const COMMITMENT_LEVELS = [
     { id: "15m", icon: Zap, label: "15 mins", desc: "Quick daily habit" },
     { id: "30m", icon: Footprints, label: "30 mins", desc: "Steady progress" },
-    { id: "1hr", icon: Dumbbell, label: "1+ hour", desc: "Deep mastery" },
+    { id: "1hr", icon: Dumbbell, label: "1+ hour", desc: "Deep study" },
 ];
 
-const TESTIMONIALS = [
-    { quote: "The Professor didn't just help me pass; it fundamentally changed how I understand complex algorithms.", author: "Sarah J.", role: "CS Major" },
-    { quote: "Finally, an AI that challenges me instead of just feeding me the answers. The active recall tools are game-changing.", author: "Michael T.", role: "Med Student" },
-    { quote: "I used to procrastinate reading long PDFs. Now, I upload them and battle through the material.", author: "Elena R.", role: "Ph.D Candidate" }
-];
 
-const CURRICULUM_FEATURES = [
-    { title: "Dynamic Spaced Repetition", icon: Clock, color: "var(--blue)", desc: "Optimizes memory retention automatically." },
-    { title: "Socratic Method Dialogue", icon: MessageSquare, color: "#10B981", desc: "Guides you to the answer instead of spoon-feeding." },
-    { title: "Hyper-Personalized Quizzes", icon: HelpCircle, color: "#818CF8", desc: "Tests tailored to your exact weaknesses." },
-];
 
 export default function OnboardingPage() {
     const { user, completeOnboarding, saveOnboardingStep } = useUser();
@@ -101,13 +85,10 @@ export default function OnboardingPage() {
     const [lastName, setLastName] = useState("");
     const [username, setUsername] = useState("");
     const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
-    const [testiIndex, setTestiIndex] = useState(0);
     const [age, setAge] = useState<string>("");
     const [eduLevel, setEduLevel] = useState("");
     const [selectedPainPoints, setSelectedPainPoints] = useState<string[]>([]);
     const [commitment, setCommitment] = useState("");
-    const [analyzingProgress, setAnalyzingProgress] = useState(0);
-    const [curriculumReady, setCurriculumReady] = useState(false);
     const [topic, setTopic] = useState("");
     const [topicError, setTopicError] = useState("");
 
@@ -119,20 +100,10 @@ export default function OnboardingPage() {
     // Load persisted topic from landing page
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const persisted = localStorage.getItem("pending_mastery");
+            const persisted = localStorage.getItem("pending_study");
             if (persisted) setTopic(persisted);
         }
     }, []);
-
-    // Testimonial Carousel Effect
-    useEffect(() => {
-        if (step === 4) {
-            const timer = setInterval(() => {
-                setTestiIndex(prev => (prev + 1) % TESTIMONIALS.length);
-            }, 4000);
-            return () => clearInterval(timer);
-        }
-    }, [step]);
 
     useEffect(() => {
         if (step !== 1) return;
@@ -161,26 +132,6 @@ export default function OnboardingPage() {
         }, 500);
         return () => clearTimeout(timer);
     }, [username, user.id, step]);
-
-    // Analyzing Animation
-    useEffect(() => {
-        if (step === 9 && !curriculumReady) {
-            const duration = 2500;
-            const interval = 50;
-            const steps = duration / interval;
-            let currentStep = 0;
-
-            const timer = setInterval(() => {
-                currentStep++;
-                setAnalyzingProgress(Math.min((currentStep / steps) * 100, 100));
-                if (currentStep >= steps) {
-                    clearInterval(timer);
-                    setCurriculumReady(true);
-                }
-            }, interval);
-            return () => clearInterval(timer);
-        }
-    }, [step, curriculumReady]);
 
     // ── Render Logic ──
     const isLanding = pathname === "/";
@@ -217,42 +168,17 @@ export default function OnboardingPage() {
                 });
                 setStep(3);
             } else if (step === 3) {
-                // Commitment & Topic
+                // Commitment & Topic → Skip straight to reward
                 if (topic && topic.length >= 3) {
-                    setStep(4);
-                    await generateInitialRoadmap();
+                    setStep(5);
                 } else {
-                    setTopicError("Please specify a subject to master.");
+                    setTopicError("Please specify a subject to study.");
                 }
-            } else if (step === 4) {
-                // Analysis -> Finish
-                setStep(5);
             }
         } catch (error) {
             console.error("Onboarding progression failed:", error);
         } finally {
             setIsSaving(false);
-        }
-    };
-
-    const generateInitialRoadmap = async () => {
-        try {
-            const res = await fetch("/api/generate/roadmap", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    title: topic, 
-                    context: `User is a ${eduLevel} student focused on ${selectedPainPoints.join(", ")}. Learning Goal: Master ${topic}.` 
-                }),
-            });
-            if (res.ok) {
-                setCurriculumReady(true);
-            } else {
-                setCurriculumReady(true);
-            }
-        } catch (error) {
-            console.error("Roadmap generation failed during onboarding:", error);
-            setCurriculumReady(true);
         }
     };
 
@@ -274,7 +200,8 @@ export default function OnboardingPage() {
             study_goal: combinedGoal
         });
         setIsSaving(false);
-        router.push("/dashboard");
+        // Redirect to create page with exam sprint active
+        router.push("/create");
     };
 
     const togglePainPoint = (id: string) => {
@@ -307,11 +234,11 @@ export default function OnboardingPage() {
             <div className="relative z-10 w-full max-w-[480px] overflow-hidden bg-[var(--card)]" style={clay.card}>
                 
                 {/* Embedded Top Progress Bar */}
-                {step > 1 && step < 6 && (
+                {step > 1 && step < 5 && (
                     <div className="absolute top-0 left-0 right-0 h-[3px] bg-[var(--bg-2)]">
                         <div 
                             className="h-full bg-gradient-to-r from-[var(--blue)] to-[var(--blue-light)] transition-all duration-700 ease-out shadow-[0_0_15px_var(--blue-glow)]" 
-                            style={{ width: `${((step - 1) / 5) * 100}%` }} 
+                            style={{ width: `${((step - 1) / 3) * 100}%` }} 
                         />
                     </div>
                 )}
@@ -391,10 +318,10 @@ export default function OnboardingPage() {
                             <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
                                 <div className="text-center mb-6">
                                     <h2 className="font-sans text-2xl font-black text-[var(--text)] mb-2 tracking-tight">
-                                        {topic ? "Confirm your Goal." : "Strategy & Topic."}
+                                        {topic ? "Confirm your Goal." : "Plan & Topic."}
                                     </h2>
                                     <p className="text-[14px] text-[var(--text)]/40 font-medium">
-                                        {topic ? `You're mastering ${topic}.` : "What are we mastering today?"}
+                                        {topic ? `You're studying ${topic}.` : "What are we studying today?"}
                                     </p>
                                 </div>
 
@@ -408,7 +335,7 @@ export default function OnboardingPage() {
                                 </div>
 
                                 <div className="space-y-4 pt-4">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text)]/20 pl-1">Initial Mastery Topic</p>
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text)]/20 pl-1">Initial Study Topic</p>
                                     <textarea 
                                         value={topic} 
                                         onChange={e => { setTopic(e.target.value); setTopicError(""); }}
@@ -421,45 +348,34 @@ export default function OnboardingPage() {
                             </motion.div>
                         )}
 
-                        {/* STEP 4: ARCHITECTING */}
-                        {step === 4 && (
-                            <motion.div key="step4" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="flex flex-col justify-center h-full">
-                                {!curriculumReady ? (
-                                    <div className="text-center py-12">
-                                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="w-20 h-20 mx-auto mb-10 rounded-3xl flex items-center justify-center bg-[var(--bg-2)] border border-[var(--border)] shadow-[0_0_40px_var(--blue-glow)]">
-                                            <Cpu size={40} className="text-[var(--blue)]" />
-                                        </motion.div>
-                                        <h2 className="font-sans text-xl font-black text-[var(--text)] mb-6 animate-pulse">Architecting Strategy...</h2>
-                                        <div className="h-2 w-full bg-[var(--bg-2)] rounded-full overflow-hidden max-w-[280px] mx-auto border border-[var(--border)]">
-                                            <div className="h-full bg-gradient-to-r from-[var(--blue)] to-[var(--emerald)] transition-all duration-75" style={{ width: `${analyzingProgress}%` }} />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-                                        <div className="mb-8">
-                                            <Sparkles size={48} className="mx-auto mb-5 text-[var(--emerald)] drop-shadow-[0_0_20px_var(--emerald-glow)]" />
-                                            <h2 className="font-sans text-2xl font-black text-[var(--text)] mb-3 tracking-tight">Your Strategy is Ready.</h2>
-                                            <p className="text-[12px] font-black uppercase tracking-widest text-[var(--blue-text)] bg-[var(--blue-dim)] px-4 py-2 rounded-xl inline-block border border-[var(--blue-border)]">{topic}</p>
-                                        </div>
-                                        <div className="space-y-3">
-                                            {CURRICULUM_FEATURES.map((f, i) => (
-                                                <div key={f.title} className="p-4 rounded-2xl flex items-center gap-4 bg-[var(--bg-2)] border border-[var(--border)] text-left">
-                                                    <f.icon size={24} style={{ color: f.color }} className="shrink-0" />
-                                                    <div>
-                                                        <div className="text-[13px] font-black text-[var(--text)]">{f.title}</div>
-                                                        <div className="text-[11px] text-[var(--text)]/40 font-bold">{f.desc}</div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </motion.div>
-                        )}
-
-                        {/* STEP 5: GIFT & FINISH */}
+                        {/* STEP 4 (final): GIFT & FINISH — Confetti + Compelling CTA */}
                         {step === 5 && (
-                            <motion.div key="step5" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto">
+                            <motion.div key="step5" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto relative overflow-visible">
+                                {/* Confetti particles */}
+                                {[...Array(30)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        className="absolute w-2 h-2 rounded-full pointer-events-none"
+                                        style={{
+                                            backgroundColor: ['#F59E0B','#10B981','#818CF8','#F472B6','#34D399','#FBBF24','#A78BFA'][i % 7],
+                                            left: `${15 + Math.random() * 70}%`,
+                                        }}
+                                        initial={{ y: 0, opacity: 1, scale: 0 }}
+                                        animate={{
+                                            y: [0, -(80 + Math.random() * 120), 200],
+                                            x: [0, (Math.random() - 0.5) * 100],
+                                            opacity: [0, 1, 0],
+                                            scale: [0, 1.2, 0],
+                                            rotate: [0, Math.random() * 720],
+                                        }}
+                                        transition={{
+                                            duration: 2.5 + Math.random() * 2,
+                                            delay: 0.1 + Math.random() * 1.5,
+                                            ease: [0.25, 0.46, 0.45, 0.94],
+                                        }}
+                                    />
+                                ))}
+                                
                                 <motion.div 
                                     initial={{ scale: 0.5, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
@@ -470,10 +386,39 @@ export default function OnboardingPage() {
                                     <div className="absolute inset-0 rounded-full animate-pulse bg-amber-400/20 blur-2xl -z-10" />
                                 </motion.div>
                                 
-                                <h2 className="font-sans text-3xl font-black text-[var(--text)] mb-4 tracking-tighter">Welcome, Scholar.</h2>
-                                <p className="text-[16px] text-[var(--text)]/60 font-medium mb-12 px-4 italic leading-relaxed">
-                                    To kickstart your journey, The Professor has assigned <span className="text-amber-500 font-black">100 Credits</span> to your archives.
+                                <h2 className="font-sans text-3xl font-black text-[var(--text)] mb-3 tracking-tighter">You're In, Scholar.</h2>
+                                <p className="text-[14px] text-[var(--text)]/60 font-medium mb-4 px-4 leading-relaxed">
+                                    50 fresh credits. Zero excuses. Your bed misses you already.
                                 </p>
+
+                                {/* Achievement Unlock Banner */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                    className="max-w-md mx-auto mb-6 p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--amber-border)] shadow-[0_10px_30px_var(--amber-glow)] flex items-center gap-4 text-left"
+                                >
+                                    <div className="w-12 h-12 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/30 flex items-center justify-center text-[var(--amber)] shrink-0 shadow-[0_0_15px_var(--amber-glow)]">
+                                        <Trophy size={24} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-0.5">
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--amber)] bg-[var(--amber)]/10 px-2 py-0.5 rounded-full">Achievement Unlocked</span>
+                                            <span className="text-[10px] font-mono text-[var(--text-3)]">+100 XP</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-[var(--text)]">First Step, First Win</p>
+                                        <p className="text-xs text-[var(--text-2)]">You've successfully completed onboarding. The Trophy Room is now fully unlocked!</p>
+                                    </div>
+                                </motion.div>
+
+                                <motion.p 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.8 }}
+                                    className="text-[12px] text-[var(--text)]/40 mb-8 font-bold italic"
+                                >
+                                    Time to turn those notes into something you actually remember.
+                                </motion.p>
                             </motion.div>
                         )}
 
@@ -486,7 +431,7 @@ export default function OnboardingPage() {
                                 <ChevronLeft size={28} />
                             </button>
                         )}
-                        {(step < 4 || (step === 4 && !curriculumReady)) && (
+                        {(step < 4) && (
                             <button
                                 onClick={handleNext}
                                 disabled={isSaving || (step === 1 && (!firstName || !lastName || !username || usernameStatus !== "available")) || (step === 2 && (!age || parseInt(age) < 10 || !eduLevel || selectedPainPoints.length === 0)) || (step === 3 && (!commitment || !topic.trim()))}
@@ -498,29 +443,19 @@ export default function OnboardingPage() {
                                         <RotateCw size={20} className="animate-spin" />
                                         <span>{usernameStatus === "checking" ? "Checking..." : "Saving..."}</span>
                                     </div>
-                                ) : step === 3 ? "Analyze" : "Continue"}
+                                ) : step === 3 ? "Done — Claim Credits" : "Continue"}
                                 {!isSaving && usernameStatus !== "checking" && step < 3 && <ChevronRight size={22} />}
-                            </button>
-                        )}
-                        {curriculumReady && step === 4 && (
-                            <button
-                                onClick={() => setStep(5)}
-                                className="flex-1 h-14 rounded-2xl font-black text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                                style={{ background: "linear-gradient(135deg, var(--blue), var(--blue-dark))", color: "#fff", boxShadow: "0 10px 30px var(--blue-glow)" }}
-                            >
-                                Review Strategy
-                                <ChevronRight size={22} />
                             </button>
                         )}
                         {step === 5 && (
                             <button
                                 onClick={handleFinish}
                                 disabled={isSaving}
-                                className="flex-1 h-16 rounded-2xl font-black text-[15px] tracking-[0.2em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.98] px-8"
+                                className="flex-1 h-16 rounded-2xl font-black text-[13px] tracking-[0.15em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.98] px-8 hover:scale-[1.02]"
                                 style={{ background: "linear-gradient(135deg, var(--emerald), var(--emerald-border))", color: "#000", boxShadow: "0 12px 40px var(--emerald-glow)" }}
                             >
-                                {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Claim Gift & Enter"}
-                                {!isSaving && <LogIn size={22} />}
+                                {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Use Your Credits → Exam Sprint"}
+                                {!isSaving && <Zap size={20} />}
                             </button>
                         )}
                     </div>

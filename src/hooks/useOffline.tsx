@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { WifiOff, Signal, Download, Zap } from "lucide-react";
 
 type NetworkStatus = "online" | "offline" | "slow";
@@ -80,12 +81,20 @@ export function useOffline(): UseOfflineReturn {
 // Offline Indicator Component
 export function OfflineIndicator() {
   const { isOnline, status, wasOffline, lastOnline } = useOffline();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (status === "offline" && (pathname === "/" || pathname === "/dashboard")) {
+      router.push("/library/offline");
+    }
+  }, [status, pathname, router]);
 
   if (isOnline && !wasOffline) return null;
 
   return (
     <div 
-      className="fixed top-0 left-0 right-0 z-[1000] px-4 py-2 text-center text-sm font-medium animate-slide-down"
+      className="fixed top-0 left-0 right-0 z-[1000] px-4 py-2.5 text-center text-xs sm:text-sm font-medium animate-slide-down shadow-2xl"
       style={{ 
         background: status === "offline" 
           ? "linear-gradient(135deg, #ef4444, #dc2626)" 
@@ -93,23 +102,28 @@ export function OfflineIndicator() {
         color: "white",
       }}
     >
-      <div className="flex items-center justify-center gap-2">
-        {status === "offline" ? (
-          <WifiOff size={18} strokeWidth={1.5} />
-        ) : (
-          <Signal size={18} strokeWidth={1.5} />
-        )}
-        <span>
-          {status === "offline" 
-            ? "You're offline. Some features may be limited." 
-            : "Connection restored!"
-          }
-          {lastOnline && lastOnline > new Date(Date.now() - 60000) && (
-            <span className="ml-2 opacity-75">
-              (back after {Math.floor((Date.now() - lastOnline.getTime()) / 1000)}s)
-            </span>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2">
+          {status === "offline" ? (
+            <WifiOff size={16} strokeWidth={2} />
+          ) : (
+            <Signal size={16} strokeWidth={2} />
           )}
-        </span>
+          <span className="font-bold">
+            {status === "offline" 
+              ? "You're offline. Switched to Offline Study Mode." 
+              : "Connection restored! Welcome back online."
+            }
+          </span>
+        </div>
+        {status === "offline" && pathname !== "/library/offline" && (
+          <button
+            onClick={() => router.push("/library/offline")}
+            className="px-3 py-1 rounded-lg bg-white text-red-600 text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Open Offline Vault
+          </button>
+        )}
       </div>
     </div>
   );

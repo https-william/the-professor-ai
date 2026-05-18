@@ -1,11 +1,11 @@
 {
-  "name": "The Professor | The Academic Insider",
+  "name": "The Professor AI",
   "short_name": "Professor",
-  "description": "The academic secret they don't teach in lectures. Automate your learning with AI-powered flashcards and quizzes.",
-  "start_url": "/",
+  "description": "Your notes. Just the good parts. Turn overwhelming lectures into simple study guides and instant quizzes. Get your sleep back and spend more time ignoring your group chat.",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#08080E",
-  "theme_color": "#08080E",
+  "theme_color": "#7C3AED",
   "orientation": "portrait",
   "scope": "/",
   "icons": [
@@ -25,6 +25,21 @@
       "src": "/favicon-32x32.png",
       "sizes": "32x32",
       "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "The Professor AI Logo"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "The Professor AI Logo"
     }
   ],
   "shortcuts": [

@@ -16,11 +16,11 @@ export default function AIStudyPlanner() {
     // Simulate AI generation
     setTimeout(() => {
       const generatedPlan = {
-        title: `Strategic Mastery Plan: ${exam}`,
+        title: `Smart Study Plan: ${exam}`,
         phases: [
           { name: "Phase 1: Knowledge Mapping", focus: "Identify blind spots and map the syllabus logic.", duration: "Days 1-7" },
           { name: "Phase 2: Neural Compression", focus: "Active recall sprints and high-fidelity summarization.", duration: "Days 8-21" },
-          { name: "Phase 3: Simulation Dominance", focus: "Full-length exam simulations under timed pressure.", duration: "Days 22-30" }
+          { name: "Phase 3: Simulation Practice", focus: "Full-length exam simulations under timed pressure.", duration: "Days 22-30" }
         ],
         verdict: "This plan is optimized for the 'Professor Recall Loop'. High-intensity retrieval is required."
       };
@@ -35,7 +35,7 @@ export default function AIStudyPlanner() {
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">AI Study Planner</h1>
           <p className="text-lg text-white/50 max-w-2xl mx-auto">
-            Stop 'reading' your syllabus. Start dominating it. Our AI builds a strategic offensive for your specific exam.
+            Stop 'reading' your syllabus. Start understanding it. Our AI builds a smart plan for your specific exam.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function AIStudyPlanner() {
           <div className="p-8 md:p-12 rounded-[40px] border border-white/5 bg-white/[0.02] backdrop-blur-xl">
             <div className="space-y-8">
               <div>
-                <label className="block text-[10px] font-black text-[var(--accent)] uppercase tracking-widest mb-3">Which exam are you crushing?</label>
+                <label className="block text-[10px] font-black text-[var(--accent)] uppercase tracking-widest mb-3">Which exam are you acing?</label>
                 <input 
                   type="text" 
                   placeholder="e.g. JAMB UTME, MCAT, SAT, Finals..." 
@@ -62,7 +62,7 @@ export default function AIStudyPlanner() {
                     className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-lg focus:border-[var(--accent)] outline-none"
                   >
                     <option value="7">7 Days (Emergency)</option>
-                    <option value="14">14 Days (Aggressive)</option>
+                    <option value="14">14 Days (Intensive)</option>
                     <option value="30">30 Days (Standard)</option>
                     <option value="90">90 Days (Elite)</option>
                   </select>
@@ -88,7 +88,7 @@ export default function AIStudyPlanner() {
                 disabled={!exam || loading}
                 className="w-full py-6 rounded-3xl bg-white text-black font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3"
               >
-                {loading ? "Strategizing..." : <>Generate Master Plan <Zap className="w-5 h-5 fill-black" /></>}
+                {loading ? "Strategizing..." : <>Generate Study Plan <Zap className="w-5 h-5 fill-black" /></>}
               </button>
             </div>
           </div>
@@ -116,10 +116,10 @@ export default function AIStudyPlanner() {
             <div className="p-10 rounded-[40px] bg-white text-black text-center">
               <h3 className="text-2xl font-black mb-4">WANT THE FULL DAILY SCHEDULE?</h3>
               <p className="text-black/60 mb-8 max-w-md mx-auto">
-                Join 50,000+ students using The Professor to automate their academic dominance.
+                Join 50,000+ students using The Professor to automate their academic success.
               </p>
               <Link href="/signup" className="inline-block px-12 py-5 rounded-3xl bg-black text-white font-black uppercase tracking-widest hover:scale-105 transition-all">
-                Access Full Strategy
+                Access Full Plan
               </Link>
             </div>
           </div>

@@ -11,7 +11,7 @@ export default function GlossaryPage() {
         <div className="mb-12 text-center">
           <h1 className="text-4xl md:text-5xl font-black text-[var(--foreground)] mb-4 tracking-tight">Study Intelligence Glossary</h1>
           <p className="text-lg text-[var(--foreground-muted)] max-w-2xl mx-auto font-medium">
-            The semantic foundation of elite learning. Master the definitions that drive academic dominance.
+            The foundation of smart learning. Understand the definitions that drive academic success.
           </p>
         </div>
 

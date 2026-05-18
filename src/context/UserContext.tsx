@@ -34,6 +34,8 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const store = useUserStore();
+    const refreshUser = useUserStore((state) => state.refreshUser);
+    const updateUser = useUserStore((state) => state.updateUser);
     const supabase = React.useMemo(() => createClient(), []);
 
     useEffect(() => {
@@ -46,7 +48,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const performInitialLoad = async () => {
             if (!initialRefreshDone) {
                 initialRefreshDone = true;
-                await store.refreshUser();
+                await refreshUser();
             }
         };
 
@@ -55,14 +57,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             // refreshUser is locked internally by isRefreshing, but we can avoid the call if session is null and we aren't auth'd
             if (event === 'SIGNED_OUT') {
-                store.updateUser({ isAuthenticated: false, id: null });
+                updateUser({ isAuthenticated: false, id: null });
             } else {
-                store.refreshUser();
+                refreshUser();
             }
         });
 
         return () => subscription.unsubscribe();
-    }, [supabase, store.refreshUser, store.updateUser]);
+    }, [supabase, refreshUser, updateUser]);
 
     const addCredits = async (amount: number): Promise<boolean> => {
         try {

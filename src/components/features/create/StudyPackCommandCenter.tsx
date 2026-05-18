@@ -13,7 +13,8 @@ import {
     Sparkles,
     ChevronRight,
     Clock,
-    BrainCircuit
+    BrainCircuit,
+    AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,63 +35,159 @@ interface Phase {
     result?: any;
 }
 
+const PHASE_APIS: Record<string, string> = {
+    breakdown: "/api/generate/breakdown",
+    distill: "/api/generate/summary",
+    retain: "/api/generate/flashcards",
+    test: "/api/generate/quiz",
+    predict: "/api/generate/roadmap",
+};
+
 import { createClient } from "@/lib/supabase/client";
 
 export default function StudyPackCommandCenter({ sourceText, onComplete }: StudyPackCommandCenterProps) {
     const supabase = createClient();
     const [phases, setPhases] = useState<Phase[]>([
-        { id: "distill", title: "Phase 1: Summary", subtitle: "Deep Summaries & Analogies", icon: FileText, status: "pending" },
-        { id: "retain",  title: "Phase 2: Memory",  subtitle: "Flashcards & Recall Tools", icon: Layers, status: "pending" },
-        { id: "test",    title: "Phase 3: Quiz",    subtitle: "Practice Exam Questions", icon: Sword, status: "pending" },
-        { id: "predict", title: "Phase 4: Roadmap", subtitle: "Study Plan & Mastery", icon: MapIcon, status: "pending" },
+        { id: "breakdown", title: "Phase 1: Breakdown", subtitle: "Lecture Deconstruct & Deep Analysis", icon: Sparkles, status: "pending" },
+        { id: "distill", title: "Phase 2: Summary", subtitle: "Deep Summaries & Analogies", icon: FileText, status: "pending" },
+        { id: "retain",  title: "Phase 3: Memory",  subtitle: "Flashcards & Recall Tools", icon: Layers, status: "pending" },
+        { id: "test",    title: "Phase 4: Quiz",    subtitle: "Practice Exam Questions", icon: Sword, status: "pending" },
+        { id: "predict", title: "Phase 5: Roadmap", subtitle: "Study Plan & Tips", icon: MapIcon, status: "pending" },
     ]);
 
     const [activePhaseIndex, setActivePhaseIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
+    const executePhase = async (phaseId: string, apiEndpoint: string): Promise<any> => {
+        const res = await fetch(apiEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                content: sourceText,
+                context: sourceText,
+                title: sourceText.trim() ? sourceText.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : "Study Pack",
+                count: 10,
+                difficulty: "medium",
+                format: phaseId === "distill" ? "bullets" : phaseId === "retain" ? "front_back" : phaseId === "test" ? "mcq" : undefined,
+            }),
+        });
+        if (!res.ok) {
+            const errText = await res.text().catch(() => "Unknown error");
+            throw new Error(`${apiEndpoint} failed: ${res.status} ${errText}`);
+        }
+
+        const contentType = res.headers.get("Content-Type") || "";
+        if (contentType.includes("text/event-stream")) {
+            const reader = res.body?.getReader();
+            if (!reader) throw new Error("Stream not readable");
+            const decoder = new TextDecoder();
+            let fullSummary = "";
+            let finalPayload: any = null;
+            let buffer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                let lineEnd;
+                while ((lineEnd = buffer.indexOf('\n')) !== -1) {
+                    const line = buffer.slice(0, lineEnd).trim();
+                    buffer = buffer.slice(lineEnd + 1);
+
+                    if (line.startsWith("data: ")) {
+                        try {
+                            const parsed = JSON.parse(line.slice(6));
+                            if (parsed.type === "chunk" && parsed.chunk) {
+                                fullSummary += parsed.chunk;
+                            }
+                            if (parsed.status === "complete") {
+                                finalPayload = parsed;
+                            }
+                            if (parsed.status === "error") {
+                                throw new Error(parsed.message || parsed.error || "Stream error");
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+
+            if (phaseId === "breakdown") {
+                return { breakdown: fullSummary, ...finalPayload };
+            }
+            if (phaseId === "distill") {
+                return { summary: fullSummary, ...finalPayload };
+            }
+            if (phaseId === "predict") {
+                return { title: finalPayload?.title || "Study Roadmap", roadmap: fullSummary, ...finalPayload };
+            }
+            if (phaseId === "retain") {
+                return finalPayload?.flashcards || finalPayload?.data || finalPayload || [];
+            }
+            if (phaseId === "test") {
+                return finalPayload?.quiz || finalPayload?.data || finalPayload || [];
+            }
+            return finalPayload;
+        }
+
+        return res.json();
+    };
+
     useEffect(() => {
         const startGeneration = async () => {
             try {
-                // 1. Initialize Record in Supabase
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) throw new Error("Unauthorized");
 
                 const packId = crypto.randomUUID();
 
-                // Start the visual generation loop
-                for (let i = 0; i < phases.length; i++) {
+                const phaseResults: Record<string, any> = {};
+
+                for (let i = 0; i < 1; i++) {
                     setActivePhaseIndex(i);
                     setPhases(prev => prev.map((p, idx) => idx === i ? { ...p, status: "generating" } : p));
-                    
-                    // Small visual delay to show progress to user
-                    await new Promise(resolve => setTimeout(resolve, 800));
-                    
+
+                    const phase = phases[i];
+                    const apiEndpoint = PHASE_APIS[phase.id];
+
+                    if (apiEndpoint) {
+                        try {
+                            const result = await executePhase(phase.id, apiEndpoint);
+                            phaseResults[phase.id] = result;
+                        } catch (phaseErr: any) {
+                            console.warn(`Phase ${phase.id} failed, continuing:`, phaseErr);
+                        }
+                    }
+
                     if (i === 0) {
-                        // Create the pack record on the first phase "completion" (initialization)
+                        const cleanTitle = sourceText.trim() ? sourceText.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : `STUDY PACK: ${new Date().toLocaleDateString()}`;
                         const { error: dbError } = await supabase.from("study_packs").insert({
                             id: packId,
                             user_id: user.id,
-                            title: `Study Pack: ${new Date().toLocaleDateString()}`,
+                            title: cleanTitle,
                             description: "Comprehensive exam survival kit generated from your notes.",
                             source_text: sourceText,
-                            phases_data: {}
+                            phases_data: phaseResults,
                         });
 
                         if (dbError) throw dbError;
                     }
-                    
+
                     setPhases(prev => prev.map((p, idx) => idx === i ? { ...p, status: "completed" } : p));
-                    setProgress((i + 1) * 25);
+                    setProgress(100);
                 }
-                
-                // Finalization
+
+                // Update pack with initial phase result
+                await supabase.from("study_packs").update({ phases_data: phaseResults }).eq("id", packId);
+
                 setTimeout(() => {
                     onComplete(packId);
-                }, 500);
+                }, 200);
             } catch (err: any) {
                 console.error("Generation Error:", err);
-                setError(err.message);
+                setError(err.message || "Something went wrong during generation.");
+                setPhases(prev => prev.map((p, idx) => idx === activePhaseIndex ? { ...p, status: "error" } : p));
             }
         };
 
@@ -99,10 +196,26 @@ export default function StudyPackCommandCenter({ sourceText, onComplete }: Study
 
     return (
         <div className="w-full max-w-4xl mx-auto py-12 animate-in fade-in zoom-in duration-700">
+            {error && (
+                <div className="mb-6 p-4 rounded-3xl bg-[var(--crimson-dim)] border border-[var(--crimson-border)] flex items-center gap-3">
+                    <AlertTriangle size={20} className="text-[var(--crimson)] shrink-0" />
+                    <div>
+                        <p className="text-[12px] font-black text-[var(--crimson)] uppercase tracking-wider">Something went wrong</p>
+                        <p className="text-[11px] text-[var(--foreground-muted)] mt-1">{error}</p>
+                    </div>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="ml-auto px-4 py-2 rounded-xl bg-[var(--crimson)]/20 text-[var(--crimson)] text-[10px] font-black uppercase tracking-wider hover:bg-[var(--crimson)]/30 transition-all"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
                 {/* Main Viewport */}
                 <div className="space-y-6">
-                    <div className="p-10 rounded-[48px] bg-white border border-[var(--border)] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] relative overflow-hidden">
+                    <div className="p-10 rounded-[48px] bg-[var(--card)] border border-[var(--border)] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8">
                             <Sparkles className="w-12 h-12 text-[var(--accent)] opacity-10 animate-pulse" />
                         </div>
@@ -131,10 +244,12 @@ export default function StudyPackCommandCenter({ sourceText, onComplete }: Study
                                         "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border-2 transition-all duration-700",
                                         phase.status === "completed" ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-[0_0_20px_var(--accent-glow)]" :
                                         phase.status === "generating" ? "bg-transparent border-[var(--accent)] text-[var(--accent)] animate-pulse" :
+                                        phase.status === "error" ? "bg-[var(--crimson-dim)] border-[var(--crimson)] text-[var(--crimson)]" :
                                         "bg-transparent border-[var(--border)] text-[var(--foreground-muted)]"
                                     )}>
                                         {phase.status === "completed" ? <CheckCircle2 size={24} /> : 
                                          phase.status === "generating" ? <Loader2 size={24} className="animate-spin" /> :
+                                         phase.status === "error" ? <AlertTriangle size={24} /> :
                                          <phase.icon size={24} />}
                                     </div>
 
@@ -148,6 +263,9 @@ export default function StudyPackCommandCenter({ sourceText, onComplete }: Study
                                             </h4>
                                             {phase.status === "generating" && (
                                                 <span className="text-[10px] font-black text-[var(--accent)] uppercase tracking-widest animate-pulse">Processing...</span>
+                                            )}
+                                            {phase.status === "error" && (
+                                                <span className="text-[10px] font-black text-[var(--crimson)] uppercase tracking-widest">Skipped</span>
                                             )}
                                         </div>
                                         <p className="text-sm text-[var(--foreground-muted)] font-medium">{phase.subtitle}</p>
@@ -168,8 +286,8 @@ export default function StudyPackCommandCenter({ sourceText, onComplete }: Study
                         </div>
                     </div>
 
-                    <div className="p-6 rounded-[32px] bg-white/[0.02] border border-white/5">
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] text-center">
+                    <div className="p-6 rounded-[32px] bg-[var(--bg-3)] border border-[var(--border)]">
+                        <p className="text-[10px] font-black text-[var(--foreground-muted)]/50 uppercase tracking-[0.4em] text-center">
                             The Professor is analyzing {sourceText.length.toLocaleString()} characters of knowledge
                         </p>
                     </div>
@@ -177,7 +295,7 @@ export default function StudyPackCommandCenter({ sourceText, onComplete }: Study
 
                 {/* Info Sidebar */}
                 <div className="space-y-6">
-                    <div className="p-8 rounded-[40px] bg-white border border-[var(--border)] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)]">
+                    <div className="p-8 rounded-[40px] bg-[var(--card)] border border-[var(--border)] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)]">
                         <h3 className="text-sm font-black text-[var(--foreground)] uppercase tracking-widest mb-6">Pack Contents</h3>
                         <ul className="space-y-4">
                             {[

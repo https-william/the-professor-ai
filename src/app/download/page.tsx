@@ -77,7 +77,7 @@ export default function DownloadPage() {
             name: "Windows", 
             icon: Laptop, 
             color: "#0078D4", 
-            desc: "Desktop mastery takes time. We don't ship mid.",
+            desc: "Desktop excellence takes time. We don't ship mid.",
             action: { label: "In the Lab", href: "#" },
             disabled: true
         },
@@ -133,6 +133,8 @@ export default function DownloadPage() {
                         <img 
                             src="/brand/professor-og-logo.svg" 
                             alt="The Professor AI" 
+                            fetchPriority="high"
+                            decoding="async"
                             className="w-full h-full object-contain filter drop-shadow-2xl"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)]/20 via-transparent to-transparent pointer-events-none" />

@@ -23,6 +23,7 @@ async function parsePDF(buffer: Buffer): Promise<{ text: string; isScanned: bool
     /* eslint-enable @typescript-eslint/no-require-imports */
 
     try {
+        // max: 0 means all pages, but pdf-parse is optimized. We ensure pagerender is clean.
         const data = await pdfParse(buffer, { pagerender: undefined, max: 0 });
         const rawText = (data.text || "").trim();
 
@@ -54,12 +55,13 @@ async function parseOffice(buffer: Buffer, fileName: string, ext: string): Promi
         console.warn(`[Parser] Permanent Solution failed for ${fileName}:`, err);
     }
 
-    // ── LAYER 1: SPECIALIZED LOCAL HANDLERS ──
+    // ── LAYER 1: SPECIALIZED LOCAL HANDLERS (Memory Optimized for 1GB RAM) ──
     try {
         if (["xlsx", "xls", "csv"].includes(ext)) {
             console.log(`[Parser] Attempting specialized XLSX extraction for ${fileName}...`);
-            const workbook = XLSX.read(buffer, { type: "buffer" });
-            const sheetNames = workbook.SheetNames;
+            // sheetRows: 500 strictly limits memory allocation on 1GB RAM budget devices
+            const workbook = XLSX.read(buffer, { type: "buffer", sheetRows: 500 });
+            const sheetNames = workbook.SheetNames.slice(0, 5); // Limit to first 5 sheets
             text = sheetNames.map((name: string) => {
                 const sheet = workbook.Sheets[name];
                 return XLSX.utils.sheet_to_txt(sheet);
@@ -139,27 +141,17 @@ export async function parseDocument(
         const { text: rawText, isScanned } = await parsePDF(buffer);
         
         if (isScanned && rawText.length === 0) {
-            // AI OCR Fallback disabled for now due to API versioning inconsistencies
-            /*
-            if (process.env.GEMINI_API_KEY) {
-                console.log(`[Parser] PDF appears scanned. Attempting Gemini OCR for ${fileName}...`);
-                text = await extractTextWithGemini(buffer, "application/pdf");
-            } else {
-                throw new Error("This PDF appears to be images only. Please upload the original Office file (.pptx, .docx) if available, or ensure the Python service is running.");
-            }
-            */
             throw new Error("This PDF appears to be images only (no selectable text). Please upload the original .pptx or .docx file for perfect extraction.");
         } else {
-            // Even if it's flagged as "scanned" (low text ratio), if we have SOME text, 
-            // it's better to return it as a fallback than to fail entirely.
             text = rawText;
         }
     } 
-    // ── CSV ──
+    // ── CSV (Memory Optimized for 1GB RAM) ──
     else if (mimeType === "text/csv" || ext === "csv") {
         const { default: Papa } = await import("papaparse");
-        const result = Papa.parse(buffer.toString("utf-8"), { header: true, skipEmptyLines: true });
-        text = result.data.slice(0, 500).map((row: any) => Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(" | ")).join("\n");
+        // preview: 500 strictly stops parsing after 500 rows, saving massive memory
+        const result = Papa.parse(buffer.toString("utf-8"), { header: true, skipEmptyLines: true, preview: 500 });
+        text = result.data.map((row: any) => Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(" | ")).join("\n");
         fileType = "CSV";
     } 
     // ── TXT / MD ──

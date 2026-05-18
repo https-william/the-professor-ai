@@ -1,14 +1,14 @@
 export const EDUCATION_TIPS = [
     "Recall is king. Your highlighter is just a glorified crayon.",
     "Spaced repetition: Because your brain is like a leaky bucket, and I'm here to plug the holes.",
-    "Explain it like I'm five. Or like you're explaining why you're late to a group chat.",
+    "Explain it like I'm five. Or like you're breaking down a movie plot to a friend.",
     "Sleep is the 'Save' button for your brain. Don't crash without hitting it.",
     "Mistakes are just data points. And today, we're being very scientific.",
     "A 15-minute study session beats a 5-hour panic session. Every single time.",
     "Your bed misses you. Let's finish this so you can go back to it.",
     "If you can't explain it simply, you're just using fancy words to hide the confusion. I see you.",
     "Stop reading the same page. Close the book and tell me what you actually remember.",
-    "Coffee helps, but it doesn't write the exam for you. Unfortunately.",
+    "Wishing for an easy exam won't write it for you. Consistent practice will.",
     "Consistency beats intensity. 10 minutes a day is better than a 10-hour breakdown.",
     "Focus is a muscle. Today is leg day for your brain.",
     "Don't study until you get it right. Study until you're bored of being right.",
@@ -49,7 +49,7 @@ export const EDUCATION_TIPS = [
     "Distraction is the thief of time. And your time is expensive.",
     "Learn the rules so you can break them with confidence later.",
     "The best way to predict your grade is to create it, one card at a time.",
-    "Don't study for the test. Study so you can explain it to me over coffee."
+    "Don't study for the test. Study so you can teach it to someone else."
 ];
 
 export function getDailyTip(userId: string): string {

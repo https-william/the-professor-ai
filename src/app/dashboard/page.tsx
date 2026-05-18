@@ -7,16 +7,17 @@ import { useQuery } from "@tanstack/react-query";
 import SEOHead, { getWebApplicationSchema, getBreadcrumbSchema } from "@/components/SEOHead";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
 import PlatformShell from "@/components/platforms/PlatformShell";
+import { createClient } from "@/lib/supabase/client";
 
 import dynamic from "next/dynamic";
+import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 
-// Platform-Specific Dashboard Components (Dynamically imported for bundle optimization)
-const DashboardWeb = dynamic(() => import("@/components/platforms/web/DashboardWeb"));
-const DashboardDesktop = dynamic(() => import("@/components/platforms/desktop/DashboardDesktop"));
-const DashboardMobile = dynamic(() => import("@/components/platforms/mobile/DashboardMobile"));
+// Platform-Specific Dashboard Components (Dynamically imported with custom skeleton fallback for client-side navigation)
+const DashboardWeb = dynamic(() => import("@/components/platforms/web/DashboardWeb"), { loading: () => <DashboardSkeleton /> });
+const DashboardDesktop = dynamic(() => import("@/components/platforms/desktop/DashboardDesktop"), { loading: () => <DashboardSkeleton /> });
+const DashboardMobile = dynamic(() => import("@/components/platforms/mobile/DashboardMobile"), { loading: () => <DashboardSkeleton /> });
 import ShareCard from "@/components/ShareCard";
 import StreakMilestone from "@/components/features/StreakMilestone";
-import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 
 /* ═══════════════════════════════════════════════════
    HELPERS
@@ -24,30 +25,110 @@ import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 function getGreeting(userId?: string): string {
     const hour = new Date().getHours();
     
-    // Professor-style greetings (Coffee-Shop Casual)
+    // Professor-style greetings (Coffee-Shop Casual, Culturally Authentic Nigerian Lifestyle, Max 6 Words)
     const morning = [
-        "Rise and shine. The coffee is fresh and your brain is ready",
-        "Morning session. Let's turn these notes into something you actually remember",
-        "Early bird energy. You're up before the group chat, and that's a win",
-        "Good morning. Let's make today remarkably easy on your future self"
+        "Sun's barely up. You're ahead",
+        "Up early. Ahead of schedule",
+        "Early bird. Smart move",
+        "Let's make today easy",
+        "Quiet morning. Perfect study weather",
+        "Filter the noise. Learn fast",
+        "Gen is off. Peace restored",
+        "Start smart. Free afternoon later",
+        "Your bed misses you. Learn",
+        "First light. Just the facts",
+        "No long talk. Let's study",
+        "Dew outside. Wisdom inside",
+        "Beat the morning rush",
+        "Clear the queue before breakfast",
+        "Skip the stress. Learn now",
+        "Early reps. Permanent memory",
+        "Morning clarity is unmatched",
+        "New day. Same smart you",
+        "Heavy lifting done early",
+        "No notifications. Pure focus",
+        "Wake up. Lock in",
+        "Quick session. Big impact",
+        "Early morning dedication. Respect",
+        "Rise. Shine. Remember"
     ];
     const afternoon = [
-        "Midday check-in. How's the caffeine levels holding up?",
-        "Afternoon shift. Let's tackle that one concept that's been bugging you",
-        "Hope your lunch was solid. Let's get back to it—just the good parts",
-        "Strategic break? Or strategic study? Either way, I'm here for it"
+        "Midday check-in. Standards are higher",
+        "Tackle that one tough concept",
+        "Lunch done. Just the good parts",
+        "Smart break or smart study?",
+        "Beat the midday heat",
+        "No fluff. Just core concepts",
+        "Focus now. More sleep later",
+        "Stay sharp. Halfway there",
+        "Smart reps now. Free evening",
+        "Secure the win before sundown",
+        "Afternoon quiet. Let's make progress",
+        "Keep it brief. Keep it smart",
+        "Don't let the slump win",
+        "Straight to the point",
+        "Clear the pending slides today",
+        "Quick session. Big results",
+        "Day's young. Focus is high",
+        "One concept. That's all",
+        "Bypass the academic jargon",
+        "Afternoon push. Organize the chaos",
+        "Effort now saves exam panic",
+        "Understand first. Memorize later",
+        "Keep the momentum alive",
+        "No wasted time today"
     ];
     const evening = [
-        "Evening session. Let's wrap this up so you can actually have a life tonight",
-        "Sunset scholars. The hard part is over, now we just refine",
-        "Good evening. Ready to distill some knowledge and then call it a day",
-        "Wind down mode. Let's look at the highlights and then close the laptop"
+        "Evening session. Wrap this up",
+        "Sunset scholars. Time to refine",
+        "Distill knowledge. Call it a day",
+        "Wind down. Close the laptop",
+        "Clear the noise. Lock in",
+        "Prime time for active recall",
+        "Secure grades before dinner",
+        "Cool breeze. Clear thoughts",
+        "Smart review. Guilt-free rest",
+        "Almost done. Make it stick",
+        "Day ending. Memory peaking",
+        "Clear the queue. Claim evening",
+        "Finish before the gen stops",
+        "Evening calm. Connect the dots",
+        "Don't leave it for midnight",
+        "Lock in concepts while fresh",
+        "Wrap up notes. Enjoy tonight",
+        "Quick sprint. Keep streak active",
+        "Verify knowledge. Sleep in peace",
+        "Less reading. More active recall",
+        "Finishing touches on today's plan",
+        "Put in hours. Elegant review",
+        "No midnight panic needed",
+        "Simplify final topics today"
     ];
     const night = [
-        "Midnight oil? I hope you're doing this for you and not a deadline",
-        "Late night wisdom. The world is quiet, perfect for those 'A-ha!' moments",
-        "Still awake? Let's make these last few minutes count so you can sleep",
-        "2 AM energy? You're built different. Let's secure the bag and go to bed"
+        "Midnight oil? Do it for you",
+        "Late wisdom. Quiet world",
+        "Still awake? Make it count",
+        "2 AM energy? Built different",
+        "Inverter holding up. Quiet progress",
+        "Midnight silence. Best for formulas",
+        "No notifications. Just core concepts",
+        "Make late night hours count",
+        "Last sprint before dreamland",
+        "Bed calling. Make this fast",
+        "Burning late hours. High marks",
+        "Late night clarity. Lock in",
+        "Stars out. Study guide out",
+        "No background noise. Pure focus",
+        "Finish before the sun beats us",
+        "Late night dedication. Respect",
+        "Get sorted. Sleep in peace",
+        "Late study weather. Simple bullets",
+        "Skipping fluff. Just exact answers",
+        "Midnight focus active. Absorb material",
+        "Working while others sleep. Win",
+        "Productive night. Easy tomorrow",
+        "Quiet hours. Deep comprehension",
+        "One last concept before sleep"
     ];
     
     let hash = 0;
@@ -56,7 +137,8 @@ function getGreeting(userId?: string): string {
             hash = ((hash << 5) - hash) + userId.charCodeAt(i);
         }
     }
-    const idx = Math.abs(hash) % 4;
+    const dayOfMonth = new Date().getDate();
+    const idx = Math.abs(hash + dayOfMonth) % 24;
 
     if (hour < 5) return night[idx];
     if (hour < 12) return morning[idx];
@@ -66,7 +148,7 @@ function getGreeting(userId?: string): string {
 }
 
 export default function DashboardPage() {
-    const { user, refreshUser, buyStreakFreeze, recoverStreak } = useUser();
+    const { user, refreshUser, recoverStreak } = useUser();
     const { addToast } = useToasts();
     const { isLoaded } = useAppPlatform();
     const [milestoneToCelebrate, setMilestoneToCelebrate] = useState<number | null>(null);
@@ -78,7 +160,13 @@ export default function DashboardPage() {
         queryKey: ['activity-history', user?.id],
         enabled: !!user?.id,
         queryFn: async () => {
-            const res = await fetch("/api/user/activity-history");
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch("/api/user/activity-history", {
+                headers: session?.access_token ? {
+                    Authorization: `Bearer ${session.access_token}`
+                } : undefined
+            });
             if (!res.ok) throw new Error("Network response was not ok");
             return res.json();
         },
@@ -100,14 +188,23 @@ export default function DashboardPage() {
                 localStorage.setItem(key, "true");
                 
                 // Award Credits/XP through the dedicated activity API
-                fetch("/api/user/activity", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        type: "daily_challenge",
-                        customXp: currentStreak === 7 ? 25 : currentStreak === 14 ? 50 : currentStreak === 30 ? 100 : currentStreak === 60 ? 200 : 500
-                    })
-                }).then(() => {
+                const awardMilestone = async () => {
+                    const supabase = createClient();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    return fetch("/api/user/activity", {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json",
+                            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+                        },
+                        body: JSON.stringify({
+                            type: "daily_challenge",
+                            customXp: currentStreak === 7 ? 25 : currentStreak === 14 ? 50 : currentStreak === 30 ? 100 : currentStreak === 60 ? 200 : 500
+                        })
+                    });
+                };
+
+                awardMilestone().then(() => {
                     // Only refresh user data once after the reward is posted
                     refreshUser();
                     addToast(`Check your rewards! +${currentStreak} day Milestone reached.`, "success", undefined, undefined, true);
@@ -120,7 +217,13 @@ export default function DashboardPage() {
     const { data: dueData } = useQuery({
         queryKey: ['due-cards', user?.id],
         queryFn: async () => {
-            const res = await fetch("/api/user/due-cards");
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch("/api/user/due-cards", {
+                headers: session?.access_token ? {
+                    Authorization: `Bearer ${session.access_token}`
+                } : undefined
+            });
             if (!res.ok) throw new Error("Network response was not ok");
             return res.json();
         },
@@ -132,7 +235,14 @@ export default function DashboardPage() {
     const { data: studyPlanData, isLoading: planLoading } = useQuery({
         queryKey: ['study-plan', user?.id],
         queryFn: async () => {
-            const res = await fetch("/api/ai/study-plan", { method: "POST" });
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch("/api/ai/study-plan", { 
+                method: "POST",
+                headers: session?.access_token ? {
+                    Authorization: `Bearer ${session.access_token}`
+                } : undefined
+            });
             if (!res.ok) throw new Error("Network response was not ok");
             const data = await res.json();
             return (data.plan || "") as string;
@@ -143,17 +253,6 @@ export default function DashboardPage() {
     const studyPlan = studyPlanData || null;
 
     const canRecover = !!(user?.streak === 0 && user?.lastStreak > 0 && user?.streakResetAt && (Date.now() - new Date(user.streakResetAt).getTime()) < 24 * 60 * 60 * 1000);
-
-    const handleBuyFreeze = async () => {
-        setIsProcessingAction(true);
-        const success = await buyStreakFreeze();
-        if (success) {
-            addToast("Streak Freeze banked!", "success", "ac_unit");
-        } else {
-            addToast("Failed to buy freeze. Check your credits.", "error");
-        }
-        setIsProcessingAction(false);
-    };
 
     const handleRecover = async () => {
         setIsProcessingAction(true);
@@ -166,11 +265,11 @@ export default function DashboardPage() {
         setIsProcessingAction(false);
     };
 
-    const handleShareMastery = () => {
+    const handleShareMilestone = () => {
         setShareData({
-            title: `${user.streak} Day Mastery`,
+            title: `${user.streak} Day Milestone`,
             count: user.streak,
-            type: "Mastery",
+            type: "Milestone",
             user: user.name || "Scholar",
             date: new Date().toLocaleDateString()
         });
@@ -178,7 +277,7 @@ export default function DashboardPage() {
 
     const greeting = getGreeting(user.id || undefined);
     
-    if (user.isLoading || !user.name || user.name.includes("@")) {
+    if (user.isLoading) {
         return <DashboardSkeleton />;
     }
 
@@ -196,8 +295,7 @@ export default function DashboardPage() {
         handleRecover,
         canRecover,
         isProcessingAction,
-        handleBuyFreeze,
-        handleShare: handleShareMastery
+        handleShare: handleShareMilestone
     };
 
     return (

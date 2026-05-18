@@ -18,16 +18,16 @@ export default function MasteryIndicator({
 }: MasteryIndicatorProps) {
   const percentage = total > 0 ? Math.round((known / total) * 100) : 0;
   
-  // Determine mastery level
-  const getMasteryLevel = (pct: number): { label: string; color: string } => {
-    if (pct >= 90) return { label: "Mastered", color: "#10B981" };
+  // Determine study level
+  const getStudyLevel = (pct: number): { label: string; color: string } => {
+    if (pct >= 90) return { label: "Aced", color: "#10B981" };
     if (pct >= 70) return { label: "Strong", color: "#34D399" };
     if (pct >= 50) return { label: "Learning", color: "var(--blue)" };
     if (pct >= 25) return { label: "Developing", color: "var(--cyan)" };
     return { label: "Just Started", color: "var(--text-3)" };
   };
 
-  const mastery = getMasteryLevel(percentage);
+  const studyLevel = getStudyLevel(percentage);
 
   const sizes = {
     sm: { bar: "h-1.5", iconSize: 14, text: "text-xs", padding: "p-2" },
@@ -45,13 +45,13 @@ export default function MasteryIndicator({
           <GraduationCap 
             size={s.iconSize}
             strokeWidth={1.5}
-            style={{ color: mastery.color }}
+            style={{ color: studyLevel.color }}
           />
           <span 
             className={`font-bold ${s.text}`}
-            style={{ color: mastery.color }}
+            style={{ color: studyLevel.color }}
           >
-            {mastery.label}
+            {studyLevel.label}
           </span>
         </div>
         <span 
@@ -68,8 +68,8 @@ export default function MasteryIndicator({
           className="h-full rounded-full transition-all duration-500 ease-out"
           style={{ 
             width: `${percentage}%`,
-            background: mastery.color,
-            boxShadow: `0 0 10px ${mastery.color}60`,
+            background: studyLevel.color,
+            boxShadow: `0 0 10px ${studyLevel.color}60`,
           }}
         />
       </div>

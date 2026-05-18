@@ -41,7 +41,7 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
     const contentType = (data.type.toLowerCase() === 'quiz' ? 'quiz' : 
                          data.type.toLowerCase().includes('flash') ? 'flashcard' : 
                          data.type.toLowerCase().includes('summary') ? 'summary' : 
-                         data.type.toLowerCase() === 'mastery' ? 'mastery' : 'chat') as ContentType;
+                         data.type.toLowerCase() === 'milestone' ? 'chat' : 'chat') as ContentType;
 
     const filteredTemplates = useMemo(() => getTemplatesForType(contentType), [contentType]);
     const [selectedTemplateId, setSelectedTemplateId] = useState(filteredTemplates[0]?.id || TEMPLATE_REGISTRY[0].id);
@@ -113,7 +113,7 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                         await navigator.share({
                             files: [file],
                             title: `Achievement: ${data.title}`,
-                            text: `I just mastered ${data.title} on The Professor! #ProfessorAI #ActiveRecall`,
+                            text: `I just achieved ${data.title} on The Professor! #ProfessorAI #ActiveRecall`,
                         });
                     } catch (err) {
                         console.error("Native share failed:", err);

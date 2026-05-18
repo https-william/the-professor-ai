@@ -33,7 +33,7 @@ const personas: Record<string, Persona> = {
     icon: Flame,
     color: "#F59E0B",
     description: "You treat learning like a blood sport. You don't 'study', you dismantle syllabuses. You use AI to extend your cognition and prioritize retrieval over review. Your GPA is a side effect of your obsession with logic. You're basically a cyborg with a student ID.",
-    advice: "Maintain your edge. Don't get complacent. Use our Exam Mode to find the 1% of blind spots you still have. Mastery is a moving target."
+    advice: "Maintain your edge. Don't get complacent. Use our Exam Mode to find the 1% of blind spots you still have. Excellence is a moving target."
   },
   delusional: {
     id: "delusional",
@@ -59,7 +59,7 @@ const personas: Record<string, Persona> = {
     tagline: "Maximum Result, Minimum Sleep.",
     icon: Zap,
     color: "#10B981",
-    description: "You study 15 minutes before the exam and somehow get a B+. You're a master of pattern recognition and strategic guessing. You live on caffeine and sheer audacity. But your foundation is made of sand, and the tide is coming in.",
+    description: "You study 15 minutes before the exam and somehow get a B+. You're a genius of pattern recognition and smart guessing. You live on caffeine and sheer audacity. But your foundation is made of sand, and the tide is coming in.",
     advice: "You're lucky, not smart (yet). One day, guessing won't work and the sand will crumble. Use our 'Neural Mapping' to actually build a knowledge foundation that won't collapse under pressure."
   },
   dependent: {
@@ -205,7 +205,7 @@ export default function StudyPersonaQuiz() {
             >
               <div className="flex items-center gap-2 text-[var(--accent)] mb-6">
                  <Zap className="w-4 h-4 fill-current" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.4em]">Strategic Diagnostic · Step {step + 1}/4</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.4em]">Study Diagnostic · Step {step + 1}/4</span>
               </div>
               
               <h2 className="text-3xl md:text-4xl font-black text-[var(--foreground)] mb-12 tracking-tight uppercase leading-[0.9]">

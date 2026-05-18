@@ -14,7 +14,7 @@ const BLOCKS = [
   },
   {
     title: "Built for the 3 AM Grind.",
-    body: "Designed for the student sitting up with an exam in 10 hours. This isn't just another AI tool; it's a strategic advantage for the ambitious who refuse to leave their grades to chance.",
+    body: "Designed for the student sitting up with an exam in 10 hours. This isn't just another AI tool; it's a smart advantage for the ambitious who refuse to leave their grades to chance.",
   },
 ];
 

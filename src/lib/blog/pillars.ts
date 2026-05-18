@@ -54,14 +54,14 @@ export const pillars: Record<string, PillarData> = {
   "best-ai-for-medical-students": {
     slug: "best-ai-for-medical-students",
     title: "Best AI for Medical Students (2026) | Anatomy, Path & USMLE",
-    description: "Medical school is a volume game. Use AI to compress terminology and master diagnosis logic.",
-    keywords: ["ai for med students", "best ai for anatomy", "usmle prep ai"],
+    description: "Medical school is a volume game. Use AI to compress terminology and understand diagnosis logic.",
+    keywords: ["ai for med med students", "best ai for anatomy", "usmle prep ai"],
     content: {
-      hero: { title: "Medical Mastery via Neural Compression", subtitle: "Crush the volume of med school with AI-powered retrieval." },
+      hero: { title: "Medical Study via Neural Compression", subtitle: "Ace the volume of med school with AI-powered retrieval." },
       sections: [
         { title: "Terminology Sprints", body: "Use our Neural Revision System to map complex pathology to your existing mental models." }
       ],
-      cta: { title: "Crush the Boards", subtitle: "Join med students worldwide using The Professor.", label: "Join the Med Lab" }
+      cta: { title: "Ace the Boards", subtitle: "Join med students worldwide using The Professor.", label: "Join the Med Lab" }
     }
   },
   "best-ai-study-tools": {
@@ -70,7 +70,7 @@ export const pillars: Record<string, PillarData> = {
     description: "The only list you need for AI studying tools. Ranked by utility, logic accuracy, and recall speed.",
     keywords: ["best ai study tools", "top ai for students", "ai revision software"],
     content: {
-      hero: { title: "The Strategist's Arsenal: Top AI Tools", subtitle: "Every tool you need to become an academic outlier in 2026." },
+      hero: { title: "The Student's Arsenal: Top AI Tools", subtitle: "Every tool you need to become an academic outlier in 2026." },
       sections: [
         { title: "The Core Four", body: "You don't need 100 tools. You need four that work together.", list: ["The Professor for Strategy", "Claude for Logic", "Perplexity for Research", "Anki for Persistence"] }
       ],
@@ -79,11 +79,11 @@ export const pillars: Record<string, PillarData> = {
   },
   "ultimate-ai-study-guide": {
     slug: "ultimate-ai-study-guide",
-    title: "The Ultimate AI Study Guide (2026) | Master Every Subject",
-    description: "A comprehensive roadmap for using AI to dominate academics. From high school to post-grad.",
+    title: "The Ultimate AI Study Guide (2026) | Ace Every Subject",
+    description: "A comprehensive roadmap for using AI to ace academics. From high school to post-grad.",
     keywords: ["ultimate ai study guide", "how to use ai for school", "ai learning roadmap"],
     content: {
-      hero: { title: "The Strategic Blueprint: AI Dominance", subtitle: "The 2026 master roadmap for students using AI-native frameworks." },
+      hero: { title: "The Smart Blueprint: AI Assistance", subtitle: "The 2026 smart roadmap for students using AI-native frameworks." },
       sections: [
         { title: "The Framework", body: "Stop using AI as a chatbot. Start using it as a cognitive exoskeleton." }
       ],
@@ -96,7 +96,7 @@ export const pillars: Record<string, PillarData> = {
     description: "The specific workflow for using AI to prepare for standardized tests and final exams.",
     keywords: ["ai exam prep", "how to pass exams with ai", "ai test prep guide"],
     content: {
-      hero: { title: "Exam Dominance: The AI Workflow", subtitle: "A step-by-step offensive strategy for the 30 days before your exam." },
+      hero: { title: "Exam Success: The AI Workflow", subtitle: "A step-by-step smart strategy for the 30 days before your exam." },
       sections: [
         { title: "The 30-Day Sprint", body: "How to use AI to build a simulation-heavy revision schedule." }
       ],
@@ -105,15 +105,15 @@ export const pillars: Record<string, PillarData> = {
   },
   "how-to-study-with-ai": {
     slug: "how-to-study-with-ai",
-    title: "How to Study with AI: The 2026 Strategic Masterclass",
+    title: "How to Study with AI: The 2026 Smart Guide",
     description: "The definitive guide on using AI as a cognitive force multiplier, not a replacement for your brain.",
     keywords: ["how to study with ai", "ai study guide", "ai learning strategy"],
     content: {
-      hero: { title: "AI is a Weapon. Learn to Wield It.", subtitle: "The 2026 guide to cognitive dominance using large language models." },
+      hero: { title: "AI is a Tool. Learn to Use It.", subtitle: "The 2026 guide to smart studying using large language models." },
       sections: [
         { title: "The Replacement Fallacy", body: "Don't ask AI to write your essay. Ask it to find the logical holes in your argument." }
       ],
-      cta: { title: "Level Up Your Brain", subtitle: "Access the full Masterclass on AI studying.", label: "Get the Guide" }
+      cta: { title: "Level Up Your Brain", subtitle: "Access the full guide on AI studying.", label: "Get the Guide" }
     }
   },
   "best-ai-for-students": {
@@ -157,13 +157,13 @@ export const pillars: Record<string, PillarData> = {
   },
   "neco-2026-guide": {
     slug: "neco-2026-guide",
-    title: "NECO 2026 Guide | Strategic Revision for SS3 Students",
+    title: "NECO 2026 Guide | Smart Revision for SS3 Students",
     description: "Pass your NECO exams with ease using AI-powered study schedules and summaries.",
     keywords: ["neco 2026 guide", "ai for neco exam", "neco prep"],
     content: {
-      hero: { title: "NECO 2026: Strategic Revision", subtitle: "Simplifying the NECO syllabus through AI distillation." },
+      hero: { title: "NECO 2026: Smart Revision", subtitle: "Simplifying the NECO syllabus through AI distillation." },
       sections: [
-        { title: "SS3 Mastery", body: "The final stretch. Use AI to patch knowledge gaps in under 14 days." }
+        { title: "SS3 Revision", body: "The final stretch. Use AI to patch knowledge gaps in under 14 days." }
       ],
       cta: { title: "Pass NECO.", subtitle: "Get the revision pack now.", label: "Get NECO Pack" }
     }
@@ -171,10 +171,10 @@ export const pillars: Record<string, PillarData> = {
   "sat-2026-guide": {
     slug: "sat-2026-guide",
     title: "Digital SAT 2026 Strategy | Target 1550+ with AI",
-    description: "The digital SAT is a logic test. Use AI to master the patterns and crush the score.",
+    description: "The digital SAT is a logic test. Use AI to learn the patterns and ace the score.",
     keywords: ["sat 2026 strategy", "digital sat ai", "sat 1550 guide"],
     content: {
-      hero: { title: "Digital SAT: Pattern Mastery", subtitle: "Targeting a 1550+ by mastering the logic patterns of the College Board." },
+      hero: { title: "Digital SAT: Pattern Study", subtitle: "Targeting a 1550+ by learning the logic patterns of the College Board." },
       sections: [
         { title: "The Logic Engine", body: "Mastering the reading and math sections through high-fidelity AI simulations." }
       ],
@@ -184,14 +184,14 @@ export const pillars: Record<string, PillarData> = {
   "gcse-2026-guide": {
     slug: "gcse-2026-guide",
     title: "GCSE 2026 Guide | How to Get Grade 9s with AI",
-    description: "UK students: Use AI to master the GCSE syllabus. Active recall and spaced repetition for all subjects.",
-    keywords: ["gcse 2026 guide", "grade 9 gcse ai", "gcse revision hacks"],
+    description: "UK students: Use AI to understand the GCSE syllabus. Active recall and spaced repetition for all subjects.",
+    keywords: ["gcse 2026 guide", "grade 9 gcse ai", "gcse revision tips"],
     content: {
-      hero: { title: "GCSE 2026: The Grade 9 Roadmap", subtitle: "Strategic revision for UK students aiming for academic excellence." },
+      hero: { title: "GCSE 2026: The Grade 9 Roadmap", subtitle: "Smart revision for UK students aiming for academic excellence." },
       sections: [
         { title: "Syllabus Compression", body: "Mapping the AQA/OCR/Edexcel syllabuses to AI retrieval loops." }
       ],
-      cta: { title: "Get Grade 9s.", subtitle: "Start your GCSE offensive now.", label: "Join the GCSE Lab" }
+      cta: { title: "Get Grade 9s.", subtitle: "Start your GCSE study now.", label: "Join the GCSE Lab" }
     }
   },
   "a-levels-2026-guide": {
@@ -213,18 +213,18 @@ export const pillars: Record<string, PillarData> = {
     description: "How to use AI to build a competitive college profile and prepare for university rigor.",
     keywords: ["college prep ai", "university admissions ai", "academic readiness"],
     content: {
-      hero: { title: "College Readiness: The AI Advantage", subtitle: "Building a world-class academic profile using strategic AI tools." },
+      hero: { title: "College Readiness: The AI Advantage", subtitle: "Building a world-class academic profile using smart AI tools." },
       sections: [
         { title: "The Admission Loop", body: "Using AI to refine your academic narrative and prepare for the university transition." }
       ],
-      cta: { title: "Get Into College.", subtitle: "Start your admissions offensive.", label: "Start College Prep" }
+      cta: { title: "Get Into College.", subtitle: "Start your admissions journey.", label: "Start College Prep" }
     }
   },
-  "university-revision-hacks": {
-    slug: "university-revision-hacks",
+  "university-revision-tips": {
+    slug: "university-revision-tips",
     title: "University Revision | Get through your finals",
     description: "How to pass your uni exams without the burnout. Simple, smart revision tips for busy students.",
-    keywords: ["university revision tips", "how to pass finals", "uni revision hacks"],
+    keywords: ["university revision tips", "how to pass finals", "uni revision tips"],
     content: {
       hero: { title: "Uni finals are a lot.", subtitle: "We're here to help you get through your exams without losing your mind." },
       sections: [
@@ -281,7 +281,7 @@ export const pillars: Record<string, PillarData> = {
       ],
       faqs: [
         { q: "Is AI replacing teachers?", a: "No, but it is replacing the 'lecturer' role. Teachers are evolving into 'academic coaches' and facilitators." },
-        { q: "Is using AI cheating?", a: "Using it to generate answers is cheating; using it to explain concepts and test your knowledge is the ultimate study hack." }
+        { q: "Is using AI cheating?", a: "Using it to generate answers is cheating; using it to explain concepts and test your knowledge is the best way to study." }
       ],
       cta: { title: "Join the conversation.", subtitle: "Learn how to use AI in a way that actually helps you learn.", label: "Join the community" }
     }

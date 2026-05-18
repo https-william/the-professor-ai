@@ -7,9 +7,10 @@ import { Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { CheckCircle2, Share2 } from "lucide-react";
+import { CheckCircle2, Share2, ArrowRight } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const KnowledgeCheck = ({ data }: { data: any }) => {
     const [selected, setSelected] = useState<number | null>(null);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -84,8 +85,9 @@ export const InteractiveSummary = ({
     rawText = "The reward circuitry in the brain, connecting the ventral tegmental area to the nucleus accumbens, is crucial for reinforcement learning. This pathway reacts to unexpected rewards, triggering dopamine spikes that drive synaptic changes and behavior reinforcement.",
     refinedText = "The brain's reward pathway connects the VTA to the NAc shell. When you get a surprise win, it triggers dopamine bursts. These bursts literally rewire your brain to help you repeat that success later.",
     tags = ["Reward Pathway", "Synaptic Growth", "Reinforcement"],
-    autoReveal = false
-}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean }) => {
+    autoReveal = false,
+    onFinish
+}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; onFinish?: () => void }) => {
     const [isRefining, setIsRefining] = useState(autoReveal);
     const [progress, setProgress] = useState(autoReveal ? 100 : 0);
     const { addToast } = useToasts();
@@ -111,19 +113,15 @@ export const InteractiveSummary = ({
 
     // Parser for [KNOWLEDGE_CHECK]
     const renderContent = (text: string) => {
-        const parts = text.split(/(\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\})/g);
+        // Completely strip out [KNOWLEDGE_CHECK] and its trailing JSON block from the text before rendering
+        const cleanData = text.replace(/\[KNOWLEDGE_CHECK\][\s\S]*?(\n\n|\n#|$)/g, "\n\n");
+        const parts = [cleanData];
         
         return parts.map((part, index) => {
-            if (part.startsWith('[KNOWLEDGE_CHECK]')) {
-                try {
-                    const jsonStr = part.replace('[KNOWLEDGE_CHECK]', '').trim();
-                    const data = JSON.parse(jsonStr);
-                    return <KnowledgeCheck key={index} data={data} />;
-                } catch (e) {
-                    console.error("Failed to parse knowledge check:", e);
-                    return null;
-                }
-            }
+            const cleanPart = part
+                .replace(/[ \t]+:[ \t]*/g, ': ')
+                .replace(/:[ \t]+/g, ': ');
+
             return (
                 <div key={index} className="prose prose-invert prose-sm md:max-w-4xl md:mx-auto text-[16px] md:text-[18px] font-medium leading-relaxed text-[var(--foreground)]">
                     <ReactMarkdown 
@@ -138,7 +136,7 @@ export const InteractiveSummary = ({
                             li: ({node, ...props}) => <li className="flex items-start gap-3" {...props} />,
                         }}
                     >
-                        {part}
+                        {cleanPart}
                     </ReactMarkdown>
                 </div>
             );
@@ -234,15 +232,25 @@ export const InteractiveSummary = ({
                     )}
                 </div>
 
-                <div className="flex items-center gap-8 pt-6 border-t border-[var(--border)] mt-auto">
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Reduction</span>
-                        <span className="text-sm font-black text-[var(--foreground)]">64% <span className="opacity-70">↓</span></span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-[var(--border)] mt-8 pb-4">
+                    <div className="flex items-center gap-8">
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Reduction</span>
+                            <span className="text-sm font-black text-[var(--foreground)]">64% <span className="opacity-70">↓</span></span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Cognitive Load</span>
+                            <span className="text-sm font-black text-[var(--foreground)]">Minimal</span>
+                        </div>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Cognitive Load</span>
-                        <span className="text-sm font-black text-[var(--foreground)]">Minimal</span>
-                    </div>
+                    {onFinish && (
+                        <button
+                            onClick={onFinish}
+                            className="px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+                        >
+                            Master Deep Summary <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

@@ -387,7 +387,7 @@ html.light {
 
   --background:     var(--bg);
   --background-secondary: var(--bg-3);
-  --background-secondary-rgb: 9, 9, 12; /* RGB of --bg-2 */
+  --background-secondary-rgb: 241, 243, 245; /* RGB of --bg-3 in light mode */
   --foreground:     var(--text);
   --foreground-secondary: var(--text-2);
   --foreground-muted: var(--text-3);
@@ -1987,7 +1987,8 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   transform: translateY(20px);
   transition: opacity 600ms ease, transform 600ms ease;
 }
-.animate-up.visible {
+.animate-up.visible,
+.visible-immediate {
   opacity: 1;
   transform: translateY(0);
 }
@@ -2466,5 +2467,30 @@ html.dark .btn-skeuo-blue:hover {
 
 html.dark .btn-skeuo-blue:active {
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2), inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* ═══ SLEEK CUSTOM SCROLLBAR ═══ */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 

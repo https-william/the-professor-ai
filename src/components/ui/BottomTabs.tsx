@@ -36,7 +36,7 @@ export default function BottomTabs() {
     if (isHiddenPath) return null;
 
     return (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-6 pt-2 pointer-events-none">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-6 pt-2 pointer-events-none">
             <div 
                 className={cn(
                     "mx-auto max-w-md w-full pointer-events-auto",

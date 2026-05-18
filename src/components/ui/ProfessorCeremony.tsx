@@ -8,7 +8,7 @@ const NARRATIVES = [
     "Opening the vault...",
     "Reading your messy notes sha...",
     "Finding the gaps in your logic...",
-    "Strategic focus areas detected.",
+    "Smart focus areas detected.",
     "Mapping the path to your first class...",
     "Almost there. Oya, stand by.",
 ];
@@ -77,7 +77,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
             </div>
 
             <p className="mt-16 text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">
-                The Professor • Strategic Thinking
+                The Professor • Clear Thinking
             </p>
         </div>
     );

@@ -12,7 +12,7 @@ const PILLARS = [
   {
     icon: <Zap className="text-[var(--blue)]" size={20} />,
     title: "Save your late nights",
-    body: "Get what you need to pass in seconds. More sleep, less stress, and more time to ignore your group chat. Simple as that."
+    body: "Get what you need to pass in seconds. More sleep, less stress, and more time to focus on what actually matters. Simple as that."
   },
   {
     icon: <Target className="text-[var(--blue)]" size={20} />,

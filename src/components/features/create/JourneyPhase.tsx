@@ -25,8 +25,8 @@ export default function JourneyPhase({ number, title, tools, onSelectTool, class
     return (
         <div className={cn("space-y-6", className)}>
             <div className="flex items-center gap-4 px-2 mb-4">
-                <span className="text-[14px] font-black text-[#1a1a1a] opacity-30">{number}</span>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1a1a1a] opacity-40">
+                <span className="text-[14px] font-black text-[var(--foreground-muted)]">{number}</span>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)]">
                     PHASE {number}: {title}
                 </h3>
             </div>
@@ -36,7 +36,7 @@ export default function JourneyPhase({ number, title, tools, onSelectTool, class
                     <button
                         key={tool.id}
                         onClick={() => onSelectTool(tool.id)}
-                        className="group relative w-full flex items-center gap-5 p-6 text-left transition-all duration-500 rounded-[32px] bg-white border border-[var(--border)] hover:border-[var(--blue)]/30 hover:translate-y-[-4px] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] active:translate-y-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]"
+                        className="group relative w-full flex items-center gap-5 p-6 text-left transition-all duration-500 rounded-[32px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--blue)]/30 hover:translate-y-[-4px] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] active:translate-y-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]"
                     >
                         <div 
                             className="w-14 h-14 rounded-[22px] flex items-center justify-center shrink-0 transition-all group-hover:scale-105"
@@ -50,7 +50,7 @@ export default function JourneyPhase({ number, title, tools, onSelectTool, class
 
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-1">
-                                <h4 className="text-[15px] font-black tracking-tight text-[#1a1a1a]">{tool.label}</h4>
+                                <h4 className="text-[15px] font-black tracking-tight text-[var(--foreground)]">{tool.label}</h4>
                                 {tool.popular && (
                                     <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20">
                                         POPULAR
