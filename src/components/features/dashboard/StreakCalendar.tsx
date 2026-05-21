@@ -26,15 +26,6 @@ export default function StreakCalendar({ streak, activeDates }: StreakCalendarPr
  
     const today = now.toISOString().split('T')[0];
     const activeSet = new Set(activeDates);
-
-    // Ensure momentum widget accurately reflects user.streak even if server activity logs are delayed
-    if (streak > 0) {
-        let todayIdx = weekDates.indexOf(today);
-        if (todayIdx === -1) todayIdx = 6; // Fallback to end of week
-        for (let i = todayIdx; i >= Math.max(0, todayIdx - streak + 1); i--) {
-            activeSet.add(weekDates[i]);
-        }
-    }
  
     return (
         <div className="p-6 sm:p-8 rounded-[36px] bg-gradient-to-br from-[var(--bg-2)] via-[var(--bg-2)] to-[var(--blue-dim)]/20 backdrop-blur-2xl border border-[var(--border)] shadow-xl relative overflow-hidden group hover:border-[var(--blue)]/40 transition-all">

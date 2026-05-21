@@ -79,7 +79,7 @@ export default function DashboardWeb({
             const ds = d.toISOString().split("T")[0];
             return {
                 label: ["M", "T", "W", "T", "F", "S", "S"][i],
-                active: activeSet.has(ds) || (ds === todayStr && (user?.streak > 0 || activeSet.has(todayStr))),
+                active: activeSet.has(ds),
                 isToday: ds === todayStr,
                 isFuture: ds > todayStr,
             };
@@ -125,7 +125,25 @@ export default function DashboardWeb({
     ];
 
     // Live achievement progress calculations
-    const streakProgress = Math.min(Math.round((user.streak / 7) * 100), 100);
+    const streakMilestones = useMemo(() => [
+        { target: 3, title: "Spark of Curiosity", desc: "Maintain a 3-day scholarly streak" },
+        { target: 7, title: "Prometheus Flame", desc: "Maintain a 7-day scholarly streak" },
+        { target: 14, title: "Consistency Catalyst", desc: "Maintain a 14-day scholarly streak" },
+        { target: 30, title: "Eternal Fire", desc: "Maintain a 30-day scholarly streak" },
+        { target: 60, title: "Sage Ascent", desc: "Maintain a 60-day scholarly streak" },
+        { target: 100, title: "Phoenix Ascendant", desc: "Maintain a 100-day scholarly streak" },
+    ], []);
+
+    const activeStreakMilestone = useMemo(() => {
+        return streakMilestones.find(m => (user.streak || 0) < m.target) || streakMilestones[streakMilestones.length - 1];
+    }, [user.streak, streakMilestones]);
+
+    const streakProgress = useMemo(() => {
+        const streakVal = user.streak || 0;
+        if (streakVal >= activeStreakMilestone.target) return 100;
+        return Math.min(Math.round((streakVal / activeStreakMilestone.target) * 100), 100);
+    }, [user.streak, activeStreakMilestone]);
+
     const totalGens = (activityData?.stats?.flashcards || 0) + (activityData?.stats?.quizzes || 0) + (activityData?.stats?.summaries || 0) + (activityData?.stats?.examSprints || 0);
     const genProgress = Math.min(Math.round((totalGens / 10) * 100), 100);
     const unlockedCount = [streakProgress, genProgress].filter(p => p === 100).length;
@@ -266,36 +284,36 @@ export default function DashboardWeb({
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="scholar-card p-6 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm" style={{ borderRadius: "24px" }}>
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                                <div className="scholar-card p-4 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm md:col-span-2" style={{ borderRadius: "24px" }}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/10 transition-colors" />
-                                    <div className="relative z-10 flex items-center justify-between mb-6">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shadow-sm">
-                                                <Flame size={16} />
+                                    <div className="relative z-10 flex items-center justify-between mb-3.5">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-lg bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shadow-sm">
+                                                <Flame size={14} />
                                             </div>
                                             <div>
-                                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold block leading-none mb-1">Momentum</span>
-                                                <span className="text-xs font-bold text-[var(--text-2)]">Daily Scholarly Loop</span>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold block leading-none mb-0.5">Momentum</span>
+                                                <span className="text-[11px] font-bold text-[var(--text-2)]">Daily Loop</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="font-mono text-2xl font-black text-[var(--amber)] tabular-nums"><AnimatedCounter value={user.streak} /></span>
-                                            <span className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">Days</span>
+                                        <div className="flex items-baseline gap-0.5">
+                                            <span className="font-mono text-xl font-black text-[var(--amber)] tabular-nums"><AnimatedCounter value={user.streak} /></span>
+                                            <span className="text-[9px] font-bold text-[var(--text-3)] uppercase tracking-wider">Days</span>
                                         </div>
                                     </div>
-                                    <div className="relative z-10 flex gap-2 w-full">
+                                    <div className="relative z-10 flex w-full justify-between items-center gap-1">
                                         {weekDays.map((day, i) => (
-                                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                                                <div className={`w-full aspect-square rounded-xl flex items-center justify-center relative transition-all ${day.active ? "bg-[var(--amber)] shadow-[0_4px_12px_var(--amber-glow)] border-t border-white/20 scale-105" : day.isToday ? "border-2 border-dashed border-[var(--amber-border)] bg-[var(--amber)]/5" : "bg-[var(--text-4)] opacity-40 hover:opacity-60"}`}>
-                                                    <span className={`text-[11px] font-black ${day.active ? "text-[#000]" : day.isToday ? "text-[var(--amber)]" : "text-[var(--text-3)]"}`}>{day.label}</span>
+                                            <div key={i} className="flex-1 flex flex-col items-center">
+                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center relative transition-all ${day.active ? "bg-[var(--amber)] shadow-[0_4px_12px_var(--amber-glow)] border-t border-white/20 scale-105" : day.isToday ? "border-2 border-dashed border-[var(--amber-border)] bg-[var(--amber)]/5" : "bg-[var(--text-4)] opacity-40 hover:opacity-60"}`}>
+                                                    <span className={`text-[9px] font-black ${day.active ? "text-[#000]" : day.isToday ? "text-[var(--amber)]" : "text-[var(--text-3)]"}`}>{day.label}</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="scholar-card p-6 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-5 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm md:col-span-3" style={{ borderRadius: "24px" }}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/10 transition-colors" />
                                     <div className="relative z-10">
                                         <div className="flex items-center justify-between mb-5">
@@ -317,10 +335,10 @@ export default function DashboardWeb({
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center justify-between mb-1">
-                                                        <p className="text-xs font-bold text-[var(--text)] truncate">Prometheus Flame</p>
+                                                        <p className="text-xs font-bold text-[var(--text)] truncate">{activeStreakMilestone.title}</p>
                                                         <span className="text-[10px] font-mono text-[var(--amber)] font-bold">{streakProgress}%</span>
                                                     </div>
-                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-2 font-medium">Maintain a 7-day scholarly streak</p>
+                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-2 font-medium">{activeStreakMilestone.desc}</p>
                                                     <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
                                                         <div className="h-full bg-[var(--amber)] shadow-[0_0_8px_var(--amber)] transition-all duration-500" style={{ width: `${streakProgress}%` }} />
                                                     </div>

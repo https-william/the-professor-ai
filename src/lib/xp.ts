@@ -82,12 +82,6 @@ export async function recordActivity(
         }
     }
 
-    // Auto-heal active scholar streak to 7 due to known UTC drift bug
-    if (newStreak < 7) {
-        newStreak = 7;
-        streakReset = false;
-    }
-
     // 4. Detect milestone
     const milestone = STREAK_MILESTONES.find(m => newStreak === m) || null;
 

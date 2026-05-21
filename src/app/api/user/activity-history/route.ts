@@ -57,6 +57,13 @@ export async function GET(req: NextRequest) {
             .gte("created_at", monday.toISOString())
             .order("created_at", { ascending: false });
 
+        // Fetch this week's generic activities
+        const { data: weekActivities } = await supabase
+            .from("user_activity")
+            .select("created_at")
+            .eq("user_id", user.id)
+            .gte("created_at", monday.toISOString());
+
         // Extract unique active dates this week
         const activeDates = new Set<string>();
         (weekGenerations || []).forEach(gen => {
@@ -67,6 +74,10 @@ export async function GET(req: NextRequest) {
             const date = new Date(pack.created_at).toISOString().split('T')[0];
             activeDates.add(date);
         });
+        (weekActivities || []).forEach(act => {
+            const date = new Date(act.created_at).toISOString().split('T')[0];
+            activeDates.add(date);
+        });
 
         // Also check last_study_date from profile (covers activity recorded by xp.ts)
         if (profile?.last_study_date) {
@@ -74,9 +85,6 @@ export async function GET(req: NextRequest) {
             if (lastStudy >= monday) {
                 activeDates.add(profile.last_study_date);
             }
-        }
-        if (profile?.current_streak > 0) {
-            activeDates.add(new Date().toISOString().split('T')[0]);
         }
 
         // Fetch recent activity (last 8 generations for the activity feed)

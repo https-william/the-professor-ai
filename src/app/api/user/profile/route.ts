@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
                     .insert({
                         id: user.id,
                         alias: user.email?.split("@")[0] || "Scholar",
-                        current_streak: 7,
+                        current_streak: 0,
                         xp_total: 0,
                         credits: 100,
                         has_onboarded: false,
@@ -61,17 +61,6 @@ export async function GET(req: NextRequest) {
                 return NextResponse.json({ profile: newProfile, email: user.email });
             }
             return NextResponse.json({ error: profileError.message }, { status: 500 });
-        }
-
-        // Auto-heal active scholar streak to 7 due to known UTC drift bug
-        if (profile && profile.current_streak < 7) {
-            const { data: healed } = await supabase
-                .from("profiles")
-                .update({ current_streak: 7 })
-                .eq("id", user.id)
-                .select()
-                .single();
-            if (healed) profile = healed;
         }
 
         return NextResponse.json({ profile, email: user.email });
