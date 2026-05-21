@@ -106,7 +106,7 @@ export default async function GlossaryTermPage({ params }: { params: Promise<{ s
                   <Link 
                     key={slug}
                     href={`/glossary/${slug}`}
-                    className="px-6 py-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                    className="px-6 py-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-sm font-bold transition-all hover-scale-lg active:scale-95"
                   >
                     {related.term}
                   </Link>

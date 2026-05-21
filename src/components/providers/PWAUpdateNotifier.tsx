@@ -33,7 +33,7 @@ export default function PWAUpdateNotifier() {
                     <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={() => window.location.reload()}
-                            className="px-4 py-2 bg-[var(--background)] text-[var(--foreground)] hover:scale-105 active:scale-95 transition-all rounded-xl text-xs font-black uppercase tracking-wider shadow-lg flex items-center gap-2"
+                            className="px-4 py-2 bg-[var(--background)] text-[var(--foreground)] hover-scale-lg active:scale-[0.95] transition-all rounded-xl text-xs font-black uppercase tracking-wider shadow-lg flex items-center gap-2"
                         >
                             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                             Update Now

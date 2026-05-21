@@ -246,7 +246,7 @@ export const InteractiveSummary = ({
                     {onFinish && (
                         <button
                             onClick={onFinish}
-                            className="px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+                            className="px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest shadow-xl hover-scale-lg active:scale-95 transition-all flex items-center justify-center gap-2 group"
                         >
                             Master Deep Summary <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                         </button>

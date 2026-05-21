@@ -18,7 +18,7 @@ export function GlassCard({
         <div
             className={cn(
                 "bg-[#111111]/60 backdrop-blur-xl border border-white/5 rounded-2xl shadow-xl transition-all duration-300",
-                hoverEffect && "hover:bg-[#161616]/80 hover:scale-[1.01] hover:border-white/10 hover:shadow-2xl cursor-pointer",
+                hoverEffect && "hover:bg-[#161616]/80 hover-scale-sm hover:border-white/10 hover:shadow-2xl cursor-pointer",
                 className
             )}
             {...props}

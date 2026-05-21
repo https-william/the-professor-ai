@@ -119,7 +119,7 @@ export default function DashboardDesktop({
                                             </div>
  
                                             <MagneticButton className="self-end">
-                                                <div className="w-16 h-16 rounded-full bg-black text-[var(--blue)] flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                                                <div className="w-16 h-16 rounded-full bg-black text-[var(--blue)] flex items-center justify-center shadow-2xl group-hover-scale-md transition-transform">
                                                     <ArrowRight size={24} strokeWidth={3} />
                                                 </div>
                                             </MagneticButton>
@@ -185,7 +185,7 @@ export default function DashboardDesktop({
                                     <div className="relative z-10">
                                         <h3 className="text-xs font-black text-[var(--amber)] uppercase tracking-[0.4em] mb-4">Streak Recovery</h3>
                                         <p className="text-sm text-[var(--text-3)] mb-6 font-medium">Restore <b>{user.lastStreak} days</b> of momentum.</p>
-                                        <button onClick={handleRecover} disabled={isProcessingAction} className="w-full py-4 rounded-2xl bg-[var(--amber)] text-black font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl disabled:opacity-50">
+                                        <button onClick={handleRecover} disabled={isProcessingAction} className="w-full py-4 rounded-2xl bg-[var(--amber)] text-black font-black text-xs uppercase tracking-widest transition-all hover-scale-md active:scale-[0.98] shadow-xl disabled:opacity-50">
                                             Restore (3 CR)
                                         </button>
                                     </div>

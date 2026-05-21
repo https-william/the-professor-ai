@@ -140,7 +140,7 @@ function ShareContent() {
                                 </p>
                                 <Link
                                     href="/signup"
-                                    className="block w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold text-lg shadow-xl shadow-blue-500/20 hover:scale-[1.02] transition-transform"
+                                    className="block w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold text-lg shadow-xl shadow-blue-500/20 hover-scale-md transition-transform"
                                 >
                                     Studying this deck
                                 </Link>

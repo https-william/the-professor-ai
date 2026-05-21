@@ -270,7 +270,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                 >
                                     <div className={cn(
                                         "w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all shadow-xl",
-                                        dragActive ? "bg-[var(--blue)] text-white scale-110" : "bg-[var(--background)] text-[var(--blue)] group-hover:scale-105"
+                                        dragActive ? "bg-[var(--blue)] text-white scale-110" : "bg-[var(--background)] text-[var(--blue)] group-hover-scale-sm"
                                     )}>
                                         <Upload className="w-8 h-8" strokeWidth={3} />
                                     </div>
@@ -294,7 +294,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                     disabled={!pastedText.trim() || isPasting}
                                     className={cn(
                                         "w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl",
-                                        !pastedText.trim() || isPasting ? 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)] opacity-50' : 'bg-[var(--blue)] text-white hover:scale-[1.01] active:scale-[0.98] shadow-[0_8px_24px_rgba(59,130,246,0.3)]'
+                                        !pastedText.trim() || isPasting ? 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)] opacity-50' : 'bg-[var(--blue)] text-white hover-scale-sm active:scale-[0.98] shadow-[0_8px_24px_rgba(59,130,246,0.3)]'
                                     )}
                                 >
                                     {isPasting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -374,7 +374,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                     "flex-1 sm:flex-none px-10 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.95]",
                                     isProcessing || !hasSuccess
                                     ? "bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)] opacity-50 cursor-not-allowed"
-                                    : "bg-[var(--blue)] text-white hover:scale-[1.05] shadow-[0_8px_32px_rgba(59,130,246,0.4)]"
+                                    : "bg-[var(--blue)] text-white hover-scale-lg shadow-[0_8px_32px_rgba(59,130,246,0.4)]"
                                 )}
                             >
                                 {isSprint ? "START SPRINT" : "GENERATE"}

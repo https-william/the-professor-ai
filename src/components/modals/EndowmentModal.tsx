@@ -129,7 +129,7 @@ export default function EndowmentModal({ isOpen, onClose, requiredCredits = 1, c
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={() => router.push('/settings/billing')}
-                                className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-extrabold text-[13px] uppercase tracking-widest shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-extrabold text-[13px] uppercase tracking-widest shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover-scale-md active:scale-[0.98] transition-all"
                             >
                                 Secure Funding
                             </button>

@@ -28,7 +28,7 @@ export default function AuthInterceptor({ message = "You need to be logged in to
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button 
                     onClick={() => router.push('/signup')} 
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--blue)] to-[var(--blue-active)] text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[var(--blue-glow)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--blue)] to-[var(--blue-active)] text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[var(--blue-glow)] hover-scale-md active:scale-[0.98] transition-all"
                 >
                     Create Free Account
                 </button>

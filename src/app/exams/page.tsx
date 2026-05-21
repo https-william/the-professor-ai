@@ -62,7 +62,7 @@ export default function ExamsPage() {
             <Link 
               key={exam.slug}
               href={`/exams/${exam.slug}`}
-              className={`group relative p-10 rounded-[40px] border-2 ${exam.border} bg-gradient-to-br ${exam.color} transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden`}
+              className={`group relative p-10 rounded-[40px] border-2 ${exam.border} bg-gradient-to-br ${exam.color} transition-all hover-scale-md active:scale-[0.98] overflow-hidden`}
             >
               <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                  <exam.icon size={80} strokeWidth={1} />
@@ -80,12 +80,12 @@ export default function ExamsPage() {
             </Link>
           ))}
         </div>
-
+ 
         <section className="mt-32 p-12 rounded-[48px] bg-[var(--background-secondary)] border border-[var(--border)] text-center">
            <BrandLogo size="lg" className="mx-auto mb-8 opacity-20" />
            <h3 className="text-2xl font-black mb-4">Don't see your exam?</h3>
            <p className="text-[var(--foreground-muted)] mb-8 font-medium">Our AI can ingest any syllabus. Launch the Hub to create a custom study pack.</p>
-           <Link href="/signup" className="px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest text-sm shadow-xl hover:scale-105 transition-all">
+           <Link href="/signup" className="px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest text-sm shadow-xl hover-scale-lg transition-all">
               Launch Global Revision Hub
            </Link>
         </section>

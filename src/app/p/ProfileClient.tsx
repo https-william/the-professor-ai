@@ -166,7 +166,7 @@ export default function ProfileClient({ profile: initialProfile, username: initi
                     <p className="text-sm text-[var(--foreground-muted)] mb-6 font-medium italic">"The elite study tools used by hundreds of scholars across the globe."</p>
                     <Link 
                         href="/signup" 
-                        className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[var(--foreground)]/[0.04] border border-[var(--border)] hover:bg-[var(--foreground)]/[0.08] transition-all hover:scale-105 active:scale-95 group"
+                        className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[var(--foreground)]/[0.04] border border-[var(--border)] hover:bg-[var(--foreground)]/[0.08] transition-all hover-scale-lg active:scale-95 group"
                     >
                         <span className="text-sm font-black uppercase tracking-widest text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors">Apply for Admission</span>
                         <span className="material-symbols-outlined text-[var(--secondary)] transition-transform group-hover:translate-x-1">arrow_forward</span>

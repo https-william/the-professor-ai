@@ -5,7 +5,7 @@ import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/context/UserContext";
-import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useMotionTemplate } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import BrandLogo from "@/components/ui/BrandLogo";
 import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -103,21 +103,22 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const scrollY = useMotionValue(0);
+    const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
         const container = document.getElementById("main-scroll-container");
-        if (!container) return;
+        const target = (container && container.scrollHeight > window.innerHeight && window.getComputedStyle(container).overflowY === 'auto') ? container : window;
         
         const updateScroll = () => {
-            scrollY.set(container.scrollTop);
+            const top = target === window ? window.scrollY : (container ? container.scrollTop : 0);
+            setScrolled(top > 40);
         };
 
-        container.addEventListener("scroll", updateScroll, { passive: true });
+        target.addEventListener("scroll", updateScroll, { passive: true });
         updateScroll();
         
-        return () => container.removeEventListener("scroll", updateScroll);
-    }, [scrollY]);
+        return () => target.removeEventListener("scroll", updateScroll);
+    }, []);
 
     /* ── Classify the current route ── */
     const isHidden  = HIDDEN_PATHS.some(p => p === "/" ? pathname === "/" : pathname.startsWith(p));
@@ -130,64 +131,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                       pathname.startsWith("/tools/");
     const isApp     = !isHidden && !isMinimal && !isLanding;
 
-    // Map scrollY [0, 150] to transformation values
-    const scrollYProgress = useTransform(scrollY, [0, 150], [0, 1]);
-
-    // Landing-specific transformations
-    const landingTop = useTransform(scrollY, [0, 150], ["0px", "16px"]);
-    const landingPaddingX = useTransform(scrollY, [0, 150], isMobile ? ["1rem", "0.75rem"] : ["2rem", "1.5rem"]);
-    const landingPaddingBlock = useTransform(scrollY, [0, 150], ["16px", "10px"]);
-    const landingBorderRadius = useTransform(scrollY, [0, 150], ["0px", "32px"]);
-    const landingWidth = useTransform(scrollYProgress, [0, 0.2], ["100%", isMobile ? "calc(100vw - 2.5rem)" : "94%"]);
-
-    // App-specific transformations (Floating Morphing)
-    const appTop = useTransform(scrollY, [0, 150], ["10px", isMobile ? "12px" : "16px"]);
-    const appWidth = useTransform(scrollY, [0, 150], ["calc(100% - 2rem)", "min(600px, 90%)"]);
-    const appPaddingInline = useTransform(scrollY, [0, 150], isMobile ? ["0.75rem", "0.75rem"] : ["1.5rem", "1.2rem"]);
-    const appPaddingBlock = useTransform(scrollY, [0, 150], isMobile ? ["6px", "6px"] : ["12px", "10px"]);
-
-    // Derived motion values
-    const headerBgOpacity = useTransform(scrollY, [0, 150], [0, 0.98]);
-    const headerBlur = useTransform(scrollY, [0, 150], [0, 24]);
-    const headerScale = useTransform(scrollY, [0, 150], [1, 0.98]);
-
-    const headerBg = useTransform(headerBgOpacity, (o) =>
-        `rgba(var(--background-secondary-rgb), ${o})`
-    );
-    const headerBackdrop = useTransform(headerBlur, (b) =>
-        `blur(${b}px) saturate(180%)`
-    );
-    const headerBorder = useTransform(headerBgOpacity, (o) =>
-        o > 0.1 ? "1px solid var(--border)" : "1px solid transparent"
-    );
-    const headerShadow = useTransform(headerBgOpacity, (o) => {
-        if (o < 0.1) return "none";
-        return resolvedTheme === "dark"
-            ? "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)"
-            : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)";
-    });
-
-    // App-page dynamic styles
-    const appBgOpacity = useTransform(scrollY, [0, 60], [0.9, 0.96]);
-    const appBlur = useTransform(scrollY, [0, 60], [16, 32]);
-    const appBorderOpacity = useTransform(scrollY, [0, 60], [0.1, 0.2]);
-    const appSaturate = useTransform(scrollY, [0, 60], [150, 200]);
-
-    const appBg = useMotionTemplate`rgba(${resolvedTheme === "dark" ? "10, 10, 20" : "250, 250, 255"}, ${appBgOpacity})`;
-    const appBackdrop = useMotionTemplate`blur(${appBlur}px) saturate(${appSaturate}%)`;
-    const appBorder = useMotionTemplate`1px solid rgba(${resolvedTheme === "dark" ? "255, 255, 255" : "0, 0, 0"}, ${appBorderOpacity})`;
-    
-    const appShadow = useTransform(scrollY, [0, 60], [
-        resolvedTheme === "dark" ? "0 4px 20px rgba(0,0,0,0.2)" : "0 4px 15px rgba(0,0,0,0.05)",
-        resolvedTheme === "dark" ? "0 20px 50px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1)" : "0 10px 40px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.8)"
-    ]);
-
-    const [isPill, setIsPill] = useState(false);
-    useEffect(() => {
-        return scrollY.on("change", (latest) => {
-            setIsPill(latest > 40);
-        });
-    }, [scrollY]);
+    const isPill = scrolled;
 
     const unreadCount = toasts.filter(t => !t.read).length;
 
@@ -225,21 +169,29 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             suppressHydrationWarning
             initial={false}
             style={{
-                top: isApp ? appTop : landingTop,
-                left: `calc(50% + ${sidebarOffset})`,
-                x: "-50%",
-                width: isApp ? "100%" : landingWidth,
+                top: isApp ? "12px" : "16px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: isApp ? "calc(100% - 2rem)" : (isMobile ? "calc(100vw - 2rem)" : "94%"),
                 maxWidth: isApp ? "1200px" : "840px",
-                paddingInline: isApp ? appPaddingInline : landingPaddingX,
-                paddingBlock: isApp ? appPaddingBlock : landingPaddingBlock,
-                borderRadius: isApp ? "0px" : landingBorderRadius,
-                scale: headerScale,
-                backgroundColor: isApp ? "transparent" : headerBg,
-                backdropFilter: isApp ? "none" : headerBackdrop,
-                border: isApp ? "none" : headerBorder,
-                boxShadow: isApp ? "none" : headerShadow,
+                padding: isApp ? "8px 16px" : (isMobile ? "10px 16px" : "12px 24px"),
+                borderRadius: isApp ? "24px" : "9999px",
+                backgroundColor: scrolled 
+                    ? "rgba(var(--background-secondary-rgb), 0.95)" 
+                    : (isApp ? "transparent" : "rgba(var(--background-secondary-rgb), 0.5)"),
+                backdropFilter: scrolled 
+                    ? "blur(24px) saturate(180%)" 
+                    : (isApp ? "none" : "blur(12px) saturate(150%)"),
+                border: scrolled 
+                    ? "1px solid var(--border)" 
+                    : (isApp ? "1px solid transparent" : "1px solid var(--border)"),
+                boxShadow: scrolled 
+                    ? (resolvedTheme === "dark" 
+                        ? "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)" 
+                        : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)") 
+                    : "none",
+                transition: "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
             }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={cn(
                 "fixed z-[10000] items-center pointer-events-none [&>div]:pointer-events-auto transition-all duration-300",
                 isApp ? "flex items-center justify-between gap-4 w-full" : "grid grid-cols-[auto_1fr_auto] gap-1.5 md:gap-4"
@@ -289,7 +241,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                         <div className="hidden lg:flex items-center gap-10">
                             <Link
                                 href="/blog"
-                                className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all hover:scale-110 active:scale-90"
+                                className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all hover-scale-xl active:scale-[0.90]"
                             >
                                 Blog
                             </Link>
@@ -297,7 +249,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             <div className="relative" ref={resourcesRef}>
                                 <button
                                     onClick={() => setShowResourcesMenu(!showResourcesMenu)}
-                                    className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all flex items-center gap-2 hover:scale-110 active:scale-[0.85]"
+                                    className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all flex items-center gap-2 hover-scale-xl active:scale-[0.85]"
                                 >
                                     Resources <ChevronDown size={12} className={cn("transition-transform", showResourcesMenu && "rotate-180")} />
                                 </button>
@@ -377,7 +329,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 {isLanding && !user.isAuthenticated && (
                     <Link
                         href="/login"
-                        className="px-6 py-2.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-[0.85] transition-all shadow-xl"
+                        className="px-6 py-2.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[11px] font-black uppercase tracking-widest hover-scale-lg active:scale-[0.85] transition-all shadow-xl"
                     >
                         Login
                     </Link>

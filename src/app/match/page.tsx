@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import EndowmentModal from "@/components/modals/EndowmentModal";
@@ -44,7 +44,7 @@ const CARD_TINTS = [
     { bg: "rgba(99,102,241,0.06)", border: "rgba(99,102,241,0.18)", text: "#6366f1" },
 ];
 
-export default function MatchGamePage() {
+function MatchGameContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, refreshUser } = useUser();
@@ -456,5 +456,13 @@ export default function MatchGamePage() {
                 continueHref="/dashboard"
             />
         </div>
+    );
+}
+
+export default function MatchGamePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[var(--background)] flex items-center justify-center"><DataDustLoader /></div>}>
+            <MatchGameContent />
+        </Suspense>
     );
 }

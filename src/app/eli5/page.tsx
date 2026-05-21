@@ -86,7 +86,7 @@ export default function Eli5Viewer() {
                     <div className="flex flex-col items-center gap-6">
                         <button 
                             onClick={() => router.push('/create')}
-                            className="group flex items-center gap-4 bg-[var(--foreground)] text-[var(--background)] px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-2xl"
+                            className="group flex items-center gap-4 bg-[var(--foreground)] text-[var(--background)] px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-2xl"
                         >
                             <span>Initialize New Journey</span>
                             <CheckCircle2 size={18} className="text-[var(--blue)]" />

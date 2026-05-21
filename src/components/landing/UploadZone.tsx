@@ -60,7 +60,7 @@ export default function UploadZone({ compact, onFileSelected }: UploadZoneProps)
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
-        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        transition: "background-color 200ms cubic-bezier(0.23, 1, 0.32, 1), border-color 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1)",
         boxShadow: isDragOver 
           ? "0 0 40px var(--blue-glow), inset 0 0 12px var(--blue-dim)" 
           : "0 10px 30px -10px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)",
@@ -104,7 +104,7 @@ export default function UploadZone({ compact, onFileSelected }: UploadZoneProps)
         border: "1px solid var(--border-2)",
         boxShadow: "0 4px 12px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.05)",
         transform: isDragOver ? "scale(1.1) rotate(5deg)" : "scale(1)",
-        transition: "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+        transition: "transform 250ms cubic-bezier(0.23, 1, 0.32, 1)"
       }}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke="var(--blue)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -132,7 +132,7 @@ export default function UploadZone({ compact, onFileSelected }: UploadZoneProps)
         PDF · PPTX · Word · Images
       </p>
 
-      <div style={{
+      <div className="active:scale-[0.95] hover:brightness-110 transition-all" style={{
         marginTop: "24px",
         fontFamily: "var(--font-sans)",
         fontSize: "13px",
@@ -142,7 +142,6 @@ export default function UploadZone({ compact, onFileSelected }: UploadZoneProps)
         padding: "10px 24px",
         borderRadius: "99px",
         boxShadow: "0 4px 12px rgba(37,99,235,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
-        transition: "all 0.2s ease"
       }}>
         or click to browse
       </div>

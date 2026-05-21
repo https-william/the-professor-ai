@@ -451,7 +451,7 @@ export default function OnboardingPage() {
                             <button
                                 onClick={handleFinish}
                                 disabled={isSaving}
-                                className="flex-1 h-16 rounded-2xl font-black text-[13px] tracking-[0.15em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.98] px-8 hover:scale-[1.02]"
+                                className="flex-1 h-16 rounded-2xl font-black text-[13px] tracking-[0.15em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.98] px-8 hover-scale-md"
                                 style={{ background: "linear-gradient(135deg, var(--emerald), var(--emerald-border))", color: "#000", boxShadow: "0 12px 40px var(--emerald-glow)" }}
                             >
                                 {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Use Your Credits → Exam Sprint"}

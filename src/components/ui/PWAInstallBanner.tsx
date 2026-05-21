@@ -74,7 +74,7 @@ export default function PWAInstallBanner() {
 
                         <button
                             onClick={installApp}
-                            className="w-full py-2.5 px-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[12px] font-black uppercase tracking-wider shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            className="w-full py-2.5 px-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[12px] font-black uppercase tracking-wider shadow-xl hover-scale-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
                             <Download size={14} />
                             {isMobile ? "Save to Home" : "Save for Offline"}

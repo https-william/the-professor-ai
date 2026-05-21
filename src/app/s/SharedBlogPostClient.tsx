@@ -225,7 +225,7 @@ export default function SharedGenerationClient({ generation: initialGeneration }
                 </div>
                 <h2 className="text-2xl font-black mb-4">Archive Link Expired</h2>
                 <p className="text-sm text-[var(--foreground-muted)] mb-8 max-w-xs">{error || "The requested material could not be found or has been purged from our records."}</p>
-                <Link href="/" className="px-8 py-3 rounded-2xl bg-[var(--accent)] text-white font-black tracking-widest text-[11px] uppercase transition-all hover:scale-105 active:scale-95 shadow-lg">
+                <Link href="/" className="px-8 py-3 rounded-2xl bg-[var(--accent)] text-white font-black tracking-widest text-[11px] uppercase transition-all hover-scale-lg active:scale-95 shadow-lg">
                     Back to The Professor
                 </Link>
             </div>
@@ -241,7 +241,7 @@ export default function SharedGenerationClient({ generation: initialGeneration }
 
             <div className="fixed top-6 left-4 z-[10001] flex items-center gap-3">
                 <Link href="/" className="group w-10 h-10 rounded-2xl flex items-center justify-center bg-[var(--card)] backdrop-blur-md border border-[var(--border)] transition-all duration-300 active:scale-95 shadow-lg">
-                    <div className="group-hover:scale-110 transition-transform duration-500">
+                    <div className="group-hover-scale-md transition-transform duration-500">
                         <span className="material-symbols-outlined text-xl font-black text-[var(--accent)]">school</span>
                     </div>
                 </Link>
@@ -277,7 +277,7 @@ export default function SharedGenerationClient({ generation: initialGeneration }
                     <p className="text-sm text-[var(--foreground-muted)] mb-8 max-w-xs">
                         The Professor can turn any notes, PDFs, or lectures into premium study aids in seconds.
                     </p>
-                    <Link href="/" className="px-8 py-4 rounded-2xl bg-[var(--accent)] text-white font-black tracking-widest text-[11px] uppercase transition-all hover:scale-105 active:scale-95 shadow-[0_10px_40px_rgba(245,158,11,0.2)]">
+                    <Link href="/" className="px-8 py-4 rounded-2xl bg-[var(--accent)] text-white font-black tracking-widest text-[11px] uppercase transition-all hover-scale-lg active:scale-95 shadow-[0_10px_40px_rgba(245,158,11,0.2)]">
                         Initialize The Professor
                     </Link>
                 </div>

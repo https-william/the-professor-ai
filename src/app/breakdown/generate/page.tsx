@@ -109,7 +109,7 @@ export default function BreakdownGenerate() {
                 <div className="flex flex-col gap-3 w-full max-w-xs">
                     <button 
                         onClick={() => window.location.reload()}
-                        className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest hover-scale-md active:scale-[0.98] transition-all"
                     >
                         Try Refreshing
                     </button>

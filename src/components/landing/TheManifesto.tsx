@@ -38,7 +38,7 @@ export default function TheManifesto() {
 
         <div className="grid gap-6">
           {PILLARS.map((pillar, i) => (
-            <div key={i} className="scholar-card p-8 animate-up" style={{ transitionDelay: `${i * 150}ms` }}>
+            <div key={i} className="scholar-card p-8 animate-up" style={{ transitionDelay: `${i * 60}ms` }}>
               <div className="flex items-start gap-6">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center shrink-0">
                   {pillar.icon}

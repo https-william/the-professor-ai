@@ -35,15 +35,10 @@ export async function GET(req: NextRequest) {
             .eq("id", user.id)
             .single();
 
-        // Auto-heal active scholar streak to 7 due to known UTC drift bug
-        if (profile && profile.current_streak < 7) {
-            const { data: healed } = await supabase
-                .from("profiles")
-                .update({ current_streak: 7 })
-                .eq("id", user.id)
-                .select("xp_total, current_streak, last_study_date, education_level, study_goal")
-                .single();
-            if (healed) profile = healed;
+        // Ensure current date is considered active if streak is active
+        if (profile && profile.current_streak > 0) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            // Will be added to activeDates set below
         }
 
         // Fetch this week's generations (for activity dots on streak calendar)
@@ -79,6 +74,9 @@ export async function GET(req: NextRequest) {
             if (lastStudy >= monday) {
                 activeDates.add(profile.last_study_date);
             }
+        }
+        if (profile?.current_streak > 0) {
+            activeDates.add(new Date().toISOString().split('T')[0]);
         }
 
         // Fetch recent activity (last 8 generations for the activity feed)

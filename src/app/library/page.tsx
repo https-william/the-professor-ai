@@ -544,7 +544,7 @@ export default function LibraryPage() {
                                             )}
                                         </AnimatePresence>
 
-                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--background)] border border-[var(--border)] shadow-sm group-hover:scale-105 transition-transform"
+                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--background)] border border-[var(--border)] shadow-sm group-hover-scale-sm transition-transform"
                                             style={{ color: cfg.color }}>
                                             <cfg.icon size={18} strokeWidth={2} />
                                         </div>

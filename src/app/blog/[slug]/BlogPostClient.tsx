@@ -304,17 +304,24 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
   const router = useRouter();
 
   useEffect(() => {
+    const container = document.getElementById("main-scroll-container");
+    const target = (container && container.scrollHeight > window.innerHeight && window.getComputedStyle(container).overflowY === 'auto') ? container : window;
+    
     const handleScroll = () => {
-      const element = document.getElementById("main-scroll-container");
-      if (!element) return;
-      const totalHeight = element.scrollHeight - element.clientHeight;
-      const progress = (element.scrollTop / totalHeight) * 100;
-      setScrollProgress(progress);
+      if (target === window) {
+        const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = totalHeight > 0 ? (window.scrollY / totalHeight) * 100 : 0;
+        setScrollProgress(progress);
+      } else if (container) {
+        const totalHeight = container.scrollHeight - container.clientHeight;
+        const progress = totalHeight > 0 ? (container.scrollTop / totalHeight) * 100 : 0;
+        setScrollProgress(progress);
+      }
     };
 
-    const container = document.getElementById("main-scroll-container");
-    container?.addEventListener("scroll", handleScroll);
-    return () => container?.removeEventListener("scroll", handleScroll);
+    target.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => target.removeEventListener("scroll", handleScroll);
   }, []);
 
 
@@ -592,7 +599,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
                 <Link
                   key={rp.slug}
                   href={`/blog/${rp.slug}`}
-                  className="scholar-card group p-6 transition-all duration-400 hover:translate-y-[-4px]"
+                  className="scholar-card group p-6 transition-all duration-400 hover-lift-lg"
                   style={{
                     borderRadius: "24px",
                   }}

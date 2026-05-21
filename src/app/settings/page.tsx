@@ -296,7 +296,7 @@ export default function SettingsPage() {
 
                         {/* ─── Leverage (Subscription) ─── */}
                         <div className="scholar-card p-8 relative overflow-hidden group border-2 border-[var(--accent)]/10">
-                            <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:scale-110 group-hover:rotate-12 transition-transform duration-1000 pointer-events-none">
+                            <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover-scale-md-rotate-12 transition-transform duration-1000 pointer-events-none">
                                 <Sparkles size={160} />
                             </div>
                             

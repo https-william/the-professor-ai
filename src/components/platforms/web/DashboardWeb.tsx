@@ -10,6 +10,7 @@ import {
     ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Trophy
 } from "lucide-react";
 import { calculateLevel, getLevelTitle, getLevelProgress } from "@/lib/profiles-client";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
 
 interface DashboardWebProps {
     user: any;
@@ -78,12 +79,12 @@ export default function DashboardWeb({
             const ds = d.toISOString().split("T")[0];
             return {
                 label: ["M", "T", "W", "T", "F", "S", "S"][i],
-                active: activeSet.has(ds),
+                active: activeSet.has(ds) || (ds === todayStr && (user?.streak > 0 || activeSet.has(todayStr))),
                 isToday: ds === todayStr,
                 isFuture: ds > todayStr,
             };
         });
-    }, [activityData]);
+    }, [activityData, user?.streak]);
 
     // Focus Timer moved to widget
 
@@ -122,6 +123,12 @@ export default function DashboardWeb({
         { type: "quiz", icon: BrainCircuit, color: "var(--cyan)", label: "Quiz", count: libStats.quiz },
         { type: "summary", icon: FileText, color: "var(--emerald)", label: "Summary", count: libStats.summary },
     ];
+
+    // Live achievement progress calculations
+    const streakProgress = Math.min(Math.round((user.streak / 7) * 100), 100);
+    const totalGens = (activityData?.stats?.flashcards || 0) + (activityData?.stats?.quizzes || 0) + (activityData?.stats?.summaries || 0) + (activityData?.stats?.examSprints || 0);
+    const genProgress = Math.min(Math.round((totalGens / 10) * 100), 100);
+    const unlockedCount = [streakProgress, genProgress].filter(p => p === 100).length;
 
     return (
         <div className="w-full min-h-screen relative bg-[var(--bg)] selection:bg-[var(--blue-dim)]">
@@ -195,7 +202,7 @@ export default function DashboardWeb({
                         {dueCount > 0 && (
                             <motion.div variants={fadeUp} className="mb-4">
                                 <Link href="/review" className="group block">
-                                    <div className="scholar-card flex items-center justify-between gap-4 px-6 py-4 border-[var(--blue-border)] bg-[var(--blue-dim)] hover:translate-x-1" style={{ borderRadius: "20px" }}>
+                                    <div className="scholar-card card-interactive-slide-right flex items-center justify-between gap-4 px-6 py-4 border-[var(--blue-border)] bg-[var(--blue-dim)]" style={{ borderRadius: "20px" }}>
                                         <div className="flex items-center gap-3">
                                             <div className="w-2.5 h-2.5 rounded-full bg-[var(--blue)] animate-pulse shadow-[0_0_10px_var(--blue)]" />
                                             <span className="text-[15px] font-bold text-[var(--blue-text)]">{dueCount} concepts require your intelligence</span>
@@ -226,11 +233,11 @@ export default function DashboardWeb({
                         {/* Col 1+2: Workspace */}
                         <div className="lg:col-span-2 flex flex-col gap-6">
                             <Link href="/create" className="group block">
-                                <div className="scholar-card relative p-8 transition-all hover:scale-[1.01] bg-gradient-to-br from-[var(--bg-2)]/40 to-transparent" style={{ borderRadius: "28px" }}>
+                                <div className="scholar-card card-interactive-scale relative p-8 bg-gradient-to-br from-[var(--bg-2)]/40 to-transparent" style={{ borderRadius: "28px" }}>
                                     <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full blur-[80px] opacity-10 bg-[var(--blue)] group-hover:opacity-20 transition-opacity" />
                                     <div className="relative z-10 flex items-center justify-between">
                                         <div className="flex items-center gap-5">
-                                            <div className="w-14 h-14 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <div className="w-14 h-14 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center shadow-lg group-hover-scale-md transition-transform">
                                                 <PlusCircle size={28} className="text-[var(--blue)]" />
                                             </div>
                                             <div>
@@ -248,7 +255,7 @@ export default function DashboardWeb({
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 {actions.map(({ label, desc, icon: Icon, href, accent }) => (
                                     <Link key={label} href={href} className="group">
-                                        <div className="scholar-card p-5 h-full transition-all hover:-translate-y-1.5" style={{ borderRadius: "20px" }}>
+                                        <div className="scholar-card card-interactive-lift p-5 h-full" style={{ borderRadius: "20px" }}>
                                             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 shadow-sm" style={{ background: `color-mix(in srgb, ${accent}, transparent 90%)`, border: `1px solid color-mix(in srgb, ${accent}, transparent 80%)` }}>
                                                 <Icon size={18} strokeWidth={2} style={{ color: accent }} />
                                             </div>
@@ -260,75 +267,89 @@ export default function DashboardWeb({
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="p-6 border-t border-[var(--border)]">
-                                    <div className="flex items-center justify-between mb-5">
-                                        <div className="flex items-center gap-2">
-                                            <Flame size={14} className="text-[var(--amber)]" />
-                                            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Momentum</span>
+                                <div className="scholar-card p-6 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm" style={{ borderRadius: "24px" }}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/10 transition-colors" />
+                                    <div className="relative z-10 flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shadow-sm">
+                                                <Flame size={16} />
+                                            </div>
+                                            <div>
+                                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold block leading-none mb-1">Momentum</span>
+                                                <span className="text-xs font-bold text-[var(--text-2)]">Daily Scholarly Loop</span>
+                                            </div>
                                         </div>
-                                        <span className="font-mono text-sm font-black text-[var(--amber)] tabular-nums">{user.streak}d</span>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="font-mono text-2xl font-black text-[var(--amber)] tabular-nums"><AnimatedCounter value={user.streak} /></span>
+                                            <span className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">Days</span>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-2 w-full">
+                                    <div className="relative z-10 flex gap-2 w-full">
                                         {weekDays.map((day, i) => (
-                                            <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                                                <div className={`w-full aspect-square rounded-xl flex items-center justify-center relative transition-all ${day.active ? "bg-[var(--amber)] shadow-[0_4px_12px_var(--amber-glow)] border-t border-white/20" : day.isToday ? "border-2 border-dashed border-[var(--amber-border)]" : "bg-[var(--text-4)] opacity-50"}`}>
-                                                    <span className={`text-[10px] font-black ${day.active ? "text-[#000]" : day.isToday ? "text-[var(--amber)]" : "text-[var(--text-3)]/40"}`}>{day.label}</span>
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                                                <div className={`w-full aspect-square rounded-xl flex items-center justify-center relative transition-all ${day.active ? "bg-[var(--amber)] shadow-[0_4px_12px_var(--amber-glow)] border-t border-white/20 scale-105" : day.isToday ? "border-2 border-dashed border-[var(--amber-border)] bg-[var(--amber)]/5" : "bg-[var(--text-4)] opacity-40 hover:opacity-60"}`}>
+                                                    <span className={`text-[11px] font-black ${day.active ? "text-[#000]" : day.isToday ? "text-[var(--amber)]" : "text-[var(--text-3)]"}`}>{day.label}</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="scholar-card p-6 min-h-[200px] flex flex-col justify-between relative overflow-hidden group" style={{ borderRadius: "28px" }}>
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/10 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/20 transition-colors" />
+                                <div className="scholar-card p-6 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm" style={{ borderRadius: "24px" }}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/10 transition-colors" />
                                     <div className="relative z-10">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div className="flex items-center gap-2">
-                                                <Trophy size={16} className="text-[var(--amber)]" />
-                                                <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[var(--text-3)] font-bold">Trophy Room</span>
+                                        <div className="flex items-center justify-between mb-5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shadow-sm">
+                                                    <Trophy size={16} />
+                                                </div>
+                                                <div>
+                                                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold block leading-none mb-1">Trophy Pill</span>
+                                                    <span className="text-xs font-bold text-[var(--text-2)]">Live Vault</span>
+                                                </div>
                                             </div>
-                                            <span className="px-2 py-0.5 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] font-mono text-[10px] font-black">3 Unlocked</span>
+                                            <span className="px-2.5 py-1 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 font-mono text-[10px] font-bold shadow-sm">{unlockedCount} / 2 Unlocked</span>
                                         </div>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)]">
-                                                <div className="w-10 h-10 rounded-xl bg-[var(--amber)]/20 border border-[var(--amber)]/40 flex items-center justify-center text-[var(--amber)] shrink-0 shadow-[0_0_15px_var(--amber-glow)] animate-bounce">
-                                                    <Flame size={20} />
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] shadow-sm group/item hover:border-[var(--amber)]/30 transition-colors">
+                                                <div className="w-9 h-9 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shrink-0 group-hover/item:scale-110 transition-transform shadow-sm">
+                                                    <Flame size={18} />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center justify-between">
-                                                        <p className="text-xs font-black text-[var(--text)] truncate">Prometheus Flame</p>
-                                                        <span className="text-[10px] font-mono text-[var(--amber)] font-black">100%</span>
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <p className="text-xs font-bold text-[var(--text)] truncate">Prometheus Flame</p>
+                                                        <span className="text-[10px] font-mono text-[var(--amber)] font-bold">{streakProgress}%</span>
                                                     </div>
-                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-1.5">Maintain a 7-day scholarly streak</p>
-                                                    <div className="h-1 w-full bg-[var(--text-4)] rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[var(--amber)] w-full shadow-[0_0_8px_var(--amber)]" />
+                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-2 font-medium">Maintain a 7-day scholarly streak</p>
+                                                    <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
+                                                        <div className="h-full bg-[var(--amber)] shadow-[0_0_8px_var(--amber)] transition-all duration-500" style={{ width: `${streakProgress}%` }} />
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] opacity-80">
-                                                <div className="w-10 h-10 rounded-xl bg-[var(--blue)]/20 border border-[var(--blue)]/40 flex items-center justify-center text-[var(--blue)] shrink-0 shadow-[0_0_15px_var(--blue-glow)]">
-                                                    <Zap size={20} />
+                                            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] shadow-sm group/item hover:border-[var(--blue)]/30 transition-colors">
+                                                <div className="w-9 h-9 rounded-xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-center text-[var(--blue)] shrink-0 group-hover/item:scale-110 transition-transform shadow-sm">
+                                                    <Zap size={18} />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center justify-between">
-                                                        <p className="text-xs font-black text-[var(--text)] truncate">Neural Architect</p>
-                                                        <span className="text-[10px] font-mono text-[var(--blue)] font-black">50%</span>
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <p className="text-xs font-bold text-[var(--text)] truncate">Neural Architect</p>
+                                                        <span className="text-[10px] font-mono text-[var(--blue)] font-bold">{genProgress}%</span>
                                                     </div>
-                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-1.5">Generate 10 study packs</p>
-                                                    <div className="h-1 w-full bg-[var(--text-4)] rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[var(--blue)] w-1/2 shadow-[0_0_8px_var(--blue)]" />
+                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-2 font-medium">Generate 10 study sessions</p>
+                                                    <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
+                                                        <div className="h-full bg-[var(--blue)] shadow-[0_0_8px_var(--blue)] transition-all duration-500" style={{ width: `${genProgress}%` }} />
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <Link href="/achievements" className="mt-8 relative z-10 flex items-center justify-between p-4 rounded-2xl bg-[var(--text)]/5 border border-[var(--border)] hover:border-[var(--amber-border)] hover:bg-[var(--amber-dim)] group/btn transition-all shrink-0">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--amber)] group-hover/btn:scale-110 transition-transform shadow-sm">
+                                    <Link href="/achievements" className="mt-5 relative z-10 flex items-center justify-between p-3.5 rounded-2xl bg-[var(--text)]/5 border border-[var(--border)] hover:border-[var(--amber-border)] hover:bg-[var(--amber-dim)] group/btn transition-all shrink-0 shadow-sm">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-7 h-7 rounded-lg bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--amber)] group-hover/btn:scale-110 transition-transform shadow-sm">
                                                 <Trophy size={14} />
                                             </div>
-                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] group-hover/btn:text-[var(--text)] transition-colors">Claim Achievements</span>
+                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-2)] group-hover/btn:text-[var(--text)] transition-colors">Claim Achievements</span>
                                         </div>
                                         <ArrowRight size={14} className="text-[var(--text-3)] group-hover/btn:text-[var(--amber)] group-hover/btn:translate-x-1 transition-all" />
                                     </Link>

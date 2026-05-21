@@ -12,11 +12,14 @@ export default function NavPill() {
 
   useEffect(() => {
     const container = document.getElementById("main-scroll-container");
-    if (!container) return;
-    const onScroll = () => setScrolled(container.scrollTop > 80);
-    container.addEventListener("scroll", onScroll, { passive: true });
+    const target = (container && container.scrollHeight > window.innerHeight && window.getComputedStyle(container).overflowY === 'auto') ? container : window;
+    const onScroll = () => {
+      const top = target === window ? window.scrollY : (container ? container.scrollTop : 0);
+      setScrolled(top > 80);
+    };
+    target.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    return () => container.removeEventListener("scroll", onScroll);
+    return () => target.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
@@ -40,7 +43,7 @@ export default function NavPill() {
         border: `1px solid ${scrolled ? "var(--border)" : "var(--border-2)"}`,
         borderRadius: "9999px",
         boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,0.1), 0 1px 0 var(--border) inset" : "none",
-        transition: "all 300ms ease",
+        transition: "background 200ms cubic-bezier(0.23, 1, 0.32, 1), border-color 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1)",
       }}
     >
       {/* Left — Logo */}
@@ -81,7 +84,7 @@ export default function NavPill() {
                 padding: "8px 12px",
                 borderRadius: "9999px",
                 textDecoration: "none",
-                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                transition: "color 150ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms cubic-bezier(0.23, 1, 0.32, 1), transform 150ms cubic-bezier(0.23, 1, 0.32, 1)",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
                 display: "block"
@@ -91,7 +94,7 @@ export default function NavPill() {
             </Link>
             
             {link.dropdown && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible scale-y-[0.95] origin-top group-hover:opacity-100 group-hover:visible group-hover:scale-y-100 transition-all duration-200 cubic-bezier(0.23, 1, 0.32, 1)">
                 <div style={{
                   background: "var(--bg-2)",
                   border: "1px solid var(--border)",
@@ -184,17 +187,19 @@ export default function NavPill() {
       </div>
 
       <style jsx>{`
-        .nav-link-pill:hover {
-          color: var(--text) !important;
-          background: var(--border-2);
-          transform: translateY(-1px);
+        @media (hover: hover) and (pointer: fine) {
+          .nav-link-pill:hover {
+            color: var(--text) !important;
+            background: var(--border-2);
+            transform: translateY(-1px);
+          }
         }
         .nav-link-pill:active {
-          transform: scale(0.85);
+          transform: scale(0.97);
           background: var(--border-3);
         }
         .btn-skeuo-blue:active {
-          transform: scale(0.85) !important;
+          transform: scale(0.96) !important;
         }
       `}</style>
     </nav>

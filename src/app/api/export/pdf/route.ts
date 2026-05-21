@@ -173,7 +173,8 @@ export async function POST(req: NextRequest) {
             status: 200,
             headers: {
                 "Content-Type": "application/pdf",
-                "Content-Disposition": `attachment; filename="Study_Guide.pdf"`
+                "Content-Disposition": `attachment; filename="Study_Guide.pdf"`,
+                "Content-Length": pdfBuffer.length.toString()
             }
         });
 

@@ -333,7 +333,7 @@ function CreatorStudio() {
     }
 
     return (
-        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-12 pt-24 relative">
+        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-24 pt-16 relative min-h-screen flex flex-col flex-1">
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--blue-glow)] opacity-[0.03] rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--blue-glow)] opacity-[0.02] rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
@@ -547,7 +547,7 @@ function CreatorStudio() {
                                     "w-full py-5 rounded-[24px] font-black text-[14px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl",
                                     !canGenerate 
                                     ? 'opacity-70 cursor-not-allowed bg-[var(--bg-3)] border border-[var(--border)] text-[var(--foreground-muted)]/40' 
-                                    : 'bg-[var(--foreground)] text-[var(--background)] hover:scale-[1.01] active:scale-[0.98]'
+                                    : 'bg-[var(--foreground)] text-[var(--background)] hover-scale-sm active:scale-[0.98]'
                                 )}
                             >
                                 {canGenerate && (

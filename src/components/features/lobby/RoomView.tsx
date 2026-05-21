@@ -257,7 +257,7 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
             {!showChat && (
                 <button
                     onClick={() => setShowChat(true)}
-                    className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#10B981] text-white shadow-lg shadow-[#10B981]/30 flex items-center justify-center hover:scale-105 transition-all z-50"
+                    className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#10B981] text-white shadow-lg shadow-[#10B981]/30 flex items-center justify-center hover-scale-lg active:scale-95 transition-all z-50"
                 >
                     <MessageSquare size={24} strokeWidth={1.5} />
                 </button>

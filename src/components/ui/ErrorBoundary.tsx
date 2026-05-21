@@ -66,7 +66,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleRefresh}
-                className="w-full py-4.5 rounded-2xl bg-white text-[#08080E] font-black text-sm flex items-center justify-center gap-3 transition-all hover:scale-[1.02] hover:bg-neutral-100 active:scale-98 shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
+                className="w-full py-4.5 rounded-2xl bg-white text-[#08080E] font-black text-sm flex items-center justify-center gap-3 transition-all hover-scale-md hover:bg-neutral-100 active:scale-[0.98] shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
               >
                 <RefreshCcw size={18} strokeWidth={3} className="animate-spin-slow" />
                 <span>Reload Session</span>

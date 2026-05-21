@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Source_Serif_4, JetBrains_Mono } from "next/font/google";
+// Fonts loaded via stylesheet in head to prevent build-time network timeouts
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { UserProvider } from "@/context/UserContext";
@@ -35,26 +35,9 @@ import MotionConfigProvider from "@/components/providers/MotionConfigProvider";
    Source Serif 4 → Editorial serif. Used for body text, AI responses, reading.
                      Closest free alternative to Tiempos Text.
    ═══════════════════════ */
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-  display: "swap",
-  adjustFontFallback: true,
-});
-
-const sourceSerif = Source_Serif_4({
-  subsets: ["latin"],
-  variable: "--font-source-serif",
-  display: "swap",
-  style: ["normal", "italic"],
-  adjustFontFallback: true,
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-});
+const outfit = { variable: "--font-outfit" };
+const sourceSerif = { variable: "--font-source-serif" };
+const jetbrainsMono = { variable: "--font-mono" };
 
 const SITE_URL = "https://theprofessor.xyz";
 
@@ -148,11 +131,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} w-full h-full overflow-x-hidden`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} w-full min-h-screen overflow-x-hidden`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
+        <link
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap"
+          rel="stylesheet"
+          suppressHydrationWarning
+        />
         <link
           id="material-symbols-stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
@@ -211,7 +199,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased transition-colors duration-300 w-full h-full m-0 p-0 overflow-x-hidden" suppressHydrationWarning>
+      <body className="font-sans antialiased transition-colors duration-300 w-full min-h-screen m-0 p-0 overflow-x-hidden flex flex-col" suppressHydrationWarning>
         <ThemeProvider>
           <PWAProvider>
             <UserProvider>
@@ -225,17 +213,17 @@ export default function RootLayout({
                     
                     <SiteHeader showLogo={true} />
                     <NavigationLoader />
-                    <main className="platform-main-container relative h-full w-full flex flex-col overflow-x-hidden">
-                      <div className="noise-overlay" />
-                      <AmbientOrbs />
-                      
-                      <div id="main-scroll-container" className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth relative custom-scrollbar w-full z-[1] flex flex-col" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+                <main className="platform-main-container relative min-h-screen w-full flex flex-col flex-1">
+                  <div className="noise-overlay" />
+                  <AmbientOrbs />
+                  
+                  <div id="main-scroll-container" className="flex-1 relative w-full z-[1] flex flex-col">
                     <div className="flex-1 flex flex-col relative z-[10]">
                       {children}
                     </div>
-                        <Footer />
-                      </div>
-                    </main>
+                    <Footer />
+                  </div>
+                </main>
     
                     {/* Mobile nav handled by PlatformLoader */}
                     <CookieBanner />

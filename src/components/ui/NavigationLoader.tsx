@@ -4,39 +4,39 @@ import { useEffect, useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-/**
- * NavigationLoaderContent — Internal component using useSearchParams
- */
 function NavigationLoaderContent() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isNavigating, setIsNavigating] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    // Watch for link/button clicks to start navigation loading instantly
+    // Watch for actual link clicks to start navigation loading accurately
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
-            const target = (e.target as HTMLElement).closest("a, button, [role='button'], [onclick]");
+            const target = (e.target as HTMLElement).closest("a");
             if (!target) return;
 
             const href = target.getAttribute("href");
             if (href && href.startsWith("/") && !href.startsWith("#")) {
-                // If navigating to a new internal route
-                if (href !== pathname) {
-                    setIsNavigating(true);
-                    setProgress(15);
-                }
-            } else {
-                const text = target.textContent?.toLowerCase() || "";
-                if (text.includes("login") || text.includes("sign up") || text.includes("dashboard") || text.includes("library") || text.includes("get started") || text.includes("continue") || text.includes("explore") || text.includes("create") || text.includes("ready") || text.includes("start") || text.includes("sprint") || text.includes("lab") || text.includes("feed")) {
+                const cleanHref = href.split("?")[0];
+                if (cleanHref !== pathname) {
                     setIsNavigating(true);
                     setProgress(15);
                 }
             }
         };
 
+        const handlePopState = () => {
+            setIsNavigating(true);
+            setProgress(15);
+        };
+
         document.addEventListener("click", handleClick, { capture: true });
-        return () => document.removeEventListener("click", handleClick, { capture: true });
+        window.addEventListener("popstate", handlePopState);
+        return () => {
+            document.removeEventListener("click", handleClick, { capture: true });
+            window.removeEventListener("popstate", handlePopState);
+        };
     }, [pathname]);
 
     // Finish loading when pathname or searchParams update
@@ -50,7 +50,7 @@ function NavigationLoaderContent() {
         return () => clearTimeout(timer);
     }, [pathname, searchParams]);
 
-    // Simulated progress trickle if navigation takes longer
+    // Simulated progress trickle + safety timeout
     useEffect(() => {
         if (!isNavigating) return;
         
@@ -61,7 +61,15 @@ function NavigationLoaderContent() {
             });
         }, 150);
 
-        return () => clearInterval(interval);
+        const safetyTimer = setTimeout(() => {
+            setIsNavigating(false);
+            setProgress(0);
+        }, 5000);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(safetyTimer);
+        };
     }, [isNavigating]);
 
     return (
@@ -89,7 +97,7 @@ function NavigationLoaderContent() {
                         }}
                     />
 
-                    {/* Leading glow pulse - Ultra refined */}
+                    {/* Leading glow pulse */}
                     <motion.div
                         animate={{ 
                             opacity: [0.2, 0.6, 0.2],
@@ -108,9 +116,6 @@ function NavigationLoaderContent() {
     );
 }
 
-/**
- * NavigationLoader — Global Progress Indicator wrapped in Suspense for SSR safety
- */
 export default function NavigationLoader() {
     return (
         <Suspense fallback={null}>

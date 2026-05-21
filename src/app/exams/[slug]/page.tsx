@@ -169,7 +169,7 @@ export default async function ExamLandingPage({ params }: { params: Promise<{ sl
              <p className="text-lg opacity-60 mb-10 max-w-md mx-auto font-bold uppercase tracking-widest">
                 Access the full {data.name} 2026 study suite now.
              </p>
-             <Link href="/signup" className="inline-flex items-center gap-4 px-12 py-6 rounded-2xl bg-[var(--accent)] text-black font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-xl">
+             <Link href="/signup" className="inline-flex items-center gap-4 px-12 py-6 rounded-2xl bg-[var(--accent)] text-black font-black uppercase tracking-[0.2em] hover-scale-lg active:scale-95 transition-all shadow-xl">
                 {data.cta} <ArrowRight className="w-5 h-5" />
              </Link>
           </div>

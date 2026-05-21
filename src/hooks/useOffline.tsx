@@ -119,7 +119,7 @@ export function OfflineIndicator() {
         {status === "offline" && pathname !== "/library/offline" && (
           <button
             onClick={() => router.push("/library/offline")}
-            className="px-3 py-1 rounded-lg bg-white text-red-600 text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="px-3 py-1 rounded-lg bg-white text-red-600 text-[10px] font-black uppercase tracking-widest shadow-md hover-scale-md active:scale-[0.98] transition-all"
           >
             Open Offline Vault
           </button>

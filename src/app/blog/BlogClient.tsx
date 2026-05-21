@@ -49,7 +49,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="scholar-card group block relative transition-all duration-500 hover:translate-y-[-4px]"
+      className="scholar-card card-interactive-lift group block relative"
       style={{
         borderRadius: "32px",
       }}
@@ -69,7 +69,7 @@ function FeaturedCard({ post }: { post: BlogPost }) {
         />
         {/* Floating icon */}
         <div
-          className="absolute top-6 right-6 w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6"
+          className="absolute top-6 right-6 w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover-rotate-sm"
           style={{
             background: "rgba(255,255,255,0.15)",
             backdropFilter: "blur(12px)",
@@ -142,14 +142,14 @@ function BlogCard({ post }: { post: BlogPost }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="scholar-card group block relative transition-all duration-400 hover:translate-y-[-3px]"
+      className="scholar-card group block relative transition-all duration-400 hover-lift-md"
     >
       {/* Top accent line */}
       <div
         className="h-1 w-full"
         style={{ background: post.coverGradient }}
       />
-
+ 
       <div className="p-5 sm:p-6">
         {/* Category + Read time */}
         <div className="flex items-center justify-between mb-4">
@@ -163,11 +163,11 @@ function BlogCard({ post }: { post: BlogPost }) {
             {post.readTime}
           </span>
         </div>
-
+ 
         {/* Icon + Title */}
         <div className="flex items-start gap-4 mb-3">
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover-scale-md"
             style={{
               background: post.coverGradient,
               boxShadow: "inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 12px rgba(0,0,0,0.3)",

@@ -35,7 +35,7 @@ export default function NotFound() {
                 <div className="space-y-4">
                     <Link 
                         href="/dashboard"
-                        className="block w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl"
+                        className="block w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest transition-all hover-scale-md active:scale-[0.98] shadow-xl"
                     >
                         Return to Dashboard
                     </Link>

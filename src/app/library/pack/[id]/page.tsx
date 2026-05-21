@@ -1027,7 +1027,7 @@ export default function StudyPackPage() {
                                     "group p-4 sm:p-5 rounded-2xl border transition-all relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md",
                                     isLocked ? "bg-[var(--background)] border-[var(--border)] opacity-50 grayscale" :
                                         isCompleted ? "bg-[var(--background-secondary)]/80 border-[var(--emerald)]/30 backdrop-blur-md" :
-                                            "bg-[var(--background-secondary)]/80 border-[var(--border)] hover:border-[var(--blue)]/40 backdrop-blur-md shadow-xl hover:scale-[1.005]"
+                                            "bg-[var(--background-secondary)]/80 border-[var(--border)] hover:border-[var(--blue)]/40 backdrop-blur-md shadow-xl hover-scale-sm"
                                 )}
                             >
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -1072,7 +1072,7 @@ export default function StudyPackPage() {
                                             isSharedView && !isCompleted ? "bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20 hover:bg-[var(--blue)]/20" :
                                             isCompleted ? "bg-[var(--emerald)]/10 text-[var(--emerald)] border border-[var(--emerald)]/20 hover:bg-[var(--emerald)]/20" :
                                                 isLocked ? "bg-[var(--background)] text-[var(--foreground-muted)] border border-[var(--border)] cursor-not-allowed" :
-                                                    "bg-[var(--foreground)] text-[var(--background)] hover:scale-[1.02] shadow-[0_8px_20px_rgba(255,255,255,0.1)] active:scale-[0.98]"
+                                                    "bg-[var(--foreground)] text-[var(--background)] hover-scale-md shadow-[0_8px_20px_rgba(255,255,255,0.1)] active:scale-[0.98]"
                                         )}
                                     >
                                         {isSharedView && isCompleted ? "VIEW" : isSharedView && !isCompleted ? "LOCKED" : isCompleted ? "REVISIT" : isLocked ? "LOCKED" : "ENTER"}
@@ -1118,9 +1118,9 @@ export default function StudyPackPage() {
                             </p>
                             <button
                                 onClick={() => setShowWrapModal(true)}
-                                className="px-10 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group"
+                                className="px-10 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover-scale-lg active:scale-95 transition-all flex items-center gap-3 group"
                             >
-                                I&apos;m done! <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                I&apos;m done! <ArrowRight size={16} className="group-hover-translate-x-sm transition-transform" />
                             </button>
                         </motion.div>
                     )}
@@ -1227,12 +1227,12 @@ export default function StudyPackPage() {
                                         <button
                                             onClick={handleBeginTask}
                                             disabled={isLoadingPhase}
-                                            className="px-8 py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-98 transition-all shadow-lg flex items-center gap-3 group disabled:opacity-50 shrink-0"
+                                            className="px-8 py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] uppercase tracking-widest hover-scale-md active:scale-98 transition-all shadow-lg flex items-center gap-3 group disabled:opacity-50 shrink-0"
                                         >
                                             {isLoadingPhase ? (
                                                 <>Thinking... <Loader2 size={14} className="animate-spin" /></>
                                             ) : (
-                                                <>Get Started <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" /></>
+                                                <>Get Started <ArrowRight size={14} className="group-hover-translate-x-sm transition-transform" /></>
                                             )}
                                         </button>
                                     </motion.div>
@@ -1268,7 +1268,7 @@ export default function StudyPackPage() {
                                             >
                                                 <button
                                                     onClick={handleMasterPhase}
-                                                    className="w-full py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                    className="w-full py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-xl hover-scale-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                                 >
                                                     <CheckCircle2 size={16} /> Finish & Continue
                                                 </button>
@@ -1358,7 +1358,7 @@ export default function StudyPackPage() {
                                 {/* Persona Badge */}
                                 <div className="col-span-2 lg:col-span-4 group p-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
-                                        <Sparkles className="w-8 h-8 group-hover:rotate-12 transition-transform shrink-0" />
+                                        <Sparkles className="w-8 h-8 group-hover-rotate-12 transition-transform shrink-0" />
                                         <div>
                                             <h4 className="text-[8px] font-black uppercase tracking-widest opacity-60 mb-0.5">Study Status</h4>
                                             <div className="text-base sm:text-lg font-black italic tracking-tight leading-none uppercase">
@@ -1393,9 +1393,9 @@ export default function StudyPackPage() {
                             <div className="flex flex-col sm:flex-row gap-3 relative z-10">
                                 <button 
                                     onClick={handleShareWrapImage}
-                                    className="flex-[2] py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                                    className="flex-[2] py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover-scale-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
                                 >
-                                    <Share2 size={16} className="group-hover:rotate-12 transition-transform" /> SHARE WRAP IMAGE
+                                    <Share2 size={16} className="group-hover-rotate-sm transition-transform" /> SHARE WRAP IMAGE
                                 </button>
                                 <button 
                                     onClick={() => router.push('/create')}

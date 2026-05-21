@@ -182,7 +182,7 @@ export default function StudyPersonaQuiz() {
               <div className="flex flex-col sm:flex-row gap-4 w-full">
                   <button 
                       onClick={handleShare}
-                      className="flex-1 flex items-center justify-center gap-3 py-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.95] transition-all"
+                      className="flex-1 flex items-center justify-center gap-3 py-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest shadow-xl hover-scale-md active:scale-[0.95] transition-all"
                   >
                       Share Your Edge <Share2 className="w-4 h-4" />
                   </button>

@@ -104,7 +104,7 @@ export default function PhilosophySection() {
               }}
             >
               <div className="flex items-start gap-6">
-                <div className="shrink-0 w-10 h-10 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="shrink-0 w-10 h-10 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center group-hover-scale-md transition-transform">
                    <Sparkles size={16} className="text-[var(--blue)]" />
                 </div>
                 <div>

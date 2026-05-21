@@ -100,7 +100,7 @@ export default function ProfessorEmptyState({
         
         {/* Main icon */}
         <div 
-          className="relative w-24 h-24 rounded-3xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110"
+          className="relative w-24 h-24 rounded-3xl flex items-center justify-center transition-transform duration-500 group-hover-scale-md"
           style={{
             background: `linear-gradient(145deg, ${accent}15, ${accent}05)`,
             border: `1px solid ${accent}20`,
@@ -139,7 +139,7 @@ export default function ProfessorEmptyState({
       {actionLabel && actionHref ? (
         <Link
           href={actionHref}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 hover-scale-lg active:scale-[0.95]"
           style={{
             background: `linear-gradient(145deg, ${accent}, ${accent}CC)`,
             boxShadow: `inset 0 1px 2px rgba(255,255,255,0.2), 0 4px 16px ${accent}40`,
@@ -152,7 +152,7 @@ export default function ProfessorEmptyState({
       ) : (
         <Link
           href="/create"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 hover-scale-lg active:scale-[0.95]"
           style={{
             background: `linear-gradient(145deg, #F59E0B, #D4911A)`,
             boxShadow: "inset 0 1px 2px rgba(255,255,255,0.2), 0 4px 16px rgba(245,158,11,0.4)",

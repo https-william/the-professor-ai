@@ -247,7 +247,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                                     setCheckpointPassed(false);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className="group flex items-center gap-4 bg-[var(--accent)] text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-amber-500/10"
+                                className="group flex items-center gap-4 bg-[var(--accent)] text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-amber-500/10"
                             >
                                 <span>Proceed</span>
                                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -255,7 +255,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                         ) : (
                             <button 
                                 onClick={handleFinish}
-                                className="group flex items-center gap-4 bg-emerald-500 text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-emerald-500/10"
+                                className="group flex items-center gap-4 bg-emerald-500 text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-emerald-500/10"
                             >
                                 <span>Finish Summary</span>
                                 <CheckCircle2 size={16} />
@@ -268,7 +268,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
                 <button 
                     onClick={handleCopyLink}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500 text-black font-black text-[10px] uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500 text-black font-black text-[10px] uppercase tracking-wider transition-all hover-scale-lg active:scale-95"
                 >
                     <Share2 size={14} />
                     <span>{copySuccess ? "Copied!" : "Share Link"}</span>

@@ -36,7 +36,7 @@ export default function WaitingRoom({ onRetry }: WaitingRoomProps) {
             <div className="flex flex-col gap-4 w-full max-w-xs mx-auto">
                 <button
                     onClick={onRetry}
-                    className="px-10 py-5 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
+                    className="px-10 py-5 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest hover-scale-md active:scale-[0.95] transition-all shadow-xl"
                 >
                     Try Again Now
                 </button>

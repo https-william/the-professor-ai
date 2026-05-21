@@ -87,7 +87,7 @@ export default async function PillarPage({ params }: { params: Promise<{ slug: s
                  <p className="text-xs text-white/40 mb-8 leading-relaxed">
                     {data.content.cta.subtitle}
                  </p>
-                 <Link href="/signup" className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-white text-black font-black uppercase text-[10px] tracking-[0.2em] hover:scale-105 transition-all">
+                 <Link href="/signup" className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-white text-black font-black uppercase text-[10px] tracking-[0.2em] hover-scale-lg active:scale-[0.97] transition-all">
                     {data.content.cta.label} <ArrowRight className="w-4 h-4" />
                  </Link>
               </div>

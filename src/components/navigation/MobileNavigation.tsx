@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -24,35 +24,37 @@ export default function MobileNavigation() {
     const pathname = usePathname();
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 h-16 bg-[#0A0A0F]/90 backdrop-blur-3xl border border-white/10 z-[60] rounded-full flex items-center px-2 shadow-[0_20px_60px_rgba(0,0,0,0.6)] max-w-[min(420px,calc(100vw-2rem))] w-full justify-between">
-            {navItems.map((item) => {
-                const isActive = item.href === "/dashboard" 
-                    ? (pathname === "/dashboard" || pathname === "/") 
-                    : pathname.startsWith(item.href);
-                
-                return (
-                    <Link
-                        key={item.name}
-                        href={item.href}
-                        className="relative flex-1 h-12 flex flex-col items-center justify-center transition-all duration-300 z-10 group"
-                    >
-                        {isActive && (
-                            <motion.div
-                                layoutId="active-slider-bg"
-                                className="absolute inset-1 rounded-full bg-[var(--blue)]/25 border border-[var(--blue)]/40 shadow-[0_0_20px_var(--blue-glow)] z-0"
-                                transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                            />
-                        )}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 h-14 bg-[var(--background)]/90 backdrop-blur-[12px] border border-[var(--border-2)] z-[60] rounded-full flex items-center px-2 shadow-[0_12px_40px_rgba(0,0,0,0.25)] max-w-[min(420px,calc(100vw-2rem))] w-full justify-between transition-all duration-300">
+            <AnimatePresence mode="popLayout">
+                {navItems.map((item) => {
+                    const isActive = item.href === "/dashboard" 
+                        ? (pathname === "/dashboard" || pathname === "/") 
+                        : pathname.startsWith(item.href);
+                    
+                    return (
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            className="relative flex-1 h-10 flex flex-col items-center justify-center transition-all duration-300 z-10 group active:scale-95"
+                        >
+                            {isActive && (
+                                <motion.div
+                                    layoutId="active-slider-bg"
+                                    className="absolute inset-1 rounded-full z-0 bg-[var(--bg-2)] border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.08)]"
+                                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                                />
+                            )}
 
-                        <div className="relative z-10 flex flex-col items-center gap-0.5">
-                            <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-[var(--blue)]" : "text-[var(--text-3)] group-hover:text-[var(--text)] transition-colors"} />
-                            <span className={`text-[9px] font-mono tracking-wider uppercase ${isActive ? "text-[var(--text)] font-black" : "text-[var(--text-4)] group-hover:text-[var(--text-2)] font-bold transition-colors"}`}>
-                                {item.name}
-                            </span>
-                        </div>
-                    </Link>
-                );
-            })}
+                            <div className="relative z-10 flex flex-col items-center gap-0.5">
+                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-[var(--foreground)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" : "text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors"} />
+                                <span className={`text-[9px] font-mono tracking-wider uppercase ${isActive ? "text-[var(--foreground)] font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" : "text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] font-bold transition-colors"}`}>
+                                    {item.name}
+                                </span>
+                            </div>
+                        </Link>
+                    );
+                })}
+            </AnimatePresence>
         </div>
     );
 }

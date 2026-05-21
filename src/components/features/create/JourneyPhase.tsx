@@ -36,10 +36,10 @@ export default function JourneyPhase({ number, title, tools, onSelectTool, class
                     <button
                         key={tool.id}
                         onClick={() => onSelectTool(tool.id)}
-                        className="group relative w-full flex items-center gap-5 p-6 text-left transition-all duration-500 rounded-[32px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--blue)]/30 hover:translate-y-[-4px] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] active:translate-y-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]"
+                        className="group relative w-full flex items-center gap-5 p-6 text-left transition-all duration-300 rounded-[32px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--blue)]/30 hover-lift-lg active:scale-[0.98] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]"
                     >
                         <div 
-                            className="w-14 h-14 rounded-[22px] flex items-center justify-center shrink-0 transition-all group-hover:scale-105"
+                            className="w-14 h-14 rounded-[22px] flex items-center justify-center shrink-0 transition-transform duration-300 group-hover-scale-sm"
                             style={{
                                 background: `color-mix(in srgb, ${tool.color}, transparent 94%)`,
                                 border: `1px solid color-mix(in srgb, ${tool.color}, transparent 85%)`,

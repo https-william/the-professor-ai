@@ -16,8 +16,6 @@ export default function Footer() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="w-full h-12" />; // Placeholder to prevent layout shift
-
   // Only show Footer on public marketing/informational routes
   const isPublicRoute = pathname === "/" || 
                         pathname.startsWith("/blog") || 
@@ -27,6 +25,8 @@ export default function Footer() {
                         pathname.startsWith("/forgot-password");
 
   if (!isPublicRoute) return null;
+
+  if (!mounted) return <div className="w-full h-12" />; // Placeholder to prevent layout shift
 
   return (
     <>

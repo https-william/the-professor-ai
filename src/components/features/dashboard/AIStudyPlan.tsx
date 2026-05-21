@@ -77,7 +77,7 @@ export default function AIStudyPlan({ studyPlan, planLoading }: AIStudyPlanProps
                     
                     <Link href="/create" className="flex items-center gap-2 group/btn">
                          <span className="text-[10px] font-black text-[var(--text-3)] opacity-0 group-hover/btn:opacity-100 transition-opacity uppercase tracking-widest">Execute Goal</span>
-                         <div className="w-10 h-10 rounded-full bg-[var(--text)] flex items-center justify-center text-[var(--bg)] shadow-lg hover:scale-110 active:scale-95 transition-all">
+                         <div className="w-10 h-10 rounded-full bg-[var(--text)] flex items-center justify-center text-[var(--bg)] shadow-lg hover-scale-xl active:scale-95 transition-all">
                             <Zap size={16} strokeWidth={2.5} fill="currentColor" />
                          </div>
                     </Link>

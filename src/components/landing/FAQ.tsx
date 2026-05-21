@@ -66,7 +66,7 @@ export default function FAQSection() {
         </div>
 
         {/* Accordion */}
-        <div className="scholar-card overflow-hidden" style={{ borderRadius: "40px", padding: "16px" }}>
+        <div className="relative overflow-hidden border border-[var(--border)] shadow-sm" style={{ borderRadius: "40px", padding: "16px", background: "var(--card)" }}>
           {FAQS.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
@@ -74,7 +74,7 @@ export default function FAQSection() {
                 key={i}
                 style={{
                   borderBottom: i < FAQS.length - 1 ? "1px solid var(--border)" : "none",
-                  transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                  transition: "background-color 250ms cubic-bezier(0.23, 1, 0.32, 1), border-radius 250ms cubic-bezier(0.23, 1, 0.32, 1), margin-top 250ms cubic-bezier(0.23, 1, 0.32, 1), margin-bottom 250ms cubic-bezier(0.23, 1, 0.32, 1)",
                   background: isOpen ? "var(--bg-2)" : "transparent",
                   borderRadius: isOpen ? "24px" : "0",
                   marginTop: isOpen && i > 0 ? "8px" : "0",
@@ -84,6 +84,7 @@ export default function FAQSection() {
                 {/* Question */}
                 <button
                   onClick={() => toggle(i)}
+                  className="active:scale-[0.99] transition-transform"
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
@@ -116,7 +117,7 @@ export default function FAQSection() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      transition: "all 0.4s ease",
+                      transition: "transform 250ms cubic-bezier(0.23, 1, 0.32, 1), border-color 200ms ease, background-color 200ms ease",
                       transform: isOpen ? "rotate(135deg)" : "rotate(0deg)",
                       flexShrink: 0,
                     }}
@@ -130,7 +131,7 @@ export default function FAQSection() {
                   style={{
                     maxHeight: isOpen ? "500px" : "0",
                     overflow: "hidden",
-                    transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                    transition: "max-height 300ms cubic-bezier(0.23, 1, 0.32, 1), opacity 250ms cubic-bezier(0.23, 1, 0.32, 1)",
                     opacity: isOpen ? 1 : 0
                   }}
                 >

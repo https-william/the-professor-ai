@@ -106,6 +106,9 @@
   pointer-events: none;
   opacity: 0.015;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  will-change: transform;
+  transform: translateZ(0);
+  contain: strict;
 }
 
 .gradient-mesh {
@@ -119,6 +122,9 @@
     radial-gradient(circle at 0% 100%, var(--amber-dim) 0%, transparent 50%);
   filter: blur(80px);
   opacity: 0.4;
+  will-change: transform;
+  transform: translateZ(0);
+  contain: strict;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -415,7 +421,6 @@ html.light {
 
 html {
   scroll-behavior: smooth;
-  overflow: hidden;
   height: 100%;
 }
 
@@ -429,10 +434,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   transition: background-color 0.3s ease, color 0.3s ease;
-  overflow: hidden;
-  height: 100%;
+  min-height: 100%;
   width: 100%;
-  position: fixed;
+  overflow-x: hidden;
   font-display: swap; /* Performance hardening */
   overflow-anchor: none; /* Prevent scroll jumps */
 }
@@ -490,10 +494,12 @@ select:is(:focus, :focus-visible) {
   transition: all 0.25s ease;
 }
 
-.card:hover {
-  background-color: var(--card-hover);
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    background-color: var(--card-hover);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 /* Scholar Card — Flat 2.0 Elevation */
@@ -502,7 +508,7 @@ select:is(:focus, :focus-visible) {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  transition: var(--transition-bounce);
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
   position: relative;
   overflow: hidden;
 }
@@ -519,14 +525,14 @@ select:is(:focus, :focus-visible) {
   transition: opacity 0.3s ease;
 }
 
-.scholar-card:hover {
-  border-color: var(--blue-border);
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-4px) scale(1.01);
-}
-
-.scholar-card:hover::before {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .scholar-card:hover {
+    border-color: var(--blue-border);
+    box-shadow: var(--shadow-xl);
+  }
+  .scholar-card:hover::before {
+    opacity: 1;
+  }
 }
 
 /* Bento Grid System */
@@ -552,6 +558,9 @@ select:is(:focus, :focus-visible) {
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(245, 240, 232, 0.07);
   border-radius: var(--radius-2xl);
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .glass-card::after {
@@ -611,6 +620,9 @@ html.light .glass-card {
     inset 0 -1px 1px rgba(0, 0, 0, 0.2);
   border-radius: var(--radius-3xl);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .glass-panel::after {
@@ -648,6 +660,9 @@ html.light .glass-panel {
     var(--shadow-xl),
     inset 0 2px 2px rgba(255, 255, 255, 0.1),
     inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 html.light .frosted-dock {
@@ -675,14 +690,16 @@ html.light .frosted-dock-mobile {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dock-item:hover {
-  color: var(--foreground);
-  background: rgba(245, 240, 232, 0.06);
-  transform: translateY(-2px);
-}
-
-html.light .dock-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+@media (hover: hover) and (pointer: fine) {
+  .dock-item:hover {
+    color: var(--foreground);
+    background: rgba(245, 240, 232, 0.06);
+    transform: translateY(-2px);
+  }
+  
+  html.light .dock-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .dock-item-active {
@@ -690,8 +707,10 @@ html.light .dock-item:hover {
   background: rgba(245, 158, 11, 0.1);
 }
 
-.dock-item-active:hover {
-  background: rgba(245, 158, 11, 0.15);
+@media (hover: hover) and (pointer: fine) {
+  .dock-item-active:hover {
+    background: rgba(245, 158, 11, 0.15);
+  }
 }
 
 .safe-area-bottom {
@@ -734,22 +753,24 @@ html.light .btn-skeuo {
   color: #12121F;
 }
 
-.btn-skeuo:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.5),
-    inset 0 1px 2px rgba(255, 255, 255, 0.12);
-}
-
-html.light .btn-skeuo:hover {
-  box-shadow: 
-    0 8px 18px rgba(0, 0, 0, 0.06),
-    inset 0 1px 1px rgba(255, 255, 255, 1);
+@media (hover: hover) and (pointer: fine) {
+  .btn-skeuo:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 
+      0 8px 24px rgba(0, 0, 0, 0.5),
+      inset 0 1px 2px rgba(255, 255, 255, 0.12);
+  }
+  
+  html.light .btn-skeuo:hover {
+    box-shadow: 
+      0 8px 18px rgba(0, 0, 0, 0.06),
+      inset 0 1px 1px rgba(255, 255, 255, 1);
+  }
 }
 
 .btn-skeuo:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.97);
   border-bottom-width: 1px;
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
   transition-duration: 0.1s;
@@ -786,16 +807,18 @@ html.light .btn-skeuo-primary {
     inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
-.btn-skeuo-primary:hover {
-  filter: contrast(1.1) brightness(1.1);
-  transform: translateY(-2px);
-  box-shadow: 
-    0 10px 25px rgba(37, 99, 235, 0.35),
-    inset 0 1px 3px rgba(255, 255, 255, 0.5);
+@media (hover: hover) and (pointer: fine) {
+  .btn-skeuo-primary:hover {
+    filter: contrast(1.1) brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 10px 25px rgba(37, 99, 235, 0.35),
+      inset 0 1px 3px rgba(255, 255, 255, 0.5);
+  }
 }
 
 .btn-skeuo-primary:active {
-  transform: translateY(2px);
+  transform: translateY(2px) scale(0.97);
   border-bottom-width: 1px;
   box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.2);
 }
@@ -813,14 +836,16 @@ html.light .btn-skeuo-primary {
   box-shadow: var(--shadow-sm);
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, var(--accent-light), var(--accent));
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.4);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.4);
+  }
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.97);
   box-shadow: var(--shadow-inner);
 }
 
@@ -855,19 +880,21 @@ html.light .btn-glass {
     inset 0 1px 1px rgba(255, 255, 255, 0.8);
 }
 
-.btn-glass:hover {
-  background: rgba(245, 158, 11, 0.25);
-  border-color: rgba(245, 158, 11, 0.6);
-  transform: translateY(-2px);
-  box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.6),
-    0 0 20px rgba(245, 158, 11, 0.3),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3),
-    inset 0 -2px 5px rgba(245, 158, 11, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .btn-glass:hover {
+    background: rgba(245, 158, 11, 0.25);
+    border-color: rgba(245, 158, 11, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 15px 40px rgba(0, 0, 0, 0.6),
+      0 0 20px rgba(245, 158, 11, 0.3),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 5px rgba(245, 158, 11, 0.2);
+  }
 }
 
 .btn-glass:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.97);
   box-shadow: 
     0 5px 15px rgba(0, 0, 0, 0.4),
     inset 0 1px 1px rgba(255, 255, 255, 0.1);
@@ -883,10 +910,12 @@ html.light .btn-glass {
   transition: all 0.2s ease;
 }
 
-.btn-secondary:hover {
-  border-color: var(--border-hover);
-  background: rgba(245, 158, 11, 0.05);
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover {
+    border-color: var(--border-hover);
+    background: rgba(245, 158, 11, 0.05);
+    color: var(--accent);
+  }
 }
 
 /* ============================================
@@ -920,14 +949,19 @@ html.light .btn-jelly {
   box-shadow: 0 8px 18px -4px rgba(217, 119, 6, 0.35), inset 0 -3px 0 rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255, 255, 255, 0.3);
 }
 
-.btn-jelly:hover {
-  transform: scale(1.06) translateY(-2px);
-  background: var(--accent-light);
-  box-shadow: 
-    0 20px 40px -10px rgba(245, 158, 11, 0.55),
-    inset 0 -4px 1px rgba(0, 0, 0, 0.2),
-    inset 0 4px 4px rgba(255, 255, 255, 0.5);
-  filter: saturate(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .btn-jelly:hover {
+    transform: scale(1.06) translateY(-2px);
+    background: var(--accent-light);
+    box-shadow: 
+      0 20px 40px -10px rgba(245, 158, 11, 0.55),
+      inset 0 -4px 1px rgba(0, 0, 0, 0.2),
+      inset 0 4px 4px rgba(255, 255, 255, 0.5);
+    filter: saturate(1.1);
+  }
+  .btn-jelly:hover::before {
+    left: 100%;
+  }
 }
 
 .btn-jelly:active {
@@ -956,10 +990,6 @@ html.light .btn-jelly {
   pointer-events: none;
 }
 
-.btn-jelly:hover::before {
-  left: 100%;
-}
-
 /* Jelly ghost variant — elevated glassmorphism */
 .btn-jelly-ghost {
   position: relative;
@@ -984,15 +1014,17 @@ html.light .btn-jelly {
   cursor: pointer;
 }
 
-.btn-jelly-ghost:hover {
-  transform: scale(1.05) translateY(-2px);
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: var(--accent);
-  box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.5),
-    0 0 15px rgba(245, 158, 11, 0.1),
-    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .btn-jelly-ghost:hover {
+    transform: scale(1.05) translateY(-2px);
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--accent);
+    box-shadow:
+      0 12px 36px rgba(0, 0, 0, 0.5),
+      0 0 15px rgba(245, 158, 11, 0.1),
+      inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  }
 }
 
 .btn-jelly-ghost:active {
@@ -1004,19 +1036,18 @@ html.light .btn-jelly {
    ============================================ */
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 3px;
+  height: 3px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-  border-radius: 4px;
+  background: transparent;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: rgba(37, 99, 235, 0.4);
-  border-radius: 4px;
-  border: 2px solid var(--scrollbar-track); /* creates a floating sensation */
+  border-radius: 9999px;
   box-shadow: inset 0 0 10px rgba(37, 99, 235, 0.5); /* Glowing notch effect */
 }
 
@@ -1122,14 +1153,16 @@ select:focus-visible {
    ═══════════════════════════════════════════════════ */
 
 .interactive-glass {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
   cursor: pointer;
   user-select: none;
 }
 
-.interactive-glass:hover {
-  transform: translateY(-1px) scale(1.02);
-  filter: brightness(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .interactive-glass:hover {
+    transform: translateY(-1px) scale(1.02);
+    filter: brightness(1.1);
+  }
 }
 
 .interactive-glass:active {
@@ -1139,7 +1172,7 @@ select:focus-visible {
 }
 
 .nm-clickable {
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   box-shadow: 
     var(--shadow-md),
@@ -1153,18 +1186,123 @@ html.light .nm-clickable {
   border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
-.nm-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    25px 25px 70px rgba(0, 0, 0, 0.6),
-    -12px -12px 35px rgba(255, 255, 255, 0.03);
+@media (hover: hover) and (pointer: fine) {
+  .nm-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      25px 25px 70px rgba(0, 0, 0, 0.6),
+      -12px -12px 35px rgba(255, 255, 255, 0.03);
+  }
+
+  html.light .nm-clickable:hover {
+    box-shadow: 
+      15px 15px 35px rgba(0, 0, 0, 0.06),
+      -15px -15px 35px rgba(255, 255, 255, 1);
+  }
 }
 
-html.light .nm-clickable:hover {
-  box-shadow: 
-    15px 15px 35px rgba(0, 0, 0, 0.06),
-    -15px -15px 35px rgba(255, 255, 255, 1);
+/* ─── GLOBAL RESPONSIVE INTERACTIVE UTILITIES ─── */
+.card-interactive-lift {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease;
 }
+
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive-lift:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.card-interactive-lift:active {
+  transform: translateY(1px) scale(0.98);
+  transition-duration: 50ms;
+}
+
+.card-interactive-scale {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive-scale:hover {
+    transform: scale(1.01);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.card-interactive-scale:active {
+  transform: scale(0.98);
+  transition-duration: 50ms;
+}
+
+.card-interactive-slide-right {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive-slide-right:hover {
+    transform: translateX(4px);
+    border-color: var(--border-hover);
+  }
+}
+
+.card-interactive-slide-right:active {
+  transform: translateX(1px) scale(0.99);
+  transition-duration: 50ms;
+}
+
+/* Gated Hover and Interaction Utilities to stabilize mobile and tablet touches */
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift-sm:hover {
+    transform: translateY(-2px);
+  }
+  .hover-lift-md:hover {
+    transform: translateY(-3px);
+  }
+  .hover-lift-lg:hover {
+    transform: translateY(-4px);
+  }
+  
+  .hover-scale-sm:hover {
+    transform: scale(1.005);
+  }
+  .hover-scale-md:hover {
+    transform: scale(1.02);
+  }
+  .hover-scale-lg:hover {
+    transform: scale(1.05);
+  }
+  .hover-scale-xl:hover {
+    transform: scale(1.1);
+  }
+  
+  .group:hover .group-hover-scale-sm {
+    transform: scale(1.05);
+  }
+  .group:hover .group-hover-scale-md {
+    transform: scale(1.1);
+  }
+  .group:hover .group-hover-scale-lg {
+    transform: scale(1.25);
+  }
+  .group:hover .group-hover-rotate-sm {
+    transform: rotate(6deg) scale(1.1);
+  }
+  .group:hover .group-hover-rotate-6 {
+    transform: rotate(6deg);
+  }
+  .group:hover .group-hover-rotate-12 {
+    transform: rotate(12deg);
+  }
+  .group:hover .group-hover-scale-md-rotate-12 {
+    transform: scale(1.1) rotate(12deg);
+  }
+  .group:hover .group-hover-translate-x-sm {
+    transform: translateX(4px);
+  }
+}
+
 
 /* 3D Glassmorphism Highlight — Neatly sculpted inset glass */
 .nm-inset-glass {
@@ -1491,14 +1629,16 @@ html.light .nm-inset-glass {
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.clay-card:hover, .container-clay:hover {
-  box-shadow:
-    0 40px 80px -12px rgba(0, 0, 0, 0.85),
-    0 25px 50px -15px rgba(0, 0, 0, 0.6),
-    -8px -8px 25px rgba(60, 60, 90, 0.15),
-    inset 0 1px 2px rgba(255, 255, 255, 0.12),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
-  transform: translateY(-8px) scale(1.02);
+@media (hover: hover) and (pointer: fine) {
+  .clay-card:hover, .container-clay:hover {
+    box-shadow:
+      0 40px 80px -12px rgba(0, 0, 0, 0.85),
+      0 25px 50px -15px rgba(0, 0, 0, 0.6),
+      -8px -8px 25px rgba(60, 60, 90, 0.15),
+      inset 0 1px 2px rgba(255, 255, 255, 0.12),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+    transform: translateY(-8px) scale(1.02);
+  }
 }
 
 /* Glass panel variant */
@@ -1511,16 +1651,17 @@ html.light .nm-inset-glass {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 1px rgba(255, 255, 255, 0.04);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
 }
 
-.glass-panel:hover {
-  border-color: rgba(245, 158, 11, 0.15);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(245, 158, 11, 0.05),
-    inset 0 1px 2px rgba(255, 255, 255, 0.06);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .glass-panel:hover {
+    border-color: rgba(245, 158, 11, 0.15);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(245, 158, 11, 0.05),
+      inset 0 1px 2px rgba(255, 255, 255, 0.06);
+  }
 }
 
 html.light .clay-card {
@@ -1544,10 +1685,12 @@ html.light .clay-card {
   transition: all 0.3s ease;
 }
 
-.neu-card:hover {
-  box-shadow:
-    8px 8px 24px rgba(0, 0, 0, 0.55),
-    -8px -8px 24px rgba(40, 40, 65, 0.18);
+@media (hover: hover) and (pointer: fine) {
+  .neu-card:hover {
+    box-shadow:
+      8px 8px 24px rgba(0, 0, 0, 0.55),
+      -8px -8px 24px rgba(40, 40, 65, 0.18);
+  }
 }
 
 /* Neumorphism inset — pressed-in / concave */
@@ -1887,9 +2030,11 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   gap: 0.5rem;
   text-decoration: none;
 }
-.btn-jelly-primary:hover {
-  transform: scale(1.03) translateY(-1px);
-  box-shadow: 0 14px 30px -6px rgba(37, 99, 235, 0.5);
+@media (hover: hover) and (pointer: fine) {
+  .btn-jelly-primary:hover {
+    transform: scale(1.03) translateY(-1px);
+    box-shadow: 0 14px 30px -6px rgba(37, 99, 235, 0.5);
+  }
 }
 .btn-jelly-primary:active {
   transform: scale(0.97) translateY(2px);
@@ -1912,16 +2057,21 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   border-radius: 1.25rem;
   border: 1px solid rgba(245,240,232,0.15);
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   text-decoration: none;
 }
-.btn-ghost:hover {
-  background: rgba(245,240,232,0.05);
-  border-color: rgba(245,240,232,0.25);
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover {
+    background: rgba(245,240,232,0.05);
+    border-color: rgba(245,240,232,0.25);
+  }
+}
+.btn-ghost:active {
+  transform: scale(0.97);
 }
 
 /* ─── Redesign: Button — Indigo Secondary ─── */
@@ -1935,16 +2085,21 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   padding: 9px 20px;
   border-radius: 1.25rem;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   text-decoration: none;
 }
-.btn-indigo:hover {
-  background: rgba(99,102,241,0.18);
-  border-color: rgba(99,102,241,0.4);
+@media (hover: hover) and (pointer: fine) {
+  .btn-indigo:hover {
+    background: rgba(99,102,241,0.18);
+    border-color: rgba(99,102,241,0.4);
+  }
+}
+.btn-indigo:active {
+  transform: scale(0.97);
 }
 
 /* ─── Redesign: Card Base ─── */
@@ -1955,10 +2110,12 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   padding: 28px 24px;
   transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
 }
-.card-redesign:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 20px rgba(245,158,11,0.06);
-  border-color: rgba(245,240,232,0.12);
+@media (hover: hover) and (pointer: fine) {
+  .card-redesign:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 20px rgba(245,158,11,0.06);
+    border-color: rgba(245,240,232,0.12);
+  }
 }
 
 /* ─── Redesign: Section Label ─── */
@@ -2061,9 +2218,11 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   cursor: pointer;
   transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
 }
-.chip:hover {
-  border-color: rgba(245,240,232,0.25);
-  color: rgba(245,240,232,0.8);
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    border-color: rgba(245,240,232,0.25);
+    color: rgba(245,240,232,0.8);
+  }
 }
 .chip.selected {
   background: #F59E0B;
@@ -2090,12 +2249,17 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   box-shadow: 0 0 0 1px rgba(245,158,11,0.04) inset, 0 24px 64px rgba(0,0,0,0.45);
   cursor: pointer;
   position: relative;
-  transition: border-color 250ms ease, background 250ms ease, box-shadow 250ms ease;
+  transition: border-color 250ms ease, background 250ms ease, box-shadow 250ms ease, transform 150ms ease;
 }
-.upload-zone:hover {
-  border-color: rgba(245,158,11,0.7);
-  background: rgba(18,18,31,0.8);
-  box-shadow: 0 0 32px rgba(245,158,11,0.07), 0 24px 64px rgba(0,0,0,0.45);
+@media (hover: hover) and (pointer: fine) {
+  .upload-zone:hover {
+    border-color: rgba(245,158,11,0.7);
+    background: rgba(18,18,31,0.8);
+    box-shadow: 0 0 32px rgba(245,158,11,0.07), 0 24px 64px rgba(0,0,0,0.45);
+  }
+}
+.upload-zone:active {
+  transform: scale(0.97);
 }
 .upload-zone.drag-over {
   border-style: solid;
@@ -2167,8 +2331,10 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   display: flex;
   white-space: nowrap;
 }
-.ticker-row:hover {
-  animation-play-state: paused !important;
+@media (hover: hover) and (pointer: fine) {
+  .ticker-row:hover {
+    animation-play-state: paused !important;
+  }
 }
 .ticker-track {
   display: flex;
@@ -2245,9 +2411,11 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   width: max-content;
   animation: tickerScrollReverse 45s linear infinite;
 }
-.ticker-row:hover .ticker-track,
-.ticker-row:hover .ticker-track-reverse {
-  animation-play-state: paused;
+@media (hover: hover) and (pointer: fine) {
+  .ticker-row:hover .ticker-track,
+  .ticker-row:hover .ticker-track-reverse {
+    animation-play-state: paused;
+  }
 }
 .edge-fade-mask {
   mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
@@ -2341,76 +2509,7 @@ html[data-platform="mobile"][data-mobile-nav-visible="true"] .platform-main-cont
   50% { opacity: 1; transform: scale(1.2); }
 }
 
-/* ─── Jelly Primary Button ─── */
-.btn-jelly-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: white;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-  border: none;
-  border-radius: 1.25rem;
-  padding: 12px 28px;
-  cursor: pointer;
-  transition: transform 200ms ease, box-shadow 200ms ease;
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255,255,255,0.15);
-}
-.btn-jelly-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255,255,255,0.15);
-}
-.btn-jelly-primary:active {
-  transform: translateY(0) scale(0.98);
-}
-.btn-jelly-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
 
-/* ─── Ghost Button ─── */
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Outfit', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(245,240,232,0.5);
-  background: transparent;
-  border: 1px solid rgba(245,240,232,0.1);
-  border-radius: 0.875rem;
-  padding: 9px 18px;
-  cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
-}
-.btn-ghost:hover {
-  color: #F5F0E8;
-  border-color: rgba(245,240,232,0.2);
-}
-
-/* ─── Indigo Button (Quiz "Next") ─── */
-.btn-indigo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Outfit', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: #F5F0E8;
-  background: rgba(99,102,241,0.15);
-  border: 1px solid rgba(99,102,241,0.3);
-  border-radius: 0.875rem;
-  padding: 9px 18px;
-  cursor: pointer;
-  transition: background 150ms ease;
-}
-.btn-indigo:hover {
-  background: rgba(99,102,241,0.25);
-}
 
 @keyframes ambient-drift-1 {
   0% { transform: translate3d(0, 0, 0) scale(1); }
@@ -2451,17 +2550,19 @@ html.dark .btn-skeuo-blue {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
-.btn-skeuo-blue:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06), inset 0 2px 0 0 rgba(255, 255, 255, 0.9);
-}
-
-html.dark .btn-skeuo-blue:hover {
-  box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .btn-skeuo-blue:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06), inset 0 2px 0 0 rgba(255, 255, 255, 0.9);
+  }
+  
+  html.dark .btn-skeuo-blue:hover {
+    box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  }
 }
 
 .btn-skeuo-blue:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.97);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 }
 

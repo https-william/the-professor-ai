@@ -193,13 +193,13 @@ export const StudyRoadmap = ({ data }: { data: any }) => {
                 <div className="lg:col-span-5 space-y-8">
                     {/* Key Focus Areas Card */}
                     <motion.div variants={item} className="p-8 rounded-[36px] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl relative overflow-hidden group hover:border-[var(--blue)]/40 transition-all duration-500">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[var(--blue)]/10 via-transparent to-transparent rounded-full blur-2xl pointer-events-none -z-10 group-hover:scale-125 transition-transform duration-700" />
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[var(--blue)]/10 via-transparent to-transparent rounded-full blur-2xl pointer-events-none -z-10 group-hover-scale-lg transition-transform duration-700" />
                         <div className="absolute top-6 right-6 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
                             <Target size={48} className="text-[var(--blue)]" />
                         </div>
                         
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-2xl bg-[var(--blue)]/10 flex items-center justify-center text-[var(--blue)] border border-[var(--blue)]/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                            <div className="w-10 h-10 rounded-2xl bg-[var(--blue)]/10 flex items-center justify-center text-[var(--blue)] border border-[var(--blue)]/20 shadow-inner group-hover-scale-md transition-transform duration-500">
                                 <Flame size={20} className="text-[var(--blue)]" />
                             </div>
                             <div>
@@ -224,13 +224,13 @@ export const StudyRoadmap = ({ data }: { data: any }) => {
 
                     {/* Intellectual Pitfalls Card */}
                     <motion.div variants={item} className="p-8 rounded-[36px] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl relative overflow-hidden group hover:border-[var(--amber)]/40 transition-all duration-500 border-l-4 border-l-[var(--amber)]">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[var(--amber)]/10 via-transparent to-transparent rounded-full blur-2xl pointer-events-none -z-10 group-hover:scale-125 transition-transform duration-700" />
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[var(--amber)]/10 via-transparent to-transparent rounded-full blur-2xl pointer-events-none -z-10 group-hover-scale-lg transition-transform duration-700" />
                         <div className="absolute top-6 right-6 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
                             <ShieldAlert size={48} className="text-[var(--amber)]" />
                         </div>
 
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-2xl bg-[var(--amber)]/10 flex items-center justify-center text-[var(--amber)] border border-[var(--amber)]/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                            <div className="w-10 h-10 rounded-2xl bg-[var(--amber)]/10 flex items-center justify-center text-[var(--amber)] border border-[var(--amber)]/20 shadow-inner group-hover-scale-md transition-transform duration-500">
                                 <AlertTriangle size={20} className="text-[var(--amber)]" />
                             </div>
                             <div>
@@ -278,12 +278,12 @@ export const StudyRoadmap = ({ data }: { data: any }) => {
                 {/* Right Column: The Timeline (7 spans) */}
                 <div className="lg:col-span-7">
                     <motion.div variants={item} className="h-full p-8 sm:p-10 rounded-[40px] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl relative overflow-hidden flex flex-col justify-between group hover:border-[var(--blue)]/30 transition-all duration-500">
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-[var(--blue)]/5 via-transparent to-transparent rounded-full blur-3xl pointer-events-none -z-10 group-hover:scale-110 transition-transform duration-700" />
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-[var(--blue)]/5 via-transparent to-transparent rounded-full blur-3xl pointer-events-none -z-10 group-hover-scale-md transition-transform duration-700" />
                         
                         <div>
                             <div className="flex items-center justify-between mb-10 pb-6 border-b border-[var(--border)]/60">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-[var(--blue)]/10 flex items-center justify-center text-[var(--blue)] border border-[var(--blue)]/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                    <div className="w-12 h-12 rounded-2xl bg-[var(--blue)]/10 flex items-center justify-center text-[var(--blue)] border border-[var(--blue)]/20 shadow-inner group-hover-scale-md transition-transform duration-500">
                                         <Calendar size={24} className="text-[var(--blue)]" />
                                     </div>
                                     <div>

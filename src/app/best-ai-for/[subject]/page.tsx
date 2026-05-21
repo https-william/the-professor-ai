@@ -159,7 +159,7 @@ export default async function SubjectSEOPage({ params }: { params: Promise<{ sub
                    <h3 className="text-xl font-bold mb-1 text-[var(--accent)]">{tool.name}</h3>
                    <p className="text-sm text-[var(--foreground-muted)]">{tool.why}</p>
                 </div>
-                <Link href="/signup" className="px-6 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all">
+                <Link href="/signup" className="px-6 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase text-xs tracking-widest hover-scale-lg active:scale-95 transition-all">
                    Try Tool
                 </Link>
              </div>
@@ -183,7 +183,7 @@ export default async function SubjectSEOPage({ params }: { params: Promise<{ sub
            <p className="text-[var(--foreground-muted)] mb-10 max-w-lg mx-auto font-medium">
               Join the circle of students who use AI as a tool, not a crutch.
            </p>
-           <Link href="/signup" className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl">
+           <Link href="/signup" className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest hover-scale-lg active:scale-95 transition-all shadow-xl">
               Join the Lab <ArrowRight className="w-4 h-4" />
            </Link>
         </div>

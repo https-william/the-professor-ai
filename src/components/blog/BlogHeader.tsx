@@ -44,7 +44,7 @@ export default function BlogHeader() {
                     <ThemeToggle />
                     <Link 
                         href="/login" 
-                        className="px-6 py-2.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg"
+                        className="px-6 py-2.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-[11px] font-black uppercase tracking-widest hover-scale-lg active:scale-95 transition-all shadow-lg"
                     >
                         Sign In
                     </Link>

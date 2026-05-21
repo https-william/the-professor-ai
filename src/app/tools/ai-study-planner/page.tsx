@@ -86,7 +86,7 @@ export default function AIStudyPlanner() {
               <button 
                 onClick={generatePlan}
                 disabled={!exam || loading}
-                className="w-full py-6 rounded-3xl bg-white text-black font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3"
+                className="w-full py-6 rounded-3xl bg-white text-black font-black uppercase tracking-[0.2em] shadow-2xl hover-scale-md active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3"
               >
                 {loading ? "Strategizing..." : <>Generate Study Plan <Zap className="w-5 h-5 fill-black" /></>}
               </button>
@@ -118,7 +118,7 @@ export default function AIStudyPlanner() {
               <p className="text-black/60 mb-8 max-w-md mx-auto">
                 Join 50,000+ students using The Professor to automate their academic success.
               </p>
-              <Link href="/signup" className="inline-block px-12 py-5 rounded-3xl bg-black text-white font-black uppercase tracking-widest hover:scale-105 transition-all">
+              <Link href="/signup" className="inline-block px-12 py-5 rounded-3xl bg-black text-white font-black uppercase tracking-widest hover-scale-lg transition-all">
                 Access Full Plan
               </Link>
             </div>

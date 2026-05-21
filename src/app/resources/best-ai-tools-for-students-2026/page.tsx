@@ -127,7 +127,7 @@ export default function PillarPage() {
               <p className="text-[var(--background)]/70 max-w-2xl mx-auto mb-10 text-lg">
                  Stop reading about the tools. Start using the one built for academic success. 
               </p>
-              <Link href="/signup" className="inline-block px-12 py-5 rounded-3xl bg-[var(--background)] text-white font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all">
+              <Link href="/signup" className="inline-block px-12 py-5 rounded-3xl bg-[var(--background)] text-white font-black uppercase tracking-[0.2em] shadow-2xl hover-scale-lg transition-all">
                  Join the Lab
               </Link>
            </div>

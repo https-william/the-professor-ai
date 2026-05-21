@@ -179,7 +179,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg disabled:opacity-50"
+                  className="w-full py-3.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest hover-scale-md active:scale-[0.98] transition-all shadow-lg disabled:opacity-50"
                 >
                   {loading ? "Creating account..." : "Create free account"}
                 </button>

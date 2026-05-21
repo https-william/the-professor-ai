@@ -179,7 +179,7 @@ export default function OfflineVaultPage() {
                         </p>
                         <button
                             onClick={() => router.push("/library")}
-                            className="px-8 py-3.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.9] transition-all shadow-xl"
+                            className="px-8 py-3.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-xs font-black uppercase tracking-widest hover-scale-md active:scale-[0.9] transition-all shadow-xl"
                         >
                             Browse Cloud Library
                         </button>
@@ -233,7 +233,7 @@ export default function OfflineVaultPage() {
                                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
                                             <BookOpen size={13} className="text-[var(--emerald)]" /> {completedCount} / 4 Phases Ready
                                         </div>
-                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[var(--emerald)] group-hover:translate-x-1 transition-transform">
+                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[var(--emerald)] group-hover-translate-x-sm transition-transform">
                                             Open Pack <ExternalLink size={12} />
                                         </div>
                                     </div>

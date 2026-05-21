@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 
@@ -35,7 +35,7 @@ interface ReviewDeck {
     cards: ReviewCard[];
 }
 
-export default function ReviewPage() {
+function ReviewContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, refreshUser } = useUser();
@@ -443,5 +443,13 @@ export default function ReviewPage() {
                 continueHref="/dashboard"
             />
         </div>
+    );
+}
+
+export default function ReviewPage() {
+    return (
+        <Suspense fallback={<div className="h-[100dvh] bg-[#06060B] overflow-hidden relative flex items-center justify-center"><div className="w-12 h-12 rounded-2xl bg-[#F59E0B]/10 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#F59E0B]/20 border-t-[#F59E0B] rounded-full animate-spin" /></div></div>}>
+            <ReviewContent />
+        </Suspense>
     );
 }

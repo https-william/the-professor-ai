@@ -44,7 +44,7 @@ class PlatformErrorBoundary extends React.Component<
 
            <button
              onClick={() => window.location.reload()}
-             className="px-8 py-3.5 rounded-2xl bg-white text-[#08080E] text-xs font-black uppercase tracking-widest hover:scale-[1.02] active:scale-98 transition-all shadow-[0_15px_30px_rgba(255,255,255,0.05)]"
+             className="px-8 py-3.5 rounded-2xl bg-white text-[#08080E] text-xs font-black uppercase tracking-widest hover-scale-md active:scale-[0.98] transition-all shadow-[0_15px_30px_rgba(255,255,255,0.05)]"
            >
              Reload View
            </button>

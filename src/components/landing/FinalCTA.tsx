@@ -21,7 +21,7 @@ export default function FinalCTA() {
       overflow: "hidden",
     }}>
       <div style={{ maxWidth: "1000px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-        <div className="scholar-card p-10 sm:p-24 text-center overflow-hidden border-[var(--blue-border)]" style={{ borderRadius: "48px", background: "linear-gradient(165deg, var(--blue-dim), var(--bg))" }}>
+        <div className="p-10 sm:p-24 text-center overflow-hidden border border-[var(--blue-border)] shadow-sm" style={{ borderRadius: "48px", background: "linear-gradient(165deg, var(--blue-dim), var(--bg))" }}>
           <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={200} /></div>
           
           <div className="relative z-10 flex flex-col items-center">

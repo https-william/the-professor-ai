@@ -375,7 +375,7 @@ export function ToastContainer() {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, x: -100 }}
                                             className={`
-                                                relative p-5 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] border backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] bg-[var(--bg)]/80
+                                                relative p-5 rounded-2xl cursor-pointer transition-all hover-scale-md border backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] bg-[var(--bg)]/80
                                                 ${typeStyles[toast.type].border}
                                                 ${typeStyles[toast.type].glow}
                                                 ${toast.read ? 'opacity-50 grayscale-[40%]' : ''}

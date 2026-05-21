@@ -174,11 +174,10 @@ function MatchGamePanel() {
           const isMatched = c.state === "matched";
           const isSelected = c.state === "selected";
           return (
-            <div key={i} style={{
+            <div key={i} className={`match-card ${isMatched ? "matched" : ""}`} style={{
               height: "clamp(60px, 12vw, 80px)", borderRadius: "1rem", padding: "8px",
               display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center",
               cursor: isMatched ? "default" : "pointer",
-              transition: "all 200ms",
               background: isMatched ? "var(--emerald-dim)" : isSelected ? "var(--blue-dim)" : "var(--bg-2)",
               border: isMatched ? "1px solid var(--emerald-border)" : isSelected ? "1.5px solid var(--blue)" : "1px solid var(--border)",
               color: isMatched ? "var(--emerald)" : isSelected ? "var(--text)" : "var(--text-3)",
@@ -195,6 +194,18 @@ function MatchGamePanel() {
       <style jsx>{`
         @media (max-width: 768px) {
           .match-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        .match-card {
+          transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 120ms ease-out;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .match-card:hover:not(.matched) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+          }
+        }
+        .match-card:active:not(.matched) {
+          transform: scale(0.96);
         }
       `}</style>
     </div>
@@ -248,10 +259,9 @@ export default function InteractiveDemo() {
                 onClick={() => setActiveTab(tab)}
                 className={activeTab === tab ? "btn-skeuo text-[var(--blue)] px-4 sm:px-8 py-2.5" : "px-4 sm:px-8 py-2.5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"}
                 style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "10px",
-                  fontWeight: 900,
-                  borderRadius: "9999px",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: "11px",
+                  fontWeight: 800,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase"
                 }}
@@ -263,7 +273,7 @@ export default function InteractiveDemo() {
         </div>
 
         {/* Demo Panel */}
-        <div className="scholar-card relative overflow-hidden" style={{
+        <div className="relative overflow-hidden border border-[var(--border)] shadow-sm" style={{
           padding: "clamp(16px, 5vw, 64px)",
           borderRadius: "32px",
           background: "linear-gradient(165deg, var(--bg-2), var(--bg))",
@@ -272,7 +282,7 @@ export default function InteractiveDemo() {
           {/* Ambient Glow */}
           <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "50%", height: "50%", background: "var(--blue-dim)", filter: "blur(120px)", opacity: 0.1, pointerEvents: "none" }} />
           
-          <div key={activeTab} className="relative z-10" style={{ animation: "fadeIn 500ms cubic-bezier(0.16, 1, 0.3, 1)" }}>
+          <div key={activeTab} className="relative z-10" style={{ animation: "fadeIn 240ms cubic-bezier(0.23, 1, 0.32, 1) forwards" }}>
             {activeTab === "Study Guide" && <StudyGuidePanel />}
             {activeTab === "Summary" && <SummaryPanel />}
             {activeTab === "Quiz" && <QuizPanel />}
@@ -283,7 +293,7 @@ export default function InteractiveDemo() {
 
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
