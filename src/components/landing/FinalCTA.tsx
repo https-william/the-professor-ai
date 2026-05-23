@@ -60,7 +60,7 @@ export default function FinalCTA() {
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <Link
                 href="/signup"
-                className="btn-jelly-primary px-10 py-5 text-[15px]"
+                className="px-10 py-5 text-[15px] font-black uppercase tracking-[0.15em] rounded-2xl flex items-center gap-2 hover:scale-[1.03] active:scale-[0.98] transition-all hover:bg-white hover:text-black border border-white/20 hover:border-white text-white bg-black/60 shadow-xl duration-300"
                 style={{ textDecoration: "none" }}
               >
                 Create Scholar Account
@@ -68,7 +68,7 @@ export default function FinalCTA() {
               <Link
                 href="/login"
                 className="btn-skeuo px-10 py-5 text-[15px]"
-                style={{ textDecoration: "none" }}
+                style={{ textDecoration: "none", border: "1px solid var(--border)" }}
               >
                 Return to Workspace
               </Link>

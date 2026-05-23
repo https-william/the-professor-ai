@@ -393,14 +393,14 @@ export default function AchievementsPage() {
                                 animate={{ scale: [1.2, 1], y: 0, opacity: 1 }}
                                 exit={{ scale: 0.8, y: -50, opacity: 0 }}
                                 transition={{ type: "spring", damping: 12, stiffness: 200 }}
-                                className="bg-[#0A0A0F]/95 backdrop-blur-3xl border-2 border-[var(--amber)] p-8 rounded-[36px] shadow-[0_0_80px_var(--amber-glow)] flex flex-col items-center text-center max-w-md mx-4 pointer-events-auto"
+                                className="bg-[#0A0A0F]/95 backdrop-blur-3xl border border-[var(--amber)]/40 p-8 sm:p-10 rounded-[32px] shadow-[0_30px_80px_rgba(0,0,0,0.8),_inset_0_1px_1px_rgba(255,255,255,0.15),_0_0_60px_rgba(245,158,11,0.2)] flex flex-col items-center text-center max-w-md mx-4 pointer-events-auto transition-all"
                             >
-                                <div className="w-20 h-20 rounded-2xl bg-[var(--amber)]/20 border border-[var(--amber)] flex items-center justify-center text-[var(--amber)] mb-6 shadow-[0_0_30px_var(--amber-glow)] animate-bounce">
+                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/25 to-yellow-500/10 border border-amber-500/40 flex items-center justify-center text-[var(--amber)] mb-6 shadow-[0_8px_30px_rgba(245,158,11,0.25),_inset_0_1px_1px_rgba(255,255,255,0.1)] animate-bounce">
                                     <Trophy size={40} />
                                 </div>
                                 <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[var(--amber)] mb-2">Achievement Unlocked</span>
                                 <h3 className="text-2xl sm:text-3xl font-black text-white mb-4 tracking-tight">{celebrationText.title}</h3>
-                                <div className="px-6 py-3 rounded-2xl bg-[var(--amber)] text-black font-black text-xl tracking-wider shadow-lg mb-4">
+                                <div className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black text-xl tracking-wider shadow-[0_8px_25px_rgba(245,158,11,0.3)] mb-4">
                                     +{celebrationText.reward} XP
                                 </div>
                                 <p className="text-xs text-[var(--text-2)] font-mono">Your neural network expands. Diligence rewarded.</p>

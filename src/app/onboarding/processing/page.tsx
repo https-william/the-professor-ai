@@ -68,30 +68,41 @@ export default function ProcessingPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
+    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Cinematic Ambient Blur Background */}
+      <div className="absolute inset-0 bg-[#08080E]/80 backdrop-blur-[100px]" />
+      
+      {/* Ambient Orbs */}
+      <motion.div 
+        className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-10 pointer-events-none"
+        style={{ background: "radial-gradient(circle, var(--blue-dim), transparent 70%)", filter: "blur(100px)", top: "-10%", left: "-10%" }}
+        animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -20, 0] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+
       <StandardContainer narrow>
-        <div className="max-w-xl mx-auto flex flex-col items-center">
+        <div className="relative z-10 w-full max-w-xl mx-auto flex flex-col items-center p-8 sm:p-12 bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl backdrop-blur-xl">
           
           {/* Logo & Status */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-12 text-center"
+            className="mb-8 text-center"
           >
-            <div className="w-20 h-20 rounded-[2rem] bg-[var(--foreground)]/5 flex items-center justify-center mb-6 mx-auto relative overflow-hidden group">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center mb-6 mx-auto relative overflow-hidden group">
                <div className="absolute inset-0 bg-[var(--foreground)] opacity-[0.03] animate-pulse" />
-               <Sparkles size={32} className="text-[var(--foreground)] animate-float-xyz" />
+               <Sparkles size={24} className="text-[var(--foreground)]" />
             </div>
-            <h1 className="text-3xl font-black text-[var(--foreground)] tracking-tight mb-2">
+            <h1 className="text-2xl font-black text-[var(--foreground)] tracking-tight mb-2">
               The Professor is analyzing
             </h1>
-            <p className="text-[var(--foreground-muted)] font-medium">
+            <p className="text-sm text-[var(--foreground-muted)] font-medium">
               Reading <span className="text-[var(--foreground)] font-bold">"{fileName}"</span>...
             </p>
           </motion.div>
 
           {/* Staggered Checklist */}
-          <div className="w-full space-y-4 mb-12">
+          <div className="w-full space-y-3 mb-8">
             {STEPS.map((step, i) => (
               <div 
                 key={step.id}
@@ -100,18 +111,18 @@ export default function ProcessingPage() {
                   currentStep > i 
                     ? "bg-[var(--foreground)]/[0.02] border-[var(--foreground)]/10 opacity-100" 
                     : i === currentStep 
-                      ? "bg-[var(--foreground)]/[0.05] border-[var(--foreground)]/20 opacity-100 scale-[1.02]" 
-                      : "bg-transparent border-transparent opacity-30"
+                      ? "bg-[var(--foreground)]/[0.04] border-[var(--foreground)]/20 opacity-100 scale-[1.01]" 
+                      : "bg-transparent border-transparent opacity-25"
                 )}
               >
                 <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-500",
-                  currentStep > i ? "bg-emerald-500/10 text-emerald-500" : "bg-[var(--foreground)]/5 text-[var(--foreground-muted)]"
+                  "w-9 h-9 rounded-xl flex items-center justify-center transition-colors duration-500",
+                  currentStep > i ? "bg-[var(--foreground)] text-[var(--background)]" : "bg-[var(--foreground)]/5 text-[var(--foreground-muted)]"
                 )}>
-                  {currentStep > i ? <CheckCircle2 size={18} /> : i === currentStep ? <Loader2 size={18} className="animate-spin" /> : <step.icon size={18} />}
+                  {currentStep > i ? <CheckCircle2 size={16} /> : i === currentStep ? <Loader2 size={16} className="animate-spin" /> : <step.icon size={16} />}
                 </div>
                 <span className={cn(
-                  "font-bold text-sm tracking-tight transition-colors duration-500",
+                  "font-bold text-xs tracking-tight transition-colors duration-500",
                   currentStep > i ? "text-[var(--foreground)]" : i === currentStep ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)]"
                 )}>
                   {step.label}
@@ -121,7 +132,7 @@ export default function ProcessingPage() {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full h-2 bg-[var(--foreground)]/5 rounded-full overflow-hidden mb-8">
+          <div className="w-full h-1.5 bg-[var(--foreground)]/5 rounded-full overflow-hidden mb-6">
             <motion.div 
               className="h-full bg-[var(--foreground)]"
               initial={{ width: "33%" }}
@@ -131,7 +142,7 @@ export default function ProcessingPage() {
           </div>
 
           {/* Study Tip Ticker */}
-          <div className="h-12 flex items-center justify-center text-center w-full">
+          <div className="h-10 flex items-center justify-center text-center w-full">
             <AnimatePresence mode="wait">
               <motion.div
                 key={tipIndex}
@@ -139,9 +150,9 @@ export default function ProcessingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.5 }}
-                className="flex items-center gap-3 text-[var(--foreground-muted)] text-sm font-medium italic"
+                className="flex items-center gap-2.5 text-[var(--foreground-muted)] text-xs font-semibold italic"
               >
-                <Lightbulb size={16} className="text-amber-500 shrink-0" />
+                <Lightbulb size={14} className="text-amber-500 shrink-0" />
                 <span>{STUDY_TIPS[tipIndex]}</span>
               </motion.div>
             </AnimatePresence>

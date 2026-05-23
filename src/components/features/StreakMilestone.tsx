@@ -131,7 +131,7 @@ export default function StreakMilestone({ count, isVisible, onClose }: StreakMil
                         exit={{ scale: 0.9, y: 10, opacity: 0 }}
                         transition={{ type: "spring", damping: 20, stiffness: 200 }}
                     >
-                        <div className="rounded-[32px] sm:rounded-[40px] p-[1px] overflow-hidden shadow-2xl" style={{ background: `linear-gradient(135deg, ${config.color}40, rgba(255,255,255,0.05))` }}>
+                        <div className="rounded-[32px] sm:rounded-[40px] p-[1px] overflow-hidden" style={{ background: `linear-gradient(135deg, ${config.color}40, rgba(255,255,255,0.05))`, boxShadow: `0 30px 70px -10px rgba(0, 0, 0, 0.95), 0 0 60px ${config.color}15, inset 0 1px 1px rgba(255, 255, 255, 0.15)` }}>
                             <div className="bg-[#0A0A0F]/90 backdrop-blur-3xl rounded-[31px] sm:rounded-[39px] p-6 sm:p-8 md:p-10 flex flex-col items-center text-center">
                                 
                                 {/* Badge Icon */}
@@ -188,17 +188,25 @@ export default function StreakMilestone({ count, isVisible, onClose }: StreakMil
                                         <div className="h-px flex-1 bg-white/5" />
                                     </div>
                                     
-                                    <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-3.5 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/5 mb-4 sm:mb-5">
+                                    <div 
+                                        className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-3.5 rounded-2xl sm:rounded-3xl border mb-4 sm:mb-5 transition-all duration-300"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${config.color}10, rgba(255, 255, 255, 0.02))`,
+                                            borderColor: `${config.color}25`,
+                                            boxShadow: `inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 0 20px ${config.color}08`
+                                        }}
+                                    >
                                         <Zap size={20} strokeWidth={1.8} className="text-[#F59E0B]" />
                                         <span className="text-lg sm:text-xl font-black text-white">+{config.bonusXp} XP</span>
                                     </div>
 
                                     <button 
                                         onClick={onClose}
-                                        className="w-full py-3.5 sm:py-4 rounded-[18px] sm:rounded-[20px] font-black text-xs sm:text-sm tracking-wider sm:tracking-widest uppercase transition-all active:scale-[0.98] shadow-xl hover:bg-white/90"
+                                        className="w-full py-3.5 sm:py-4 rounded-[18px] sm:rounded-[20px] font-black text-xs sm:text-sm tracking-wider sm:tracking-widest uppercase transition-all duration-300 hover:scale-[1.01] active:scale-[0.97] hover:brightness-110 shadow-lg"
                                         style={{ 
-                                            background: "white", 
-                                            color: "#06060B"
+                                            background: `linear-gradient(135deg, ${config.color}, ${config.color}cc)`, 
+                                            color: config.icon === 'headphones' || config.icon === 'school' ? '#ffffff' : '#06060B',
+                                            boxShadow: `0 8px 24px ${config.color}35, inset 0 1px 1px rgba(255,255,255,0.25)`
                                         }}
                                     >
                                         Accept Achievement

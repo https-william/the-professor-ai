@@ -185,15 +185,15 @@ export default function HeroSection() {
         >
           <a
             href="#get-started"
-            className="btn-jelly-primary px-10 py-5 text-[15px]"
+            className="px-10 py-5 text-[15px] font-black uppercase tracking-[0.15em] rounded-2xl flex items-center gap-2 hover:scale-[1.03] active:scale-[0.98] transition-all hover:bg-white hover:text-black border border-white/20 hover:border-white text-white bg-black/60 shadow-xl duration-300"
             style={{ textDecoration: "none" }}
           >
             Get Started <ArrowRight size={18} className="ml-2" />
           </a>
           <Link
             href="/about"
-            className="btn-ghost px-8 py-4 text-[14px] border-[var(--blue-border)]"
-            style={{ textDecoration: "none", color: "var(--foreground-secondary)" }}
+            className="btn-ghost px-8 py-4 text-[14px]"
+            style={{ textDecoration: "none", color: "var(--foreground-secondary)", border: "1px solid var(--border)" }}
           >
             How it works
           </Link>

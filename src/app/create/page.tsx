@@ -370,212 +370,255 @@ function CreatorStudio() {
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-400 space-y-6">
-                        <div className="flex items-center gap-4 p-5 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl">
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                                style={{ background: `color-mix(in srgb, ${selectedCreator?.color}, transparent 92%)`, border: `1px solid color-mix(in srgb, ${selectedCreator?.color}, transparent 80%)` }}>
-                                {selectedCreator && <selectedCreator.icon size={24} strokeWidth={2.2} style={{ color: selectedCreator?.color }} />}
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-[15px] font-black text-[var(--foreground)] tracking-tight">{selectedCreator?.label}</h3>
-                                <p className="text-[12px] text-[var(--foreground-muted)] font-bold opacity-70">{selectedCreator?.desc}</p>
-                            </div>
-                            <button onClick={resetSelection} className="p-3 hover:bg-[var(--border)] rounded-full transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="relative overflow-hidden rounded-[40px] bg-[var(--card)] border border-[var(--border)] shadow-2xl">
-                            <div className="px-6 pt-5 flex items-center justify-between">
-                                <label className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-30">Source Material</label>
-                                <span className={`text-[11px] font-mono font-black tracking-tighter ${charPercentage > 80 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
-                                    {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
-                                </span>
-                            </div>
-                            <div className="relative p-6">
-                                {isUploading && (
-                                    <div className="absolute inset-0 z-10 bg-[var(--bg)]/80 backdrop-blur-md flex flex-col items-center justify-center rounded-[32px] gap-4">
-                                        <div className="relative w-14 h-14">
-                                            <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
-                                            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)] animate-spin" />
-                                        </div>
-                                        <p className="text-[11px] font-black text-[var(--foreground)] uppercase tracking-[0.4em]">{uploadStatus}</p>
-                                    </div>
-                                )}
-                                <textarea
-                                    value={inputText}
-                                    onChange={handleInputChange}
-                                    placeholder="Paste lecture notes, syllabus, or raw data here..."
-                                    className="w-full h-64 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] placeholder:opacity-40 text-[16px] leading-relaxed outline-none font-bold"
-                                    style={{ scrollbarWidth: "none" }}
-                                    autoFocus
-                                    disabled={isUploading}
-                                />
-                            </div>
-                            <div className="px-6 py-5 flex items-center justify-between bg-[var(--bg-3)] border-t border-[var(--border)]">
-                                <button
-                                    onClick={handleFileUploadRequest}
-                                    className="flex items-center gap-3 text-[12px] font-black text-[var(--blue)] hover:text-[var(--blue-dark)] uppercase tracking-[0.2em] transition-all group"
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {/* Two-column layout grid */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                            
+                            {/* Left Side: Workspace (8 cols on desktop) */}
+                            <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+                                
+                                {/* Refined Tool Header with subtle gradient matching tool theme */}
+                                <div 
+                                    className="flex items-center gap-4 p-5 rounded-[32px] bg-[var(--card)]/90 border transition-all duration-300 shadow-md"
+                                    style={{ 
+                                        borderColor: `color-mix(in srgb, ${selectedCreator?.color || 'var(--border)'}, transparent 80%)`,
+                                        boxShadow: `0 10px 30px -10px color-mix(in srgb, ${selectedCreator?.color || 'transparent'}, transparent 95%)`
+                                    }}
                                 >
-                                    <Upload size={16} strokeWidth={2.5} className="group-hover:-translate-y-1 transition-transform" />
-                                    Feed the Professor
-                                </button>
-                                {inputText.length > 0 && inputText.length < 50 && (
-                                    <span className="text-[11px] font-black text-[var(--amber)] uppercase tracking-tight italic">Min 50 chars required</span>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-30 mb-5 block">
-                                    Density / Count
-                                </label>
-                                <div className="flex flex-wrap gap-2.5">
-                                    {countOptions.map((count) => (
-                                        <button
-                                            key={count}
-                                            onClick={() => setItemCount(count)}
-                                            className={cn(
-                                                "px-5 py-2.5 text-[12px] font-black transition-all rounded-2xl border",
-                                                itemCount === count 
-                                                ? 'bg-[var(--blue)] text-white border-[var(--blue)] shadow-[0_8px_16px_-4px_rgba(59,130,246,0.5)]' 
-                                                : 'bg-[var(--bg-3)] text-[var(--foreground-muted)] border-[var(--border)] hover:bg-[var(--border)]'
-                                            )}
-                                        >
-                                            {count}
-                                        </button>
-                                    ))}
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                                        style={{ 
+                                            background: `color-mix(in srgb, ${selectedCreator?.color || 'var(--blue)'}, transparent 92%)`, 
+                                            border: `1px solid color-mix(in srgb, ${selectedCreator?.color || 'var(--blue)'}, transparent 80%)` 
+                                        }}
+                                    >
+                                        {selectedCreator && <selectedCreator.icon size={20} strokeWidth={2.2} style={{ color: selectedCreator?.color }} />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm font-black text-[var(--foreground)] tracking-tight">{selectedCreator?.label}</h3>
+                                        <p className="text-[11px] text-[var(--foreground-muted)] font-bold opacity-70 leading-normal">{selectedCreator?.desc}</p>
+                                    </div>
+                                    <button 
+                                        onClick={resetSelection} 
+                                        className="p-2 hover:bg-[var(--border)] rounded-full transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)] shrink-0"
+                                    >
+                                        <X size={18} />
+                                    </button>
                                 </div>
-                            </div>
-  
-                            <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-30 mb-5 block">Professor&apos;s Rigor</label>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    {difficultyOptions.map((opt) => (
-                                        <button
-                                            key={opt.id}
-                                            onClick={() => setDifficulty(opt.id as any)}
-                                            className={cn(
-                                                "p-4 text-left rounded-[20px] transition-all border",
-                                                difficulty === opt.id 
-                                                ? 'bg-[var(--blue)]/5 border-[var(--blue)]/30 shadow-md scale-[1.02]' 
-                                                : 'bg-[var(--bg-3)] border-[var(--border)] hover:bg-[var(--border)]'
-                                            )}
-                                        >
-                                            <div className={cn("text-[12px] font-black flex items-center gap-2 mb-1.5", difficulty === opt.id ? 'text-[var(--blue)]' : 'text-[var(--foreground)]')}>
-                                                <span>{opt.emoji}</span> {opt.label}
-                                            </div>
-                                            <p className="text-[10px] text-[var(--foreground-muted)] font-bold opacity-60 leading-tight">{opt.desc}</p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
 
-                            {formatOptions[selectedType || ""] && (
-                                <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-30 mb-5 block">Output Format</label>
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                        {formatOptions[selectedType || ""].map((opt) => (
-                                            <button
-                                                key={opt.id}
-                                                onClick={() => setSelectedFormat(opt.id)}
-                                                className={cn(
-                                                    "p-4 text-left rounded-[20px] transition-all border",
-                                                    selectedFormat === opt.id 
-                                                    ? 'bg-[var(--cyan)]/5 border-[var(--cyan)]/30 shadow-md scale-[1.02]' 
-                                                    : 'bg-[var(--bg-3)] border-[var(--border)] hover:bg-[var(--border)]'
-                                                )}
-                                            >
-                                                <div className={cn("text-[12px] font-black mb-1.5", selectedFormat === opt.id ? 'text-[var(--cyan)]' : 'text-[var(--foreground)]')}>
-                                                    {opt.label}
+                                {/* Source Material Textarea Workspace */}
+                                <div className="relative overflow-hidden rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl transition-all focus-within:border-[var(--blue)]/40 focus-within:shadow-[0_12px_40px_rgba(37,99,235,0.06)]">
+                                    <div className="px-6 pt-5 flex items-center justify-between">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-35">Source Material</label>
+                                        <span className={`text-[10px] font-mono font-black tracking-tighter ${charPercentage > 80 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
+                                            {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
+                                        </span>
+                                    </div>
+                                    <div className="relative p-6">
+                                        {isUploading && (
+                                            <div className="absolute inset-0 z-10 bg-[var(--bg)]/80 backdrop-blur-md flex flex-col items-center justify-center rounded-[24px] gap-4">
+                                                <div className="relative w-12 h-12">
+                                                    <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
+                                                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)] animate-spin" />
                                                 </div>
-                                                <p className="text-[10px] text-[var(--foreground-muted)] font-bold opacity-60 leading-tight">{opt.desc}</p>
-                                            </button>
-                                        ))}
+                                                <p className="text-[10px] font-black text-[var(--foreground)] uppercase tracking-[0.4em]">{uploadStatus}</p>
+                                            </div>
+                                        )}
+                                        <textarea
+                                            value={inputText}
+                                            onChange={handleInputChange}
+                                            placeholder="Paste lecture notes, syllabus, or raw data here..."
+                                            className="w-full h-80 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 text-[15px] leading-relaxed outline-none font-bold"
+                                            style={{ scrollbarWidth: "none" }}
+                                            autoFocus
+                                            disabled={isUploading}
+                                        />
+                                    </div>
+                                    <div className="px-6 py-4 flex items-center justify-between bg-[var(--bg-3)]/60 border-t border-[var(--border)]">
+                                        <button
+                                            onClick={handleFileUploadRequest}
+                                            className="flex items-center gap-2.5 text-[11px] font-black text-[var(--blue-text)] hover:text-[var(--blue)] uppercase tracking-[0.2em] transition-all group"
+                                        >
+                                            <Upload size={14} strokeWidth={2.5} className="group-hover:-translate-y-0.5 transition-transform" />
+                                            Feed the Professor
+                                        </button>
+                                        {inputText.length > 0 && inputText.length < 50 && (
+                                            <span className="text-[10px] font-black text-[var(--amber)] uppercase tracking-tight italic">Min 50 chars required</span>
+                                        )}
                                     </div>
                                 </div>
-                            )}
 
-                            {(selectedType === "quiz" || selectedType === "match") && (
-                                <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-30 mb-5 block">Time Pressure</label>
-                                    <div className="flex flex-wrap gap-2.5">
-                                        {timerOptions.map((opt) => (
-                                            <button
-                                                key={opt.id}
-                                                onClick={() => setTimerValue(opt.id)}
-                                                className={cn(
-                                                    "px-4 py-2 text-[12px] font-black transition-all rounded-2xl border",
-                                                    timerValue === opt.id 
-                                                    ? 'bg-[var(--crimson)] text-white border-[var(--crimson)] shadow-[0_8px_16px_-4px_rgba(220,38,38,0.3)]' 
-                                                    : 'bg-[var(--bg-3)] border-[var(--border)] text-[var(--foreground-muted)] hover:bg-[var(--border)]'
-                                                )}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
+                                {/* Mission Name Card */}
+                                <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-md transition-all focus-within:border-[var(--blue)]/30">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-35 mb-3 block">The Mission</label>
+                                    <input 
+                                        type="text"
+                                        defaultValue={sessionStorage.getItem("lastSprintName") || ""}
+                                        placeholder="e.g., 'Bio-Chem Final Push' or 'Law 101 Ace'"
+                                        className="w-full bg-[var(--bg-3)]/60 border border-[var(--border)] rounded-xl px-5 py-3.5 text-sm font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--accent)]/30 focus:bg-[var(--bg-4)] outline-none transition-all sprint-title-input"
+                                    />
+                                    <p className="mt-3 text-[9px] text-[var(--foreground-muted)]/40 font-bold uppercase tracking-widest leading-relaxed">
+                                        Give your session a name. It helps you focus when things get tough.
+                                    </p>
                                 </div>
-                            )}
-                        </div>
-
-                        {/* Endowment Layer: The Mission */}
-                        <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-5 block">The Mission</label>
-                            <input 
-                                type="text"
-                                defaultValue={sessionStorage.getItem("lastSprintName") || ""}
-                                placeholder="e.g., 'Bio-Chem Final Push' or 'Law 101 Ace'"
-                                className="w-full bg-[var(--bg-3)] border border-[var(--border)] rounded-2xl px-6 py-4 text-sm font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 focus:border-[var(--accent)]/30 focus:bg-[var(--bg-4)] outline-none transition-all sprint-title-input"
-                            />
-                            <p className="mt-4 text-[9px] text-[var(--foreground-muted)]/40 font-bold uppercase tracking-widest leading-relaxed">
-                                Give your session a name. It helps you focus when things get tough.
-                            </p>
-                        </div>
-
-                        <div className="pt-4">
-                            <button
-                                onClick={() => {
-                                    const input = document.querySelector('.sprint-title-input') as HTMLInputElement;
-                                    const customTitle = input?.value || "";
-                                    if (customTitle) sessionStorage.setItem("customGenerationTitle", customTitle);
-                                    handleGenerate();
-                                }}
-                                disabled={!canGenerate}
-                                className={cn(
-                                    "w-full py-5 rounded-[24px] font-black text-[14px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl",
-                                    !canGenerate 
-                                    ? 'opacity-70 cursor-not-allowed bg-[var(--bg-3)] border border-[var(--border)] text-[var(--foreground-muted)]/40' 
-                                    : 'bg-[var(--foreground)] text-[var(--background)] hover-scale-sm active:scale-[0.98]'
-                                )}
-                            >
-                                {canGenerate && (
-                                    <>
-                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/5 to-transparent -translate-x-full group-hover:animate-shimmer" />
-                                    </>
-                                )}
-                                <Zap size={20} strokeWidth={2.5} className={canGenerate ? "animate-pulse" : ""} />
-                                <span className="relative z-10">I&apos;m Ready</span>
-                                <span className="text-[10px] opacity-60 font-mono ml-1">(-{selectedCreator?.cost} CR)</span>
-                            </button>
-                        </div>
-
-                        {setupError && (
-                            <div className="flex items-center justify-between p-4 rounded-[24px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
-                                <div className="flex items-center gap-3 text-[12px] font-black text-[var(--crimson)] uppercase tracking-wider">
-                                    <AlertTriangle size={18} strokeWidth={2.5} />
-                                    {setupError}
-                                </div>
-                                <button
-                                    onClick={() => { setSetupError(null); }}
-                                    className="px-4 py-2 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[10px] uppercase tracking-[0.2em] font-black rounded-xl hover:bg-[var(--crimson)]/30 transition-colors"
-                                >
-                                    Dismiss
-                                </button>
                             </div>
-                        )}
+
+                            {/* Right Side: Configuration Sidebar (4 cols on desktop) */}
+                            <div className="lg:col-span-5 xl:col-span-4 space-y-6 lg:sticky lg:top-24">
+                                
+                                {/* Unified Configuration Panel Card */}
+                                <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl space-y-6">
+                                    <div className="flex items-center gap-2 pb-4 border-b border-[var(--border)]">
+                                        <div className="w-1.5 h-3 rounded-full bg-[var(--blue)]" />
+                                        <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-50">
+                                            Study Settings
+                                        </h3>
+                                    </div>
+
+                                    {/* Setting 1: Density / Count */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">
+                                            Density / Count
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {countOptions.map((count) => (
+                                                <button
+                                                    key={count}
+                                                    onClick={() => setItemCount(count)}
+                                                    className={cn(
+                                                        "px-4 py-2 text-[11px] font-black transition-all rounded-xl border cursor-pointer",
+                                                        itemCount === count 
+                                                        ? 'bg-[var(--blue)] text-white border-[var(--blue)] shadow-md' 
+                                                        : 'bg-[var(--bg-3)]/60 text-[var(--foreground-muted)] border-[var(--border)] hover:bg-[var(--border)]'
+                                                    )}
+                                                >
+                                                    {count}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Setting 2: Rigor */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">
+                                            Professor&apos;s Rigor
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {difficultyOptions.map((opt) => (
+                                                <button
+                                                    key={opt.id}
+                                                    onClick={() => setDifficulty(opt.id as any)}
+                                                    className={cn(
+                                                        "p-3 text-left rounded-xl transition-all border cursor-pointer flex flex-col justify-between h-20",
+                                                        difficulty === opt.id 
+                                                        ? 'bg-[var(--blue)]/5 border-[var(--blue)]/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] scale-[1.01]' 
+                                                        : 'bg-[var(--bg-3)]/60 border-[var(--border)] hover:bg-[var(--border)]'
+                                                    )}
+                                                >
+                                                    <div className={cn("text-[11px] font-black flex items-center gap-1.5", difficulty === opt.id ? 'text-[var(--blue-text)]' : 'text-[var(--foreground)]')}>
+                                                        <span>{opt.emoji}</span> {opt.label}
+                                                    </div>
+                                                    <p className="text-[9px] text-[var(--foreground-muted)] font-bold opacity-60 leading-snug">{opt.desc}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Setting 3: Output Format (if applicable) */}
+                                    {formatOptions[selectedType || ""] && (
+                                        <div className="space-y-3 pt-2 border-t border-[var(--border)]/40">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">Output Format</label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {formatOptions[selectedType || ""].map((opt) => (
+                                                    <button
+                                                        key={opt.id}
+                                                        onClick={() => setSelectedFormat(opt.id)}
+                                                        className={cn(
+                                                            "p-3 text-left rounded-xl transition-all border cursor-pointer flex flex-col justify-between h-20",
+                                                            selectedFormat === opt.id 
+                                                            ? 'bg-[var(--cyan)]/5 border-[var(--cyan)]/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] scale-[1.01]' 
+                                                            : 'bg-[var(--bg-3)]/60 border-[var(--border)] hover:bg-[var(--border)]'
+                                                        )}
+                                                    >
+                                                        <div className={cn("text-[11px] font-black", selectedFormat === opt.id ? 'text-[var(--cyan-text)]' : 'text-[var(--foreground)]')}>
+                                                            {opt.label}
+                                                        </div>
+                                                        <p className="text-[9px] text-[var(--foreground-muted)] font-bold opacity-60 leading-snug">{opt.desc}</p>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Setting 4: Time Pressure (if applicable) */}
+                                    {(selectedType === "quiz" || selectedType === "match") && (
+                                        <div className="space-y-3 pt-2 border-t border-[var(--border)]/40">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">Time Pressure</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {timerOptions.map((opt) => (
+                                                    <button
+                                                        key={opt.id}
+                                                        onClick={() => setTimerValue(opt.id)}
+                                                        className={cn(
+                                                            "px-3 py-2 text-[11px] font-black transition-all rounded-xl border cursor-pointer",
+                                                            timerValue === opt.id 
+                                                            ? 'bg-[var(--crimson)] text-white border-[var(--crimson)] shadow-md' 
+                                                            : 'bg-[var(--bg-3)]/60 border-[var(--border)] text-[var(--foreground-muted)] hover:bg-[var(--border)]'
+                                                        )}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Actions Group */}
+                                <div className="space-y-4">
+                                    <button
+                                        id="ready-sprint-btn"
+                                        onClick={() => {
+                                            const input = document.querySelector('.sprint-title-input') as HTMLInputElement;
+                                            const customTitle = input?.value || "";
+                                            if (customTitle) sessionStorage.setItem("customGenerationTitle", customTitle);
+                                            handleGenerate();
+                                        }}
+                                        disabled={!canGenerate}
+                                        className={cn(
+                                            "w-full py-4.5 rounded-[20px] font-black text-xs sm:text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
+                                            !canGenerate 
+                                            ? 'opacity-70 cursor-not-allowed bg-[var(--bg-3)]/80 border border-[var(--border)] text-[var(--foreground-muted)]/40' 
+                                            : 'bg-[var(--foreground)] text-[var(--background)] hover-scale-sm active:scale-[0.98]'
+                                        )}
+                                    >
+                                        {canGenerate && (
+                                            <>
+                                                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                                            </>
+                                        )}
+                                        <Zap size={16} strokeWidth={2.5} className={canGenerate ? "animate-pulse" : ""} />
+                                        <span className="relative z-10">I&apos;m Ready</span>
+                                        <span className="text-[9px] opacity-60 font-mono ml-0.5">(-{selectedCreator?.cost} CR)</span>
+                                    </button>
+
+                                    {setupError && (
+                                        <div className="flex items-center justify-between p-4 rounded-[20px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
+                                            <div className="flex items-center gap-2.5 text-[11px] font-black text-[var(--crimson)] uppercase tracking-wider">
+                                                <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
+                                                <span className="leading-snug">{setupError}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => { setSetupError(null); }}
+                                                className="px-3 py-1.5 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-[var(--crimson)]/30 transition-colors cursor-pointer shrink-0 ml-2"
+                                            >
+                                                Dismiss
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </StandardContainer>

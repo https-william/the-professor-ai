@@ -85,7 +85,7 @@ export async function PUT(req: NextRequest) {
         // SECURITY: Whitelist allowed fields. BLOCK xp/streak manipulation.
         const allowedUpdates: any = {
             alias: body.alias,
-            username: body.username?.toLowerCase().trim(),
+            username: body.username ? body.username.toLowerCase().trim() : undefined,
             first_name: body.first_name,
             last_name: body.last_name,
             age: body.age,
@@ -94,7 +94,6 @@ export async function PUT(req: NextRequest) {
             study_goal: body.study_goal,
             study_style: body.study_style,
             preferred_subjects: body.preferred_subjects,
-            time_commitment: body.time_commitment,
             main_challenge: body.main_challenge,
             ai_persona: body.ai_persona,
             has_onboarded: body.has_onboarded,

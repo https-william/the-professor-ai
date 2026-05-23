@@ -67,9 +67,9 @@ export default function PreviewPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               onClick={() => router.push("/signup")}
-              className="btn-skeuo-primary px-8 py-4 flex items-center gap-3 group whitespace-nowrap"
+              className="px-8 py-4 flex items-center gap-3 group whitespace-nowrap font-black uppercase tracking-[0.15em] rounded-2xl hover:scale-[1.03] active:scale-[0.98] transition-all hover:bg-white hover:text-black border border-white/20 hover:border-white text-white bg-black/60 shadow-xl duration-300"
             >
-              <span className="font-black uppercase tracking-widest text-sm">Save my study pack</span>
+              <span className="text-sm font-black">Save my study pack</span>
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </motion.button>
           </div>
@@ -177,7 +177,7 @@ export default function PreviewPage() {
                           </p>
                           <button 
                             onClick={() => router.push("/signup")}
-                            className="btn-skeuo-primary px-10 py-4 font-black uppercase tracking-widest text-sm"
+                            className="px-10 py-4 font-black uppercase tracking-[0.15em] rounded-2xl hover:scale-[1.03] active:scale-[0.98] transition-all hover:bg-white hover:text-black border border-white/20 hover:border-white text-white bg-black/60 shadow-xl duration-300"
                           >
                             Save for free
                           </button>

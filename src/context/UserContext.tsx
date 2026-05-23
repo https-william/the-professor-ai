@@ -32,6 +32,23 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, delay = 500): Promise<Response> => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const res = await fetch(url, options);
+            if (res.ok) return res;
+            // Don't retry if it's a standard client-side validation error (except 429 rate limits)
+            if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+                return res;
+            }
+        } catch (err) {
+            if (i === retries - 1) throw err;
+        }
+        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+    }
+    throw new Error(`Request failed after ${retries} retries`);
+};
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const store = useUserStore();
     const refreshUser = useUserStore((state) => state.refreshUser);
@@ -119,7 +136,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const completeOnboarding = async (data: any): Promise<boolean> => {
         try {
-            const res = await fetch("/api/user/profile", {
+            const res = await fetchWithRetry("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...data, has_onboarded: true }),
@@ -137,13 +154,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
             return false;
         } catch (error) {
+            console.error("completeOnboarding failed after retries:", error);
             return false;
         }
     };
 
     const saveOnboardingStep = async (data: any): Promise<boolean> => {
         try {
-            const res = await fetch("/api/user/profile", {
+            const res = await fetchWithRetry("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
@@ -154,6 +172,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
             return false;
         } catch (error) {
+            console.error("saveOnboardingStep failed after retries:", error);
             return false;
         }
     };

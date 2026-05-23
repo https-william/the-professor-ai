@@ -55,7 +55,7 @@ const TOUR_STEPS: TourStep[] = [
     waitForElement: "textarea",
   },
   {
-    targetSelector: "button:has(span:contains('I'm Ready'))",
+    targetSelector: "#ready-sprint-btn",
     title: "Exam Sprint Mode",
     body: "Exam in 10 hours? Don't panic. This sprint mode is your ultimate lifesaver.",
     icon: Zap,

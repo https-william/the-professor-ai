@@ -210,14 +210,14 @@ export const useToasts = create<ToastStore>((set, get) => ({
 }));
 
 const typeStyles: Record<ToastType, { bg: string, iconColor: string, border: string, glow: string }> = {
-    success: { bg: 'bg-emerald-500/10', iconColor: 'text-emerald-400', border: 'border-emerald-500/20', glow: 'shadow-[0_0_20px_rgba(34,197,94,0.15)]' },
-    error: { bg: 'bg-rose-500/10', iconColor: 'text-rose-400', border: 'border-rose-500/20', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.15)]' },
-    warn: { bg: 'bg-yellow-500/10', iconColor: 'text-yellow-400', border: 'border-yellow-500/20', glow: 'shadow-[0_0_20px_rgba(234,179,8,0.15)]' },
-    xp: { bg: 'bg-amber-500/10', iconColor: 'text-amber-400', border: 'border-amber-500/20', glow: 'shadow-[0_0_20px_rgba(245,158,11,0.15)]' },
-    info: { bg: 'bg-indigo-500/10', iconColor: 'text-indigo-400', border: 'border-indigo-500/20', glow: 'shadow-[0_0_20px_rgba(99,102,241,0.15)]' },
-    achievement: { bg: 'bg-purple-500/10', iconColor: 'text-purple-400', border: 'border-purple-500/20', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.15)]' },
-    challenge: { bg: 'bg-cyan-500/10', iconColor: 'text-cyan-400', border: 'border-cyan-500/20', glow: 'shadow-[0_0_20px_rgba(6,182,212,0.15)]' },
-    broadcast: { bg: 'bg-blue-500/10', iconColor: 'text-blue-400', border: 'border-blue-500/20', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.15)]' },
+    success: { bg: 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5', iconColor: 'text-emerald-400', border: 'border-emerald-500/30', glow: 'shadow-[0_12px_40px_rgba(16,185,129,0.15),_inset_0_1px_1px_rgba(255,255,255,0.05)]' },
+    error: { bg: 'bg-gradient-to-br from-rose-500/10 to-rose-600/5', iconColor: 'text-rose-400', border: 'border-rose-500/30', glow: 'shadow-[0_12px_40px_rgba(244,63,94,0.15),_inset_0_1px_1px_rgba(255,255,255,0.05)]' },
+    warn: { bg: 'bg-gradient-to-br from-yellow-500/10 to-yellow-600/5', iconColor: 'text-yellow-400', border: 'border-yellow-500/30', glow: 'shadow-[0_12px_40px_rgba(234,179,8,0.15),_inset_0_1px_1px_rgba(255,255,255,0.05)]' },
+    xp: { bg: 'bg-gradient-to-br from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-400', border: 'border-amber-500/30', glow: 'shadow-[0_12px_40px_rgba(245,158,11,0.15),_inset_0_1px_1px_rgba(255,255,255,0.05)]' },
+    info: { bg: 'bg-gradient-to-br from-indigo-500/10 to-indigo-600/5', iconColor: 'text-indigo-400', border: 'border-indigo-500/30', glow: 'shadow-[0_12px_40px_rgba(99,102,241,0.15),_inset_0_1px_1px_rgba(255,255,255,0.05)]' },
+    achievement: { bg: 'bg-gradient-to-br from-purple-500/10 to-indigo-500/5', iconColor: 'text-purple-300', border: 'border-purple-500/35', glow: 'shadow-[0_16px_48px_rgba(168,85,247,0.22),_inset_0_1px_1px_rgba(255,255,255,0.08)]' },
+    challenge: { bg: 'bg-gradient-to-br from-cyan-500/10 to-cyan-600/5', iconColor: 'text-cyan-400', border: 'border-cyan-500/30', glow: 'shadow-[0_12px_40px_rgba(6,182,212,0.15),_inset_0_1px_1px_rgba(255,255,255,0.05)]' },
+    broadcast: { bg: 'bg-gradient-to-br from-blue-500/10 to-blue-600/5', iconColor: 'text-blue-400', border: 'border-blue-500/30', glow: 'shadow-[0_12px_40px_rgba(59,130,246,0.15),_inset_0_1px_1px_rgba(255,255,255,0.05)]' },
 };
 
 const defaultIcons: Record<ToastType, any> = {
@@ -375,8 +375,9 @@ export function ToastContainer() {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, x: -100 }}
                                             className={`
-                                                relative p-5 rounded-2xl cursor-pointer transition-all hover-scale-md border backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] bg-[var(--bg)]/80
+                                                relative p-5 rounded-2xl cursor-pointer hover:scale-[1.01] active:scale-[0.99] hover:brightness-[1.03] transition-all duration-300 border backdrop-blur-xl
                                                 ${typeStyles[toast.type].border}
+                                                ${typeStyles[toast.type].bg}
                                                 ${typeStyles[toast.type].glow}
                                                 ${toast.read ? 'opacity-50 grayscale-[40%]' : ''}
                                             `}
@@ -499,7 +500,7 @@ export default function GlobalToasts() {
                             initial={{ opacity: 0, x: 20, scale: 0.9 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                            className={`pointer-events-auto relative overflow-hidden p-4 rounded-2xl border backdrop-blur-xl bg-[var(--bg)]/90 ${typeStyles[toast.type].border} ${typeStyles[toast.type].bg} shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center gap-4 group`}
+                            className={`pointer-events-auto relative overflow-hidden p-4 rounded-2xl border backdrop-blur-xl bg-[#09090E]/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ${typeStyles[toast.type].border} ${typeStyles[toast.type].bg} ${typeStyles[toast.type].glow} flex items-center gap-4 group`}
                         >
                             <div className={`absolute top-0 left-0 w-1 h-full ${typeStyles[toast.type].iconColor.replace('text-', 'bg-')}`} />
                             
