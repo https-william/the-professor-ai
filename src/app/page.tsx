@@ -3,9 +3,13 @@
 import React, { useEffect } from "react";
 import NavPill from "@/components/landing/NavPill";
 import HeroSection from "@/components/landing/HeroSection";
-import InteractiveDemo from "@/components/landing/InteractiveDemo";
-import FinalCTA from "@/components/landing/FinalCTA";
 import TheManifesto from "@/components/landing/TheManifesto";
+import InteractiveDemo from "@/components/landing/InteractiveDemo";
+import PainSection from "@/components/landing/PainSection";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import FAQSection from "@/components/landing/FAQ";
+import FinalCTA from "@/components/landing/FinalCTA";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -32,8 +36,12 @@ export default function LandingPage() {
     <>
       <NavPill />
       <HeroSection />
+      <PainSection />
       <TheManifesto />
+      <HowItWorksSection />
       <InteractiveDemo />
+      <TestimonialsSection />
+      <FAQSection />
       <FinalCTA />
     </>
   );

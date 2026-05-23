@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 
 const TABS = ["Study Guide", "Summary", "Quiz", "Match Game"] as const;
 type Tab = typeof TABS[number];
@@ -12,61 +13,77 @@ function StudyGuidePanel() {
     { n: "2", name: "The Multiplier Effect", desc: "A change in expenditure produces a magnified change in national income through successive rounds of spending." },
     { n: "3", name: "Demand-Pull Inflation", desc: "When aggregate demand persistently exceeds productive capacity, causing the general price level to rise." },
   ];
-  const bars = [92, 78, 100, 55, 83, 67, 44, 90, 71, 60];
 
   return (
-    <div className="demo-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "28px" }}>
-      {/* Left — Raw Input */}
-      <div>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--text-3)", textTransform: "uppercase" as const, marginBottom: "12px" }}>
-          SOURCE MATERIAL
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 animate-fade-in">
+      {/* Left — Raw Input (Stylized PDF Document) */}
+      <div className="flex flex-col gap-3">
+        <p className="font-sans text-[10px] font-extrabold tracking-wider text-[var(--foreground-muted)] uppercase">
+          Source Material
         </p>
-        <div style={{ background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: "1.25rem", padding: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-            <div style={{ width: "12px", height: "12px", background: "var(--blue)", borderRadius: "3px" }} />
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: "12px", fontWeight: 700, color: "var(--text-2)" }}>ECO 201 — Lecture Notes.pdf</span>
+        <div className="bg-[var(--bg-2)] border border-[var(--border)] rounded-[20px] p-6 relative overflow-hidden h-full flex flex-col justify-between">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-3.5 h-3.5 rounded bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
+            <span className="font-sans text-xs font-bold text-[var(--foreground)] truncate">ECO 201 — Lecture Notes.pdf</span>
           </div>
-          {bars.map((w, i) => (
-            <div key={i} style={{ height: "8px", background: "rgba(255,255,255,0.04)", borderRadius: "4px", marginBottom: "8px", width: `${w}%` }} />
-          ))}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "16px" }}>
-            <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--emerald-dim)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-               <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="var(--emerald)" strokeWidth="2"><path d="M2 5l2 2 4-4" /></svg>
+          
+          {/* Stylized scanned notes text paragraphs */}
+          <div className="space-y-4 font-mono text-[11px] leading-relaxed text-[var(--foreground-secondary)] opacity-80 flex-1">
+            <div className="border-l border-[var(--border-3)] pl-3">
+              <span className="text-[var(--foreground)] font-bold">Aggregate Demand (AD)</span> is the sum of spending in the economy, calculated by adding consumer spending (C), business investments (I), government expenditure (G), and net exports (X - M).
             </div>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: "11px", color: "var(--emerald)", fontWeight: 700 }}>Synthesized</span>
+            <div className="border-l border-[var(--border-3)] pl-3">
+              <span className="text-[var(--foreground)] font-bold">The Multiplier Effect</span> is the phenomenon where a change in autonomous spending results in a larger change in equilibrium GDP.
+            </div>
+            <div className="border-l border-[var(--border-3)] pl-3">
+              <span className="text-[var(--foreground)] font-bold">Demand-Pull Inflation</span> occurs when aggregate demand rises too fast relative to aggregate supply, bidding up prices.
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mt-6 pt-4 border-t border-[var(--border)]/50">
+            <div className="w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <CheckCircle2 size={12} />
+            </div>
+            <span className="font-sans text-xs font-bold text-emerald-400">Scan Complete & Key Concepts Extracted</span>
           </div>
         </div>
       </div>
 
       {/* Right — Generated Output */}
-      <div>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "12px" }}>
-          THE PROFESSOR'S ARCHIVE
+      <div className="flex flex-col gap-3">
+        <p className="font-sans text-[10px] font-extrabold tracking-wider text-blue-400 uppercase">
+          The Professor's Archive
         </p>
-        <div style={{ background: "var(--bg-2)", border: "1px solid var(--blue-border)", borderRadius: "1.25rem", padding: "24px", boxShadow: "0 0 40px var(--blue-glow)" }}>
-          <div style={{ fontFamily: "var(--font-heading)", fontSize: "16px", fontWeight: 900, color: "var(--text)", marginBottom: "4px" }}>Macroeconomics — ECO 201</div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", marginBottom: "16px", fontWeight: 600 }}>Chapter 3: Aggregate Demand & Supply</div>
-          <div style={{ height: "1px", background: "var(--blue-border)", opacity: 0.3, marginBottom: "16px" }} />
-          {concepts.map(c => (
-            <div key={c.n} style={{ display: "flex", alignItems: "flex-start", gap: "14px", marginBottom: "16px" }}>
-              <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "var(--blue-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px", border: "1px solid var(--blue-border)" }}>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: "11px", fontWeight: 900, color: "var(--blue)" }}>{c.n}</span>
-              </div>
-              <div>
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: "13px", fontWeight: 800, color: "var(--text)", marginBottom: "2px" }}>{c.name}</div>
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-2)", lineHeight: 1.6, fontWeight: 500 }}>{c.desc}</div>
-              </div>
+        <div className="bg-[var(--bg-2)] border border-blue-500/15 rounded-[20px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col justify-between h-full relative">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-blue-500">
+            <Sparkles size={120} />
+          </div>
+          
+          <div>
+            <div className="font-heading text-base font-black text-[var(--foreground)]">Macroeconomics — ECO 201</div>
+            <div className="font-sans text-xs text-[var(--foreground-muted)] mb-4 font-bold">Chapter 3: Aggregate Demand & Supply</div>
+            <div className="h-[1px] bg-[var(--border)] mb-4" />
+            
+            <div className="space-y-4">
+              {concepts.map(c => (
+                <div key={c.n} className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 mt-0.5 text-blue-400 font-sans text-xs font-black">
+                    {c.n}
+                  </div>
+                  <div>
+                    <div className="font-sans text-xs font-black text-[var(--foreground)] mb-0.5">{c.name}</div>
+                    <div className="font-sans text-[11px] text-[var(--foreground-secondary)] leading-relaxed font-medium">{c.desc}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: "11px", color: "var(--blue-text)", fontStyle: "italic", marginTop: "8px", fontWeight: 700 }}>+ 7 more key concepts detected</div>
+          </div>
+
+          <div className="font-sans text-xs text-blue-400 font-extrabold mt-6 pt-4 border-t border-[var(--border)]/50">
+            + 7 more key concepts detected
+          </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .demo-two-col { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -80,16 +97,16 @@ function SummaryPanel() {
   ];
 
   return (
-    <div style={{ maxWidth: "720px", margin: "0 auto" }}>
-      <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "16px", textAlign: "center" }}>THE QUICK VERSION</p>
-      <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "18px", fontWeight: 900, color: "var(--text)", marginBottom: "24px", textAlign: "center" }}>
-        Just the essentials
-      </h3>
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div className="max-w-2xl mx-auto flex flex-col gap-6 animate-fade-in">
+      <div className="text-center">
+        <p className="font-sans text-[10px] font-extrabold tracking-wider text-blue-400 uppercase mb-2">The Quick Version</p>
+        <h3 className="font-heading text-lg font-black text-[var(--foreground)]">Just the essentials</h3>
+      </div>
+      <div className="space-y-4">
         {paras.map((p, i) => (
-          <div key={i} style={{ padding: "16px", background: "var(--bg-2)", borderRadius: "1rem", border: "1px solid var(--border)" }}>
-            <div style={{ width: "32px", height: "2px", background: "var(--blue)", marginBottom: "12px" }} />
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: "14px", color: "var(--text-2)", lineHeight: 1.6, fontWeight: 500 }}>{p}</p>
+          <div key={i} className="p-5 bg-[var(--bg-2)] border border-[var(--border)] rounded-2xl flex flex-col gap-3">
+            <div className="w-8 h-0.5 bg-blue-500 rounded-full" />
+            <p className="font-sans text-xs md:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium">{p}</p>
           </div>
         ))}
       </div>
@@ -107,39 +124,42 @@ function QuizPanel() {
   ];
 
   return (
-    <div style={{ maxWidth: "680px", margin: "0 auto" }}>
-      <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "8px", textAlign: "center" }}>TEST YOURSELF</p>
-      <p style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", textAlign: "center", marginBottom: "20px", fontWeight: 600 }}>Question 2 — Macroeconomics</p>
-      {/* Progress */}
-      <div style={{ width: "100%", height: "4px", background: "var(--bg-2)", borderRadius: "2px", marginBottom: "24px" }}>
-        <div style={{ width: "16.7%", height: "100%", background: "var(--blue)", borderRadius: "2px", boxShadow: "0 0 10px var(--blue-glow)" }} />
+    <div className="max-w-xl mx-auto flex flex-col gap-6 animate-fade-in">
+      <div className="text-center">
+        <p className="font-sans text-[10px] font-extrabold tracking-wider text-blue-400 uppercase mb-1">Test Yourself</p>
+        <p className="font-sans text-xs text-[var(--foreground-muted)] font-bold">Question 2 — Macroeconomics</p>
       </div>
+
+      {/* Progress Bar */}
+      <div className="w-full h-1 bg-[var(--bg-3)] rounded-full overflow-hidden">
+        <div className="w-[16.7%] h-full bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+      </div>
+
       {/* Question Card */}
-      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: "1.5rem", padding: "clamp(16px, 4vw, 32px)" }}>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: "clamp(16px, 3vw, 18px)", fontWeight: 800, color: "var(--text)", marginBottom: "20px", lineHeight: 1.4 }}>
+      <div className="bg-[var(--bg-2)] border border-[var(--border)] rounded-[24px] p-6 md:p-8">
+        <p className="font-heading text-base md:text-lg font-black text-[var(--foreground)] mb-6 leading-snug">
           What describes the Multiplier Effect?
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div className="flex flex-col gap-3">
           {options.map(opt => {
             const isCorrect = opt.state === "correct";
             return (
-              <div key={opt.letter} style={{
-                background: isCorrect ? "var(--emerald-dim)" : "rgba(255,255,255,0.02)",
-                border: `1px solid ${isCorrect ? "var(--emerald-border)" : "var(--border)"}`,
-                borderRadius: "1rem",
-                padding: "12px 16px",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-              }}>
-                <div style={{
-                  width: "24px", height: "24px", borderRadius: "50%",
-                  background: isCorrect ? "var(--emerald)" : "rgba(255,255,255,0.05)",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                }}>
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: "11px", fontWeight: 900, color: isCorrect ? "#000" : "var(--text-3)" }}>{opt.letter}</span>
+              <div 
+                key={opt.letter} 
+                className={`p-4 rounded-xl border flex items-center gap-3 transition-colors ${
+                  isCorrect 
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+                    : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--foreground-secondary)]"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-black ${
+                  isCorrect 
+                    ? "bg-emerald-500 text-black" 
+                    : "bg-[var(--border)] text-[var(--foreground-muted)]"
+                }`}>
+                  {opt.letter}
                 </div>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: "13px", color: isCorrect ? "var(--emerald)" : "var(--text-2)", flex: 1, fontWeight: 600, lineHeight: 1.3 }}>{opt.text}</span>
+                <span className="font-sans text-xs font-bold leading-normal">{opt.text}</span>
               </div>
             );
           })}
@@ -163,51 +183,36 @@ function MatchGamePanel() {
   ];
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-      <p style={{ fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 800, letterSpacing: "0.15em", color: "var(--blue-text)", textTransform: "uppercase" as const, marginBottom: "8px", textAlign: "center" }}>STUDY GAME</p>
-      <p style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", textAlign: "center", marginBottom: "20px", fontWeight: 600 }}>Connect the ideas. 3 of 8 matched.</p>
-      <div style={{ width: "100%", height: "4px", background: "var(--bg-2)", borderRadius: "2px", marginBottom: "24px" }}>
-        <div style={{ width: "37.5%", height: "100%", background: "var(--blue)", borderRadius: "2px" }} />
+    <div className="max-w-2xl mx-auto flex flex-col gap-6 animate-fade-in">
+      <div className="text-center">
+        <p className="font-sans text-[10px] font-extrabold tracking-wider text-blue-400 uppercase mb-1">Study Game</p>
+        <p className="font-sans text-xs text-[var(--foreground-muted)] font-bold">Connect the ideas. 3 of 8 matched.</p>
       </div>
-      <div className="match-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+
+      <div className="w-full h-1 bg-[var(--bg-3)] rounded-full overflow-hidden">
+        <div className="w-[37.5%] h-full bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {cards.map((c, i) => {
           const isMatched = c.state === "matched";
           const isSelected = c.state === "selected";
           return (
-            <div key={i} className={`match-card ${isMatched ? "matched" : ""}`} style={{
-              height: "clamp(60px, 12vw, 80px)", borderRadius: "1rem", padding: "8px",
-              display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center",
-              cursor: isMatched ? "default" : "pointer",
-              background: isMatched ? "var(--emerald-dim)" : isSelected ? "var(--blue-dim)" : "var(--bg-2)",
-              border: isMatched ? "1px solid var(--emerald-border)" : isSelected ? "1.5px solid var(--blue)" : "1px solid var(--border)",
-              color: isMatched ? "var(--emerald)" : isSelected ? "var(--text)" : "var(--text-3)",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "clamp(10px, 2.5vw, 12px)", lineHeight: 1.2,
-              boxShadow: isSelected ? "0 0 20px var(--blue-glow)" : "none"
-            }}>
+            <div 
+              key={i} 
+              className={`h-16 rounded-xl border flex items-center justify-center p-3 text-center cursor-pointer font-sans text-[11px] font-black leading-snug transition-all select-none ${
+                isMatched 
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-default" 
+                  : isSelected 
+                    ? "bg-blue-500/10 border-blue-500 text-[var(--foreground)] shadow-[0_0_15px_rgba(59,130,246,0.2)]" 
+                    : "bg-[var(--bg-2)] border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--bg-3)] hover:-translate-y-0.5 active:translate-y-0 duration-200"
+              }`}
+            >
               {c.text}
             </div>
           );
         })}
       </div>
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .match-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        .match-card {
-          transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 120ms ease-out;
-        }
-        @media (hover: hover) and (pointer: fine) {
-          .match-card:hover:not(.matched) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-          }
-        }
-        .match-card:active:not(.matched) {
-          transform: scale(0.96);
-        }
-      `}</style>
     </div>
   );
 }
@@ -216,85 +221,79 @@ export default function InteractiveDemo() {
   const [activeTab, setActiveTab] = useState<Tab>("Study Guide");
 
   return (
-    <section style={{
-      background: "transparent",
-      padding: "clamp(60px, 10vw, 120px) clamp(16px, 5vw, 80px)",
-      position: "relative"
-    }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
-          <span className="section-label mb-4" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>LIVE PREVIEW</span>
-          <h2 style={{ 
-            fontFamily: "var(--font-heading)", 
-            fontSize: "clamp(2rem, 5vw, 3.5rem)", 
-            fontWeight: 900, 
-            color: "var(--foreground)", 
-            lineHeight: 1.1,
-            letterSpacing: "-0.03em" 
-          }}>
-            Turn your notes into <br />
-            <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>something useful.</span>
+    <section className="relative w-full py-20 px-4 md:px-8 lg:px-12 bg-transparent">
+      <div className="w-full max-w-5xl mx-auto flex flex-col gap-10">
+        
+        {/* Section Header */}
+        <div className="text-center flex flex-col items-center gap-3">
+          <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">Live Preview</span>
+          <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
+            Turn your notes into <br className="hidden sm:inline" />
+            <span className="text-blue-500 text-shadow-[0_0_30px_rgba(59,130,246,0.15)]">something useful.</span>
           </h2>
-          <p style={{ 
-            fontFamily: "var(--font-sans)", 
-            fontSize: "15px", 
-            color: "var(--foreground-secondary)", 
-            marginTop: "16px", 
-            fontWeight: 500, 
-            maxWidth: "600px", 
-            margin: "16px auto 0",
-            opacity: 0.7
-          }}>
+          <p className="font-sans text-xs md:text-sm font-medium text-[var(--foreground-secondary)] opacity-80 max-w-md mt-2">
             This is what happens when you drop an ECO 201 lecture here. No fluff, just what you need to pass.
           </p>
         </div>
 
-        {/* Tab Bar */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "32px", overflowX: "auto", paddingBottom: "8px" }}>
-          <div className="glass-panel p-1.5 flex gap-1" style={{ borderRadius: "9999px", minWidth: "max-content" }}>
-            {TABS.map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={activeTab === tab ? "btn-skeuo text-[var(--blue)] px-4 sm:px-8 py-2.5" : "px-4 sm:px-8 py-2.5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"}
-                style={{
-                  fontFamily: "var(--font-sans)",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase"
-                }}
-              >
-                {tab}
-              </button>
-            ))}
+        {/* Tab Controls Bar */}
+        <div className="flex justify-center overflow-x-auto pb-2 scrollbar-none">
+          <div className="p-1.5 flex gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-2)] shadow-sm">
+            {TABS.map(tab => {
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-2.5 rounded-full font-sans text-[10px] font-extrabold tracking-wider uppercase transition-all duration-200 ${
+                    isActive
+                      ? "bg-[var(--border)] text-blue-500 border border-[var(--blue-border)]"
+                      : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  {tab}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Demo Panel */}
-        <div className="relative overflow-hidden border border-[var(--border)] shadow-sm" style={{
-          padding: "clamp(16px, 5vw, 64px)",
-          borderRadius: "32px",
-          background: "linear-gradient(165deg, var(--bg-2), var(--bg))",
-          minHeight: "450px",
-        }}>
-          {/* Ambient Glow */}
-          <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "50%", height: "50%", background: "var(--blue-dim)", filter: "blur(120px)", opacity: 0.1, pointerEvents: "none" }} />
+        {/* Tab Content Display Container */}
+        <div className="relative overflow-hidden border border-[var(--border)] rounded-[32px] bg-gradient-to-br from-[var(--bg-2)] to-[var(--bg)] p-6 md:p-10 lg:p-12 min-h-[420px] flex flex-col justify-center">
           
-          <div key={activeTab} className="relative z-10" style={{ animation: "fadeIn 240ms cubic-bezier(0.23, 1, 0.32, 1) forwards" }}>
+          {/* Subtle Ambient Radial Glow */}
+          <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-500/5 filter blur-[100px] pointer-events-none rounded-full" />
+          
+          <div key={activeTab} className="relative z-10 w-full">
             {activeTab === "Study Guide" && <StudyGuidePanel />}
             {activeTab === "Summary" && <SummaryPanel />}
             {activeTab === "Quiz" && <QuizPanel />}
             {activeTab === "Match Game" && <MatchGamePanel />}
           </div>
         </div>
+
       </div>
 
       <style jsx>{`
+        .scrollbar-none::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-none {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
       `}</style>
     </section>

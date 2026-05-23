@@ -35,122 +35,75 @@ const FAQS = [
 ];
 
 export default function FAQSection() {
-  const [openIndex, setOpenIndex] = useState(0);
+  const [openIndex, setOpenIndex] = useState<number>(0);
 
   const toggle = (i: number) => {
     setOpenIndex(openIndex === i ? -1 : i);
   };
 
   return (
-    <section style={{
-      background: "transparent",
-      padding: "clamp(100px, 15vw, 160px) clamp(24px, 6vw, 80px)",
-      position: "relative"
-    }}>
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "80px" }}>
-          <span className="section-label mb-6" style={{ color: "var(--blue)", letterSpacing: "0.4em" }}>FREQUENTLY ASKED</span>
-          <h2 style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "clamp(2.2rem, 5vw, 4rem)",
-            fontWeight: 900,
-            color: "var(--foreground)",
-            marginTop: "12px",
-            lineHeight: 0.95,
-            letterSpacing: "-0.04em"
-          }}>
-            Every question. <br />
-            <span style={{ color: "var(--blue)", textShadow: "0 0 30px var(--blue-glow)" }}>Honest answers.</span>
-          </h2>
-        </div>
+    <section className="w-full py-20 px-4 md:px-8 lg:px-12 bg-transparent max-w-4xl mx-auto">
+      
+      {/* Section Header */}
+      <div className="text-center flex flex-col items-center gap-3 max-w-2xl mx-auto mb-16">
+        <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
+          Frequently Asked
+        </span>
+        <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
+          Every question. <br />
+          <span className="text-blue-500 text-shadow-[0_0_30px_rgba(59,130,246,0.15)]">Honest answers.</span>
+        </h2>
+      </div>
 
-        {/* Accordion */}
-        <div className="relative overflow-hidden border border-[var(--border)] shadow-sm" style={{ borderRadius: "40px", padding: "16px", background: "var(--card)" }}>
-          {FAQS.map((faq, i) => {
-            const isOpen = openIndex === i;
-            return (
-              <div
-                key={i}
-                style={{
-                  borderBottom: i < FAQS.length - 1 ? "1px solid var(--border)" : "none",
-                  transition: "background-color 250ms cubic-bezier(0.23, 1, 0.32, 1), border-radius 250ms cubic-bezier(0.23, 1, 0.32, 1), margin-top 250ms cubic-bezier(0.23, 1, 0.32, 1), margin-bottom 250ms cubic-bezier(0.23, 1, 0.32, 1)",
-                  background: isOpen ? "var(--bg-2)" : "transparent",
-                  borderRadius: isOpen ? "24px" : "0",
-                  marginTop: isOpen && i > 0 ? "8px" : "0",
-                  marginBottom: isOpen && i < FAQS.length - 1 ? "8px" : "0",
-                }}
+      {/* Accordion Container */}
+      <div className="border border-[var(--border)] rounded-[32px] p-2 bg-[var(--card)] shadow-sm overflow-hidden flex flex-col gap-1.5">
+        {FAQS.map((faq, i) => {
+          const isOpen = openIndex === i;
+          return (
+            <div
+              key={i}
+              className={`rounded-2xl transition-all duration-300 ${
+                isOpen 
+                  ? "bg-[var(--bg-2)] border border-[var(--border)]/40 shadow-sm" 
+                  : "border-b border-[var(--border)]/40 last:border-b-0 hover:bg-[var(--bg-2)]/30"
+              }`}
+            >
+              {/* Accordion Header Trigger */}
+              <button
+                onClick={() => toggle(i)}
+                className="flex items-center justify-between w-full px-6 py-5 text-left active:scale-[0.99] transition-transform duration-200 select-none group"
               >
-                {/* Question */}
-                <button
-                  onClick={() => toggle(i)}
-                  className="active:scale-[0.99] transition-transform"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    width: "100%",
-                    padding: "32px",
-                    cursor: "pointer",
-                    background: "none",
-                    border: "none",
-                    textAlign: "left",
-                  }}
-                >
-                  <span style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "18px",
-                    fontWeight: 900,
-                    color: isOpen ? "var(--foreground)" : "var(--foreground-muted)",
-                    transition: "color 300ms ease",
-                    flex: 1,
-                    paddingRight: "24px",
-                    letterSpacing: "-0.01em"
-                  }}>
-                    {faq.q}
-                  </span>
-                  <div
-                    className={isOpen ? "btn-skeuo" : "w-10 h-10 rounded-xl bg-[var(--bg-3)] border border-[var(--border)]"}
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "transform 250ms cubic-bezier(0.23, 1, 0.32, 1), border-color 200ms ease, background-color 200ms ease",
-                      transform: isOpen ? "rotate(135deg)" : "rotate(0deg)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Plus size={20} className={isOpen ? "text-[var(--blue)]" : "text-[var(--foreground-muted)]"} />
-                  </div>
-                </button>
+                <span className={`font-heading text-sm md:text-base font-black transition-colors duration-200 ${
+                  isOpen ? "text-[var(--foreground)]" : "text-[var(--foreground-secondary)] group-hover:text-[var(--foreground)]"
+                }`}>
+                  {faq.q}
+                </span>
 
-                {/* Answer */}
+                {/* Plus/X icon box */}
                 <div 
-                  style={{
-                    maxHeight: isOpen ? "500px" : "0",
-                    overflow: "hidden",
-                    transition: "max-height 300ms cubic-bezier(0.23, 1, 0.32, 1), opacity 250ms cubic-bezier(0.23, 1, 0.32, 1)",
-                    opacity: isOpen ? 1 : 0
-                  }}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-300 shrink-0 ${
+                    isOpen 
+                      ? "bg-blue-500/10 border-blue-500/30 text-blue-400 rotate-135" 
+                      : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--foreground-muted)] group-hover:text-[var(--foreground)]"
+                  }`}
                 >
-                  <p style={{
-                    fontFamily: "var(--font-sans)",
-                    fontSize: "16px",
-                    color: "var(--foreground-secondary)",
-                    lineHeight: 1.7,
-                    padding: "0 32px 32px 32px",
-                    fontWeight: 500,
-                    opacity: 0.8
-                  }}>
-                    {faq.a}
-                  </p>
+                  <Plus size={16} />
                 </div>
+              </button>
+
+              {/* Accordion Content Panel (Drawer) */}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  isOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <p className="font-sans text-xs md:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium px-6 pb-5 pt-1 opacity-85">
+                  {faq.a}
+                </p>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

@@ -4,21 +4,18 @@ import React from "react";
 
 const TESTIMONIALS = [
   {
-    barOpacity: 1,
     quote: "I uploaded my BIO 202 notes at 11 PM the night before my practical. Within 20 minutes I had a full study guide, a quiz I could actually fail, and a match game that made me laugh while I learned. Passed the practical. Came back the next day for CHM 201.",
     name: "Adaeze O.",
     detail: "300L · Biochemistry · UNN",
     initials: "AO",
   },
   {
-    barOpacity: 0.5,
     quote: "The quiz exposed everything I thought I knew but actually didn't. That moment of failing your own notes before the real exam — that's the feature. Everything else is a bonus.",
     name: "Tomiwa A.",
     detail: "200L · Economics · Covenant University",
     initials: "TA",
   },
   {
-    barOpacity: 0.3,
     quote: "I'm in 400L Medicine. Every hour counts. The Professor turns 3 hours of anatomy reading into a 40-minute session. I don't understand why I waited until third year to find this.",
     name: "Chukwuemeka E.",
     detail: "400L · Medicine · UNILAG",
@@ -28,106 +25,56 @@ const TESTIMONIALS = [
 
 export default function TestimonialsSection() {
   return (
-    <section style={{
-      background: "var(--bg)",
-      padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 80px)",
-      maxWidth: "1100px",
-      margin: "0 auto",
-    }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: "48px" }}>
-        <span className="section-label" style={{ textAlign: "center", color: "var(--blue)" }}>STUDENT STORIES</span>
-        <h2 style={{
-          fontFamily: "var(--font-heading)",
-          fontSize: "clamp(1.8rem, 4vw, 3rem)",
-          fontWeight: 900,
-          color: "var(--text)",
-          marginTop: "12px",
-          letterSpacing: "-0.03em"
-        }}>
+    <section className="w-full py-20 px-4 md:px-8 lg:px-12 bg-transparent max-w-6xl mx-auto">
+      
+      {/* Section Header */}
+      <div className="text-center flex flex-col items-center gap-3 max-w-2xl mx-auto mb-16">
+        <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
+          Student Stories
+        </span>
+        <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
           From upload to exam-ready.
         </h2>
       </div>
 
-      {/* Cards */}
-      <div className="testimonials-grid" style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "20px",
-      }}>
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {TESTIMONIALS.map((t, i) => (
-          <div key={i} className="card-redesign animate-up" style={{ 
-            transitionDelay: `${i * 100}ms`,
-            background: "var(--bg-2)",
-            border: "1px solid var(--border)",
-            borderRadius: "24px",
-            padding: "32px"
-          }}>
-            {/* Accent bar */}
-            <div style={{
-              width: "32px",
-              height: "3px",
-              background: "var(--blue)",
-              opacity: t.barOpacity,
-              borderRadius: "2px",
-              marginBottom: "20px",
-            }} />
+          <div 
+            key={i} 
+            className="p-8 rounded-[28px] bg-[var(--bg-2)] border border-[var(--border)] hover:border-blue-500/20 hover-lift-sm transition-all duration-300 flex flex-col justify-between gap-6"
+          >
+            {/* Top Card Group: Stars + Quote */}
+            <div className="flex flex-col gap-4">
+              {/* Soft visual indicator line instead of random glows */}
+              <div className="w-8 h-[2px] bg-blue-500 rounded-full" />
+              
+              {/* Star icons */}
+              <div className="flex items-center gap-0.5 text-blue-500 text-xs">
+                {[...Array(5)].map((_, j) => (
+                  <span key={j}>★</span>
+                ))}
+              </div>
 
-            {/* Stars */}
-            <div style={{ display: "flex", gap: "2px", marginBottom: "14px" }}>
-              {[...Array(5)].map((_, j) => (
-                <span key={j} style={{ color: "var(--blue)", fontSize: "14px" }}>★</span>
-              ))}
+              {/* Quote text */}
+              <p className="font-sans text-xs md:text-sm leading-relaxed text-[var(--foreground)] font-medium italic">
+                &ldquo;{t.quote}&rdquo;
+              </p>
             </div>
 
-            {/* Quote */}
-            <p style={{
-              fontFamily: "var(--font-sans)",
-              fontSize: "15px",
-              fontWeight: 500,
-              color: "var(--text)",
-              lineHeight: 1.6,
-              fontStyle: "italic",
-            }}>
-              &ldquo;{t.quote}&rdquo;
-            </p>
-
-            {/* Author */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "24px" }}>
-              <div style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "14px",
-                background: "var(--blue-dim)",
-                border: "1px solid var(--blue-border)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <span style={{
-                  fontFamily: "var(--font-sans)",
-                  fontSize: "13px",
-                  fontWeight: 800,
-                  color: "var(--blue)",
-                }}>
-                  {t.initials}
-                </span>
+            {/* Bottom Group: Author info */}
+            <div className="flex items-center gap-3 pt-4 border-t border-[var(--border)]/50">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 font-sans text-xs font-black text-blue-400">
+                {t.initials}
               </div>
-              <div>
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 800, color: "var(--text)" }}>{t.name}</div>
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: "12px", color: "var(--text-3)", fontWeight: 500 }}>{t.detail}</div>
+              <div className="min-w-0">
+                <div className="font-sans text-xs font-black text-[var(--foreground)] truncate">{t.name}</div>
+                <div className="font-sans text-[10px] text-[var(--foreground-muted)] font-bold truncate">{t.detail}</div>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .testimonials-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </section>
   );
 }
