@@ -45,9 +45,9 @@ export async function recordActivity(
 
     // 3. Robust Date-Based Streak Logic
     const now = new Date();
-    // Get local date in "YYYY-MM-DD" format (using local time to match user expectation)
-    // For now we'll stick to UTC split for consistency, but compare full day differences
-    const todayStr = now.toISOString().split('T')[0];
+    // Use local date (not UTC) so a Nigerian user studying at 11pm WAT
+    // gets credit for that day, not the next UTC day.
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     
     let newStreak = profile.current_streak || 0;
     let freezeUsed = false;
@@ -58,25 +58,26 @@ export async function recordActivity(
     if (!lastDateStr) {
         newStreak = 1;
     } else {
-        // Parse dates as "YYYY-MM-DD" at midnight to get clean day differences
-        const today = new Date(todayStr);
-        const last = new Date(lastDateStr);
+        // Parse as local midnight (avoid timezone-induced off-by-one)
+        const [ty, tm, td] = todayStr.split('-').map(Number);
+        const [ly, lm, ld] = lastDateStr.split('-').map(Number);
+        const today = new Date(ty, tm - 1, td);
+        const last  = new Date(ly, lm - 1, ld);
         
         const diffTime = today.getTime() - last.getTime();
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays === 0) {
-            // Already studied today according to the date string
-            // Keep current streak
-        } else if (diffDays === 1 || diffDays === 2) {
-            // Studied exactly yesterday (or diffDays=2 due to UTC timezone rollover for late night studying)
+            // Already studied today — keep current streak, no change
+        } else if (diffDays === 1) {
+            // Studied exactly yesterday — consecutive day!
             newStreak += 1;
-        } else if (diffDays === 3 && freezeCount > 0) {
-            // Missed one day, but have a freeze
+        } else if (diffDays === 2 && freezeCount > 0) {
+            // Missed exactly one day but have a streak freeze — use it
             newStreak += 1;
             freezeUsed = true;
         } else {
-            // Missed too many days or no freeze available
+            // Gap too large (or diffDays===2 with no freeze) — reset
             newStreak = 1;
             streakReset = true;
         }
