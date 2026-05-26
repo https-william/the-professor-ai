@@ -60,9 +60,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const handleChange = () => {
             if (theme === "system") {
                 const newResolved = getSystemTheme();
+                
+                // Prevent transition lag
+                if (typeof window !== "undefined") {
+                    document.documentElement.classList.add("disable-transitions");
+                }
+
                 setResolvedTheme(newResolved);
                 document.documentElement.classList.remove("light", "dark");
                 document.documentElement.classList.add(newResolved);
+
+                if (typeof window !== "undefined") {
+                    // Force DOM reflow
+                    window.getComputedStyle(document.documentElement).opacity;
+                    requestAnimationFrame(() => {
+                        document.documentElement.classList.remove("disable-transitions");
+                    });
+                }
             }
         };
 
@@ -73,12 +87,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const setTheme = useCallback((newTheme: Theme) => {
         const resolved = newTheme === "system" ? getSystemTheme() : newTheme;
 
+        // Prevent transition lag
+        if (typeof window !== "undefined") {
+            document.documentElement.classList.add("disable-transitions");
+        }
+
         setThemeState(newTheme);
         setResolvedTheme(resolved);
 
         // Apply to DOM immediately
         document.documentElement.classList.remove("light", "dark");
         document.documentElement.classList.add(resolved);
+
+        if (typeof window !== "undefined") {
+            // Force DOM reflow
+            window.getComputedStyle(document.documentElement).opacity;
+            
+            // Remove disabling class in the next frame
+            requestAnimationFrame(() => {
+                document.documentElement.classList.remove("disable-transitions");
+            });
+        }
 
         // Persist
         localStorage.setItem("theme", newTheme);

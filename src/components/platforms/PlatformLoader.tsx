@@ -6,8 +6,19 @@ import { usePathname } from "next/navigation";
 
 // Dynamically import platform-specific components with SSR disabled.
 // This ensures Tauri-specific chunks are never loaded in a regular browser environment.
-const DesktopTitleBar = dynamic(() => import("@/components/ui/DesktopTitleBar"), { ssr: false });
-const MobileNavigation = dynamic(() => import("@/components/navigation/MobileNavigation"), { ssr: false });
+const DesktopTitleBar = dynamic(() => import("@/components/ui/DesktopTitleBar").catch((err) => {
+    if (typeof window !== "undefined" && (err.name === "ChunkLoadError" || err.message?.includes("Failed to load chunk"))) {
+        window.location.reload();
+    }
+    throw err;
+}), { ssr: false });
+
+const MobileNavigation = dynamic(() => import("@/components/navigation/MobileNavigation").catch((err) => {
+    if (typeof window !== "undefined" && (err.name === "ChunkLoadError" || err.message?.includes("Failed to load chunk"))) {
+        window.location.reload();
+    }
+    throw err;
+}), { ssr: false });
 
 export default function PlatformLoader() {
     const pathname = usePathname();

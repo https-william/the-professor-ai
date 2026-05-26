@@ -12,10 +12,6 @@ import StandardContainer from "@/components/ui/StandardContainer";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { 
     CheckCircle2, 
-    Target, 
-    Zap, 
-    Bell, 
-    Smartphone, 
     ChevronRight,
     Sparkles,
     LogOut,
@@ -26,29 +22,29 @@ import {
     Brain,
     Clock,
     Star,
-    Shield,
     Award,
     Sun,
     Moon,
     Users,
     Swords,
-    GraduationCap
+    GraduationCap,
+    Shield
 } from "lucide-react";
 
 /* ═══ Achievements ═══ */
 const ACHIEVEMENTS = [
-    { id: "first_quiz", icon: Brain, label: "First Steps", desc: "Complete your first quiz", color: "var(--emerald)" },
-    { id: "flash_10", icon: Sparkles, label: "Card Collector", desc: "Generate 10 flashcard sets", color: "var(--blue)" },
-    { id: "streak_3", icon: Flame, label: "On Fire", desc: "3-day study streak", color: "var(--amber)" },
-    { id: "streak_7", icon: Flame, label: "Unstoppable", desc: "7-day study streak", color: "var(--amber)" },
-    { id: "perfect_score", icon: Award, label: "Perfect 10", desc: "Score 100% on any quiz", color: "var(--violet)" },
-    { id: "night_owl", icon: Moon, label: "Night Owl", desc: "Study after midnight", color: "var(--blue)" },
-    { id: "early_bird", icon: Sun, label: "Early Bird", desc: "Study before 7am", color: "var(--amber)" },
-    { id: "social", icon: Users, label: "Team Player", desc: "Join a Hub room", color: "var(--emerald)" },
-    { id: "marathon", icon: Clock, label: "Marathon", desc: "60+ min session", color: "var(--blue)" },
-    { id: "centurion", icon: Star, label: "Centurion", desc: "Review 100 flashcards", color: "var(--amber)" },
-    { id: "duel_win", icon: Swords, label: "Victor", desc: "Win your first Duel", color: "var(--violet)" },
-    { id: "level_5", icon: GraduationCap, label: "Scholar", desc: "Reach Level 5", color: "var(--blue)" },
+    { id: "first_quiz", icon: Brain, label: "First Steps", desc: "Complete your first quiz", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { id: "flash_10", icon: Sparkles, label: "Card Collector", desc: "Generate 10 flashcard sets", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+    { id: "streak_3", icon: Flame, label: "On Fire", desc: "3-day study streak", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+    { id: "streak_7", icon: Flame, label: "Unstoppable", desc: "7-day study streak", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+    { id: "perfect_score", icon: Award, label: "Perfect 10", desc: "Score 100% on any quiz", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+    { id: "night_owl", icon: Moon, label: "Night Owl", desc: "Study after midnight", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
+    { id: "early_bird", icon: Sun, label: "Early Bird", desc: "Study before 7am", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+    { id: "social", icon: Users, label: "Team Player", desc: "Join a Hub room", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { id: "marathon", icon: Clock, label: "Marathon", desc: "60+ min session", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+    { id: "centurion", icon: Star, label: "Centurion", desc: "Review 100 flashcards", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+    { id: "duel_win", icon: Swords, label: "Victor", desc: "Win your first Duel", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+    { id: "level_5", icon: GraduationCap, label: "Scholar", desc: "Reach Level 5", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
 ];
 
 export default function ProfilePage() {
@@ -149,19 +145,25 @@ export default function ProfilePage() {
     }, [user?.id, user?.xp, user?.streak, user?.wins, level]);
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-[var(--blue-dim)] pb-24 font-sans">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-blue-500/10 pb-24 font-sans">
             <div className="pt-20 md:pt-28">
                 <StandardContainer narrow>
-                    {/* ═══ Header Section (Subtle & Elegant) ═══ */}
+                    
+                    {/* ═══ Header Section (Flat 2.0 Branding Card) ═══ */}
                     <div className="mb-8 relative">
-                        <div className="scholar-card p-6 md:p-8 relative overflow-hidden group border border-[var(--border)] bg-[var(--background-secondary)]/60 backdrop-blur-md" style={{ borderRadius: "24px" }}>
+                        <div className="p-6 md:p-8 relative overflow-hidden border border-[var(--border)] bg-[var(--card)] rounded-[28px] shadow-lg">
+                          
+                            {/* Ambient Brand Glowing Orbs */}
+                            <div className="absolute top-[-30%] right-[-20%] w-80 h-80 rounded-full bg-blue-500/5 filter blur-[60px] pointer-events-none select-none" />
+                            <div className="absolute bottom-[-30%] left-[-20%] w-80 h-80 rounded-full bg-amber-500/3 filter blur-[60px] pointer-events-none select-none" />
+
                             {/* Sign Out Trigger */}
                             <button 
                                 onClick={async () => {
                                     await supabase.auth.signOut();
                                     router.push('/login');
                                 }}
-                                className="absolute top-5 right-5 p-2 rounded-full bg-[var(--text)]/5 border border-[var(--border)] text-[var(--text-3)] hover:text-red-500 hover:bg-red-500/10 transition-all z-20 shadow-sm"
+                                className="absolute top-5 right-5 p-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-2)] hover:bg-red-500/10 hover:border-red-500/20 text-[var(--foreground-muted)] hover:text-red-400 transition-all z-20 shadow-sm cursor-pointer"
                                 title="Sign Out"
                             >
                                 <LogOut size={14} />
@@ -169,52 +171,52 @@ export default function ProfilePage() {
 
                             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div className="flex items-center gap-5">
-                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[var(--blue-dim)] to-[var(--amber-dim)] border border-[var(--border)] flex items-center justify-center text-2xl shadow-md shrink-0">
+                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500/10 to-amber-500/5 border border-[var(--border)] flex items-center justify-center text-2xl shadow-sm shrink-0 select-none">
                                         <span>{user?.avatar || "🎓"}</span>
                                     </div>
                                     
                                     <div className="space-y-1">
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[10px] font-bold uppercase tracking-wider text-[var(--blue)]">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-wider text-blue-400">
                                             Level {level} · {levelTitle}
                                         </div>
-                                        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text)]">{user?.name || "Scholar"}</h1>
-                                        <p className="text-xs text-[var(--text-3)] font-mono tracking-wide">{user?.email || "student@theprofessor.xyz"}</p>
+                                        <h1 className="text-xl md:text-2xl font-black tracking-tight text-[var(--foreground)]">{user?.name || "Scholar"}</h1>
+                                        <p className="text-[11px] text-[var(--foreground-muted)] font-mono tracking-wide">{user?.email || "student@theprofessor.xyz"}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-8 border-t md:border-t-0 md:border-l border-[var(--border)] pt-4 md:pt-0 md:pl-8">
+                                <div className="flex items-center gap-8 border-t md:border-t-0 md:border-l border-[var(--border)]/60 pt-4 md:pt-0 md:pl-8">
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] mb-1">Total XP</p>
-                                        <p className="text-2xl font-black font-mono text-[var(--blue)] tabular-nums">{stats.xp.toLocaleString()}</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] mb-0.5">Total XP</p>
+                                        <p className="text-xl md:text-2xl font-black font-mono text-blue-400 tabular-nums">{stats.xp.toLocaleString()}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] mb-1">Study Streak</p>
-                                        <p className="text-2xl font-black font-mono text-[var(--amber)] tabular-nums">{user?.streak || 0} days</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] mb-0.5">Study Streak</p>
+                                        <p className="text-xl md:text-2xl font-black font-mono text-amber-500 tabular-nums">🔥 {user?.streak || 0} days</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Level Progress */}
-                            <div className="mt-6 pt-4 border-t border-[var(--border)]/50 space-y-2">
-                                <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[var(--text-3)]">
+                            {/* Level Progress Slider */}
+                            <div className="mt-6 pt-4 border-t border-[var(--border)]/50 space-y-2 relative z-10">
+                                <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[var(--foreground-muted)]">
                                     <span>Targeting Level {level + 1}</span>
                                     <span>{stats.xp} / {nextLevelXp} XP</span>
                                 </div>
-                                <div className="h-1.5 rounded-full bg-[var(--text-4)] overflow-hidden shadow-inner">
+                                <div className="h-2 rounded-full bg-[var(--bg-3)] overflow-hidden border border-[var(--border)]">
                                     <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${levelProgress}%` }}
                                         transition={{ duration: 1 }}
-                                        className="h-full bg-gradient-to-r from-[var(--blue)] to-[var(--amber)]"
+                                        className="h-full bg-gradient-to-r from-blue-500 to-amber-500"
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* ═══ Subtle Segmented Control ═══ */}
+                    {/* ═══ Segmented Tab Controller (Flat 2.0 Styled) ═══ */}
                     <div className="flex justify-center mb-8">
-                        <div className="inline-flex p-1 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
+                        <div className="inline-flex p-1 rounded-2xl bg-[var(--bg-2)] border border-[var(--border)] shadow-sm">
                             {TABS.map((tab) => {
                                 const isActive = activeSection === tab.id;
                                 const IconComponent = tab.icon;
@@ -223,56 +225,71 @@ export default function ProfilePage() {
                                         key={tab.id}
                                         onClick={() => setActiveSection(tab.id)}
                                         className={cn(
-                                            "relative px-6 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all z-10",
-                                            isActive ? "text-[var(--text)] shadow-sm" : "text-[var(--text-3)] hover:text-[var(--text-2)]"
+                                            "relative px-5 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all z-10 cursor-pointer",
+                                            isActive ? "text-blue-400 shadow-sm" : "text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)]"
                                         )}
                                     >
                                         {isActive && (
                                             <motion.div 
                                                 layoutId="active-profile-tab-bg"
-                                                className="absolute inset-0 bg-[var(--bg)] border border-[var(--border)] rounded-xl"
+                                                className="absolute inset-0 bg-blue-500/5 border border-blue-500/15 rounded-xl"
                                                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                                             />
                                         )}
-                                        <IconComponent size={16} className="relative z-10" />
-                                        <span className="relative z-10 uppercase tracking-wider">{tab.label}</span>
+                                        <IconComponent size={14} className="relative z-10" />
+                                        <span className="relative z-10 uppercase tracking-wider text-[10px]">{tab.label}</span>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* ═══ Content Area ═══ */}
+                    {/* ═══ Tab Contents (Dynamic & Personalised) ═══ */}
                     <div className="animate-in fade-in duration-500">
                         {activeSection === "achievements" && (
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between px-2">
-                                    <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-3)]">Unlocked Badges</p>
-                                    <Link href="/achievements" className="text-xs font-bold text-[var(--blue)] hover:underline flex items-center gap-1">
-                                        <span>Go to Trophy Room</span>
-                                        <ChevronRight size={14} />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Unlocked Badges</p>
+                                    <Link href="/achievements" className="text-[10px] font-black uppercase tracking-wider text-blue-400 hover:text-blue-500 flex items-center gap-1">
+                                        <span>Trophy Room</span>
+                                        <ChevronRight size={12} />
                                     </Link>
                                 </div>
+                                
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {ACHIEVEMENTS.map((badge) => {
                                         const unlocked = unlockedIds.has(badge.id);
                                         const BadgeIcon = badge.icon;
                                         return (
-                                            <div key={badge.id} className={cn(
-                                                "scholar-card p-5 flex items-center gap-4 border transition-all group",
-                                                unlocked ? "bg-[var(--background-secondary)] border-[var(--border)]" : "bg-[var(--background-secondary)]/30 border-[var(--border)]/40 opacity-40 grayscale"
-                                            )} style={{ borderRadius: "20px" }}>
-                                                <div className="w-12 h-12 rounded-xl bg-[var(--text-4)] border border-[var(--border)] flex items-center justify-center shrink-0 shadow-sm" style={{ color: unlocked ? badge.color : 'inherit' }}>
-                                                    <BadgeIcon size={22} />
+                                            <div 
+                                                key={badge.id} 
+                                                className={cn(
+                                                    "p-5 flex items-center gap-4 border transition-all duration-300 relative overflow-hidden",
+                                                    unlocked 
+                                                        ? "bg-[var(--bg-2)] border-[var(--border)] hover:border-blue-500/20 hover-lift-sm" 
+                                                        : "bg-[var(--bg-2)]/30 border-[var(--border)]/40 opacity-30 grayscale pointer-events-none"
+                                                )} 
+                                                style={{ borderRadius: "20px" }}
+                                            >
+                                                {/* Mini Background Glow for Unlocked Badges */}
+                                                {unlocked && (
+                                                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-blue-500/5 filter blur-[20px] pointer-events-none" />
+                                                )}
+                                                
+                                                <div className={cn(
+                                                    "w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 shadow-sm",
+                                                    unlocked ? `${badge.bg} ${badge.border} ${badge.color}` : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--foreground-muted)]"
+                                                )}>
+                                                    <BadgeIcon size={20} />
                                                 </div>
-                                                <div className="space-y-0.5 flex-1 min-w-0">
+                                                <div className="space-y-0.5 flex-1 min-w-0 z-10">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <h3 className="text-xs font-black uppercase tracking-wider text-[var(--text)] truncate">{badge.label}</h3>
+                                                        <h3 className="text-xs font-black uppercase tracking-wider text-[var(--foreground)] truncate">{badge.label}</h3>
                                                         {unlocked && (
-                                                            <CheckCircle2 size={14} className="text-[var(--emerald)] shrink-0" />
+                                                            <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                                                         )}
                                                     </div>
-                                                    <p className="text-[11px] text-[var(--text-2)] font-normal line-clamp-1">{badge.desc}</p>
+                                                    <p className="text-[11px] text-[var(--foreground-muted)] font-medium line-clamp-1">{badge.desc}</p>
                                                 </div>
                                             </div>
                                         );
@@ -283,25 +300,26 @@ export default function ProfilePage() {
 
                         {activeSection === "habits" && (
                             <div className="space-y-6 max-w-2xl mx-auto">
-                                <div className="scholar-card border border-[var(--border)] bg-[var(--background-secondary)] overflow-hidden" style={{ borderRadius: "24px" }}>
+                                <div className="border border-[var(--border)] bg-[var(--card)] rounded-[28px] overflow-hidden shadow-md">
                                     <div className="p-6 border-b border-[var(--border)]">
-                                        <h3 className="text-lg font-bold text-[var(--text)] tracking-tight">The Study Lab</h3>
-                                        <p className="text-xs text-[var(--text-2)] mt-1">Configure your focus parameters and preferred difficulty rigor.</p>
+                                        <h3 className="text-base font-black text-[var(--foreground)] tracking-tight">The Study Lab</h3>
+                                        <p className="text-xs text-[var(--foreground-muted)] mt-1 font-medium">Configure your preferred default parameters for new syntheses.</p>
                                     </div>
                                     <div className="p-6 space-y-8">
-                                        {/* Daily Goal */}
+                                        
+                                        {/* Daily Goal Input Selector */}
                                         <div className="space-y-3">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)]">Daily Focus Goal (Minutes)</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Daily Focus Goal</p>
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                                 {[15, 30, 60, 120].map((goal) => (
                                                     <button
                                                         key={goal}
                                                         onClick={() => updatePref('daily_goal_minutes', goal)}
                                                         className={cn(
-                                                            "py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border",
+                                                            "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer",
                                                             user?.dailyGoalMinutes === goal 
-                                                                ? "bg-[var(--blue)] text-black border-[var(--blue)] shadow-md font-black" 
-                                                                : "bg-[var(--bg)] text-[var(--text-2)] border-[var(--border)] hover:border-[var(--text-3)] hover:text-[var(--text)]"
+                                                                ? "bg-blue-500/10 border-blue-500 text-blue-400 font-extrabold shadow-sm shadow-blue-500/5" 
+                                                                : "bg-[var(--bg-2)]/60 text-[var(--foreground-secondary)] border-[var(--border)] hover:bg-[var(--border)]"
                                                         )}
                                                     >
                                                         {goal} mins
@@ -310,19 +328,19 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
 
-                                        {/* Rigor */}
+                                        {/* Rigor Selector */}
                                         <div className="space-y-3">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)]">Professor's Rigor (Difficulty)</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Default Rigor (Difficulty)</p>
                                             <div className="grid grid-cols-3 gap-3">
                                                 {['easy', 'medium', 'hard'].map((diff) => (
                                                     <button
                                                         key={diff}
                                                         onClick={() => updatePref('difficulty_preference', diff)}
                                                         className={cn(
-                                                            "py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border",
+                                                            "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer",
                                                             user?.difficultyPreference === diff 
-                                                                ? "bg-[var(--blue)] text-black border-[var(--blue)] shadow-md font-black" 
-                                                                : "bg-[var(--bg)] text-[var(--text-2)] border-[var(--border)] hover:border-[var(--text-3)] hover:text-[var(--text)]"
+                                                                ? "bg-blue-500/10 border-blue-500 text-blue-400 font-extrabold shadow-sm shadow-blue-500/5" 
+                                                                : "bg-[var(--bg-2)]/60 text-[var(--foreground-secondary)] border-[var(--border)] hover:bg-[var(--border)]"
                                                         )}
                                                     >
                                                         {diff}
@@ -336,7 +354,7 @@ export default function ProfilePage() {
                                 <div className="text-center pt-4">
                                     <button 
                                         onClick={handleDeleteAccount}
-                                        className="px-6 py-2.5 rounded-xl border border-red-500/20 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 transition-all text-[10px] font-bold uppercase tracking-wider"
+                                        className="px-5 py-2.5 rounded-xl border border-red-500/15 text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all text-[9px] font-black uppercase tracking-widest cursor-pointer"
                                     >
                                         Wipe Account History
                                     </button>
@@ -346,31 +364,35 @@ export default function ProfilePage() {
 
                         {activeSection === "plan" && (
                             <div className="max-w-xl mx-auto">
-                                <div className="scholar-card p-8 flex flex-col items-center text-center gap-6 border border-[var(--border)] bg-[var(--background-secondary)]" style={{ borderRadius: "24px" }}>
-                                    <div className="space-y-2">
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[10px] font-bold uppercase tracking-wider text-[var(--blue)]">
+                                <div className="p-8 flex flex-col items-center text-center gap-6 border border-[var(--border)] bg-[var(--card)] rounded-[28px] shadow-md relative overflow-hidden">
+                                    
+                                    {/* Subtle Ambient Radial Glow */}
+                                    <div className="absolute top-[-30%] left-[-30%] w-72 h-72 rounded-full bg-blue-500/5 filter blur-[50px] pointer-events-none" />
+
+                                    <div className="space-y-2 relative z-10">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-wider text-blue-400">
                                             Protocol Status
                                         </div>
-                                        <h3 className="text-2xl font-bold tracking-tight text-[var(--text)]">Scholar Free</h3>
-                                        <p className="text-xs text-[var(--text-2)] max-w-xs mx-auto leading-relaxed">You are currently on the foundational protocol. Upgrade for unlimited leverage and speed.</p>
+                                        <h3 className="text-xl font-black tracking-tight text-[var(--foreground)]">Scholar Free</h3>
+                                        <p className="text-xs text-[var(--foreground-muted)] max-w-xs mx-auto leading-relaxed font-medium">You are currently on the foundational protocol. Upgrade for unlimited leverage and speed.</p>
                                     </div>
                                     
-                                    <div className="flex items-center gap-12 py-4 border-y border-[var(--border)]/60 w-full justify-center">
+                                    <div className="flex items-center gap-12 py-4 border-y border-[var(--border)]/60 w-full justify-center relative z-10">
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">Monthly Credits</p>
-                                            <p className="text-3xl font-black font-mono text-[var(--text)] tabular-nums">{user?.credits || 0}<span className="text-xs text-[var(--text-3)] ml-1">/ 100</span></p>
+                                            <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-wider">Monthly Credits</p>
+                                            <p className="text-2xl font-black font-mono text-[var(--foreground)] tabular-nums">{user?.credits || 0}<span className="text-xs text-[var(--foreground-muted)] ml-1">/ 100</span></p>
                                         </div>
-                                        <div className="w-px h-12 bg-[var(--border)]" />
+                                        <div className="w-px h-10 bg-[var(--border)]" />
                                         <div className="space-y-1 text-left">
-                                            <p className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider">Service Health</p>
+                                            <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-wider">Service Health</p>
                                             <div className="flex items-center gap-2">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-                                                <p className="text-lg font-black uppercase tracking-tight text-[var(--text)]">Optimal</p>
+                                                <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse" />
+                                                <p className="text-base font-black uppercase tracking-tight text-[var(--foreground)]">Optimal</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <Link href="/settings/billing" className="w-full py-4 rounded-xl bg-[var(--text)] text-[var(--bg)] text-xs font-black uppercase tracking-widest hover:bg-[var(--text-2)] active:scale-[0.99] transition-all text-center shadow-md">
+                                    <Link href="/settings/billing" className="w-full py-4.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest active:scale-[0.98] transition-all text-center shadow-lg hover:shadow-blue-500/10 relative z-10">
                                         Upgrade Now
                                     </Link>
                                 </div>

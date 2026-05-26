@@ -15,14 +15,11 @@ import {
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
-
 export default function HeroSection() {
   const [activeMockTab, setActiveMockTab] = useState<string>("Study Lab");
 
   return (
     <section className="relative w-full min-h-[95dvh] flex flex-col items-center justify-start pt-32 pb-16 px-4 md:px-8 lg:px-12 overflow-hidden bg-transparent z-10">
-      {/* Top Ambient Radial Glow (Flat 2.0 Soft Tone) */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[600px] bg-[radial-gradient(ellipse_at_center_top,rgba(59,130,246,0.08)_0%,transparent_70%)] pointer-events-none z-0" />
 
       {/* Hero Content Container */}
       <div className="relative w-full max-w-6xl mx-auto flex flex-col items-center gap-12 z-10">
@@ -30,17 +27,17 @@ export default function HeroSection() {
         {/* Top Badges & Headings Group */}
         <div className="flex flex-col items-center text-center gap-6 max-w-4xl">
           {/* Pre-Headline Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm animate-fade-in">
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-            <span className="font-mono text-[10px] md:text-[11px] font-black text-blue-400 tracking-[0.2em] uppercase">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 shadow-sm animate-fade-in">
+            <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/60 animate-pulse shadow-[0_0_8px_rgba(0,0,0,0.15)] dark:shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+            <span className="font-mono text-[10px] md:text-[11px] font-black text-black/60 dark:text-white/80 tracking-[0.2em] uppercase">
               The Professor AI · Study Less
             </span>
           </div>
 
           {/* Main Headline */}
-          <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-black text-[var(--foreground)] leading-[1.05] tracking-tight">
+          <h1 className="text-3d font-heading text-5xl md:text-7xl lg:text-8xl font-black text-[var(--foreground)] leading-[1.05] tracking-tight">
             Your notes. <br />
-            Just the <span className="text-blue-500 text-shadow-[0_0_30px_rgba(59,130,246,0.2)]">good parts.</span>
+            Just the <span className="border-b-4 border-[var(--foreground)]/20 pb-1">good parts.</span>
           </h1>
 
           {/* Subheading */}
@@ -51,17 +48,11 @@ export default function HeroSection() {
 
         {/* CTA Button Group */}
         <div className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in [--animation-delay:200ms]">
-          <a
-            href="#get-started"
-            className="px-10 py-5 text-[14px] font-black uppercase tracking-[0.15em] rounded-2xl flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] hover-lift-md transition-all duration-300"
+          <Link
+            href="/signup"
+            className="px-10 py-5 text-[14px] font-black uppercase tracking-[0.15em] rounded-2xl flex items-center gap-2 bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-black shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_25px_rgba(255,255,255,0.08)] hover:shadow-[0_4px_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_4px_35px_rgba(255,255,255,0.15)] active:scale-[0.98] hover-lift-md transition-all duration-300"
           >
             Get Started <ArrowRight size={18} />
-          </a>
-          <Link
-            href="/about"
-            className="px-8 py-4 text-[13px] font-bold uppercase tracking-[0.1em] rounded-2xl border border-[var(--border)] bg-[var(--bg-2)] hover:bg-[var(--border)] text-[var(--foreground-secondary)] hover:text-[var(--foreground)] active:scale-[0.98] transition-all duration-200"
-          >
-            How it works
           </Link>
         </div>
 
@@ -303,7 +294,7 @@ export default function HeroSection() {
 
       {/* Scroll Indicator */}
       <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-2 z-10 pointer-events-none opacity-50">
-        <div className="w-[1px] h-9 bg-gradient-to-b from-blue-500 to-transparent animate-pulse" />
+        <div className="w-[1px] h-9 bg-gradient-to-b from-[var(--foreground)] to-transparent animate-pulse opacity-60" />
         <span className="font-sans text-[8px] font-bold tracking-[0.25em] uppercase text-[var(--foreground-muted)]">
           scroll
         </span>

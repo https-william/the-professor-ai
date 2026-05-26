@@ -13,9 +13,26 @@ import dynamic from "next/dynamic";
 import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 
 // Platform-Specific Dashboard Components (Dynamically imported with custom skeleton fallback for client-side navigation)
-const DashboardWeb = dynamic(() => import("@/components/platforms/web/DashboardWeb"), { loading: () => <DashboardSkeleton /> });
-const DashboardDesktop = dynamic(() => import("@/components/platforms/desktop/DashboardDesktop"), { loading: () => <DashboardSkeleton /> });
-const DashboardMobile = dynamic(() => import("@/components/platforms/mobile/DashboardMobile"), { loading: () => <DashboardSkeleton /> });
+const DashboardWeb = dynamic(() => import("@/components/platforms/web/DashboardWeb").catch((err) => {
+    if (typeof window !== "undefined" && (err.name === "ChunkLoadError" || err.message?.includes("Failed to load chunk"))) {
+        window.location.reload();
+    }
+    throw err;
+}), { loading: () => <DashboardSkeleton /> });
+
+const DashboardDesktop = dynamic(() => import("@/components/platforms/desktop/DashboardDesktop").catch((err) => {
+    if (typeof window !== "undefined" && (err.name === "ChunkLoadError" || err.message?.includes("Failed to load chunk"))) {
+        window.location.reload();
+    }
+    throw err;
+}), { loading: () => <DashboardSkeleton /> });
+
+const DashboardMobile = dynamic(() => import("@/components/platforms/mobile/DashboardMobile").catch((err) => {
+    if (typeof window !== "undefined" && (err.name === "ChunkLoadError" || err.message?.includes("Failed to load chunk"))) {
+        window.location.reload();
+    }
+    throw err;
+}), { loading: () => <DashboardSkeleton /> });
 import ShareCard from "@/components/ShareCard";
 import StreakMilestone from "@/components/features/StreakMilestone";
 

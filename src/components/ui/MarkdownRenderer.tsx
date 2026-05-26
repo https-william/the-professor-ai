@@ -23,12 +23,25 @@ interface MarkdownRendererProps {
  * - Automatic line breaks
  * - Professor-style "Identity Nudges" styling
  */
+import { useState, useEffect } from "react";
+import { BubblyThinkingLoader } from "./Markdown";
+
 export default function MarkdownRenderer({ 
     content, 
     className,
     isStreaming = false 
 }: MarkdownRendererProps) {
-    const cleanContent = content
+    const isEmpty = !content || content.trim() === "";
+
+    if (isEmpty && isStreaming) {
+        return (
+            <div className={cn("prose prose-invert max-w-none transition-all duration-300", className)}>
+                <BubblyThinkingLoader />
+            </div>
+        );
+    }
+
+    const cleanContent = (content || "")
         .replace(/[ \t]+:[ \t]*/g, ': ')
         .replace(/:[ \t]+/g, ': ');
 
@@ -40,6 +53,7 @@ export default function MarkdownRenderer({
             "prose-strong:text-white prose-strong:font-bold",
             "prose-code:text-amber-400 prose-code:bg-white/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",
             "prose-li:text-white/70",
+            isStreaming && "typing-cursor",
             className
         )}>
             <ReactMarkdown
@@ -77,7 +91,7 @@ export default function MarkdownRenderer({
             </ReactMarkdown>
             
             {/* The "Identity Nudge" styling for the footer if it exists */}
-            {content.includes("That's the difference sha.") && (
+            {content && content.includes("That's the difference sha.") && (
                 <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-center text-center opacity-40 hover:opacity-100 transition-opacity">
                     <p className="text-[10px] uppercase tracking-[0.4em] font-black text-white/30 mb-2">
                         Professor's Verdict
@@ -87,3 +101,4 @@ export default function MarkdownRenderer({
         </div>
     );
 }
+

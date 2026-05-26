@@ -34,6 +34,13 @@ function InkMoteCanvas() {
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
+
+        const isLowPerf = typeof document !== "undefined" && document.documentElement.classList.contains("low-perf");
+        if (isLowPerf) {
+            canvas.style.display = "none";
+            return;
+        }
+
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 

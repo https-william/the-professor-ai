@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 
 import { CheckCircle2, Share2, ArrowRight } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const KnowledgeCheck = ({ data }: { data: any }) => {
@@ -86,11 +87,13 @@ export const InteractiveSummary = ({
     refinedText = "The brain's reward pathway connects the VTA to the NAc shell. When you get a surprise win, it triggers dopamine bursts. These bursts literally rewire your brain to help you repeat that success later.",
     tags = ["Reward Pathway", "Synaptic Growth", "Reinforcement"],
     autoReveal = false,
+    isStreaming = false,
     onFinish
-}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; onFinish?: () => void }) => {
-    const [isRefining, setIsRefining] = useState(autoReveal);
-    const [progress, setProgress] = useState(autoReveal ? 100 : 0);
+}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; isStreaming?: boolean; onFinish?: () => void }) => {
+    const [isRefining, setIsRefining] = useState(autoReveal || isStreaming);
+    const [progress, setProgress] = useState((autoReveal || isStreaming) ? 100 : 0);
     const { addToast } = useToasts();
+
 
     const handleRefine = () => {
         setIsRefining(true);
@@ -215,9 +218,12 @@ export const InteractiveSummary = ({
                                      <span key={tag} className="px-2 py-0.5 rounded-md bg-[var(--accent)]/10 text-[9px] font-bold text-[var(--accent)] border border-[var(--accent)]/10">{tag}</span>
                                   ))}
                                </div>
-                               <div className="space-y-2">
-                                   {renderContent(refinedText)}
-                               </div>
+                                <div className="space-y-2">
+                                    <MarkdownRenderer 
+                                        content={(refinedText || "").replace(/\[KNOWLEDGE_CHECK\][\s\S]*?(\n\n|\n#|$)/g, "\n\n")} 
+                                        isStreaming={isStreaming} 
+                                    />
+                                </div>
                            </motion.div>
                         )}
                     </AnimatePresence>

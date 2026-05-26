@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
+import Markdown from "@/components/ui/Markdown";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
 import { useIngestStore } from "@/store/useIngestStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Sparkles, Loader2 } from "lucide-react";
+
 
 /* ═══════════════════════════════════════════════════
    TYPES & HELPERS
@@ -228,11 +227,12 @@ function ChatTool() {
                                             {msg.role === 'user' ? (
                                                 msg.content
                                             ) : (
-                                                <div className="markdown-prose w-full">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                        {typeof msg.content === 'string' ? msg.content.replace(/[ \t]+:[ \t]*/g, ': ').replace(/:[ \t]+/g, ': ') : msg.content}
-                                                    </ReactMarkdown>
-                                                </div>
+                                                <Markdown 
+                                                    isStreaming={isTyping && i === messages.length - 1} 
+                                                    className="w-full"
+                                                >
+                                                    {typeof msg.content === 'string' ? msg.content : ""}
+                                                </Markdown>
                                             )}
                                         </div>
                                     </motion.div>

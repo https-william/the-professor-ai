@@ -34,6 +34,7 @@ import { useToasts } from "@/components/ui/GlobalToasts";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/context/UserContext";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
+import { BubblyThinkingLoader } from "@/components/ui/Markdown";
 
 // Import Interactive Components
 import { InteractiveSummary } from "@/components/features/InteractiveSummary";
@@ -69,9 +70,15 @@ export default function StudyPackPage() {
     const [showGuestModal, setShowGuestModal] = useState(false);
     const [showWrapModal, setShowWrapModal] = useState(false);
 
+    const [isSprint, setIsSprint] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState("");
+    const [candleBurnPct, setCandleBurnPct] = useState(100);
+
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+
 
     // Workflow States
     const [viewingPhaseIndex, setViewingPhaseIndex] = useState<number | null>(null);
@@ -105,6 +112,111 @@ export default function StudyPackPage() {
     const [isStreamingPhase, setIsStreamingPhase] = useState(false);
     const [sourceText, setSourceText] = useState("");
     const [packTitle, setPackTitle] = useState("Study Pack");
+
+    // Change tab title dynamically when user unfocuses, using brand-voice Nigeria names & prompts
+    useEffect(() => {
+        const originalTitle = document.title;
+        const prompts = [
+            "Your bed misses you...",
+            "Bolu, the exam hall is waiting...",
+            "Amaka, the clock is ticking...",
+            "Focus up! Just the good parts.",
+            "Your group chat can wait...",
+            "Concentrate, Midnight Scholar!"
+        ];
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+                document.title = randomPrompt;
+            } else {
+                document.title = originalTitle;
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            document.title = originalTitle;
+        };
+    }, [packTitle]);
+
+    // Set up 10-hour exam countdown and candle burn percentage
+    useEffect(() => {
+        if (!isSprint || !packId) return;
+        
+        const startKey = `sprint_start_${packId}`;
+        let startTimeStr = localStorage.getItem(startKey);
+        if (!startTimeStr) {
+            startTimeStr = Date.now().toString();
+            localStorage.setItem(startKey, startTimeStr);
+        }
+        const startTime = parseInt(startTimeStr, 10);
+        const endTime = startTime + 10 * 60 * 60 * 1000; // 10 hours
+
+        const updateTimer = () => {
+            const now = Date.now();
+            const diff = endTime - now;
+            if (diff <= 0) {
+                setTimeRemaining("00:00:00");
+                setCandleBurnPct(0);
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const pad = (num: number) => String(num).padStart(2, "0");
+            setTimeRemaining(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
+            
+            const pct = Math.max(5, (diff / (10 * 60 * 60 * 1000)) * 100);
+            setCandleBurnPct(pct);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [isSprint, packId]);
+
+    const renderSprintCandle = () => {
+        if (!isSprint) return null;
+        return (
+            <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[var(--background-secondary)]/50 border border-[var(--border)] shadow-sm backdrop-blur-md">
+                {/* Animated CSS Candle */}
+                <div className="relative w-5 h-8 flex items-center justify-center shrink-0">
+                    {/* Wax Body */}
+                    <div 
+                        className="absolute bottom-0 w-2.5 bg-[var(--foreground)] rounded-sm transition-all duration-1000"
+                        style={{ 
+                            height: `${Math.max(4, (candleBurnPct / 100) * 16)}px`,
+                            opacity: 0.8
+                        }}
+                    />
+                    {/* Wick */}
+                    <div 
+                        className="absolute w-0.5 h-1.5 bg-gray-500"
+                        style={{ bottom: `${Math.max(4, (candleBurnPct / 100) * 16)}px` }}
+                    />
+                    {/* Flame */}
+                    <div 
+                        className="absolute w-2 h-3.5 bg-gradient-to-t from-[var(--accent)] to-yellow-300 rounded-full animate-pulse"
+                        style={{ 
+                            bottom: `${Math.max(4, (candleBurnPct / 100) * 16) + 4}px`,
+                            boxShadow: "0 0 10px var(--accent-glow)",
+                            transformOrigin: "bottom center"
+                        }}
+                    />
+                </div>
+                
+                {/* Timer Text */}
+                <div className="flex flex-col">
+                    <span className="text-[7px] font-black uppercase tracking-widest text-[var(--foreground-muted)] leading-none">Exam Countdown</span>
+                    <span className="text-[11px] font-mono font-black text-[var(--accent)] leading-tight">{timeRemaining}</span>
+                </div>
+            </div>
+        );
+    };
 
     const phases: Phase[] = [
         {
@@ -293,6 +405,7 @@ export default function StudyPackPage() {
                 if (typeof window !== "undefined") {
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.get("sprint") === "true") {
+                        setIsSprint(true);
                         setViewingPhaseIndex(0);
                         setIsPerforming(true);
                         setHasTaskCompleted(false);
@@ -398,6 +511,7 @@ export default function StudyPackPage() {
         }
 
         setIsLoadingPhase(true);
+        setIsPerforming(true); // Transition immediately to task view so bubbly loader can display
         try {
             const res = await fetch("/api/generate/pack-phase", {
                 method: "POST",
@@ -417,7 +531,7 @@ export default function StudyPackPage() {
             if (contentType.includes("text/event-stream")) {
                 setIsLoadingPhase(false);
                 setIsStreamingPhase(true);
-                setIsPerforming(true);
+                // isPerforming is already set to true
 
                 const reader = res.body?.getReader();
                 if (!reader) throw new Error("Stream not readable");
@@ -490,6 +604,7 @@ export default function StudyPackPage() {
                 addToast("The Professor is taking a quick break. Please try again in a moment.", "error");
             }
             setIsStreamingPhase(false);
+            setIsPerforming(false);
         } finally {
             setIsLoadingPhase(false);
         }
@@ -695,6 +810,11 @@ export default function StudyPackPage() {
         addToast(`Regenerating ${phaseId}...`, "info");
         setIsPerforming(true);
         setIsLoadingPhase(true);
+        setPhasesData(prev => {
+            const copy = { ...prev };
+            delete copy[phaseId];
+            return copy;
+        });
 
         try {
             const res = await fetch("/api/generate/pack-phase", {
@@ -902,16 +1022,28 @@ export default function StudyPackPage() {
 
     const renderPhaseInteractive = (phase: Phase) => {
         const data = phasesData[phase.id];
-        if (!data && phase.id !== "retain") return null;
+        const isCurrentlyGenerating = isLoadingPhase || isStreamingPhase;
+        
+        if (!data && phase.id !== "retain" && !isCurrentlyGenerating) return null;
+
+        // If actively generating but no items are generated yet, render bubbly loader
+        if (isCurrentlyGenerating && (!data || (Array.isArray(data) && data.length === 0))) {
+            return (
+                <div className="p-12 rounded-[2.5rem] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl flex items-center justify-center min-h-[300px] w-full max-w-2xl mx-auto">
+                    <BubblyThinkingLoader />
+                </div>
+            );
+        }
 
         switch (phase.id) {
             case "distill":
-                const summaryText = typeof data === 'string' ? data : (data?.summary ? (typeof data.summary === 'string' ? data.summary : JSON.stringify(data.summary)) : "No summary available.");
+                const summaryText = typeof data === 'string' ? data : (data?.summary ? (typeof data.summary === 'string' ? data.summary : JSON.stringify(data.summary)) : (isCurrentlyGenerating ? "" : "No summary available."));
                 return (
                     <InteractiveSummary
                         rawText={String(sourceText).substring(0, 1000) + "..."}
                         refinedText={summaryText}
                         autoReveal={true}
+                        isStreaming={isStreamingPhase && phase.id === "distill"}
                         onFinish={() => handleMasterPhase()}
                     />
                 );
@@ -927,7 +1059,7 @@ export default function StudyPackPage() {
                 const quizQuestions = Array.isArray(data) ? data : (data.questions || [data]);
                 return <InteractiveQuiz questions={quizQuestions} onFinish={(stats) => handleMasterPhase(stats)} />;
             case "predict":
-                return <StudyRoadmap data={data} />;
+                return <StudyRoadmap data={data} isStreaming={isStreamingPhase && phase.id === "predict"} />;
             default:
                 return null;
         }
@@ -979,18 +1111,19 @@ export default function StudyPackPage() {
                                 <Zap size={10} className="fill-current" /> Study Pack
                             </div>
                             <div className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest flex items-center gap-1.5">
-                                <Clock size={10} /> {completedPhases.length} / {phases.length} Phases Mastered
+                                <Clock size={10} /> {completedPhases.length} / {phases.length} Steps Completed
                             </div>
                         </div>
                         <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-none italic mb-2">
                             Your <span className="text-[var(--blue)]">Study Guide</span> Is Ready.
                         </h1>
                         <p className="text-xs sm:text-sm text-[var(--foreground-muted)] font-medium leading-relaxed opacity-90">
-                            A simple 4-step path. Finish each one to unlock your final <span className="text-[var(--foreground)] font-black">Study Report</span>.
+                            A simple 4-step path. Finish each one to get your final <span className="text-[var(--foreground)] font-black">Study Report</span>.
                         </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                        {renderSprintCandle()}
                         <ThemeToggle />
                         <FocusTimer widget={true} />
                         <button
@@ -1170,6 +1303,7 @@ export default function StudyPackPage() {
                                         </div>
                                     </button>
                                 )}
+                                {renderSprintCandle()}
                                 <FocusTimer widget={true} />
                                 <button
                                     onClick={() => setViewingPhaseIndex(null)}
@@ -1377,29 +1511,57 @@ export default function StudyPackPage() {
                             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--background)] border border-[var(--border)] mb-8 text-center relative overflow-hidden group shadow-md z-10">
                                 <BrainCircuit className="w-6 h-6 text-[var(--blue)] mx-auto mb-3" />
                                 <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-2">Professor&apos;s Assessment</h4>
-                                <p className="text-xs sm:text-base text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                    {effectiveQuizScore >= 95 
-                                        ? "Flawless genius. Your bed misses you now."
-                                        : effectiveQuizScore >= 80
-                                        ? "Smart work. You've earned a solid break."
-                                        : effectiveQuizScore >= 60
-                                        ? "You passed, but let's aim higher next."
-                                        : effectiveQuizScore > 0
-                                        ? "Rough session. Step away, clear your mind, then try again."
-                                        : "Lab is prepped. Let's get to work."}
-                                </p>
+                                {isGuest ? (
+                                    <div className="relative py-4">
+                                        <div className="blur-[4px] select-none text-xs sm:text-base text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
+                                            This is a secret assessment. The Professor knows exactly how ready you are, but you need to sign up to unlock this wisdom.
+                                        </div>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm">
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-2">Locked Wisdom</span>
+                                            <button
+                                                onClick={() => {
+                                                    setShowWrapModal(false);
+                                                    setShowGuestModal(true);
+                                                }}
+                                                className="px-4 py-2 rounded-xl bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest hover-scale-sm transition-all cursor-pointer"
+                                            >
+                                                Sign Up to Unlock
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs sm:text-base text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
+                                        {effectiveQuizScore >= 95 
+                                            ? "Flawless genius. Your bed misses you now."
+                                            : effectiveQuizScore >= 80
+                                            ? "Smart work. You've earned a solid break."
+                                            : effectiveQuizScore >= 60
+                                            ? "You passed, but let's aim higher next."
+                                            : effectiveQuizScore > 0
+                                            ? "Rough session. Step away, clear your mind, then try again."
+                                            : "Lab is prepped. Let's get to work."}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 relative z-10">
                                 <button 
-                                    onClick={handleShareWrapImage}
-                                    className="flex-[2] py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover-scale-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                                    onClick={() => {
+                                        if (isGuest) {
+                                            setShowWrapModal(false);
+                                            setShowGuestModal(true);
+                                        } else {
+                                            handleShareWrapImage();
+                                        }
+                                    }}
+                                    className="flex-[2] py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover-scale-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
                                 >
-                                    <Share2 size={16} className="group-hover-rotate-sm transition-transform" /> SHARE WRAP IMAGE
+                                    <Share2 size={16} className="group-hover-rotate-sm transition-transform" /> 
+                                    {isGuest ? "SIGN UP TO SHARE WRAP" : "SHARE WRAP IMAGE"}
                                 </button>
                                 <button 
                                     onClick={() => router.push('/create')}
-                                    className="flex-1 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--border)] transition-all shadow-md"
+                                    className="flex-1 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--border)] transition-all shadow-md cursor-pointer"
                                 >
                                     CREATE NEW PACK
                                 </button>

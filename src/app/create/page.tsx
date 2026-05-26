@@ -146,7 +146,7 @@ function CreatorStudio() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, spendCredits } = useUser();
-    const { openModal } = useIngestStore();
+    const { openModal, isProcessing: storeIsProcessing, queue: storeQueue, addFiles } = useIngestStore();
     const supabase = createClient();
 
     const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -162,6 +162,93 @@ function CreatorStudio() {
     const [timerValue, setTimerValue] = useState(600);
     const [selectedFormat, setSelectedFormat] = useState("");
     const [showGuestModal, setShowGuestModal] = useState(false);
+
+    const [dragActive, setDragActive] = useState(false);
+    const [missionTitle, setMissionTitle] = useState("");
+    const [userEditedTitle, setUserEditedTitle] = useState(false);
+
+    // Dynamic loading phrases matching our warm coffee-shop tone
+    const loadingPhrases = [
+        "Skimming your materials...",
+        "Reading your notes...",
+        "Sorting out the main ideas...",
+        "Connecting the dots..."
+    ];
+
+    const [phraseIndex, setPhraseIndex] = useState(0);
+
+    useEffect(() => {
+        if (!storeIsProcessing) return;
+        const interval = setInterval(() => {
+            setPhraseIndex(prev => (prev + 1) % loadingPhrases.length);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [storeIsProcessing]);
+
+    // Load initial title from session if present
+    useEffect(() => {
+        const saved = sessionStorage.getItem("lastSprintName") || "";
+        if (saved) {
+            setMissionTitle(saved);
+            setUserEditedTitle(true);
+        }
+    }, []);
+
+    // Auto-suggest title based on the first few words of input
+    useEffect(() => {
+        if (!userEditedTitle && inputText.trim().length > 10) {
+            const firstLine = inputText.split('\n')[0].trim().replace(/[#*_\-[\]()]/g, '');
+            if (firstLine.length > 3) {
+                const words = firstLine.split(/\s+/).slice(0, 4).join(" ");
+                const cleaned = words.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+                if (cleaned) {
+                    const capitalized = cleaned.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                    setMissionTitle(capitalized + " Prep");
+                }
+            }
+        }
+    }, [inputText, userEditedTitle]);
+
+    // Preset configurations with warm coffee-shop brand names
+    const presets = [
+        {
+            id: "midnight_cram",
+            label: "Midnight Cram",
+            desc: "Quick high-yield prep",
+            settings: { itemCount: 10, difficulty: "medium", timerValue: 600, selectedFormat: "bullets" }
+        },
+        {
+            id: "class_recap",
+            label: "Class Recap",
+            desc: "Study this week's slides",
+            settings: { itemCount: 20, difficulty: "easy", timerValue: 0, selectedFormat: "bullets" }
+        },
+        {
+            id: "exam_ace",
+            label: "Exam Ace",
+            desc: "Simulate the real exam hall",
+            settings: { itemCount: 30, difficulty: "nightmare", timerValue: 1800, selectedFormat: "mixed" }
+        }
+    ];
+
+    const applyPreset = (preset: typeof presets[0]) => {
+        setItemCount(preset.settings.itemCount);
+        setDifficulty(preset.settings.difficulty as any);
+        setTimerValue(preset.settings.timerValue);
+        
+        if (selectedType && formatOptions[selectedType]) {
+            const availableFormats = formatOptions[selectedType].map(f => f.id);
+            if (availableFormats.includes(preset.settings.selectedFormat)) {
+                setSelectedFormat(preset.settings.selectedFormat);
+            } else {
+                setSelectedFormat(availableFormats[0]);
+            }
+        }
+        
+        if (!userEditedTitle) {
+            setMissionTitle(preset.label + " Prep");
+        }
+    };
 
     useEffect(() => {
         if (typeof window !== "undefined" && !user.isAuthenticated && !user.isLoading) {
@@ -220,7 +307,7 @@ function CreatorStudio() {
     const handleGenerate = async () => {
         if (!inputText.trim()) return;
 
-        const customTitle = sessionStorage.getItem("customGenerationTitle") || "";
+        const customTitle = missionTitle || "";
 
         if (isSprintMode) {
             // Deduct credits for Exam Sprint (10 credits)
@@ -312,6 +399,8 @@ function CreatorStudio() {
         sessionStorage.removeItem("customGenerationTitle");
         setIsSprintMode(false);
         setIsGeneratingPack(false);
+        setMissionTitle("");
+        setUserEditedTitle(false);
     };
 
     if (isGeneratingPack) {
@@ -405,8 +494,54 @@ function CreatorStudio() {
                                     </button>
                                 </div>
 
-                                {/* Source Material Textarea Workspace */}
-                                <div className="relative overflow-hidden rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl transition-all focus-within:border-[var(--blue)]/40 focus-within:shadow-[0_12px_40px_rgba(37,99,235,0.06)]">
+                                {/* Source Material Textarea Workspace with Drag & Drop */}
+                                <div 
+                                    onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
+                                    onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
+                                    onDragOver={(e) => { e.preventDefault(); }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        setDragActive(false);
+                                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                            addFiles(Array.from(e.dataTransfer.files));
+                                        }
+                                    }}
+                                    className={cn(
+                                        "relative overflow-hidden rounded-[32px] bg-[var(--card)]/90 border border-[var(--border)] shadow-xl transition-all focus-within:border-[var(--blue)]/40 focus-within:shadow-[0_12px_40px_rgba(37,99,235,0.06)]",
+                                        dragActive && "border-[var(--blue)] bg-[var(--blue)]/5 scale-[1.01]"
+                                    )}
+                                >
+                                    {/* Drag Overlay */}
+                                    {dragActive && (
+                                        <div className="absolute inset-0 z-20 bg-[var(--background)]/90 backdrop-blur-sm border-2 border-dashed border-[var(--blue)] rounded-[32px] flex flex-col items-center justify-center gap-3 p-6 pointer-events-none">
+                                            <Upload size={36} className="text-[var(--blue)] animate-bounce" />
+                                            <h4 className="text-lg font-black text-[var(--foreground)]">Drop your files here</h4>
+                                            <p className="text-xs text-[var(--foreground-muted)] font-bold text-center">
+                                                Drop PDFs, slides, or notes to feed the Professor
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Ingestion Progress Overlay */}
+                                    {storeIsProcessing && (
+                                        <div className="absolute inset-0 z-20 bg-[var(--background)]/85 backdrop-blur-md rounded-[32px] flex flex-col items-center justify-center p-6 gap-4 animate-in fade-in duration-300">
+                                            <div className="relative w-14 h-14">
+                                                <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
+                                                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)] animate-spin" />
+                                            </div>
+                                            <div className="text-center space-y-1 max-w-sm">
+                                                <p className="text-[10px] font-black text-[var(--blue)] uppercase tracking-[0.3em] animate-pulse">
+                                                    Reading your notes...
+                                                </p>
+                                                {storeQueue.filter(f => f.status === 'reading' || f.status === 'learning').slice(0, 1).map(f => (
+                                                    <p key={f.id} className="text-xs font-bold text-[var(--foreground-muted)] truncate max-w-xs mx-auto">
+                                                        {loadingPhrases[phraseIndex]} ({f.name})
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="px-6 pt-5 flex items-center justify-between">
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-35">Source Material</label>
                                         <span className={`text-[10px] font-mono font-black tracking-tighter ${charPercentage > 80 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
@@ -414,15 +549,6 @@ function CreatorStudio() {
                                         </span>
                                     </div>
                                     <div className="relative p-6">
-                                        {isUploading && (
-                                            <div className="absolute inset-0 z-10 bg-[var(--bg)]/80 backdrop-blur-md flex flex-col items-center justify-center rounded-[24px] gap-4">
-                                                <div className="relative w-12 h-12">
-                                                    <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
-                                                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)] animate-spin" />
-                                                </div>
-                                                <p className="text-[10px] font-black text-[var(--foreground)] uppercase tracking-[0.4em]">{uploadStatus}</p>
-                                            </div>
-                                        )}
                                         <textarea
                                             value={inputText}
                                             onChange={handleInputChange}
@@ -430,13 +556,13 @@ function CreatorStudio() {
                                             className="w-full h-80 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 text-[15px] leading-relaxed outline-none font-bold"
                                             style={{ scrollbarWidth: "none" }}
                                             autoFocus
-                                            disabled={isUploading}
+                                            disabled={isUploading || storeIsProcessing}
                                         />
                                     </div>
                                     <div className="px-6 py-4 flex items-center justify-between bg-[var(--bg-3)]/60 border-t border-[var(--border)]">
                                         <button
                                             onClick={handleFileUploadRequest}
-                                            className="flex items-center gap-2.5 text-[11px] font-black text-[var(--blue-text)] hover:text-[var(--blue)] uppercase tracking-[0.2em] transition-all group"
+                                            className="flex items-center gap-2.5 text-[11px] font-black text-[var(--blue-text)] hover:text-[var(--blue)] uppercase tracking-[0.2em] transition-all group cursor-pointer"
                                         >
                                             <Upload size={14} strokeWidth={2.5} className="group-hover:-translate-y-0.5 transition-transform" />
                                             Feed the Professor
@@ -452,7 +578,11 @@ function CreatorStudio() {
                                     <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-35 mb-3 block">The Mission</label>
                                     <input 
                                         type="text"
-                                        defaultValue={sessionStorage.getItem("lastSprintName") || ""}
+                                        value={missionTitle}
+                                        onChange={(e) => {
+                                            setMissionTitle(e.target.value);
+                                            setUserEditedTitle(true);
+                                        }}
                                         placeholder="e.g., 'Bio-Chem Final Push' or 'Law 101 Ace'"
                                         className="w-full bg-[var(--bg-3)]/60 border border-[var(--border)] rounded-xl px-5 py-3.5 text-sm font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--accent)]/30 focus:bg-[var(--bg-4)] outline-none transition-all sprint-title-input"
                                     />
@@ -472,6 +602,39 @@ function CreatorStudio() {
                                         <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-50">
                                             Study Settings
                                         </h3>
+                                    </div>
+
+                                    {/* Quick Presets */}
+                                    <div className="space-y-3 pb-4 border-b border-[var(--border)]/40">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">
+                                            Quick Presets
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {presets.map((preset) => {
+                                                const isActive = itemCount === preset.settings.itemCount && 
+                                                                 difficulty === preset.settings.difficulty && 
+                                                                 timerValue === preset.settings.timerValue;
+                                                return (
+                                                    <button
+                                                        key={preset.id}
+                                                        onClick={() => applyPreset(preset)}
+                                                        className={cn(
+                                                            "p-2 text-center rounded-xl border transition-all cursor-pointer flex flex-col justify-center gap-1",
+                                                            isActive 
+                                                            ? 'bg-[var(--blue)]/5 border-[var(--blue)]/30 scale-[1.02]' 
+                                                            : 'bg-[var(--bg-3)]/60 border-[var(--border)] hover:bg-[var(--border)]'
+                                                        )}
+                                                    >
+                                                        <span className={cn("text-[9px] font-black leading-tight", isActive ? 'text-[var(--blue)]' : 'text-[var(--foreground)]')}>
+                                                            {preset.label}
+                                                        </span>
+                                                        <span className="text-[7px] text-[var(--foreground-muted)] font-bold opacity-60 leading-none truncate w-full">
+                                                            {preset.desc}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
 
                                     {/* Setting 1: Density / Count */}
@@ -577,12 +740,7 @@ function CreatorStudio() {
                                 <div className="space-y-4">
                                     <button
                                         id="ready-sprint-btn"
-                                        onClick={() => {
-                                            const input = document.querySelector('.sprint-title-input') as HTMLInputElement;
-                                            const customTitle = input?.value || "";
-                                            if (customTitle) sessionStorage.setItem("customGenerationTitle", customTitle);
-                                            handleGenerate();
-                                        }}
+                                        onClick={handleGenerate}
                                         disabled={!canGenerate}
                                         className={cn(
                                             "w-full py-4.5 rounded-[20px] font-black text-xs sm:text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
@@ -599,7 +757,7 @@ function CreatorStudio() {
                                         )}
                                         <Zap size={16} strokeWidth={2.5} className={canGenerate ? "animate-pulse" : ""} />
                                         <span className="relative z-10">I&apos;m Ready</span>
-                                        <span className="text-[9px] opacity-60 font-mono ml-0.5">(-{selectedCreator?.cost} CR)</span>
+                                        <span className="text-[9px] opacity-60 font-mono ml-0.5">(-{selectedCreator?.cost || 1} CR)</span>
                                     </button>
 
                                     {setupError && (

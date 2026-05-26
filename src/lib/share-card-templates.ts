@@ -56,42 +56,53 @@ export const SHARE_CARD_TEMPLATES = [
         id: "academic-stamp",
         name: "Academic Stamp",
         svg: `<svg width="1080" height="1350" viewBox="0 0 1080 1350" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Cream Canvas -->
-            <rect width="1080" height="1350" fill="#FDFCF8"/>
-            
-            <!-- Grid Pattern -->
             <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#000000" stroke-opacity="0.04" stroke-width="1"/>
+                <linearGradient id="stampGlow" x1="0" y1="0" x2="1080" y2="1350" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#3B82F6"/>
+                    <stop offset="1" stop-color="#F59E0B"/>
+                </linearGradient>
+                <pattern id="stampGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FFFFFF" stroke-opacity="0.02" stroke-width="1"/>
                 </pattern>
+                <filter id="sealBlur" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="20" />
+                </filter>
             </defs>
-            <rect width="1080" height="1350" fill="url(#grid)"/>
+            
+            <!-- Slate Backdrop -->
+            <rect width="1080" height="1350" fill="#08080E"/>
+            <rect width="1080" height="1350" fill="url(#stampGrid)"/>
+            
+            <!-- Ambient Glow behind Seal -->
+            <circle cx="540" cy="820" r="300" fill="#3B82F6" fill-opacity="0.06" filter="url(#sealBlur)"/>
+            <circle cx="540" cy="820" r="200" fill="#F59E0B" fill-opacity="0.04" filter="url(#sealBlur)"/>
 
-            <rect x="80" y="80" width="920" height="1190" fill="none" stroke="#111111" stroke-width="6"/>
-            <rect x="96" y="96" width="888" height="1158" fill="none" stroke="#111111" stroke-width="2"/>
+            <!-- Elegant Double Borders in Brand Colors -->
+            <rect x="80" y="80" width="920" height="1190" fill="none" stroke="url(#stampGlow)" stroke-opacity="0.4" stroke-width="4"/>
+            <rect x="96" y="96" width="888" height="1158" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1"/>
 
-            <text x="540" y="200" text-anchor="middle" fill="#111111" font-family="Playfair Display, serif" font-size="32" font-weight="700" letter-spacing="0.2em">CERTIFICATE OF STUDY</text>
-            <line x1="300" y1="240" x2="780" y2="240" stroke="#111111" stroke-width="2"/>
+            <text x="540" y="200" text-anchor="middle" fill="#FFFFFF" fill-opacity="0.9" font-family="Playfair Display, serif" font-size="32" font-weight="700" letter-spacing="0.2em">CERTIFICATE OF STUDY</text>
+            <line x1="300" y1="240" x2="780" y2="240" stroke="url(#stampGlow)" stroke-width="2" stroke-opacity="0.3"/>
 
             <!-- Huge wrapped topic -->
-            <text x="540" y="440" text-anchor="middle" fill="#111111" font-family="Playfair Display, serif" font-size="96" font-weight="900" letter-spacing="-0.03em">{{title}}</text>
+            <text x="540" y="440" text-anchor="middle" fill="#FFFFFF" font-family="Playfair Display, serif" font-size="96" font-weight="900" letter-spacing="-0.03em">{{title}}</text>
 
-            <!-- Stats seal -->
+            <!-- Stats seal (Slate Layer with Blue/Amber Outline) -->
             <g transform="translate(340, 640)">
-                <circle cx="200" cy="200" r="180" fill="#111111"/>
-                <circle cx="200" cy="200" r="160" fill="none" stroke="#FFFFFF" stroke-dasharray="8 8" stroke-width="3"/>
-                <text x="200" y="220" text-anchor="middle" fill="#FFFFFF" font-family="Inter, sans-serif" font-size="110" font-weight="800">{{count}}</text>
-                <text x="200" y="280" text-anchor="middle" fill="#FFFFFF" fill-opacity="0.8" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="0.1em">{{type}}</text>
+                <circle cx="200" cy="200" r="180" fill="#12121A" stroke="url(#stampGlow)" stroke-opacity="0.6" stroke-width="3"/>
+                <circle cx="200" cy="200" r="160" fill="none" stroke="#FFFFFF" stroke-opacity="0.1" stroke-dasharray="8 8" stroke-width="2"/>
+                <text x="200" y="220" text-anchor="middle" fill="#F59E0B" font-family="Inter, sans-serif" font-size="110" font-weight="800">{{count}}</text>
+                <text x="200" y="280" text-anchor="middle" fill="#FFFFFF" fill-opacity="0.7" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="0.1em">{{type}}</text>
             </g>
 
-            <text x="140" y="1120" text-anchor="start" fill="#444444" font-family="Inter, sans-serif" font-size="24" font-weight="500">DATE RECORDED:</text>
-            <text x="140" y="1160" text-anchor="start" fill="#111111" font-family="Inter, sans-serif" font-size="32" font-weight="800">{{date}}</text>
+            <text x="140" y="1120" text-anchor="start" fill="#FFFFFF" fill-opacity="0.4" font-family="Inter, sans-serif" font-size="24" font-weight="500">DATE RECORDED:</text>
+            <text x="140" y="1160" text-anchor="start" fill="#FFFFFF" fill-opacity="0.9" font-family="Inter, sans-serif" font-size="32" font-weight="800">{{date}}</text>
 
-            <text x="940" y="1120" text-anchor="end" fill="#444444" font-family="Inter, sans-serif" font-size="24" font-weight="500">SCHOLAR:</text>
-            <text x="940" y="1160" text-anchor="end" fill="#111111" font-family="Inter, sans-serif" font-size="32" font-weight="800">{{user}}</text>
+            <text x="940" y="1120" text-anchor="end" fill="#FFFFFF" fill-opacity="0.4" font-family="Inter, sans-serif" font-size="24" font-weight="500">SCHOLAR:</text>
+            <text x="940" y="1160" text-anchor="end" fill="#FFFFFF" fill-opacity="0.9" font-family="Inter, sans-serif" font-size="32" font-weight="800">{{user}}</text>
 
-            <line x1="140" y1="1200" x2="940" y2="1200" stroke="#111111" stroke-width="4"/>
-            <text x="540" y="1250" text-anchor="middle" fill="#111111" font-family="Playfair Display, serif" font-size="28" font-weight="800" font-style="italic">The Professor Intelligence System</text>
+            <line x1="140" y1="1200" x2="940" y2="1200" stroke="url(#stampGlow)" stroke-width="2" stroke-opacity="0.3"/>
+            <text x="540" y="1250" text-anchor="middle" fill="#FFFFFF" fill-opacity="0.8" font-family="Playfair Display, serif" font-size="28" font-weight="800" font-style="italic">The Professor Intelligence System</text>
         </svg>`
     },
     {

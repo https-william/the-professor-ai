@@ -199,7 +199,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased transition-colors duration-300 w-full min-h-screen m-0 p-0 overflow-x-hidden flex flex-col" suppressHydrationWarning>
+      <body className="font-sans antialiased w-full min-h-screen m-0 p-0 overflow-x-hidden flex flex-col" suppressHydrationWarning>
         <ThemeProvider>
           <PWAProvider>
             <UserProvider>

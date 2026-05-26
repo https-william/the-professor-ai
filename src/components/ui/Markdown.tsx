@@ -49,13 +49,74 @@ const mdComponents = {
     td: ({node, ...props}: any) => <td className="px-8 py-5 text-sm text-[var(--foreground)]/60 border-t border-[var(--border)]" {...props} />,
 };
 
-export default function Markdown({ children, className }: { children: string, className?: string }) {
-    const cleanChildren = children
+import { useState, useEffect } from "react";
+
+const THINKING_PHRASES = [
+    "Consulting the archives...",
+    "Finding the good parts...",
+    "Scanning the lecture slides...",
+    "Making it simple...",
+    "Filtering the noise...",
+    "Closing the gap...",
+];
+
+export function BubblyThinkingLoader() {
+    const [phrase, setPhrase] = useState("");
+
+    useEffect(() => {
+        setPhrase(THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)]);
+        const interval = setInterval(() => {
+            setPhrase(prev => {
+                const remaining = THINKING_PHRASES.filter(p => p !== prev);
+                return remaining[Math.floor(Math.random() * remaining.length)];
+            });
+        }, 3500);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="flex flex-col gap-3 py-4 pl-1">
+            <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[var(--blue-light)] thinking-dot" />
+                <span className="w-2 h-2 rounded-full bg-[var(--blue-light)] thinking-dot" />
+                <span className="w-2 h-2 rounded-full bg-[var(--blue-light)] thinking-dot" />
+            </div>
+            <p className="text-[10px] font-mono font-bold tracking-widest text-[var(--foreground-muted)] uppercase animate-pulse">
+                {phrase}
+            </p>
+        </div>
+    );
+}
+
+export default function Markdown({ 
+    children, 
+    className,
+    isStreaming = false 
+}: { 
+    children: string; 
+    className?: string; 
+    isStreaming?: boolean; 
+}) {
+    const isEmpty = !children || children.trim() === "";
+
+    if (isEmpty && isStreaming) {
+        return (
+            <div className={cn("selection:bg-[var(--foreground)]/10 selection:text-[var(--foreground)]", className)}>
+                <BubblyThinkingLoader />
+            </div>
+        );
+    }
+
+    const cleanChildren = (children || "")
         .replace(/[ \t]+:[ \t]*/g, ': ')
         .replace(/:[ \t]+/g, ': ');
 
     return (
-        <div className={cn("selection:bg-[var(--foreground)]/10 selection:text-[var(--foreground)]", className)}>
+        <div className={cn(
+            "selection:bg-[var(--foreground)]/10 selection:text-[var(--foreground)]", 
+            isStreaming && "typing-cursor",
+            className
+        )}>
             <ReactMarkdown 
                 remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]} 
                 rehypePlugins={[rehypeKatex]}
@@ -65,7 +126,7 @@ export default function Markdown({ children, className }: { children: string, cl
             </ReactMarkdown>
             
             {/* The "Identity Nudge" styling for the footer if it exists */}
-            {children.includes("That's the difference sha.") && (
+            {children && children.includes("That's the difference sha.") && (
                 <motion.div 
                     variants={revealVariants}
                     className="mt-20 pt-10 border-t border-[var(--border)] flex flex-col items-center text-center opacity-30 hover:opacity-100 transition-opacity duration-700"
@@ -78,7 +139,7 @@ export default function Markdown({ children, className }: { children: string, cl
             )}
 
             {/* AI Transparency Watermark */}
-            {!children.includes("That's the difference sha.") && (
+            {children && !children.includes("That's the difference sha.") && (
                 <motion.div 
                     variants={revealVariants}
                     className="mt-20 pt-10 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-center gap-3 text-[9px] text-[var(--foreground-muted)] select-none"
@@ -92,3 +153,4 @@ export default function Markdown({ children, className }: { children: string, cl
         </div>
     );
 }
+

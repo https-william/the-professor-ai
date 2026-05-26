@@ -83,3 +83,14 @@ DISTILLED_AESTHETICS_PROMPT = """
   - `src/app/dashboard/page.tsx` (useEffect import fix + neutral spinner)
   - `public/site.webmanifest` (NEW)
   - `public/favicon.ico`, `public/favicon-*.png`, `public/apple-touch-icon.png`, `public/android-chrome-*.png` (NEW — user assets)
+
+## 2026-05-23 (Update 10: Landing Redirection Middleware & Cleanup)
+- **What Changed:**
+  - Removed "How it works" Hero CTA and redirected "Get Started" to `/signup`.
+  - Deleted the bottom `FinalCTA` and upload zone CTA from the landing page.
+  - Implemented Standard Next.js Middleware in `src/middleware.ts` to redirect authenticated users instantly server-side to `/dashboard` when visiting `/`, `/login`, or `/signup`.
+  - Cleaned up unused `src/proxy.ts`.
+- **Files Modified:**
+  - `src/middleware.ts` (NEW)
+  - `src/proxy.ts` (DELETED)
+- **Verified:** Running `npx tsc --noEmit` compiles cleanly with no errors, confirming correct TypeScript signature for Middleware.

@@ -1,0 +1,85 @@
+{
+  "reddit": {
+    "subreddits": [
+      "studytips",
+      "GetStudying",
+      "college",
+      "Nigeria",
+      "UniUK",
+      "ApplyingToCollege",
+      "GCSE",
+      "6thForm",
+      "medicalschool",
+      "lawschool",
+      "premed"
+    ],
+    "api_base": "https://www.reddit.com",
+    "results_per_sub": 10,
+    "sort": "relevance",
+    "time_filter": "month"
+  },
+  "forums": {
+    "nairaland": {
+      "base_url": "https://www.nairaland.com",
+      "sections": ["education", "pair", "pair"],
+      "enabled": true
+    },
+    "quora": {
+      "base_url": "https://www.quora.com",
+      "topics": [
+        "Study-Tips",
+        "Exam-Preparation",
+        "Active-Recall",
+        "Spaced-Repetition"
+      ],
+      "enabled": true
+    }
+  },
+  "keywords": [
+    "how to study for",
+    "Feynman technique",
+    "exam anxiety",
+    "active recall",
+    "spaced repetition",
+    "study method",
+    "flashcard app",
+    "study tips",
+    "how to pass",
+    "cramming doesn't work",
+    "WAEC preparation",
+    "JAMB tips",
+    "JAMB CBT",
+    "past questions",
+    "study hack",
+    "exam prep",
+    "how to study accounting",
+    "how to study biology",
+    "how to study chemistry",
+    "how to study physics",
+    "how to study economics",
+    "study motivation",
+    "can't remember what I studied",
+    "blank in exam",
+    "study but still fail",
+    "memorize vs understand",
+    "exam prediction",
+    "study schedule",
+    "how to read academic papers",
+    "how to take notes",
+    "AI study tool",
+    "study app",
+    "edutech",
+    "Nigerian university",
+    "UNILAG exam",
+    "OAU exam",
+    "UNN exam"
+  ],
+  "rate_limit": {
+    "delay_ms": 3000,
+    "max_requests_per_session": 100
+  },
+  "output": {
+    "leads_path": "../data/leads.json",
+    "max_leads": 500
+  }
+}

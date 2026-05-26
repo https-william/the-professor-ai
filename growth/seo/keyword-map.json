@@ -1,0 +1,452 @@
+[
+  {
+    "keyword": "what is osmosis in biology",
+    "slug": "what-is-osmosis-in-biology",
+    "subject": "Biology",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["diffusion", "active transport", "cell membrane"]
+  },
+  {
+    "keyword": "difference between mitosis and meiosis",
+    "slug": "difference-between-mitosis-and-meiosis",
+    "subject": "Biology",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["cell division", "chromosomes", "cytokinesis"]
+  },
+  {
+    "keyword": "explain the process of photosynthesis",
+    "slug": "explain-the-process-of-photosynthesis",
+    "subject": "Biology",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["chlorophyll", "light reactions", "carbon fixation"]
+  },
+  {
+    "keyword": "aerobic and anaerobic respiration explained",
+    "slug": "aerobic-and-anaerobic-respiration-explained",
+    "subject": "Biology",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["glycolysis", "ATP", "fermentation"]
+  },
+  {
+    "keyword": "how does DNA replication work",
+    "slug": "how-does-dna-replication-work",
+    "subject": "Biology",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["genetics", "helicase", "complementary base pairing"]
+  },
+  {
+    "keyword": "food chain and food web in ecology",
+    "slug": "food-chain-and-food-web-in-ecology",
+    "subject": "Biology",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["trophic levels", "producers and consumers", "energy flow"]
+  },
+  {
+    "keyword": "how enzymes work in the body",
+    "slug": "how-enzymes-work-in-the-body",
+    "subject": "Biology",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["lock and key model", "activation energy", "substrate specificity"]
+  },
+  {
+    "keyword": "blood circulation in humans",
+    "slug": "blood-circulation-in-humans",
+    "subject": "Biology",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["heart chambers", "pulmonary circulation", "arteries and veins"]
+  },
+  {
+    "keyword": "how the nervous system works",
+    "slug": "how-the-nervous-system-works",
+    "subject": "Biology",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["neurons", "reflex arc", "synapse"]
+  },
+  {
+    "keyword": "excretion in humans biology",
+    "slug": "excretion-in-humans-biology",
+    "subject": "Biology",
+    "difficulty": "foundational",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["kidney function", "nephron", "urea formation"]
+  },
+  {
+    "keyword": "atomic structure and electron configuration",
+    "slug": "atomic-structure-and-electron-configuration",
+    "subject": "Chemistry",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["orbitals", "atomic number", "isotopes"]
+  },
+  {
+    "keyword": "types of chemical bonding explained",
+    "slug": "types-of-chemical-bonding-explained",
+    "subject": "Chemistry",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["ionic bonding", "covalent bonding", "metallic bonding"]
+  },
+  {
+    "keyword": "electrolysis of brine and water",
+    "slug": "electrolysis-of-brine-and-water",
+    "subject": "Chemistry",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["electrodes", "Faraday's laws", "electrolyte"]
+  },
+  {
+    "keyword": "acids bases and salts in chemistry",
+    "slug": "acids-bases-and-salts-in-chemistry",
+    "subject": "Chemistry",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["pH scale", "neutralization", "indicators"]
+  },
+  {
+    "keyword": "organic chemistry naming and nomenclature",
+    "slug": "organic-chemistry-naming-and-nomenclature",
+    "subject": "Chemistry",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["IUPAC naming", "functional groups", "homologous series"]
+  },
+  {
+    "keyword": "how to calculate mole concept in chemistry",
+    "slug": "how-to-calculate-mole-concept-in-chemistry",
+    "subject": "Chemistry",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["Avogadro's number", "molar mass", "stoichiometry"]
+  },
+  {
+    "keyword": "gas laws in chemistry with examples",
+    "slug": "gas-laws-in-chemistry-with-examples",
+    "subject": "Chemistry",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["Boyle's law", "Charles's law", "ideal gas equation"]
+  },
+  {
+    "keyword": "what are redox reactions",
+    "slug": "what-are-redox-reactions",
+    "subject": "Chemistry",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["oxidation", "reduction", "oxidizing agents"]
+  },
+  {
+    "keyword": "periodic table trends explained",
+    "slug": "periodic-table-trends-explained",
+    "subject": "Chemistry",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["electronegativity", "ionization energy", "atomic radius"]
+  },
+  {
+    "keyword": "factors affecting rate of reaction",
+    "slug": "factors-affecting-rate-of-reaction",
+    "subject": "Chemistry",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["collision theory", "catalysts", "activation energy"]
+  },
+  {
+    "keyword": "Newton's three laws of motion explained",
+    "slug": "newtons-three-laws-of-motion-explained",
+    "subject": "Physics",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["inertia", "force and acceleration", "action and reaction"]
+  },
+  {
+    "keyword": "electromagnetic induction and Faraday's law",
+    "slug": "electromagnetic-induction-and-faradays-law",
+    "subject": "Physics",
+    "difficulty": "advanced",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["Lenz's law", "magnetic flux", "induced EMF"]
+  },
+  {
+    "keyword": "properties of waves in physics",
+    "slug": "properties-of-waves-in-physics",
+    "subject": "Physics",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["wavelength", "frequency", "amplitude"]
+  },
+  {
+    "keyword": "nuclear physics and radioactive decay",
+    "slug": "nuclear-physics-and-radioactive-decay",
+    "subject": "Physics",
+    "difficulty": "advanced",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["half-life", "alpha beta gamma radiation", "nuclear fission"]
+  },
+  {
+    "keyword": "projectile motion equations and examples",
+    "slug": "projectile-motion-equations-and-examples",
+    "subject": "Physics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["range", "trajectory", "horizontal and vertical components"]
+  },
+  {
+    "keyword": "electric circuits series and parallel",
+    "slug": "electric-circuits-series-and-parallel",
+    "subject": "Physics",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["Ohm's law", "resistance", "Kirchhoff's laws"]
+  },
+  {
+    "keyword": "how lenses and mirrors work in optics",
+    "slug": "how-lenses-and-mirrors-work-in-optics",
+    "subject": "Physics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["refraction", "focal length", "lens equation"]
+  },
+  {
+    "keyword": "basics of thermodynamics and heat transfer",
+    "slug": "basics-of-thermodynamics-and-heat-transfer",
+    "subject": "Physics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["conduction", "convection", "specific heat capacity"]
+  },
+  {
+    "keyword": "simple harmonic motion examples",
+    "slug": "simple-harmonic-motion-examples",
+    "subject": "Physics",
+    "difficulty": "advanced",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["pendulum", "oscillation", "restoring force"]
+  },
+  {
+    "keyword": "radioactivity and its applications",
+    "slug": "radioactivity-and-its-applications",
+    "subject": "Physics",
+    "difficulty": "advanced",
+    "search_volume_tier": "low",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["nuclear energy", "radiation safety", "carbon dating"]
+  },
+  {
+    "keyword": "how to solve quadratic equations",
+    "slug": "how-to-solve-quadratic-equations",
+    "subject": "Mathematics",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO", "GCE"],
+    "related_concepts": ["factoring", "quadratic formula", "completing the square"]
+  },
+  {
+    "keyword": "differentiation in calculus explained",
+    "slug": "differentiation-in-calculus-explained",
+    "subject": "Mathematics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["derivatives", "chain rule", "rate of change"]
+  },
+  {
+    "keyword": "integration formulas and examples",
+    "slug": "integration-formulas-and-examples",
+    "subject": "Mathematics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["definite integrals", "antiderivatives", "area under a curve"]
+  },
+  {
+    "keyword": "matrices operations and determinants",
+    "slug": "matrices-operations-and-determinants",
+    "subject": "Mathematics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["matrix multiplication", "inverse matrix", "simultaneous equations"]
+  },
+  {
+    "keyword": "probability questions and solutions",
+    "slug": "probability-questions-and-solutions",
+    "subject": "Mathematics",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO", "GCE"],
+    "related_concepts": ["conditional probability", "permutations", "combinations"]
+  },
+  {
+    "keyword": "trigonometry formulas and identities",
+    "slug": "trigonometry-formulas-and-identities",
+    "subject": "Mathematics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["sine cosine tangent", "unit circle", "trigonometric equations"]
+  },
+  {
+    "keyword": "sequences and series arithmetic geometric",
+    "slug": "sequences-and-series-arithmetic-geometric",
+    "subject": "Mathematics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["common difference", "common ratio", "sum to infinity"]
+  },
+  {
+    "keyword": "logarithms rules and how to solve",
+    "slug": "logarithms-rules-and-how-to-solve",
+    "subject": "Mathematics",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["log laws", "natural logarithm", "change of base"]
+  },
+  {
+    "keyword": "law of demand and supply explained",
+    "slug": "law-of-demand-and-supply-explained",
+    "subject": "Economics",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["equilibrium price", "market forces", "shift in demand curve"]
+  },
+  {
+    "keyword": "price elasticity of demand examples",
+    "slug": "price-elasticity-of-demand-examples",
+    "subject": "Economics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["elastic and inelastic demand", "cross elasticity", "income elasticity"]
+  },
+  {
+    "keyword": "GDP and national income calculation",
+    "slug": "gdp-and-national-income-calculation",
+    "subject": "Economics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "UTME"],
+    "related_concepts": ["gross national product", "per capita income", "economic growth"]
+  },
+  {
+    "keyword": "causes and effects of inflation",
+    "slug": "causes-and-effects-of-inflation",
+    "subject": "Economics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["demand-pull inflation", "cost-push inflation", "monetary policy"]
+  },
+  {
+    "keyword": "fiscal policy and government spending",
+    "slug": "fiscal-policy-and-government-spending",
+    "subject": "Economics",
+    "difficulty": "advanced",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["budget deficit", "taxation", "public expenditure"]
+  },
+  {
+    "keyword": "types of market structures in economics",
+    "slug": "types-of-market-structures-in-economics",
+    "subject": "Economics",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["perfect competition", "monopoly", "oligopoly"]
+  },
+  {
+    "keyword": "separation of powers in government",
+    "slug": "separation-of-powers-in-government",
+    "subject": "Government",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["checks and balances", "arms of government", "rule of law"]
+  },
+  {
+    "keyword": "federalism in Nigeria explained",
+    "slug": "federalism-in-nigeria-explained",
+    "subject": "Government",
+    "difficulty": "intermediate",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["federal system", "state and local government", "revenue allocation"]
+  },
+  {
+    "keyword": "fundamental human rights in Nigeria",
+    "slug": "fundamental-human-rights-in-nigeria",
+    "subject": "Government",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO", "GCE"],
+    "related_concepts": ["right to life", "freedom of expression", "limitations of rights"]
+  },
+  {
+    "keyword": "electoral systems and voting methods",
+    "slug": "electoral-systems-and-voting-methods",
+    "subject": "Government",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB"],
+    "related_concepts": ["first past the post", "proportional representation", "INEC"]
+  },
+  {
+    "keyword": "features of the Nigerian constitution",
+    "slug": "features-of-the-nigerian-constitution",
+    "subject": "Government",
+    "difficulty": "foundational",
+    "search_volume_tier": "high",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO", "GCE"],
+    "related_concepts": ["supremacy of the constitution", "1999 constitution", "amendment process"]
+  },
+  {
+    "keyword": "pressure groups and their functions",
+    "slug": "pressure-groups-and-their-functions",
+    "subject": "Government",
+    "difficulty": "intermediate",
+    "search_volume_tier": "medium",
+    "nigerian_exam_relevance": ["WAEC", "JAMB", "NECO"],
+    "related_concepts": ["interest groups", "lobbying", "civil society"]
+  }
+]

@@ -21,6 +21,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 
+import { BubblyThinkingLoader } from "@/components/ui/Markdown";
+
 interface RoadmapData {
     studySchedule?: Record<string, string>;
     commonMistakes?: string[];
@@ -29,7 +31,15 @@ interface RoadmapData {
     roadmap?: string; // Fallback for pure markdown
 }
 
-export const StudyRoadmap = ({ data }: { data: any }) => {
+export const StudyRoadmap = ({ data, isStreaming = false }: { data: any; isStreaming?: boolean }) => {
+    if (isStreaming && (!data || (typeof data === 'string' && data.trim() === "") || (data.roadmap && data.roadmap.trim() === ""))) {
+        return (
+            <div className="p-12 rounded-[2.5rem] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl flex items-center justify-center min-h-[300px] w-full max-w-2xl mx-auto">
+                <BubblyThinkingLoader />
+            </div>
+        );
+    }
+
     // Normalization and intelligent markdown parsing logic
     const normalize = (raw: any): RoadmapData => {
         if (!raw) return { roadmap: "No roadmap data available.", mostImportantTopics: ["Mastering core conceptual relationships"], commonBlindspots: ["Overlooking foundational definitions"], commonMistakes: ["Memorizing without understanding"], studySchedule: { "Phase 01": "Deep Summary & Core Concept Deconstruction" } };
@@ -178,13 +188,13 @@ export const StudyRoadmap = ({ data }: { data: any }) => {
             <div className="text-center mb-12 relative">
                 <div className="absolute inset-0 -top-10 bg-gradient-to-b from-[var(--blue)]/5 via-transparent to-transparent blur-3xl pointer-events-none -z-10" />
                 <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20 text-[10px] font-black uppercase tracking-[0.2em] mb-4 shadow-sm">
-                    <Compass size={14} className="animate-spin-slow" /> Strategic Blueprint
+                    <Compass size={14} className="animate-spin-slow" /> Study Plan Blueprint
                 </motion.div>
                 <motion.h2 variants={item} className="text-4xl sm:text-6xl font-black tracking-tighter italic uppercase leading-none mb-4 text-[var(--foreground)]">
                     Your <span className="text-[var(--blue)]">Study</span> Path
                 </motion.h2>
                 <motion.p variants={item} className="text-[var(--foreground-muted)] font-medium max-w-2xl mx-auto text-xs sm:text-sm leading-relaxed opacity-90">
-                    A precision-engineered roadmap designed by The Professor to accelerate synaptic retention and guarantee mastery.
+                    A custom study path built to save you time and make passing easy.
                 </motion.p>
             </div>
 

@@ -45,7 +45,8 @@ export type LayoutId =
   | "floating"         // Content floats over background
   | "timeline"         // Chronological/sequential layout
   | "spotlight"        // Single element focus with radial bg
-  | "liquid-glass";    // Ultra-modern blurred glass with refraction
+  | "liquid-glass"     // Ultra-modern blurred glass with refraction
+  | "academic-stamp";  // Elegant certificate-style stamp layout
 
 export interface LayoutPrimitive {
   id: LayoutId;
@@ -179,6 +180,14 @@ export const LAYOUT_PRIMITIVES: LayoutPrimitive[] = [
     gridTemplate: "relative flex items-center justify-center p-12",
     zones: 3,
     bestFor: ["flashcard", "quiz", "summary", "breakdown"],
+  },
+  {
+    id: "academic-stamp",
+    label: "Academic Stamp",
+    description: "Certificate style stamp layout with elegant borders",
+    gridTemplate: "grid-rows-[auto_1fr_auto] items-center justify-items-center relative",
+    zones: 3,
+    bestFor: ["quiz", "summary", "flashcard", "chat"],
   },
 ];
 
@@ -630,6 +639,41 @@ export function renderTemplate(templateId: string, content: ShareableContent): s
                 <text x="${innerW/2}" y="${innerH/2 - 40}" text-anchor="middle" fill="${color.text}" font-family="${typo.headingFont}" font-size="${42 * typo.headingScale}" font-weight="900">${wrapSvgText(content.title, innerW/2, 0, innerW * 0.6, 42)}</text>
                 <text x="${innerW/2}" y="${innerH/2 + 100}" text-anchor="middle" fill="${color.accent}" font-family="${typo.bodyFont}" font-size="120" font-weight="900">${content.data.count || content.data.streak || 'A+'}</text>
                 <text x="${innerW/2}" y="${innerH/2 + 160}" text-anchor="middle" fill="${color.text}44" font-family="${typo.bodyFont}" font-size="14" font-weight="900" letter-spacing="0.4em">${content.type.toUpperCase()}</text>
+            </g>
+            `;
+            break;
+
+        case "academic-stamp":
+            svg += `
+            <g transform="translate(${padding}, ${padding})">
+                <!-- Inner slate background frame with thin border -->
+                <rect width="${innerW}" height="${innerH}" rx="24" fill="${color.cardBg}" stroke="${color.border}" stroke-width="2"/>
+                
+                <!-- Inner glowing double border -->
+                <rect x="16" y="16" width="${innerW - 32}" height="${innerH - 32}" rx="18" fill="none" stroke="${color.accent}33" stroke-width="2"/>
+                
+                <text x="${innerW/2}" y="120" text-anchor="middle" fill="${color.text}B3" font-family="${typo.headingFont}" font-size="32" font-weight="700" letter-spacing="0.2em">CERTIFICATE OF STUDY</text>
+                <line x1="${innerW*0.25}" y1="160" x2="${innerW*0.75}" y2="160" stroke="${color.accent}" stroke-width="2" stroke-opacity="0.3"/>
+
+                <text x="${innerW/2}" y="320" text-anchor="middle" fill="${color.text}" font-family="${typo.headingFont}" font-size="${64 * typo.headingScale}" font-weight="900" letter-spacing="-0.02em">
+                    ${wrapSvgText(content.title, innerW/2, 0, innerW * 0.8, 64)}
+                </text>
+
+                <!-- Dynamic Seal Component (Slate Layer with accent outline) -->
+                <g transform="translate(${innerW/2 - 180}, ${innerH/2 - 60})">
+                    <circle cx="180" cy="180" r="160" fill="${color.background.includes('gradient') ? '#0A0A14' : color.background}" stroke="${color.accent}" stroke-width="2"/>
+                    <circle cx="180" cy="180" r="140" fill="none" stroke="${color.border}" stroke-dasharray="6 6" stroke-width="2"/>
+                    <text x="180" y="200" text-anchor="middle" fill="${color.accent}" font-family="${typo.bodyFont}" font-size="100" font-weight="900">${content.data.count || 'A+'}</text>
+                    <text x="180" y="250" text-anchor="middle" fill="${color.text}B3" font-family="${typo.bodyFont}" font-size="22" font-weight="600" letter-spacing="0.1em">${content.type.toUpperCase()}</text>
+                </g>
+
+                <text x="80" y="${innerH - 140}" text-anchor="start" fill="${color.text}66" font-family="${typo.bodyFont}" font-size="20" font-weight="500">DATE RECORDED</text>
+                <text x="80" y="${innerH - 100}" text-anchor="start" fill="${color.text}" font-family="${typo.bodyFont}" font-size="26" font-weight="800">${new Date(content.createdAt || '').toLocaleDateString()}</text>
+
+                <text x="${innerW - 80}" y="${innerH - 140}" text-anchor="end" fill="#FFFFFF" fill-opacity="0.4" font-family="${typo.bodyFont}" font-size="20" font-weight="500">SCHOLAR</text>
+                <text x="${innerW - 80}" y="${innerH - 100}" text-anchor="end" fill="${color.text}" font-family="${typo.bodyFont}" font-size="26" font-weight="800">${content.author || 'Scholar'}</text>
+
+                <line x1="80" y1="${innerH - 60}" x2="${innerW - 80}" y2="${innerH - 60}" stroke="${color.border}" stroke-width="2"/>
             </g>
             `;
             break;

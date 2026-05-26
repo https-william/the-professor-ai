@@ -9,7 +9,7 @@ const dayOptions = [
     { id: "7", label: "7 Days", desc: "Emergency Pace", emoji: "🚨" },
     { id: "14", label: "14 Days", desc: "Intensive Study", emoji: "🔥" },
     { id: "30", label: "30 Days", desc: "Standard Pace", emoji: "📅" },
-    { id: "90", label: "90 Days", desc: "Elite Mastery", emoji: "🏆" },
+    { id: "90", label: "90 Days", desc: "Deep Study Prep", emoji: "🏆" },
 ];
 
 export default function AIStudyPlanner() {
@@ -152,7 +152,7 @@ export default function AIStudyPlanner() {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                    Strategizing...
+                    Planning...
                   </span>
                 ) : (
                   <>

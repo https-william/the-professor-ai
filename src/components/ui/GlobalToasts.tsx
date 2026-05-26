@@ -244,40 +244,6 @@ export function ToastContainer() {
         // Fetch initial
         useToasts.getState().fetchNotifications();
 
-        // Check for unclaimed unlocked achievements
-        const checkUnclaimedAchievements = () => {
-            if (typeof window !== "undefined") {
-                const claimedMap = JSON.parse(localStorage.getItem("claimed_achievements") || "{}");
-                // Check unlocked achievements from initial list (streak-7, elite-midnight)
-                const unlocked = [
-                    { id: "streak-7", title: "Prometheus Flame", xp: 250 },
-                    { id: "elite-midnight", title: "Midnight Scholar", xp: 500 }
-                ];
-                unlocked.forEach(ach => {
-                    if (!claimedMap[ach.id]) {
-                        const currentToasts = useToasts.getState().toasts;
-                        const msg = `🏆 Unclaimed Reward: ${ach.title} (+${ach.xp} XP)`;
-                        if (!currentToasts.some(t => t.message === msg)) {
-                            useToasts.getState().addToast(msg, "achievement", undefined, "/achievements", false, ach.id);
-                        }
-                    } else {
-                        // If claimed, remove the toast if present
-                        const currentToasts = useToasts.getState().toasts;
-                        const existing = currentToasts.find(t => t.id === ach.id);
-                        if (existing) {
-                            useToasts.getState().removeToast(ach.id);
-                        }
-                    }
-                });
-            }
-        };
-
-        checkUnclaimedAchievements();
-
-        if (typeof window !== "undefined") {
-            window.addEventListener("achievements_updated", checkUnclaimedAchievements);
-        }
-
         const sub = supabase.channel('toast_updates')
             .on('postgres_changes', { 
                 event: 'INSERT', 
@@ -298,9 +264,6 @@ export function ToastContainer() {
 
         return () => {
             supabase.removeChannel(sub);
-            if (typeof window !== "undefined") {
-                window.removeEventListener("achievements_updated", checkUnclaimedAchievements);
-            }
         };
     }, []);
 

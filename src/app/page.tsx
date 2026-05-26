@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/context/UserContext";
 import NavPill from "@/components/landing/NavPill";
 import HeroSection from "@/components/landing/HeroSection";
 import TheManifesto from "@/components/landing/TheManifesto";
@@ -9,9 +11,18 @@ import PainSection from "@/components/landing/PainSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import FAQSection from "@/components/landing/FAQ";
-import FinalCTA from "@/components/landing/FinalCTA";
+import ScholarShaderCanvas from "@/components/ui/ScholarShaderCanvas";
 
 export default function LandingPage() {
+  const { user } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user.isAuthenticated && !user.isLoading) {
+      router.push("/dashboard");
+    }
+  }, [user.isAuthenticated, user.isLoading, router]);
+
   useEffect(() => {
     // Intersection Observer for scroll-reveal animations
     const observer = new IntersectionObserver(
@@ -32,8 +43,14 @@ export default function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
+  // Avoid layout flash when redirecting authenticated users
+  if (user.isAuthenticated && !user.isLoading) {
+    return null;
+  }
+
   return (
     <>
+      <ScholarShaderCanvas />
       <NavPill />
       <HeroSection />
       <PainSection />
@@ -42,7 +59,6 @@ export default function LandingPage() {
       <InteractiveDemo />
       <TestimonialsSection />
       <FAQSection />
-      <FinalCTA />
     </>
   );
 }

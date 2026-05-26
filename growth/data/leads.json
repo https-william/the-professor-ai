@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-05-23T16:42:29.570Z",
+  "total_leads": 1,
+  "leads": [
+    {
+      "url": "https://www.nairaland.com/post/139387280",
+      "title": "How to study without cramming for next week exams?",
+      "forum": "nairaland",
+      "section": "education",
+      "snippet": "I have exams starting next week and I always cram the night before but then I blank out during the exam. What should I do to stop cramming?",
+      "keywords_matched": [
+        "cramming"
+      ],
+      "keyword_match_count": 1,
+      "timestamp": "2026-05-23T16:41:16.208Z",
+      "source": "nairaland",
+      "scraped_at": "2026-05-23T16:41:16.209Z"
+    }
+  ]
+}
