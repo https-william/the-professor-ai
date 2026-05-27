@@ -38,16 +38,27 @@ export default function ConnectivityIndicator() {
     };
   }, []);
 
+  const [isMobileViewport, setIsMobileViewport] = useState(true);
+
+  useEffect(() => {
+    const checkViewport = () => {
+      setIsMobileViewport(window.innerWidth < 768);
+    };
+    checkViewport();
+    window.addEventListener("resize", checkViewport);
+    return () => window.removeEventListener("resize", checkViewport);
+  }, []);
+
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+    <div className="fixed bottom-20 md:bottom-auto md:top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
       <AnimatePresence mode="wait">
         {/* State: Offline */}
         {!isOnline && (
           <motion.div
             key="offline"
-            initial={{ y: 50, opacity: 0, scale: 0.9 }}
+            initial={{ y: isMobileViewport ? 30 : -30, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 50, opacity: 0, scale: 0.8 }}
+            exit={{ y: isMobileViewport ? 30 : -30, opacity: 0, scale: 0.9 }}
             className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#08080E] border border-[var(--border)] shadow-2xl text-[var(--foreground)]"
           >
             <div className="p-1 px-2 rounded-full bg-red-500/10">
@@ -61,9 +72,9 @@ export default function ConnectivityIndicator() {
         {isOnline && showBackOnline && (
           <motion.div
             key="online"
-            initial={{ y: 50, opacity: 0, scale: 0.9 }}
+            initial={{ y: isMobileViewport ? 30 : -30, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 50, opacity: 0, scale: 0.8 }}
+            exit={{ y: isMobileViewport ? 30 : -30, opacity: 0, scale: 0.9 }}
             className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#08080E] border border-success-bg shadow-2xl text-[var(--foreground)]"
           >
             <div className="p-1 px-2 rounded-full bg-success/10">

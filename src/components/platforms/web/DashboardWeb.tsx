@@ -7,7 +7,7 @@ import {
     Zap, Library, BookOpen, Swords, 
     Sparkles, History as HistoryIcon,
     ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Flame, CheckCircle2, ArrowRight,
-    Coins
+    Coins, Loader2
 } from "lucide-react";
 import { calculateLevel, getLevelTitle, getLevelProgress } from "@/lib/profiles-client";
 import { cn } from "@/lib/utils";
@@ -91,31 +91,24 @@ export default function DashboardWeb({
         });
     }, [activityData, user?.streak]);
 
-    // Fetch library stats for recent activity
-    const [libStats, setLibStats] = useState({ flashcards: 0, quiz: 0, summary: 0 });
+    // Fetch recent study packs
+    const [recentPacks, setRecentPacks] = useState<any[]>([]);
+    const [packsLoading, setPacksLoading] = useState(true);
     useEffect(() => {
         if (!user?.id) return;
+        setPacksLoading(true);
         fetch('/api/library')
             .then(res => res.json())
             .then(data => {
                 if (data.success && Array.isArray(data.generations)) {
-                    const newStats = { flashcards: 0, quiz: 0, summary: 0 };
-                    data.generations.forEach((g: any) => {
-                        if (g.type === 'flashcards') newStats.flashcards++;
-                        if (g.type === 'quiz') newStats.quiz++;
-                        if (g.type === 'summary') newStats.summary++;
-                    });
-                    setLibStats(newStats);
+                    // Sort by created date descending
+                    const sorted = [...data.generations].sort((a, b) => new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime());
+                    setRecentPacks(sorted.slice(0, 3));
                 }
             })
-            .catch(err => console.error("Failed to fetch library stats:", err));
+            .catch(err => console.error("Failed to fetch library packs:", err))
+            .finally(() => setPacksLoading(false));
     }, [user?.id]);
-
-    const recentTypes = [
-        { type: "flashcards", icon: Layers, color: "var(--blue)", label: "Flashcards", count: libStats.flashcards },
-        { type: "quiz", icon: BrainCircuit, color: "var(--cyan)", label: "Quiz", count: libStats.quiz },
-        { type: "summary", icon: FileText, color: "var(--emerald)", label: "Summary", count: libStats.summary },
-    ];
 
     return (
         <div className="w-full min-h-screen relative bg-[var(--bg)] selection:bg-[var(--blue-dim)]">
@@ -136,12 +129,12 @@ export default function DashboardWeb({
                                     </div>
                                     <FocusTimer widget={true} />
                                 </div>
-                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text)] leading-relaxed mb-3 italic uppercase">
+                                <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-2">
+                                    Hey {firstName},
+                                </h2>
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
                                     &ldquo;{dailyLine}&rdquo;
                                 </h1>
-                                <p className="text-[10px] text-[var(--text-3)] font-black uppercase tracking-[0.2em]">
-                                    Active prepared session for <span className="text-[var(--text)]">{firstName}</span>
-                                </p>
                             </div>
                         </div>
                     </motion.div>
@@ -164,13 +157,7 @@ export default function DashboardWeb({
                             </div>
                         </Link>
 
-                        {/* Arena Pill */}
-                        <Link href="/arena" className="group">
-                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--crimson)]/40 text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                <Swords size={12} className="text-[var(--crimson)]" />
-                                <span>Arena</span>
-                            </div>
-                        </Link>
+
 
                         {/* Blog Pill */}
                         <Link href="/blog" className="group">
@@ -338,20 +325,61 @@ export default function DashboardWeb({
                     {/* Main Stats Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 flex flex-col gap-6">
-                            {/* Recent Generations Stats Block */}
+                            {/* Recent Study Packs */}
                             <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
-                                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-[var(--text-3)] mb-4 flex items-center gap-2">
-                                    <BrainCircuit size={14} className="text-[var(--blue)]" /> Recent Activity
-                                </h3>
-                                <div className="grid grid-cols-3 gap-4">
-                                    {recentTypes.map(({ icon: Icon, color, label, count }) => (
-                                        <div key={label} className="p-4 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)]">
-                                            <Icon size={20} style={{ color }} className="mb-2" />
-                                            <div className="text-sm font-black">{count} items</div>
-                                            <div className="text-[9px] text-[var(--text-3)] uppercase tracking-wider font-bold">{label}</div>
-                                        </div>
-                                    ))}
+                                <div className="flex items-center justify-between mb-5">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.25em] text-[var(--text-3)] flex items-center gap-2">
+                                        <Library size={14} className="text-[var(--blue)]" /> Recent Study Packs
+                                    </h3>
+                                    <Link href="/library" className="text-[10px] font-black uppercase tracking-widest text-[var(--blue)] hover:underline flex items-center gap-1.5 transition-all">
+                                        View Library <ArrowRight size={12} />
+                                    </Link>
                                 </div>
+                                {packsLoading ? (
+                                    <div className="py-8 flex flex-col items-center justify-center gap-2">
+                                        <Loader2 className="animate-spin text-[var(--text-3)]" size={20} />
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)]">Loading packs...</p>
+                                    </div>
+                                ) : recentPacks.length === 0 ? (
+                                    <div className="py-8 text-center bg-[var(--bg-3)]/60 rounded-2xl border border-[var(--border)]">
+                                        <p className="text-[11px] font-bold text-[var(--text-3)] uppercase tracking-wider mb-3">No study packs generated yet</p>
+                                        <Link href="/create" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--foreground)] text-[var(--background)] font-black text-[9px] uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all">
+                                            Create First Pack
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-3">
+                                        {recentPacks.map((pack) => {
+                                            const packType = pack.type || "summary";
+                                            const typeBadgeColor = 
+                                                packType === "flashcards" ? "bg-[var(--blue-dim)] border-[var(--blue-border)] text-[var(--blue)]" :
+                                                packType === "quiz" ? "bg-[var(--cyan-dim)] border-[var(--cyan-border)] text-[var(--cyan)]" :
+                                                "bg-[var(--emerald-dim)] border-[var(--emerald-border)] text-[var(--emerald)]";
+                                            const packUrl = packType === "summary" 
+                                                ? `/summary/${pack.id || pack.generation_id}` 
+                                                : `/library/pack/${pack.id || pack.generation_id}`;
+
+                                            return (
+                                                <Link href={packUrl} key={pack.id || pack.generation_id} className="group block">
+                                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--text-3)]/40 transition-all flex-wrap sm:flex-nowrap gap-3">
+                                                        <div className="min-w-0">
+                                                            <p className="font-sans text-sm font-bold text-[var(--foreground)] truncate group-hover:text-[var(--blue)] transition-colors">{pack.title || "Untitled Pack"}</p>
+                                                            <p className="text-[10px] text-[var(--text-3)] font-mono mt-0.5">
+                                                                {new Date(pack.created_at || pack.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 shrink-0">
+                                                            <span className={cn("px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-wider", typeBadgeColor)}>
+                                                                {packType}
+                                                            </span>
+                                                            <ChevronRight size={14} className="text-[var(--text-3)] group-hover:translate-x-0.5 transition-transform" />
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

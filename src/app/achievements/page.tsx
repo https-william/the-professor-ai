@@ -35,11 +35,10 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Flame,
         color: "var(--amber)",
         glow: "var(--amber-glow)",
-        progress: 3,
+        progress: 0,
         maxProgress: 3,
         xpReward: 100,
-        unlockedAt: "2 days ago",
-        claimed: true,
+        claimed: false,
     },
     {
         id: "streak-7",
@@ -49,11 +48,10 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Flame,
         color: "var(--amber)",
         glow: "var(--amber-glow)",
-        progress: 7,
+        progress: 0,
         maxProgress: 7,
         xpReward: 250,
-        unlockedAt: "Just now",
-        claimed: false, // Ready to claim!
+        claimed: false,
     },
     {
         id: "streak-30",
@@ -63,7 +61,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Star,
         color: "var(--amber)",
         glow: "var(--amber-glow)",
-        progress: 12,
+        progress: 0,
         maxProgress: 30,
         xpReward: 1000,
         claimed: false,
@@ -78,11 +76,10 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Zap,
         color: "var(--blue)",
         glow: "var(--blue-glow)",
-        progress: 1,
+        progress: 0,
         maxProgress: 1,
         xpReward: 100,
-        unlockedAt: "5 days ago",
-        claimed: true,
+        claimed: false,
     },
     {
         id: "synth-10",
@@ -92,7 +89,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Brain,
         color: "var(--blue)",
         glow: "var(--blue-glow)",
-        progress: 6,
+        progress: 0,
         maxProgress: 10,
         xpReward: 300,
         claimed: false,
@@ -105,7 +102,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Sparkles,
         color: "var(--blue)",
         glow: "var(--blue-glow)",
-        progress: 6,
+        progress: 0,
         maxProgress: 50,
         xpReward: 1500,
         claimed: false,
@@ -118,10 +115,9 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Award,
         color: "var(--amber)",
         glow: "var(--amber-glow)",
-        progress: 5,
+        progress: 0,
         maxProgress: 5,
         xpReward: 250,
-        unlockedAt: "Yesterday",
         claimed: false,
     },
     {
@@ -132,7 +128,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Brain,
         color: "var(--blue)",
         glow: "var(--blue-glow)",
-        progress: 14,
+        progress: 0,
         maxProgress: 20,
         xpReward: 500,
         claimed: false,
@@ -147,11 +143,10 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Clock,
         color: "var(--emerald)",
         glow: "var(--emerald-glow)",
-        progress: 1,
+        progress: 0,
         maxProgress: 1,
         xpReward: 100,
-        unlockedAt: "3 days ago",
-        claimed: true,
+        claimed: false,
     },
     {
         id: "focus-10",
@@ -161,7 +156,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Target,
         color: "var(--emerald)",
         glow: "var(--emerald-glow)",
-        progress: 8,
+        progress: 0,
         maxProgress: 10,
         xpReward: 400,
         claimed: false,
@@ -174,7 +169,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Shield,
         color: "var(--emerald)",
         glow: "var(--emerald-glow)",
-        progress: 8,
+        progress: 0,
         maxProgress: 50,
         xpReward: 2000,
         claimed: false,
@@ -187,7 +182,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Shield,
         color: "var(--emerald)",
         glow: "var(--emerald-glow)",
-        progress: 32,
+        progress: 0,
         maxProgress: 50,
         xpReward: 1000,
         claimed: false,
@@ -200,7 +195,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Target,
         color: "var(--emerald)",
         glow: "var(--emerald-glow)",
-        progress: 8,
+        progress: 0,
         maxProgress: 10,
         xpReward: 600,
         claimed: false,
@@ -215,7 +210,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Award,
         color: "var(--violet)",
         glow: "var(--violet-glow)",
-        progress: 3,
+        progress: 0,
         maxProgress: 5,
         xpReward: 500,
         claimed: false,
@@ -223,16 +218,15 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
     {
         id: "elite-midnight",
         title: "Midnight Scholar",
-        description: "Complete a study sprint between midnight and 3 AM. Your bed misses you, but excellence doesn't sleep.",
+        description: "Complete a study sprint between midnight and 3 AM. Quiet hours, loud results. Midnight dedication rewarded.",
         category: "elite",
         icon: BookOpen,
         color: "var(--violet)",
         glow: "var(--violet-glow)",
-        progress: 1,
+        progress: 0,
         maxProgress: 1,
         xpReward: 500,
-        unlockedAt: "Yesterday",
-        claimed: false, // Ready to claim!
+        claimed: false,
     },
     {
         id: "elite-nepa",
@@ -242,10 +236,9 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         icon: Sparkles,
         color: "var(--violet)",
         glow: "var(--violet-glow)",
-        progress: 1,
+        progress: 0,
         maxProgress: 1,
         xpReward: 300,
-        unlockedAt: "Today",
         claimed: false,
     },
 ];
@@ -258,29 +251,36 @@ export default function AchievementsPage() {
     const [celebrationText, setCelebrationText] = useState<{ title: string; reward: number } | null>(null);
 
     useEffect(() => {
-        if (typeof window !== "undefined") {
+        let active = true;
+
+        const syncWithRealData = async () => {
+            let libraryCount = 0;
+            try {
+                const res = await fetch("/api/library");
+                if (res.ok) {
+                    const data = await res.json();
+                    const generations = data.generations || [];
+                    libraryCount = generations.length;
+                }
+            } catch (err) {
+                console.error("Achievements page: error fetching library count", err);
+            }
+
+            if (!active) return;
+
             const claimedMap = JSON.parse(localStorage.getItem("claimed_achievements") || "{}");
             const streak = user?.streak || 0;
-            const xp = user?.xp || 1250;
-            
+
             setAchievements(INITIAL_ACHIEVEMENTS.map(ach => {
-                let currentProg = ach.progress;
+                let currentProg = 0;
                 if (ach.id === "streak-3") currentProg = Math.min(ach.maxProgress, streak);
-                if (ach.id === "streak-7") currentProg = Math.min(ach.maxProgress, streak);
-                if (ach.id === "streak-30") currentProg = Math.min(ach.maxProgress, streak);
-                if (ach.id === "synth-1") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 200));
-                if (ach.id === "synth-10") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 200));
-                if (ach.id === "synth-50") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 200));
-                if (ach.id === "synth-jollof") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 300));
-                if (ach.id === "synth-deconstruct") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 250));
-                if (ach.id === "focus-1") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 150));
-                if (ach.id === "focus-10") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 150));
-                if (ach.id === "focus-50") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 150));
-                if (ach.id === "focus-library") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 100));
-                if (ach.id === "focus-ghost") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 180));
-                if (ach.id === "elite-quiz") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 400));
-                if (ach.id === "elite-midnight") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 500));
-                if (ach.id === "elite-nepa") currentProg = Math.min(ach.maxProgress, Math.floor(xp / 600));
+                else if (ach.id === "streak-7") currentProg = Math.min(ach.maxProgress, streak);
+                else if (ach.id === "streak-30") currentProg = Math.min(ach.maxProgress, streak);
+                else if (ach.id === "synth-1") currentProg = Math.min(ach.maxProgress, libraryCount);
+                else if (ach.id === "synth-10") currentProg = Math.min(ach.maxProgress, libraryCount);
+                else if (ach.id === "synth-50") currentProg = Math.min(ach.maxProgress, libraryCount);
+                else if (ach.id === "synth-deconstruct") currentProg = Math.min(ach.maxProgress, libraryCount);
+                // focus and elite quizzes are currently set to 0 as they require complex back-end event tracking
 
                 return {
                     ...ach,
@@ -288,13 +288,21 @@ export default function AchievementsPage() {
                     claimed: !!claimedMap[ach.id]
                 };
             }));
+        };
+
+        if (typeof window !== "undefined") {
+            syncWithRealData();
         }
+
+        return () => {
+            active = false;
+        };
     }, [user?.streak, user?.xp]);
 
-    const level = calculateLevel(user?.xp || 1250);
+    const level = calculateLevel(user?.xp || 0);
     const title = getLevelTitle(level);
     const echelon = getAcademicEchelon(level);
-    const semesterStanding = getSemesterStanding(user?.xp || 1250);
+    const semesterStanding = getSemesterStanding(user?.xp || 0);
     const semesterInfo = getCurrentSemesterInfo();
 
     const unlockedCount = achievements.filter(a => a.progress >= a.maxProgress).length;

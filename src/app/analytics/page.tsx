@@ -235,7 +235,7 @@ export default function AnalyticsPage() {
             `Stop the grind. Ace it. theprofessor.xyz`,
             `Actually understand your material. theprofessor.xyz 🧪`,
             `Get your time back. theprofessor.xyz 📚`,
-            `Your bed misses you. theprofessor.xyz 💤`,
+            `Smart study. More free time. theprofessor.xyz 💤`,
             `Exam prep, without the stress. theprofessor.xyz`
         ];
 

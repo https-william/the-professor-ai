@@ -42,7 +42,7 @@ export default function HeroSection() {
 
           {/* Subheading */}
           <p className="font-sans text-base md:text-lg lg:text-xl font-medium text-[var(--foreground-secondary)] opacity-85 max-w-xl leading-relaxed">
-            Uni is a lot, we get it. Drop your notes here and we'll turn them into simple, structured study guides so you can actually enjoy your day. Your bed misses you.
+            Uni is a lot, we get it. Drop your notes here and we'll turn them into simple, structured study guides so you can actually enjoy your day. Get your time back.
           </p>
         </div>
 

@@ -10,7 +10,6 @@ import {
     LayoutDashboard, 
     PlusCircle, 
     Library, 
-    Swords, 
     Settings, 
     History,
     GraduationCap,

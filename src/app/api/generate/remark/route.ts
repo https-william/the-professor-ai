@@ -44,7 +44,7 @@ DO NOT output markdown, no titles, and strictly keep it to one punchy, authorita
             ], { temperature: 0.8, maxTokens: 150, timeoutMs: 15000 });
         } catch (e) {
             console.error("Groq remark generation failed on all keys:", e);
-            remark = "Flawless genius. Your bed misses you now.";
+            remark = "Nothing left to learn here. Go enjoy your evening.";
         }
 
         return NextResponse.json({ remark: remark.trim() });

@@ -38,7 +38,6 @@ export default function CommandPalette() {
         { id: "dashboard", label: "Dashboard", icon: Home, shortcut: "G D", category: "Navigation", onSelect: () => router.push("/dashboard") },
         { id: "create", label: "Create Studio", icon: PlusCircle, shortcut: "G C", category: "Navigation", onSelect: () => router.push("/create") },
         { id: "match", label: "Match Game", icon: Zap, category: "Navigation", onSelect: () => router.push("/match") },
-        { id: "arena", label: "Global Arena", icon: Flame, category: "Navigation", onSelect: () => router.push("/arena") },
         { id: "flashcards", label: "Review Flashcards", icon: Layers, category: "Actions", onSelect: () => router.push("/review") },
     ];
 

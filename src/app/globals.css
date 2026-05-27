@@ -423,11 +423,12 @@ html.light {
 html {
   scroll-behavior: smooth;
   height: 100%;
+  background: var(--background);
 }
 
 body {
   color: var(--foreground-secondary);
-  background: var(--background);
+  background: transparent;
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "ss01";
   font-optical-sizing: auto;

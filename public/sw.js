@@ -1,7 +1,7 @@
 const CACHE_NAME = 'professor-v5';
 const STATIC_ASSETS = [
   '/',
-  '/offline',
+  '/offline.html',
   '/favicon.ico',
   '/site.webmanifest',
   '/logo.svg',
@@ -146,7 +146,7 @@ self.addEventListener('fetch', (event) => {
               if (cached) {
                 resolve(cached);
               } else {
-                caches.match('/offline').then((offlineRes) => {
+                caches.match('/offline.html').then((offlineRes) => {
                   resolve(offlineRes || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } }));
                 });
               }

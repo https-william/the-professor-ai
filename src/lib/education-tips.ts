@@ -5,7 +5,7 @@ export const EDUCATION_TIPS = [
     "Sleep is the 'Save' button for your brain. Don't crash without hitting it.",
     "Mistakes are just data points. And today, we're being very scientific.",
     "A 15-minute study session beats a 5-hour panic session. Every single time.",
-    "Your bed misses you. Let's finish this so you can go back to it.",
+    "Let's wrap this up so you can get your evening back.",
     "If you can't explain it simply, you're just using fancy words to hide the confusion. I see you.",
     "Stop reading the same page. Close the book and tell me what you actually remember.",
     "Wishing for an easy exam won't write it for you. Consistent practice will.",

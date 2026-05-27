@@ -136,43 +136,49 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const completeOnboarding = async (data: any): Promise<boolean> => {
         try {
-            const res = await fetchWithRetry("/api/user/profile", {
+            // Optimistic update of local store
+            store.updateUser({ 
+                name: data.alias || data.first_name, 
+                firstName: data.first_name,
+                lastName: data.last_name,
+                username: data.username,
+                age: data.age,
+                hasOnboarded: true 
+            });
+
+            // Sync with backend in background (fire-and-forget)
+            fetchWithRetry("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...data, has_onboarded: true }),
+            }).catch(error => {
+                console.error("completeOnboarding background sync failed:", error);
             });
-            if (res.ok) {
-                store.updateUser({ 
-                    name: data.alias || data.first_name, 
-                    firstName: data.first_name,
-                    lastName: data.last_name,
-                    username: data.username,
-                    age: data.age,
-                    hasOnboarded: true 
-                });
-                return true;
-            }
-            return false;
+
+            return true;
         } catch (error) {
-            console.error("completeOnboarding failed after retries:", error);
+            console.error("completeOnboarding failed:", error);
             return false;
         }
     };
 
     const saveOnboardingStep = async (data: any): Promise<boolean> => {
         try {
-            const res = await fetchWithRetry("/api/user/profile", {
+            // Optimistic update of local store
+            store.updateUser(data);
+
+            // Sync with backend in background (fire-and-forget)
+            fetchWithRetry("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
+            }).catch(error => {
+                console.error("saveOnboardingStep background sync failed:", error);
             });
-            if (res.ok) {
-                store.updateUser(data);
-                return true;
-            }
-            return false;
+
+            return true;
         } catch (error) {
-            console.error("saveOnboardingStep failed after retries:", error);
+            console.error("saveOnboardingStep failed:", error);
             return false;
         }
     };

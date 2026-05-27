@@ -32,7 +32,8 @@ import {
     Pause,
     ChevronDown,
     Sparkles,
-    Trophy
+    Trophy,
+    PlusCircle
 } from "lucide-react";
 import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
@@ -279,7 +280,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                                         <div className="w-10 h-10 rounded-xl bg-[var(--background)] flex items-center justify-center border border-[var(--border)] group-hover:border-[var(--accent)] group-hover:text-[var(--accent)] transition-all">
                                                             <item.icon size={18} />
                                                         </div>
-                                                        <span className="text-sm font-black text-[var font-black text-[var(--foreground)] tracking-tight">{item.label}</span>
+                                                        <span className="text-sm font-black text-[var(--foreground)] tracking-tight">{item.label}</span>
                                                     </Link>
                                                 ))}
                                             </div>
@@ -287,6 +288,42 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     )}
                                 </AnimatePresence>
                             </div>
+                        </div>
+                    ) : isApp ? (
+                        <div className="hidden md:flex items-center gap-1 p-1 bg-[var(--background-secondary)]/95 backdrop-blur-md border border-[var(--border)] rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+                            {[
+                                { name: "Home", href: "/dashboard", icon: LayoutDashboard },
+                                { name: "Create", href: "/create", icon: PlusCircle },
+                                { name: "Library", href: "/library", icon: Library },
+                                { name: "Profile", href: "/profile", icon: User },
+                            ].map((item) => {
+                                const isActive = item.href === "/dashboard"
+                                    ? (pathname === "/dashboard" || pathname === "/")
+                                    : pathname.startsWith(item.href);
+                                
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={cn(
+                                            "relative px-4 py-2 rounded-full text-xs font-bold tracking-tight transition-all duration-300 flex items-center gap-1.5 active:scale-95 group",
+                                            isActive ? "text-[var(--background)]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                                        )}
+                                    >
+                                        {isActive && (
+                                            <motion.div
+                                                layoutId="header-active-bg"
+                                                className="absolute inset-0 bg-[var(--foreground)] rounded-full z-0 shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+                                                transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+                                            />
+                                        )}
+                                        <span className="relative z-10 flex items-center gap-1.5">
+                                            <item.icon size={13} strokeWidth={isActive ? 2.5 : 2} className="transition-transform duration-300 group-hover:scale-110" />
+                                            <span>{item.name}</span>
+                                        </span>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     ) : null}
                 </AnimatePresence>

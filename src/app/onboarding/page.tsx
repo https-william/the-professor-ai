@@ -318,33 +318,42 @@ export default function OnboardingPage() {
                                     <p className="text-[14px] text-white/50 font-medium">Aligning difficulty to your profile.</p>
                                 </div>
                                 
-                                <div className="flex gap-4">
-                                    <input 
-                                        type="tel" 
-                                        value={age} 
-                                        onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))} 
-                                        placeholder="Age" 
-                                        className="w-1/4 px-4 py-4 font-black text-white text-center text-xl outline-none placeholder:text-white/30 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-blue-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(37,99,235,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
-                                    />
-                                    <div className="flex-1 grid grid-cols-2 gap-2">
-                                        {EDU_LEVELS.map(l => (
-                                            <button 
-                                                key={l.id} 
-                                                onClick={() => setEduLevel(l.id)} 
-                                                className={`py-3 rounded-2xl border transition-all duration-300 active:scale-[0.97] hover:scale-[1.01] ${
-                                                    eduLevel === l.id 
-                                                        ? 'bg-gradient-to-br from-blue-600/25 via-indigo-600/15 to-transparent border-blue-500/50 text-white font-bold shadow-[0_4px_15px_rgba(37,99,235,0.2)]' 
-                                                        : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04] text-white/40 hover:text-white'
-                                                }`}
-                                            >
-                                                <span className="text-[10px] font-black uppercase tracking-widest">{l.label}</span>
-                                            </button>
-                                        ))}
+                                <div className="flex gap-4 items-end">
+                                    <div className="w-1/3 flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-1">Age</label>
+                                        <input 
+                                            type="tel" 
+                                            value={age} 
+                                            onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))} 
+                                            placeholder="e.g. 21" 
+                                            className="w-full px-4 py-3.5 font-black text-white text-center text-2xl outline-none placeholder:text-white/20 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-blue-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(37,99,235,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
+                                        />
+                                    </div>
+                                    <div className="flex-1 flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-1">Education Level</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {EDU_LEVELS.map(l => (
+                                                <button 
+                                                    key={l.id} 
+                                                    onClick={() => setEduLevel(l.id)} 
+                                                    className={`py-3.5 rounded-2xl border transition-all duration-300 active:scale-[0.97] hover:scale-[1.01] text-center ${
+                                                        eduLevel === l.id 
+                                                            ? 'bg-gradient-to-br from-blue-600/25 via-indigo-600/15 to-transparent border-blue-500/50 text-white font-bold shadow-[0_4px_15px_rgba(37,99,235,0.2)]' 
+                                                            : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04] text-white/40 hover:text-white'
+                                                    }`}
+                                                >
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">{l.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2 pt-2">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 pl-1">Primary Struggle Areas</p>
+                                    <div className="flex items-center gap-1.5 pl-1">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Primary Struggle Areas</p>
+                                        <span className="text-[9px] font-bold text-white/40 lowercase italic">(select all that apply)</span>
+                                    </div>
                                     <div className="grid grid-cols-1 gap-2">
                                         {PAIN_POINTS.map(p => {
                                             const isSelected = selectedPainPoints.includes(p.id);
@@ -369,46 +378,38 @@ export default function OnboardingPage() {
                             </motion.div>
                         )}
 
-                        {/* STEP 3: COMMITMENT & TOPIC */}
+                        {/* STEP 3: COMMITMENT */}
                         {step === 3 && (
                             <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
                                 <div className="text-center mb-6">
-                                    <h2 className="font-sans text-3xl font-black bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent mb-3 tracking-tight">Plan & Topic.</h2>
-                                    <p className="text-[14px] text-white/50 font-medium">What are we studying today?</p>
+                                    <h2 className="font-sans text-3xl font-black bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent mb-3 tracking-tight">Study Commitment.</h2>
+                                    <p className="text-[14px] text-white/50 font-medium">How long are you willing to study every day?</p>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-2">
-                                    {COMMITMENT_LEVELS.map(c => (
-                                        <button 
-                                            key={c.id} 
-                                            onClick={() => setCommitment(c.id)} 
-                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 active:scale-[0.97] hover:scale-[1.02] ${
-                                                commitment === c.id 
-                                                    ? 'bg-gradient-to-br from-blue-600/25 via-indigo-600/15 to-transparent border-blue-500/50 text-white font-bold shadow-[0_4px_15px_rgba(37,99,235,0.2)]' 
-                                                    : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04] text-white/40 hover:text-white'
-                                            }`}
-                                        >
-                                            <c.icon size={18} className="mb-2" />
-                                            <span className="text-[10px] font-black uppercase tracking-wider">{c.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="space-y-4 pt-2">
-                                    <div className="flex justify-between items-center px-1">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Initial Study Topic</p>
-                                        <span className="text-[10px] font-bold text-white/30 italic">Optional</span>
-                                    </div>
-                                    <textarea 
-                                        value={topic} 
-                                        onChange={e => { setTopic(e.target.value); setTopicError(""); }}
-                                        placeholder="e.g. Molecular Biology, Advanced Calculus..." 
-                                        className="w-full px-5 py-6 font-bold text-white outline-none placeholder:text-white/20 text-center text-lg min-h-[120px] resize-none leading-relaxed bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-blue-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(37,99,235,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
-                                    />
-                                    <p className="text-[11px] text-white/35 text-center leading-normal italic font-medium px-2">
-                                        Leave this empty if you want to upload notes or decide later.
-                                    </p>
-                                    {topicError && <p className="text-[11px] text-red-500 font-bold text-center">{topicError}</p>}
+                                <div className="space-y-3 pt-2">
+                                    {COMMITMENT_LEVELS.map(c => {
+                                        const isSelected = commitment === c.id;
+                                        return (
+                                            <button 
+                                                key={c.id} 
+                                                onClick={() => setCommitment(c.id)} 
+                                                className={`w-full flex items-center p-4 rounded-2xl border transition-all duration-300 active:scale-[0.98] hover:scale-[1.01] ${
+                                                    isSelected 
+                                                        ? 'bg-gradient-to-br from-blue-600/25 via-indigo-600/15 to-transparent border-blue-500/50 text-white font-bold shadow-[0_4px_15px_rgba(37,99,235,0.2)]' 
+                                                        : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04] text-white/40 hover:text-white'
+                                                }`}
+                                            >
+                                                <div className={`p-2.5 rounded-xl mr-4 ${isSelected ? 'bg-blue-500/20 text-white' : 'bg-white/[0.03] text-white/30'}`}>
+                                                    <c.icon size={20} />
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-sm font-bold">{c.label}</p>
+                                                    <p className="text-[11px] text-white/40 font-medium">{c.desc}</p>
+                                                </div>
+                                                {isSelected && <Check size={18} className="text-white ml-auto" />}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </motion.div>
                         )}
@@ -453,7 +454,7 @@ export default function OnboardingPage() {
                                 
                                 <h2 className="font-sans text-3xl font-black text-[var(--text)] mb-3 tracking-tighter">You're In, Scholar.</h2>
                                 <p className="text-[14px] text-[var(--text)]/60 font-medium mb-4 px-4 leading-relaxed">
-                                    50 fresh credits. Zero excuses. Your bed misses you already.
+                                    50 credits loaded. Upload your first note and let's get you sorted.
                                 </p>
 
                                 {/* Achievement Unlock Banner */}

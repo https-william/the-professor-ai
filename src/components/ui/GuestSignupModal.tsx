@@ -105,7 +105,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
                 <p className="text-sm text-[var(--foreground-muted)] font-medium leading-relaxed">
                   {packTitle
                     ? `Create a free account to save "${packTitle}" and build your own study packs, quizzes, and flashcards.`
-                    : "Create a free account to build your own study packs, quizzes, and flashcards. Your bed misses you."
+                    : "Create a free account to build your own study packs, quizzes, and flashcards. It takes 30 seconds."
                   }
                 </p>
               </div>

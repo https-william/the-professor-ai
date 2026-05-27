@@ -6,7 +6,8 @@ import Link from "next/link";
 import {
     Zap, Library, BookOpen, Swords, 
     Sparkles, History as HistoryIcon,
-    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Flame, CheckCircle2, ArrowRight
+    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Flame, CheckCircle2, ArrowRight,
+    Loader2
 } from "lucide-react";
 import { calculateLevel, getLevelTitle } from "@/lib/profiles-client";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,24 @@ export default function DashboardMobile({
 
     const [showStreakDetails, setShowStreakDetails] = useState(false);
     const [showWrappedDetails, setShowWrappedDetails] = useState(false);
+
+    // Fetch recent study packs
+    const [recentPacks, setRecentPacks] = useState<any[]>([]);
+    const [packsLoading, setPacksLoading] = useState(true);
+    useState(() => {
+        if (!user?.id) return;
+        setPacksLoading(true);
+        fetch('/api/library')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && Array.isArray(data.generations)) {
+                    const sorted = [...data.generations].sort((a, b) => new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime());
+                    setRecentPacks(sorted.slice(0, 3));
+                }
+            })
+            .catch(err => console.error("Failed to fetch library packs:", err))
+            .finally(() => setPacksLoading(false));
+    });
 
     // Time-based category hint
     const timeHint = useMemo(() => {
@@ -107,12 +126,12 @@ export default function DashboardMobile({
                                     </div>
                                     <FocusTimer widget={true} />
                                 </div>
-                                <h1 className="text-lg font-black tracking-tight text-[var(--text)] leading-relaxed mb-3 italic uppercase">
+                                <h2 className="text-2xl font-black tracking-tight text-[var(--text)] mb-1">
+                                    Hey {firstName},
+                                </h2>
+                                <h1 className="text-base font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
                                     &ldquo;{dailyLine}&rdquo;
                                 </h1>
-                                <p className="text-[10px] text-[var(--text-3)] font-black uppercase tracking-[0.2em]">
-                                    Sprint session for <span className="text-[var(--text)]">{firstName}</span>
-                                </p>
                             </div>
                         </div>
                     </motion.div>
@@ -135,13 +154,7 @@ export default function DashboardMobile({
                             </div>
                         </Link>
 
-                        {/* Arena Pill */}
-                        <Link href="/arena" className="group">
-                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                <Swords size={11} className="text-[var(--crimson)]" />
-                                <span>Arena</span>
-                            </div>
-                        </Link>
+
 
                         {/* Blog Pill */}
                         <Link href="/blog" className="group">
@@ -288,6 +301,64 @@ export default function DashboardMobile({
                         )}
                     </AnimatePresence>
 
+                    {/* Recent Study Packs */}
+                    <motion.div variants={fadeUp} className="mt-2">
+                        <div className="scholar-card p-5 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] flex items-center gap-2">
+                                    <Library size={12} className="text-[var(--blue)]" /> Recent Study Packs
+                                </h3>
+                                <Link href="/library" className="text-[9px] font-black uppercase tracking-widest text-[var(--blue)] hover:underline flex items-center gap-1 transition-all">
+                                    View Library <ArrowRight size={10} />
+                                </Link>
+                            </div>
+                            {packsLoading ? (
+                                <div className="py-6 flex flex-col items-center justify-center gap-2">
+                                    <Loader2 className="animate-spin text-[var(--text-3)]" size={16} />
+                                    <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-3)]">Loading...</p>
+                                </div>
+                            ) : recentPacks.length === 0 ? (
+                                <div className="py-6 text-center bg-[var(--bg-3)]/60 rounded-2xl border border-[var(--border)]">
+                                    <p className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider mb-2">No study packs yet</p>
+                                    <Link href="/create" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--foreground)] text-[var(--background)] font-black text-[8px] uppercase tracking-wider">
+                                        Create Pack
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-2.5">
+                                    {recentPacks.map((pack) => {
+                                        const packType = pack.type || "summary";
+                                        const typeBadgeColor = 
+                                            packType === "flashcards" ? "bg-[var(--blue-dim)] border-[var(--blue-border)] text-[var(--blue)]" :
+                                            packType === "quiz" ? "bg-[var(--cyan-dim)] border-[var(--cyan-border)] text-[var(--cyan)]" :
+                                            "bg-[var(--emerald-dim)] border-[var(--emerald-border)] text-[var(--emerald)]";
+                                        const packUrl = packType === "summary" 
+                                            ? `/summary/${pack.id || pack.generation_id}` 
+                                            : `/library/pack/${pack.id || pack.generation_id}`;
+
+                                        return (
+                                            <Link href={packUrl} key={pack.id || pack.generation_id} className="group block">
+                                                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--text-3)]/30 transition-all gap-2">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-sans text-xs font-bold text-[var(--foreground)] truncate group-hover:text-[var(--blue)] transition-colors">{pack.title || "Untitled Pack"}</p>
+                                                        <p className="text-[9px] text-[var(--text-3)] font-mono mt-0.5">
+                                                            {new Date(pack.created_at || pack.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <span className={cn("px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-wider", typeBadgeColor)}>
+                                                            {packType}
+                                                        </span>
+                                                        <ChevronRight size={12} className="text-[var(--text-3)]" />
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
                 </motion.div>
             </StandardContainer>
         </div>

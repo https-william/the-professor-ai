@@ -135,6 +135,17 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
 
+        // Sync metadata to auth.users raw_user_meta_data
+        if (allowedUpdates.first_name !== undefined || allowedUpdates.last_name !== undefined || allowedUpdates.username !== undefined) {
+            await supabase.auth.updateUser({
+                data: {
+                    first_name: allowedUpdates.first_name,
+                    last_name: allowedUpdates.last_name,
+                    username: allowedUpdates.username
+                }
+            });
+        }
+
         return NextResponse.json({ profile });
     } catch (error) {
         console.error("Profile PUT Error:", error);

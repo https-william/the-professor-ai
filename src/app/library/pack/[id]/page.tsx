@@ -116,7 +116,7 @@ export default function StudyPackPage() {
     useEffect(() => {
         const originalTitle = document.title;
         const prompts = [
-            "Your bed misses you...",
+            "Almost there...",
             "Bolu, the exam hall is waiting...",
             "Amaka, the clock is ticking...",
             "Focus up! Just the good parts.",
@@ -887,8 +887,7 @@ export default function StudyPackPage() {
 
             addToast("PDF Downloaded Successfully!", "success");
         } catch (err: any) {
-            console.error("PDF Export Error:", err);
-            addToast("Server PDF download failed. Triggering browser print fallback...", "warn");
+            // Silent fallback to browser print
             setTimeout(() => {
                 window.print();
             }, 500);
@@ -1503,7 +1502,7 @@ export default function StudyPackPage() {
                                 ) : (
                                     <p className="text-xs sm:text-sm text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
                                         {(() => {
-                                            if (effectiveQuizScore >= 95) return "Absolute genius. Bolu, your brain is full and the slides have been parsed. Close this tab, shut your laptop, and go sleep. Your bed misses you.";
+                                            if (effectiveQuizScore >= 95) return "Absolute genius. Bolu, your brain is full and the slides have been parsed. Flawless. You've fully absorbed this material. Close the tab and go live your life.";
                                             if (effectiveQuizScore >= 80) return "Solid run. You've locked in the high-yield parts. Amaka, grab some water and catch up on sleep. The hard work is done.";
                                             if (effectiveQuizScore >= 60) return "You passed, but it was close. Tunde, go get some rest now, but review these card decks one more time tomorrow morning.";
                                             return "Concept explorer. Some gaps remain, but cramming tired won't help. Rest your brain, sleep on it, and let the concepts settle.";

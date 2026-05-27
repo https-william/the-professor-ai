@@ -7,7 +7,6 @@ import {
     LayoutDashboard, 
     PlusCircle, 
     Library, 
-    Swords,
     User
 } from "lucide-react";
 import BrandLogo from "@/components/ui/BrandLogo";
@@ -15,7 +14,6 @@ import BrandLogo from "@/components/ui/BrandLogo";
 const navItems = [
     { name: "Home", href: "/dashboard", icon: LayoutDashboard },
     { name: "Create", href: "/create", icon: PlusCircle },
-    { name: "Arena", href: "/arena", icon: Swords },
     { name: "Library", href: "/library", icon: Library },
     { name: "Profile", href: "/profile", icon: User },
 ];
@@ -24,7 +22,7 @@ export default function MobileNavigation() {
     const pathname = usePathname();
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 h-14 bg-[var(--background)]/90 backdrop-blur-[12px] border border-[var(--border-2)] z-[60] rounded-full flex items-center px-2 shadow-[0_12px_40px_rgba(0,0,0,0.25)] max-w-[min(420px,calc(100vw-2rem))] w-full justify-between transition-all duration-300">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 h-14 bg-[var(--background)]/90 backdrop-blur-[12px] border border-[var(--border-2)] z-[60] rounded-full flex items-center px-2 shadow-[0_12px_40px_rgba(0,0,0,0.25)] max-w-[min(420px,calc(100vw-2rem))] w-full justify-between transition-all duration-300 md:hidden">
             <AnimatePresence mode="popLayout">
                 {navItems.map((item) => {
                     const isActive = item.href === "/dashboard" 

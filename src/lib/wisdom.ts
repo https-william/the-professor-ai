@@ -6,7 +6,7 @@
  */
 
 export const PROFESSOR_WISDOM = [
-    { text: "Don't worry about being perfect. Worry about being finished. Your bed misses you.", author: "The Professor" },
+    { text: "Don't worry about being perfect. Worry about being finished. Get your time back.", author: "The Professor" },
     { text: "A 20-minute nap is better than a 2-hour panic. Trust me on this one.", author: "The Professor" },
     { text: "Study less, but study better. Life is too short for re-reading the same paragraph 40 times.", author: "The Professor" },
     { text: "You've got this. And if you don't, I've got your notes. We'll figure it out together.", author: "The Professor" },
