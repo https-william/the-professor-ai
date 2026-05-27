@@ -11,21 +11,7 @@ interface ThemeToggleProps {
 }
 
 export default function ThemeToggle({ className = "", variant = "default" }: ThemeToggleProps) {
-    const { theme, toggleTheme } = useTheme();
-
-    if (variant === "floating") {
-        return (
-            <div className={`fixed top-6 right-4 z-[10002] ${className}`}>
-                <ThemeButton theme={theme} toggleTheme={toggleTheme} />
-            </div>
-        );
-    }
-
-    return (
-        <div className={className}>
-            <ThemeButton theme={theme} toggleTheme={toggleTheme} />
-        </div>
-    );
+    return null;
 }
 
 function ThemeButton({ theme, toggleTheme }: { theme: string; toggleTheme: () => void }) {

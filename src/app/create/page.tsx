@@ -1,189 +1,155 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useIngestStore } from "@/store/useIngestStore";
 import { useToasts } from "@/components/ui/GlobalToasts";
-import KnowledgeIngestModal from "@/components/modals/KnowledgeIngestModal";
-import DataDustLoader from "@/components/ui/DataDustLoader";
 import StandardContainer from "@/components/ui/StandardContainer";
-import JourneyPhase from "@/components/features/create/JourneyPhase";
-import ExamSprintCard from "@/components/features/create/ExamSprintCard";
 import { cn } from "@/lib/utils";
 import ProfessorCeremony from "@/components/ui/ProfessorCeremony";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
 import { createClient } from "@/lib/supabase/client";
+import { performOCR } from "@/lib/ocr-bridge";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { 
     X, 
-    Layers, 
     Zap, 
-    FileText, 
-    Map as MapIcon, 
-    ShieldAlert,
-    BrainCircuit,
+    Upload, 
+    AlertTriangle,
+    CheckCircle2,
+    Loader2,
+    AlertCircle,
+    FileText,
+    Layers,
     Sword,
-    BookOpen,
-    Upload,
-    AlertTriangle
+    Map as MapIcon,
+    Sparkles,
+    MessageCircle,
+    Type,
+    ArrowRight
 } from "lucide-react";
 
 const MAX_CHARS = 50000;
 
-// ─── Phase-Based Creator Types ────────────────────────────────────────────────
-const phases = [
-    {
-        id: "understand",
-        number: 1,
-        title: "Break it Down",
-        tools: [
-            {
-                id: "summary",
-                label: "The Core",
-                desc: "Turn 50 pages into 5. Just the bits that actually matter.",
-                icon: FileText,
-                color: "var(--emerald)",
-                apiEndpoint: "/api/generate/summary",
-                cost: 2,
-                popular: true,
-            },
-            {
-                id: "eli5",
-                label: "Vivid Analogy",
-                desc: "Explain it like we're having a conversation. Simple and clear.",
-                icon: BrainCircuit,
-                color: "var(--blue)",
-                apiEndpoint: "/api/generate/eli5",
-                cost: 1,
-            },
-        ]
-    },
-    {
-        id: "retain",
-        number: 2,
-        title: "Lock it In",
-        tools: [
-            {
-                id: "flashcards",
-                label: "Memory Cards",
-                desc: "Active recall without the headache. Lock facts in fast.",
-                icon: Layers,
-                color: "var(--blue)",
-                apiEndpoint: "/api/generate/flashcards",
-                cost: 1,
-            },
-            {
-                id: "match",
-                label: "Match Studio",
-                desc: "A quick game to prove you actually know your stuff.",
-                icon: Zap,
-                color: "var(--cyan)",
-                apiEndpoint: "/api/generate/match",
-                cost: 1,
-            },
-        ]
-    },
-    {
-        id: "test",
-        number: 3,
-        title: "Final Check",
-        tools: [
-            {
-                id: "quiz",
-                label: "Mock Exam",
-                desc: "Predict exactly what's coming. No surprises, just an ace.",
-                icon: Sword,
-                color: "var(--crimson)",
-                apiEndpoint: "/api/generate/quiz",
-                cost: 2,
-                popular: true,
-            },
-        ]
-    },
+// High-Anticipation Loading Phrases for the file queue
+const loadingPhrases = [
+    "Skimming the abstract...",
+    "Reviewing notes & parsing tables...",
+    "Translating academic jargon into plain English...",
+    "Connecting the dots across chapters...",
+    "Distilling high-yield survival concepts...",
+    "Almost there. Polishing the wisdom..."
 ];
-
-const allTools = phases.flatMap(p => p.tools);
-
-const countOptions = [5, 10, 20, 30, 45, 60];
-const difficultyOptions = [
-    { id: "easy", label: "Chilled", desc: "Basic recall & definitions", emoji: "🌱" },
-    { id: "medium", label: "Scholar", desc: "Conceptual understanding", emoji: "📜" },
-    { id: "difficult", label: "Advanced", desc: "Application & analysis", emoji: "🏛️" },
-    { id: "nightmare", label: "Professor", desc: "Strict rigor. Deep focus required.", emoji: "🎓" },
-];
-
-const timerOptions = [
-    { id: 0, label: "No Rush", desc: "Take your time" },
-    { id: 300, label: "5 Min", desc: "Blitz session" },
-    { id: 600, label: "10 Min", desc: "Standard flow" },
-    { id: 1200, label: "20 Min", desc: "Deep focus" },
-    { id: 1800, label: "30 Min", desc: "Full mock exam" },
-];
-
-const formatOptions: Record<string, { id: string, label: string, desc: string }[]> = {
-    flashcards: [
-        { id: "front_back", label: "Front/Back", desc: "Classic active recall" },
-        { id: "cloze", label: "Cloze", desc: "Fill in the blanks" },
-    ],
-    quiz: [
-        { id: "mcq", label: "MCQ", desc: "Multiple choice" },
-        { id: "mixed", label: "Mixed", desc: "MCQ + True/False" },
-    ],
-    summary: [
-        { id: "bullets", label: "High-Yield", desc: "Focus on facts" },
-        { id: "narrative", label: "Narrative", desc: "Prose explanation" },
-    ],
-    eli5: [
-        { id: "analogy", label: "Vivid Analogy", desc: "Best for intuition" },
-        { id: "metaphor", label: "Poetic Metaphor", desc: "Creative links" },
-    ],
-};
-
-import StudyPackCommandCenter from "@/components/features/create/StudyPackCommandCenter";
 
 function CreatorStudio() {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const { user, spendCredits } = useUser();
-    const { openModal, isProcessing: storeIsProcessing, queue: storeQueue, addFiles } = useIngestStore();
+    const { addToast } = useToasts();
+    const { queue, addFiles, updateFileStatus, clearQueue, isProcessing } = useIngestStore();
     const supabase = createClient();
 
-    const [selectedType, setSelectedType] = useState<string | null>(null);
     const [inputText, setInputText] = useState("");
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadStatus, setUploadStatus] = useState("");
+    const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
     const [setupError, setSetupError] = useState<string | null>(null);
-    const [isSprintMode, setIsSprintMode] = useState(false);
     const [isGeneratingPack, setIsGeneratingPack] = useState(false);
-
-    const [itemCount, setItemCount] = useState(10);
-    const [difficulty, setDifficulty] = useState<"easy" | "medium" | "difficult" | "nightmare">("medium");
-    const [timerValue, setTimerValue] = useState(600);
-    const [selectedFormat, setSelectedFormat] = useState("");
     const [showGuestModal, setShowGuestModal] = useState(false);
-
     const [dragActive, setDragActive] = useState(false);
     const [missionTitle, setMissionTitle] = useState("");
     const [userEditedTitle, setUserEditedTitle] = useState(false);
 
-    // Dynamic loading phrases matching our warm coffee-shop tone
-    const loadingPhrases = [
-        "Skimming your materials...",
-        "Reading your notes...",
-        "Sorting out the main ideas...",
-        "Connecting the dots..."
-    ];
+    // Queue processing states
+    const processedIds = useRef<Set<string>>(new Set());
+    const [trickleProgress, setTrickleProgress] = useState<Record<string, number>>({});
+    const [filePhraseIndex, setFilePhraseIndex] = useState<Record<string, number>>({});
 
-    const [phraseIndex, setPhraseIndex] = useState(0);
-
+    // Keep track of active phrase animation
     useEffect(() => {
-        if (!storeIsProcessing) return;
+        const readingItems = queue.filter(item => item.status === 'reading' || item.status === 'learning');
+        if (readingItems.length === 0) return;
+
         const interval = setInterval(() => {
-            setPhraseIndex(prev => (prev + 1) % loadingPhrases.length);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [storeIsProcessing]);
+            setTrickleProgress(prev => {
+                const next = { ...prev };
+                readingItems.forEach(item => {
+                    const current = next[item.id] || item.progress || 20;
+                    if (current < 90) {
+                        next[item.id] = current + Math.floor(Math.random() * 6) + 2;
+                    }
+                });
+                return next;
+            });
+        }, 400);
+
+        const phraseInterval = setInterval(() => {
+            setFilePhraseIndex(prev => {
+                const next = { ...prev };
+                readingItems.forEach(item => {
+                    const current = next[item.id] || 0;
+                    next[item.id] = (current + 1) % loadingPhrases.length;
+                });
+                return next;
+            });
+        }, 2500);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(phraseInterval);
+        };
+    }, [queue]);
+
+    // Handle background document parsing in page
+    useEffect(() => {
+        const processNext = async () => {
+            const nextItem = queue.find(item => item.status === 'reading' && !processedIds.current.has(item.id));
+            if (!nextItem || !nextItem.file) return;
+
+            processedIds.current.add(nextItem.id);
+
+            try {
+                updateFileStatus(nextItem.id, 'reading', 20);
+
+                const formData = new FormData();
+                formData.append("file", nextItem.file);
+
+                const res = await fetch("/api/parse", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const result = await res.json().catch(() => ({ error: "Parser failed to respond" }));
+                
+                if (!res.ok || result.error) {
+                    throw new Error(result.error || "Failed to process document");
+                }
+
+                let finalWeightText = result.text || "";
+
+                if (result.isOcrRequired && result.images) {
+                    updateFileStatus(nextItem.id, 'learning', 50);
+                    const ocrText = await performOCR(result.images);
+                    finalWeightText = `${result.baseText || ""}\n\n${ocrText}`;
+                }
+
+                updateFileStatus(nextItem.id, 'success', 100);
+                
+                if (finalWeightText) {
+                    setInputText(prev => {
+                        const nextVal = prev ? `${prev}\n\n${finalWeightText}` : finalWeightText;
+                        return nextVal.substring(0, MAX_CHARS);
+                    });
+                }
+            } catch (err: any) {
+                console.error("Ingestion Error:", err);
+                updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to parse file");
+            }
+        };
+
+        if (isProcessing) {
+            processNext();
+        }
+    }, [queue, isProcessing, updateFileStatus]);
 
     // Load initial title from session if present
     useEffect(() => {
@@ -193,6 +159,12 @@ function CreatorStudio() {
             setUserEditedTitle(true);
         }
     }, []);
+
+    // Clear queue when page mounts or unmounts
+    useEffect(() => {
+        clearQueue();
+        return () => clearQueue();
+    }, [clearQueue]);
 
     // Auto-suggest title based on the first few words of input
     useEffect(() => {
@@ -209,47 +181,6 @@ function CreatorStudio() {
         }
     }, [inputText, userEditedTitle]);
 
-    // Preset configurations with warm coffee-shop brand names
-    const presets = [
-        {
-            id: "midnight_cram",
-            label: "Midnight Cram",
-            desc: "Quick high-yield prep",
-            settings: { itemCount: 10, difficulty: "medium", timerValue: 600, selectedFormat: "bullets" }
-        },
-        {
-            id: "class_recap",
-            label: "Class Recap",
-            desc: "Study this week's slides",
-            settings: { itemCount: 20, difficulty: "easy", timerValue: 0, selectedFormat: "bullets" }
-        },
-        {
-            id: "exam_ace",
-            label: "Exam Ace",
-            desc: "Simulate the real exam hall",
-            settings: { itemCount: 30, difficulty: "nightmare", timerValue: 1800, selectedFormat: "mixed" }
-        }
-    ];
-
-    const applyPreset = (preset: typeof presets[0]) => {
-        setItemCount(preset.settings.itemCount);
-        setDifficulty(preset.settings.difficulty as any);
-        setTimerValue(preset.settings.timerValue);
-        
-        if (selectedType && formatOptions[selectedType]) {
-            const availableFormats = formatOptions[selectedType].map(f => f.id);
-            if (availableFormats.includes(preset.settings.selectedFormat)) {
-                setSelectedFormat(preset.settings.selectedFormat);
-            } else {
-                setSelectedFormat(availableFormats[0]);
-            }
-        }
-        
-        if (!userEditedTitle) {
-            setMissionTitle(preset.label + " Prep");
-        }
-    };
-
     useEffect(() => {
         if (typeof window !== "undefined" && !user.isAuthenticated && !user.isLoading) {
             const isGuest = sessionStorage.getItem("shared_view") === "true";
@@ -259,48 +190,18 @@ function CreatorStudio() {
         }
     }, [user.isAuthenticated, user.isLoading]);
 
-    useEffect(() => {
-        const tool = searchParams.get('tool');
-        const validTools = allTools.map(t => t.id);
-        if (tool && validTools.includes(tool)) {
-            setSelectedType(tool);
-            sessionStorage.removeItem("isExamSprint");
-            setIsSprintMode(false);
-        }
-    }, [searchParams]);
+    const hasSuccess = queue.some(item => item.status === 'success') || inputText.trim().length > 50;
+    const isQueueProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
 
-    useEffect(() => {
-        if (selectedType && formatOptions[selectedType]) {
-            setSelectedFormat(formatOptions[selectedType][0].id);
-        }
-    }, [selectedType]);
-
-    const selectedCreator = allTools.find(c => c.id === selectedType);
-    const charPercentage = (inputText.length / MAX_CHARS) * 100;
-    const canGenerate = inputText.trim().length > 50 && (selectedType || isSprintMode);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) addFiles(Array.from(e.target.files));
     };
 
-    const handleFileUploadRequest = () => {
-        setIsSprintMode(false);
-        openModal();
-    };
-
-    const handleExamSprint = () => {
-        sessionStorage.setItem("isExamSprint", "true");
-        setIsSprintMode(true);
-        openModal();
-    };
-
-    const handleIngestSuccess = (text: string) => {
-        const isSprint = sessionStorage.getItem("isExamSprint") === "true";
-        if (isSprint) {
-            setIsSprintMode(true);
-            setInputText(text.substring(0, MAX_CHARS));
-        } else {
-            setInputText(prev => prev + (prev ? '\n\n' : '') + text.substring(0, MAX_CHARS));
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            addFiles(Array.from(e.dataTransfer.files));
         }
     };
 
@@ -309,54 +210,25 @@ function CreatorStudio() {
 
         const customTitle = missionTitle || "";
 
-        if (isSprintMode) {
-            // Deduct credits for Exam Sprint (10 credits)
-            if (user.isAuthenticated) {
-                const success = await spendCredits(10);
-                if (!success) {
-                    setSetupError("Insufficient credits for Exam Sprint. Please acquire more credits.");
-                    return;
-                }
+        // Deduct credits for Exam Sprint (10 credits)
+        if (user.isAuthenticated) {
+            const success = await spendCredits(10);
+            if (!success) {
+                setSetupError("Insufficient credits for Exam Sprint. Please acquire more credits.");
+                return;
             }
+        }
 
-            sessionStorage.setItem("examSprintContent", inputText);
-            setIsGeneratingPack(true);
+        sessionStorage.setItem("examSprintContent", inputText);
+        setIsGeneratingPack(true);
 
-            const createPack = async () => {
-                const packId = crypto.randomUUID();
-                const cleanTitle = customTitle || (inputText.trim() ? inputText.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : `STUDY PACK: ${new Date().toLocaleDateString()}`);
-                
-                try {
-                    const { data: { user: authUser } } = await supabase.auth.getUser();
-                    if (!authUser) {
-                        const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
-                        offlinePacks[packId] = {
-                            id: packId,
-                            title: cleanTitle,
-                            source_text: inputText,
-                            phases_data: {},
-                            user_id: "guest",
-                            savedAt: Date.now()
-                        };
-                        localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
-                        router.push(`/library/pack/${packId}?sprint=true`);
-                        return;
-                    }
-
-                    const { error: dbError } = await supabase.from("study_packs").insert({
-                        id: packId,
-                        user_id: authUser.id,
-                        title: cleanTitle,
-                        description: "Comprehensive exam survival kit generated from your notes.",
-                        source_text: inputText,
-                        phases_data: {},
-                    });
-
-                    if (dbError) throw dbError;
-
-                    router.push(`/library/pack/${packId}?sprint=true`);
-                } catch (err) {
-                    console.error("Failed to create pack in DB, falling back to offline storage:", err);
+        const createPack = async () => {
+            const packId = crypto.randomUUID();
+            const cleanTitle = customTitle || (inputText.trim() ? inputText.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : `STUDY PACK: ${new Date().toLocaleDateString()}`);
+            
+            try {
+                const { data: { user: authUser } } = await supabase.auth.getUser();
+                if (!authUser) {
                     const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
                     offlinePacks[packId] = {
                         id: packId,
@@ -368,39 +240,53 @@ function CreatorStudio() {
                     };
                     localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
                     router.push(`/library/pack/${packId}?sprint=true`);
+                    return;
                 }
-            };
 
-            createPack();
-            return;
-        }
+                const { error: dbError } = await supabase.from("study_packs").insert({
+                    id: packId,
+                    user_id: authUser.id,
+                    title: cleanTitle,
+                    description: "Comprehensive study sprint generated from your notes.",
+                    source_text: inputText,
+                    phases_data: {},
+                });
 
-        if (!selectedType) return;
-        
-        sessionStorage.setItem("generateParams", JSON.stringify({
-            content: inputText,
-            count: itemCount,
-            difficulty,
-            timer: timerValue,
-            format: selectedFormat,
-            type: selectedType,
-            title: customTitle
-        }));
-        
-        router.push(`/${selectedType}/generate`);
+                if (dbError) throw dbError;
+
+                router.push(`/library/pack/${packId}?sprint=true`);
+            } catch (err) {
+                console.error("Failed to create pack in DB, falling back to offline storage:", err);
+                const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                offlinePacks[packId] = {
+                    id: packId,
+                    title: cleanTitle,
+                    source_text: inputText,
+                    phases_data: {},
+                    user_id: "guest",
+                    savedAt: Date.now()
+                };
+                localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
+                router.push(`/library/pack/${packId}?sprint=true`);
+            }
+        };
+
+        createPack();
     };
 
     const resetSelection = () => {
-        setSelectedType(null);
         setInputText("");
         setSetupError(null);
         sessionStorage.removeItem("isExamSprint");
         sessionStorage.removeItem("examSprintContent");
         sessionStorage.removeItem("customGenerationTitle");
-        setIsSprintMode(false);
         setIsGeneratingPack(false);
         setMissionTitle("");
         setUserEditedTitle(false);
+        clearQueue();
+        processedIds.current.clear();
+        setTrickleProgress({});
+        setFilePhraseIndex({});
     };
 
     if (isGeneratingPack) {
@@ -410,7 +296,7 @@ function CreatorStudio() {
                     <div className="mb-8 text-center">
                         <button 
                             onClick={() => setIsGeneratingPack(false)}
-                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-2"
+                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-2 cursor-pointer"
                         >
                             <X size={14} /> Cancel Generation
                         </button>
@@ -422,160 +308,145 @@ function CreatorStudio() {
     }
 
     return (
-        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-24 pt-16 relative min-h-screen flex flex-col flex-1">
+        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-24 pt-16 relative min-h-screen flex flex-col flex-1 overflow-x-hidden">
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--blue-glow)] opacity-[0.03] rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[var(--blue-glow)] opacity-[0.02] rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+            
+            <StandardContainer>
+                <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+                    {/* Header Banner */}
+                    <div className="mb-10 text-center">
+                        <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4 leading-none uppercase italic">
+                            Exam <span className="text-[var(--blue)]">Sprint</span>
+                        </h1>
+                        <p className="text-xs sm:text-sm text-[var(--foreground-muted)] font-bold leading-relaxed max-w-xl mx-auto opacity-75">
+                            Your notes. Just the good parts. Let's break them down and lock them in.
+                        </p>
+                    </div>
 
-            <StandardContainer wide>
-                {!selectedType ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                        <div className="mb-12 sm:mb-20 text-center sm:text-left">
-                            <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-6 leading-[0.9] text-[var(--foreground)]">
-                                The Study <span className="text-[var(--blue)]">Lab</span>
-                            </h1>
-                            <p className="text-base sm:text-lg text-[var(--foreground-muted)] font-bold leading-relaxed max-w-xl opacity-70 mx-auto sm:mx-0">
-                                Your notes. Just the good parts. Let&apos;s break them down, lock them in, and get you back to your life. Your bed misses you.
-                            </p>
-                        </div>
+                    {/* Compact Pill-Shaped Pipeline Flow */}
+                    <div className="mb-8 p-4 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-md relative">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[var(--blue)]/30" />
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mr-2 flex items-center gap-1.5 shrink-0">
+                                <Sparkles size={11} className="text-[var(--blue)]" /> Sprint Pipeline:
+                            </span>
+                            
+                            {/* Pill 1 */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--blue)]/30 transition-all shrink-0">
+                                <FileText size={12} className="text-[var(--blue)]" />
+                                <span className="text-[10px] font-black uppercase tracking-tight">01. Summary</span>
+                            </div>
 
-                        <div className="mb-12">
-                            <ExamSprintCard onClick={handleExamSprint} />
-                        </div>
+                            <span className="text-[var(--foreground-muted)]/30 text-xs shrink-0">➔</span>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {phases.map((phase) => (
-                                <JourneyPhase
-                                    key={phase.id}
-                                    number={phase.number}
-                                    title={phase.title}
-                                    tools={phase.tools}
-                                    onSelectTool={(type) => { 
-                                        setSelectedType(type); 
-                                        sessionStorage.removeItem("isExamSprint"); 
-                                        setIsSprintMode(false); 
-                                    }}
-                                />
-                            ))}
+                            {/* Pill 2 */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--amber)]/30 transition-all shrink-0">
+                                <Layers size={12} className="text-[var(--amber)]" />
+                                <span className="text-[10px] font-black uppercase tracking-tight">02. Cards</span>
+                            </div>
+
+                            <span className="text-[var(--foreground-muted)]/30 text-xs shrink-0">➔</span>
+
+                            {/* Pill 3 */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--crimson)]/30 transition-all shrink-0">
+                                <Sword size={12} className="text-[var(--crimson)]" />
+                                <span className="text-[10px] font-black uppercase tracking-tight">03. Quiz</span>
+                            </div>
+
+                            <span className="text-[var(--foreground-muted)]/30 text-xs shrink-0">➔</span>
+
+                            {/* Pill 4 */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--emerald)]/30 transition-all shrink-0">
+                                <MapIcon size={12} className="text-[var(--emerald)]" />
+                                <span className="text-[10px] font-black uppercase tracking-tight">04. Roadmap</span>
+                            </div>
                         </div>
                     </div>
-                ) : (
-                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Two-column layout grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                            
-                            {/* Left Side: Workspace (8 cols on desktop) */}
-                            <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-                                
-                                {/* Refined Tool Header with subtle gradient matching tool theme */}
-                                <div 
-                                    className="flex items-center gap-4 p-5 rounded-[32px] bg-[var(--card)]/90 border transition-all duration-300 shadow-md"
-                                    style={{ 
-                                        borderColor: `color-mix(in srgb, ${selectedCreator?.color || 'var(--border)'}, transparent 80%)`,
-                                        boxShadow: `0 10px 30px -10px color-mix(in srgb, ${selectedCreator?.color || 'transparent'}, transparent 95%)`
-                                    }}
-                                >
-                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                                        style={{ 
-                                            background: `color-mix(in srgb, ${selectedCreator?.color || 'var(--blue)'}, transparent 92%)`, 
-                                            border: `1px solid color-mix(in srgb, ${selectedCreator?.color || 'var(--blue)'}, transparent 80%)` 
-                                        }}
-                                    >
-                                        {selectedCreator && <selectedCreator.icon size={20} strokeWidth={2.2} style={{ color: selectedCreator?.color }} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-sm font-black text-[var(--foreground)] tracking-tight">{selectedCreator?.label}</h3>
-                                        <p className="text-[11px] text-[var(--foreground-muted)] font-bold opacity-70 leading-normal">{selectedCreator?.desc}</p>
-                                    </div>
-                                    <button 
-                                        onClick={resetSelection} 
-                                        className="p-2 hover:bg-[var(--border)] rounded-full transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)] shrink-0"
-                                    >
-                                        <X size={18} />
-                                    </button>
-                                </div>
 
-                                {/* Source Material Textarea Workspace with Drag & Drop */}
-                                <div 
+                    {/* Main Flat 2.0 Ingestion Area */}
+                    <div className="rounded-[2.5rem] bg-[var(--card)] border border-[var(--border)] shadow-xl overflow-hidden">
+                        
+                        {/* Tab Headers */}
+                        <div className="flex bg-[var(--bg-3)]/40 border-b border-[var(--border)] p-1">
+                            <button
+                                onClick={() => setActiveTab('upload')}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer",
+                                    activeTab === 'upload' 
+                                        ? 'bg-[var(--background)] border border-[var(--border)] rounded-2xl text-[var(--foreground)] shadow-sm' 
+                                        : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                )}
+                            >
+                                <Upload size={14} strokeWidth={2.5} />
+                                Upload Study File
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('text')}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer",
+                                    activeTab === 'text' 
+                                        ? 'bg-[var(--background)] border border-[var(--border)] rounded-2xl text-[var(--foreground)] shadow-sm' 
+                                        : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                )}
+                            >
+                                <Type size={14} strokeWidth={2.5} />
+                                Paste Raw Text
+                            </button>
+                        </div>
+
+                        {/* Workspace body */}
+                        <div className="p-6 sm:p-8 space-y-6">
+                            
+                            {/* File Upload Ingestion Area */}
+                            {activeTab === 'upload' ? (
+                                <label 
                                     onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
                                     onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
                                     onDragOver={(e) => { e.preventDefault(); }}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        setDragActive(false);
-                                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                                            addFiles(Array.from(e.dataTransfer.files));
-                                        }
-                                    }}
-                                    className={cn(
-                                        "relative overflow-hidden rounded-[32px] bg-[var(--card)]/90 border border-[var(--border)] shadow-xl transition-all focus-within:border-[var(--blue)]/40 focus-within:shadow-[0_12px_40px_rgba(37,99,235,0.06)]",
-                                        dragActive && "border-[var(--blue)] bg-[var(--blue)]/5 scale-[1.01]"
-                                    )}
+                                    onDrop={handleDrop}
+                                    className="block cursor-pointer group"
                                 >
-                                    {/* Drag Overlay */}
-                                    {dragActive && (
-                                        <div className="absolute inset-0 z-20 bg-[var(--background)]/90 backdrop-blur-sm border-2 border-dashed border-[var(--blue)] rounded-[32px] flex flex-col items-center justify-center gap-3 p-6 pointer-events-none">
-                                            <Upload size={36} className="text-[var(--blue)] animate-bounce" />
-                                            <h4 className="text-lg font-black text-[var(--foreground)]">Drop your files here</h4>
-                                            <p className="text-xs text-[var(--foreground-muted)] font-bold text-center">
-                                                Drop PDFs, slides, or notes to feed the Professor
-                                            </p>
+                                    <div 
+                                        className={cn(
+                                            "p-12 flex flex-col items-center justify-center text-center transition-all rounded-3xl border-2 border-dashed group-hover:border-[var(--blue)]/50 group-active:scale-[0.99]",
+                                            dragActive ? "bg-[var(--blue)]/5 border-[var(--blue)]" : "bg-[var(--bg-3)]/30 border-[var(--border)]"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all shadow-xl bg-[var(--background)]",
+                                            dragActive ? "bg-[var(--blue)] text-white scale-110" : "text-[var(--blue)]"
+                                        )}>
+                                            <Upload className="w-8 h-8" strokeWidth={2.5} />
                                         </div>
-                                    )}
-
-                                    {/* Ingestion Progress Overlay */}
-                                    {storeIsProcessing && (
-                                        <div className="absolute inset-0 z-20 bg-[var(--background)]/85 backdrop-blur-md rounded-[32px] flex flex-col items-center justify-center p-6 gap-4 animate-in fade-in duration-300">
-                                            <div className="relative w-14 h-14">
-                                                <div className="absolute inset-0 rounded-full border-2 border-[var(--blue)]/10" />
-                                                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)] animate-spin" />
-                                            </div>
-                                            <div className="text-center space-y-1 max-w-sm">
-                                                <p className="text-[10px] font-black text-[var(--blue)] uppercase tracking-[0.3em] animate-pulse">
-                                                    Reading your notes...
-                                                </p>
-                                                {storeQueue.filter(f => f.status === 'reading' || f.status === 'learning').slice(0, 1).map(f => (
-                                                    <p key={f.id} className="text-xs font-bold text-[var(--foreground-muted)] truncate max-w-xs mx-auto">
-                                                        {loadingPhrases[phraseIndex]} ({f.name})
-                                                    </p>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="px-6 pt-5 flex items-center justify-between">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-35">Source Material</label>
-                                        <span className={`text-[10px] font-mono font-black tracking-tighter ${charPercentage > 80 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
+                                        <h4 className="text-lg font-black text-[var(--foreground)] mb-1">Drop notes here</h4>
+                                        <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-[0.2em] font-black">PDF, PPTX, DOCX, or Images</p>
+                                        <input type="file" className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
+                                    </div>
+                                </label>
+                            ) : (
+                                <div className="space-y-2 animate-in fade-in duration-300">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)]">Paste Lecture Notes</label>
+                                        <span className={`text-[10px] font-mono font-black tracking-tighter ${inputText.length > MAX_CHARS * 0.8 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
                                             {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
                                         </span>
                                     </div>
-                                    <div className="relative p-6">
-                                        <textarea
-                                            value={inputText}
-                                            onChange={handleInputChange}
-                                            placeholder="Paste lecture notes, syllabus, or raw data here..."
-                                            className="w-full h-80 px-1 py-1 resize-none bg-transparent text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 text-[15px] leading-relaxed outline-none font-bold"
-                                            style={{ scrollbarWidth: "none" }}
-                                            autoFocus
-                                            disabled={isUploading || storeIsProcessing}
-                                        />
-                                    </div>
-                                    <div className="px-6 py-4 flex items-center justify-between bg-[var(--bg-3)]/60 border-t border-[var(--border)]">
-                                        <button
-                                            onClick={handleFileUploadRequest}
-                                            className="flex items-center gap-2.5 text-[11px] font-black text-[var(--blue-text)] hover:text-[var(--blue)] uppercase tracking-[0.2em] transition-all group cursor-pointer"
-                                        >
-                                            <Upload size={14} strokeWidth={2.5} className="group-hover:-translate-y-0.5 transition-transform" />
-                                            Feed the Professor
-                                        </button>
-                                        {inputText.length > 0 && inputText.length < 50 && (
-                                            <span className="text-[10px] font-black text-[var(--amber)] uppercase tracking-tight italic">Min 50 chars required</span>
-                                        )}
-                                    </div>
+                                    <textarea
+                                        value={inputText}
+                                        onChange={(e) => {
+                                            if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
+                                        }}
+                                        placeholder="Paste syllabus, textbook pages, raw lecture text, or transcripts here..."
+                                        className="w-full h-64 p-5 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)] text-sm leading-relaxed outline-none font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 resize-none custom-scrollbar"
+                                        disabled={isQueueProcessing}
+                                    />
                                 </div>
+                            )}
 
-                                {/* Mission Name Card */}
-                                <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-md transition-all focus-within:border-[var(--blue)]/30">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground)] opacity-35 mb-3 block">The Mission</label>
+                            {/* Title & Stats */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="flex flex-col justify-center">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-2">Sprint Name</label>
                                     <input 
                                         type="text"
                                         value={missionTitle}
@@ -583,211 +454,112 @@ function CreatorStudio() {
                                             setMissionTitle(e.target.value);
                                             setUserEditedTitle(true);
                                         }}
-                                        placeholder="e.g., 'Bio-Chem Final Push' or 'Law 101 Ace'"
-                                        className="w-full bg-[var(--bg-3)]/60 border border-[var(--border)] rounded-xl px-5 py-3.5 text-sm font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--accent)]/30 focus:bg-[var(--bg-4)] outline-none transition-all sprint-title-input"
+                                        placeholder="e.g., 'Bio-Chem Prep' or 'Law 101 Exam'"
+                                        className="w-full bg-[var(--bg-3)]/60 border border-[var(--border)] rounded-xl px-5 py-3 text-sm font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 outline-none transition-all"
                                     />
-                                    <p className="mt-3 text-[9px] text-[var(--foreground-muted)]/40 font-bold uppercase tracking-widest leading-relaxed">
-                                        Give your session a name. It helps you focus when things get tough.
-                                    </p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/40 border border-[var(--border)] flex flex-col justify-center">
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Calculated Cost</span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Zap size={16} className="text-[var(--blue)] fill-current" />
+                                        <span className="text-xl font-black italic tracking-tight leading-none uppercase">10 CREDITS</span>
+                                    </div>
+                                    <p className="text-[8px] text-[var(--foreground-muted)] mt-1 font-bold">You currently have {user.credits} credits.</p>
                                 </div>
                             </div>
 
-                            {/* Right Side: Configuration Sidebar (4 cols on desktop) */}
-                            <div className="lg:col-span-5 xl:col-span-4 space-y-6 lg:sticky lg:top-24">
-                                
-                                {/* Unified Configuration Panel Card */}
-                                <div className="p-6 rounded-[32px] bg-[var(--card)] border border-[var(--border)] shadow-xl space-y-6">
-                                    <div className="flex items-center gap-2 pb-4 border-b border-[var(--border)]">
-                                        <div className="w-1.5 h-3 rounded-full bg-[var(--blue)]" />
-                                        <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-50">
-                                            Study Settings
-                                        </h3>
-                                    </div>
-
-                                    {/* Quick Presets */}
-                                    <div className="space-y-3 pb-4 border-b border-[var(--border)]/40">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">
-                                            Quick Presets
-                                        </label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {presets.map((preset) => {
-                                                const isActive = itemCount === preset.settings.itemCount && 
-                                                                 difficulty === preset.settings.difficulty && 
-                                                                 timerValue === preset.settings.timerValue;
-                                                return (
-                                                    <button
-                                                        key={preset.id}
-                                                        onClick={() => applyPreset(preset)}
-                                                        className={cn(
-                                                            "p-2 text-center rounded-xl border transition-all cursor-pointer flex flex-col justify-center gap-1",
-                                                            isActive 
-                                                            ? 'bg-[var(--blue)]/5 border-[var(--blue)]/30 scale-[1.02]' 
-                                                            : 'bg-[var(--bg-3)]/60 border-[var(--border)] hover:bg-[var(--border)]'
-                                                        )}
-                                                    >
-                                                        <span className={cn("text-[9px] font-black leading-tight", isActive ? 'text-[var(--blue)]' : 'text-[var(--foreground)]')}>
-                                                            {preset.label}
-                                                        </span>
-                                                        <span className="text-[7px] text-[var(--foreground-muted)] font-bold opacity-60 leading-none truncate w-full">
-                                                            {preset.desc}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* Setting 1: Density / Count */}
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">
-                                            Density / Count
-                                        </label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {countOptions.map((count) => (
-                                                <button
-                                                    key={count}
-                                                    onClick={() => setItemCount(count)}
-                                                    className={cn(
-                                                        "px-4 py-2 text-[11px] font-black transition-all rounded-xl border cursor-pointer",
-                                                        itemCount === count 
-                                                        ? 'bg-[var(--blue)] text-white border-[var(--blue)] shadow-md' 
-                                                        : 'bg-[var(--bg-3)]/60 text-[var(--foreground-muted)] border-[var(--border)] hover:bg-[var(--border)]'
-                                                    )}
-                                                >
-                                                    {count}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Setting 2: Rigor */}
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">
-                                            Professor&apos;s Rigor
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {difficultyOptions.map((opt) => (
-                                                <button
-                                                    key={opt.id}
-                                                    onClick={() => setDifficulty(opt.id as any)}
-                                                    className={cn(
-                                                        "p-3 text-left rounded-xl transition-all border cursor-pointer flex flex-col justify-between h-20",
-                                                        difficulty === opt.id 
-                                                        ? 'bg-[var(--blue)]/5 border-[var(--blue)]/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] scale-[1.01]' 
-                                                        : 'bg-[var(--bg-3)]/60 border-[var(--border)] hover:bg-[var(--border)]'
-                                                    )}
-                                                >
-                                                    <div className={cn("text-[11px] font-black flex items-center gap-1.5", difficulty === opt.id ? 'text-[var(--blue-text)]' : 'text-[var(--foreground)]')}>
-                                                        <span>{opt.emoji}</span> {opt.label}
-                                                    </div>
-                                                    <p className="text-[9px] text-[var(--foreground-muted)] font-bold opacity-60 leading-snug">{opt.desc}</p>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Setting 3: Output Format (if applicable) */}
-                                    {formatOptions[selectedType || ""] && (
-                                        <div className="space-y-3 pt-2 border-t border-[var(--border)]/40">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">Output Format</label>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {formatOptions[selectedType || ""].map((opt) => (
-                                                    <button
-                                                        key={opt.id}
-                                                        onClick={() => setSelectedFormat(opt.id)}
-                                                        className={cn(
-                                                            "p-3 text-left rounded-xl transition-all border cursor-pointer flex flex-col justify-between h-20",
-                                                            selectedFormat === opt.id 
-                                                            ? 'bg-[var(--cyan)]/5 border-[var(--cyan)]/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] scale-[1.01]' 
-                                                            : 'bg-[var(--bg-3)]/60 border-[var(--border)] hover:bg-[var(--border)]'
-                                                        )}
-                                                    >
-                                                        <div className={cn("text-[11px] font-black", selectedFormat === opt.id ? 'text-[var(--cyan-text)]' : 'text-[var(--foreground)]')}>
-                                                            {opt.label}
+                            {/* Ingestion Progress Queue */}
+                            {queue.length > 0 && (
+                                <div className="space-y-3 pt-4 border-t border-[var(--border)]">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] block">Professor's Feed</span>
+                                    {queue.map((item) => (
+                                        <div key={item.id} className="p-4 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)] flex gap-4 items-start shadow-sm">
+                                            <div className="w-10 h-10 rounded-xl bg-[var(--background)] flex items-center justify-center shrink-0 border border-[var(--border)]">
+                                                <MessageCircle className="w-5 h-5 text-[var(--blue)]" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                {item.status === 'success' ? (
+                                                    <p className="text-xs font-bold text-[var(--foreground)] leading-snug">
+                                                        "Mastered <span className="text-[var(--blue)]">{item.name}</span>."
+                                                    </p>
+                                                ) : item.status === 'error' ? (
+                                                    <p className="text-xs font-bold text-[var(--crimson)] leading-snug">
+                                                        {item.errorMessage || `Failed to read ${item.name}`}
+                                                    </p>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2 truncate pr-2">
+                                                                <Loader2 className="w-3.5 h-3.5 text-[var(--blue)] animate-spin shrink-0" />
+                                                                <p className="text-[11px] font-bold text-[var(--foreground)] leading-snug truncate">
+                                                                    {loadingPhrases[filePhraseIndex[item.id] || 0]} <span className="italic text-[var(--foreground-muted)]">({item.name})</span>
+                                                                </p>
+                                                            </div>
+                                                            <span className="text-[10px] font-mono font-black text-[var(--blue)]">{trickleProgress[item.id] || item.progress || 20}%</span>
                                                         </div>
-                                                        <p className="text-[9px] text-[var(--foreground-muted)] font-bold opacity-60 leading-snug">{opt.desc}</p>
-                                                    </button>
-                                                ))}
+                                                        <div className="w-full bg-[var(--background)] rounded-full h-1.5 overflow-hidden border border-[var(--border)] relative">
+                                                            <motion.div 
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${trickleProgress[item.id] || item.progress || 20}%` }}
+                                                                className="h-full bg-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
+                                            {item.status === 'success' && <CheckCircle2 className="w-5 h-5 text-[var(--emerald)] shrink-0" />}
+                                            {item.status === 'error' && <AlertCircle className="w-5 h-5 text-[var(--crimson)] shrink-0" />}
                                         </div>
-                                    )}
-
-                                    {/* Setting 4: Time Pressure (if applicable) */}
-                                    {(selectedType === "quiz" || selectedType === "match") && (
-                                        <div className="space-y-3 pt-2 border-t border-[var(--border)]/40">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground)] opacity-35 block">Time Pressure</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {timerOptions.map((opt) => (
-                                                    <button
-                                                        key={opt.id}
-                                                        onClick={() => setTimerValue(opt.id)}
-                                                        className={cn(
-                                                            "px-3 py-2 text-[11px] font-black transition-all rounded-xl border cursor-pointer",
-                                                            timerValue === opt.id 
-                                                            ? 'bg-[var(--crimson)] text-white border-[var(--crimson)] shadow-md' 
-                                                            : 'bg-[var(--bg-3)]/60 border-[var(--border)] text-[var(--foreground-muted)] hover:bg-[var(--border)]'
-                                                        )}
-                                                    >
-                                                        {opt.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
+                            )}
 
-                                {/* Actions Group */}
-                                <div className="space-y-4">
+                            {/* Errors */}
+                            {setupError && (
+                                <div className="flex items-center justify-between p-4 rounded-[20px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
+                                    <div className="flex items-center gap-2.5 text-[11px] font-black text-[var(--crimson)] uppercase tracking-wider">
+                                        <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
+                                        <span className="leading-snug">{setupError}</span>
+                                    </div>
                                     <button
-                                        id="ready-sprint-btn"
-                                        onClick={handleGenerate}
-                                        disabled={!canGenerate}
-                                        className={cn(
-                                            "w-full py-4.5 rounded-[20px] font-black text-xs sm:text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
-                                            !canGenerate 
-                                            ? 'opacity-70 cursor-not-allowed bg-[var(--bg-3)]/80 border border-[var(--border)] text-[var(--foreground-muted)]/40' 
-                                            : 'bg-[var(--foreground)] text-[var(--background)] hover-scale-sm active:scale-[0.98]'
-                                        )}
+                                        onClick={() => { setSetupError(null); }}
+                                        className="px-3 py-1.5 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-[var(--crimson)]/30 transition-colors cursor-pointer shrink-0 ml-2"
                                     >
-                                        {canGenerate && (
-                                            <>
-                                                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
-                                            </>
-                                        )}
-                                        <Zap size={16} strokeWidth={2.5} className={canGenerate ? "animate-pulse" : ""} />
-                                        <span className="relative z-10">I&apos;m Ready</span>
-                                        <span className="text-[9px] opacity-60 font-mono ml-0.5">(-{selectedCreator?.cost || 1} CR)</span>
+                                        Dismiss
                                     </button>
-
-                                    {setupError && (
-                                        <div className="flex items-center justify-between p-4 rounded-[20px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
-                                            <div className="flex items-center gap-2.5 text-[11px] font-black text-[var(--crimson)] uppercase tracking-wider">
-                                                <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
-                                                <span className="leading-snug">{setupError}</span>
-                                            </div>
-                                            <button
-                                                onClick={() => { setSetupError(null); }}
-                                                className="px-3 py-1.5 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-[var(--crimson)]/30 transition-colors cursor-pointer shrink-0 ml-2"
-                                            >
-                                                Dismiss
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
+                            )}
+
+                            {/* Trigger buttons */}
+                            <div className="flex gap-3 pt-2">
+                                {inputText.trim().length > 0 && (
+                                    <button
+                                        onClick={resetSelection}
+                                        className="px-6 py-4 border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg-3)]/60 transition-all cursor-pointer"
+                                    >
+                                        Clear All
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleGenerate}
+                                    disabled={!hasSuccess || isQueueProcessing}
+                                    className={cn(
+                                        "flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
+                                        !hasSuccess || isQueueProcessing
+                                            ? 'opacity-50 cursor-not-allowed bg-[var(--bg-3)]/80 border border-[var(--border)] text-[var(--foreground-muted)]/40' 
+                                            : 'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:scale-[0.98]'
+                                    )}
+                                >
+                                    <Zap size={16} strokeWidth={2.5} className={hasSuccess && !isQueueProcessing ? "animate-pulse" : ""} />
+                                    <span>Start Exam Sprint</span>
+                                    <ArrowRight size={14} strokeWidth={2.5} />
+                                </button>
                             </div>
+
                         </div>
                     </div>
-                )}
+                </div>
             </StandardContainer>
-
-            <KnowledgeIngestModal 
-                onSuccess={handleIngestSuccess} 
-                onStartSprint={handleGenerate}
-                title={isSprintMode ? "Exam Sprint" : undefined}
-                description={isSprintMode ? "Upload your materials and the Professor will prepare your 10-hour survival kit." : undefined}
-                isSprint={isSprintMode}
-            />
 
             <GuestSignupModal
                 isOpen={showGuestModal}

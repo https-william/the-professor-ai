@@ -44,10 +44,18 @@ export async function recordActivity(
     if (!profile) return null;
 
     // 3. Robust Date-Based Streak Logic
-    const now = new Date();
-    // Use local date (not UTC) so a Nigerian user studying at 11pm WAT
-    // gets credit for that day, not the next UTC day.
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    // Use Africa/Lagos (WAT) timezone to handle midnight boundaries correctly for users in Nigeria
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Africa/Lagos",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parts.find(p => p.type === "year")?.value;
+    const month = parts.find(p => p.type === "month")?.value;
+    const day = parts.find(p => p.type === "day")?.value;
+    const todayStr = `${year}-${month}-${day}`;
     
     let newStreak = profile.current_streak || 0;
     let freezeUsed = false;

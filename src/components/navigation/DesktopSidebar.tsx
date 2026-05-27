@@ -169,18 +169,6 @@ export default function DesktopSidebar() {
                 </nav>
                 {/* Profile/Footer Section */}
                 <div className="px-4 mt-auto space-y-2">
-                    {/* Theme Toggle */}
-                    <button
-                        onClick={toggleTheme}
-                        className="w-full flex items-center gap-4 p-3 rounded-2xl text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.03] hover:text-[var(--foreground)] transition-all duration-300"
-                    >
-                        <div className="shrink-0 w-6 h-6 flex items-center justify-center">
-                            {resolvedTheme === "dark" ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
-                        </div>
-                        <span className="font-sans font-bold text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                            {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
-                        </span>
-                    </button>
 
                     {isInstallable && (
                         <button

@@ -213,74 +213,74 @@
    ============================================ */
 
 :root {
-  /* ─── BACKGROUNDS ─── */
-  --bg:             #040406;
-  --bg-2:           #09090C;
-  --bg-3:           #0E0E12;
-  --bg-4:           #14141A;
-  --bg-5:           #1C1C24;
+  /* ─── BACKGROUNDS (Vary Background Colors to solve flat look) ─── */
+  --bg:             #0c0d12; /* Deep, dark gray/navy base background */
+  --bg-2:           #141620; /* Elevated surface card background */
+  --bg-3:           #1e212f; /* Lighter elevated surface */
+  --bg-4:           #282b3d;
+  --bg-5:           #353950;
 
-  /* ─── PRIMARY: BLUE (replaces amber as the brand/action color) ─── */
-  --blue:           #2563EB;
-  --blue-light:     #3B82F6;
-  --blue-dark:      #1D4ED8;
-  --blue-dim:       rgba(37, 99, 235, 0.10);
-  --blue-border:    rgba(37, 99, 235, 0.25);
-  --blue-glow:      rgba(37, 99, 235, 0.12);
-  --blue-text:      #93C5FD;
+  /* ─── DESATURATED ACCENT COLORS (20-30% desaturated, lightened) ─── */
+  --blue:           #4A7CF5; /* Desaturated & lightened brand blue */
+  --blue-light:     #608DF6;
+  --blue-dark:      #2E5CD2;
+  --blue-dim:       rgba(74, 124, 245, 0.10);
+  --blue-border:    rgba(74, 124, 245, 0.25);
+  --blue-glow:      rgba(74, 124, 245, 0.12);
+  --blue-text:      #A5C0FF;
 
   /* ─── AMBER (XP, streaks, warnings ONLY) ─── */
-  --amber:          #F59E0B;
-  --amber-light:    #FBBF24;
-  --amber-dark:     #C47B00;
-  --amber-dim:      rgba(245, 158, 11, 0.08);
-  --amber-border:   rgba(245, 158, 11, 0.18);
-  --amber-glow:     rgba(245, 158, 11, 0.05);
-  --amber-text:     #FCD34D;
+  --amber:          #E5A93C; /* Desaturated gold/amber */
+  --amber-light:    #F2BE65;
+  --amber-dark:     #B8821F;
+  --amber-dim:      rgba(229, 169, 60, 0.08);
+  --amber-border:   rgba(229, 169, 60, 0.18);
+  --amber-glow:     rgba(229, 169, 60, 0.05);
+  --amber-text:     #F7D293;
 
   /* ─── CYAN (Hub, social, collaboration) ─── */
-  --cyan:           #22D3EE;
-  --cyan-dark:      #0891B2;
-  --cyan-dim:       rgba(34, 211, 238, 0.10);
-  --cyan-border:    rgba(34, 211, 238, 0.22);
-  --cyan-glow:      rgba(34, 211, 238, 0.06);
-  --cyan-text:      #67E8F9;
+  --cyan:           #4CDAEF; /* Desaturated cyan */
+  --cyan-dark:      #1AA0B5;
+  --cyan-dim:       rgba(76, 218, 239, 0.10);
+  --cyan-border:    rgba(76, 218, 239, 0.22);
+  --cyan-glow:      rgba(76, 218, 239, 0.06);
+  --cyan-text:      #8FE5F2;
 
   /* ─── CRIMSON (Arena, competitive, danger) ─── */
-  --crimson:        #F43F5E;
-  --crimson-dark:   #BE123C;
-  --crimson-dim:    rgba(244, 63, 94, 0.10);
-  --crimson-border: rgba(244, 63, 94, 0.22);
-  --crimson-glow:   rgba(244, 63, 94, 0.07);
-  --crimson-text:   #FDA4AF;
+  --crimson:        #E85D75; /* Desaturated crimson */
+  --crimson-dark:   #B8344B;
+  --crimson-dim:    rgba(232, 93, 117, 0.10);
+  --crimson-border: rgba(232, 93, 117, 0.22);
+  --crimson-glow:   rgba(232, 93, 117, 0.07);
+  --crimson-text:   #FCA3B0;
 
   /* ─── EMERALD (success, correct, level up) ─── */
-  --emerald:        #10B981;
-  --emerald-dim:    rgba(16, 185, 129, 0.10);
-  --emerald-border: rgba(16, 185, 129, 0.25);
-  --emerald-glow:   rgba(16, 185, 129, 0.06);
-  --emerald-text:   #6EE7B7;
+  --emerald:        #2BB288; /* Desaturated emerald */
+  --emerald-dim:    rgba(43, 178, 136, 0.10);
+  --emerald-border: rgba(43, 178, 136, 0.25);
+  --emerald-glow:   rgba(43, 178, 136, 0.06);
+  --emerald-text:   #81E0C1;
 
   /* ─── VIOLET (Library, archive, passive) ─── */
-  --violet:         #8B5CF6;
-  --violet-dark:    #6D28D9;
-  --violet-dim:     rgba(139, 92, 246, 0.10);
-  --violet-border:  rgba(139, 92, 246, 0.22);
-  --violet-glow:    rgba(139, 92, 246, 0.06);
-  --violet-text:    #C4B5FD;
+  --violet:         #9673F5; /* Desaturated violet */
+  --violet-dark:    #6F4BC9;
+  --violet-dim:     rgba(150, 115, 245, 0.10);
+  --violet-border:  rgba(150, 115, 245, 0.22);
+  --violet-glow:    rgba(150, 115, 245, 0.06);
+  --violet-text:    #CDBDFD;
 
-  /* ─── TEXT ─── */
-  --text:           #F2EDE4;
-  --text-2:         rgba(242, 237, 228, 0.75);
-  --text-3:         rgba(242, 237, 228, 0.50);
-  --text-4:         rgba(242, 237, 228, 0.25);
+  /* ─── SUBDUED TEXT (Off-white E0E0E0 to prevent eye glare) ─── */
+  --text:           #E0E0E0;
+  --text-2:         rgba(224, 224, 224, 0.75);
+  --text-3:         rgba(224, 224, 224, 0.50);
+  --text-4:         rgba(224, 224, 224, 0.25);
   --orb-opacity:    0.3;
 
-  /* ─── BORDERS ─── */
-  --border:         rgba(255, 255, 255, 0.05);
-  --border-2:       rgba(255, 255, 255, 0.08);
-  --border-3:       rgba(255, 255, 255, 0.15);
-  --border-hover:   rgba(255, 255, 255, 0.25);
+  /* ─── BORDERS WITH SUBTLE LIGHT SHADOW DEFINITION ─── */
+  --border:         rgba(255, 255, 255, 0.06);
+  --border-2:       rgba(255, 255, 255, 0.10);
+  --border-3:       rgba(255, 255, 255, 0.18);
+  --border-hover:   rgba(255, 255, 255, 0.30);
 
   /* ─── TYPOGRAPHY ─── */
   --font-display:   var(--font-outfit), 'Outfit', 'Helvetica Neue', sans-serif;
@@ -288,15 +288,15 @@
   --font-serif:     var(--font-source-serif), Georgia, serif;
   --font-mono-raw:  var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* ─── FLAT 2.0 DEPTH SYSTEM ─── */
+  /* ─── FLAT 2.0 DEPTH SYSTEM WITH LIGHT INNER GLOWS ─── */
   --shadow-color:   0, 0, 0;
-  --shadow-sm:      0 1px 2px rgba(var(--shadow-color), 0.3), 0 1px 1px rgba(var(--shadow-color), 0.2);
-  --shadow-md:      0 4px 12px rgba(var(--shadow-color), 0.4), 0 2px 4px rgba(var(--shadow-color), 0.3);
-  --shadow-lg:      0 12px 32px rgba(var(--shadow-color), 0.5), 0 4px 12px rgba(var(--shadow-color), 0.4);
-  --shadow-xl:      0 32px 64px rgba(var(--shadow-color), 0.6), 0 16px 24px rgba(var(--shadow-color), 0.4);
+  --shadow-sm:      0 1px 2px rgba(var(--shadow-color), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-md:      0 4px 12px rgba(var(--shadow-color), 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  --shadow-lg:      0 12px 32px rgba(var(--shadow-color), 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.10);
+  --shadow-xl:      0 32px 64px rgba(var(--shadow-color), 0.6), inset 0 1px 3px rgba(255, 255, 255, 0.12);
   
   /* Atmospheric elevation for Dark Mode (adds a subtle "lift" glow) */
-  --shadow-lift:    0 0 0 1px rgba(255, 255, 255, 0.05), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  --shadow-lift:    inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   --shadow-md:      var(--shadow-md), 0 0 20px var(--blue-glow);
   --shadow-lg:      var(--shadow-lg), 0 0 30px var(--blue-glow);
   --shadow-xl:      var(--shadow-xl), 0 0 40px var(--blue-glow);
@@ -2708,3 +2708,54 @@ html:not(.light) .text-3d {
     0px 4px 0px rgba(255, 255, 255, 0.04),
     0px 5px 0px rgba(255, 255, 255, 0.01);
 }
+
+/* Ensure typewriter cursor displays inside prose elements */
+.prose.typing-cursor > :last-child::after,
+.prose.typing-cursor.markdown-prose :last-child::after {
+  content: "▊" !important;
+  display: inline-block !important;
+  color: var(--blue-light) !important;
+  animation: cursor-blink 0.8s steps(2, start) infinite !important;
+  margin-left: 2px !important;
+  vertical-align: middle !important;
+}
+
+/* Block global horizontal scrolling */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* ═══ PRINT STYLES FOR CLEAN PDF EXPORTS ═══ */
+@media print {
+  header, footer, nav, aside, button, .btn, [role="button"],
+  .toast, .toast-container, .FocusTimer_widget, .FocusTimer, 
+  .no-print, [class*="Header"], [class*="Sidebar"], .immersive-header,
+  .notification-panel, .fixed, .sticky, [class*="header"] {
+    display: none !important;
+  }
+
+  html, body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+
+  main, .prose, .prose-invert {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #000000 !important;
+  }
+
+  .prose *, .prose-invert * {
+    color: #000000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+

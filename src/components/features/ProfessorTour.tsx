@@ -57,7 +57,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     targetSelector: "#ready-sprint-btn",
     title: "Exam Sprint Mode",
-    body: "Exam in 10 hours? Don't panic. This sprint mode is your ultimate lifesaver.",
+    body: "Exam coming up? Don't panic. This sprint mode is your ultimate study companion.",
     icon: Zap,
     placement: "top",
   },

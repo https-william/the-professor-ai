@@ -36,7 +36,7 @@ interface ToastStore {
     activeToastIds: string[];
     isOpen: boolean;
     fetchNotifications: () => Promise<void>;
-    addToast: (message: string, type: ToastType, icon?: any, link?: string, saveToDb?: boolean, idOverride?: string) => Promise<void>;
+    addToast: (message: string, type: ToastType, icon?: any, link?: string, saveToDb?: boolean, idOverride?: string, transient?: boolean) => Promise<void>;
     removeToast: (id: string) => Promise<void>;
     markAsRead: (id: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;
@@ -100,7 +100,7 @@ export const useToasts = create<ToastStore>((set, get) => ({
         }
     },
 
-    addToast: async (message, type, icon, link, saveToDb = false, idOverride) => {
+    addToast: async (message, type, icon, link, saveToDb = false, idOverride, transient = false) => {
         const id = idOverride || (Date.now().toString(36) + Math.random().toString(36).substring(2, 6));
         const newToast: Toast = { 
             id, 
@@ -113,17 +113,23 @@ export const useToasts = create<ToastStore>((set, get) => ({
         };
 
         set((state) => {
+            const updatedActive = [id, ...state.activeToastIds].slice(0, 3);
+            if (transient) {
+                return {
+                    activeToastIds: updatedActive
+                };
+            }
             const updated = [newToast, ...state.toasts].slice(0, 50);
             if (typeof window !== 'undefined') {
                 localStorage.setItem('local_notifications', JSON.stringify(updated));
             }
             return { 
                 toasts: updated,
-                activeToastIds: [id, ...state.activeToastIds].slice(0, 3)
+                activeToastIds: updatedActive
             };
         });
 
-        if (saveToDb) {
+        if (saveToDb && !transient) {
             const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
@@ -148,10 +154,10 @@ export const useToasts = create<ToastStore>((set, get) => ({
             }
         }
 
-        // Auto-dismiss inline popup after 8 seconds (but keep in persistent Notification Center)
+        // Auto-dismiss inline popup
         setTimeout(() => {
             set((state) => ({ activeToastIds: state.activeToastIds.filter((activeId) => activeId !== id) }));
-        }, type === 'broadcast' ? 15000 : 8000);
+        }, transient ? 4000 : (type === 'broadcast' ? 15000 : 8000));
     },
     
     removeToast: async (id) => {

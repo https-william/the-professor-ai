@@ -4,13 +4,18 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
-    ArrowRight, Flame, Zap, Shield, Coins, PlusCircle,
-    Library, BookOpen, Swords, Play, Pause, RotateCcw,
-    Clock, Target, Sparkles, History as HistoryIcon,
-    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Trophy
+    Zap, Library, BookOpen, Swords, 
+    Sparkles, History as HistoryIcon,
+    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Flame, CheckCircle2, ArrowRight,
+    Coins
 } from "lucide-react";
 import { calculateLevel, getLevelTitle, getLevelProgress } from "@/lib/profiles-client";
+import { cn } from "@/lib/utils";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import StandardContainer from "@/components/ui/StandardContainer";
+import FocusTimer from "@/components/features/dashboard/FocusTimer";
+import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
+import { getDailyTip } from "@/lib/education-tips";
 
 interface DashboardWebProps {
     user: any;
@@ -26,30 +31,17 @@ interface DashboardWebProps {
     handleShare?: () => void;
 }
 
-/* â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
-   "COMMAND CENTER" DASHBOARD
-   Aesthetic: Arc Browser Ã— Raycast Ã— Linear
-   Philosophy: Dense information, zero clutter, ambient energy
-   â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  */
-
-// Import education tip
-import { getDailyTip } from "@/lib/education-tips";
-import FocusTimer from "@/components/features/dashboard/FocusTimer";
-import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
-
 const stagger = {
     hidden: {},
     show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
 };
 const fadeUp = {
     hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
 };
 
-import StandardContainer from "@/components/ui/StandardContainer";
-
 export default function DashboardWeb({
-    user, activityData, dueCount, studyPlan, planLoading, greeting, firstName,
+    user, activityData, dueCount, greeting, firstName,
     handleRecover, canRecover, isProcessingAction,
 }: DashboardWebProps) {
 
@@ -62,7 +54,20 @@ export default function DashboardWeb({
     const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
     const dailyLine = getDailyTip(user.id || "");
 
-    // Streak calendar
+    const [showStreakDetails, setShowStreakDetails] = useState(false);
+    const [showWrappedDetails, setShowWrappedDetails] = useState(false);
+
+    // Time-based category hint
+    const timeHint = useMemo(() => {
+        const hour = new Date().getHours();
+        if (hour < 5) return "MIDNIGHT CRAM";
+        if (hour < 12) return "MORNING FOCUS";
+        if (hour < 17) return "AFTERNOON PUSH";
+        if (hour < 22) return "EVENING RECAP";
+        return "MIDNIGHT Prep";
+    }, []);
+
+    // Streak calendar days
     const weekDays = useMemo(() => {
         const now = new Date();
         const dayOfWeek = now.getDay();
@@ -86,8 +91,6 @@ export default function DashboardWeb({
         });
     }, [activityData, user?.streak]);
 
-    // Focus Timer moved to widget
-
     // Fetch library stats for recent activity
     const [libStats, setLibStats] = useState({ flashcards: 0, quiz: 0, summary: 0 });
     useEffect(() => {
@@ -108,74 +111,160 @@ export default function DashboardWeb({
             .catch(err => console.error("Failed to fetch library stats:", err));
     }, [user?.id]);
 
-    // Quick actions
-    const actions = [
-        { label: "Create", desc: "Generate new material", icon: PlusCircle, href: "/create", accent: "var(--blue)" },
-        { label: "Library", desc: "Your study vault", icon: Library, href: "/library", accent: "var(--violet)" },
-        { label: "Arena", desc: "Duel others", icon: Swords, href: "/arena", accent: "var(--crimson)" },
-        { label: "Blog", desc: "Study secrets", icon: BookOpen, href: "/blog", accent: "var(--cyan)" },
-    ];
-
-    // Recent generation types for visual variety mapped to real data
-    const totalGenerations = Math.max(1, libStats.flashcards + libStats.quiz + libStats.summary);
     const recentTypes = [
         { type: "flashcards", icon: Layers, color: "var(--blue)", label: "Flashcards", count: libStats.flashcards },
         { type: "quiz", icon: BrainCircuit, color: "var(--cyan)", label: "Quiz", count: libStats.quiz },
         { type: "summary", icon: FileText, color: "var(--emerald)", label: "Summary", count: libStats.summary },
     ];
 
-    // Live achievement progress calculations
-    const streakMilestones = useMemo(() => [
-        { target: 3, title: "Spark of Curiosity", desc: "Maintain a 3-day scholarly streak" },
-        { target: 7, title: "Prometheus Flame", desc: "Maintain a 7-day scholarly streak" },
-        { target: 14, title: "Consistency Catalyst", desc: "Maintain a 14-day scholarly streak" },
-        { target: 30, title: "Eternal Fire", desc: "Maintain a 30-day scholarly streak" },
-        { target: 60, title: "Sage Ascent", desc: "Maintain a 60-day scholarly streak" },
-        { target: 100, title: "Phoenix Ascendant", desc: "Maintain a 100-day scholarly streak" },
-    ], []);
-
-    const activeStreakMilestone = useMemo(() => {
-        return streakMilestones.find(m => (user.streak || 0) < m.target) || streakMilestones[streakMilestones.length - 1];
-    }, [user.streak, streakMilestones]);
-
-    const streakProgress = useMemo(() => {
-        const streakVal = user.streak || 0;
-        if (streakVal >= activeStreakMilestone.target) return 100;
-        return Math.min(Math.round((streakVal / activeStreakMilestone.target) * 100), 100);
-    }, [user.streak, activeStreakMilestone]);
-
-    const totalGens = (activityData?.stats?.flashcards || 0) + (activityData?.stats?.quizzes || 0) + (activityData?.stats?.summaries || 0) + (activityData?.stats?.examSprints || 0);
-    const genProgress = Math.min(Math.round((totalGens / 10) * 100), 100);
-    const unlockedCount = [streakProgress, genProgress].filter(p => p === 100).length;
-
     return (
         <div className="w-full min-h-screen relative bg-[var(--bg)] selection:bg-[var(--blue-dim)]">
-            {/* Scroll sentinel for header pill morph */}
-            <div data-header-sentinel className="absolute top-0 left-0 right-0 h-1 pointer-events-none z-50" />
-
             <StandardContainer className="pt-24 pb-20 relative z-10">
                 <motion.div variants={stagger} initial="hidden" animate="show">
-                    {/* Hero Zone */}
-                    <motion.div variants={fadeUp} className="mb-10">
-                        <div className="scholar-card relative p-8 sm:p-12 overflow-hidden bg-[var(--background-secondary)] border border-[var(--border)] shadow-xl" style={{ borderRadius: "32px" }}>
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.05] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
+                    {/* Welcome Banner (Greetings replaced with Quote + Time hint) */}
+                    <motion.div variants={fadeUp} className="mb-6">
+                        <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl" style={{ borderRadius: "28px" }}>
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
                             <div className="relative z-10">
-                                <div className="flex flex-wrap items-center gap-3 mb-6">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
+                                <div className="flex flex-wrap items-center gap-2 mb-4">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold">{dateStr}</span>
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint}</span>
+                                    </div>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
                                     </div>
                                     <FocusTimer widget={true} />
                                 </div>
-                                <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[var(--text)] leading-[0.95] mb-6">
-                                    {greeting}{greeting.match(/[?!]$/) ? "" : ","} <span className="text-[var(--blue)]">{firstName}</span>
-                                </h1>
-                                <p className="text-[17px] text-[var(--text-2)] italic font-medium max-w-xl leading-relaxed">
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text)] leading-relaxed mb-3 italic uppercase">
                                     &ldquo;{dailyLine}&rdquo;
+                                </h1>
+                                <p className="text-[10px] text-[var(--text-3)] font-black uppercase tracking-[0.2em]">
+                                    Active prepared session for <span className="text-[var(--text)]">{firstName}</span>
                                 </p>
                             </div>
                         </div>
                     </motion.div>
+
+                    {/* Compact Navigation & Status Pills Row */}
+                    <motion.div variants={fadeUp} className="mb-6 flex flex-wrap gap-2.5 items-center">
+                        {/* Start Session Pill */}
+                        <Link href="/create" className="group">
+                            <div className="flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--text)] text-[var(--bg)] font-black text-[11px] uppercase tracking-[0.2em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
+                                <Zap size={13} className="fill-current animate-pulse text-[var(--bg)]" />
+                                <span>Start New Session</span>
+                            </div>
+                        </Link>
+                        
+                        {/* Library Pill */}
+                        <Link href="/library" className="group">
+                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--violet)]/40 text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <Library size={12} className="text-[var(--violet)]" />
+                                <span>Library</span>
+                            </div>
+                        </Link>
+
+                        {/* Arena Pill */}
+                        <Link href="/arena" className="group">
+                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--crimson)]/40 text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <Swords size={12} className="text-[var(--crimson)]" />
+                                <span>Arena</span>
+                            </div>
+                        </Link>
+
+                        {/* Blog Pill */}
+                        <Link href="/blog" className="group">
+                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--cyan)]/40 text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <BookOpen size={12} className="text-[var(--cyan)]" />
+                                <span>Blog</span>
+                            </div>
+                        </Link>
+
+                        {/* Momentum Streak Toggle Pill */}
+                        <button
+                            onClick={() => {
+                                setShowStreakDetails(!showStreakDetails);
+                                setShowWrappedDetails(false);
+                            }}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2.5 rounded-full border text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                showStreakDetails 
+                                    ? "bg-[var(--amber-dim)] border-[var(--amber-border)]" 
+                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-[var(--amber)]/40"
+                            )}
+                        >
+                            <Flame size={12} className={cn("text-[var(--amber)]", user.streak > 0 && "animate-pulse")} />
+                            <span>{user.streak}d Streak</span>
+                        </button>
+
+                        {/* Weekly Wrapped Toggle Pill */}
+                        <button
+                            onClick={() => {
+                                setShowWrappedDetails(!showWrappedDetails);
+                                setShowStreakDetails(false);
+                            }}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2.5 rounded-full border text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                showWrappedDetails 
+                                    ? "bg-[var(--blue-dim)] border-[var(--blue-border)]" 
+                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-[var(--blue)]/40"
+                            )}
+                        >
+                            <TrendingUp size={12} className="text-[var(--blue)]" />
+                            <span>Weekly Wrapped</span>
+                        </button>
+                    </motion.div>
+
+                    {/* Inline Toggled Details Cards */}
+                    <AnimatePresence mode="wait">
+                        {showStreakDetails && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mb-6 overflow-hidden"
+                                key="streak-details"
+                            >
+                                <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)] shadow-md" style={{ borderRadius: "24px" }}>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <Flame size={16} className="text-[var(--amber)]" />
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-[var(--text-2)]">Momentum Daily Loop</span>
+                                        </div>
+                                        <div className="text-[11px] font-mono font-black text-[var(--amber)]">{user.streak} Days Active</div>
+                                    </div>
+                                    <div className="flex w-full justify-between items-center gap-2">
+                                        {weekDays.map((day, i) => (
+                                            <div key={i} className="flex-1 flex flex-col items-center">
+                                                <div className={cn(
+                                                    "w-10 h-10 rounded-xl flex items-center justify-center border transition-all text-xs font-black",
+                                                    day.active 
+                                                        ? "bg-[var(--amber)] border-[var(--amber-light)]/20 text-black shadow-[0_0_15px_var(--amber-glow)]" 
+                                                        : day.isToday 
+                                                        ? "border-2 border-dashed border-[var(--amber)] bg-[var(--amber-dim)] text-[var(--amber)]" 
+                                                        : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--text-3)]"
+                                                )}>
+                                                    {day.label}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {showWrappedDetails && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mb-6 overflow-hidden"
+                                key="wrapped-details"
+                            >
+                                <WeeklyWrappedCard />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     {/* Stat Ribbon */}
                     <motion.div variants={fadeUp} className="mb-8 flex flex-wrap gap-4">
@@ -197,13 +286,13 @@ export default function DashboardWeb({
                     </motion.div>
 
                     {/* Level Progress */}
-                    <motion.div variants={fadeUp} className="mb-10">
+                    <motion.div variants={fadeUp} className="mb-8">
                         <div className="flex items-center gap-4 py-4 border-t border-b border-[var(--border)]">
                             <div className="flex items-center gap-2.5 shrink-0">
                                 <Sparkles size={14} className="text-[var(--blue)]" />
                                 <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--text-2)] font-bold">Level {level}</span>
                             </div>
-                            <div className="flex-1 h-2 bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
+                            <div className="flex-1 h-2 bg-[var(--bg-3)] rounded-full overflow-hidden shadow-inner">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${progress}%` }}
@@ -246,138 +335,24 @@ export default function DashboardWeb({
                         )}
                     </AnimatePresence>
 
-                    {/* Main Grid */}
+                    {/* Main Stats Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Col 1+2: Workspace */}
                         <div className="lg:col-span-2 flex flex-col gap-6">
-                            <Link href="/create" className="group block">
-                                <div className="scholar-card card-interactive-scale relative p-8 bg-gradient-to-br from-[var(--bg-2)]/40 to-transparent" style={{ borderRadius: "28px" }}>
-                                    <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full blur-[80px] opacity-10 bg-[var(--blue)] group-hover:opacity-20 transition-opacity" />
-                                    <div className="relative z-10 flex items-center justify-between">
-                                        <div className="flex items-center gap-5">
-                                            <div className="w-14 h-14 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center shadow-lg group-hover-scale-md transition-transform">
-                                                <PlusCircle size={28} className="text-[var(--blue)]" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xl font-black text-[var(--text)] tracking-tight">Start a new session</p>
-                                                <p className="text-sm text-[var(--text-2)] font-medium">Turn your notes into just the good parts.</p>
-                                            </div>
+                            {/* Recent Generations Stats Block */}
+                            <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
+                                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-[var(--text-3)] mb-4 flex items-center gap-2">
+                                    <BrainCircuit size={14} className="text-[var(--blue)]" /> Recent Activity
+                                </h3>
+                                <div className="grid grid-cols-3 gap-4">
+                                    {recentTypes.map(({ icon: Icon, color, label, count }) => (
+                                        <div key={label} className="p-4 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)]">
+                                            <Icon size={20} style={{ color }} className="mb-2" />
+                                            <div className="text-sm font-black">{count} items</div>
+                                            <div className="text-[9px] text-[var(--text-3)] uppercase tracking-wider font-bold">{label}</div>
                                         </div>
-                                        <div className="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center group-hover:border-[var(--blue-border)] transition-colors">
-                                            <ChevronRight size={20} className="text-[var(--blue)] opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                {actions.map(({ label, desc, icon: Icon, href, accent }) => (
-                                    <Link key={label} href={href} className="group">
-                                        <div className="scholar-card card-interactive-lift p-5 h-full" style={{ borderRadius: "20px" }}>
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 shadow-sm" style={{ background: `color-mix(in srgb, ${accent}, transparent 90%)`, border: `1px solid color-mix(in srgb, ${accent}, transparent 80%)` }}>
-                                                <Icon size={18} strokeWidth={2} style={{ color: accent }} />
-                                            </div>
-                                            <p className="text-[14px] font-black text-[var(--text)] leading-tight mb-1">{label}</p>
-                                            <p className="text-[10px] text-[var(--text-3)] leading-snug font-medium">{desc}</p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                                <div className="scholar-card p-4 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm md:col-span-2" style={{ borderRadius: "24px" }}>
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/10 transition-colors" />
-                                    <div className="relative z-10 flex items-center justify-between mb-3.5">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-7 h-7 rounded-lg bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shadow-sm">
-                                                <Flame size={14} />
-                                            </div>
-                                            <div>
-                                                <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold block leading-none mb-0.5">Momentum</span>
-                                                <span className="text-[11px] font-bold text-[var(--text-2)]">Daily Loop</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-baseline gap-0.5">
-                                            <span className="font-mono text-xl font-black text-[var(--amber)] tabular-nums"><AnimatedCounter value={user.streak} /></span>
-                                            <span className="text-[9px] font-bold text-[var(--text-3)] uppercase tracking-wider">Days</span>
-                                        </div>
-                                    </div>
-                                    <div className="relative z-10 flex w-full justify-between items-center gap-1">
-                                        {weekDays.map((day, i) => (
-                                            <div key={i} className="flex-1 flex flex-col items-center">
-                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center relative transition-all ${day.active ? "bg-[var(--amber)] shadow-[0_4px_12px_var(--amber-glow)] border-t border-white/20 scale-105" : day.isToday ? "border-2 border-dashed border-[var(--amber-border)] bg-[var(--amber)]/5" : "bg-[var(--text-4)] opacity-40 hover:opacity-60"}`}>
-                                                    <span className={`text-[9px] font-black ${day.active ? "text-[#000]" : day.isToday ? "text-[var(--amber)]" : "text-[var(--text-3)]"}`}>{day.label}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="scholar-card p-5 flex flex-col justify-between relative overflow-hidden group bg-gradient-to-br from-[var(--bg-2)]/60 to-[var(--bg-2)]/20 backdrop-blur-xl border border-[var(--border)] hover:border-[var(--amber-border)]/50 transition-all shadow-sm md:col-span-3" style={{ borderRadius: "24px" }}>
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--amber)]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--amber)]/10 transition-colors" />
-                                    <div className="relative z-10">
-                                        <div className="flex items-center justify-between mb-5">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shadow-sm">
-                                                    <Trophy size={16} />
-                                                </div>
-                                                <div>
-                                                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--text-3)] font-bold block leading-none mb-1">Trophy Pill</span>
-                                                    <span className="text-xs font-bold text-[var(--text-2)]">Live Vault</span>
-                                                </div>
-                                            </div>
-                                            <span className="px-2.5 py-1 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 font-mono text-[10px] font-bold shadow-sm">{unlockedCount} / 2 Unlocked</span>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] shadow-sm group/item hover:border-[var(--amber)]/30 transition-colors">
-                                                <div className="w-9 h-9 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[var(--amber)] shrink-0 group-hover/item:scale-110 transition-transform shadow-sm">
-                                                    <Flame size={18} />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <p className="text-xs font-bold text-[var(--text)] truncate">{activeStreakMilestone.title}</p>
-                                                        <span className="text-[10px] font-mono text-[var(--amber)] font-bold">{streakProgress}%</span>
-                                                    </div>
-                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-2 font-medium">{activeStreakMilestone.desc}</p>
-                                                    <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
-                                                        <div className="h-full bg-[var(--amber)] shadow-[0_0_8px_var(--amber)] transition-all duration-500" style={{ width: `${streakProgress}%` }} />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] shadow-sm group/item hover:border-[var(--blue)]/30 transition-colors">
-                                                <div className="w-9 h-9 rounded-xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-center text-[var(--blue)] shrink-0 group-hover/item:scale-110 transition-transform shadow-sm">
-                                                    <Zap size={18} />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <p className="text-xs font-bold text-[var(--text)] truncate">Neural Architect</p>
-                                                        <span className="text-[10px] font-mono text-[var(--blue)] font-bold">{genProgress}%</span>
-                                                    </div>
-                                                    <p className="text-[10px] text-[var(--text-3)] truncate mb-2 font-medium">Generate 10 study sessions</p>
-                                                    <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
-                                                        <div className="h-full bg-[var(--blue)] shadow-[0_0_8px_var(--blue)] transition-all duration-500" style={{ width: `${genProgress}%` }} />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <Link href="/achievements" className="mt-5 relative z-10 flex items-center justify-between p-3.5 rounded-2xl bg-[var(--text)]/5 border border-[var(--border)] hover:border-[var(--amber-border)] hover:bg-[var(--amber-dim)] group/btn transition-all shrink-0 shadow-sm">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-lg bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--amber)] group-hover/btn:scale-110 transition-transform shadow-sm">
-                                                <Trophy size={14} />
-                                            </div>
-                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-2)] group-hover/btn:text-[var(--text)] transition-colors">Claim Achievements</span>
-                                        </div>
-                                        <ArrowRight size={14} className="text-[var(--text-3)] group-hover/btn:text-[var(--amber)] group-hover/btn:translate-x-1 transition-all" />
-                                    </Link>
+                                    ))}
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Col 3: Focus Panel */}
-                        <div className="flex flex-col gap-6">
-                            <WeeklyWrappedCard />
                         </div>
                     </div>
                 </motion.div>
@@ -385,5 +360,3 @@ export default function DashboardWeb({
         </div>
     );
 }
-
-

@@ -115,7 +115,8 @@ export const useUserStore = create<UserStore>()(
                         const controller = new AbortController();
                         const id = setTimeout(() => controller.abort(), 5000); 
 
-                        const res = await fetch("/api/user/profile", {
+                        const res = await fetch(`/api/user/profile?t=${Date.now()}`, {
+                            cache: "no-store",
                             headers: session.access_token ? {
                                 Authorization: `Bearer ${session.access_token}`
                             } : undefined,

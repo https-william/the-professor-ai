@@ -32,7 +32,45 @@ interface OfflinePack {
     title: string;
     source_text: string;
     phases_data: Record<string, any>;
-    savedAt: number;
+    savedAt: any; // Can be string or number
+}
+
+function openProfessorDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+        if (typeof window === "undefined") {
+            reject(new Error("IndexedDB is only available in the browser"));
+            return;
+        }
+        const request = indexedDB.open("ProfessorOffline", 1);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains("savedPacks")) {
+                db.createObjectStore("savedPacks", { keyPath: "id" });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function getSavedPacks(): Promise<OfflinePack[]> {
+    const db = await openProfessorDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction("savedPacks", "readonly");
+        const store = tx.objectStore("savedPacks");
+        const all = store.getAll();
+        all.onsuccess = () => {
+            const results = all.result || [];
+            resolve(results.map(r => ({
+                id: r.id,
+                title: r.title,
+                source_text: r.source_text || "",
+                phases_data: r.phases_data || {},
+                savedAt: typeof r.savedAt === "string" ? new Date(r.savedAt).getTime() : (r.savedAt || 0)
+            })));
+        };
+        all.onerror = () => reject(all.error);
+    });
 }
 
 export default function OfflineVaultPage() {
@@ -53,15 +91,47 @@ export default function OfflineVaultPage() {
         window.addEventListener("online", handleOnline);
         window.addEventListener("offline", handleOffline);
 
-        try {
-            const packsObj = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
-            const packsArray = Object.values(packsObj) as OfflinePack[];
-            // Sort by most recently saved
-            packsArray.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
-            setOfflinePacks(packsArray);
-        } catch (err) {
-            console.error("Failed to load offline packs:", err);
-        }
+        const loadPacks = async () => {
+            try {
+                // Try IndexedDB first
+                const dbPacks = await getSavedPacks();
+                if (dbPacks && dbPacks.length > 0) {
+                    dbPacks.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+                    setOfflinePacks(dbPacks);
+                } else {
+                    // Fallback to localStorage
+                    const packsObj = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                    const packsArray = Object.values(packsObj).map((r: any) => ({
+                        id: r.id,
+                        title: r.title,
+                        source_text: r.source_text || "",
+                        phases_data: r.phases_data || {},
+                        savedAt: typeof r.savedAt === "string" ? new Date(r.savedAt).getTime() : (r.savedAt || 0)
+                    })) as OfflinePack[];
+                    packsArray.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+                    setOfflinePacks(packsArray);
+                }
+            } catch (err) {
+                console.error("Failed to load offline packs:", err);
+                // Fallback to localStorage
+                try {
+                    const packsObj = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                    const packsArray = Object.values(packsObj).map((r: any) => ({
+                        id: r.id,
+                        title: r.title,
+                        source_text: r.source_text || "",
+                        phases_data: r.phases_data || {},
+                        savedAt: typeof r.savedAt === "string" ? new Date(r.savedAt).getTime() : (r.savedAt || 0)
+                    })) as OfflinePack[];
+                    packsArray.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+                    setOfflinePacks(packsArray);
+                } catch (localErr) {
+                    console.error("Local storage load failed too:", localErr);
+                }
+            }
+        };
+
+        loadPacks();
 
         return () => {
             window.removeEventListener("online", handleOnline);
@@ -69,12 +139,27 @@ export default function OfflineVaultPage() {
         };
     }, []);
 
-    const handleDelete = (id: string, e: React.MouseEvent) => {
+    const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
+            // Delete from IndexedDB
+            try {
+                const db = await openProfessorDB();
+                const tx = db.transaction("savedPacks", "readwrite");
+                tx.objectStore("savedPacks").delete(id);
+                await new Promise<void>((resolve, reject) => {
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+            } catch (dbErr) {
+                console.error("IndexedDB delete failed:", dbErr);
+            }
+
+            // Delete from localStorage fallback
             const packsObj = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
             delete packsObj[id];
             localStorage.setItem("offline_study_packs", JSON.stringify(packsObj));
+
             setOfflinePacks(prev => prev.filter(p => p.id !== id));
             addToast("Removed from Offline Vault", "success");
         } catch (err) {

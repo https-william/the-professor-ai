@@ -8,6 +8,7 @@ import rehypeKatex from "rehype-katex";
 import remarkBreaks from "remark-breaks";
 import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
+import { Zap } from "lucide-react";
 
 interface MarkdownRendererProps {
     content: string;
@@ -61,9 +62,28 @@ export default function MarkdownRenderer({
                 rehypePlugins={[rehypeKatex]}
                 components={{
                     // Custom rendering for headings to add "weight"
-                    h1: ({ node, ...props }) => <h1 className="text-3xl mt-8 mb-4 bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent" {...props} />,
-                    h2: ({ node, ...props }) => <h2 className="text-2xl mt-8 mb-4 text-white" {...props} />,
-                    h3: ({ node, ...props }) => <h3 className="text-xl mt-6 mb-3 text-white/90" {...props} />,
+                    h1: ({ node, ...props }) => <h1 className="text-2xl md:text-4xl font-black mt-12 mb-6 bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent tracking-tight border-b border-white/5 pb-3" {...props} />,
+                    h2: ({ node, children, ...props }) => {
+                        const isKeyFacts = typeof children === 'string' && children.toLowerCase().includes('key facts');
+                        if (isKeyFacts) {
+                            return (
+                                <h2 className="text-xl md:text-2xl font-black text-[var(--accent)] flex items-center gap-2 border-b border-[var(--accent)]/20 pb-3 mb-6 mt-12 tracking-tight" {...props}>
+                                    <Zap size={18} className="text-[var(--accent)] animate-pulse shrink-0" />
+                                    {children}
+                                </h2>
+                            );
+                        }
+                        return (
+                            <h2 className="text-xl md:text-2xl font-black mt-12 mb-5 text-white border-l-4 border-[var(--blue)] pl-4 flex items-center gap-2 tracking-tight" {...props}>
+                                {children}
+                            </h2>
+                        );
+                    },
+                    h3: ({ node, children, ...props }) => (
+                        <h3 className="text-lg md:text-xl font-black mt-8 mb-4 text-white/95 border-l-2 border-white/20 pl-3 tracking-tight" {...props}>
+                            {children}
+                        </h3>
+                    ),
                     
                     // Style horizontal rules
                     hr: ({ node, ...props }) => <hr className="my-12 border-white/5" {...props} />,
@@ -71,7 +91,7 @@ export default function MarkdownRenderer({
                     // Special treatment for blockquotes (Professor's Insights)
                     blockquote: ({ node, ...props }) => (
                         <blockquote 
-                            className="border-l-4 border-white/20 pl-6 my-8 italic text-white/60 bg-white/[0.02] py-4 rounded-r-2xl"
+                            className="border-l-4 border-[var(--blue)]/40 pl-6 my-8 italic text-white/80 bg-white/[0.01] py-5 pr-4 rounded-r-2xl border-dashed"
                             {...props} 
                         />
                     ),
@@ -85,6 +105,16 @@ export default function MarkdownRenderer({
                     thead: ({ node, ...props }) => <thead className="bg-white/5" {...props} />,
                     th: ({ node, ...props }) => <th className="px-6 py-4 text-left text-xs font-black uppercase tracking-widest text-white/40" {...props} />,
                     td: ({ node, ...props }) => <td className="px-6 py-4 text-sm text-white/70 border-t border-white/5" {...props} />,
+
+                    // Stylized list rendering to prevent monotone look
+                    ul: ({ node, ...props }) => <ul className="my-6 space-y-3.5 pl-0" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="my-6 space-y-3.5 pl-6 list-decimal text-white/80" {...props} />,
+                    li: ({ node, ...props }) => (
+                        <li className="list-none flex items-start gap-3 mb-2 text-white/85 leading-relaxed text-sm md:text-base font-medium" {...props}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] mt-2.5 shrink-0 animate-pulse shadow-[0_0_8px_var(--blue-glow)]" />
+                            <span className="flex-1">{props.children}</span>
+                        </li>
+                    ),
                 }}
             >
                 {cleanContent}

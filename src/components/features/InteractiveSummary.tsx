@@ -238,23 +238,13 @@ export const InteractiveSummary = ({
                     )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-[var(--border)] mt-8 pb-4">
-                    <div className="flex items-center gap-8">
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Reduction</span>
-                            <span className="text-sm font-black text-[var(--foreground)]">64% <span className="opacity-70">↓</span></span>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Cognitive Load</span>
-                            <span className="text-sm font-black text-[var(--foreground)]">Minimal</span>
-                        </div>
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 pt-6 border-t border-[var(--border)] mt-8 pb-4">
                     {onFinish && (
                         <button
                             onClick={onFinish}
                             className="px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest shadow-xl hover-scale-lg active:scale-95 transition-all flex items-center justify-center gap-2 group"
                         >
-                            Master Deep Summary <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                            Finish & Continue <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                         </button>
                     )}
                 </div>

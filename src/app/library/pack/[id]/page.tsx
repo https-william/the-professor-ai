@@ -58,7 +58,7 @@ export default function StudyPackPage() {
     const params = useParams();
     const router = useRouter();
     const { addToast } = useToasts();
-    const { user } = useUser();
+    const { user, refreshUser } = useUser();
     const userLoading = user.isLoading;
 
     const [completedPhases, setCompletedPhases] = useState<string[]>([]);
@@ -71,8 +71,6 @@ export default function StudyPackPage() {
     const [showWrapModal, setShowWrapModal] = useState(false);
 
     const [isSprint, setIsSprint] = useState(false);
-    const [timeRemaining, setTimeRemaining] = useState("");
-    const [candleBurnPct, setCandleBurnPct] = useState(100);
 
     useEffect(() => {
         setIsMounted(true);
@@ -110,6 +108,7 @@ export default function StudyPackPage() {
     const [phasesData, setPhasesData] = useState<Record<string, any>>({});
     const [isLoadingPhase, setIsLoadingPhase] = useState(false);
     const [isStreamingPhase, setIsStreamingPhase] = useState(false);
+    const [generatingPhases, setGeneratingPhases] = useState<Record<string, 'loading' | 'streaming' | null>>({});
     const [sourceText, setSourceText] = useState("");
     const [packTitle, setPackTitle] = useState("Study Pack");
 
@@ -141,82 +140,72 @@ export default function StudyPackPage() {
         };
     }, [packTitle]);
 
-    // Set up 10-hour exam countdown and candle burn percentage
-    useEffect(() => {
-        if (!isSprint || !packId) return;
-        
-        const startKey = `sprint_start_${packId}`;
-        let startTimeStr = localStorage.getItem(startKey);
-        if (!startTimeStr) {
-            startTimeStr = Date.now().toString();
-            localStorage.setItem(startKey, startTimeStr);
-        }
-        const startTime = parseInt(startTimeStr, 10);
-        const endTime = startTime + 10 * 60 * 60 * 1000; // 10 hours
-
-        const updateTimer = () => {
-            const now = Date.now();
-            const diff = endTime - now;
-            if (diff <= 0) {
-                setTimeRemaining("00:00:00");
-                setCandleBurnPct(0);
+    // IndexedDB & Image base64 conversion utilities
+    function openProfessorDB(): Promise<IDBDatabase> {
+        return new Promise((resolve, reject) => {
+            if (typeof window === "undefined") {
+                reject(new Error("IndexedDB is only available in the browser"));
                 return;
             }
+            const request = indexedDB.open("ProfessorOffline", 1);
+            request.onupgradeneeded = () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains("savedPacks")) {
+                    db.createObjectStore("savedPacks", { keyPath: "id" });
+                }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
 
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    async function imageUrlToBase64(url: string): Promise<string> {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.error("Failed to convert image to base64:", url, e);
+            return url;
+        }
+    }
 
-            const pad = (num: number) => String(num).padStart(2, "0");
-            setTimeRemaining(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
-            
-            const pct = Math.max(5, (diff / (10 * 60 * 60 * 1000)) * 100);
-            setCandleBurnPct(pct);
-        };
+    async function embedImagesInPhasesData(data: any): Promise<any> {
+        if (!data) return data;
 
-        updateTimer();
-        const interval = setInterval(updateTimer, 1000);
-        return () => clearInterval(interval);
-    }, [isSprint, packId]);
+        if (typeof data === "string") {
+            const imageRegex = /https?:\/\/[^\s\)]+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?[^\s\)]+)?/g;
+            const matches = data.match(imageRegex);
+            if (!matches) return data;
 
-    const renderSprintCandle = () => {
-        if (!isSprint) return null;
-        return (
-            <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[var(--background-secondary)]/50 border border-[var(--border)] shadow-sm backdrop-blur-md">
-                {/* Animated CSS Candle */}
-                <div className="relative w-5 h-8 flex items-center justify-center shrink-0">
-                    {/* Wax Body */}
-                    <div 
-                        className="absolute bottom-0 w-2.5 bg-[var(--foreground)] rounded-sm transition-all duration-1000"
-                        style={{ 
-                            height: `${Math.max(4, (candleBurnPct / 100) * 16)}px`,
-                            opacity: 0.8
-                        }}
-                    />
-                    {/* Wick */}
-                    <div 
-                        className="absolute w-0.5 h-1.5 bg-gray-500"
-                        style={{ bottom: `${Math.max(4, (candleBurnPct / 100) * 16)}px` }}
-                    />
-                    {/* Flame */}
-                    <div 
-                        className="absolute w-2 h-3.5 bg-gradient-to-t from-[var(--accent)] to-yellow-300 rounded-full animate-pulse"
-                        style={{ 
-                            bottom: `${Math.max(4, (candleBurnPct / 100) * 16) + 4}px`,
-                            boxShadow: "0 0 10px var(--accent-glow)",
-                            transformOrigin: "bottom center"
-                        }}
-                    />
-                </div>
-                
-                {/* Timer Text */}
-                <div className="flex flex-col">
-                    <span className="text-[7px] font-black uppercase tracking-widest text-[var(--foreground-muted)] leading-none">Exam Countdown</span>
-                    <span className="text-[11px] font-mono font-black text-[var(--accent)] leading-tight">{timeRemaining}</span>
-                </div>
-            </div>
-        );
-    };
+            let processedText = data;
+            for (const url of Array.from(new Set(matches))) {
+                if (url.startsWith("data:")) continue;
+                const base64 = await imageUrlToBase64(url);
+                processedText = processedText.replaceAll(url, base64);
+            }
+            return processedText;
+        }
+
+        if (Array.isArray(data)) {
+            return Promise.all(data.map(item => embedImagesInPhasesData(item)));
+        }
+
+        if (typeof data === "object") {
+            const result: any = {};
+            for (const key of Object.keys(data)) {
+                result[key] = await embedImagesInPhasesData(data[key]);
+            }
+            return result;
+        }
+
+        return data;
+    }
 
     const phases: Phase[] = [
         {
@@ -258,6 +247,7 @@ export default function StudyPackPage() {
     const prefetchPhase = async (targetPhaseId: string, srcText: string, pId: string) => {
         if (!srcText || !navigator.onLine) return;
 
+        setGeneratingPhases(prev => ({ ...prev, [targetPhaseId]: 'loading' }));
         try {
             const res = await fetch("/api/generate/pack-phase", {
                 method: "POST",
@@ -272,6 +262,7 @@ export default function StudyPackPage() {
 
             const contentType = res.headers.get("Content-Type") || "";
             if (contentType.includes("text/event-stream")) {
+                setGeneratingPhases(prev => ({ ...prev, [targetPhaseId]: 'streaming' }));
                 const reader = res.body?.getReader();
                 if (!reader) return;
                 const decoder = new TextDecoder();
@@ -322,7 +313,9 @@ export default function StudyPackPage() {
                 }
             }
         } catch (err) {
-            console.error(`Background prefetch failed for ${targetPhaseId}:`, err);
+            console.error("Prefetch Phase Error:", err);
+        } finally {
+            setGeneratingPhases(prev => ({ ...prev, [targetPhaseId]: null }));
         }
     };
 
@@ -334,14 +327,32 @@ export default function StudyPackPage() {
             try {
                 let packData = null;
                 if (!navigator.onLine) {
-                    const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
-                    if (offlinePacks[packId]) {
-                        packData = offlinePacks[packId];
+                    try {
+                        const db = await openProfessorDB();
+                        const tx = db.transaction("savedPacks", "readonly");
+                        const store = tx.objectStore("savedPacks");
+                        packData = await new Promise((resolve) => {
+                            const req = store.get(packId);
+                            req.onsuccess = () => resolve(req.result);
+                            req.onerror = () => resolve(null);
+                        });
+                    } catch (dbErr) {
+                        console.error("IndexedDB load error:", dbErr);
+                    }
+
+                    if (packData) {
                         setIsSavedOffline(true);
                     } else {
-                        addToast("You're offline and this study pack isn't saved for offline view.", "error");
-                        router.push("/library");
-                        return;
+                        // Fallback to localStorage
+                        const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                        if (offlinePacks[packId]) {
+                            packData = offlinePacks[packId];
+                            setIsSavedOffline(true);
+                        } else {
+                            addToast("You're offline and this study pack isn't saved for offline view.", "error");
+                            router.push("/library");
+                            return;
+                        }
                     }
                 } else {
                     const { data, error } = await supabase
@@ -351,21 +362,60 @@ export default function StudyPackPage() {
                         .single();
 
                     if (error) {
-                        const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
-                        if (offlinePacks[packId]) {
-                            packData = offlinePacks[packId];
+                        // Try IndexedDB first
+                        try {
+                            const db = await openProfessorDB();
+                            const tx = db.transaction("savedPacks", "readonly");
+                            const store = tx.objectStore("savedPacks");
+                            packData = await new Promise((resolve) => {
+                                const req = store.get(packId);
+                                req.onsuccess = () => resolve(req.result);
+                                req.onerror = () => resolve(null);
+                            });
+                        } catch (dbErr) {
+                            console.error("IndexedDB fallback error:", dbErr);
+                        }
+
+                        if (packData) {
                             setIsSavedOffline(true);
                         } else {
-                            console.error("Fetch Pack Error:", error.message, error.details, error.hint);
-                            addToast("This study pack could not be found.", "error");
-                            router.push("/library");
-                            return;
+                            // Fallback to localStorage
+                            const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                            if (offlinePacks[packId]) {
+                                packData = offlinePacks[packId];
+                                setIsSavedOffline(true);
+                            } else {
+                                console.error("Fetch Pack Error:", error.message, error.details, error.hint);
+                                addToast("This study pack could not be found.", "error");
+                                router.push("/library");
+                                return;
+                            }
                         }
                     } else {
                         packData = data;
-                        const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
-                        if (offlinePacks[packId]) {
-                            setIsSavedOffline(true);
+                        // Check if saved in IndexedDB
+                        try {
+                            const db = await openProfessorDB();
+                            const tx = db.transaction("savedPacks", "readonly");
+                            const store = tx.objectStore("savedPacks");
+                            const saved = await new Promise((resolve) => {
+                                const req = store.get(packId);
+                                req.onsuccess = () => resolve(req.result);
+                                req.onerror = () => resolve(null);
+                            });
+                            if (saved) {
+                                setIsSavedOffline(true);
+                            } else {
+                                const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                                if (offlinePacks[packId]) {
+                                    setIsSavedOffline(true);
+                                }
+                            }
+                        } catch (dbErr) {
+                            const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                            if (offlinePacks[packId]) {
+                                setIsSavedOffline(true);
+                            }
                         }
                     }
                 }
@@ -457,24 +507,76 @@ export default function StudyPackPage() {
         });
     };
 
-    const handleSaveOffline = () => {
+    const handleSaveOffline = async () => {
         try {
-            const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
             if (isSavedOffline) {
+                // Delete from IndexedDB
+                try {
+                    const db = await openProfessorDB();
+                    const tx = db.transaction("savedPacks", "readwrite");
+                    const store = tx.objectStore("savedPacks");
+                    store.delete(packId);
+                    await new Promise<void>((resolve, reject) => {
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    });
+                } catch (dbErr) {
+                    console.error("IndexedDB delete error:", dbErr);
+                }
+
+                // Delete from localStorage fallback
+                const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
                 delete offlinePacks[packId];
                 localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
+
                 setIsSavedOffline(false);
                 addToast("Removed from Offline Vault.", "success");
             } else {
+                addToast("Saving for offline view. Processing media...", "info", undefined, undefined, false, undefined, true);
+
+                let processedPhasesData = phasesData;
+                try {
+                    processedPhasesData = await embedImagesInPhasesData(phasesData);
+                } catch (imgErr) {
+                    console.error("Image processing error:", imgErr);
+                }
+
+                const packToSave = {
+                    id: packId,
+                    title: packTitle,
+                    source_text: sourceText,
+                    phases_data: processedPhasesData,
+                    user_id: user.id,
+                    type: "study_pack",
+                    savedAt: new Date().toISOString()
+                };
+
+                // Save to IndexedDB
+                try {
+                    const db = await openProfessorDB();
+                    const tx = db.transaction("savedPacks", "readwrite");
+                    const store = tx.objectStore("savedPacks");
+                    store.put(packToSave);
+                    await new Promise<void>((resolve, reject) => {
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    });
+                } catch (dbErr) {
+                    console.error("IndexedDB save error:", dbErr);
+                }
+
+                // Save to localStorage fallback
+                const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
                 offlinePacks[packId] = {
                     id: packId,
                     title: packTitle,
                     source_text: sourceText,
-                    phases_data: phasesData,
+                    phases_data: processedPhasesData,
                     user_id: user.id,
                     savedAt: Date.now()
                 };
                 localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
+
                 setIsSavedOffline(true);
                 addToast("Saved for Offline View! You can access this anytime without an internet connection.", "success");
             }
@@ -511,6 +613,7 @@ export default function StudyPackPage() {
         }
 
         setIsLoadingPhase(true);
+        setGeneratingPhases(prev => ({ ...prev, [phase.id]: 'loading' }));
         setIsPerforming(true); // Transition immediately to task view so bubbly loader can display
         try {
             const res = await fetch("/api/generate/pack-phase", {
@@ -531,6 +634,7 @@ export default function StudyPackPage() {
             if (contentType.includes("text/event-stream")) {
                 setIsLoadingPhase(false);
                 setIsStreamingPhase(true);
+                setGeneratingPhases(prev => ({ ...prev, [phase.id]: 'streaming' }));
                 // isPerforming is already set to true
 
                 const reader = res.body?.getReader();
@@ -607,6 +711,8 @@ export default function StudyPackPage() {
             setIsPerforming(false);
         } finally {
             setIsLoadingPhase(false);
+            setIsStreamingPhase(false);
+            setGeneratingPhases(prev => ({ ...prev, [phase.id]: null }));
         }
     };
 
@@ -660,9 +766,9 @@ export default function StudyPackPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ type: "exam_sprint", customXp: 100 })
-            }).catch(err => console.error("XP error:", err));
+            }).then(() => refreshUser()).catch(err => console.error("XP error:", err));
 
-            // Trigger Scholarly Wrap Modal
+            // Trigger Bedtime Verdict Modal
             setShowWrapModal(true);
         } else {
             // Award 50 XP for phase completion
@@ -670,7 +776,7 @@ export default function StudyPackPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ type: "exam_sprint", customXp: 50 })
-            }).catch(err => console.error("XP error:", err));
+            }).then(() => refreshUser()).catch(err => console.error("XP error:", err));
 
             // Auto-advance to next phase intro
             const nextIdx = viewingPhaseIndex! + 1;
@@ -707,7 +813,7 @@ export default function StudyPackPage() {
         setIsExportingPDF(true);
         setPdfDownloadProgress(0);
         setPdfDownloadSpeed("Connecting...");
-        addToast("Downloading summary report...", "info");
+        addToast("Downloading summary report...", "info", undefined, undefined, false, undefined, true);
 
         try {
             const summaryData = phasesData.distill;
@@ -807,7 +913,7 @@ export default function StudyPackPage() {
         }
         sessionStorage.setItem(lastRetryKey, Date.now().toString());
 
-        addToast(`Regenerating ${phaseId}...`, "info");
+        addToast(`Regenerating ${phaseId}...`, "info", undefined, undefined, false, undefined, true);
         setIsPerforming(true);
         setIsLoadingPhase(true);
         setPhasesData(prev => {
@@ -902,132 +1008,18 @@ export default function StudyPackPage() {
     const effectiveQuizTime = sessionStats.quiz?.time ?? (phasesData.test ? "3m 15s" : "Fast");
     const effectiveFlashcardsCount = sessionStats.flashcards?.totalCards ?? (phasesData.retain ? (Array.isArray(phasesData.retain) ? phasesData.retain.length : (phasesData.retain.flashcards?.length || phasesData.retain.cards?.length || 8)) : 0);
 
-    const handleShareWrapImage = async () => {
-        try {
-            addToast("Generating wrap card image...", "info");
-            const canvas = document.createElement("canvas");
-            canvas.width = 1200;
-            canvas.height = 630;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
 
-            // Background
-            ctx.fillStyle = "#090A0F";
-            ctx.fillRect(0, 0, 1200, 630);
-
-            // Decorative glows
-            const grad1 = ctx.createRadialGradient(200, 100, 50, 200, 100, 400);
-            grad1.addColorStop(0, "rgba(59, 130, 246, 0.15)");
-            grad1.addColorStop(1, "rgba(9, 10, 15, 0)");
-            ctx.fillStyle = grad1;
-            ctx.fillRect(0, 0, 1200, 630);
-
-            const grad2 = ctx.createRadialGradient(1000, 500, 50, 1000, 500, 400);
-            grad2.addColorStop(0, "rgba(16, 185, 129, 0.15)");
-            grad2.addColorStop(1, "rgba(9, 10, 15, 0)");
-            ctx.fillStyle = grad2;
-            ctx.fillRect(0, 0, 1200, 630);
-
-            // Header text
-            ctx.fillStyle = "#3B82F6";
-            ctx.font = "bold 24px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("SESSION WRAP 2026", 600, 100);
-
-            ctx.fillStyle = "#FFFFFF";
-            ctx.font = "italic 900 64px sans-serif";
-            ctx.fillText("THE PROFESSOR'S STUDY WRAP", 600, 180);
-
-            ctx.fillStyle = "#888888";
-            ctx.font = "bold 18px sans-serif";
-            ctx.fillText(`${packTitle.toUpperCase()} • SESSION ANALYTICS`, 600, 230);
-
-            // Boxes
-            const drawBox = (x: number, y: number, w: number, h: number, title: string, val: string, color: string) => {
-                ctx.fillStyle = "#12141D";
-                ctx.strokeStyle = "#222533";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.roundRect(x, y, w, h, 20);
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.fillStyle = color;
-                ctx.font = "bold 14px sans-serif";
-                ctx.textAlign = "left";
-                ctx.fillText(title.toUpperCase(), x + 25, y + 40);
-
-                ctx.fillStyle = "#FFFFFF";
-                ctx.font = "italic 900 36px sans-serif";
-                ctx.fillText(val, x + 25, y + 90);
-            };
-
-            drawBox(100, 280, 230, 130, "Study Topic", packTitle.length > 12 ? packTitle.substring(0, 10) + "..." : packTitle, "#3B82F6");
-            drawBox(355, 280, 230, 130, "Quiz Score", `${effectiveQuizScore}%`, "#3B82F6");
-            drawBox(610, 280, 230, 130, "Flashcards Reviewed", `${effectiveFlashcardsCount} cards`, "#F59E0B");
-            drawBox(865, 280, 230, 130, "Study Velocity", effectiveQuizTime, "#EF4444");
-
-            // Footer banner
-            ctx.fillStyle = "#FFFFFF";
-            ctx.beginPath();
-            ctx.roundRect(100, 440, 995, 100, 25);
-            ctx.fill();
-
-            ctx.fillStyle = "#000000";
-            ctx.font = "italic 900 32px sans-serif";
-            ctx.textAlign = "left";
-            const verdictText = effectiveQuizScore >= 95 ? "EXAM READY" : effectiveQuizScore >= 80 ? "STUDY SCHOLAR" : effectiveQuizScore >= 60 ? "KNOWLEDGE BUILDER" : "CONCEPT EXPLORER";
-            ctx.fillText(`VERDICT: ${verdictText}`, 140, 500);
-
-            ctx.font = "bold 18px sans-serif";
-            ctx.textAlign = "right";
-            ctx.fillText("The Professor AI | Your notes. Just the good parts.", 1050, 500);
-
-            canvas.toBlob(async (blob) => {
-                if (!blob) return;
-                const file = new File([blob], "Study_Wrap.png", { type: "image/png" });
-                const text = `I just wrapped up my study session with The Professor AI! 🎓\n\n🎯 Quiz Score: ${effectiveQuizScore}%\n⚡ Flashcards Reviewed: ${effectiveFlashcardsCount} cards\n⏱️ Study Velocity: ${effectiveQuizTime}\n\nYour notes. Just the good parts. Get your time back:\n${window.location.origin}`;
-                
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            title: 'The Professor - Study Wrap',
-                            text: text,
-                            files: [file]
-                        });
-                        addToast("Shared successfully!", "success");
-                        return;
-                    } catch (e) {
-                        console.error("Web share failed, falling back to download", e);
-                    }
-                }
-
-                // Fallback download
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "The_Professor_Study_Wrap.png";
-                document.body.appendChild(a);
-                a.click();
-                URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                addToast("Wrap card image downloaded!", "success");
-            }, "image/png");
-
-        } catch (e) {
-            console.error("Image share error:", e);
-            addToast("Failed to create share image.", "error");
-        }
-    };
 
     const renderPhaseInteractive = (phase: Phase) => {
         const data = phasesData[phase.id];
-        const isCurrentlyGenerating = isLoadingPhase || isStreamingPhase;
+        const isPhaseLoading = isLoadingPhase || generatingPhases[phase.id] === 'loading';
+        const isPhaseStreaming = isStreamingPhase || generatingPhases[phase.id] === 'streaming';
+        const isCurrentlyGenerating = isPhaseLoading || isPhaseStreaming;
         
         if (!data && phase.id !== "retain" && !isCurrentlyGenerating) return null;
 
         // If actively generating but no items are generated yet, render bubbly loader
-        if (isCurrentlyGenerating && (!data || (Array.isArray(data) && data.length === 0))) {
+        if (isCurrentlyGenerating && (!data || (Array.isArray(data) && data.length === 0) || (typeof data === 'string' && data.length === 0))) {
             return (
                 <div className="p-12 rounded-[2.5rem] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl flex items-center justify-center min-h-[300px] w-full max-w-2xl mx-auto">
                     <BubblyThinkingLoader />
@@ -1043,7 +1035,7 @@ export default function StudyPackPage() {
                         rawText={String(sourceText).substring(0, 1000) + "..."}
                         refinedText={summaryText}
                         autoReveal={true}
-                        isStreaming={isStreamingPhase && phase.id === "distill"}
+                        isStreaming={isPhaseStreaming && phase.id === "distill"}
                         onFinish={() => handleMasterPhase()}
                     />
                 );
@@ -1123,7 +1115,6 @@ export default function StudyPackPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        {renderSprintCandle()}
                         <ThemeToggle />
                         <FocusTimer widget={true} />
                         <button
@@ -1240,20 +1231,20 @@ export default function StudyPackPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="mt-12 flex flex-col items-center justify-center text-center p-8 rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-xl"
                         >
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--emerald)]/10 text-[var(--emerald)] text-[10px] font-black uppercase tracking-widest mb-4 border border-[var(--emerald)]/20 shadow-sm">
-                                <Sparkles size={12} /> All Phases Mastered
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue-text)] text-[10px] font-black uppercase tracking-widest mb-4 border border-[var(--blue)]/20 shadow-sm">
+                                <CheckCircle2 size={12} /> All Phases Complete
                             </div>
                             <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tight text-[var(--foreground)] mb-2">
-                                Ready for your Scholarly Wrap?
+                                Bedtime Verdict
                             </h3>
                             <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-md">
-                                You've completed all required study steps. Click below to view your session analytics and Professor's review.
+                                You've completed all study phases. Let's see what the Professor has to say about your progress tonight.
                             </p>
                             <button
                                 onClick={() => setShowWrapModal(true)}
-                                className="px-10 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover-scale-lg active:scale-95 transition-all flex items-center gap-3 group"
+                                className="px-10 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover-scale-lg active:scale-95 transition-all flex items-center gap-3 group cursor-pointer"
                             >
-                                I&apos;m done! <ArrowRight size={16} className="group-hover-translate-x-sm transition-transform" />
+                                Get the Verdict <ArrowRight size={16} className="group-hover-translate-x-sm transition-transform" />
                             </button>
                         </motion.div>
                     )}
@@ -1303,7 +1294,6 @@ export default function StudyPackPage() {
                                         </div>
                                     </button>
                                 )}
-                                {renderSprintCandle()}
                                 <FocusTimer widget={true} />
                                 <button
                                     onClick={() => setViewingPhaseIndex(null)}
@@ -1394,7 +1384,7 @@ export default function StudyPackPage() {
                                         </div>
 
                                         {/* Final Phase Action - Only show for non-interactive phases */}
-                                        {currentPhase.id !== 'breakdown' && currentPhase.id !== 'retain' && currentPhase.id !== 'test' && !isSharedView && (
+                                        {currentPhase.id !== 'distill' && currentPhase.id !== 'breakdown' && currentPhase.id !== 'retain' && currentPhase.id !== 'test' && !isSharedView && (
                                             <motion.div
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
@@ -1419,7 +1409,7 @@ export default function StudyPackPage() {
                 )}
             </AnimatePresence>
 
-            {/* THE PROFESSOR'S STUDY WRAP MODAL */}
+            {/* THE PROFESSOR'S BEDTIME VERDICT MODAL */}
             <AnimatePresence>
                 {showWrapModal && (
                     <motion.div
@@ -1432,139 +1422,128 @@ export default function StudyPackPage() {
                             initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-2xl p-6 sm:p-10 rounded-[3rem] bg-[var(--background-secondary)] border border-[var(--border)] shadow-2xl overflow-hidden my-auto"
+                            className="relative w-full max-w-xl p-6 sm:p-8 rounded-[2rem] bg-[var(--card)] border border-[var(--border)] shadow-2xl overflow-hidden my-auto"
                         >
-                            {/* Abstract Wrapped Background Decorations */}
-                            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[var(--blue)]/10 rounded-full blur-[60px] pointer-events-none" />
-                            <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[var(--emerald)]/10 rounded-full blur-[60px] pointer-events-none" />
-
                             <button
                                 onClick={() => setShowWrapModal(false)}
-                                className="absolute top-6 right-6 p-2 rounded-full bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors z-20"
+                                className="absolute top-6 right-6 p-2 rounded-full hover:bg-[var(--bg-3)]/60 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors z-20 cursor-pointer"
                             >
                                 <X size={18} />
                             </button>
 
                             <div className="relative z-10 text-center mb-8">
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest mb-4 shadow-md">
-                                    <Star size={12} className="fill-current" /> SESSION WRAP 2026
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--foreground)] text-[var(--background)] text-[9px] font-black uppercase tracking-widest mb-4 shadow-md">
+                                    <Star size={12} className="fill-current" /> BEDTIME VERDICT
                                 </div>
-                                <h2 className="text-2xl sm:text-4xl font-black text-[var(--foreground)] tracking-tight italic uppercase leading-none mb-2">
-                                    The Professor&apos;s <span className="text-[var(--blue)]">Study</span> Wrap
+                                <h2 className="text-2xl sm:text-3xl font-black text-[var(--foreground)] tracking-tight italic uppercase leading-none mb-2">
+                                    The Professor&apos;s Verdict
                                 </h2>
-                                <p className="text-[var(--foreground-muted)] font-black uppercase tracking-widest text-[9px]">
-                                    {packTitle} • Session Analytics
+                                <p className="text-[var(--foreground-muted)] font-black uppercase tracking-widest text-[9px] opacity-70">
+                                    {packTitle} • Sprint Summary
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 relative z-10">
-                                {/* Subject Badge */}
-                                <div className="group p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-md relative overflow-hidden flex flex-col justify-center border-l-4 border-l-[var(--blue)]">
-                                    <h4 className="text-[7px] font-black uppercase tracking-widest text-[var(--blue)] mb-1 opacity-80">Study Topic</h4>
+                            {/* Stats Cards */}
+                            <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
+                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center border-l-4 border-l-[var(--blue)]">
+                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--blue-text)] mb-1">Study Topic</h4>
                                     <div className="text-xs font-black text-[var(--foreground)] truncate uppercase tracking-tight">
                                         {packTitle}
                                     </div>
                                 </div>
-                                {/* Quiz Achievement */}
-                                <div className="group p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-md relative overflow-hidden flex flex-col justify-center">
-                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--blue)] mb-0.5">Quiz Score</h4>
-                                    <div className="text-xl font-black text-[var(--foreground)] italic tracking-tight">
+                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center">
+                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-1">Quiz Score</h4>
+                                    <div className="text-lg font-black text-[var(--foreground)] italic tracking-tight">
                                         {effectiveQuizScore}%
                                     </div>
                                 </div>
-
-                                {/* Flashcard Achievement */}
-                                <div className="group p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-md relative overflow-hidden flex flex-col justify-center">
-                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--amber)] mb-0.5">Flashcards Reviewed</h4>
-                                    <div className="text-xl font-black text-[var(--foreground)] italic tracking-tight">
-                                        {effectiveFlashcardsCount} <span className="text-[9px] opacity-40">CARDS</span>
+                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center">
+                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-1">Cards Mastered</h4>
+                                    <div className="text-lg font-black text-[var(--foreground)] italic tracking-tight">
+                                        {effectiveFlashcardsCount} cards
                                     </div>
                                 </div>
-
-                                {/* Speed Achievement */}
-                                <div className="group p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-md relative overflow-hidden flex flex-col justify-center">
-                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--crimson)] mb-0.5">Study Velocity</h4>
-                                    <div className="text-xl font-black text-[var(--foreground)] italic tracking-tight">
-                                        {effectiveQuizTime}
+                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center">
+                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-1">Study Velocity</h4>
+                                    <div className="text-lg font-black text-[var(--foreground)] italic tracking-tight">
+                                        {(() => {
+                                            const durationMs = sessionStats.finishTime ? (sessionStats.finishTime - sessionStats.startTime) : 0;
+                                            const minutes = Math.floor(durationMs / 60000);
+                                            const seconds = Math.floor((durationMs % 60000) / 1000);
+                                            const durationStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                                            return durationMs > 0 ? durationStr : "3m 15s";
+                                        })()}
                                     </div>
-                                </div>
-
-                                {/* Persona Badge */}
-                                <div className="col-span-2 lg:col-span-4 group p-5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3">
-                                        <Sparkles className="w-8 h-8 group-hover-rotate-12 transition-transform shrink-0" />
-                                        <div>
-                                            <h4 className="text-[8px] font-black uppercase tracking-widest opacity-60 mb-0.5">Study Status</h4>
-                                            <div className="text-base sm:text-lg font-black italic tracking-tight leading-none uppercase">
-                                                {effectiveQuizScore >= 95 ? "Exam Ready" : 
-                                                 effectiveQuizScore >= 80 ? "Study Scholar" : 
-                                                 effectiveQuizScore >= 60 ? "Knowledge Builder" : "Concept Explorer"}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] font-bold leading-tight opacity-80 max-w-sm text-left sm:text-right">
-                                        Classification: Intellectual Rigor. You&apos;ve earned your rest today.
-                                    </p>
                                 </div>
                             </div>
 
-                            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--background)] border border-[var(--border)] mb-8 text-center relative overflow-hidden group shadow-md z-10">
-                                <BrainCircuit className="w-6 h-6 text-[var(--blue)] mx-auto mb-3" />
-                                <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-2">Professor&apos;s Assessment</h4>
+                            {/* Assessment box */}
+                            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-3)]/40 border border-[var(--border)] mb-8 text-center relative overflow-hidden shadow-inner z-10">
+                                <h4 className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-3 flex items-center justify-center gap-1.5">
+                                    <Zap size={10} className="text-[var(--blue)]" /> ASSESSMENT VERDICT
+                                </h4>
                                 {isGuest ? (
-                                    <div className="relative py-4">
-                                        <div className="blur-[4px] select-none text-xs sm:text-base text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                            This is a secret assessment. The Professor knows exactly how ready you are, but you need to sign up to unlock this wisdom.
+                                    <div className="relative py-2">
+                                        <div className="blur-[4px] select-none text-xs sm:text-sm text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
+                                            Bolu, the Professor knows exactly how ready you are, but you need to sign up to unlock this final verdict and save your streak.
                                         </div>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm">
-                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-2">Locked Wisdom</span>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--card)]/10">
+                                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-2">Locked Assessment</span>
                                             <button
                                                 onClick={() => {
                                                     setShowWrapModal(false);
                                                     setShowGuestModal(true);
                                                 }}
-                                                className="px-4 py-2 rounded-xl bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest hover-scale-sm transition-all cursor-pointer"
+                                                className="px-4 py-2 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all cursor-pointer shadow-md"
                                             >
                                                 Sign Up to Unlock
                                             </button>
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-xs sm:text-base text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                        {effectiveQuizScore >= 95 
-                                            ? "Flawless genius. Your bed misses you now."
-                                            : effectiveQuizScore >= 80
-                                            ? "Smart work. You've earned a solid break."
-                                            : effectiveQuizScore >= 60
-                                            ? "You passed, but let's aim higher next."
-                                            : effectiveQuizScore > 0
-                                            ? "Rough session. Step away, clear your mind, then try again."
-                                            : "Lab is prepped. Let's get to work."}
+                                    <p className="text-xs sm:text-sm text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
+                                        {(() => {
+                                            if (effectiveQuizScore >= 95) return "Absolute genius. Bolu, your brain is full and the slides have been parsed. Close this tab, shut your laptop, and go sleep. Your bed misses you.";
+                                            if (effectiveQuizScore >= 80) return "Solid run. You've locked in the high-yield parts. Amaka, grab some water and catch up on sleep. The hard work is done.";
+                                            if (effectiveQuizScore >= 60) return "You passed, but it was close. Tunde, go get some rest now, but review these card decks one more time tomorrow morning.";
+                                            return "Concept explorer. Some gaps remain, but cramming tired won't help. Rest your brain, sleep on it, and let the concepts settle.";
+                                        })()}
                                     </p>
                                 )}
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-3 relative z-10">
+                            {/* Actions */}
+                            <div className="flex flex-col gap-2.5 relative z-10">
                                 <button 
                                     onClick={() => {
                                         if (isGuest) {
                                             setShowWrapModal(false);
                                             setShowGuestModal(true);
                                         } else {
-                                            handleShareWrapImage();
+                                            const text = `I just wrapped up my study session on "${packTitle}" with The Professor! 🎓\n\n🎯 Quiz Score: ${effectiveQuizScore}%\n⚡ Cards Reviewed: ${effectiveFlashcardsCount}\n\nYour notes. Just the good parts. Get your time back:\n${window.location.origin}`;
+                                            navigator.clipboard.writeText(text);
+                                            addToast("Summary copied to clipboard!", "success");
                                         }
                                     }}
-                                    className="flex-[2] py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover-scale-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                                    className="w-full py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] uppercase tracking-widest shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
                                 >
-                                    <Share2 size={16} className="group-hover-rotate-sm transition-transform" /> 
-                                    {isGuest ? "SIGN UP TO SHARE WRAP" : "SHARE WRAP IMAGE"}
+                                    <Share2 size={14} /> 
+                                    {isGuest ? "SIGN UP TO SAVE PROGRESS" : "COPY SPRINT SUMMARY"}
                                 </button>
-                                <button 
-                                    onClick={() => router.push('/create')}
-                                    className="flex-1 py-4 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--border)] transition-all shadow-md cursor-pointer"
-                                >
-                                    CREATE NEW PACK
-                                </button>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button 
+                                        onClick={() => router.push('/create')}
+                                        className="py-3.5 rounded-xl bg-[var(--bg-3)]/60 border border-[var(--border)] text-[var(--foreground)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--bg-3)] transition-all cursor-pointer"
+                                    >
+                                        NEW SPRINT
+                                    </button>
+                                    <button 
+                                        onClick={() => router.push('/dashboard')}
+                                        className="py-3.5 rounded-xl bg-[var(--bg-3)]/60 border border-[var(--border)] text-[var(--foreground)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--bg-3)] transition-all cursor-pointer"
+                                    >
+                                        CLOSE LAB
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>

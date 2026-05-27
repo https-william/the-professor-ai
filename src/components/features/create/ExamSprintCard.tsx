@@ -30,7 +30,7 @@ export default function ExamSprintCard({ onClick }: ExamSprintCardProps) {
                         </div>
                     </div>
                     <p className="text-sm sm:text-base text-[var(--foreground-muted)] font-bold leading-relaxed max-w-xl">
-                        I have an exam in 10 hours. Distill my notes into a survival kit: Key terms, predicted questions, and a 1-page summary.
+                        I have an exam coming up. Distill my notes into a study guide: Key terms, predicted questions, and a 1-page summary.
                     </p>
                 </div>
 

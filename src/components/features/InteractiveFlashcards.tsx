@@ -103,7 +103,7 @@ export const InteractiveFlashcards = ({
               {/* Front Side */}
               <div className={cn(
                 "absolute inset-0 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center backface-hidden",
-                "bg-[var(--card)] border border-[var(--foreground)]/10 shadow-xl overflow-hidden transform-gpu translate-z-0",
+                "bg-[var(--card)] border border-[var(--foreground)]/10 shadow-xl overflow-hidden",
                 "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-[var(--foreground)]/5 before:to-transparent before:pointer-events-none"
               )}>
                 {/* Refraction Streak */}
@@ -128,7 +128,7 @@ export const InteractiveFlashcards = ({
 
               {/* Back Side */}
               <div className={cn(
-                "absolute inset-0 rounded-[2.5rem] py-6 px-6 md:py-8 md:px-7 flex flex-col items-center justify-center text-center backface-hidden rotate-y-180 overflow-hidden transform-gpu translate-z-0",
+                "absolute inset-0 rounded-[2.5rem] py-6 px-6 md:py-8 md:px-7 flex flex-col items-center justify-center text-center backface-hidden rotate-y-180 overflow-hidden",
                 "bg-[var(--background-secondary)] border border-[var(--accent)]/30 shadow-2xl"
               )}>
                 {/* Refraction Streak (Back) */}

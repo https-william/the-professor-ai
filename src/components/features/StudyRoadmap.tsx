@@ -22,6 +22,7 @@ import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 
 import { BubblyThinkingLoader } from "@/components/ui/Markdown";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 interface RoadmapData {
     studySchedule?: Record<string, string>;
@@ -32,10 +33,15 @@ interface RoadmapData {
 }
 
 export const StudyRoadmap = ({ data, isStreaming = false }: { data: any; isStreaming?: boolean }) => {
-    if (isStreaming && (!data || (typeof data === 'string' && data.trim() === "") || (data.roadmap && data.roadmap.trim() === ""))) {
+    if (isStreaming) {
+        const textContent = typeof data === 'string' ? data : (data?.roadmap || JSON.stringify(data || ""));
         return (
-            <div className="p-12 rounded-[2.5rem] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl flex items-center justify-center min-h-[300px] w-full max-w-2xl mx-auto">
-                <BubblyThinkingLoader />
+            <div className="p-8 rounded-[36px] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl w-full max-w-4xl mx-auto space-y-6">
+                <div className="flex items-center gap-3 border-b border-[var(--border)] pb-4">
+                    <div className="w-2 h-2 rounded-full bg-[var(--blue-light)] animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Professor's Roadmap Stream</span>
+                </div>
+                <MarkdownRenderer content={textContent} isStreaming={true} />
             </div>
         );
     }

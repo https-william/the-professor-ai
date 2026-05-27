@@ -1,16 +1,20 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import StandardContainer from "@/components/ui/StandardContainer";
-import { Layers, Zap, ArrowRight, Flame, Brain, Calendar, Sparkles, Coins } from "lucide-react";
-import XPGauge from "@/components/features/dashboard/XPGauge";
-import ProfessorsWisdom from "@/components/features/dashboard/ProfessorsWisdom";
-import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
-import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import {
+    Zap, Library, BookOpen, Swords, 
+    Sparkles, History as HistoryIcon,
+    ChevronRight, BrainCircuit, Layers, FileText, TrendingUp, Flame, CheckCircle2, ArrowRight
+} from "lucide-react";
 import { calculateLevel, getLevelTitle } from "@/lib/profiles-client";
-import { getDailyTip } from "@/lib/education-tips";
+import { cn } from "@/lib/utils";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import StandardContainer from "@/components/ui/StandardContainer";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
+import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
+import { getDailyTip } from "@/lib/education-tips";
 
 interface DashboardMobileProps {
     user: any;
@@ -26,150 +30,265 @@ interface DashboardMobileProps {
     handleShare: () => void;
 }
 
+const stagger = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
+};
+const fadeUp = {
+    hidden: { opacity: 0, y: 8 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
+};
+
 export default function DashboardMobile({
-    user,
-    activityData,
-    dueCount,
-    studyPlan,
-    planLoading,
-    greeting,
-    firstName,
-    handleRecover,
-    canRecover,
-    isProcessingAction,
-    handleShare,
+    user, activityData, dueCount, firstName,
+    handleRecover, canRecover, isProcessingAction,
 }: DashboardMobileProps) {
+
     const level = calculateLevel(user.xp);
     const title = getLevelTitle(level);
+
     const today = new Date();
     const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
     const dailyLine = getDailyTip(user.id || "");
 
+    const [showStreakDetails, setShowStreakDetails] = useState(false);
+    const [showWrappedDetails, setShowWrappedDetails] = useState(false);
+
+    // Time-based category hint
+    const timeHint = useMemo(() => {
+        const hour = new Date().getHours();
+        if (hour < 5) return "MIDNIGHT CRAM";
+        if (hour < 12) return "MORNING FOCUS";
+        if (hour < 17) return "AFTERNOON PUSH";
+        if (hour < 22) return "EVENING RECAP";
+        return "MIDNIGHT Prep";
+    }, []);
+
+    // Streak calendar days
+    const weekDays = useMemo(() => {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + mondayOffset);
+        monday.setHours(0, 0, 0, 0);
+        const todayStr = now.toISOString().split("T")[0];
+        const activeSet = new Set(activityData?.activeDatesThisWeek || []);
+
+        return Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            const ds = d.toISOString().split("T")[0];
+            return {
+                label: ["M", "T", "W", "T", "F", "S", "S"][i],
+                active: activeSet.has(ds),
+                isToday: ds === todayStr,
+                isFuture: ds > todayStr,
+            };
+        });
+    }, [activityData, user?.streak]);
+
     return (
-        <div className="w-full relative font-sans bg-[var(--bg)] selection:bg-[var(--blue-dim)] pt-24 pb-32">
-            {/* Ultra-Premium Glassmorphic Background */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-5%] right-[-10%] w-[300px] h-[300px] bg-[var(--blue)]/15 blur-[80px] rounded-full mix-blend-screen" />
-                <div className="absolute bottom-[20%] left-[-10%] w-[250px] h-[250px] bg-[var(--blue-dim)] blur-[80px] rounded-full mix-blend-screen" />
-            </div>
-
+        <div className="w-full relative bg-[var(--bg)] selection:bg-[var(--blue-dim)] pt-24 pb-32">
             <StandardContainer className="relative z-10 flex flex-col gap-6">
-                
-                {/* ─── 1. MASTHEAD (Greeting Banner) ─── */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-8 rounded-[36px] border border-[var(--border)] bg-[var(--background-secondary)] shadow-xl relative overflow-hidden group flex flex-col justify-end min-h-[260px]"
-                >
-                    <div className="absolute top-0 right-0 p-8 opacity-[0.05] text-[var(--blue)] pointer-events-none"><Sparkles size={140} /></div>
-                    <div className="relative z-10">
-                        <div className="flex flex-wrap items-center gap-2 mb-4">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--text)]/5 border border-[var(--border)] text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] backdrop-blur-md shadow-sm">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                <span className="font-mono font-bold">{dateStr}</span>
-                            </div>
-                            <FocusTimer widget={true} />
-                        </div>
-                        <h1 className="text-4xl font-black text-[var(--text)] tracking-tighter mb-4 leading-[0.9]">
-                            {greeting}{greeting.match(/[?!]$/) ? "" : ","} <br />
-                            <span className="text-[var(--blue)] drop-shadow-[0_8px_20px_var(--blue-glow)]">{firstName}</span>
-                        </h1>
-                        <p className="text-sm text-[var(--text-2)] italic font-medium leading-relaxed">
-                            &ldquo;{dailyLine}&rdquo;
-                        </p>
-                    </div>
-                </motion.div>
-
-                {/* ─── 2. ACTION CENTER (Urgent Tasks) ─── */}
-                <AnimatePresence>
-                    {dueCount > 0 && (
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                            <Link href="/review" className="block w-full">
-                                <div className="p-6 rounded-[36px] bg-[var(--blue)] border border-[var(--blue-border)] relative overflow-hidden flex items-center justify-between shadow-lg">
-                                    <div>
-                                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/20 text-[9px] font-black uppercase tracking-[0.2em] text-black mb-3">
-                                            Priority Task
-                                        </div>
-                                        <h3 className="text-2xl font-black text-black tracking-tighter leading-none mb-1">Resume Session</h3>
-                                        <p className="text-xs font-bold text-[var(--text-2)]">{dueCount} topics pending.</p>
+                <motion.div variants={stagger} initial="hidden" animate="show">
+                    {/* Welcome Banner */}
+                    <motion.div variants={fadeUp} className="mb-4">
+                        <div className="scholar-card relative p-6 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl animate-in fade-in duration-300" style={{ borderRadius: "24px" }}>
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={120} /></div>
+                            <div className="relative z-10">
+                                <div className="flex flex-wrap items-center gap-2 mb-3">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint}</span>
                                     </div>
-                                    <div className="w-14 h-14 rounded-full bg-black text-[var(--blue)] flex items-center justify-center flex-shrink-0 shadow-xl">
-                                        <ArrowRight size={24} strokeWidth={3} />
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
                                     </div>
+                                    <FocusTimer widget={true} />
                                 </div>
-                            </Link>
-                        </motion.div>
-                    )}
-                    {canRecover && (
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                            <button 
-                                onClick={handleRecover}
-                                disabled={isProcessingAction}
-                                className="w-full p-6 rounded-[32px] bg-[var(--amber-dim)] border border-[var(--amber-border)] flex items-center justify-between active:scale-[0.98] transition-all relative overflow-hidden shadow-lg disabled:opacity-50"
+                                <h1 className="text-lg font-black tracking-tight text-[var(--text)] leading-relaxed mb-3 italic uppercase">
+                                    &ldquo;{dailyLine}&rdquo;
+                                </h1>
+                                <p className="text-[10px] text-[var(--text-3)] font-black uppercase tracking-[0.2em]">
+                                    Sprint session for <span className="text-[var(--text)]">{firstName}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Compact Navigation & Status Pills Row */}
+                    <motion.div variants={fadeUp} className="mb-4 flex flex-wrap gap-2 items-center">
+                        {/* Start Session Pill */}
+                        <Link href="/create" className="group">
+                            <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[var(--text)] text-[var(--bg)] font-black text-[10px] uppercase tracking-[0.15em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
+                                <Zap size={12} className="fill-current animate-pulse text-[var(--bg)]" />
+                                <span>Start Session</span>
+                            </div>
+                        </Link>
+                        
+                        {/* Library Pill */}
+                        <Link href="/library" className="group">
+                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <Library size={11} className="text-[var(--violet)]" />
+                                <span>Library</span>
+                            </div>
+                        </Link>
+
+                        {/* Arena Pill */}
+                        <Link href="/arena" className="group">
+                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <Swords size={11} className="text-[var(--crimson)]" />
+                                <span>Arena</span>
+                            </div>
+                        </Link>
+
+                        {/* Blog Pill */}
+                        <Link href="/blog" className="group">
+                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <BookOpen size={11} className="text-[var(--cyan)]" />
+                                <span>Blog</span>
+                            </div>
+                        </Link>
+
+                        {/* Momentum Streak Toggle Pill */}
+                        <button
+                            onClick={() => {
+                                setShowStreakDetails(!showStreakDetails);
+                                setShowWrappedDetails(false);
+                            }}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                showStreakDetails 
+                                    ? "bg-[var(--amber-dim)] border-[var(--amber-border)]" 
+                                    : "bg-[var(--bg-2)] border-[var(--border)]"
+                            )}
+                        >
+                            <Flame size={11} className={cn("text-[var(--amber)]", user.streak > 0 && "animate-pulse")} />
+                            <span>{user.streak}d Streak</span>
+                        </button>
+
+                        {/* Weekly Wrapped Toggle Pill */}
+                        <button
+                            onClick={() => {
+                                setShowWrappedDetails(!showWrappedDetails);
+                                setShowStreakDetails(false);
+                            }}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                showWrappedDetails 
+                                    ? "bg-[var(--blue-dim)] border-[var(--blue-border)]" 
+                                    : "bg-[var(--bg-2)] border-[var(--border)]"
+                            )}
+                        >
+                            <TrendingUp size={11} className="text-[var(--blue)]" />
+                            <span>Wrapped</span>
+                        </button>
+                    </motion.div>
+
+                    {/* Inline Toggled Details Cards */}
+                    <AnimatePresence mode="wait">
+                        {showStreakDetails && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mb-4 overflow-hidden"
+                                key="streak-details"
                             >
-                                <div className="flex flex-col items-start gap-1 relative z-10">
-                                    <span className="text-[9px] font-black text-[var(--amber)] uppercase tracking-[0.2em]">Streak Rescue</span>
-                                    <span className="text-base font-bold text-[var(--text)]">Restore {user.lastStreak} Days</span>
+                                <div className="p-5 rounded-[20px] bg-[var(--bg-2)] border border-[var(--border)] shadow-md">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Flame size={14} className="text-[var(--amber)]" />
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-2)]">Daily Loop</span>
+                                        </div>
+                                        <div className="text-[10px] font-mono font-black text-[var(--amber)]">{user.streak}d active</div>
+                                    </div>
+                                    <div className="flex w-full justify-between items-center gap-1">
+                                        {weekDays.map((day, i) => (
+                                            <div key={i} className="flex-1 flex flex-col items-center">
+                                                <div className={cn(
+                                                    "w-8 h-8 rounded-lg flex items-center justify-center border transition-all text-[10px] font-black",
+                                                    day.active 
+                                                        ? "bg-[var(--amber)] border-[var(--amber-light)]/20 text-black shadow-[0_0_10px_var(--amber-glow)]" 
+                                                        : day.isToday 
+                                                        ? "border-2 border-dashed border-[var(--amber)] bg-[var(--amber-dim)] text-[var(--amber)]" 
+                                                        : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--text-3)]"
+                                                )}>
+                                                    {day.label}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="px-4 py-2 bg-[var(--amber)] text-black rounded-xl text-xs font-black shadow-lg relative z-10">3 CR</div>
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            </motion.div>
+                        )}
 
-                {/* ─── 3. VITAL STATS RIBBON ─── */}
-                <div className="space-y-4 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Vital Stats</span>
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="p-5 rounded-[28px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between">
-                            <div className="flex items-center gap-1.5 mb-3 text-[var(--blue)]">
-                                <Zap size={14} />
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)]">Level</span>
-                            </div>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black text-[var(--text)]">{level}</span>
-                                <span className="text-[9px] font-bold text-[var(--text-3)] truncate">· {title.split(" ")[0]}</span>
-                            </div>
-                        </div>
-    
-                        <div className="p-5 rounded-[28px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-3 opacity-[0.05] text-[var(--amber)]"><Flame size={50} /></div>
-                            <div className="flex items-center gap-1.5 mb-3 text-[var(--amber)] relative z-10">
-                                <Flame size={14} />
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)]">Streak</span>
-                            </div>
-                            <div className="flex items-baseline gap-1 relative z-10">
-                                <span className="text-2xl font-black text-[var(--text)]"><AnimatedCounter value={user.streak} /></span>
-                                <span className="text-[9px] font-bold text-[var(--text-3)] uppercase tracking-tighter">Days</span>
-                            </div>
-                        </div>
+                        {showWrappedDetails && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mb-4 overflow-hidden"
+                                key="wrapped-details"
+                            >
+                                <WeeklyWrappedCard />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                        <div className="p-5 rounded-[28px] bg-[var(--bg-2)]/50 backdrop-blur-xl border border-[var(--border)] flex flex-col justify-between">
-                            <div className="flex items-center gap-1.5 mb-3 text-[var(--violet)]">
-                                <Coins size={14} />
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-3)]">Credits</span>
+                    {/* Stat Ribbon */}
+                    <motion.div variants={fadeUp} className="mb-4 grid grid-cols-3 gap-2">
+                        {[
+                            { label: "Level", value: level, color: "var(--blue)" },
+                            { label: "Streak", value: `${user.streak}d`, color: "var(--amber)" },
+                            { label: "Credits", value: user.credits, color: "var(--violet)" },
+                        ].map(({ label, value, color }) => (
+                            <div key={label} className="scholar-card flex flex-col p-4 bg-[var(--bg-2)] border border-[var(--border)] shadow-sm" style={{ borderRadius: "16px" }}>
+                                <span className="text-[8px] font-black uppercase tracking-wider text-[var(--text-3)] mb-1" style={{ color }}>{label}</span>
+                                <span className="font-mono text-base font-black text-[var(--text)] tabular-nums leading-none">{value}</span>
                             </div>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black text-[var(--text)]"><AnimatedCounter value={user.credits} /></span>
-                                <span className="text-[9px] font-bold text-[var(--text-3)] uppercase tracking-tighter">Bal</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        ))}
+                    </motion.div>
 
-                {/* ─── 4. PROFESSOR'S WISDOM ─── */}
-                <div className="space-y-6 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Professor&apos;s Wisdom</span>
-                    <ProfessorsWisdom />
-                </div>
+                    {/* Urgent Actions */}
+                    <AnimatePresence>
+                        {dueCount > 0 && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-4">
+                                <Link href="/review" className="block w-full">
+                                    <div className="p-5 rounded-[24px] bg-[var(--blue)] border border-[var(--blue-border)] relative overflow-hidden flex items-center justify-between shadow-lg">
+                                        <div>
+                                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/20 text-[9px] font-black uppercase tracking-[0.15em] text-black mb-2">
+                                                Priority
+                                            </span>
+                                            <h3 className="text-xl font-black text-black tracking-tighter leading-none mb-1">Resume Session</h3>
+                                            <p className="text-xs font-bold text-[var(--text-2)]">{dueCount} topics pending.</p>
+                                        </div>
+                                        <div className="w-12 h-12 rounded-full bg-black text-[var(--blue)] flex items-center justify-center flex-shrink-0 shadow-xl">
+                                            <ArrowRight size={20} strokeWidth={3} />
+                                        </div>
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        )}
+                        {canRecover && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-4">
+                                <button 
+                                    onClick={handleRecover}
+                                    disabled={isProcessingAction}
+                                    className="w-full p-5 rounded-[24px] bg-[var(--amber-dim)] border border-[var(--amber-border)] flex items-center justify-between shadow-lg disabled:opacity-50"
+                                >
+                                    <div className="flex flex-col items-start gap-0.5">
+                                        <span className="text-[9px] font-black text-[var(--amber)] uppercase tracking-[0.15em]">Streak Rescue</span>
+                                        <span className="text-sm font-bold text-[var(--text)]">Restore {user.lastStreak} Days</span>
+                                    </div>
+                                    <div className="px-3 py-1.5 bg-[var(--amber)] text-black rounded-lg text-xs font-black">3 CR</div>
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                {/* ─── 5. PROGRESS & INSIGHTS ─── */}
-                <div className="space-y-6 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-3)] block px-2">Progress & Insights</span>
-                    <XPGauge xp={user.xp} />
-                    <WeeklyWrappedCard />
-                </div>
-
+                </motion.div>
             </StandardContainer>
         </div>
     );
