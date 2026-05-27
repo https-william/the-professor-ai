@@ -116,16 +116,20 @@ export default function FocusTimer({ widget = false }: { widget?: boolean }) {
 
     if (widget) {
         return (
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm shrink-0 max-w-full overflow-hidden">
+            <div 
+                onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 640) handleToggle(); }}
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm shrink-0 max-w-full overflow-hidden cursor-pointer sm:cursor-default"
+                title="Timer (Tap to toggle on mobile)"
+            >
                 <Clock size={14} className={isActive ? "text-[var(--blue)] animate-pulse shrink-0" : "text-[var(--foreground-muted)] shrink-0"} />
                 <span className="font-mono text-xs font-black tabular-nums text-[var(--foreground)] shrink-0">
                     {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
                 </span>
                 
-                {/* Mode Selectors — Persistent & Clear Toggle */}
-                <div className="flex items-center gap-0.5 sm:gap-1 bg-[var(--background)] p-0.5 rounded-xl border border-[var(--border)] mx-0.5 sm:mx-1 shrink-0">
+                {/* Mode Selectors — Persistent & Clear Toggle — Hidden on Mobile */}
+                <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 bg-[var(--background)] p-0.5 rounded-xl border border-[var(--border)] mx-0.5 sm:mx-1 shrink-0">
                     <button 
-                        onClick={() => { setMode("focus"); setQuote({ text: "", author: "" }); }}
+                        onClick={(e) => { e.stopPropagation(); setMode("focus"); setQuote({ text: "", author: "" }); }}
                         className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === "focus" ? "bg-[var(--blue)] text-white shadow-md shadow-blue-500/20 scale-[1.02]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}
                         title="Study Session (25m)"
                     >
@@ -133,7 +137,7 @@ export default function FocusTimer({ widget = false }: { widget?: boolean }) {
                         <span className="hidden sm:inline">Study</span>
                     </button>
                     <button 
-                        onClick={() => { setMode(mode === "shortBreak" ? "longBreak" : "shortBreak"); setQuote({ text: "", author: "" }); }}
+                        onClick={(e) => { e.stopPropagation(); setMode(mode === "shortBreak" ? "longBreak" : "shortBreak"); setQuote({ text: "", author: "" }); }}
                         className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode !== "focus" ? "bg-amber-500 text-black shadow-md shadow-amber-500/20 scale-[1.02]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}
                         title={mode === "longBreak" ? "Long Break (15m)" : "Short Break (5m)"}
                     >
@@ -142,16 +146,16 @@ export default function FocusTimer({ widget = false }: { widget?: boolean }) {
                     </button>
                 </div>
 
-                <div className="flex items-center gap-0.5 sm:gap-1 border-l border-[var(--border)] pl-1 sm:pl-2 shrink-0">
+                <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 border-l border-[var(--border)] pl-1 sm:pl-2 shrink-0">
                     <button 
-                        onClick={handleToggle}
+                        onClick={(e) => { e.stopPropagation(); handleToggle(); }}
                         className="w-6 sm:w-7 h-6 sm:h-7 rounded-xl flex items-center justify-center bg-[var(--background)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors shadow-sm"
                         title={isActive ? "Pause" : "Start"}
                     >
                         {isActive ? <Pause size={12} className="fill-current" /> : <Play size={12} className="fill-current ml-0.5" />}
                     </button>
                     <button 
-                        onClick={handleReset}
+                        onClick={(e) => { e.stopPropagation(); handleReset(); }}
                         className="w-6 sm:w-7 h-6 sm:h-7 rounded-xl flex items-center justify-center bg-[var(--background)] hover:bg-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                         title="Reset"
                     >

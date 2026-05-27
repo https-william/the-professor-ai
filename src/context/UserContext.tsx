@@ -32,28 +32,98 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, delay = 500): Promise<Response> => {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const res = await fetch(url, options);
-            if (res.ok) return res;
-            // Don't retry if it's a standard client-side validation error (except 429 rate limits)
-            if (res.status >= 400 && res.status < 500 && res.status !== 429) {
-                return res;
-            }
-        } catch (err) {
-            if (i === retries - 1) throw err;
-        }
-        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
-    }
-    throw new Error(`Request failed after ${retries} retries`);
-};
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const store = useUserStore();
     const refreshUser = useUserStore((state) => state.refreshUser);
     const updateUser = useUserStore((state) => state.updateUser);
     const supabase = React.useMemo(() => createClient(), []);
+
+    const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers = {
+                ...options.headers,
+                ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+            };
+            return fetch(url, { ...options, headers });
+        } catch (e) {
+            console.error("Auth fetch token retrieval error, falling back to standard fetch", e);
+            return fetch(url, options);
+        }
+    };
+
+    const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, delay = 500): Promise<Response> => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers = {
+                ...options.headers,
+                ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+            };
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, { ...options, headers });
+                    if (res.ok) return res;
+                    // Don't retry if it's a standard client-side validation error (except 429 rate limits)
+                    if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+                        return res;
+                    }
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                }
+                await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+            }
+        } catch (e) {
+            console.error("fetchWithRetry token error", e);
+        }
+        throw new Error(`Request failed after ${retries} retries`);
+    };
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const originalFetch = window.fetch;
+        window.fetch = async function (input, init) {
+            let url = "";
+            if (typeof input === 'string') {
+                url = input;
+            } else if (input instanceof URL) {
+                url = input.toString();
+            } else if (input && typeof input === 'object' && 'url' in input) {
+                url = (input as any).url;
+            }
+            
+            const isLocalApi = url.startsWith('/api/');
+            const isWebApi = url.startsWith(window.location.origin + '/api/');
+            const isProductionApi = url.startsWith('https://theprofessor.xyz/api/');
+            
+            if (isLocalApi || isWebApi || isProductionApi) {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.access_token) {
+                        init = init || {};
+                        if (input instanceof Request) {
+                            if (!input.headers.has('Authorization')) {
+                                input.headers.set('Authorization', `Bearer ${session.access_token}`);
+                            }
+                        } else {
+                            const headers = new Headers(init.headers || {});
+                            if (!headers.has('Authorization')) {
+                                headers.set('Authorization', `Bearer ${session.access_token}`);
+                            }
+                            init.headers = headers;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Fetch interceptor auth token injection failed", e);
+                }
+            }
+            return originalFetch.call(this, input, init);
+        };
+
+        return () => {
+            window.fetch = originalFetch;
+        };
+    }, [supabase]);
 
     useEffect(() => {
         // Only run on client
@@ -85,7 +155,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const addCredits = async (amount: number): Promise<boolean> => {
         try {
-            const res = await fetch("/api/user/profile", {
+            const res = await authenticatedFetch("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ credits: store.credits + amount }),
@@ -103,7 +173,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const spendCredits = async (amount: number): Promise<boolean> => {
         if (store.credits < amount) return false;
         try {
-            const res = await fetch("/api/user/profile", {
+            const res = await authenticatedFetch("/api/user/profile", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ credits: store.credits - amount }),
@@ -121,7 +191,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const incrementStreak = async () => {
         try {
             // Trigger server-side streak logic via activity API
-            const res = await fetch("/api/user/activity", {
+            const res = await authenticatedFetch("/api/user/activity", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ type: "daily_challenge" }),
@@ -185,7 +255,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const buyStreakFreeze = async (): Promise<boolean> => {
         try {
-            const res = await fetch("/api/user/streak-freeze", {
+            const res = await authenticatedFetch("/api/user/streak-freeze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "buy" }),
@@ -202,7 +272,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const recoverStreak = async (): Promise<boolean> => {
         try {
-            const res = await fetch("/api/user/streak-freeze", {
+            const res = await authenticatedFetch("/api/user/streak-freeze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "recover" }),

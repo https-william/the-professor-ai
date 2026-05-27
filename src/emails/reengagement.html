@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" style="margin:0;padding:0;background:#f5f5f5;font-family:'Inter',Arial,sans-serif;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>We’ve missed you!</title>
+<style>
+  /* ==== Reset ==== */
+  body,table,td,a{font-family:inherit;font-size:100%;line-height:inherit;margin:0;padding:0;}
+  img{border:0;height:auto;line-height:100%;outline:none;text-decoration:none;}
+  table{border-collapse:collapse !important;}
+
+  /* ==== Layout ==== */
+  .wrapper{
+    max-width:460px;width:100%;margin:40px auto;padding:20px;
+    background:rgba(255,255,255,0.62);
+    border-radius:16px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.12);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.18);
+  }
+
+  /* ==== Gradient background for the whole email (visible behind glass) ==== */
+  body{
+    background:linear-gradient(135deg, #fff5e6, #e6f0ff);
+  }
+
+  /* ==== Branding ==== */
+  .logo{margin:0 auto 24px;text-align:center;}
+  .primary-btn{
+    display:inline-block;
+    padding:14px 28px;
+    background:#b8422e;               /* primary colour */
+    color:#ffffff;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:600;
+    text-align:center;
+    transition:background 0.3s,transform .2s;
+  }
+  .primary-btn:hover{
+    background:#a33927;               /* a shade‑darker for hover */
+    transform:translateY(-2px);
+  }
+
+  h1{font-size:24px;margin:0 0 16px;text-align:center;color:#111;}
+  p{margin:0 0 16px;line-height:1.6;color:#222;}
+  ul{margin:0 0 24px;padding-left:20px;color:#222;line-height:1.6;}
+  li{margin-bottom:8px;}
+  .footer{font-size:12px;color:#777;text-align:center;margin-top:32px;}
+  .footer a{color:#777;text-decoration:underline;}
+  @media(max-width:480px){.wrapper{padding:15px;margin:20px auto;}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Logo (base64) -->
+  <div class="logo">
+    <img src="data:image/png;base64,{{logo_base64}}" alt="The Professor" width="120" style="display:block;">
+  </div>
+
+  <h1>Hey {{first_name|title}}, we’ve missed you!</h1>
+
+  <p>
+    It’s been a while since you’ve popped into The Professor, and I’ve been wondering what you’ve been up to.<br><br>
+    Got a mountain of notes? A half‑finished study deck? Or maybe you’re just drowning in coffee‑stained papers? Whatever’s keeping you busy, I’m here to make the next round a whole lot smoother.
+  </p>
+
+  <ul>
+    <li>Instant flash‑cards – paste any text and the AI whips up recall cards in seconds.</li>
+    <li>One‑click “Study Session” – all your resources in a single, tidy window, no tab‑hopping.</li>
+    <li>Live community – join Tunde, Amaka, Ifeanyi and a bunch of other Nigerian scholars swapping study hacks.</li>
+  </ul>
+
+  <p style="text-align:center;">
+    <a href="{{cta_url}}" class="primary-btn">Take a quick look →</a>
+  </p>
+
+  <p>
+    Got an idea for something you’d love to see? Hit reply. I’m all ears.
+  </p>
+
+  <p style="margin-top:24px;">Talk soon,<br><strong>The Professor</strong> (your study‑buddy)</p>
+
+  <div class="footer">
+    You’re receiving this because you signed up at <a href="https://theprofessor.xyz">theprofessor.xyz</a>.<br>
+    <a href="{{unsubscribe_url}}">Unsubscribe</a> | <a href="{{profile_url}}">Manage preferences</a>
+  </div>
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"EmailMessage",
+    "description":"Re‑engagement email from The Professor",
+    "potentialAction":{
+      "@type":"ViewAction",
+      "url":"{{cta_url}}",
+      "name":"Take a quick look"
+    },
+    "sender":{
+      "@type":"Organization",
+      "name":"The Professor",
+      "url":"https://theprofessor.xyz"
+    }
+  }
+  </script>
+</div>
+</body>
+</html>

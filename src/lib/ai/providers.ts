@@ -82,18 +82,22 @@ export async function callOpenAICompatible(
     }
 
     const availableKeys = Math.max(1, keys.length);
+    const startIdx = Math.floor(Math.random() * availableKeys);
     let lastError: Error | null = null;
-    const maxRetriesPerKey = 2;
+    
+    // We try models in priority: llama-3.3-70b-versatile, gemma2-9b-it, llama-3.1-8b-instant
+    const models = [config.model, 'gemma2-9b-it', 'llama-3.1-8b-instant'];
 
-    for (let i = 0; i < availableKeys; i++) {
-        const apiKey = keys[i] || "";
-        
-        for (let attempt = 1; attempt <= maxRetriesPerKey; attempt++) {
+    for (const model of models) {
+        for (let i = 0; i < availableKeys; i++) {
+            const keyIdx = (startIdx + i) % availableKeys;
+            const apiKey = keys[keyIdx] || "";
+            
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 15000);
 
             const body: any = {
-                model: config.model,
+                model: model,
                 messages,
                 temperature: options.temperature ?? 0.6,
                 max_tokens: options.maxTokens ?? 8192,
@@ -109,8 +113,6 @@ export async function callOpenAICompatible(
                 headers['Authorization'] = `Bearer ${apiKey}`;
             }
 
-
-
             try {
                 const response = await fetch(`${config.baseUrl}/chat/completions`, {
                     method: 'POST',
@@ -121,42 +123,36 @@ export async function callOpenAICompatible(
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    lastError = new Error(`${config.name} API error (Key ${i+1}/${availableKeys}, attempt ${attempt}/${maxRetriesPerKey}): ${response.status} - ${errorText.substring(0, 150)}`);
+                    lastError = new Error(`${config.name} API error (Model ${model}, Key ${keyIdx+1}/${availableKeys}): ${response.status} - ${errorText.substring(0, 150)}`);
                     
-                    // Retry on rate limit (429), server errors (500+), or unauthorized (401)
-                    if (response.status === 429 || response.status >= 500 || response.status === 401) {
-                        console.warn(`[AI Key Rotation] ${provider} key ${i+1} attempt ${attempt} failed (${response.status}). Retrying...`);
-                        if (attempt < maxRetriesPerKey) {
-                            await new Promise(res => setTimeout(res, 1000 * attempt));
-                            continue; // Retry same key
-                        }
-                        break; // Move to next key
+                    if (response.status === 429 || response.status === 503 || response.status >= 500) {
+                        console.warn(`[AI Key Rotation] ${provider} key ${keyIdx+1} failed with ${response.status} for model ${model}. Trying next key/model.`);
+                        clearTimeout(timeoutId);
+                        continue;
                     }
                     
-                    throw lastError; // Stop rotation for Bad Request (400)
+                    if (response.status === 401) {
+                        console.warn(`[AI Key Rotation] ${provider} key ${keyIdx+1} unauthorized (401). Trying next key.`);
+                        clearTimeout(timeoutId);
+                        continue;
+                    }
+
+                    throw lastError;
                 }
 
                 const data = await response.json();
-                let content = data.choices[0]?.message?.content || '';
-                
-
-                
-                return content;
+                clearTimeout(timeoutId);
+                return data.choices[0]?.message?.content || '';
             } catch (error: any) {
                 lastError = error;
-                console.warn(`[AI Key Rotation] ${provider} key ${i+1} attempt ${attempt} threw exception. Retrying... (${error.message})`);
-                if (attempt < maxRetriesPerKey) {
-                    await new Promise(res => setTimeout(res, 1000 * attempt));
-                    continue;
-                }
-                break; // Move to next key
-            } finally {
+                console.warn(`[AI Key Rotation] ${provider} key ${keyIdx+1} failed with exception for model ${model}: ${error.message}`);
                 clearTimeout(timeoutId);
+                continue;
             }
         }
     }
     
-    throw lastError || new Error(`${config.name} API failed on all configured keys.`);
+    throw lastError || new Error(`${config.name} API failed on all configured keys and models.`);
 }
 
 /**
@@ -182,18 +178,21 @@ export async function callOpenAICompatibleStream(
     }
 
     const availableKeys = Math.max(1, keys.length);
+    const startIdx = Math.floor(Math.random() * availableKeys);
     let lastError: Error | null = null;
-    const maxRetriesPerKey = 2;
+    
+    const models = [config.model, 'gemma2-9b-it', 'llama-3.1-8b-instant'];
 
-    for (let i = 0; i < availableKeys; i++) {
-        const apiKey = keys[i] || "";
-        
-        for (let attempt = 1; attempt <= maxRetriesPerKey; attempt++) {
+    for (const model of models) {
+        for (let i = 0; i < availableKeys; i++) {
+            const keyIdx = (startIdx + i) % availableKeys;
+            const apiKey = keys[keyIdx] || "";
+            
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? 45000);
 
             const body: any = {
-                model: config.model,
+                model: model,
                 messages,
                 temperature: options.temperature ?? 0.6,
                 max_tokens: options.maxTokens ?? 8192,
@@ -209,8 +208,6 @@ export async function callOpenAICompatibleStream(
                 headers['Authorization'] = `Bearer ${apiKey}`;
             }
 
-
-
             try {
                 const response = await fetch(`${config.baseUrl}/chat/completions`, {
                     method: 'POST',
@@ -220,34 +217,34 @@ export async function callOpenAICompatibleStream(
                 });
 
                 if (!response.ok) {
-                    clearTimeout(timeoutId);
                     const errorText = await response.text();
-                    lastError = new Error(`${config.name} API error (Key ${i+1}/${availableKeys}, attempt ${attempt}/${maxRetriesPerKey}): ${response.status} - ${errorText.substring(0, 150)}`);
+                    lastError = new Error(`${config.name} API error (Model ${model}, Key ${keyIdx+1}/${availableKeys}): ${response.status} - ${errorText.substring(0, 150)}`);
                     
-                    if (response.status === 429 || response.status >= 500 || response.status === 401) {
-                        console.warn(`[AI Key Rotation Stream] ${provider} key ${i+1} attempt ${attempt} failed (${response.status}). Retrying...`);
-                        if (attempt < maxRetriesPerKey) {
-                            await new Promise(res => setTimeout(res, 1000 * attempt));
-                            continue;
-                        }
-                        break; // Move to next key
+                    if (response.status === 429 || response.status === 503 || response.status >= 500) {
+                        console.warn(`[AI Key Rotation Stream] ${provider} key ${keyIdx+1} failed with ${response.status} for model ${model}. Trying next key/model.`);
+                        clearTimeout(timeoutId);
+                        continue;
                     }
+
+                    if (response.status === 401) {
+                        console.warn(`[AI Key Rotation Stream] ${provider} key ${keyIdx+1} unauthorized (401). Trying next key.`);
+                        clearTimeout(timeoutId);
+                        continue;
+                    }
+                    
                     throw lastError;
                 }
 
+                clearTimeout(timeoutId);
                 return response;
             } catch (error: any) {
                 clearTimeout(timeoutId);
                 lastError = error;
-                console.warn(`[AI Key Rotation Stream] ${provider} key ${i+1} attempt ${attempt} threw exception. Retrying... (${error.message})`);
-                if (attempt < maxRetriesPerKey) {
-                    await new Promise(res => setTimeout(res, 1000 * attempt));
-                    continue;
-                }
-                break; // Move to next key
+                console.warn(`[AI Key Rotation Stream] ${provider} key ${keyIdx+1} failed with exception for model ${model}: ${error.message}`);
+                continue;
             }
         }
     }
     
-    throw lastError || new Error(`${config.name} STREAM API failed on all configured keys.`);
+    throw lastError || new Error(`${config.name} STREAM API failed on all configured keys and models.`);
 }

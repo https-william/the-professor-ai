@@ -26,8 +26,36 @@ export async function POST(req: NextRequest) {
 
         if (isOcrTarget) {
             console.log(`[Parser] Target for image extraction: ${file.name}`);
-            const extractUrl = `${new URL(req.url).origin}/api/extract_images`;
             
+            // ── OPTIMIZATION: Check if it's a digital PDF first by calling MarkItDown ──
+            let mdText = "";
+            try {
+                const markitdownUrl = `${new URL(req.url).origin}/api/markitdown`;
+                const mdResponse = await fetch(markitdownUrl, { method: "POST", body: formData });
+                if (mdResponse.ok) {
+                    const mdData = await mdResponse.json().catch(() => ({ text: "" }));
+                    mdText = mdData.text || "";
+                }
+            } catch (mdErr) {
+                console.error("[Parser] MarkItDown pre-extraction failed:", mdErr);
+            }
+
+            // If the PDF is digital (has selectable text), return it immediately and skip OCR!
+            if (mdText.trim().length > 300) {
+                const wordCount = mdText.split(/\s+/).filter(Boolean).length;
+                logParserSuccess(filename.split('.').pop()?.toUpperCase() || "PDF", file.size, wordCount, Date.now() - parseStart);
+                console.log(`[Parser] Digital PDF detected with ${mdText.length} chars. Skipping OCR.`);
+                return NextResponse.json({ 
+                    success: true, 
+                    text: mdText, 
+                    wordCount,
+                    isOcrRequired: false,
+                    fileType: filename.split('.').pop()?.toUpperCase()
+                });
+            }
+
+            // Otherwise, it is scanned or image-heavy. Call extraction service for OCR.
+            const extractUrl = `${new URL(req.url).origin}/api/extract_images`;
             try {
                 const extractResponse = await fetch(extractUrl, {
                     method: "POST",
@@ -38,16 +66,17 @@ export async function POST(req: NextRequest) {
                     const { images, count } = await extractResponse.json();
                     console.log(`[Parser] Extracted ${count} images from ${file.name}`);
                     
-                    // Also get base text from MarkItDown for comparison or merging
-                    const markitdownUrl = `${new URL(req.url).origin}/api/markitdown`;
-                    const mdResponse = await fetch(markitdownUrl, { method: "POST", body: formData });
-                    const mdData = await mdResponse.json().catch(() => ({ text: "" }));
+                    // Limit to first 15 images to avoid browser memory crash or long waiting times
+                    const limitedImages = images.slice(0, 15);
+                    const isLimited = count > 15;
 
                     return NextResponse.json({ 
                         success: true, 
-                        images, 
-                        baseText: mdData.text || "",
+                        images: limitedImages, 
+                        baseText: mdText || "",
                         isOcrRequired: true,
+                        isOcrLimited: isLimited,
+                        ocrLimitCount: 15,
                         fileType: filename.split('.').pop()?.toUpperCase()
                     });
                 }

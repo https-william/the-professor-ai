@@ -324,8 +324,8 @@ export default function StudyPackPage() {
 
         const fetchPack = async () => {
             setPackLoading(true);
+            let packData: any = null;
             try {
-                let packData = null;
                 if (!navigator.onLine) {
                     try {
                         const db = await openProfessorDB();
@@ -452,12 +452,13 @@ export default function StudyPackPage() {
                 console.error("Fetch Pack Unexpected Error:", err);
             } finally {
                 setPackLoading(false);
-                if (typeof window !== "undefined") {
+                if (typeof window !== "undefined" && packData) {
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.get("sprint") === "true") {
                         setIsSprint(true);
                         setViewingPhaseIndex(0);
-                        setIsPerforming(true);
+                        const hasMaterials = !!(packData.phases_data && packData.phases_data[phases[0].id]);
+                        setIsPerforming(hasMaterials);
                         setHasTaskCompleted(false);
                     }
                 }
@@ -655,8 +656,17 @@ export default function StudyPackPage() {
                         buffer = buffer.slice(lineEnd + 1);
 
                         if (line.startsWith("data: ")) {
+                            let parsed: any = null;
                             try {
-                                const parsed = JSON.parse(line.slice(6));
+                                parsed = JSON.parse(line.slice(6));
+                            } catch (e) {
+                                // Ignore json parse errors for incomplete chunks
+                            }
+
+                            if (parsed) {
+                                if (parsed.status === "error") {
+                                    throw new Error(parsed.message || parsed.error || "Stream error");
+                                }
                                 if (parsed.type === "chunk" && parsed.chunk) {
                                     accumulatedText += parsed.chunk;
                                     if (phase.id === "breakdown" || phase.id === "distill") {
@@ -676,14 +686,22 @@ export default function StudyPackPage() {
                                 if (parsed.status === "complete" && parsed.data) {
                                     setPhasesData(prev => ({ ...prev, [phase.id]: parsed.data }));
                                 }
-                                if (parsed.status === "error") {
-                                    throw new Error(parsed.message || parsed.error || "Stream error");
-                                }
-                            } catch (e) {}
+                            }
                         }
                     }
                 }
                 setIsStreamingPhase(false);
+
+                // Safety validation: verify some study data was successfully accumulated
+                const currentData = phasesData[phase.id];
+                const hasAccumulated = (typeof currentData === 'string' && currentData.trim() !== '') || 
+                                       (Array.isArray(currentData) && currentData.length > 0) || 
+                                       (currentData && typeof currentData === 'object' && Object.keys(currentData).length > 0);
+
+                if (!hasAccumulated && !accumulatedText && accumulatedItems.length === 0) {
+                    throw new Error("No study materials were generated. Please try again.");
+                }
+
                 const nextIdx = viewingPhaseIndex! + 1;
                 if (phases[nextIdx] && !phasesData[phases[nextIdx].id]) {
                     prefetchPhase(phases[nextIdx].id, sourceText, packId);
@@ -762,21 +780,31 @@ export default function StudyPackPage() {
             addToast("All steps complete! Your Study Report is now ready.", "success");
 
             // Award 100 XP for full sprint completion
-            fetch("/api/user/activity", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ type: "exam_sprint", customXp: 100 })
-            }).then(() => refreshUser()).catch(err => console.error("XP error:", err));
+            supabase.auth.getSession().then(({ data: { session } }: any) => {
+                fetch("/api/user/activity", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+                    },
+                    body: JSON.stringify({ type: "exam_sprint", customXp: 100 })
+                }).then(() => refreshUser()).catch((err: any) => console.error("XP error:", err));
+            }).catch((err: any) => console.error("Session fetch error for activity:", err));
 
             // Trigger Bedtime Verdict Modal
             setShowWrapModal(true);
         } else {
             // Award 50 XP for phase completion
-            fetch("/api/user/activity", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ type: "exam_sprint", customXp: 50 })
-            }).then(() => refreshUser()).catch(err => console.error("XP error:", err));
+            supabase.auth.getSession().then(({ data: { session } }: any) => {
+                fetch("/api/user/activity", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+                    },
+                    body: JSON.stringify({ type: "exam_sprint", customXp: 50 })
+                }).then(() => refreshUser()).catch((err: any) => console.error("XP error:", err));
+            }).catch((err: any) => console.error("Session fetch error for activity:", err));
 
             // Auto-advance to next phase intro
             const nextIdx = viewingPhaseIndex! + 1;
@@ -957,8 +985,17 @@ export default function StudyPackPage() {
                         buffer = buffer.slice(lineEnd + 1);
 
                         if (line.startsWith("data: ")) {
+                            let parsed: any = null;
                             try {
-                                const parsed = JSON.parse(line.slice(6));
+                                parsed = JSON.parse(line.slice(6));
+                            } catch (e) {
+                                // Ignore partial json parse errors
+                            }
+
+                            if (parsed) {
+                                if (parsed.status === "error") {
+                                    throw new Error(parsed.message || parsed.error || "Stream error");
+                                }
                                 if (parsed.type === "chunk" && parsed.chunk) {
                                     accumulatedText += parsed.chunk;
                                     if (phaseId === "breakdown" || phaseId === "distill") {
@@ -981,10 +1018,7 @@ export default function StudyPackPage() {
                                     setIsLoadingPhase(false);
                                     addToast("Phase regenerated successfully!", "success");
                                 }
-                                if (parsed.status === "error") {
-                                    throw new Error(parsed.message || parsed.error || "Stream error");
-                                }
-                            } catch (e) {}
+                            }
                         }
                     }
                 }
@@ -1036,6 +1070,7 @@ export default function StudyPackPage() {
                         autoReveal={true}
                         isStreaming={isPhaseStreaming && phase.id === "distill"}
                         onFinish={() => handleMasterPhase()}
+                        onDownloadPDF={handleExportPDF}
                     />
                 );
             case "retain":
@@ -1069,7 +1104,7 @@ export default function StudyPackPage() {
 
     return (
         <div className="min-h-screen bg-transparent pb-16 pt-12 overflow-x-hidden transition-all duration-700">
-            <StandardContainer>
+            <StandardContainer className="print-hidden">
                 {isGuest && (
                   <div className="mb-6 p-4 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-between gap-4">
                     <p className="text-xs text-[var(--foreground)] font-medium leading-relaxed">
@@ -1257,7 +1292,7 @@ export default function StudyPackPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[300] bg-[var(--background)] overflow-y-auto flex flex-col"
+                        className="fixed inset-0 z-[300] bg-[var(--background)] overflow-y-auto flex flex-col print-overlay"
                     >
                         {/* Immersive Header */}
                         <div className="px-4 sm:px-6 h-14 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-md z-20 sticky top-0 shrink-0">
@@ -1274,12 +1309,13 @@ export default function StudyPackPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                                 {currentPhase.id === 'distill' && (
                                     <button
                                         onClick={handleExportPDF}
                                         disabled={isExportingPDF}
-                                        className="relative hidden sm:flex px-4 py-1.5 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md disabled:opacity-50 overflow-hidden min-w-[140px]"
+                                        className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md disabled:opacity-50 overflow-hidden min-w-[34px] sm:min-w-[140px]"
+                                        title="Download PDF Summary"
                                     >
                                         {isExportingPDF && (
                                             <div 
@@ -1287,19 +1323,13 @@ export default function StudyPackPage() {
                                                 style={{ width: `${pdfDownloadProgress}%` }}
                                             />
                                         )}
-                                        <div className="relative z-10 flex items-center gap-1.5">
+                                        <div className="relative z-10 flex items-center justify-center gap-1.5">
                                             {isExportingPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                                            <span>{isExportingPDF ? (pdfDownloadSpeed ? `${pdfDownloadProgress}% (${pdfDownloadSpeed})` : "Downloading...") : "Download PDF"}</span>
+                                            <span className="hidden sm:inline">{isExportingPDF ? (pdfDownloadSpeed ? `${pdfDownloadProgress}% (${pdfDownloadSpeed})` : "Downloading...") : "Download PDF"}</span>
                                         </div>
                                     </button>
                                 )}
                                 <FocusTimer widget={true} />
-                                <button
-                                    onClick={() => setViewingPhaseIndex(null)}
-                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
-                                >
-                                    <X size={18} />
-                                </button>
                             </div>
                         </div>
 

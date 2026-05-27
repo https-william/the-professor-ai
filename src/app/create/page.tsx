@@ -63,10 +63,11 @@ function CreatorStudio() {
     const processedIds = useRef<Set<string>>(new Set());
     const [trickleProgress, setTrickleProgress] = useState<Record<string, number>>({});
     const [filePhraseIndex, setFilePhraseIndex] = useState<Record<string, number>>({});
+    const [customStatusMsg, setCustomStatusMsg] = useState<Record<string, string>>({});
 
     // Keep track of active phrase animation
     useEffect(() => {
-        const readingItems = queue.filter(item => item.status === 'reading' || item.status === 'learning');
+        const readingItems = queue.filter(item => (item.status === 'reading' || item.status === 'learning') && !customStatusMsg[item.id]);
         if (readingItems.length === 0) return;
 
         const interval = setInterval(() => {
@@ -97,7 +98,7 @@ function CreatorStudio() {
             clearInterval(interval);
             clearInterval(phraseInterval);
         };
-    }, [queue]);
+    }, [queue, customStatusMsg]);
 
     // Handle background document parsing in page
     useEffect(() => {
@@ -128,7 +129,34 @@ function CreatorStudio() {
 
                 if (result.isOcrRequired && result.images) {
                     updateFileStatus(nextItem.id, 'learning', 50);
-                    const ocrText = await performOCR(result.images);
+                    
+                    const isLimited = !!result.isOcrLimited;
+                    const limitCount = result.ocrLimitCount || 15;
+                    const totalPages = result.images.length;
+
+                    const ocrText = await performOCR(result.images, (curr, total) => {
+                        const pct = Math.round(50 + (curr / total) * 45); // Scale OCR progress from 50% to 95%
+                        setTrickleProgress(prev => ({ ...prev, [nextItem.id]: pct }));
+                        setCustomStatusMsg(prev => ({ 
+                            ...prev, 
+                            [nextItem.id]: isLimited 
+                                ? `OCR Limit (first ${limitCount} pgs): parsing page ${curr} of ${total}...` 
+                                : `Performing OCR: parsing page ${curr} of ${total}...` 
+                        }));
+                    });
+
+                    if (isLimited) {
+                        setCustomStatusMsg(prev => ({ 
+                            ...prev, 
+                            [nextItem.id]: `OCR complete: parsed first ${limitCount} pages.` 
+                        }));
+                    } else {
+                        setCustomStatusMsg(prev => ({ 
+                            ...prev, 
+                            [nextItem.id]: `OCR complete: parsed all ${totalPages} pages.` 
+                        }));
+                    }
+
                     finalWeightText = `${result.baseText || ""}\n\n${ocrText}`;
                 }
 
@@ -470,45 +498,103 @@ function CreatorStudio() {
 
                             {/* Ingestion Progress Queue */}
                             {queue.length > 0 && (
-                                <div className="space-y-3 pt-4 border-t border-[var(--border)]">
+                                <div className="space-y-4 pt-6 border-t border-[var(--border)]">
                                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] block">Professor's Feed</span>
                                     {queue.map((item) => (
-                                        <div key={item.id} className="p-4 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)] flex gap-4 items-start shadow-sm">
-                                            <div className="w-10 h-10 rounded-xl bg-[var(--background)] flex items-center justify-center shrink-0 border border-[var(--border)]">
-                                                <MessageCircle className="w-5 h-5 text-[var(--blue)]" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                {item.status === 'success' ? (
-                                                    <p className="text-xs font-bold text-[var(--foreground)] leading-snug">
-                                                        "Mastered <span className="text-[var(--blue)]">{item.name}</span>."
-                                                    </p>
-                                                ) : item.status === 'error' ? (
-                                                    <p className="text-xs font-bold text-[var(--crimson)] leading-snug">
-                                                        {item.errorMessage || `Failed to read ${item.name}`}
-                                                    </p>
-                                                ) : (
-                                                    <div className="space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2 truncate pr-2">
-                                                                <Loader2 className="w-3.5 h-3.5 text-[var(--blue)] animate-spin shrink-0" />
-                                                                <p className="text-[11px] font-bold text-[var(--foreground)] leading-snug truncate">
-                                                                    {loadingPhrases[filePhraseIndex[item.id] || 0]} <span className="italic text-[var(--foreground-muted)]">({item.name})</span>
-                                                                </p>
-                                                            </div>
-                                                            <span className="text-[10px] font-mono font-black text-[var(--blue)]">{trickleProgress[item.id] || item.progress || 20}%</span>
+                                        <div 
+                                            key={item.id} 
+                                            className="p-5 sm:p-6 rounded-[2rem] bg-[var(--card)]/90 border border-white/5 shadow-[0_15px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl flex flex-col gap-4 relative overflow-hidden animate-in fade-in duration-300"
+                                        >
+                                            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                                            
+                                            <div className="flex gap-4 items-start w-full">
+                                                {/* Left Column: Visualizer Status Indicator */}
+                                                <div className="relative w-10 h-10 rounded-xl bg-[var(--background-secondary)] flex items-center justify-center shrink-0 border border-[var(--border)] overflow-hidden shadow-inner">
+                                                    {item.status === 'success' ? (
+                                                        <div className="absolute inset-0 bg-[var(--emerald)]/10 flex items-center justify-center">
+                                                            <CheckCircle2 className="w-5 h-5 text-[var(--emerald)]" />
                                                         </div>
-                                                        <div className="w-full bg-[var(--background)] rounded-full h-1.5 overflow-hidden border border-[var(--border)] relative">
+                                                    ) : item.status === 'error' ? (
+                                                        <div className="absolute inset-0 bg-[var(--crimson)]/10 flex items-center justify-center">
+                                                            <AlertCircle className="w-5 h-5 text-[var(--crimson)]" />
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {/* Spinning Accent Ring */}
                                                             <motion.div 
-                                                                initial={{ width: 0 }}
-                                                                animate={{ width: `${trickleProgress[item.id] || item.progress || 20}%` }}
-                                                                className="h-full bg-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
+                                                                className="absolute inset-0.5 rounded-lg border border-dashed border-[var(--blue)]/30"
+                                                                animate={{ rotate: 360 }}
+                                                                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                                                             />
+                                                            <Loader2 className="w-5 h-5 text-[var(--blue)] animate-spin relative z-10" />
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                {/* Middle: Content Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    {item.status === 'success' ? (
+                                                        <p className="text-xs font-black text-[var(--foreground)] leading-snug">
+                                                            Mastered <span className="text-[var(--blue)] italic font-black uppercase">{item.name}</span>.
+                                                        </p>
+                                                    ) : item.status === 'error' ? (
+                                                        <p className="text-xs font-black text-[var(--crimson)] leading-snug uppercase">
+                                                            {item.errorMessage || `Failed to read ${item.name}`}
+                                                        </p>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center justify-between gap-4">
+                                                                <p className="text-[11px] font-black text-[var(--foreground)] leading-snug truncate pr-2">
+                                                                    {customStatusMsg[item.id] || loadingPhrases[filePhraseIndex[item.id] || 0]}
+                                                                </p>
+                                                                <span className="text-[10px] font-mono font-black text-[var(--blue)] shrink-0">{trickleProgress[item.id] || item.progress || 20}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-[var(--background)] rounded-full h-1.5 overflow-hidden border border-[var(--border)] relative shadow-inner">
+                                                                <motion.div 
+                                                                    initial={{ width: 0 }}
+                                                                    animate={{ width: `${trickleProgress[item.id] || item.progress || 20}%` }}
+                                                                    className="h-full bg-gradient-to-r from-[var(--blue-light)] to-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Bottom: Ingestion Monospace Terminal Log */}
+                                            <div className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 font-mono text-[10px] text-[var(--foreground-muted)] space-y-1.5 select-none relative overflow-hidden">
+                                                {/* Terminal Top Dot Controls */}
+                                                <div className="flex items-center gap-1.5 text-white/30 border-b border-white/5 pb-2 mb-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500/60" />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/60" />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
+                                                    <span className="ml-1 text-[8px] font-black uppercase tracking-[0.25em]">Ingestion Pipeline Console</span>
+                                                </div>
+                                                
+                                                <p className="text-white/60"><span className="text-[var(--blue)]">&gt;</span> PIPELINE INITIALIZED: {item.name}</p>
+                                                {item.file && (
+                                                    <p className="text-white/40"><span className="text-[var(--blue)]">&gt;</span> Payload details: {(item.file.size / (1024 * 1024)).toFixed(2)} MB | MIME: {item.file.type || "unknown"}</p>
+                                                )}
+                                                
+                                                {item.status === 'reading' && (
+                                                    <p className="text-[var(--blue)] animate-pulse"><span className="text-[var(--blue)]">&gt;</span> STATUS: Extracting text stream & de-formatting tables...</p>
+                                                )}
+                                                {item.status === 'learning' && (
+                                                    <>
+                                                        <p className="text-amber-500/80"><span className="text-amber-500/80">&gt;</span> STATUS: Scanned document detected. OCR Engine active.</p>
+                                                        <p className="text-[var(--blue)] animate-pulse"><span className="text-[var(--blue)]">&gt;</span> {customStatusMsg[item.id] || "Initializing WASM Tesseract workers..."}</p>
+                                                    </>
+                                                )}
+                                                {item.status === 'success' && (
+                                                    <>
+                                                        <p className="text-[var(--emerald)] font-bold"><span className="text-[var(--emerald)]">&gt;</span> STATUS: 100% of notes successfully absorbed.</p>
+                                                        <p className="text-white/35"><span className="text-white/35">&gt;</span> The Professor: "Quiet hours, loud results. Oya, study pack ready."</p>
+                                                    </>
+                                                )}
+                                                {item.status === 'error' && (
+                                                    <p className="text-[var(--crimson)] font-bold"><span className="text-[var(--crimson)]">&gt;</span> FATAL ERROR: {item.errorMessage || "Failed to parse document content."}</p>
                                                 )}
                                             </div>
-                                            {item.status === 'success' && <CheckCircle2 className="w-5 h-5 text-[var(--emerald)] shrink-0" />}
-                                            {item.status === 'error' && <AlertCircle className="w-5 h-5 text-[var(--crimson)] shrink-0" />}
                                         </div>
                                     ))}
                                 </div>

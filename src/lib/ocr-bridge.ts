@@ -4,7 +4,10 @@ import { createWorker } from 'tesseract.js';
  * High-performance OCR Bridge for "The Professor"
  * Processes images extracted from PDF/PPTX using Tesseract.js (WASM)
  */
-export async function performOCR(images: { data: string; ext: string }[]): Promise<string> {
+export async function performOCR(
+    images: { data: string; ext: string }[],
+    onProgress?: (currentPage: number, totalPages: number) => void
+): Promise<string> {
     if (!images || images.length === 0) return "";
 
     const worker = await createWorker('eng');
@@ -18,6 +21,10 @@ export async function performOCR(images: { data: string; ext: string }[]): Promi
             
             const { data: { text } } = await worker.recognize(base64Data);
             combinedText += `\n\n--- OCR Page/Image ${i + 1} ---\n\n${text}`;
+
+            if (onProgress) {
+                onProgress(i + 1, images.length);
+            }
         }
     } finally {
         await worker.terminate();

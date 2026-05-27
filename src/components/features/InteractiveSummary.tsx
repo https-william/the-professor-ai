@@ -7,7 +7,7 @@ import { Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { CheckCircle2, Share2, ArrowRight } from "lucide-react";
+import { CheckCircle2, Share2, ArrowRight, Download } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
@@ -88,8 +88,9 @@ export const InteractiveSummary = ({
     tags = ["Reward Pathway", "Synaptic Growth", "Reinforcement"],
     autoReveal = false,
     isStreaming = false,
-    onFinish
-}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; isStreaming?: boolean; onFinish?: () => void }) => {
+    onFinish,
+    onDownloadPDF
+}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; isStreaming?: boolean; onFinish?: () => void; onDownloadPDF?: () => void }) => {
     const [isRefining, setIsRefining] = useState(autoReveal || isStreaming);
     const [progress, setProgress] = useState((autoReveal || isStreaming) ? 100 : 0);
     const { addToast } = useToasts();
@@ -155,6 +156,16 @@ export const InteractiveSummary = ({
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Professor's Summary</span>
                     </div>
                     <div className="flex items-center gap-2">
+                        {onDownloadPDF && (
+                            <button 
+                                onClick={onDownloadPDF}
+                                className="p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all flex items-center gap-1.5 text-[10px] shadow-sm font-bold uppercase tracking-wider"
+                                title="Download PDF Summary"
+                            >
+                                <Download size={14} />
+                                <span className="hidden sm:inline">Download PDF</span>
+                            </button>
+                        )}
                         <button 
                             onClick={handleShareSection}
                             className="p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all"

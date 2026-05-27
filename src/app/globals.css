@@ -489,30 +489,67 @@ select:is(:focus, :focus-visible) {
    ============================================ */
 
 .card {
-  background-color: var(--card);
+  background: linear-gradient(180deg, var(--card) 0%, rgba(20, 22, 32, 0.8) 100%);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.05);
   transition: all 0.25s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
-    background-color: var(--card-hover);
+    background: linear-gradient(180deg, var(--card-hover) 0%, rgba(20, 22, 32, 0.9) 100%);
     border-color: var(--border-hover);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25), inset 0 1px 1.5px rgba(255, 255, 255, 0.08);
   }
 }
 
-/* Scholar Card — Flat 2.0 Elevation */
+/* Scholar Card — Tactile 3D Elevation */
 .scholar-card {
-  background-color: var(--card);
+  background: linear-gradient(180deg, var(--card) 0%, rgba(12, 13, 18, 0.45) 100%);
   border: 1px solid var(--border);
+  border-bottom: 2.5px solid rgba(0, 0, 0, 0.35);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  transition: all 200ms ease;
   position: relative;
   overflow: hidden;
+}
+
+/* Tactile Button Depth & Anti-Flat Upgrades Globally */
+button[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not([disabled]):not(.btn-flat),
+a[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not(.btn-flat) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0.5px rgba(255, 255, 255, 0.15), 0 2px 0 rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Global Tactile Inputs & Selects - Anti-Flat Upgrades */
+input[type="text"], input[type="email"], input[type="password"], input[type="number"], textarea, select {
+  background: rgba(8, 8, 14, 0.6) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s ease-in-out !important;
+  color: var(--foreground) !important;
+}
+
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+  border-color: var(--blue) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 16px rgba(59, 130, 246, 0.2) !important;
+  background: rgba(8, 8, 14, 0.8) !important;
+  outline: none !important;
+}
+button[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not([disabled]):not(.btn-flat):hover,
+a[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not(.btn-flat):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  filter: brightness(1.05);
+}
+button[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not([disabled]):not(.btn-flat):active,
+a[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not(.btn-flat):active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  filter: brightness(0.95);
 }
 
 .scholar-card::before {
@@ -2732,8 +2769,18 @@ html, body {
   header, footer, nav, aside, button, .btn, [role="button"],
   .toast, .toast-container, .FocusTimer_widget, .FocusTimer, 
   .no-print, [class*="Header"], [class*="Sidebar"], .immersive-header,
-  .notification-panel, .fixed, .sticky, [class*="header"] {
+  .notification-panel, .fixed:not(.print-overlay), .sticky, [class*="header"],
+  .print-hidden {
     display: none !important;
+  }
+
+  .print-overlay {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    z-index: auto !important;
   }
 
   html, body {
