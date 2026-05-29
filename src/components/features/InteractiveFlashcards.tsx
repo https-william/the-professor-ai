@@ -82,79 +82,84 @@ export const InteractiveFlashcards = ({
 
   return (
     <div className="relative w-full min-h-[440px] md:min-h-[520px] flex flex-col items-center justify-center p-2 sm:p-4 cursor-default overflow-visible">
-      <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[420px] md:h-[500px] perspective-1200">
+      <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[420px] md:h-[500px] perspective-1000">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentIndex}
             custom={direction}
-            initial={{ x: direction * 50, opacity: 0, rotateY: 0 }}
+            initial={{ x: direction * 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -direction * 50, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full h-full transform-style-3d relative"
+            className="w-full h-full relative"
+            style={{ transformStyle: "preserve-3d" }}
             onClick={() => setIsFlipped(!isFlipped)}
           >
-            {/* Card Content */}
+            {/* Front Side */}
             <motion.div
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
-              className="w-full h-full relative transform-style-3d group"
-            >
-              {/* Front Side */}
-              <div className={cn(
-                "absolute inset-0 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center backface-hidden",
+              style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
+              className={cn(
+                "absolute inset-0 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center",
                 "bg-[var(--card)] border border-[var(--foreground)]/10 shadow-xl overflow-hidden",
                 "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-[var(--foreground)]/5 before:to-transparent before:pointer-events-none"
-              )}>
-                {/* Refraction Streak */}
-                <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent pointer-events-none shimmer-streak" />
+              )}
+            >
+              {/* Refraction Streak */}
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent pointer-events-none shimmer-streak" />
 
-                <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 mb-6 shadow-inner relative z-10">
-                  <Brain size={32} strokeWidth={1.5} className="text-[var(--accent)]" />
-                </div>
-                <div className="mb-2">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)] bg-[var(--accent)]/10 px-2 py-0.5 rounded-md">
-                    {currentCard.topic || "Active Recall"}
-                  </span>
-                </div>
-                <h4 className="text-xl md:text-3xl font-black text-[var(--foreground)] leading-tight tracking-tight mb-4 relative z-10">
-                  {currentCard.front}
-                </h4>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background)]/80 border border-[var(--border-2)] relative z-10 shadow-lg">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] sm:hidden">Tap to flip</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] hidden sm:block">Click to flip</span>
-                </div>
+              <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 mb-6 shadow-inner relative z-10">
+                <Brain size={32} strokeWidth={1.5} className="text-[var(--accent)]" />
               </div>
+              <div className="mb-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)] bg-[var(--accent)]/10 px-2 py-0.5 rounded-md">
+                  {currentCard.topic || "Active Recall"}
+                </span>
+              </div>
+              <h4 className="text-xl md:text-3xl font-black text-[var(--foreground)] leading-tight tracking-tight mb-4 relative z-10">
+                {currentCard.front}
+              </h4>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background)]/80 border border-[var(--border-2)] relative z-10 shadow-lg">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] sm:hidden">Tap to flip</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] hidden sm:block">Click to flip</span>
+              </div>
+            </motion.div>
 
-              {/* Back Side */}
-              <div className={cn(
-                "absolute inset-0 rounded-[2.5rem] py-6 px-6 md:py-8 md:px-7 flex flex-col items-center justify-center text-center backface-hidden rotate-y-180 overflow-hidden",
+            {/* Back Side */}
+            <motion.div
+              initial={{ rotateY: -180 }}
+              animate={{ rotateY: isFlipped ? 0 : -180 }}
+              transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+              style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
+              className={cn(
+                "absolute inset-0 rounded-[2.5rem] py-6 px-6 md:py-8 md:px-7 flex flex-col items-center justify-center text-center overflow-hidden",
                 "bg-[var(--background-secondary)] border border-[var(--accent)]/30 shadow-2xl"
-              )}>
-                {/* Refraction Streak (Back) */}
-                <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent pointer-events-none shimmer-streak" />
+              )}
+            >
+              {/* Refraction Streak (Back) */}
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent pointer-events-none shimmer-streak" />
 
-                <div className="flex flex-col h-full relative z-10 w-full pt-4">
-                  <div className="mb-4 overflow-y-auto max-h-[160px] md:max-h-[200px] pr-2 scrollbar-none">
-                    <p className="text-[13px] md:text-[18px] font-medium leading-relaxed text-[var(--foreground)]">
-                      {answer}
-                    </p>
+              <div className="flex flex-col h-full relative z-10 w-full pt-4">
+                <div className="mb-4 overflow-y-auto max-h-[160px] md:max-h-[200px] pr-2 scrollbar-none">
+                  <p className="text-[13px] md:text-[18px] font-medium leading-relaxed text-[var(--foreground)]">
+                    {answer}
+                  </p>
+                </div>
+
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent mb-4" />
+
+                <div className="flex-1 min-h-0 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col">
+                  <div className="flex items-center gap-2 mb-2 shrink-0">
+                    <div className="w-5 h-5 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20">
+                      <Lightbulb size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
+                    </div>
+                    <span className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.1em] text-[var(--accent)]">Professor&apos;s Tip</span>
                   </div>
-
-                  <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent mb-4" />
-
-                  <div className="flex-1 min-h-0 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col">
-                    <div className="flex items-center gap-2 mb-2 shrink-0">
-                      <div className="w-5 h-5 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20">
-                        <Lightbulb size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
-                      </div>
-                      <span className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.1em] text-[var(--accent)]">Professor&apos;s Tip</span>
-                    </div>
-                    <div className="overflow-y-auto pr-1 scrollbar-none">
-                      <p className="text-[11px] md:text-[15px] italic leading-relaxed text-[var(--foreground-secondary)]">
-                        &quot;{hook}&quot;
-                      </p>
-                    </div>
+                  <div className="overflow-y-auto pr-1 scrollbar-none">
+                    <p className="text-[11px] md:text-[15px] italic leading-relaxed text-[var(--foreground-secondary)]">
+                      &quot;{hook}&quot;
+                    </p>
                   </div>
                 </div>
               </div>
