@@ -48,17 +48,17 @@ export default function Footer() {
           <div className="flex items-center gap-5">
             <button
               onClick={() => setShowPrivacy(true)}
-              className="text-[11px] font-medium transition-colors hover:text-[var(--foreground)] cursor-pointer"
-              style={{ color: "var(--foreground-muted)" }}
+              className="text-xs font-bold transition-all hover:text-[var(--foreground)] underline cursor-pointer"
+              style={{ color: "var(--foreground-secondary)" }}
             >
-              Privacy
+              Privacy Policy
             </button>
             <button
               onClick={() => setShowTerms(true)}
-              className="text-[11px] font-medium transition-colors hover:text-[var(--foreground)] cursor-pointer"
-              style={{ color: "var(--foreground-muted)" }}
+              className="text-xs font-bold transition-all hover:text-[var(--foreground)] underline cursor-pointer"
+              style={{ color: "var(--foreground-secondary)" }}
             >
-              Terms
+              Terms & Conditions
             </button>
             <p className="text-[11px]" style={{ color: "var(--foreground-muted)" }}>
               © {new Date().getFullYear()} The Professor

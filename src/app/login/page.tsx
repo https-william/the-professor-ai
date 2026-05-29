@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getRedirectUrl } from "@/lib/api-client";
 import BrandLogo from "@/components/ui/BrandLogo";
+import Turnstile from "@/components/ui/Turnstile";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const router = useRouter();
     const supabase = createClient();
 
@@ -21,7 +23,13 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
         
-        const { data: { user: authUser }, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: { user: authUser }, error: loginError } = await supabase.auth.signInWithPassword({ 
+            email, 
+            password,
+            options: {
+                captchaToken: captchaToken || undefined,
+            }
+        });
         
         if (loginError) { 
             setError(loginError.message); 
@@ -232,6 +240,7 @@ export default function LoginPage() {
                     <button type="submit" disabled={loading} className="btn-jelly-primary" style={{ width: "100%", marginTop: "8px" }}>
                         {loading ? "Signing in..." : "Sign in"}
                     </button>
+                    <Turnstile onVerify={setCaptchaToken} />
                 </form>
 
                 <p style={{
@@ -246,6 +255,18 @@ export default function LoginPage() {
                         Create a free account
                     </Link>
                 </p>
+
+                <div style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "16px",
+                    marginTop: "24px",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "11px",
+                }}>
+                    <Link href="/legal/privacy" style={{ color: "var(--text-4)", textDecoration: "underline" }}>Privacy Policy</Link>
+                    <Link href="/legal/terms" style={{ color: "var(--text-4)", textDecoration: "underline" }}>Terms of Use</Link>
+                </div>
             </div>
         </div>
     );

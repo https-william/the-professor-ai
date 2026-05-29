@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, BookOpen, Zap, GraduationCap } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
+import Turnstile from "@/components/ui/Turnstile";
 
 interface GuestSignupModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -43,7 +46,13 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
       await fetch('/api/auth/signout', { method: 'POST' });
     }
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        captchaToken: captchaToken || undefined,
+      }
+    });
     if (error) { setError(error.message); setLoading(false); }
     else {
       router.push("/onboarding");
@@ -183,6 +192,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
                 >
                   {loading ? "Creating account..." : "Create free account"}
                 </button>
+                <Turnstile onVerify={setCaptchaToken} />
               </form>
 
               {/* Login link */}
@@ -200,8 +210,11 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
               </p>
 
               {/* Legal */}
-              <p className="text-center mt-4 text-[10px] text-[var(--foreground-muted)]/50 font-medium">
-                By signing up, you agree to our Terms of Service and Privacy Policy.
+              <p className="text-center mt-4 text-[10px] text-[var(--foreground-muted)]/50 font-medium leading-relaxed">
+                By signing up, you agree to our{" "}
+                <Link href="/legal/terms" onClick={onClose} className="text-[var(--blue)] hover:underline">Terms of Use</Link>{" "}
+                and{" "}
+                <Link href="/legal/privacy" onClick={onClose} className="text-[var(--blue)] hover:underline">Privacy Policy</Link>.
               </p>
             </div>
           </motion.div>

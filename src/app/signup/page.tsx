@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
+import Turnstile from "@/components/ui/Turnstile";
 
 const TESTIMONIALS = [
   { quote: "The quiz exposed everything I didn't know. Best study tool I've used.", author: "Elena F. · Stanford University", },
@@ -19,6 +20,7 @@ function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [testiIndex, setTestiIndex] = useState(0);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
   const searchParams = useSearchParams();
@@ -66,7 +68,13 @@ function SignupForm() {
       await fetch('/api/auth/signout', { method: 'POST' });
     }
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        captchaToken: captchaToken || undefined,
+      }
+    });
     if (error) { setError(error.message); setLoading(false); }
     else {
       router.push("/onboarding");
@@ -294,9 +302,10 @@ function SignupForm() {
               )}
             </div>
 
-            <button type="submit" disabled={loading} className="btn-jelly-primary" style={{ width: "100%", marginTop: "8px" }}>
+             <button type="submit" disabled={loading} className="btn-jelly-primary" style={{ width: "100%", marginTop: "8px" }}>
               {loading ? "Creating account..." : "Create free account"}
             </button>
+            <Turnstile onVerify={setCaptchaToken} />
           </form>
 
           {/* Legal text */}
@@ -306,8 +315,12 @@ function SignupForm() {
             color: "rgba(245,240,232,0.3)",
             textAlign: "center",
             marginTop: "16px",
+            lineHeight: "1.5",
           }}>
-            By signing up, you agree to our Terms of Service and Privacy Policy.
+            By signing up, you agree to our{" "}
+            <Link href="/legal/terms" style={{ color: "var(--blue)", textDecoration: "underline" }}>Terms of Use</Link>{" "}
+            and{" "}
+            <Link href="/legal/privacy" style={{ color: "var(--blue)", textDecoration: "underline" }}>Privacy Policy</Link>.
           </p>
 
           {/* Sign in link */}

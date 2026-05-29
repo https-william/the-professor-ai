@@ -67,6 +67,13 @@ export default function PrivacyPolicy() {
             To generate study materials, your document text is transmitted to highly secure, enterprise-tier AI providers. We have explicit agreements ensuring that <strong>your data is NOT used to train their models</strong>. Your intellectual property remains yours.
           </p>
         </section>
+
+        <section className="mb-12">
+          <h2 className="font-heading text-2xl font-bold text-[var(--foreground)] mb-4">6. Security & Bot Protection (Cloudflare Turnstile)</h2>
+          <p>
+            To secure our platform, prevent spam, and protect user accounts from automated bot attacks, we use <strong>Cloudflare Turnstile</strong> on our login and registration pages. Turnstile operates as a privacy-friendly security tool. It analyzes minimal client-side Signals (such as TLS Fingerprints, IP addresses, User-Agent Headers, and site metadata) to distinguish human actions from bots. Cloudflare does not profile, target, or track individuals, and collects only what is strictly necessary to secure the service. For more details, you can consult the <strong>Cloudflare Turnstile Privacy Addendum</strong>.
+          </p>
+        </section>
       </main>
     </div>
   );

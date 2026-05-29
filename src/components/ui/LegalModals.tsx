@@ -51,6 +51,8 @@ export function PrivacyPolicyModal({ onClose }: { onClose: () => void }) {
         <p>We do not use your personal study materials, generated quizzes, or session histories to train our foundational AI models.</p>
         <h3 className="text-base font-bold text-[var(--foreground)] mt-6">3. Deletion Rights (GDPR/CCPA)</h3>
         <p>You maintain full control. You can permanently delete your account and all associated data directly from your Profile settings at any time.</p>
+        <h3 className="text-base font-bold text-[var(--foreground)] mt-6">4. Security & Turnstile Bot Protection</h3>
+        <p>We use Cloudflare Turnstile to protect login and registration from automated bot traffic. Turnstile processes minimal client-side signals in a privacy-first manner to distinguish humans from bots, without tracking or profiling you.</p>
       </div>
     </LegalModal>
   );
