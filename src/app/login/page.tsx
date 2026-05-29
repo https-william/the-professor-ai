@@ -32,7 +32,15 @@ export default function LoginPage() {
         });
         
         if (loginError) { 
-            setError(loginError.message); 
+            let msg = loginError.message;
+            if (msg.toLowerCase().includes("invalid login credentials")) {
+                msg = "Hmm, that email or password doesn't match our notes. Try checking for typos?";
+            } else if (msg.toLowerCase().includes("email not confirmed")) {
+                msg = "Almost there! We sent a confirmation link to your email. Click it to unlock your account.";
+            } else if (msg.toLowerCase().includes("rate limit")) {
+                msg = "Whoa, slow down a bit! You've tried logging in too many times recently. Take a breath and try again in a minute.";
+            }
+            setError(msg); 
             setLoading(false); 
         } else if (authUser) {
             const { data: profile } = await supabase

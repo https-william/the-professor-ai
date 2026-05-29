@@ -37,7 +37,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (password.length < 6) { setError("A bit too short! Let's make that password at least 6 characters so it's nice and secure."); return; }
     setLoading(true);
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -53,9 +53,19 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
         captchaToken: captchaToken || undefined,
       }
     });
-    if (error) { setError(error.message); setLoading(false); }
+    if (error) {
+      let msg = error.message;
+      if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already exists")) {
+        msg = "Looks like you're already in our books! Try signing in instead?";
+      } else if (msg.toLowerCase().includes("rate limit")) {
+        msg = "Whoa, slow down a bit! You've tried signing up too many times recently. Take a breath and try again in a minute.";
+      }
+      setError(msg);
+      setLoading(false);
+    }
     else {
-      router.push("/onboarding");
+      onClose();
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
       router.refresh();
     }
   };
