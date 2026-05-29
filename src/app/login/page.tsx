@@ -70,7 +70,7 @@ export default function LoginPage() {
     return (
         <div style={{
             minHeight: "100dvh",
-            background: "var(--bg)",
+            background: "transparent",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -93,6 +93,7 @@ export default function LoginPage() {
                     alignItems: "center",
                     gap: "6px",
                     transition: "color 150ms ease",
+                    zIndex: 10,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.color = "var(--text)"; }}
                 onMouseLeave={e => { e.currentTarget.style.color = "var(--text-3)"; }}
@@ -100,7 +101,19 @@ export default function LoginPage() {
                 ← Back
             </Link>
 
-            <div style={{ width: "100%", maxWidth: "400px" }}>
+            <div style={{ 
+                width: "100%", 
+                maxWidth: "420px",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid var(--border)",
+                borderRadius: "2rem",
+                padding: "40px 32px",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                position: "relative",
+                zIndex: 1,
+            }}>
                 {/* Logo */}
                 <div style={{ textAlign: "center", marginBottom: "32px" }}>
                     <div style={{

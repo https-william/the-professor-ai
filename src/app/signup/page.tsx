@@ -8,9 +8,9 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import Turnstile from "@/components/ui/Turnstile";
 
 const TESTIMONIALS = [
-  { quote: "The quiz exposed everything I didn't know. Best study tool I've used.", author: "Elena F. · Stanford University", },
-  { quote: "Finished my Biology guide in 8 minutes flat. Game changer.", author: "Liam M. · King's College London", },
-  { quote: "Three friends signed up after I showed them my study pack.", author: "Maya S. · NUS Singapore", },
+  { quote: "Finally got 8 hours of sleep before my exam. My bed actually remembers what I look like now.", author: "Amaka O. · University of Ibadan", },
+  { quote: "Turned 40 pages of slides into 15 smart flashcards. Now I have more time to ignore my group chats.", author: "Tunde A. · UNILAG", },
+  { quote: "I passed my finals without drinking a single cup of unsweetened coffee. Pure magic.", author: "Bolu W. · Covenant University", },
 ];
 
 function SignupForm() {
@@ -103,16 +103,18 @@ function SignupForm() {
   const strengthColor = ["", "#e05050", "#e59e0e", "#1aab76"][strength];
 
   return (
-    <div style={{ minHeight: "100dvh", display: "flex", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100dvh", display: "flex", background: "transparent" }}>
       {/* Left Panel — Desktop only */}
       <div className="signup-left-panel" style={{
         width: "45%",
-        background: "var(--bg-2)",
+        background: "rgba(255, 255, 255, 0.01)",
         borderRight: "1px solid var(--border)",
         minHeight: "100vh",
         padding: "48px",
         display: "flex",
         flexDirection: "column",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         justifyContent: "center",
       }}>
         {/* Logo & Navigation */}
@@ -180,14 +182,27 @@ function SignupForm() {
       {/* Right Panel — Form */}
       <div style={{
         flex: 1,
-        background: "var(--bg)",
+        background: "transparent",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        padding: "48px",
+        padding: "24px",
       }}>
-        <div style={{ maxWidth: "360px", margin: "0 auto", width: "100%" }}>
+        <div style={{
+          width: "100%",
+          maxWidth: "420px",
+          margin: "0 auto",
+          background: "rgba(255, 255, 255, 0.03)",
+          border: "1px solid var(--border)",
+          borderRadius: "2rem",
+          padding: "40px 32px",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          position: "relative",
+          zIndex: 1,
+        }}>
           <h1 style={{
             fontFamily: "var(--font-heading)",
             fontSize: "26px",
