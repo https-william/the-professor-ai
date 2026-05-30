@@ -36,6 +36,7 @@ const DashboardMobile = dynamic(() => import("@/components/platforms/mobile/Dash
 import ShareCard from "@/components/ShareCard";
 import StreakMilestone from "@/components/features/StreakMilestone";
 import { LateNightGuard } from "@/components/features/LateNightGuard";
+import DashboardMascot from "@/components/features/dashboard/DashboardMascot";
 
 /* ═══════════════════════════════════════════════════
    HELPERS
@@ -344,6 +345,7 @@ export default function DashboardPage() {
             )}
 
             <LateNightGuard />
+            <DashboardMascot />
         </main>
     );
 }

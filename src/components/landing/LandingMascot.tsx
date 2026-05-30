@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Mascot } from "@/components/ui/Mascot";
 import { useMascotStore } from "@/store/useMascotStore";
 
 const PROACTIVE_COMMENTS = [
-  "Need a coffee break? I won't tell your lecturer.",
-  "Scroll down, there's good stuff below.",
-  "Your notes are safe with me. Just the good parts.",
-  "Still here? Let's turn slides into sleep schedule.",
+  "Need a coffee break? I won't tell your lecturer. 🤫",
+  "Scroll down, there's good stuff below. 👇",
+  "Your notes are safe with me. Just the good parts. 📚",
+  "Still here? Let's turn slides into sleep schedule. 🛌",
   "I'm ready when you are. Drop those files!",
-  "Ace your exams, save your weekend. Simple plan.",
-  "My mortarboard is crooked but my logic is straight.",
+  "Ace your exams, save your weekend. Simple plan. 🎯",
+  "My mortarboard is crooked but my logic is straight. 🎓",
 ];
 
 /* Safe zones where Prof can wander without obstructing content.
@@ -153,17 +153,17 @@ export default function LandingMascot() {
 
   return (
     <motion.div
-      className="fixed z-[999] select-none"
+      className="fixed top-0 left-0 z-[999] select-none"
       style={{ willChange: "transform", pointerEvents: "none" }}
       animate={{
-        left: currentWaypoint.x,
-        top: currentWaypoint.y,
+        x: currentWaypoint.x,
+        y: currentWaypoint.y,
       }}
       transition={{
         type: "spring",
-        stiffness: 18,
-        damping: 12,
-        mass: 1.2,
+        stiffness: 12,
+        damping: 15,
+        mass: 1.5,
       }}
     >
       {/* Tap target — pointer-events-auto only on the mascot itself */}

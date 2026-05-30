@@ -71,7 +71,6 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
   }, [controls]);
 
   // Eye tracking state
-  const [scrollRotate, setScrollRotate] = useState(0);
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -106,36 +105,6 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
     };
   }, [interactive, isMobile]);
 
-  // Scroll-based rotation (lightweight — 500ms poll)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleScroll = () => {
-      const scrollContainer = document.getElementById("main-scroll-container");
-      const currentScroll = scrollContainer ? scrollContainer.scrollTop : (window.scrollY || document.documentElement.scrollTop);
-      const maxScrollHeight = scrollContainer
-        ? (scrollContainer.scrollHeight - scrollContainer.clientHeight)
-        : (document.documentElement.scrollHeight - window.innerHeight);
-      const scrollPct = maxScrollHeight > 0 ? (currentScroll / maxScrollHeight) : 0;
-      setScrollRotate(scrollPct * 30 - 15);
-      if (!interactive) {
-        setEyeOffset({
-          x: Math.sin(scrollPct * Math.PI * 2) * (isMobile ? 5 : 3.5),
-          y: Math.cos(scrollPct * Math.PI * 2) * (isMobile ? 2.5 : 1.5)
-        });
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
-    const container = document.getElementById("main-scroll-container");
-    if (container) container.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    const interval = setInterval(handleScroll, 500);
-    return () => {
-      window.removeEventListener("scroll", handleScroll, { capture: true });
-      if (container) container.removeEventListener("scroll", handleScroll);
-      clearInterval(interval);
-    };
-  }, [interactive, isMobile]);
-
   // Determine eye details based on state
   const getEyeContent = (isLeft: boolean) => {
     const cx = isLeft ? 65 : 95;
@@ -148,7 +117,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
               cy="80"
               r="6"
               fill="none"
-              stroke="var(--foreground)"
+              stroke="#18181B"
               strokeWidth="2"
               animate={{ rotate: isLeft ? 360 : -360 }}
               transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
@@ -161,7 +130,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
           <path
             d={isLeft ? "M60,82 L65,75 L70,82 L63,77 L67,77 Z" : "M90,82 L95,75 L100,82 L93,77 L97,77 Z"}
             fill="#2563EB"
-            stroke="var(--foreground)"
+            stroke="#18181B"
             strokeWidth="1"
           />
         );
@@ -169,7 +138,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
         return (
           <path
             d={isLeft ? "M60,76 L70,84 M70,76 L60,84" : "M90,76 L100,84 M100,76 L90,84"}
-            stroke="var(--foreground)"
+            stroke="#18181B"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
@@ -179,7 +148,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
           <path
             d={isLeft ? "M58,80 Q65,86 72,80" : "M88,80 Q95,86 102,80"}
             fill="none"
-            stroke="var(--foreground)"
+            stroke="#18181B"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
@@ -187,7 +156,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
       case "streak":
         return (
           <g transform={`translate(${eyeOffset.x}, ${eyeOffset.y})`}>
-            <circle cx={cx} cy="80" r="6.5" fill="#2563EB" stroke="var(--foreground)" strokeWidth="1" />
+            <circle cx={cx} cy="80" r="6.5" fill="#2563EB" stroke="#18181B" strokeWidth="1" />
             <circle cx={cx + 1.5} cy="78.5" r="2" fill="#FFFFFF" />
           </g>
         );
@@ -197,7 +166,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
       default:
         return (
           <g transform={`translate(${eyeOffset.x}, ${eyeOffset.y})`}>
-            <circle cx={cx} cy="80" r="5.5" fill="#2563EB" stroke="var(--foreground)" strokeWidth="0.8" />
+            <circle cx={cx} cy="80" r="5.5" fill="#2563EB" stroke="#18181B" strokeWidth="0.8" />
             <circle cx={cx} cy="80" r="2.8" fill="#09090B" />
             <circle cx={cx + 1.2} cy="78" r="1" fill="#FFFFFF" />
           </g>
@@ -209,16 +178,16 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
     switch (mascotState) {
       case "success":
       case "streak":
-        return <path d="M70,96 Q80,108 90,96" fill="var(--foreground)" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />;
+        return <path d="M70,96 Q80,108 90,96" fill="#18181B" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round" />;
       case "fail":
-        return <path d="M72,102 Q80,95 88,102" fill="none" stroke="var(--foreground)" strokeWidth="3.5" strokeLinecap="round" />;
+        return <path d="M72,102 Q80,95 88,102" fill="none" stroke="#18181B" strokeWidth="3.5" strokeLinecap="round" />;
       case "sleepy":
-        return <motion.circle cx="80" cy="98" r="4.5" fill="var(--foreground)" animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 4 }} />;
+        return <motion.circle cx="80" cy="98" r="4.5" fill="#18181B" animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 4 }} />;
       case "working":
-        return <line x1="74" y1="98" x2="86" y2="98" stroke="var(--foreground)" strokeWidth="3.5" strokeLinecap="round" />;
+        return <line x1="74" y1="98" x2="86" y2="98" stroke="#18181B" strokeWidth="3.5" strokeLinecap="round" />;
       case "idle":
       default:
-        return <path d="M72,98 Q80,105 88,98" fill="none" stroke="var(--foreground)" strokeWidth="3" strokeLinecap="round" />;
+        return <path d="M72,98 Q80,105 88,98" fill="none" stroke="#18181B" strokeWidth="3" strokeLinecap="round" />;
     }
   };
 
@@ -257,10 +226,10 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
 
   // Combine scrollRotate with idle poses
   const svgAnimate = currentIdlePose === "bounce"
-    ? { ...controls, y: [0, -22, 0], rotate: scrollRotate }
+    ? { ...controls, y: [0, -22, 0] }
     : currentIdlePose === "tilt"
-    ? { ...controls, rotate: [scrollRotate, scrollRotate - 14, scrollRotate + 14, scrollRotate] }
-    : { ...controls, rotate: scrollRotate };
+    ? { ...controls, rotate: [0, -14, 14, 0] }
+    : { ...controls };
 
   const svgTransition = (currentIdlePose === "bounce"
     ? { type: "spring", stiffness: 80, damping: 10 }
@@ -380,21 +349,21 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
             <path d="M 60,110 L 100,110 L 100,135 L 60,135 Z" fill="#FFFFFF" />
             
             {/* White shirt collar flaps */}
-            <polygon points="68,110 80,119 72,119" fill="#FFFFFF" stroke="var(--foreground)" strokeWidth="1.2" strokeLinejoin="round" />
-            <polygon points="92,110 80,119 88,119" fill="#FFFFFF" stroke="var(--foreground)" strokeWidth="1.2" strokeLinejoin="round" />
+            <polygon points="68,110 80,119 72,119" fill="#FFFFFF" stroke="#18181B" strokeWidth="1.2" strokeLinejoin="round" />
+            <polygon points="92,110 80,119 88,119" fill="#FFFFFF" stroke="#18181B" strokeWidth="1.2" strokeLinejoin="round" />
 
             {/* Charcoal/dark sweater vest */}
             <path d="M 35,110 L 68,110 L 80,123 L 92,110 L 125,110 L 125,135 L 35,135 Z" fill="url(#vestGrad)" />
             {/* V-neck trim line */}
-            <path d="M 68,110 L 80,123 L 92,110" fill="none" stroke="var(--foreground)" strokeWidth="2.0" strokeLinecap="round" />
+            <path d="M 68,110 L 80,123 L 92,110" fill="none" stroke="#18181B" strokeWidth="2.0" strokeLinecap="round" />
             
             {/* Pocket protector / pocket on vest */}
-            <rect x="94" y="116" width="12" height="11" rx="1.5" fill="#27272A" stroke="var(--foreground)" strokeWidth="1.2" />
+            <rect x="94" y="116" width="12" height="11" rx="1.5" fill="#27272A" stroke="#18181B" strokeWidth="1.2" />
             {/* Pens sticking out */}
             {/* Blue pen */}
             <line x1="97" y1="112" x2="97" y2="116" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" />
             {/* Black pen */}
-            <line x1="103" y1="111" x2="103" y2="116" stroke="var(--foreground)" strokeWidth="1.8" strokeLinecap="round" />
+            <line x1="103" y1="111" x2="103" y2="116" stroke="#18181B" strokeWidth="1.8" strokeLinecap="round" />
           </g>
 
           {/* Body highlights & shadows (drawn on top of vest for 3D depth) */}
@@ -408,17 +377,17 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
 
           {/* Bow tie (draws on top of collar/vest) */}
           <g>
-            <polygon points="73,112 80,116 87,112 87,120 80,116 73,120" fill="#2563EB" stroke="var(--foreground)" strokeWidth="1.2" strokeLinejoin="round" />
-            <circle cx="80" cy="116" r="2.5" fill="#1D4ED8" stroke="var(--foreground)" strokeWidth="1" />
+            <polygon points="73,112 80,116 87,112 87,120 80,116 73,120" fill="#2563EB" stroke="#18181B" strokeWidth="1.2" strokeLinejoin="round" />
+            <circle cx="80" cy="116" r="2.5" fill="#1D4ED8" stroke="#18181B" strokeWidth="1" />
           </g>
 
           {/* Eyebrows */}
-          <path d="M54,71 Q65,66 76,71" fill="none" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M84,71 Q95,66 106,71" fill="none" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M54,71 Q65,66 76,71" fill="none" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M84,71 Q95,66 106,71" fill="none" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round" />
 
           {/* Left Eye */}
           {isEyeClosed ? (
-            <line x1="54" y1="80" x2="76" y2="80" stroke="var(--foreground)" strokeWidth="4.5" strokeLinecap="round" />
+            <line x1="54" y1="80" x2="76" y2="80" stroke="#18181B" strokeWidth="4.5" strokeLinecap="round" />
           ) : (
             <>
               <g clipPath="url(#leftEyeClip)">
@@ -426,16 +395,16 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
                 {getEyeContent(true)}
               </g>
               {/* Eyeball border stroke */}
-              <ellipse cx="65" cy="80" rx="11" ry="8" fill="none" stroke="var(--foreground)" strokeWidth="2.2" />
+              <ellipse cx="65" cy="80" rx="11" ry="8" fill="none" stroke="#18181B" strokeWidth="2.2" />
               {/* Eyelid detail */}
               <path d="M 53,72 L 77,72 L 77,76 Q 65,73 53,76 Z" fill="url(#mugBodyGrad)" />
-              <path d="M 54,76 Q 65,73 76,76" stroke="var(--foreground)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              <path d="M 54,76 Q 65,73 76,76" stroke="#18181B" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             </>
           )}
 
           {/* Right Eye */}
           {isEyeClosed ? (
-            <line x1="84" y1="80" x2="106" y2="80" stroke="var(--foreground)" strokeWidth="4.5" strokeLinecap="round" />
+            <line x1="84" y1="80" x2="106" y2="80" stroke="#18181B" strokeWidth="4.5" strokeLinecap="round" />
           ) : (
             <>
               <g clipPath="url(#rightEyeClip)">
@@ -443,27 +412,27 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
                 {getEyeContent(false)}
               </g>
               {/* Eyeball border stroke */}
-              <ellipse cx="95" cy="80" rx="11" ry="8" fill="none" stroke="var(--foreground)" strokeWidth="2.2" />
+              <ellipse cx="95" cy="80" rx="11" ry="8" fill="none" stroke="#18181B" strokeWidth="2.2" />
               {/* Eyelid detail */}
               <path d="M 83,72 L 107,72 L 107,76 Q 95,73 83,76 Z" fill="url(#mugBodyGrad)" />
-              <path d="M 84,76 Q 95,73 106,76" stroke="var(--foreground)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              <path d="M 84,76 Q 95,73 106,76" stroke="#18181B" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             </>
           )}
 
           {/* Eyebrow shadows (soft detail lines under eyebrows) */}
-          <path d="M56,84 Q65,88 74,84" fill="none" stroke="var(--foreground)" strokeWidth="1.2" strokeLinecap="round" opacity="0.3" />
-          <path d="M86,84 Q95,88 104,84" fill="none" stroke="var(--foreground)" strokeWidth="1.2" strokeLinecap="round" opacity="0.3" />
+          <path d="M56,84 Q65,88 74,84" fill="none" stroke="#18181B" strokeWidth="1.2" strokeLinecap="round" opacity="0.3" />
+          <path d="M86,84 Q95,88 104,84" fill="none" stroke="#18181B" strokeWidth="1.2" strokeLinecap="round" opacity="0.3" />
 
           {/* Scholarly Glasses (drawn on top of eyes for depth) */}
           <g style={{ pointerEvents: "none" }}>
             {/* Lenses glass effect */}
-            <circle cx="65" cy="80" r="15" fill="rgba(255, 255, 255, 0.08)" stroke="var(--foreground)" strokeWidth="2.5" />
-            <circle cx="95" cy="80" r="15" fill="rgba(255, 255, 255, 0.08)" stroke="var(--foreground)" strokeWidth="2.5" />
+            <circle cx="65" cy="80" r="15" fill="rgba(255, 255, 255, 0.08)" stroke="#18181B" strokeWidth="2.5" />
+            <circle cx="95" cy="80" r="15" fill="rgba(255, 255, 255, 0.08)" stroke="#18181B" strokeWidth="2.5" />
             {/* Bridge */}
-            <path d="M78,78 Q80,75 82,78" fill="none" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M78,78 Q80,75 82,78" fill="none" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round" />
             {/* Side frames */}
-            <path d="M50,80 H46" fill="none" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M110,80 H114" fill="none" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M50,80 H46" fill="none" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M110,80 H114" fill="none" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round" />
             {/* Lens reflections */}
             <path d="M57,73 L62,78" stroke="rgba(255, 255, 255, 0.45)" strokeWidth="1.8" strokeLinecap="round" />
             <path d="M87,73 L92,78" stroke="rgba(255, 255, 255, 0.45)" strokeWidth="1.8" strokeLinecap="round" />
@@ -474,7 +443,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
           <circle cx="108" cy="90" r="6" fill="#F87171" opacity="0.15" />
 
           {/* Nose */}
-          <ellipse cx="80" cy="90" rx="2" ry="1.5" fill="var(--foreground)" opacity="0.2" />
+          <ellipse cx="80" cy="90" rx="2" ry="1.5" fill="#18181B" opacity="0.2" />
 
           {/* Mouth */}
           {getMouth()}
