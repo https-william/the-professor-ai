@@ -14,14 +14,25 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
   const controls = useAnimation();
   const [isBlinking, setIsBlinking] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLite, setIsLite] = useState(false);
   const [currentIdlePose, setCurrentIdlePose] = useState<"none" | "wave" | "bounce" | "tilt">("none");
 
-  // Mobile viewport detection
+  // Device capabilities detection
   useEffect(() => {
     if (typeof window !== "undefined") {
       setIsMobile(window.innerWidth < 768);
       const handleResize = () => setIsMobile(window.innerWidth < 768);
       window.addEventListener("resize", handleResize);
+
+      // Detect low-spec devices (1GB RAM or less, 2 cores or less, or prefers-reduced-motion)
+      const checkLite = () => {
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const lowMemory = (navigator as any).deviceMemory !== undefined && (navigator as any).deviceMemory <= 1;
+        const lowCpu = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency <= 2;
+        return reducedMotion || lowMemory || lowCpu;
+      };
+      setIsLite(checkLite());
+
       return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
@@ -33,8 +44,9 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
     onTap?.();
   }, [onTap]);
 
-  // Periodic proactive animations timer (waving, bouncing, tilting on idle)
+  // Periodic proactive animations timer (waving, bouncing, tilting on idle) - Disabled in Lite Mode
   useEffect(() => {
+    if (isLite) return;
     const interval = setInterval(() => {
       if (mascotState === "idle" || mascotState === "pointing-left" || mascotState === "pointing-right") {
         const poses = ["wave", "bounce", "tilt"] as const;
@@ -44,10 +56,11 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
       }
     }, 8000);
     return () => clearInterval(interval);
-  }, [mascotState]);
+  }, [mascotState, isLite]);
 
-  // Random blink interval timer logic
+  // Random blink interval timer logic - Disabled in Lite Mode to save paint cycles
   useEffect(() => {
+    if (isLite) return;
     let timeoutId: NodeJS.Timeout;
     const triggerBlink = () => {
       setIsBlinking(true);
@@ -60,23 +73,27 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
     const initialDelay = Math.random() * 3000 + 1000;
     timeoutId = setTimeout(triggerBlink, initialDelay);
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [isLite]);
 
-  // Floating bobbing effect (looping idle)
+  // Floating bobbing effect (looping idle) - Disabled in Lite Mode
   useEffect(() => {
+    if (isLite) {
+      controls.set({ y: 0 });
+      return;
+    }
     controls.start({
       y: [0, -6, 0],
       transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
     });
-  }, [controls]);
+  }, [controls, isLite]);
 
   // Eye tracking state
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Mouse and Touch tracking (eyes follow cursor/finger)
+  // Mouse and Touch tracking (eyes follow cursor/finger) - Disabled in Lite Mode to save JS event processing
   useEffect(() => {
-    if (typeof window === "undefined" || !interactive) return;
+    if (typeof window === "undefined" || !interactive || isLite) return;
     const handleInteraction = (clientX: number, clientY: number) => {
       const container = containerRef.current;
       if (!container) return;
@@ -103,7 +120,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
       window.removeEventListener("touchstart", handleTouchMove);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [interactive, isMobile]);
+  }, [interactive, isMobile, isLite]);
 
   // Determine eye details based on state
   const getEyeContent = (isLeft: boolean) => {
@@ -119,8 +136,8 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
               fill="none"
               stroke="#18181B"
               strokeWidth="2"
-              animate={{ rotate: isLeft ? 360 : -360 }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              animate={isLite ? {} : { rotate: isLeft ? 360 : -360 }}
+              transition={isLite ? undefined : { repeat: Infinity, duration: 1.5, ease: "linear" }}
             />
             <circle cx={cx} cy="80" r="2.5" fill="#2563EB" />
           </g>
@@ -155,7 +172,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
         );
       case "streak":
         return (
-          <g transform={`translate(${eyeOffset.x}, ${eyeOffset.y})`}>
+          <g transform={isLite ? undefined : `translate(${eyeOffset.x}, ${eyeOffset.y})`}>
             <circle cx={cx} cy="80" r="6.5" fill="#2563EB" stroke="#18181B" strokeWidth="1" />
             <circle cx={cx + 1.5} cy="78.5" r="2" fill="#FFFFFF" />
           </g>
@@ -165,7 +182,7 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
       case "pointing-right":
       default:
         return (
-          <g transform={`translate(${eyeOffset.x}, ${eyeOffset.y})`}>
+          <g transform={isLite ? undefined : `translate(${eyeOffset.x}, ${eyeOffset.y})`}>
             <circle cx={cx} cy="80" r="5.5" fill="#2563EB" stroke="#18181B" strokeWidth="0.8" />
             <circle cx={cx} cy="80" r="2.8" fill="#09090B" />
             <circle cx={cx + 1.2} cy="78" r="1" fill="#FFFFFF" />
@@ -182,7 +199,11 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
       case "fail":
         return <path d="M72,102 Q80,95 88,102" fill="none" stroke="#18181B" strokeWidth="3.5" strokeLinecap="round" />;
       case "sleepy":
-        return <motion.circle cx="80" cy="98" r="4.5" fill="#18181B" animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 4 }} />;
+        return isLite ? (
+          <circle cx="80" cy="98" r="4.5" fill="#18181B" />
+        ) : (
+          <motion.circle cx="80" cy="98" r="4.5" fill="#18181B" animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 4 }} />
+        );
       case "working":
         return <line x1="74" y1="98" x2="86" y2="98" stroke="#18181B" strokeWidth="3.5" strokeLinecap="round" />;
       case "idle":
@@ -194,13 +215,13 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
   // Dynamic arm animations
   const leftArmAnimate = currentIdlePose === "wave"
     ? { rotate: [0, -75, -25, -75, -25, 0] }
-    : mascotState === "working" ? { rotate: [0, 45, 0] }
-    : mascotState === "success" ? { y: [-2, -15, -2], rotate: [0, -30, 0] }
+    : mascotState === "working" && !isLite ? { rotate: [0, 45, 0] }
+    : mascotState === "success" && !isLite ? { y: [-2, -15, -2], rotate: [0, -30, 0] }
     : mascotState === "pointing-left" ? { rotate: -65 }
     : { rotate: [0, 5, 0] };
 
-  const rightArmAnimate = mascotState === "working" ? { rotate: [0, -45, 0] }
-    : mascotState === "success" ? { y: [-2, -15, -2], rotate: [0, 30, 0] }
+  const rightArmAnimate = mascotState === "working" && !isLite ? { rotate: [0, -45, 0] }
+    : mascotState === "success" && !isLite ? { y: [-2, -15, -2], rotate: [0, 30, 0] }
     : mascotState === "pointing-right" ? { rotate: 65 }
     : { rotate: [0, -5, 0] };
 
@@ -208,24 +229,32 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
     ? { duration: 1.5, ease: "easeInOut" }
     : (mascotState === "pointing-left" || mascotState === "pointing-right")
     ? { duration: 0.4, ease: "easeOut" }
+    : isLite
+    ? undefined
     : { repeat: Infinity, duration: 1.5, ease: "easeInOut" } as any;
 
   const rightArmTransition = ((mascotState === "pointing-left" || mascotState === "pointing-right")
     ? { duration: 0.4, ease: "easeOut" }
+    : isLite
+    ? undefined
     : { repeat: Infinity, duration: 1.5, ease: "easeInOut" }) as any;
 
   const legAnimate = currentIdlePose === "bounce"
     ? { y: [0, -4, 0] }
-    : mascotState === "working" ? { y: [0, -2, 0] }
-    : mascotState === "success" ? { y: [0, -6, 0] }
+    : mascotState === "working" && !isLite ? { y: [0, -2, 0] }
+    : mascotState === "success" && !isLite ? { y: [0, -6, 0] }
     : { y: [0, 0] };
 
   const legTransition = (currentIdlePose === "bounce"
     ? { duration: 0.8, ease: "easeInOut" }
+    : isLite
+    ? undefined
     : { repeat: Infinity, duration: 1, ease: "easeInOut" }) as any;
 
   // Combine scrollRotate with idle poses
-  const svgAnimate = currentIdlePose === "bounce"
+  const svgAnimate = isLite
+    ? {}
+    : currentIdlePose === "bounce"
     ? { ...controls, y: [0, -22, 0] }
     : currentIdlePose === "tilt"
     ? { ...controls, rotate: [0, -14, 14, 0] }
@@ -313,18 +342,20 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
 
         {/* Body group */}
         <g>
-          {/* Steam */}
-          <g>
-            <motion.path d="M70,44 Q67,35 72,25 T68,12" fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round"
-              animate={{ pathLength: [0,1,1], pathOffset: [0,0,1], opacity: [0,0.7,0] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }} />
-            <motion.path d="M80,43 Q83,32 78,22 T82,8" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"
-              animate={{ pathLength: [0,1,1], pathOffset: [0,0,1], opacity: [0,0.5,0] }}
-              transition={{ duration: 2.5, repeat: Infinity, delay: 0.8, ease: "linear" }} />
-            <motion.path d="M90,44 Q93,36 88,26 T92,14" fill="none" stroke="#60A5FA" strokeWidth="1.5" strokeLinecap="round"
-              animate={{ pathLength: [0,1,1], pathOffset: [0,0,1], opacity: [0,0.4,0] }}
-              transition={{ duration: 2.8, repeat: Infinity, delay: 1.4, ease: "linear" }} />
-          </g>
+          {/* Steam - Disabled in Lite Mode to save CPU drawing cycles */}
+          {!isLite && (
+            <g>
+              <motion.path d="M70,44 Q67,35 72,25 T68,12" fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round"
+                animate={{ pathLength: [0,1,1], pathOffset: [0,0,1], opacity: [0,0.7,0] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }} />
+              <motion.path d="M80,43 Q83,32 78,22 T82,8" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"
+                animate={{ pathLength: [0,1,1], pathOffset: [0,0,1], opacity: [0,0.5,0] }}
+                transition={{ duration: 2.5, repeat: Infinity, delay: 0.8, ease: "linear" }} />
+              <motion.path d="M90,44 Q93,36 88,26 T92,14" fill="none" stroke="#60A5FA" strokeWidth="1.5" strokeLinecap="round"
+                animate={{ pathLength: [0,1,1], pathOffset: [0,0,1], opacity: [0,0.4,0] }}
+                transition={{ duration: 2.8, repeat: Infinity, delay: 1.4, ease: "linear" }} />
+            </g>
+          )}
 
           {/* Left arm with hand */}
           <motion.g style={{ transformOrigin: "45px 90px" }} animate={leftArmAnimate} transition={leftArmTransition}>
@@ -451,9 +482,9 @@ const MascotInner: React.FC<MascotProps> = ({ size = "100%", interactive = true,
           {/* Mortarboard cap */}
           <g>
             <motion.path d="M80,30 L48,36" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round"
-              animate={{ rotate: [-2, 5, -2] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} />
+              animate={isLite ? {} : { rotate: [-2, 5, -2] }} transition={isLite ? undefined : { repeat: Infinity, duration: 2, ease: "easeInOut" }} />
             <motion.circle cx="46" cy="37" r="3" fill="#2563EB" stroke="var(--foreground)" strokeWidth="1"
-              animate={{ y: [0, 2, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} />
+              animate={isLite ? {} : { y: [0, 2, 0] }} transition={isLite ? undefined : { repeat: Infinity, duration: 2, ease: "easeInOut" }} />
             <path d="M60,34 L60,42 C60,48 100,48 100,42 L100,34 Z" fill="#09090B" stroke="var(--foreground)" strokeWidth="1.5" />
             <rect x="60" y="40" width="40" height="3" rx="1" fill="#27272A" opacity="0.6" />
             <polygon points="80,22 116,31 80,40 44,31" fill="#09090B" stroke="var(--foreground)" strokeWidth="1.8" />

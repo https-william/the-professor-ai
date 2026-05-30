@@ -37,6 +37,7 @@ export default function LandingMascot() {
   const { setMascotState, triggerReaction, clearSpeech } = useMascotStore();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLite, setIsLite] = useState(false);
   const [waypointIdx, setWaypointIdx] = useState(0);
   const [activeSection, setActiveSection] = useState<string>("hero");
   const lastScrollTime = useRef<number>(Date.now());
@@ -49,35 +50,43 @@ export default function LandingMascot() {
       setIsMobile(window.innerWidth < 768);
       const handleResize = () => setIsMobile(window.innerWidth < 768);
       window.addEventListener("resize", handleResize);
+
+      // Low-spec hardware detection
+      const checkLite = () => {
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const lowMemory = (navigator as any).deviceMemory !== undefined && (navigator as any).deviceMemory <= 1;
+        const lowCpu = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency <= 2;
+        return reducedMotion || lowMemory || lowCpu;
+      };
+      setIsLite(checkLite());
+
       return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
 
-  // Autonomous wandering — pick a new waypoint every 6–12s
+  // Autonomous wandering — pick a new waypoint every 6–12s. Disabled in Lite Mode to save CPU translation math.
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLite) return;
     const wander = () => {
       const waypoints = isMobile ? WAYPOINTS_MOBILE : WAYPOINTS_DESKTOP;
       setWaypointIdx((prev) => {
         let next = Math.floor(Math.random() * waypoints.length);
-        // Avoid same spot twice in a row
         while (next === prev && waypoints.length > 1) {
           next = Math.floor(Math.random() * waypoints.length);
         }
         return next;
       });
-      // Schedule next wander in 6–12 seconds
       const delay = 6000 + Math.random() * 6000;
       wanderRef.current = setTimeout(wander, delay);
     };
     const initialDelay = 3000 + Math.random() * 2000;
     wanderRef.current = setTimeout(wander, initialDelay);
     return () => { if (wanderRef.current) clearTimeout(wanderRef.current); };
-  }, [mounted, isMobile]);
+  }, [mounted, isMobile, isLite]);
 
-  // Track scrolling (lightweight — capture + 500ms poll)
+  // Track scrolling (lightweight — capture + 500ms poll). Disabled in Lite Mode.
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLite) return;
     const handleScroll = () => {
       lastScrollTime.current = Date.now();
       const scrollContainer = document.getElementById("main-scroll-container");
@@ -105,11 +114,11 @@ export default function LandingMascot() {
       if (container) container.removeEventListener("scroll", handleScroll);
       clearInterval(interval);
     };
-  }, [mounted, activeSection]);
+  }, [mounted, activeSection, isLite]);
 
-  // Section reactions
+  // Section reactions. Disabled in Lite Mode.
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLite) return;
     const reactions: Record<string, [string, string]> = {
       hero: ["Hey! I'm Prof. Let's get your time back.", "pointing-left"],
       pain: ["Reading 100+ slides at 2 AM? Your bed misses you.", "pointing-left"],
@@ -125,11 +134,11 @@ export default function LandingMascot() {
       clearSpeech();
       setMascotState("idle");
     }
-  }, [activeSection, mounted]);
+  }, [activeSection, mounted, isLite]);
 
-  // Proactive idle comments
+  // Proactive idle comments. Disabled in Lite Mode.
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLite) return;
     const checkIdle = () => {
       if (Date.now() - lastScrollTime.current > 12000) {
         const comment = PROACTIVE_COMMENTS[Math.floor(Math.random() * PROACTIVE_COMMENTS.length)];
@@ -139,7 +148,7 @@ export default function LandingMascot() {
     };
     idleTimerRef.current = setInterval(checkIdle, 5000);
     return () => { if (idleTimerRef.current) clearInterval(idleTimerRef.current); };
-  }, [mounted]);
+  }, [mounted, isLite]);
 
   // Tap handler — wave reaction
   const handleProfTap = useCallback(() => {
@@ -149,7 +158,8 @@ export default function LandingMascot() {
   if (!mounted) return null;
 
   const waypoints = isMobile ? WAYPOINTS_MOBILE : WAYPOINTS_DESKTOP;
-  const currentWaypoint = waypoints[waypointIdx] || waypoints[0];
+  // In Lite Mode, always stay at the default bottom-right waypoint (no wandering calculations)
+  const currentWaypoint = isLite ? waypoints[0] : (waypoints[waypointIdx] || waypoints[0]);
 
   return (
     <motion.div
@@ -159,7 +169,7 @@ export default function LandingMascot() {
         x: currentWaypoint.x,
         y: currentWaypoint.y,
       }}
-      transition={{
+      transition={isLite ? { duration: 0 } : {
         type: "spring",
         stiffness: 12,
         damping: 15,

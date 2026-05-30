@@ -57,6 +57,7 @@ export default function DashboardMascot() {
   const { setMascotState, triggerReaction, clearSpeech } = useMascotStore();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLite, setIsLite] = useState(false);
   const [waypointIdx, setWaypointIdx] = useState(0);
   const wanderRef = useRef<NodeJS.Timeout | null>(null);
   const eventTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -67,13 +68,23 @@ export default function DashboardMascot() {
       setIsMobile(window.innerWidth < 768);
       const handleResize = () => setIsMobile(window.innerWidth < 768);
       window.addEventListener("resize", handleResize);
+
+      // Low-spec hardware detection
+      const checkLite = () => {
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const lowMemory = (navigator as any).deviceMemory !== undefined && (navigator as any).deviceMemory <= 1;
+        const lowCpu = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency <= 2;
+        return reducedMotion || lowMemory || lowCpu;
+      };
+      setIsLite(checkLite());
+
       return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
 
-  // Autonomous wandering — pick a new waypoint every 7–14s
+  // Autonomous wandering. Disabled in Lite Mode to save CPU translation cycles.
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLite) return;
     const wander = () => {
       const waypoints = isMobile ? WAYPOINTS_MOBILE : WAYPOINTS_DESKTOP;
       setWaypointIdx((prev) => {
@@ -89,24 +100,20 @@ export default function DashboardMascot() {
     const initialDelay = 4000 + Math.random() * 2000;
     wanderRef.current = setTimeout(wander, initialDelay);
     return () => { if (wanderRef.current) clearTimeout(wanderRef.current); };
-  }, [mounted, isMobile]);
+  }, [mounted, isMobile, isLite]);
 
-  // Periodic random events (reactions, moods, comments)
+  // Periodic random events (reactions, moods, comments). Disabled in Lite Mode.
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLite) return;
     const runRandomEvent = () => {
-      // Pick a random comment
       const comment = RANDOM_COMMENTS[Math.floor(Math.random() * RANDOM_COMMENTS.length)];
-      // Pick a random mood/state
       const states: Array<"idle" | "working" | "success" | "fail" | "sleepy" | "streak"> = [
         "idle", "working", "success", "fail", "sleepy", "streak"
       ];
       const randomState = states[Math.floor(Math.random() * states.length)];
       
-      // Trigger the reaction with the random state
       triggerReaction(comment, randomState, 4500);
 
-      // Re-schedule in 12–20 seconds
       const nextDelay = 12000 + Math.random() * 8000;
       eventTimerRef.current = setTimeout(runRandomEvent, nextDelay);
     };
@@ -117,12 +124,11 @@ export default function DashboardMascot() {
     return () => {
       if (eventTimerRef.current) clearTimeout(eventTimerRef.current);
     };
-  }, [mounted, triggerReaction]);
+  }, [mounted, triggerReaction, isLite]);
 
   // Tap handler — funny random replies
   const handleProfTap = useCallback(() => {
     const reply = TAP_REPLIES[Math.floor(Math.random() * TAP_REPLIES.length)];
-    // Pick an expressive state for tap reaction
     const tapStates: Array<"success" | "streak" | "fail" | "idle"> = ["success", "streak", "fail", "idle"];
     const randomTapState = tapStates[Math.floor(Math.random() * tapStates.length)];
     triggerReaction(reply, randomTapState, 3000);
@@ -131,7 +137,8 @@ export default function DashboardMascot() {
   if (!mounted) return null;
 
   const waypoints = isMobile ? WAYPOINTS_MOBILE : WAYPOINTS_DESKTOP;
-  const currentWaypoint = waypoints[waypointIdx] || waypoints[0];
+  // Keep mascot static in the bottom-right corner in Lite Mode
+  const currentWaypoint = isLite ? waypoints[0] : (waypoints[waypointIdx] || waypoints[0]);
 
   return (
     <motion.div
@@ -141,7 +148,7 @@ export default function DashboardMascot() {
         x: currentWaypoint.x,
         y: currentWaypoint.y,
       }}
-      transition={{
+      transition={isLite ? { duration: 0 } : {
         type: "spring",
         stiffness: 12,
         damping: 15,
