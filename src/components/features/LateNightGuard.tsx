@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mascot } from "@/components/ui/Mascot";
-import { useMascotStore } from "@/store/useMascotStore";
+
 import { X, Flame } from "lucide-react";
 
 export const LateNightGuard: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const triggerReaction = useMascotStore((state) => state.triggerReaction);
 
   useEffect(() => {
     // Check time condition (between 11:30 PM (23:30) and 5:00 AM)
@@ -25,20 +23,10 @@ export const LateNightGuard: React.FC = () => {
         setIsOpen(true);
         localStorage.setItem("last_late_night_cheer", todayDate);
         
-        // Trigger mascot sleepy/focus response in the store
-        const cheers = [
-          "Still grinding? I've got a fresh brew of focus for you. Let's get this done.",
-          "2:00 AM study squad. You, me, and coffee. Let's get these notes sorted."
-        ];
-        const selectedCheer = cheers[Math.floor(Math.random() * cheers.length)];
-        
-        // Wait 2 seconds, then display bubble text on Prof
-        setTimeout(() => {
-          triggerReaction(selectedCheer, "sleepy", 7000);
-        }, 1500);
+
       }
     }
-  }, [triggerReaction]);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -60,9 +48,9 @@ export const LateNightGuard: React.FC = () => {
             <X size={12} />
           </button>
 
-          {/* Left: Mascot */}
-          <div className="shrink-0">
-            <Mascot size={90} />
+          {/* Left: Icon */}
+          <div className="shrink-0 w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+            <Flame size={32} className="animate-pulse" />
           </div>
 
           {/* Right: Copy & Actions */}

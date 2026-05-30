@@ -12,8 +12,6 @@ import GuestSignupModal from "@/components/ui/GuestSignupModal";
 import { createClient } from "@/lib/supabase/client";
 import { performOCR } from "@/lib/ocr-bridge";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mascot } from "@/components/ui/Mascot";
-import { useMascotStore } from "@/store/useMascotStore";
 
 import { 
     X, 
@@ -51,7 +49,6 @@ function CreatorStudio() {
     const { addToast } = useToasts();
     const { queue, addFiles, updateFileStatus, clearQueue, isProcessing } = useIngestStore();
     const supabase = createClient();
-    const triggerReaction = useMascotStore(state => state.triggerReaction);
 
     const [inputText, setInputText] = useState("");
     const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
@@ -110,7 +107,6 @@ function CreatorStudio() {
             if (!nextItem || !nextItem.file) return;
 
             processedIds.current.add(nextItem.id);
-            triggerReaction("Sifting through academic jargon so you don't have to...", "working", 12000);
 
             try {
                 updateFileStatus(nextItem.id, 'reading', 20);
@@ -147,7 +143,6 @@ function CreatorStudio() {
                                 ? `OCR Limit (first ${limitCount} pgs): parsing page ${curr} of ${total}...` 
                                 : `Performing OCR: parsing page ${curr} of ${total}...` 
                         }));
-                        triggerReaction(`Reading page ${curr} of ${total}... I'm reading as fast as I can!`, "working", 5000);
                     });
 
                     if (isLimited) {
@@ -166,7 +161,6 @@ function CreatorStudio() {
                 }
 
                 updateFileStatus(nextItem.id, 'success', 100);
-                triggerReaction("Ingested successfully! Let's build the pack.", "success", 4000);
                 
                 if (finalWeightText) {
                     setInputText(prev => {
@@ -177,14 +171,13 @@ function CreatorStudio() {
             } catch (err: any) {
                 console.error("Ingestion Error:", err);
                 updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to parse file");
-                triggerReaction("Ouch. Something went wrong with that file.", "fail", 4000);
             }
         };
 
         if (isProcessing) {
             processNext();
         }
-    }, [queue, isProcessing, updateFileStatus, triggerReaction]);
+    }, [queue, isProcessing, updateFileStatus]);
 
     // Load initial title from session if present
     useEffect(() => {
@@ -509,8 +502,6 @@ function CreatorStudio() {
                             {/* Ingestion Progress Queue */}
                             {queue.length > 0 && (
                                 <div className="space-y-4 pt-6 border-t border-[var(--border)] flex flex-col items-center justify-center">
-                                    <Mascot size={120} />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mt-2 block">Professor's Feed</span>
                                     {queue.map((item) => (
                                         <div 
                                             key={item.id} 
@@ -599,7 +590,7 @@ function CreatorStudio() {
                                                 {item.status === 'success' && (
                                                     <>
                                                         <p className="text-[var(--emerald)] font-bold"><span className="text-[var(--emerald)]">&gt;</span> STATUS: 100% of notes successfully absorbed.</p>
-                                                        <p className="text-white/35"><span className="text-white/35">&gt;</span> The Professor: "Quiet hours, loud results. Oya, study pack ready."</p>
+                                                        <p className="text-white/35"><span className="text-white/35">&gt;</span> SYSTEM: Study pack ready for compilation.</p>
                                                     </>
                                                 )}
                                                 {item.status === 'error' && (

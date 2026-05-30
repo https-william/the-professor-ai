@@ -16,8 +16,7 @@ import StandardContainer from "@/components/ui/StandardContainer";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
 import { getDailyTip } from "@/lib/education-tips";
-import { Mascot } from "@/components/ui/Mascot";
-import { useMascotStore } from "@/store/useMascotStore";
+
 
 interface DashboardMobileProps {
     user: any;
@@ -75,13 +74,6 @@ export default function DashboardMobile({
             .finally(() => setPacksLoading(false));
     });
 
-    const triggerReaction = useMascotStore((state) => state.triggerReaction);
-
-    useEffect(() => {
-        if (!packsLoading && recentPacks.length === 0) {
-            triggerReaction("Got notes? Feed them to me and let's get you your evening back.", "idle", 6000);
-        }
-    }, [packsLoading, recentPacks.length, triggerReaction]);
 
     // Time-based category hint
     const timeHint = useMemo(() => {
@@ -329,8 +321,8 @@ export default function DashboardMobile({
                                 </div>
                             ) : recentPacks.length === 0 ? (
                                  <div className="py-6 flex flex-col items-center justify-center bg-[var(--bg-3)]/60 rounded-2xl border border-[var(--border)]">
-                                     <Mascot size={110} />
-                                     <p className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider mt-3 mb-2">No study packs yet</p>
+                                     <BookOpen size={40} className="text-[var(--text-3)]/40 mb-2" />
+                                     <p className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider mb-2">No study packs yet</p>
                                      <Link href="/create" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--foreground)] text-[var(--background)] font-black text-[8px] uppercase tracking-wider">
                                          Create Pack
                                      </Link>
