@@ -70,7 +70,6 @@ const typeConfig: Record<string, { icon: any; label: string; color: string }> = 
 
 const filters = [
     { id: "all", label: "All", icon: LayoutGrid },
-    { id: "due", label: "Due Today", icon: BellRing },
     { id: "exam_sprint", label: "Exam Sprints", icon: BookOpen },
     { id: "flashcards", label: "Flashcards", icon: Layers },
     { id: "quiz", label: "Quizzes", icon: HelpCircle },

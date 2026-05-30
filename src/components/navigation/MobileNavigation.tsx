@@ -38,16 +38,16 @@ export default function MobileNavigation() {
                             {isActive && (
                                 <motion.div
                                     layoutId="active-slider-bg"
-                                    className="absolute inset-1 rounded-full z-0 bg-[var(--bg-2)] border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.08)]"
+                                    className="absolute inset-1 rounded-full z-0 bg-[var(--foreground)] border border-transparent shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
                                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                                 />
                             )}
 
                             <div className="relative z-10 flex flex-col items-center gap-0.5">
-                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-[var(--foreground)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" : "text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors"} />
-                                <span className={`text-[9px] font-mono tracking-wider uppercase ${isActive ? "text-[var(--foreground)] font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" : "text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] font-bold transition-colors"}`}>
-                                    {item.name}
-                                </span>
+                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-[var(--background)]" : "text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors"} />
+                                <span className={`text-[9px] font-mono tracking-wider uppercase ${isActive ? "text-[var(--background)] font-black" : "text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] font-bold transition-colors"}`}>
+                                     {item.name}
+                                 </span>
                             </div>
                         </Link>
                     );

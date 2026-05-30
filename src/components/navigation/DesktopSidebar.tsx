@@ -75,95 +75,70 @@ export default function DesktopSidebar() {
                 </div>
 
                 {/* Nav Items */}
-                <nav className="flex-1 px-4 space-y-2">
+                <nav className="flex-1 px-3 space-y-2.5">
                     <Link
                         href="/dashboard"
-                        className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 relative group/item ${
+                        className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/item border ${
                             pathname === "/dashboard"
-                            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                            : "text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.03] hover:text-[var(--foreground)]"
+                            ? "bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-md"
+                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--bg-3)]/20 hover:bg-[var(--foreground)]/[0.04] border-[var(--border)]"
                         }`}
                     >
                         <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname === "/dashboard" ? "scale-110" : "group-hover/item:scale-110"}`}>
-                            <LayoutDashboard size={20} strokeWidth={pathname === "/dashboard" ? 2.5 : 1.5} />
+                            <LayoutDashboard size={20} strokeWidth={pathname === "/dashboard" ? 2.5 : 2} />
                         </div>
-                        <span className={`font-sans font-bold text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap ${pathname === "/dashboard" ? "text-[var(--foreground)]" : ""}`}>
+                        <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
                             Dashboard
                         </span>
-                        {pathname === "/dashboard" && (
-                            <motion.div
-                                layoutId="sidebar-active"
-                                className="absolute left-0 w-1 h-6 bg-[var(--accent)] rounded-r-full"
-                            />
-                        )}
                     </Link>
 
                     {/* Note: Arena/Match are handled in the Header, so we keep sidebar focused on core navigation */}
                     <Link
                         href="/create"
-                        className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 relative group/item ${
+                        className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/item border ${
                             pathname === "/create"
-                            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                            : "text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.03] hover:text-[var(--foreground)]"
+                            ? "bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-md"
+                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--bg-3)]/20 hover:bg-[var(--foreground)]/[0.04] border-[var(--border)]"
                         }`}
                     >
                         <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname === "/create" ? "scale-110" : "group-hover/item:scale-110"}`}>
-                            <PlusCircle size={20} strokeWidth={pathname === "/create" ? 2.5 : 1.5} />
+                            <PlusCircle size={20} strokeWidth={pathname === "/create" ? 2.5 : 2} />
                         </div>
-                        <span className={`font-sans font-bold text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap ${pathname === "/create" ? "text-[var(--foreground)]" : ""}`}>
+                        <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
                             Create Studio
                         </span>
-                        {pathname === "/create" && (
-                            <motion.div
-                                layoutId="sidebar-active"
-                                className="absolute left-0 w-1 h-6 bg-[var(--accent)] rounded-r-full"
-                            />
-                        )}
                     </Link>
 
                     <Link
                         href="/tools/ai-study-planner"
-                        className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 relative group/item ${
+                        className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/item border ${
                             pathname === "/tools/ai-study-planner"
-                            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                            : "text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.03] hover:text-[var(--foreground)]"
+                            ? "bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-md"
+                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--bg-3)]/20 hover:bg-[var(--foreground)]/[0.04] border-[var(--border)]"
                         }`}
                     >
                         <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname === "/tools/ai-study-planner" ? "scale-110" : "group-hover/item:scale-110"}`}>
-                            <Zap size={20} strokeWidth={pathname === "/tools/ai-study-planner" ? 2.5 : 1.5} />
+                            <Zap size={20} strokeWidth={pathname === "/tools/ai-study-planner" ? 2.5 : 2} />
                         </div>
-                        <span className={`font-sans font-bold text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap ${pathname === "/tools/ai-study-planner" ? "text-[var(--foreground)]" : ""}`}>
+                        <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
                             Study Lab
                         </span>
-                        {pathname === "/tools/ai-study-planner" && (
-                            <motion.div
-                                layoutId="sidebar-active"
-                                className="absolute left-0 w-1 h-6 bg-[var(--accent)] rounded-r-full"
-                            />
-                        )}
                     </Link>
 
                     <Link
                         href="/library"
-
-                        className={`flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 relative group/item ${
+                        className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/item border ${
                             pathname === "/library"
-                            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                            : "text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.03] hover:text-[var(--foreground)]"
+                            ? "bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-md"
+                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--bg-3)]/20 hover:bg-[var(--foreground)]/[0.04] border-[var(--border)]"
                         }`}
                     >
                         <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname === "/library" ? "scale-110" : "group-hover/item:scale-110"}`}>
-                            <Library size={20} strokeWidth={pathname === "/library" ? 2.5 : 1.5} />
+                            <Library size={20} strokeWidth={pathname === "/library" ? 2.5 : 2} />
                         </div>
-                        <span className={`font-sans font-bold text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap ${pathname === "/library" ? "text-[var(--foreground)]" : ""}`}>
+                        <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
                             Library
                         </span>
-                        {pathname === "/library" && (
-                            <motion.div
-                                layoutId="sidebar-active"
-                                className="absolute left-0 w-1 h-6 bg-[var(--accent)] rounded-r-full"
-                            />
-                        )}
                     </Link>
                 </nav>
                 {/* Profile/Footer Section */}

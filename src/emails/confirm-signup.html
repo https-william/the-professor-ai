@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" style="margin:0;padding:0;background:#fdfcfb;font-family:'Inter',Arial,sans-serif;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirm your email ☕</title>
+<style>
+  /* ==== Reset ==== */
+  body,table,td,a{font-family:inherit;font-size:100%;line-height:inherit;margin:0;padding:0;}
+  img{border:0;height:auto;line-height:100%;outline:none;text-decoration:none;}
+  table{border-collapse:collapse !important;}
+
+  /* ==== Layout ==== */
+  .wrapper{
+    max-width:440px;width:100%;margin:40px auto;padding:32px;
+    background:rgba(255,255,255,0.75);
+    border-radius:20px;
+    box-shadow:0 12px 40px rgba(184, 66, 46, 0.05), 0 2px 8px rgba(0,0,0,0.03);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,0.6);
+  }
+
+  /* ==== Red-hued warm background for the email ==== */
+  body{
+    background:linear-gradient(135deg, #fdf6f5 0%, #f5f7fa 100%);
+    color:#2d2d2d;
+  }
+
+  /* ==== Branding & Elements ==== */
+  .logo{margin:0 auto 24px;text-align:center;}
+  
+  .primary-btn{
+    display:inline-block;
+    padding:14px 28px;
+    background:#b8422e;               /* brand primary red */
+    color:#ffffff !important;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:600;
+    text-align:center;
+    box-shadow:0 4px 14px rgba(184, 66, 46, 0.25);
+    transition:all 0.2s ease;
+  }
+  .primary-btn:hover{
+    background:#a33927;               /* brand dark red */
+    box-shadow:0 6px 20px rgba(184, 66, 46, 0.35);
+  }
+
+  h1{font-size:22px;margin:0 0 16px;text-align:center;color:#1a1a1a;font-weight:700;letter-spacing:-0.02em;}
+  p{margin:0 0 16px;line-height:1.6;color:#3a3a3a;font-size:15px;}
+  .footer{font-size:11px;color:#999;text-align:center;margin-top:32px;border-top:1px dashed rgba(0,0,0,0.06);padding-top:20px;}
+  .footer a{color:#999;text-decoration:underline;}
+  @media(max-width:480px){
+    .wrapper{padding:20px;margin:20px auto;}
+    h1{font-size:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Logo (base64 or fallback) -->
+  <div class="logo">
+    <img src="data:image/png;base64,{{logo_base64}}" alt="The Professor AI" width="100" style="display:block;margin:0 auto;">
+  </div>
+
+  <h1>Confirm your email (your bed misses you) ☕</h1>
+
+  <p>
+    Hey there,
+  </p>
+
+  <p>
+    I'm the <strong>Prof</strong>. I'm here to help you get your notes down to just the good parts, so you can get your study time back and catch up on sleep.
+  </p>
+
+  <p>
+    But first, let's make sure this is actually your email (and not someone signing you up for morning lectures at 8:00 AM). Click the button below to confirm your account and join the study lab:
+  </p>
+
+  <p style="text-align:center;margin:24px 0;">
+    <a href="{{ .ConfirmationURL }}" class="primary-btn">Confirm Email →</a>
+  </p>
+
+  <p>
+    Talk soon,
+  </p>
+
+  <p style="margin-top:24px;border-top:1px solid rgba(0,0,0,0.05);padding-top:12px;">
+    <strong>Prof</strong><br>
+    <span style="font-size:13px;color:#777;">Your coffee-loving study buddy</span>
+  </p>
+
+  <div class="footer">
+    You're receiving this because you signed up at <a href="https://theprofessor.xyz">theprofessor.xyz</a>.<br>
+    If you didn't request this, you can safely ignore it.
+  </div>
+</div>
+</body>
+</html>

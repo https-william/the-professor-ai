@@ -73,20 +73,20 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
           />
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="relative w-full max-w-md overflow-hidden rounded-[40px] shadow-2xl"
+            className="relative w-full max-w-md overflow-y-auto rounded-[32px] shadow-2xl max-h-[90vh] my-auto custom-scrollbar"
             style={{
               background: "var(--card)",
               border: "1px solid var(--border)",
@@ -96,7 +96,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-[var(--blue)]/10 rounded-full blur-[80px] pointer-events-none" />
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-[var(--emerald)]/10 rounded-full blur-[80px] pointer-events-none" />
 
-            <div className="relative z-10 p-8">
+            <div className="relative z-10 p-6 sm:p-8">
               {/* Close button */}
               <button
                 onClick={onClose}

@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Zap, Share2, CheckCircle2, XCircle, Clock, ChevronRight, AlertCircle } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
+import { Mascot } from "@/components/ui/Mascot";
+import { useMascotStore } from "@/store/useMascotStore";
 
 export const InteractiveQuiz = ({ 
     questions = [
@@ -33,6 +35,28 @@ export const InteractiveQuiz = ({
     const [startTime] = useState(Date.now());
     const [endTime, setEndTime] = useState<number | null>(null);
     const { addToast } = useToasts();
+
+    const triggerReaction = useMascotStore(state => state.triggerReaction);
+
+    useEffect(() => {
+        if (showResults) {
+            const results = questions.map((q, idx) => ({
+                isCorrect: answers[idx] === q.correctIndex,
+            }));
+            const totalCorrect = results.filter(r => r.isCorrect).length;
+            const scorePercent = Math.round((totalCorrect / questions.length) * 100);
+
+            if (scorePercent === 100) {
+                triggerReaction("Perfect score! No cap, you actually read this.", "streak", 6000);
+            } else if (scorePercent >= 70) {
+                triggerReaction("Solid work. Amaka would be proud.", "success", 6000);
+            } else if (scorePercent >= 50) {
+                triggerReaction("Almost there. A quick review and you're golden.", "idle", 6000);
+            } else {
+                triggerReaction("Let's review this again. I know you can do better.", "fail", 6000);
+            }
+        }
+    }, [showResults, answers, questions, triggerReaction]);
 
     const currentQuestion = questions[currentIdx] || questions[0];
 
@@ -101,6 +125,11 @@ export const InteractiveQuiz = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full flex flex-col gap-3 overflow-visible"
             >
+                {/* Mascot Header */}
+                <div className="flex flex-col items-center justify-center py-2 shrink-0">
+                    <Mascot size={120} />
+                </div>
+
                 {/* Score header */}
                 <div className="grid grid-cols-3 gap-2 shrink-0">
                     <div className="p-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center">

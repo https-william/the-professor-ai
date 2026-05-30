@@ -154,8 +154,8 @@ export async function hydraGenerateWithChunking(
     const chunks = chunkContent(content);
     if (chunks.length === 1) return hydraGenerateContent(buildPrompt(chunks[0], 0, 1), options);
     const results = await Promise.allSettled(chunks.map((c, i) => hydraGenerateContent(buildPrompt(c, i, chunks.length), options)));
-    const success = results.find(r => r.status === "fulfilled") as PromiseFulfilledResult<string>;
-    if (success) return success.value;
+    const successfulResults = results.filter(r => r.status === "fulfilled") as PromiseFulfilledResult<string>[];
+    if (successfulResults.length > 0) return successfulResults.map(r => r.value).join("\n\n");
     throw new Error("All chunks failed");
 }
 
@@ -165,16 +165,16 @@ export async function hydraGenerateStream(prompt: string, options: HydraOptions 
     const sysPrompt = systemPrompt ?? "You are an expert AI assistant. Output JSON only.";
     
     const { sys, usr } = validateRequestSize(sysPrompt, prompt);
-
+    
     const tryStream = async (p: any): Promise<Response | null> => {
         try {
             return await callOpenAICompatibleStream(p, [{ role: "system", content: sys }, { role: "user", content: usr }], { temperature, timeoutMs });
         } catch (e: any) { 
             console.warn(`Hydra Stream [${p}] failed: ${e.message}`);
-            return null; 
+            return null;
         }
     };
-
+    
     let resp = null;
     const providers: Array<AIProvider> = ['groq'];
     
@@ -182,9 +182,22 @@ export async function hydraGenerateStream(prompt: string, options: HydraOptions 
         resp = await tryStream(p);
         if (resp) break;
     }
-
-    if (!resp) throw new Error("Our streaming server is currently unavailable. Please try again in a moment.");
-
+    
+    // If streaming fails completely, fallback to non‑streaming generation
+    if (!resp) {
+        console.warn('Hydra Stream failed for all providers – falling back to non‑streaming call');
+        const fallbackContent = await hydraGenerateContent(prompt, options);
+        const encoder = new TextEncoder();
+        return new ReadableStream({
+            start(controller) {
+                // Emit a single chunk mimicking the streaming format
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "chunk", chunk: fallbackContent })}\n\n`));
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "complete" })}\n\n`));
+                controller.close();
+            }
+        });
+    }
+    
     const reader = resp.body!.getReader();
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();

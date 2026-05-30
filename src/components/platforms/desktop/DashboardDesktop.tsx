@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -16,6 +16,8 @@ import StandardContainer from "@/components/ui/StandardContainer";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
 import { getDailyTip } from "@/lib/education-tips";
+import { Mascot } from "@/components/ui/Mascot";
+import { useMascotStore } from "@/store/useMascotStore";
 
 interface DashboardDesktopProps {
     user: any;
@@ -74,6 +76,14 @@ export default function DashboardDesktop({
             .catch(err => console.error("Failed to fetch library packs:", err))
             .finally(() => setPacksLoading(false));
     });
+
+    const triggerReaction = useMascotStore((state) => state.triggerReaction);
+
+    useEffect(() => {
+        if (!packsLoading && recentPacks.length === 0) {
+            triggerReaction("Got notes? Feed them to me and let's get you your evening back.", "idle", 6000);
+        }
+    }, [packsLoading, recentPacks.length, triggerReaction]);
 
     // Time-based category hint
     const timeHint = useMemo(() => {
@@ -346,8 +356,9 @@ export default function DashboardDesktop({
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)]">Loading packs...</p>
                                 </div>
                             ) : recentPacks.length === 0 ? (
-                                <div className="py-8 text-center bg-[var(--bg-3)]/60 rounded-2xl border border-[var(--border)]">
-                                    <p className="text-[11px] font-bold text-[var(--text-3)] uppercase tracking-wider mb-3">No study packs generated yet</p>
+                                <div className="py-8 flex flex-col items-center justify-center bg-[var(--bg-3)]/60 rounded-2xl border border-[var(--border)]">
+                                    <Mascot size={130} />
+                                    <p className="text-[11px] font-bold text-[var(--text-3)] uppercase tracking-wider mt-4 mb-3">No study packs generated yet</p>
                                     <Link href="/create" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--foreground)] text-[var(--background)] font-black text-[9px] uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all">
                                         Create First Pack
                                     </Link>
