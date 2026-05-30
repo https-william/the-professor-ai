@@ -331,6 +331,14 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
             {/* ── RIGHT: Actions ── */}
             <div className="flex items-center justify-end gap-1.5 md:gap-2.5">
+                {user.isAuthenticated && user.planStatus === 'free' && (
+                    <Link 
+                        href="/settings/billing"
+                        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--accent)]/10 hover:bg-[var(--accent)] hover:text-black text-[var(--accent)] font-sans font-black text-[9px] uppercase tracking-wider transition-all border border-[var(--accent)]/25 active:scale-95 shadow-sm"
+                    >
+                        <Sparkles size={10} /> Upgrade
+                    </Link>
+                )}
                 {user.isAuthenticated && (
                     <div className={cn(
                         "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
@@ -421,7 +429,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
                                     {[
                                         { label: "Profile", icon: User, href: "/settings" },
-                                        { label: "Billing", icon: CreditCard, href: "/settings" },
+                                        { label: "Billing", icon: CreditCard, href: "/settings/billing" },
                                         { label: "Achievements", icon: Trophy, href: "/achievements" },
                                     ].map((item) => (
                                         <Link

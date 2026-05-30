@@ -34,6 +34,8 @@ export interface UserState {
     dailyGoalMinutes: number;
     difficultyPreference: string;
     themePreference: string;
+    planStatus: 'free' | 'plus' | 'unlimited';
+    subscriptionEndDate: string | null;
 }
 
 export interface UserStore extends UserState {
@@ -73,6 +75,8 @@ export const defaultUser: UserState = {
     dailyGoalMinutes: 30,
     difficultyPreference: "medium",
     themePreference: "dark",
+    planStatus: "free",
+    subscriptionEndDate: null,
 };
 
 let isRefreshing = false;
@@ -114,7 +118,7 @@ export const useUserStore = create<UserStore>()(
                     try {
                         const controller = new AbortController();
                         const id = setTimeout(() => controller.abort(), 5000); 
-
+ 
                         const res = await fetch(`/api/user/profile?t=${Date.now()}`, {
                             cache: "no-store",
                             headers: session.access_token ? {
@@ -177,6 +181,8 @@ export const useUserStore = create<UserStore>()(
                         dailyGoalMinutes: profile?.daily_goal_minutes ?? get().dailyGoalMinutes ?? 30,
                         difficultyPreference: profile?.difficulty_preference ?? get().difficultyPreference ?? "medium",
                         themePreference: profile?.theme_preference ?? get().themePreference ?? "dark",
+                        planStatus: profile?.plan_status ?? get().planStatus ?? "free",
+                        subscriptionEndDate: profile?.subscription_end_date ?? get().subscriptionEndDate ?? null,
                     });
 
                 } catch (error: any) {
@@ -216,7 +222,9 @@ export const useUserStore = create<UserStore>()(
                 notificationPush: state.notificationPush,
                 dailyGoalMinutes: state.dailyGoalMinutes,
                 difficultyPreference: state.difficultyPreference,
-                themePreference: state.themePreference
+                themePreference: state.themePreference,
+                planStatus: state.planStatus,
+                subscriptionEndDate: state.subscriptionEndDate
             }),
         }
     )

@@ -37,7 +37,33 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
-        console.log(`[Ingest] Processing: ${file.name} for user ${user.id}`);
+        // Fetch profile to verify plan limits
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("plan_status")
+            .eq("id", user.id)
+            .single();
+
+        const planStatus = profile?.plan_status || 'free';
+
+        // Enforce file size limit based on plan status
+        // Free: 10MB, Plus: 25MB, Unlimited: 100MB
+        const sizeLimits: Record<string, number> = {
+            free: 10 * 1024 * 1024,
+            plus: 25 * 1024 * 1024,
+            unlimited: 100 * 1024 * 1024
+        };
+
+        const maxAllowedSize = sizeLimits[planStatus] || (10 * 1024 * 1024);
+
+        if (file.size > maxAllowedSize) {
+            const displayLimit = planStatus === 'free' ? "10MB" : planStatus === 'plus' ? "25MB" : "100MB";
+            return NextResponse.json({ 
+                error: `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Your ${planStatus.toUpperCase()} plan limit is ${displayLimit}. Upgrade to access higher upload capacities.` 
+            }, { status: 400 });
+        }
+
+        console.log(`[Ingest] Processing: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) under plan ${planStatus} for user ${user.id}`);
 
         // 2. Upload to Supabase Storage (Temporary)
         const fileName = `${user.id}/${Date.now()}_${file.name}`;

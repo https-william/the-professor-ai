@@ -41,8 +41,13 @@ export async function canUserGenerate(
 
     const cost = costs[feature] || 5;
 
-    // Allow if user has credits OR if credits are 0 (free tier unlimited - OpenRouter is free)
-    if (profile.credits > 0 && profile.credits < cost) {
+    // 2. Bypass check for Unlimited tier
+    if (profile.plan_status === "unlimited") {
+        return { allowed: true, creditsLeft: 999999 };
+    }
+
+    // 3. Allow if user has credits
+    if (profile.credits < cost) {
         return { 
             allowed: false, 
             reason: `Insufficient credits. This operation requires ${cost} units.`,
@@ -55,15 +60,39 @@ export async function canUserGenerate(
 
 /**
  * Deducts credits on the server-side after generation.
- * Note: OpenRouter is free, so we skip actual deduction to avoid blocking users with 0 credits.
  */
 export async function deductCredits(
     supabase: SupabaseClient,
     userId: string,
     feature: 'flashcards' | 'quiz' | 'summary' | 'roadmap' | 'chat' | 'mind-map' | 'podcast'
 ): Promise<void> {
-    // Skip deduction since OpenRouter is free
-    // This allows users with 0 credits to continue generating content
-    console.log(`[Guard] Generation complete for ${feature} (credits not deducted - free tier)`);
-    return;
+    // Fetch profile to verify plan and credits
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("credits, plan_status")
+        .eq("id", userId)
+        .single();
+
+    if (!profile) return;
+    if (profile.plan_status === "unlimited") {
+        console.log(`[Guard] Unlimited user generated ${feature} (no credits deducted)`);
+        return;
+    }
+
+    const costs: Record<string, number> = {
+        flashcards: 1,
+        quiz: 2,
+        summary: 2,
+        roadmap: 2,
+        chat: 1,
+    };
+    const cost = costs[feature] || 5;
+    const newCredits = Math.max(0, profile.credits - cost);
+
+    await supabase
+        .from("profiles")
+        .update({ credits: newCredits })
+        .eq("id", userId);
+
+    console.log(`[Guard] Deducted ${cost} credits for ${feature}. New balance: ${newCredits}`);
 }

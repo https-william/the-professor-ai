@@ -22,8 +22,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Amount required" }, { status: 400 });
         }
 
-        // Initialize Paystack Transaction
-        const params = {
+        // Map plan identifiers to Paystack plan codes
+        const planCodes: Record<string, string | undefined> = {
+            plus: process.env.PAYSTACK_PLAN_PLUS || "PLN_mock_plus_code",
+            unlimited: process.env.PAYSTACK_PLAN_UNLIMITED || "PLN_mock_unlimited_code"
+        };
+
+        // Initialize Paystack Transaction parameters
+        const params: any = {
             email: user.email,
             amount: amount, // Amount in kobo
             callback_url: `${req.headers.get("origin")}/settings/billing`,
@@ -33,6 +39,11 @@ export async function POST(req: NextRequest) {
                 credits: credits || 0
             }
         };
+
+        // If it is a subscription plan, inject the Paystack Plan Code
+        if (plan === "plus" || plan === "unlimited") {
+            params.plan = planCodes[plan];
+        }
 
         const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
             method: "POST",

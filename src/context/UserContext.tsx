@@ -319,7 +319,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         notificationPush: store.notificationPush,
         dailyGoalMinutes: store.dailyGoalMinutes,
         difficultyPreference: store.difficultyPreference,
-        themePreference: store.themePreference
+        themePreference: store.themePreference,
+        planStatus: store.planStatus,
+        subscriptionEndDate: store.subscriptionEndDate
     };
 
     return (

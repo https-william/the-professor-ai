@@ -304,14 +304,25 @@ export default function SettingsPage() {
                                 <div className="space-y-8">
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent)] mb-2">The Plan</p>
-                                        <h4 className="text-3xl md:text-4xl font-bold font-heading">Scholar Free</h4>
-                                        <p className="text-sm text-[var(--foreground-muted)] mt-2">You are currently on the basic plan. Upgrade to get your time back faster.</p>
+                                        <h4 className="text-3xl md:text-4xl font-bold font-heading capitalize">
+                                            {user.planStatus === 'free' ? "Scholar Free" : user.planStatus === 'plus' ? "Plus Scholar" : "Unlimited Professor"}
+                                        </h4>
+                                        <p className="text-sm text-[var(--foreground-muted)] mt-2">
+                                            {user.planStatus === 'free' 
+                                                ? "You are currently on the basic plan. Upgrade to get your time back faster." 
+                                                : `You are currently on the ${user.planStatus} plan. Enjoy priority generation speeds and premium features.`}
+                                        </p>
                                     </div>
                                     
                                     <div className="flex items-center gap-12">
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">Monthly Credits</p>
-                                            <p className="text-3xl font-bold font-heading text-[var(--foreground)]">{user?.credits || 0}<span className="text-xs text-[var(--foreground-muted)] ml-1">/ 100</span></p>
+                                            <p className="text-3xl font-bold font-heading text-[var(--foreground)]">
+                                                {user.planStatus === 'unlimited' ? "∞" : user?.credits || 0}
+                                                <span className="text-xs text-[var(--foreground-muted)] ml-1">
+                                                    {user.planStatus === 'free' ? "/ 100" : user.planStatus === 'plus' ? "/ 1,000" : ""}
+                                                </span>
+                                            </p>
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">Usage Health</p>
@@ -323,10 +334,13 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
-                                <button className="btn-skeuo w-full py-6 flex flex-col items-center justify-center gap-1 bg-[var(--foreground)] text-[var(--background)] group/btn overflow-hidden relative shadow-2xl">
+                                <button 
+                                    onClick={() => router.push('/settings/billing')}
+                                    className="btn-skeuo w-full py-6 flex flex-col items-center justify-center gap-1 bg-[var(--foreground)] text-[var(--background)] group/btn overflow-hidden relative shadow-2xl"
+                                >
                                     <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
                                     <span className="text-xs font-black uppercase tracking-[0.2em] relative z-10 flex items-center gap-2">
-                                        Upgrade to Pro <ChevronRight size={14} />
+                                        {user.planStatus === 'free' ? "Upgrade to Pro" : "Manage Billing"} <ChevronRight size={14} />
                                     </span>
                                     <span className="text-[9px] font-bold uppercase opacity-50 relative z-10">Expand your reach</span>
                                 </button>

@@ -48,8 +48,10 @@ export async function GET(req: NextRequest) {
                         alias: user.email?.split("@")[0] || "Scholar",
                         current_streak: 0,
                         xp_total: 0,
-                        credits: 100,
+                        credits: 100, // 100 starter credits
                         has_onboarded: false,
+                        plan_status: 'free',
+                        last_replenishment_date: new Date().toISOString()
                     })
                     .select()
                     .single();
@@ -61,6 +63,41 @@ export async function GET(req: NextRequest) {
                 return NextResponse.json({ profile: newProfile, email: user.email });
             }
             return NextResponse.json({ error: profileError.message }, { status: 500 });
+        }
+
+        // Automatic free tier monthly replenishment (50 credits/month)
+        if (profile && profile.plan_status === 'free') {
+            const lastReplenish = profile.last_replenishment_date ? new Date(profile.last_replenishment_date) : new Date(profile.created_at || Date.now());
+            const now = new Date();
+            
+            // Calculate difference in months
+            const yearsDiff = now.getFullYear() - lastReplenish.getFullYear();
+            const monthsDiff = (yearsDiff * 12) + (now.getMonth() - lastReplenish.getMonth());
+            
+            if (monthsDiff >= 1) {
+                const creditsToReplenish = monthsDiff * 50;
+                const newCredits = (profile.credits || 0) + creditsToReplenish;
+                
+                // Add months to last replenish date
+                const newReplenishDate = new Date(lastReplenish);
+                newReplenishDate.setMonth(newReplenishDate.getMonth() + monthsDiff);
+                
+                // Update database
+                const { data: updatedProfile, error: updateError } = await supabase
+                    .from("profiles")
+                    .update({
+                        credits: newCredits,
+                        last_replenishment_date: newReplenishDate.toISOString()
+                    })
+                    .eq("id", user.id)
+                    .select()
+                    .single();
+                    
+                if (!updateError && updatedProfile) {
+                    profile = updatedProfile;
+                    console.log(`[Profile GET] Auto-replenished ${creditsToReplenish} credits for free tier user ${user.id}`);
+                }
+            }
         }
 
         return NextResponse.json({ profile, email: user.email });

@@ -9,7 +9,7 @@ export type ParseResult = {
     isMultimodal?: boolean;
 };
 
-const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // Expanded to 15MB for high-fidelity images/PDFs
+const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // Cap at 100MB. Actual limits enforced via API per plan tier.
 const MIN_TEXT_LENGTH = 10; // Lowered for multimodal transcription
 
 // ─── PDF Parsing ──────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export async function parseDocument(
 ): Promise<ParseResult> {
     const size = fileSizeBytes ?? buffer.byteLength;
     if (size > MAX_FILE_SIZE_BYTES) {
-        throw new Error(`File too large (${(size / 1024 / 1024).toFixed(1)} MB). Limit is 15MB.`);
+        throw new Error(`File too large (${(size / 1024 / 1024).toFixed(1)} MB). Limit is 100MB.`);
     }
 
     const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
