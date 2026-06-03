@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, BookOpen, Zap, GraduationCap } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
-import Turnstile from "@/components/ui/Turnstile";
+import Turnstile, { TurnstileHandle } from "@/components/ui/Turnstile";
 
 interface GuestSignupModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<React.ReactNode | null>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -53,12 +53,22 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
       await fetch('/api/auth/signout', { method: 'POST' });
     }
 
+    // Get a fresh captcha token before submitting
+    let captchaToken: string | undefined;
+    try {
+      const token = await turnstileRef.current?.getToken();
+      captchaToken = token || undefined;
+    } catch (captchaErr: unknown) {
+      const msg = captchaErr instanceof Error ? captchaErr.message : "Captcha verification failed. Please refresh and try again.";
+      setError(msg);
+      setLoading(false);
+      return;
+    }
+
     const { error: signUpError } = await supabase.auth.signUp({ 
       email, 
       password,
-      options: {
-        captchaToken: captchaToken || undefined,
-      }
+      options: { captchaToken },
     });
     if (signUpError) {
       const msg = signUpError.message;
@@ -91,6 +101,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
       } else {
         setError(msg);
       }
+      turnstileRef.current?.reset();
       setLoading(false);
     }
     else {
@@ -215,7 +226,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
                 >
                   {loading ? "Creating account..." : "Create free account"}
                 </button>
-                <Turnstile onVerify={setCaptchaToken} />
+                <Turnstile ref={turnstileRef} />
               </form>
 
               {/* Login link */}

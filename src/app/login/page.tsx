@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useRef, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getRedirectUrl } from "@/lib/api-client";
 import BrandLogo from "@/components/ui/BrandLogo";
-import Turnstile from "@/components/ui/Turnstile";
+import Turnstile, { TurnstileHandle } from "@/components/ui/Turnstile";
 
 function LoginForm() {
     const [email, setEmail] = useState("");
@@ -14,7 +14,7 @@ function LoginForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const turnstileRef = useRef<TurnstileHandle>(null);
     const router = useRouter();
     const supabase = createClient();
     const searchParams = useSearchParams();
@@ -25,25 +25,39 @@ function LoginForm() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        // Always get a fresh captcha token before submitting to Supabase.
+        // Without this, Supabase rejects the request with "invalid login credentials"
+        // even when the email/password are correct.
+        let captchaToken: string | undefined;
+        try {
+            const token = await turnstileRef.current?.getToken();
+            captchaToken = token || undefined;
+        } catch (captchaErr: unknown) {
+            const msg = captchaErr instanceof Error ? captchaErr.message : "Captcha verification failed. Please refresh and try again.";
+            setError(msg);
+            setLoading(false);
+            return;
+        }
         
         const { data: { user: authUser }, error: loginError } = await supabase.auth.signInWithPassword({ 
             email, 
             password,
-            options: {
-                captchaToken: captchaToken || undefined,
-            }
+            options: { captchaToken },
         });
         
         if (loginError) { 
             let msg = loginError.message;
-            if (msg.toLowerCase().includes("invalid login credentials")) {
+            if (msg.toLowerCase().includes("invalid login credentials") || msg.toLowerCase().includes("invalid credentials")) {
                 msg = "Hmm, that email or password doesn't match our notes. Try checking for typos?";
             } else if (msg.toLowerCase().includes("email not confirmed")) {
                 msg = "Almost there! We sent a confirmation link to your email. Click it to unlock your account.";
             } else if (msg.toLowerCase().includes("rate limit")) {
                 msg = "Whoa, slow down a bit! You've tried logging in too many times recently. Take a breath and try again in a minute.";
             }
-            setError(msg); 
+            setError(msg);
+            // Reset turnstile so a fresh token is issued on the next attempt
+            turnstileRef.current?.reset();
             setLoading(false); 
         } else if (authUser) {
             const { data: profile } = await supabase
@@ -268,7 +282,7 @@ function LoginForm() {
                     <button type="submit" disabled={loading} className="btn-jelly-primary" style={{ width: "100%", marginTop: "8px" }}>
                         {loading ? "Signing in..." : "Sign in"}
                     </button>
-                    <Turnstile onVerify={setCaptchaToken} />
+                    <Turnstile ref={turnstileRef} />
                 </form>
 
                 <p style={{

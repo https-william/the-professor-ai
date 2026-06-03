@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
-import Turnstile from "@/components/ui/Turnstile";
+import Turnstile, { TurnstileHandle } from "@/components/ui/Turnstile";
 
 const TESTIMONIALS = [
   { quote: "Finally got 8 hours of sleep before my exam. My bed actually remembers what I look like now.", author: "Amaka O. · University of Ibadan", },
@@ -20,7 +20,7 @@ function SignupForm() {
   const [error, setError] = useState<React.ReactNode | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [testiIndex, setTestiIndex] = useState(0);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const router = useRouter();
   const supabase = createClient();
   const searchParams = useSearchParams();
@@ -71,12 +71,22 @@ function SignupForm() {
       await fetch('/api/auth/signout', { method: 'POST' });
     }
 
+    // Get a fresh captcha token before submitting
+    let captchaToken: string | undefined;
+    try {
+      const token = await turnstileRef.current?.getToken();
+      captchaToken = token || undefined;
+    } catch (captchaErr: unknown) {
+      const msg = captchaErr instanceof Error ? captchaErr.message : "Captcha verification failed. Please refresh and try again.";
+      setError(msg);
+      setLoading(false);
+      return;
+    }
+
     const { error: signUpError } = await supabase.auth.signUp({ 
       email, 
       password,
-      options: {
-        captchaToken: captchaToken || undefined,
-      }
+      options: { captchaToken },
     });
     if (signUpError) {
       const msg = signUpError.message;
@@ -104,6 +114,7 @@ function SignupForm() {
       } else {
         setError(msg);
       }
+      turnstileRef.current?.reset();
       setLoading(false);
     }
     else {
@@ -353,7 +364,7 @@ function SignupForm() {
              <button type="submit" disabled={loading} className="btn-jelly-primary" style={{ width: "100%", marginTop: "8px" }}>
               {loading ? "Creating account..." : "Create free account"}
             </button>
-            <Turnstile onVerify={setCaptchaToken} />
+            <Turnstile ref={turnstileRef} />
           </form>
 
           {/* Legal text */}
