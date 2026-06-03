@@ -83,17 +83,28 @@ function SignupForm() {
       return;
     }
 
-    const { error: signUpError } = await supabase.auth.signUp({ 
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ 
       email, 
       password,
       options: { captchaToken },
     });
-    if (signUpError) {
-      const msg = signUpError.message;
-      if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already exists") || msg.toLowerCase().includes("already in use")) {
+
+    // Supabase quirk: for an existing CONFIRMED user, signUp returns no error
+    // but data.user.identities is an empty array. Catch it here.
+    const isExistingConfirmed = !signUpError && signUpData?.user?.identities?.length === 0;
+
+    if (signUpError || isExistingConfirmed) {
+      const msg = signUpError?.message ?? '';
+      const isExisting =
+        isExistingConfirmed ||
+        msg.toLowerCase().includes('already registered') ||
+        msg.toLowerCase().includes('already exists') ||
+        msg.toLowerCase().includes('already in use') ||
+        (signUpError as any)?.code === 'user_exists';
+      if (isExisting) {
         setError(
           <span>
-            Looks like you're already in our books! Try{" "}
+            Looks like you&apos;re already in our books! Try{" "}
             <Link 
               href={`/login?next=${encodeURIComponent(nextUrl)}`}
               className="underline text-[var(--blue)] font-bold"
