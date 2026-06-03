@@ -3,8 +3,8 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from "react";
 
 export interface TurnstileHandle {
-  /** Call this on form submit. Resolves with a fresh token or rejects on timeout. */
-  getToken: () => Promise<string>;
+  /** Call this on form submit. Resolves with a token, or undefined if captcha is unavailable. */
+  getToken: () => Promise<string | undefined>;
   /** Reset the widget (call after a failed auth attempt so a fresh token can be issued). */
   reset: () => void;
 }
@@ -42,7 +42,7 @@ const Turnstile = forwardRef<TurnstileHandle, TurnstileProps>(
 
     useEffect(() => {
       if (!siteKey) {
-        console.warn("NEXT_PUBLIC_TURNSTILE_SITE_KEY is not defined.");
+        console.warn("NEXT_PUBLIC_TURNSTILE_SITE_KEY is not defined. Captcha will be skipped.");
         return;
       }
 
@@ -94,7 +94,12 @@ const Turnstile = forwardRef<TurnstileHandle, TurnstileProps>(
     }, [siteKey, handleSuccess]);
 
     useImperativeHandle(ref, () => ({
-      getToken: () => {
+      getToken: (): Promise<string | undefined> => {
+        // If no site key configured, skip captcha entirely
+        if (!siteKey) {
+          return Promise.resolve(undefined);
+        }
+
         // If we already have a fresh token, return it immediately
         if (latestTokenRef.current) {
           const t = latestTokenRef.current;
@@ -102,18 +107,17 @@ const Turnstile = forwardRef<TurnstileHandle, TurnstileProps>(
           return Promise.resolve(t);
         }
 
-        return new Promise<string>((resolve, reject) => {
-          pendingResolveRef.current = resolve;
+        return new Promise<string | undefined>((resolve, reject) => {
+          pendingResolveRef.current = resolve as (token: string) => void;
           pendingRejectRef.current = reject;
 
           // Execute the invisible challenge
           if (widgetIdRef.current && (window as any).turnstile) {
             (window as any).turnstile.execute(widgetIdRef.current);
           } else {
-            // If widget not ready, resolve without captcha (graceful degradation)
-            // Supabase will reject if captcha is strictly required
+            // Widget not ready — skip captcha (undefined = no token passed to Supabase)
             console.warn("Turnstile widget not ready, proceeding without token.");
-            resolve("");
+            resolve(undefined);
           }
 
           // Timeout after 15s so the form never hangs forever
