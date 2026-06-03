@@ -123,6 +123,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5, // Allow zooming for accessibility
   userScalable: true,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -17,7 +17,7 @@ function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<React.ReactNode | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [testiIndex, setTestiIndex] = useState(0);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -25,6 +25,7 @@ function SignupForm() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const topic = searchParams.get("topic");
+  const nextUrl = searchParams.get("next") || "/dashboard";
 
   const [pendingUpload, setPendingUpload] = useState<string | null>(null);
 
@@ -49,9 +50,11 @@ function SignupForm() {
       await supabase.auth.signOut();
       await fetch('/api/auth/signout', { method: 'POST' });
     }
+    const redirectBase = `${window.location.origin}/auth/callback`;
+    const redirectUrl = `${redirectBase}${redirectBase.includes("?") ? "&" : "?"}next=${encodeURIComponent(nextUrl)}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: redirectUrl },
     });
     if (error) { setError(error.message); setLoading(false); }
   };
@@ -68,25 +71,43 @@ function SignupForm() {
       await fetch('/api/auth/signout', { method: 'POST' });
     }
 
-    const { error } = await supabase.auth.signUp({ 
+    const { error: signUpError } = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
         captchaToken: captchaToken || undefined,
       }
     });
-    if (error) {
-      let msg = error.message;
-      if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already exists")) {
-        msg = "Looks like you're already in our books! Try signing in instead?";
+    if (signUpError) {
+      const msg = signUpError.message;
+      if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already exists") || msg.toLowerCase().includes("already in use")) {
+        setError(
+          <span>
+            Looks like you're already in our books! Try{" "}
+            <Link 
+              href={`/login?next=${encodeURIComponent(nextUrl)}`}
+              className="underline text-[var(--blue)] font-bold"
+            >
+              signing in
+            </Link>{" "}
+            or resetting your password via{" "}
+            <Link 
+              href="/forgot-password"
+              className="underline text-[var(--blue)] font-bold"
+            >
+              Forgot Password
+            </Link>?
+          </span>
+        );
       } else if (msg.toLowerCase().includes("rate limit")) {
-        msg = "Whoa, slow down a bit! You've tried signing up too many times recently. Take a breath and try again in a minute.";
+        setError("Whoa, slow down a bit! You've tried signing up too many times recently. Take a breath and try again in a minute.");
+      } else {
+        setError(msg);
       }
-      setError(msg);
       setLoading(false);
     }
     else {
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      router.push(`/verify-email?email=${encodeURIComponent(email)}${nextUrl && nextUrl !== "/dashboard" ? `&next=${encodeURIComponent(nextUrl)}` : ""}`);
       router.refresh();
     }
   };
@@ -276,14 +297,17 @@ function SignupForm() {
           {/* Error */}
           {error && (
             <div style={{
-              padding: "10px 14px",
-              borderRadius: "0.875rem",
-              marginBottom: "16px",
-              background: "rgba(239,68,68,0.08)",
-              border: "1px solid rgba(239,68,68,0.15)",
-              color: "#f87171",
+              padding: "12px 16px",
+              borderRadius: "1rem",
+              marginBottom: "20px",
+              background: "rgba(220, 38, 38, 0.2)",
+              border: "1px solid rgba(220, 38, 38, 0.4)",
+              color: "#fecaca",
               fontFamily: "'Outfit',sans-serif",
               fontSize: "13px",
+              fontWeight: "700",
+              boxShadow: "0 0 10px rgba(220, 38, 38, 0.15)",
+              lineHeight: "1.4"
             }}>
               ⚠ {error}
             </div>
@@ -356,7 +380,12 @@ function SignupForm() {
             marginTop: "16px",
           }}>
             Already have an account?{" "}
-            <Link href="/login" style={{ color: "var(--blue)", textDecoration: "none", fontWeight: 700 }}>Sign in</Link>
+            <Link 
+              href={`/login${nextUrl && nextUrl !== "/dashboard" ? `?next=${encodeURIComponent(nextUrl)}` : ""}`} 
+              style={{ color: "var(--blue)", textDecoration: "none", fontWeight: 700 }}
+            >
+              Sign in
+            </Link>
           </p>
         </div>
       </div>

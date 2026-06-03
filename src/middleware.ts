@@ -63,11 +63,22 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // If visiting landing/login/signup and already logged in, redirect to dashboard
+    // If visiting landing/login/signup and already logged in, redirect to next parameter or dashboard
     if (isAuthPage && user) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
-      return NextResponse.redirect(url);
+      const nextParam = request.nextUrl.searchParams.get('next');
+      if (nextParam) {
+        try {
+          return NextResponse.redirect(new URL(nextParam, request.url));
+        } catch {
+          const url = request.nextUrl.clone();
+          url.pathname = '/dashboard';
+          return NextResponse.redirect(url);
+        }
+      } else {
+        const url = request.nextUrl.clone();
+        url.pathname = '/dashboard';
+        return NextResponse.redirect(url);
+      }
     }
   }
 

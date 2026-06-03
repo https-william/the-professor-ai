@@ -5,24 +5,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
     LayoutDashboard, 
-    PlusCircle, 
-    Library, 
-    User
+    MessageSquare, 
+    Brain, 
+    FolderLock,
+    Settings
 } from "lucide-react";
 import BrandLogo from "@/components/ui/BrandLogo";
-
-const navItems = [
-    { name: "Home", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Create", href: "/create", icon: PlusCircle },
-    { name: "Library", href: "/library", icon: Library },
-    { name: "Profile", href: "/profile", icon: User },
-];
 
 export default function MobileNavigation() {
     const pathname = usePathname();
 
+    const navItems = [
+        { name: "Home", href: "/dashboard", icon: LayoutDashboard },
+        { name: "Chat", href: "/chat", icon: MessageSquare },
+        { name: "Cards", href: "/flashcards", icon: Brain },
+        { name: "Vault", href: "/offline-vault", icon: FolderLock },
+        { name: "Settings", href: "/settings", icon: Settings },
+    ];
+
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 h-14 bg-[var(--background)]/90 backdrop-blur-[12px] border border-[var(--border-2)] z-[60] rounded-full flex items-center px-2 shadow-[0_12px_40px_rgba(0,0,0,0.25)] max-w-[min(420px,calc(100vw-2rem))] w-full justify-between transition-all duration-300 md:hidden">
+        <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 h-14 bg-[var(--background)]/90 backdrop-blur-[12px] border border-[var(--border-2)] z-[60] rounded-full flex items-center px-2 shadow-[0_12px_40px_rgba(0,0,0,0.25)] max-w-[min(420px,calc(100vw-2rem))] w-full justify-between transition-all duration-300 md:hidden">
             <AnimatePresence mode="popLayout">
                 {navItems.map((item) => {
                     const isActive = item.href === "/dashboard" 

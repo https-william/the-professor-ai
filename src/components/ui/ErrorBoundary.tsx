@@ -25,6 +25,19 @@ export default class ErrorBoundary extends Component<Props, State> {
     return { hasError: true };
   }
 
+  public componentDidMount() {
+    window.addEventListener("unhandledrejection", this.handlePromiseRejection);
+  }
+
+  public componentWillUnmount() {
+    window.removeEventListener("unhandledrejection", this.handlePromiseRejection);
+  }
+
+  private handlePromiseRejection = (event: PromiseRejectionEvent) => {
+    console.error("Unhandled promise rejection caught by boundary:", event.reason);
+    this.setState({ hasError: true });
+  };
+
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Scholarship Interrupted:", error, errorInfo);
   }

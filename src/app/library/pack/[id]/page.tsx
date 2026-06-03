@@ -3,8 +3,13 @@
 import { useEffect, useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import dynamic from "next/dynamic";
+
+const ReactMarkdown = dynamic(() => import("react-markdown"), {
+    ssr: false,
+    loading: () => <div className="animate-pulse text-[var(--foreground-muted)] text-xs">Generating study guide preview...</div>
+});
 import {
     Zap,
     ChevronLeft,

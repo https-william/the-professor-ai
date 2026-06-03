@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getRedirectUrl } from "@/lib/api-client";
 import BrandLogo from "@/components/ui/BrandLogo";
 import Turnstile from "@/components/ui/Turnstile";
 
-export default function LoginPage() {
+function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -17,6 +17,9 @@ export default function LoginPage() {
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const router = useRouter();
     const supabase = createClient();
+    const searchParams = useSearchParams();
+
+    const nextUrl = searchParams.get("next") || "/dashboard";
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,9 +53,9 @@ export default function LoginPage() {
                 .single();
 
             if (profile?.has_onboarded === false) {
-                router.push("/onboarding");
+                router.push(`/onboarding?next=${encodeURIComponent(nextUrl)}`);
             } else {
-                router.push("/dashboard");
+                router.push(nextUrl);
             }
             router.refresh();
         }
@@ -60,9 +63,11 @@ export default function LoginPage() {
 
     const handleGoogleLogin = async () => {
         setLoading(true);
+        const redirectBase = getRedirectUrl();
+        const redirectUrl = `${redirectBase}${redirectBase.includes("?") ? "&" : "?"}next=${encodeURIComponent(nextUrl)}`;
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: getRedirectUrl() },
+            options: { redirectTo: redirectUrl },
         });
         if (error) { setError(error.message); setLoading(false); }
     };
@@ -184,14 +189,16 @@ export default function LoginPage() {
                         display: "flex",
                         alignItems: "center",
                         gap: "8px",
-                        padding: "10px 14px",
-                        borderRadius: "0.875rem",
-                        marginBottom: "16px",
-                        background: "rgba(239,68,68,0.08)",
-                        border: "1px solid rgba(239,68,68,0.15)",
-                        color: "#f87171",
+                        padding: "12px 16px",
+                        borderRadius: "1rem",
+                        marginBottom: "20px",
+                        background: "rgba(220, 38, 38, 0.2)",
+                        border: "1px solid rgba(220, 38, 38, 0.4)",
+                        color: "#fecaca",
                         fontFamily: "'Outfit',sans-serif",
                         fontSize: "13px",
+                        fontWeight: "700",
+                        boxShadow: "0 0 10px rgba(220, 38, 38, 0.15)"
                     }}>
                         ⚠ {error}
                     </div>
@@ -272,7 +279,10 @@ export default function LoginPage() {
                     marginTop: "20px",
                 }}>
                     New to The Professor?{" "}
-                    <Link href="/signup" style={{ color: "var(--blue)", textDecoration: "none", fontWeight: 700 }}>
+                    <Link 
+                        href={`/signup${nextUrl && nextUrl !== "/dashboard" ? `?next=${encodeURIComponent(nextUrl)}` : ""}`} 
+                        style={{ color: "var(--blue)", textDecoration: "none", fontWeight: 700 }}
+                    >
                         Create a free account
                     </Link>
                 </p>
@@ -290,5 +300,17 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div style={{ minHeight: "100vh", background: "#08080E", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: "32px", height: "32px", border: "3px solid rgba(245,158,11,0.3)", borderTopColor: "#F59E0B", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     );
 }

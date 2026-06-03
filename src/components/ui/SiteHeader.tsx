@@ -166,9 +166,8 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const sidebarOffset = "0px";
 
     return (
-        <motion.header
+        <header
             suppressHydrationWarning
-            initial={false}
             style={{
                 top: isApp ? "12px" : "16px",
                 left: "50%",
@@ -191,10 +190,9 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                         ? "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)" 
                         : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)") 
                     : "none",
-                transition: "all 300ms cubic-bezier(0.4, 0, 0.2, 1)",
             }}
             className={cn(
-                "fixed z-[10000] items-center pointer-events-none [&>div]:pointer-events-auto transition-all duration-300",
+                "fixed z-[10000] items-center pointer-events-none [&>div]:pointer-events-auto transition-all duration-300 ease-in-out",
                 isApp ? "flex items-center justify-between gap-4 w-full" : "grid grid-cols-[auto_1fr_auto] gap-1.5 md:gap-4"
             )}
         >
@@ -295,6 +293,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                 { name: "Home", href: "/dashboard", icon: LayoutDashboard },
                                 { name: "Create", href: "/create", icon: PlusCircle },
                                 { name: "Library", href: "/library", icon: Library },
+                                ...(pathname.startsWith("/hub") ? [{ name: "Hub", href: "/hub", icon: Users }] : []),
                                 { name: "Profile", href: "/profile", icon: User },
                             ].map((item) => {
                                 const isActive = item.href === "/dashboard"
@@ -461,7 +460,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     </div>
                 )}
             </div>
-        </motion.header>
+        </header>
     );
 }
 

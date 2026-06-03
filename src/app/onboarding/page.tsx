@@ -72,9 +72,12 @@ const COMMITMENT_LEVELS = [
 
 
 
+import { usePWA } from "@/context/PWAContext";
+
 export default function OnboardingPage() {
     const { user, completeOnboarding, saveOnboardingStep } = useUser();
     const { isDesktop, isMobile, platform } = useAppPlatform();
+    const { isInstallable, installApp } = usePWA();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -142,7 +145,9 @@ export default function OnboardingPage() {
     // Redirect if already onboarded
     useEffect(() => {
         if (mounted && user.hasOnboarded) {
-            router.push("/dashboard");
+            const searchParams = new URLSearchParams(window.location.search);
+            const nextUrl = searchParams.get("next") || "/dashboard";
+            router.push(nextUrl);
         }
     }, [mounted, user.hasOnboarded, router]);
 
@@ -213,8 +218,13 @@ export default function OnboardingPage() {
         });
         setIsSaving(false);
         if (success) {
-            // Redirect to create page with exam sprint active
-            router.push("/create");
+            const searchParams = new URLSearchParams(window.location.search);
+            const nextUrl = searchParams.get("next");
+            if (nextUrl) {
+                router.push(nextUrl);
+            } else {
+                router.push("/create");
+            }
         } else {
             setSaveError("Could not complete onboarding. Let's try that one more time.");
         }
@@ -414,7 +424,7 @@ export default function OnboardingPage() {
                             </motion.div>
                         )}
 
-                        {/* STEP 4 (final): GIFT & FINISH — Confetti + Compelling CTA */}
+                        {/* STEP 4 (final): INSTALL THE APP & FINISH */}
                         {step === 4 && (
                             <motion.div key="step4" variants={stepVariants} initial="initial" animate="animate" exit="exit" className="text-center flex flex-col justify-center h-full my-auto relative overflow-visible">
                                 {/* Confetti particles */}
@@ -446,45 +456,44 @@ export default function OnboardingPage() {
                                     initial={{ scale: 0.5, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
-                                    className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-amber-600 shadow-[0_20px_50px_rgba(245,158,11,0.25)] border-2 border-white/10 relative"
+                                    className="w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-400 to-amber-600 shadow-[0_20px_50px_rgba(245,158,11,0.25)] border-2 border-white/10 relative"
                                 >
-                                    <Zap size={44} className="text-black" fill="currentColor" />
+                                    <Zap size={36} className="text-black" fill="currentColor" />
                                     <div className="absolute inset-0 rounded-full animate-pulse bg-amber-400/20 blur-2xl -z-10" />
                                 </motion.div>
                                 
-                                <h2 className="font-sans text-3xl font-black text-[var(--text)] mb-3 tracking-tighter">You're In, Scholar.</h2>
-                                <p className="text-[14px] text-[var(--text)]/60 font-medium mb-4 px-4 leading-relaxed">
-                                    50 credits loaded. Upload your first note and let's get you sorted.
+                                <h2 className="font-sans text-2xl font-black text-white mb-2 tracking-tighter">You're In, Scholar.</h2>
+                                <p className="text-[13px] text-white/60 font-medium mb-4 px-2 leading-relaxed">
+                                    50 credits loaded. But wait, your browser is fine, but your home screen is better.
                                 </p>
 
-                                {/* Achievement Unlock Banner */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.6 }}
-                                    className="max-w-md mx-auto mb-6 p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-yellow-500/5 border border-amber-500/30 shadow-[0_10px_30px_rgba(245,158,11,0.1),_inset_0_1px_1px_rgba(255,255,255,0.05)] flex items-center gap-4 text-left"
-                                >
-                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/5 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-                                        <Trophy size={24} />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-amber-300 bg-amber-500/25 px-2 py-0.5 rounded-full border border-amber-500/35">Achievement Unlocked</span>
-                                            <span className="text-[10px] font-mono text-amber-400">+100 XP</span>
+                                {isInstallable ? (
+                                    <div className="mb-4 p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-left flex items-start gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white shrink-0 mt-0.5">
+                                            <Backpack size={20} />
                                         </div>
-                                        <p className="text-sm font-bold text-[var(--text)]">First Step, First Win</p>
-                                        <p className="text-xs text-[var(--text-2)]">You've successfully completed onboarding. The Trophy Room is now fully unlocked!</p>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-bold text-white mb-0.5">Install The Professor App</p>
+                                            <p className="text-[11px] text-white/40 leading-snug">Get offline access to your study vault, quick photo uploads, and micro-reminders so you never break your streak.</p>
+                                            <button 
+                                                onClick={installApp}
+                                                className="mt-3 px-4 py-2 rounded-xl bg-white text-black text-[10px] font-black uppercase tracking-wider hover:bg-neutral-200 transition-colors active:scale-95"
+                                            >
+                                                Add to Home Screen
+                                            </button>
+                                        </div>
                                     </div>
-                                </motion.div>
-
-                                <motion.p 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.8 }}
-                                    className="text-[12px] text-[var(--text)]/40 mb-8 font-bold italic"
-                                >
-                                    Time to turn those notes into something you actually remember.
-                                </motion.p>
+                                ) : (
+                                    <div className="mb-4 p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-left flex items-start gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white shrink-0 mt-0.5">
+                                            <Trophy size={20} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-bold text-white mb-0.5">Keep the flow on mobile</p>
+                                            <p className="text-[11px] text-white/40 leading-snug">To study offline, open The Professor in Safari or Chrome on your phone, tap the share menu, and select &quot;Add to Home Screen&quot;.</p>
+                                        </div>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
 
@@ -530,7 +539,7 @@ export default function OnboardingPage() {
                                 disabled={isSaving}
                                 className="flex-1 h-16 rounded-2xl font-black text-[13px] tracking-[0.15em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.97] px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:scale-[1.01] border border-amber-400/20"
                             >
-                                {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Use Your Credits → Exam Sprint"}
+                                {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Launch Study Studio"}
                                 {!isSaving && <Zap size={20} />}
                             </button>
                         )}

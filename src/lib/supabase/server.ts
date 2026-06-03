@@ -1,6 +1,26 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 
+const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  let retries = 3;
+  let delay = 300; // ms
+  while (retries > 0) {
+    try {
+      const res = await fetch(input, init);
+      if (res.status === 502 || res.status === 503 || res.status === 504 || res.status === 429) {
+        throw new Error(`Transient status: ${res.status}`);
+      }
+      return res;
+    } catch (err) {
+      retries--;
+      if (retries === 0) throw err;
+      await new Promise(r => setTimeout(r, delay));
+      delay *= 2;
+    }
+  }
+  return fetch(input, init);
+};
+
 export async function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
@@ -18,7 +38,7 @@ export async function createClient() {
           getAll() {
             return cookieStore.getAll()
           },
-          setAll(cookiesToSet) {
+          setAll(cookiesToSet: any[]) {
             try {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
@@ -32,6 +52,7 @@ export async function createClient() {
         },
         global: {
           headers: authHeader ? { Authorization: authHeader } : undefined,
+          fetch: customFetch
         },
       }
     )
@@ -45,10 +66,12 @@ export async function createClient() {
       {
         cookies: {
           getAll() { return [] },
-          setAll() { },
+          setAll(cookiesToSet: any[]) { },
         },
+        global: {
+          fetch: customFetch
+        }
       }
     )
   }
 }
-
