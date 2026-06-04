@@ -65,28 +65,26 @@ export default function DownloadPage() {
     const PLATFORMS = [
         { 
             id: "android", 
-            name: "Android", 
+            name: "Android App", 
             icon: SmartphoneNfc, 
             color: "#4CAF50", 
-            desc: "The native experience is being forged. We're cooking.",
-            action: { label: "In the Lab", href: "#" },
-            disabled: true
+            desc: "Get the high-performance Android APK. Run offline, study on the go.",
+            action: { label: "Download APK", href: "https://github.com/https-william/the-professor-ai/releases/latest" }
         },
         { 
             id: "desktop", 
-            name: "Windows", 
+            name: "Windows App", 
             icon: Laptop, 
             color: "#0078D4", 
-            desc: "Desktop excellence takes time. We don't ship mid.",
-            action: { label: "In the Lab", href: "#" },
-            disabled: true
+            desc: "Install the Windows app. Full power, custom native titlebar, and local resource optimization.",
+            action: { label: "Download MSI", href: "https://github.com/https-william/the-professor-ai/releases/latest" }
         },
         { 
             id: "ios", 
-            name: "iOS", 
+            name: "iOS App", 
             icon: Smartphone, 
             color: "#FFFFFF", 
-            desc: "The App Store awaits. Patience, scholar.",
+            desc: "The App Store awaits. Coming soon to iPhones and iPads.",
             action: { label: "In the Lab", href: "#" },
             disabled: true
         },
@@ -95,7 +93,7 @@ export default function DownloadPage() {
             name: "Web App", 
             icon: Globe, 
             color: "#F59E0B", 
-            desc: "Full power. No downloads. Install it like an app.",
+            desc: "Full power. No downloads. Install it directly from your browser.",
             action: { label: "Install as App", onClick: handlePWAInstall } 
         },
     ];
@@ -151,7 +149,7 @@ export default function DownloadPage() {
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--blue-light)] via-[var(--blue)] to-[var(--blue-dark)]">Goes Everywhere.</span>
                         </h1>
                         <p className="text-white/40 text-lg md:text-xl font-medium max-w-xl mx-auto leading-relaxed">
-                            We&apos;re building something that doesn&apos;t exist yet. Native apps are being engineered from scratch — no shortcuts, no compromises. When it drops, you&apos;ll feel the difference.
+                            Take your notes and study guides everywhere. Download our native client or run directly in the browser.
                         </p>
                     </motion.div>
                 </div>
@@ -171,17 +169,22 @@ export default function DownloadPage() {
                                </div>
                                <div className="text-center md:text-left flex-1">
                                    <div className="flex flex-col md:flex-row items-center gap-3 mb-4">
-                                       <span className="px-3 py-1 rounded-full bg-white/5 text-white/50 text-[10px] font-black uppercase tracking-widest border border-white/10">Under Construction</span>
+                                       <span className="px-3 py-1 rounded-full bg-[var(--blue)]/10 text-[var(--blue-light)] text-[10px] font-black uppercase tracking-widest border border-[var(--blue)]/20">Recommended</span>
                                        <h2 className="text-2xl font-black text-white">{platform === "android" ? "The Android App" : "The Windows Client"}</h2>
                                    </div>
                                    <p className="text-white/40 font-medium mb-8 leading-relaxed max-w-lg">
-                                       The {platform === "android" ? "mobile" : "desktop"} experience is being built from the ground up. Not a wrapper. Not a port. A purpose-built machine for your device.
+                                       We detected you are using a {platform === "android" ? "mobile" : "desktop"} device. Grab the official high-performance native build below.
                                    </p>
                                    <div className="relative inline-block">
-                                       <button disabled className="btn-skeuo-primary px-10 py-4 inline-flex items-center gap-3 opacity-50 cursor-not-allowed">
-                                           <Construction size={20} />
-                                           Under Construction
-                                       </button>
+                                       <a 
+                                           href="https://github.com/https-william/the-professor-ai/releases/latest"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           className="btn-skeuo-blue px-10 py-4 inline-flex items-center gap-3 text-white font-black text-sm"
+                                       >
+                                           <Download size={20} />
+                                           One-Tap Download
+                                       </a>
                                    </div>
                                </div>
                                <div className="hidden lg:block w-px h-24 bg-white/5" />
@@ -225,13 +228,13 @@ export default function DownloadPage() {
                                 {p.action.onClick ? (
                                     <button 
                                         onClick={p.action.onClick}
-                                        className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                                        className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all cursor-pointer"
                                         style={{ color: p.color }}
                                     >
-                                        {deferredPrompt && !pwaInstalled ? p.action.label : pwaInstalled ? "Active" : "Check Menu"}
+                                        {deferredPrompt && !pwaInstalled ? p.action.label : pwaInstalled ? "Active" : "Install PWA"}
                                         <ChevronRight size={14} />
                                     </button>
-                                ) : (
+                                ) : p.disabled ? (
                                     <span 
                                         className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 opacity-50"
                                         style={{ color: p.color }}
@@ -239,6 +242,17 @@ export default function DownloadPage() {
                                         {p.action.label}
                                         <Construction size={14} />
                                     </span>
+                                ) : (
+                                    <a 
+                                        href={p.action.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                                        style={{ color: p.color }}
+                                    >
+                                        {p.action.label}
+                                        <ChevronRight size={14} />
+                                    </a>
                                 )}
                             </div>
                         </motion.div>

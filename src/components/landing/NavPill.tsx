@@ -70,7 +70,8 @@ export default function NavPill() {
             { label: "SAT Guide", href: "/exams/sat" },
             { label: "Glossary", href: "/glossary" },
           ]},
-          { label: "Blog", href: "/blog", className: "flex" },
+          { label: "Blog", href: "/blog", className: "hidden md:flex" },
+          { label: "Download", href: "/download", className: "flex" },
         ].map((link) => (
           <div key={link.label} className={`relative group ${link.className}`}>
             <Link
