@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
+const isTauri = process.env.NEXT_PUBLIC_TAURI === "1" || process.env.TAURI_ENV_PLATFORM !== undefined;
+
 const nextConfig: NextConfig = {
+  output: isTauri ? "export" : undefined,
   images: {
-    unoptimized: false,
+    unoptimized: isTauri ? true : false,
     remotePatterns: [
       {
         protocol: 'https',
