@@ -284,8 +284,8 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 </div>
 
                 {/* Animated 3D Cards container */}
-                <div className="relative w-full aspect-[4/3] perspective-1000">
-                    <AnimatePresence mode="wait" initial={false}>
+                <div className="relative w-full aspect-[4/3]" style={{ perspective: "1000px" }}>
+                    <AnimatePresence mode="wait" custom={exitDirection} initial={false}>
                         <motion.div
                             key={queuePointer}
                             custom={exitDirection}
@@ -316,7 +316,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                 </div>
 
                                 {/* Back Panel */}
-                                <div style={cardBackStyle} onClick={(e) => e.stopPropagation()}>
+                                <div style={cardBackStyle}>
                                     <div className="flex flex-col items-center justify-between w-full h-full py-6">
                                         
                                         {/* Back Text / Eli5 text */}
@@ -327,7 +327,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                         </div>
 
                                         {/* Actions footer */}
-                                        <div className="flex flex-col items-center gap-4 mt-6">
+                                        <div className="flex flex-col items-center gap-4 mt-6" onClick={(e) => e.stopPropagation()}>
                                             {!eli5Text[currentCardIndex] && (
                                                 <button 
                                                     onClick={(e) => handleEli5(e, currentCard.back, currentCardIndex)} 
