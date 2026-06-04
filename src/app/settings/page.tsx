@@ -40,12 +40,20 @@ export default function SettingsPage() {
         try {
             const { data, error } = await supabase.auth.registerPasskey();
             if (error) {
-                addToast(error.message, "error");
+                let msg = error.message;
+                if (msg.toLowerCase().includes("timed out") || msg.toLowerCase().includes("not allowed")) {
+                    msg = "Cancelled or timed out. Let's try registering that passkey again!";
+                }
+                addToast(msg, "error");
             } else {
                 addToast("Passkey registered successfully! 🔒", "success");
             }
         } catch (err: any) {
-            addToast(err?.message || "An unexpected error occurred during Passkey registration.", "error");
+            let msg = err?.message || "An unexpected error occurred during Passkey registration.";
+            if (msg.toLowerCase().includes("timed out") || msg.toLowerCase().includes("not allowed")) {
+                msg = "Cancelled or timed out. Let's try registering that passkey again!";
+            }
+            addToast(msg, "error");
         } finally {
             setIsRegisteringPasskey(false);
         }

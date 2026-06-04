@@ -93,7 +93,11 @@ function LoginForm() {
         try {
             const { data, error: passkeyError } = await supabase.auth.signInWithPasskey();
             if (passkeyError) {
-                setError(passkeyError.message);
+                let msg = passkeyError.message;
+                if (msg.toLowerCase().includes("timed out") || msg.toLowerCase().includes("not allowed")) {
+                    msg = "Oops! Looks like the passkey request timed out or was cancelled. Let's try that again!";
+                }
+                setError(msg);
                 setLoading(false);
             } else if (data?.user) {
                 const { data: profile } = await supabase
@@ -110,7 +114,11 @@ function LoginForm() {
                 router.refresh();
             }
         } catch (err: any) {
-            setError(err?.message || "An unexpected error occurred during Passkey verification.");
+            let msg = err?.message || "An unexpected error occurred during Passkey verification.";
+            if (msg.toLowerCase().includes("timed out") || msg.toLowerCase().includes("not allowed")) {
+                msg = "Oops! Looks like the passkey request timed out or was cancelled. Let's try that again!";
+            }
+            setError(msg);
             setLoading(false);
         }
     };
