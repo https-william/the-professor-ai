@@ -6,8 +6,8 @@ import { useUser } from "@/context/UserContext";
 import ShareCard from "@/components/ShareCard";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import SessionComplete from "@/components/features/SessionComplete";
-import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
-import { Share2, ChevronLeft, Lightbulb, Baby, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Share2, ChevronLeft, Baby, Check, X, HelpCircle } from "lucide-react";
 
 interface Flashcard {
     id?: string;
@@ -21,103 +21,152 @@ interface FlashcardViewerProps {
     generationId?: string | null;
 }
 
+type CardState = 'IDLE' | 'FLIPPED' | 'EVALUATED';
+
+const cardVariants = {
+    enter: {
+        y: 40,
+        scale: 0.95,
+        opacity: 0,
+    },
+    center: {
+        y: 0,
+        scale: 1,
+        opacity: 1,
+    },
+    exit: (direction: 'left' | 'right' | null) => ({
+        x: direction === 'left' ? -350 : direction === 'right' ? 350 : 0,
+        y: direction === null ? -40 : 0,
+        rotate: direction === 'left' ? -12 : direction === 'right' ? 12 : 0,
+        opacity: 0,
+        scale: 0.9,
+    }),
+};
+
 export default function FlashcardViewer({ flashcards, title, generationId }: FlashcardViewerProps) {
     const router = useRouter();
     const { user, refreshUser } = useUser();
     const { addToast } = useToasts();
     
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isFlipped, setIsFlipped] = useState(false);
+    // Core states
+    const [cardQueue, setCardQueue] = useState<number[]>([]);
+    const [queuePointer, setQueuePointer] = useState(0);
+    const [cardState, setCardState] = useState<CardState>('IDLE');
+    const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
+    const [masteredSet, setMasteredSet] = useState<Set<number>>(new Set());
+
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isTheaterMode, setIsTheaterMode] = useState(false);
     const [hasRecordedActivity, setHasRecordedActivity] = useState(false);
-    const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
-    const [showSwipeHint, setShowSwipeHint] = useState(true);
     const [eli5Text, setEli5Text] = useState<Record<number, string>>({});
     const [isGeneratingEli5, setIsGeneratingEli5] = useState(false);
     const [sessionComplete, setSessionComplete] = useState(false);
     const [sessionStats, setSessionStats] = useState({ xp: 0, streak: 0, incremented: false });
 
-    // Swipe motion
-    const dragX = useMotionValue(0);
-    const cardRotate = useTransform(dragX, [-200, 0, 200], [-8, 0, 8]);
-    const cardOpacity = useTransform(dragX, [-200, -100, 0, 100, 200], [0.5, 0.8, 1, 0.8, 0.5]);
-
+    // Initialize card queue
     useEffect(() => {
-        const timer = setTimeout(() => setShowSwipeHint(false), 5000);
-        return () => clearTimeout(timer);
-    }, []);
+        if (flashcards.length > 0) {
+            setCardQueue(Array.from({ length: flashcards.length }, (_, i) => i));
+        }
+    }, [flashcards]);
 
+    // Keyboard controls
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (isGeneratingEli5 || sessionComplete) return;
-            switch (e.key) {
+            if (isGeneratingEli5 || sessionComplete || cardQueue.length === 0) return;
+            
+            // Bypass input fields
+            const activeTag = document.activeElement?.tagName.toLowerCase();
+            if (activeTag === 'input' || activeTag === 'textarea') return;
+
+            switch (e.key.toLowerCase()) {
                 case ' ':
-                case 'Enter':
+                case 'enter':
                     e.preventDefault();
-                    setIsFlipped(prev => !prev);
-                    setIsTheaterMode(true);
+                    if (cardState === 'IDLE') {
+                        setCardState('FLIPPED');
+                        setIsTheaterMode(true);
+                    } else if (cardState === 'FLIPPED') {
+                        setCardState('IDLE');
+                    }
                     break;
-                case 'ArrowRight':
+                case 'j':
                     e.preventDefault();
-                    handleNext();
-                    setIsTheaterMode(true);
+                    if (cardState === 'FLIPPED') {
+                        handleEvaluate(false); // Flag/Re-queue
+                    }
                     break;
-                case 'ArrowLeft':
+                case 'k':
                     e.preventDefault();
-                    handlePrev();
-                    setIsTheaterMode(true);
+                    if (cardState === 'FLIPPED') {
+                        handleEvaluate(true); // Mastered
+                    }
                     break;
-                case 'Escape':
+                case 'escape':
+                    e.preventDefault();
                     setIsTheaterMode(false);
+                    router.push('/library');
                     break;
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentIndex, flashcards.length, isGeneratingEli5, sessionComplete]);
+    }, [cardState, queuePointer, cardQueue, isGeneratingEli5, sessionComplete]);
 
-    const handleFlip = () => setIsFlipped(!isFlipped);
+    const handleFlip = () => {
+        if (cardState === 'IDLE') setCardState('FLIPPED');
+        else if (cardState === 'FLIPPED') setCardState('IDLE');
+    };
 
-    const handleNext = async () => {
-        setIsFlipped(false);
-        if (currentIndex === flashcards.length - 1) {
-            if (!hasRecordedActivity) {
-                setHasRecordedActivity(true);
-                try {
-                    const actRes = await fetch("/api/user/activity", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ type: "flashcards" })
-                    });
-                    if (actRes.ok) {
-                        const { stats } = await actRes.json();
-                        setSessionStats({
-                            xp: stats?.xpGained || 5,
-                            streak: stats?.newStreak || user.streak || 0,
-                            incremented: stats?.streakIncremented || false,
-                        });
-                        refreshUser();
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-            setSessionComplete(true);
-            return;
+    const handleEvaluate = async (mastered: boolean) => {
+        const currentCardIndex = cardQueue[queuePointer];
+        
+        setExitDirection(mastered ? 'right' : 'left');
+        setCardState('EVALUATED');
+
+        if (mastered) {
+            setMasteredSet(prev => {
+                const next = new Set(prev);
+                next.add(currentCardIndex);
+                return next;
+            });
+            addToast("Card marked as mastered! 🎯", "success", undefined, undefined, true);
+        } else {
+            setCardQueue(prev => [...prev, currentCardIndex]);
+            addToast("Re-queued for review. Keep going! 💪", "info", undefined, undefined, true);
         }
-        setTimeout(() => setCurrentIndex(prev => prev + 1), 300);
-    };
 
-    const handlePrev = () => {
-        setIsFlipped(false);
-        setTimeout(() => setCurrentIndex(prev => (prev - 1 + flashcards.length) % flashcards.length), 300);
-    };
-
-    const handleDragEnd = (_: any, info: { offset: { x: number }; velocity: { x: number } }) => {
-        const threshold = 80;
-        if (info.offset.x < -threshold) handleNext();
-        else if (info.offset.x > threshold) handlePrev();
+        // Wait for exit transition
+        setTimeout(async () => {
+            if (queuePointer >= cardQueue.length - 1) {
+                if (!hasRecordedActivity) {
+                    setHasRecordedActivity(true);
+                    try {
+                        const actRes = await fetch("/api/user/activity", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ type: "flashcards" })
+                        });
+                        if (actRes.ok) {
+                            const { stats } = await actRes.json();
+                            setSessionStats({
+                                xp: stats?.xpGained || 5,
+                                streak: stats?.newStreak || user.streak || 0,
+                                incremented: stats?.streakIncremented || false,
+                            });
+                            refreshUser();
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+                setSessionComplete(true);
+            } else {
+                setQueuePointer(prev => prev + 1);
+                setCardState('IDLE');
+                setExitDirection(null);
+            }
+        }, 220);
     };
 
     const handleEli5 = async (e: React.MouseEvent, text: string, idx: number) => {
@@ -147,15 +196,55 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         }
     };
 
-    if (flashcards.length === 0) return null;
-    const currentCard = flashcards[currentIndex];
+    if (flashcards.length === 0 || cardQueue.length === 0) return null;
+
+    const currentCardIndex = cardQueue[queuePointer];
+    const currentCard = flashcards[currentCardIndex];
+    const progressPercent = Math.round((masteredSet.size / flashcards.length) * 100);
+
+    // 3D Card Inline Styles
+    const cardInnerStyle: React.CSSProperties = {
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        transition: "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)",
+        transformStyle: "preserve-3d",
+        transform: cardState === 'IDLE' ? "rotateY(0deg)" : "rotateY(180deg)",
+    };
+
+    const cardFaceStyle: React.CSSProperties = {
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        borderRadius: "32px",
+        border: "1px solid var(--border)",
+        padding: "32px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
+    };
+
+    const cardFrontStyle: React.CSSProperties = {
+        ...cardFaceStyle,
+        background: "var(--card)",
+    };
+
+    const cardBackStyle: React.CSSProperties = {
+        ...cardFaceStyle,
+        background: "var(--card)",
+        transform: "rotateY(180deg)",
+    };
 
     return (
-        <div className={`min-h-screen w-full transition-colors duration-700 ${isTheaterMode ? 'bg-[#030305]' : 'bg-transparent'} flex flex-col items-center`}>
+        <div className={`min-h-screen w-full transition-colors duration-700 ${isTheaterMode ? 'bg-[#030305]' : 'bg-transparent'} flex flex-col items-center select-none`}>
             {/* Header */}
             <header className={`w-full max-w-5xl p-6 flex items-center justify-between z-20 transition-opacity duration-500 ${isTheaterMode ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                 <div className="flex items-center gap-4">
-                    <button onClick={() => router.push('/library')} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+                    <button onClick={() => router.push('/library')} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
                         <ChevronLeft size={20} />
                     </button>
                     <div>
@@ -164,7 +253,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={() => setIsShareOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5">
+                    <button onClick={() => setIsShareOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 cursor-pointer">
                         <Share2 size={16} />
                         <span className="text-[11px] font-bold">Share</span>
                     </button>
@@ -172,58 +261,137 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
             </header>
 
             <main className="flex-1 w-full max-w-2xl px-6 flex flex-col items-center justify-center relative z-10">
-                <div className="mb-12 flex flex-col items-center">
-                    {showSwipeHint && (
-                        <p className="text-[10px] font-bold tracking-[0.3em] text-[var(--foreground-muted)] opacity-50 uppercase mb-4">Swipe to navigate</p>
-                    )}
-                    <div className="px-5 py-2 rounded-full bg-white/5 border border-white/5 text-[11px] font-bold text-[var(--foreground-muted)]">
-                        {currentIndex + 1} / {flashcards.length}
+                
+                {/* Stats & Progress indicators */}
+                <div className="w-full mb-10 space-y-4">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-[var(--foreground-muted)] uppercase tracking-wider">
+                        <span>Sprint Progress</span>
+                        <span>{masteredSet.size} / {flashcards.length} Mastered</span>
+                    </div>
+
+                    <div className="w-full bg-[var(--bg-3)] rounded-full h-2 overflow-hidden border border-white/5 relative shadow-inner">
+                        <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progressPercent}%` }}
+                            className="h-full bg-gradient-to-r from-[var(--blue-light)] to-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
+                        />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-[var(--foreground-muted)]/60 font-mono">
+                        <span>Card {queuePointer + 1} of {cardQueue.length} in round</span>
+                        <span>{cardQueue.length - queuePointer} remaining</span>
                     </div>
                 </div>
 
-                <motion.div
-                    className="relative w-full aspect-[4/3] perspective-1000 cursor-pointer touch-pan-y"
-                    onClick={handleFlip}
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    style={{ x: dragX, rotate: cardRotate, opacity: cardOpacity }}
-                    onDragEnd={handleDragEnd}
-                >
-                    <div className={`relative w-full h-full transition-all duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-                        {/* Front */}
-                        <div className="absolute inset-0 rounded-[40px] bg-[var(--card-bg)] border border-white/10 p-12 flex flex-col items-center justify-center backface-hidden shadow-2xl">
-                            <p className="text-2xl font-black text-center leading-tight tracking-tight text-[var(--text)]">{currentCard.front}</p>
-                            <div className="absolute bottom-10 flex flex-col items-center gap-2">
-                                <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[var(--blue)] transition-all shadow-[0_0_10px_var(--blue-glow)]" style={{ width: `${((currentIndex + 1)/flashcards.length)*100}%` }} />
+                {/* Animated 3D Cards container */}
+                <div className="relative w-full aspect-[4/3] perspective-1000">
+                    <AnimatePresence mode="wait" initial={false}>
+                        <motion.div
+                            key={queuePointer}
+                            custom={exitDirection}
+                            variants={cardVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{
+                                x: { type: "spring", stiffness: 350, damping: 26 },
+                                y: { type: "spring", stiffness: 350, damping: 26 },
+                                opacity: { duration: 0.18 },
+                            }}
+                            className="w-full h-full relative cursor-pointer"
+                            onClick={handleFlip}
+                        >
+                            <div style={cardInnerStyle}>
+                                
+                                {/* Front Panel */}
+                                <div style={cardFrontStyle}>
+                                    <p className="text-2xl font-black text-center leading-tight tracking-tight text-[var(--text)] px-4">
+                                        {currentCard.front}
+                                    </p>
+                                    <div className="absolute bottom-8 flex flex-col items-center gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 flex items-center gap-1.5">
+                                            Tap Card or Press [Space] to Flip
+                                        </span>
+                                    </div>
                                 </div>
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Tap to Flip</span>
-                            </div>
-                        </div>
-                        {/* Back */}
-                        <div className="absolute inset-0 rounded-[40px] bg-[var(--card-bg)] border border-white/10 p-12 flex flex-col items-center justify-center backface-hidden rotate-y-180 shadow-2xl">
-                            <div className="flex flex-col items-center gap-6 w-full">
-                                <p className="text-xl font-sans font-bold text-center italic text-[var(--blue)] leading-relaxed">
-                                    {eli5Text[currentIndex] || currentCard.back}
-                                </p>
-                                {!eli5Text[currentIndex] && (
-                                    <button onClick={(e) => handleEli5(e, currentCard.back, currentIndex)} className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--blue-dim)] text-[var(--blue)] border border-[var(--blue-border)] text-[10px] font-black uppercase tracking-wider hover:bg-[var(--blue-active)] transition-all">
-                                        <Baby size={14} />
-                                        {isGeneratingEli5 ? "Simplifying..." : "ELI5"}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
 
-                <div className="flex items-center gap-6 mt-16 w-full max-w-sm">
-                    <button onClick={handlePrev} className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all border border-white/5">
-                        <ChevronLeft />
-                    </button>
-                    <button onClick={handleNext} className="flex-1 h-16 rounded-2xl bg-[var(--blue)] text-white font-black uppercase tracking-[0.2em] text-[11px] shadow-lg shadow-[var(--blue-glow)] active:scale-95 transition-all">
-                        {currentIndex === flashcards.length - 1 ? "Complete Session" : "Next Card"}
-                    </button>
+                                {/* Back Panel */}
+                                <div style={cardBackStyle} onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex flex-col items-center justify-between w-full h-full py-6">
+                                        
+                                        {/* Back Text / Eli5 text */}
+                                        <div className="flex-1 flex items-center justify-center px-4 overflow-y-auto">
+                                            <p className="text-xl font-sans font-bold text-center italic text-[var(--blue)] leading-relaxed">
+                                                {eli5Text[currentCardIndex] || currentCard.back}
+                                            </p>
+                                        </div>
+
+                                        {/* Actions footer */}
+                                        <div className="flex flex-col items-center gap-4 mt-6">
+                                            {!eli5Text[currentCardIndex] && (
+                                                <button 
+                                                    onClick={(e) => handleEli5(e, currentCard.back, currentCardIndex)} 
+                                                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--blue-dim)] text-[var(--blue)] border border-[var(--blue-border)] text-[10px] font-black uppercase tracking-wider hover:bg-[var(--blue-active)] transition-all cursor-pointer"
+                                                >
+                                                    <Baby size={14} />
+                                                    {isGeneratingEli5 ? "Simplifying..." : "ELI5"}
+                                                </button>
+                                            )}
+                                            
+                                            {/* Tap / Space indicator */}
+                                            <span className="text-[9px] font-black uppercase tracking-[0.25em] opacity-30">
+                                                Press [Space] to see Front
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+                {/* Grading Action Buttons / Keyboard key indicators */}
+                <div className="mt-12 w-full max-w-sm flex flex-col gap-6">
+                    {cardState === 'FLIPPED' ? (
+                        <div className="flex items-center gap-4 animate-in fade-in zoom-in-95 duration-200">
+                            {/* Don't Know button */}
+                            <button 
+                                onClick={() => handleEvaluate(false)}
+                                className="flex-1 h-14 rounded-2xl border border-[var(--crimson-border)] bg-[var(--crimson-dim)]/20 text-[var(--crimson)] hover:bg-[var(--crimson-dim)]/40 font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                            >
+                                <X size={16} strokeWidth={2.5} />
+                                <span>Don't Know (J)</span>
+                            </button>
+                            
+                            {/* Got It button */}
+                            <button 
+                                onClick={() => handleEvaluate(true)}
+                                className="flex-1 h-14 rounded-2xl border border-[var(--emerald-border)] bg-[var(--emerald-dim)]/20 text-[var(--emerald)] hover:bg-[var(--emerald-dim)]/40 font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                            >
+                                <Check size={16} strokeWidth={2.5} />
+                                <span>Got It (K)</span>
+                            </button>
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={handleFlip} 
+                            className="w-full h-14 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-2 hover:opacity-90 transition-all cursor-pointer"
+                        >
+                            <HelpCircle size={16} />
+                            <span>Reveal Answer</span>
+                        </button>
+                    )}
+
+                    {/* Keyboard Shortcuts Overlay Row */}
+                    <div className="flex items-center justify-center gap-5 text-[9px] text-[var(--foreground-muted)]/50 font-mono">
+                        <span className="flex items-center gap-1.5">
+                            <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5">Space</kbd> Flip
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5">Esc</kbd> Exit
+                        </span>
+                    </div>
                 </div>
             </main>
 
@@ -235,7 +403,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 streakIncremented={sessionStats.incremented}
                 type="flashcards"
                 title={title}
-                extraStat={{ label: "Cards Mastered", value: String(flashcards.length), icon: "style" }}
+                extraStat={{ label: "Cards Mastered", value: String(masteredSet.size), icon: "style" }}
                 continueHref="/library"
             />
 

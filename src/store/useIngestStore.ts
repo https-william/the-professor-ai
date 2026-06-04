@@ -7,6 +7,7 @@ interface IngestFile {
   progress: number;
   errorMessage?: string;
   file?: File; // Store the actual file object
+  path?: string; // Store the absolute file path for Tauri
   text?: string; // Store the parsed text
 }
 
@@ -17,6 +18,7 @@ interface IngestState {
   openModal: () => void;
   closeModal: () => void;
   addFiles: (files: File[], explicitIds?: string[]) => void;
+  addLocalPaths: (files: { name: string; path: string }[], explicitIds?: string[]) => void;
   updateFileStatus: (id: string, status: IngestFile['status'], progress?: number, error?: string) => void;
   clearQueue: () => void;
 }
@@ -38,6 +40,20 @@ export const useIngestStore = create<IngestState>((set) => ({
         status: 'reading' as const,
         progress: 0,
         file: f,
+      }))
+    ],
+    isProcessing: true,
+  })),
+
+  addLocalPaths: (files, explicitIds) => set((state) => ({
+    queue: [
+      ...state.queue,
+      ...files.map((f, i) => ({
+        id: explicitIds ? explicitIds[i] : Math.random().toString(36).substring(7),
+        name: f.name,
+        status: 'reading' as const,
+        progress: 0,
+        path: f.path,
       }))
     ],
     isProcessing: true,

@@ -12,6 +12,7 @@ import GuestSignupModal from "@/components/ui/GuestSignupModal";
 import { createClient } from "@/lib/supabase/client";
 import { performOCR } from "@/lib/ocr-bridge";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAppPlatform } from "@/hooks/useAppPlatform";
 
 import { 
     X, 
@@ -47,7 +48,8 @@ function CreatorStudio() {
     const router = useRouter();
     const { user, spendCredits } = useUser();
     const { addToast } = useToasts();
-    const { queue, addFiles, updateFileStatus, clearQueue, isProcessing } = useIngestStore();
+    const { queue, addFiles, addLocalPaths, updateFileStatus, clearQueue, isProcessing } = useIngestStore();
+    const { isDesktop } = useAppPlatform();
     const supabase = createClient();
 
     const [inputText, setInputText] = useState("");
@@ -104,15 +106,39 @@ function CreatorStudio() {
     useEffect(() => {
         const processNext = async () => {
             const nextItem = queue.find(item => item.status === 'reading' && !processedIds.current.has(item.id));
-            if (!nextItem || !nextItem.file) return;
+            if (!nextItem || (!nextItem.file && !nextItem.path)) return;
 
             processedIds.current.add(nextItem.id);
 
+            // Handle native desktop parsing via Rust command
+            if (nextItem.path) {
+                try {
+                    updateFileStatus(nextItem.id, 'reading', 20);
+                    const { invoke } = await import("@tauri-apps/api/core");
+                    updateFileStatus(nextItem.id, 'reading', 50);
+
+                    const extractedText = await invoke<string>("extract_document_text", { filePath: nextItem.path });
+
+                    updateFileStatus(nextItem.id, 'success', 100);
+                    if (extractedText) {
+                        setInputText(prev => {
+                            const nextVal = prev ? `${prev}\n\n${extractedText}` : extractedText;
+                            return nextVal.substring(0, MAX_CHARS);
+                        });
+                    }
+                } catch (err: any) {
+                    console.error("Tauri Local Ingestion Error:", err);
+                    updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to extract text locally");
+                }
+                return;
+            }
+
+            // Web-based parsing logic
             try {
                 updateFileStatus(nextItem.id, 'reading', 20);
 
                 const formData = new FormData();
-                formData.append("file", nextItem.file);
+                formData.append("file", nextItem.file!);
 
                 const res = await fetch("/api/parse", {
                     method: "POST",
@@ -229,7 +255,40 @@ function CreatorStudio() {
         e.preventDefault();
         setDragActive(false);
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            addFiles(Array.from(e.dataTransfer.files));
+            const files = Array.from(e.dataTransfer.files);
+            const localPaths = files.filter(f => (f as any).path).map(f => ({ name: f.name, path: (f as any).path }));
+            if (isDesktop && localPaths.length > 0) {
+                addLocalPaths(localPaths);
+            } else {
+                addFiles(files);
+            }
+        }
+    };
+
+    const handleUploadClick = async (e: React.MouseEvent) => {
+        if (isDesktop) {
+            e.preventDefault();
+            try {
+                const { open } = await import("@tauri-apps/plugin-dialog");
+                const selected = await open({
+                    multiple: true,
+                    filters: [{
+                        name: 'Study Materials',
+                        extensions: ['pdf', 'docx', 'pptx', 'txt']
+                    }]
+                });
+                
+                if (selected) {
+                    const paths = Array.isArray(selected) ? selected : [selected];
+                    const localFiles = paths.map(p => {
+                        const name = p.split(/[/\\]/).pop() || p;
+                        return { name, path: p };
+                    });
+                    addLocalPaths(localFiles);
+                }
+            } catch (err) {
+                console.error("Tauri dialog open error:", err);
+            }
         }
     };
 
@@ -427,11 +486,12 @@ function CreatorStudio() {
                             
                             {/* File Upload Ingestion Area */}
                             {activeTab === 'upload' ? (
-                                <label 
+                                <div 
                                     onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
                                     onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
                                     onDragOver={(e) => { e.preventDefault(); }}
                                     onDrop={handleDrop}
+                                    onClick={handleUploadClick}
                                     className="block cursor-pointer group"
                                 >
                                     <div 
@@ -451,9 +511,11 @@ function CreatorStudio() {
                                         </div>
                                         <h4 className="text-xl font-black text-[var(--foreground)] mb-2">Drop notes here</h4>
                                         <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-[0.2em] font-black">PDF, PPTX, DOCX, or Images</p>
-                                        <input type="file" className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
+                                        {!isDesktop && (
+                                            <input type="file" className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
+                                        )}
                                     </div>
-                                </label>
+                                </div>
                             ) : (
                                 <div className="space-y-3 animate-in fade-in duration-300">
                                     <div className="flex items-center justify-between">
