@@ -1,6 +1,4 @@
-"use client";
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -9,6 +7,8 @@ import remarkBreaks from "remark-breaks";
 import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
 import { Zap } from "lucide-react";
+import { BubblyThinkingLoader } from "./Markdown";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MarkdownRendererProps {
     content: string;
@@ -16,16 +16,59 @@ interface MarkdownRendererProps {
     isStreaming?: boolean;
 }
 
-/**
- * Premium Markdown Renderer for The Professor.
- * Supports:
- * - KaTeX (Math formulas like $\sqrt{a^2 + b^2}$)
- * - GFM (Tables, task lists)
- * - Automatic line breaks
- * - Professor-style "Identity Nudges" styling
- */
-import { useState, useEffect } from "react";
-import { BubblyThinkingLoader } from "./Markdown";
+const TermPopover = ({ children }: { children?: React.ReactNode }) => {
+    const termText = children ? String(children) : "";
+    
+    // Dictionary of high-yield study concepts with friendly definitions
+    const definitions: Record<string, string> = {
+        "reward circuitry": "The brain's pathway of neurons that triggers dopamine release during positive reinforcement loops.",
+        "ventral tegmental area": "VTA: A group of neurons at the base of the brain that plays a critical role in the reward system.",
+        "nucleus accumbens": "NAc: A key region in the brain's cognitive loop that handles pleasure, motivation, and habit formation.",
+        "active recall": "A study method where you actively test your memory instead of passively re-reading slides.",
+        "dopamine": "A neurotransmitter associated with learning, reinforcement, and reward-seeking behaviors.",
+        "spaced repetition": "Systematic review of study concepts at increasing intervals to combat the forgetting curve.",
+        "feynman technique": "A learning method where you explain a concept in simple, conversational terms to spot gaps in your understanding.",
+        "cognitive retention": "The brain's ability to store, consolidate, and retrieve processed academic information over time.",
+        "data structures": "Methods of organizing and storing data in computer memory to perform operations efficiently.",
+        "algorithms": "Step-by-step procedures or formulas for solving problems and performing computations.",
+        "recursion": "A programming technique where a function calls itself directly or indirectly to solve a problem."
+    };
+
+    const lowercaseTerm = termText.toLowerCase().trim();
+    const definition = definitions[lowercaseTerm] || `Key study concept: ${termText}. Hover or tap this definition to explore the high-yield parts and lock it in.`;
+
+    const [isVisible, setIsVisible] = useState(false);
+
+    return (
+        <span 
+            className="relative inline-block cursor-help group/popover"
+            onMouseEnter={() => setIsVisible(true)}
+            onMouseLeave={() => setIsVisible(false)}
+            onClick={() => setIsVisible(!isVisible)}
+        >
+            <strong className="font-black text-[var(--accent)] underline decoration-dotted decoration-[var(--accent)]/50 underline-offset-4 hover:text-[var(--accent-light)] transition-colors">
+                {children}
+            </strong>
+            <AnimatePresence>
+                {isVisible && (
+                    <motion.span
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-4 rounded-2xl bg-zinc-950/90 backdrop-blur-xl border border-zinc-800/80 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-xs text-zinc-200 z-50 text-center leading-relaxed"
+                    >
+                        <span className="block font-black text-white uppercase tracking-wider mb-1 text-[10px] text-[var(--blue-text)]">
+                            Definition
+                        </span>
+                        {definition}
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-950/90" />
+                    </motion.span>
+                )}
+            </AnimatePresence>
+        </span>
+    );
+};
 
 export default function MarkdownRenderer({ 
     content, 
@@ -61,6 +104,9 @@ export default function MarkdownRenderer({
                 remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
                 rehypePlugins={[rehypeKatex]}
                 components={{
+                    // TermPopover definition lookup
+                    strong: ({ node, ...props }) => <TermPopover {...props} />,
+
                     // Custom rendering for headings to add "weight"
                     h1: ({ node, ...props }) => <h1 className="text-2xl md:text-4xl font-black mt-12 mb-6 bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent tracking-tight border-b border-white/5 pb-3" {...props} />,
                     h2: ({ node, children, ...props }) => {

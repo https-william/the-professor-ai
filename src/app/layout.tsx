@@ -214,7 +214,7 @@ export default function RootLayout({
                     
                     <SiteHeader showLogo={true} />
                     <NavigationLoader />
-                <main className="platform-main-container relative min-h-screen w-full flex flex-col flex-1">
+                <main className="platform-main-container relative min-h-screen w-full flex flex-col flex-1 bg-zinc-950/70 backdrop-blur-md border border-zinc-800/50">
                   <div className="noise-overlay" />
                   <AmbientOrbs />
                   

@@ -467,6 +467,7 @@ export default function LibraryPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setShowSearch(true)}
+                        onBlur={() => setTimeout(() => setShowSearch(false), 200)}
                         className="w-full pl-11 pr-14 py-3.5 rounded-2xl text-xs font-medium bg-[var(--bg-2)] border border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:outline-none focus:border-[var(--foreground)] transition-all shadow-inner"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -488,6 +489,69 @@ export default function LibraryPage() {
                             <Tag size={15} strokeWidth={2} />
                         </button>
                     </div>
+
+                    {/* Suggestions Panel */}
+                    <AnimatePresence>
+                        {showSearch && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="absolute left-0 right-0 top-full mt-2 p-5 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-2xl z-50 text-left space-y-4"
+                            >
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-[var(--text-3)] mb-2 flex items-center gap-1.5">
+                                        <Clock size={11} /> Recent Study Packs
+                                    </h4>
+                                    <div className="flex flex-col gap-1.5">
+                                        {activeItems.slice(0, 2).map((item) => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => handleOpen(item)}
+                                                className="text-left text-xs font-bold text-[var(--text)] hover:text-[var(--blue)] transition-colors truncate"
+                                            >
+                                                {item.title || "Untitled Study Pack"}
+                                            </button>
+                                        ))}
+                                        {activeItems.length === 0 && (
+                                            <span className="text-xs text-[var(--text-3)] italic">No packs generated yet.</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="border-t border-[var(--border)] pt-3">
+                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-[var(--text-3)] mb-2 flex items-center gap-1.5">
+                                        <Sparkles size={11} className="text-[var(--blue)]" /> Highly Reviewed Core Concepts
+                                    </h4>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {["Action Potentials", "Cardiac Cycle", "Renal Clearance"].map((concept) => (
+                                            <button
+                                                key={concept}
+                                                onClick={() => setSearchQuery(concept)}
+                                                className="px-2.5 py-1 rounded-lg bg-[var(--bg-3)] border border-[var(--border)] text-[10px] font-bold text-[var(--text-2)] hover:text-[var(--foreground)] hover:border-[var(--text-3)] transition-all"
+                                            >
+                                                {concept}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="border-t border-[var(--border)] pt-3">
+                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-[var(--text-3)] mb-2 flex items-center gap-1.5">
+                                        <BellRing size={11} className="text-[var(--amber)]" /> Flagged Exam Questions
+                                    </h4>
+                                    <div className="flex flex-col gap-1.5 text-xs text-[var(--text-2)] font-medium">
+                                        <button onClick={() => setSearchQuery("murmur")} className="text-left hover:text-[var(--amber)] transition-colors truncate">
+                                            Q: "What is the classic murmur triad?"
+                                        </button>
+                                        <button onClick={() => setSearchQuery("action potential")} className="text-left hover:text-[var(--amber)] transition-colors truncate">
+                                            Q: "Explain phase 0 depolarization dynamics."
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* ═══ Content ═══ */}

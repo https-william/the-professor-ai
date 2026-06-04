@@ -213,12 +213,12 @@
    ============================================ */
 
 :root {
-  /* ─── BACKGROUNDS (Vary Background Colors to solve flat look) ─── */
-  --bg:             #0c0d12; /* Deep, dark gray/navy base background */
-  --bg-2:           #141620; /* Elevated surface card background */
-  --bg-3:           #1e212f; /* Lighter elevated surface */
-  --bg-4:           #282b3d;
-  --bg-5:           #353950;
+  /* ─── BACKGROUNDS (Vary Background Colors to solve flat look - Zinc Elevation blueprint) ─── */
+  --bg:             #09090b; /* Deepest dark tone - Canvas (Zinc-950) */
+  --bg-2:           #18181b; /* Mid-tone surface for inactive sections (Zinc-900) */
+  --bg-3:           #27272a; /* Elevated lighter surface for active items (Zinc-800) */
+  --bg-4:           #3f3f46; /* Zinc-700 */
+  --bg-5:           #52525b; /* Zinc-600 */
 
   /* ─── DESATURATED ACCENT COLORS (20-30% desaturated, lightened) ─── */
   --blue:           #4A7CF5; /* Desaturated & lightened brand blue */
@@ -445,9 +445,13 @@ body {
 
 h1,
 h2,
-h3 {
+h3,
+.display-heading,
+.sprint-title {
   font-family: var(--font-heading);
   font-optical-sizing: auto;
+  letter-spacing: -0.025em; /* Compress tracking by 2.5% */
+  line-height: 1.15;        /* Compress line height to 115% */
 }
 
 /* ============================================

@@ -196,6 +196,31 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         }
     };
 
+    // 3D Parallax Mouse States
+    const [rotateX, setRotateX] = useState(0);
+    const [rotateY, setRotateY] = useState(0);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const card = e.currentTarget;
+        const rect = card.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseX = e.clientX - rect.left - width / 2;
+        const mouseY = e.clientY - rect.top - height / 2;
+        
+        // Calculate rotation degrees (cap at max 12 deg tilt)
+        const calcY = (mouseX / (width / 2)) * 12;
+        const calcX = -(mouseY / (height / 2)) * 12;
+
+        setRotateX(calcX);
+        setRotateY(calcY);
+    };
+
+    const handleMouseLeave = () => {
+        setRotateX(0);
+        setRotateY(0);
+    };
+
     if (flashcards.length === 0 || cardQueue.length === 0) return null;
 
     const currentCardIndex = cardQueue[queuePointer];
@@ -207,9 +232,9 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         position: "relative",
         width: "100%",
         height: "100%",
-        transition: "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: cardState === 'EVALUATED' ? "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)" : "transform 0.1s ease-out",
         transformStyle: "preserve-3d",
-        transform: cardState === 'IDLE' ? "rotateY(0deg)" : "rotateY(180deg)",
+        transform: `${cardState === 'IDLE' ? `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` : `rotateX(${rotateX}deg) rotateY(${180 + rotateY}deg)`}`,
     };
 
     const cardFaceStyle: React.CSSProperties = {
@@ -218,14 +243,15 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         height: "100%",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
-        borderRadius: "32px",
-        border: "1px solid var(--border)",
+        borderRadius: "28px",
+        border: "1.5px solid var(--border)",
         padding: "32px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
+        // Primary interactive card uses deep rich layout blur shadow, inactive uses shadow-none
+        boxShadow: cardState === 'EVALUATED' ? "none" : "0 20px 50px rgba(0, 0, 0, 0.5)",
     };
 
     const cardFrontStyle: React.CSSProperties = {
@@ -300,6 +326,8 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             }}
                             className="w-full h-full relative cursor-pointer"
                             onClick={handleFlip}
+                            onMouseMove={handleMouseMove}
+                            onMouseLeave={handleMouseLeave}
                         >
                             <div style={cardInnerStyle}>
                                 

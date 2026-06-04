@@ -3,22 +3,19 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
     LayoutDashboard, 
-    Sparkles, 
-    Library, 
-    Globe,
+    Search,
+    Plus,
     User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-    { id: "dashboard", label: "Home", href: "/dashboard", icon: LayoutDashboard, color: "var(--emerald)" },
-    { id: "create", label: "Create", href: "/create", icon: Sparkles, color: "var(--blue)" },
-    { id: "library", label: "Library", href: "/library", icon: Library, color: "var(--violet)" },
-    { id: "hub", label: "Hub", href: "/hub", icon: Globe, color: "var(--cyan)" },
-    { id: "profile", label: "You", href: "/profile", icon: User, color: "var(--blue)" },
+    { id: "dashboard", label: "Home", href: "/dashboard", icon: LayoutDashboard },
+    { id: "library", label: "Search", href: "/library", icon: Search },
+    { id: "create", label: "Create", href: "/create", icon: Plus, isFloating: true },
+    { id: "profile", label: "You", href: "/profile", icon: User },
 ];
 
 export default function BottomTabs() {
@@ -36,75 +33,59 @@ export default function BottomTabs() {
     if (isHiddenPath) return null;
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-6 pt-2 pointer-events-none">
-            <div 
-                className={cn(
-                    "mx-auto max-w-md w-full pointer-events-auto",
-                    "bg-[var(--background-secondary)]/85 backdrop-blur-lg",
-                    "border border-[var(--border)]",
-                    "rounded-[2.5rem] shadow-2xl",
-                    "flex items-center justify-around p-2",
-                    "relative overflow-hidden"
-                )}
-                style={{
-                    boxShadow: "0 20px 50px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1)"
-                }}
-            >
-                {/* Subtle Refraction Shine */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-zinc-950 border-t border-zinc-900 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] px-6 flex items-center justify-around">
+            {TABS.map((tab) => {
+                const isActive = pathname.startsWith(tab.href);
+                const Icon = tab.icon;
 
-                {TABS.map((tab) => {
-                    const isActive = pathname.startsWith(tab.href);
-                    
+                if (tab.isFloating) {
                     return (
                         <Link
                             key={tab.id}
                             href={tab.href}
-                            className="relative flex flex-col items-center justify-center py-2 px-3 transition-all active:scale-90"
+                            className="relative flex flex-col items-center justify-center -translate-y-4 transition-all"
                         >
-                            <AnimatePresence>
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="bottom-tab-active"
-                                        className="absolute inset-0 rounded-2xl z-0"
-                                        style={{
-                                            backgroundColor: `color-mix(in srgb, ${tab.color} 15%, transparent)`,
-                                            border: `1px solid color-mix(in srgb, ${tab.color} 30%, transparent)`
-                                        }}
-                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                    />
-                                )}
-                            </AnimatePresence>
-
-                            <tab.icon 
-                                size={22} 
-                                strokeWidth={isActive ? 2.5 : 2}
-                                className={cn(
-                                    "relative z-10 transition-colors duration-300",
-                                    isActive ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)]"
-                                )}
-                                style={{
-                                    color: isActive ? tab.color : undefined,
-                                    filter: isActive ? `drop-shadow(0 0 8px ${tab.color})` : "none"
-                                }}
-                            />
-                            
+                            <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform">
+                                <Icon size={24} className="text-zinc-950 stroke-[3px]" />
+                            </div>
                             <span 
                                 className={cn(
-                                    "text-[10px] font-bold mt-1 tracking-tight relative z-10 transition-opacity duration-300",
-                                    isActive ? "opacity-100" : "opacity-0 h-0"
+                                    "text-[10px] mt-1 tracking-tight transition-all duration-300",
+                                    isActive ? "font-semibold text-zinc-100" : "font-normal text-zinc-500"
                                 )}
-                                style={{ color: isActive ? tab.color : undefined }}
                             >
                                 {tab.label}
                             </span>
                         </Link>
-                    )
-                })}
-            </div>
-            
-            {/* iOS/Android Home Indicator Spacer */}
-            <div className="h-[env(safe-area-inset-bottom)]" />
+                    );
+                }
+
+                return (
+                    <Link
+                        key={tab.id}
+                        href={tab.href}
+                        className="flex flex-col items-center justify-center py-1 transition-all active:scale-95"
+                    >
+                        <Icon 
+                            size={20} 
+                            strokeWidth={isActive ? 2.5 : 2}
+                            fill={isActive ? "currentColor" : "none"}
+                            className={cn(
+                                "transition-colors duration-300",
+                                isActive ? "text-white" : "text-zinc-500"
+                            )}
+                        />
+                        <span 
+                            className={cn(
+                                "text-[10px] mt-1 tracking-tight transition-colors duration-300",
+                                isActive ? "font-semibold text-zinc-100" : "font-normal text-zinc-500"
+                            )}
+                        >
+                            {tab.label}
+                        </span>
+                    </Link>
+                );
+            })}
         </nav>
     );
 }

@@ -44,6 +44,7 @@ export const InteractiveQuiz = ({
             ...prev,
             [currentIdx]: idx
         }));
+        addToast("Answer registered!", "success", undefined, undefined, false, undefined, true);
     };
 
     const handleNext = () => {

@@ -306,6 +306,7 @@ export default function DashboardPage() {
         user,
         activityData,
         dueCount,
+        dueData,
         studyPlan,
         planLoading,
         greeting,

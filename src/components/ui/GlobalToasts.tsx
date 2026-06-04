@@ -161,8 +161,7 @@ export const useToasts = create<ToastStore>((set, get) => ({
     },
     
     removeToast: async (id) => {
-        const supabase = createClient();
-        await supabase.from('notifications').delete().eq('id', id);
+        // Optimistic UI update
         set((state) => {
             const updated = state.toasts.filter((t) => t.id !== id);
             if (typeof window !== 'undefined') {
@@ -170,11 +169,15 @@ export const useToasts = create<ToastStore>((set, get) => ({
             }
             return { toasts: updated, activeToastIds: state.activeToastIds.filter((activeId) => activeId !== id) };
         });
+        // Database update in background
+        const supabase = createClient();
+        supabase.from('notifications').delete().eq('id', id).then(({ error }) => {
+            if (error) console.error("Failed to delete notification from DB:", error);
+        });
     },
     
     markAsRead: async (id) => {
-        const supabase = createClient();
-        await supabase.from('notifications').update({ read: true }).eq('id', id);
+        // Optimistic UI update
         set((state) => {
             const updated = state.toasts.map((t) => t.id === id ? { ...t, read: true } : t);
             if (typeof window !== 'undefined') {
@@ -182,14 +185,15 @@ export const useToasts = create<ToastStore>((set, get) => ({
             }
             return { toasts: updated };
         });
+        // Database update in background
+        const supabase = createClient();
+        supabase.from('notifications').update({ read: true }).eq('id', id).then(({ error }) => {
+            if (error) console.error("Failed to mark notification as read in DB:", error);
+        });
     },
     
     markAllAsRead: async () => {
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            await supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id);
-        }
+        // Optimistic UI update
         set((state) => {
             const updated = state.toasts.map((t) => ({ ...t, read: true }));
             if (typeof window !== 'undefined') {
@@ -197,18 +201,32 @@ export const useToasts = create<ToastStore>((set, get) => ({
             }
             return { toasts: updated };
         });
+        // Database update in background
+        const supabase = createClient();
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id).then(({ error }) => {
+                    if (error) console.error("Failed to mark all notifications read in DB:", error);
+                });
+            }
+        });
     },
     
     clearAll: async () => {
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            await supabase.from('notifications').delete().eq('user_id', session.user.id);
-        }
+        // Optimistic UI update
         if (typeof window !== 'undefined') {
             localStorage.setItem('local_notifications', JSON.stringify([]));
         }
         set({ toasts: [], activeToastIds: [] });
+        // Database update in background
+        const supabase = createClient();
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                supabase.from('notifications').delete().eq('user_id', session.user.id).then(({ error }) => {
+                    if (error) console.error("Failed to clear notifications in DB:", error);
+                });
+            }
+        });
     },
     
     toggleCenter: () => set((state) => ({ isOpen: !state.isOpen })),

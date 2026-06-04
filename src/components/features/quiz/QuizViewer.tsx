@@ -67,13 +67,21 @@ export default function QuizViewer({ questions, title, generationId, initialTime
 
     const handleAnswer = (optionIndex: number) => {
         setAnswers(prev => ({ ...prev, [currentIndex]: optionIndex }));
+        addToast("Answer registered!", "success", undefined, undefined, false, undefined, true);
     };
 
     const toggleFlag = () => {
         setFlags(prev => {
             const next = new Set(prev);
-            if (next.has(currentIndex)) next.delete(currentIndex);
-            else next.add(currentIndex);
+            let msg = "";
+            if (next.has(currentIndex)) {
+                next.delete(currentIndex);
+                msg = "Bookmark removed";
+            } else {
+                next.add(currentIndex);
+                msg = "Question bookmarked!";
+            }
+            addToast(msg, "info", undefined, undefined, false, undefined, true);
             return next;
         });
     };

@@ -230,6 +230,35 @@ export default function OnboardingPage() {
         }
     };
 
+    const handleSkipOnboarding = async () => {
+        setIsSaving(true);
+        setSaveError(null);
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        const placeholderUsername = `scholar_${randomNum}`;
+        const combinedGoal = JSON.stringify({
+            painPoints: [],
+            commitmentTime: "30m",
+            initialTopic: "",
+            platformDetected: platform,
+            skipped: true
+        });
+        const success = await completeOnboarding({
+            alias: "Scholar",
+            first_name: "Scholar",
+            last_name: "",
+            username: placeholderUsername,
+            age: 20,
+            education_level: "undergrad",
+            study_goal: combinedGoal
+        });
+        setIsSaving(false);
+        if (success) {
+            router.push("/create");
+        } else {
+            setSaveError("Could not bypass onboarding. Please try again.");
+        }
+    };
+
     const togglePainPoint = (id: string) => {
         setSelectedPainPoints(prev => 
             prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
@@ -315,6 +344,15 @@ export default function OnboardingPage() {
                                         {usernameStatus === "available" && <p className="text-[12px] text-emerald-400 font-bold opacity-90 drop-shadow-[0_0_6px_rgba(16,185,129,0.2)]">Handle is available.</p>}
                                         {usernameStatus === "taken" && <p className="text-[12px] text-rose-400 font-bold">Handle is already claimed.</p>}
                                         {usernameStatus === "invalid" && <p className="text-[12px] text-rose-400 font-bold">Alphanumeric characters only.</p>}
+                                    </div>
+                                    <div className="flex flex-col items-center mt-4">
+                                        <button
+                                            type="button"
+                                            onClick={handleSkipOnboarding}
+                                            className="text-xs font-black uppercase tracking-wider text-[var(--blue-text)] hover:text-white transition-colors hover:underline cursor-pointer"
+                                        >
+                                            Skip straight to Study Studio (Save 3 minutes)
+                                        </button>
                                     </div>
                                 </div>
                             </motion.div>

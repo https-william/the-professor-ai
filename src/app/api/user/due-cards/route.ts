@@ -27,6 +27,12 @@ export async function GET(request: NextRequest) {
 
         if (error) throw error;
 
+        // Fetch total count of card reviews for this user
+        const { count: totalCardsCount } = await supabase
+            .from("card_reviews")
+            .select("*", { count: 'exact', head: true })
+            .eq("user_id", user.id);
+
         // Group by generation_id for deck info
         const deckMap = new Map<string, any[]>();
         for (const card of (dueCards || [])) {
@@ -75,6 +81,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             totalDue,
+            totalCardsCount: totalCardsCount || 0,
             estimatedMinutes,
             decks,
         });

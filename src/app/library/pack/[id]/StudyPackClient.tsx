@@ -74,6 +74,7 @@ export default function StudyPackPage() {
     const [isSharedView, setIsSharedView] = useState(false);
     const [showGuestModal, setShowGuestModal] = useState(false);
     const [showWrapModal, setShowWrapModal] = useState(false);
+    const [wrapSlide, setWrapSlide] = useState(0);
 
     const [isSprint, setIsSprint] = useState(false);
 
@@ -1448,136 +1449,216 @@ export default function StudyPackPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[500] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto"
+                        className="fixed inset-0 z-[500] flex flex-col justify-between p-6 sm:p-10 bg-[#060608] text-white selection:bg-[var(--blue-dim)] overflow-hidden"
                     >
-                        <motion.div 
-                            initial={{ scale: 0.95, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-xl p-6 sm:p-8 rounded-[2rem] bg-[var(--card)] border border-[var(--border)] shadow-2xl overflow-hidden my-auto"
-                        >
-                            <button
-                                onClick={() => setShowWrapModal(false)}
-                                className="absolute top-6 right-6 p-2 rounded-full hover:bg-[var(--bg-3)]/60 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors z-20 cursor-pointer"
-                            >
-                                <X size={18} />
-                            </button>
-
-                            <div className="relative z-10 text-center mb-8">
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--foreground)] text-[var(--background)] text-[9px] font-black uppercase tracking-widest mb-4 shadow-md">
-                                    <Star size={12} className="fill-current" /> BEDTIME VERDICT
-                                </div>
-                                <h2 className="text-2xl sm:text-3xl font-black text-[var(--foreground)] tracking-tight italic uppercase leading-none mb-2">
-                                    The Professor&apos;s Verdict
-                                </h2>
-                                <p className="text-[var(--foreground-muted)] font-black uppercase tracking-widest text-[9px] opacity-70">
-                                    {packTitle} • Sprint Summary
-                                </p>
+                        {/* Story Progress Indicators */}
+                        <div className="w-full max-w-xl mx-auto z-20 pt-4 flex flex-col gap-4">
+                            <div className="flex gap-1.5 w-full">
+                                {Array.from({ length: 4 }).map((_, idx) => (
+                                    <button 
+                                        key={idx} 
+                                        onClick={() => setWrapSlide(idx)}
+                                        className={cn(
+                                            "h-1 flex-1 rounded-full transition-all duration-300",
+                                            wrapSlide >= idx ? "bg-[var(--blue)] shadow-[0_0_8px_var(--blue-glow)]" : "bg-white/10"
+                                        )}
+                                    />
+                                ))}
                             </div>
-
-                            {/* Stats Cards */}
-                            <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
-                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center border-l-4 border-l-[var(--blue)]">
-                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--blue-text)] mb-1">Study Topic</h4>
-                                    <div className="text-xs font-black text-[var(--foreground)] truncate uppercase tracking-tight">
-                                        {packTitle}
-                                    </div>
-                                </div>
-                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center">
-                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-1">Quiz Score</h4>
-                                    <div className="text-lg font-black text-[var(--foreground)] italic tracking-tight">
-                                        {effectiveQuizScore}%
-                                    </div>
-                                </div>
-                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center">
-                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-1">Cards Mastered</h4>
-                                    <div className="text-lg font-black text-[var(--foreground)] italic tracking-tight">
-                                        {effectiveFlashcardsCount} cards
-                                    </div>
-                                </div>
-                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/30 border border-[var(--border)] flex flex-col justify-center">
-                                    <h4 className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-1">Study Velocity</h4>
-                                    <div className="text-lg font-black text-[var(--foreground)] italic tracking-tight">
-                                        {(() => {
-                                            const durationMs = sessionStats.finishTime ? (sessionStats.finishTime - sessionStats.startTime) : 0;
-                                            const minutes = Math.floor(durationMs / 60000);
-                                            const seconds = Math.floor((durationMs % 60000) / 1000);
-                                            const durationStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-                                            return durationMs > 0 ? durationStr : "3m 15s";
-                                        })()}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Assessment box */}
-                            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--bg-3)]/40 border border-[var(--border)] mb-8 text-center relative overflow-hidden shadow-inner z-10">
-                                <h4 className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-3 flex items-center justify-center gap-1.5">
-                                    <Zap size={10} className="text-[var(--blue)]" /> ASSESSMENT VERDICT
-                                </h4>
-                                {isGuest ? (
-                                    <div className="relative py-2">
-                                        <div className="blur-[4px] select-none text-xs sm:text-sm text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                            Bolu, the Professor knows exactly how ready you are, but you need to sign up to unlock this final verdict and save your streak.
-                                        </div>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--card)]/10">
-                                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-2">Locked Assessment</span>
-                                            <button
-                                                onClick={() => {
-                                                    setShowWrapModal(false);
-                                                    setShowGuestModal(true);
-                                                }}
-                                                className="px-4 py-2 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all cursor-pointer shadow-md"
-                                            >
-                                                Sign Up to Unlock
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <p className="text-xs sm:text-sm text-[var(--foreground)] font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                        {(() => {
-                                            if (effectiveQuizScore >= 95) return "Absolute genius. Bolu, your brain is full and the slides have been parsed. Flawless. You've fully absorbed this material. Close the tab and go live your life.";
-                                            if (effectiveQuizScore >= 80) return "Solid run. You've locked in the high-yield parts. Amaka, grab some water and catch up on sleep. The hard work is done.";
-                                            if (effectiveQuizScore >= 60) return "You passed, but it was close. Tunde, go get some rest now, but review these card decks one more time tomorrow morning.";
-                                            return "Concept explorer. Some gaps remain, but cramming tired won't help. Rest your brain, sleep on it, and let the concepts settle.";
-                                        })()}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex flex-col gap-2.5 relative z-10">
-                                <button 
-                                    onClick={() => {
-                                        if (isGuest) {
-                                            setShowWrapModal(false);
-                                            setShowGuestModal(true);
-                                        } else {
-                                            const text = `I just wrapped up my study session on "${packTitle}" with The Professor! 🎓\n\n🎯 Quiz Score: ${effectiveQuizScore}%\n⚡ Cards Reviewed: ${effectiveFlashcardsCount}\n\nYour notes. Just the good parts. Get your time back:\n${window.location.origin}`;
-                                            navigator.clipboard.writeText(text);
-                                            addToast("Summary copied to clipboard!", "success");
-                                        }
-                                    }}
-                                    className="w-full py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] uppercase tracking-widest shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/40">
+                                    Sprint Wrap • Slide {wrapSlide + 1} of 4
+                                </span>
+                                <button
+                                    onClick={() => { setShowWrapModal(false); setWrapSlide(0); }}
+                                    className="p-1 rounded-lg hover:bg-white/5 text-white/60 hover:text-white transition-colors"
                                 >
-                                    <Share2 size={14} /> 
-                                    {isGuest ? "SIGN UP TO SAVE PROGRESS" : "COPY SPRINT SUMMARY"}
+                                    <X size={18} />
                                 </button>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button 
-                                        onClick={() => router.push('/create')}
-                                        className="py-3.5 rounded-xl bg-[var(--bg-3)]/60 border border-[var(--border)] text-[var(--foreground)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--bg-3)] transition-all cursor-pointer"
-                                    >
-                                        NEW SPRINT
-                                    </button>
-                                    <button 
-                                        onClick={() => router.push('/dashboard')}
-                                        className="py-3.5 rounded-xl bg-[var(--bg-3)]/60 border border-[var(--border)] text-[var(--foreground)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--bg-3)] transition-all cursor-pointer"
-                                    >
-                                        CLOSE LAB
-                                    </button>
-                                </div>
                             </div>
-                        </motion.div>
+                        </div>
+
+                        {/* Story Card Canvas */}
+                        <div className="flex-1 w-full max-w-xl mx-auto flex items-center justify-center my-8 z-10 relative">
+                            <AnimatePresence mode="wait">
+                                {wrapSlide === 0 && (
+                                    <motion.div
+                                        key="slide0"
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 1.05 }}
+                                        className="text-center space-y-6 flex flex-col items-center justify-center"
+                                    >
+                                        <div className="w-20 h-20 rounded-3xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center text-[var(--blue)] animate-bounce mb-4 shadow-[0_0_40px_var(--blue-glow)]">
+                                            <Sparkles size={40} />
+                                        </div>
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-[var(--blue-text)] text-[9px] font-black uppercase tracking-widest border border-white/10">
+                                            <Star size={10} className="fill-current" /> SPRINT COMPLETE
+                                        </div>
+                                        <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase leading-none italic">
+                                            Your <span className="text-[var(--blue)]">Daily Wrapped</span> is Ready
+                                        </h2>
+                                        <p className="text-sm text-white/60 font-bold max-w-sm mx-auto">
+                                            You just finished studying {packTitle}. Let's look at how your brain performed today.
+                                        </p>
+                                    </motion.div>
+                                )}
+
+                                {wrapSlide === 1 && (
+                                    <motion.div
+                                        key="slide1"
+                                        initial={{ opacity: 0, x: 100 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -100 }}
+                                        className="w-full text-center space-y-8 flex flex-col items-center justify-center"
+                                    >
+                                        <h3 className="text-2xl font-black tracking-tight uppercase italic text-[var(--blue-text)]">
+                                            Academic Output
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4 w-full">
+                                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center shadow-lg relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-4 opacity-5 text-[var(--blue)]"><Zap size={60} /></div>
+                                                <span className="text-[9px] font-black uppercase tracking-wider text-white/40 mb-1">QUIZ SCORE</span>
+                                                <span className="text-5xl font-black text-[var(--blue)] tracking-tighter">{effectiveQuizScore}%</span>
+                                            </div>
+                                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center shadow-lg relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-4 opacity-5 text-[var(--emerald)]"><CheckCircle2 size={60} /></div>
+                                                <span className="text-[9px] font-black uppercase tracking-wider text-white/40 mb-1">CARDS DRILL</span>
+                                                <span className="text-5xl font-black text-[var(--emerald)] tracking-tighter">{effectiveFlashcardsCount}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-white/50 max-w-sm font-medium">
+                                            Amaka increased her exam preparedness score significantly with a card run like this.
+                                        </p>
+                                    </motion.div>
+                                )}
+
+                                {wrapSlide === 2 && (
+                                    <motion.div
+                                        key="slide2"
+                                        initial={{ opacity: 0, scale: 1.1 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        className="text-center space-y-6 flex flex-col items-center justify-center"
+                                    >
+                                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--amber)]">STUDY VELOCITY</span>
+                                        <div className="text-7xl font-black text-[var(--amber)] tracking-tighter italic">
+                                            {(() => {
+                                                const durationMs = sessionStats.finishTime ? (sessionStats.finishTime - sessionStats.startTime) : 0;
+                                                const minutes = Math.floor(durationMs / 60000);
+                                                const seconds = Math.floor((durationMs % 60000) / 1000);
+                                                return durationMs > 0 ? `${minutes}m ${seconds}s` : "3m 15s";
+                                            })()}
+                                        </div>
+                                        <h3 className="text-lg font-black uppercase max-w-sm leading-tight">
+                                            Fast and focused study pace.
+                                        </h3>
+                                        <p className="text-xs text-white/60 max-w-sm mx-auto font-medium">
+                                            Tunde keeps his memory loops sharp by completing sprints in record time.
+                                        </p>
+                                    </motion.div>
+                                )}
+
+                                {wrapSlide === 3 && (
+                                    <motion.div
+                                        key="slide3"
+                                        initial={{ opacity: 0, y: 50 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -50 }}
+                                        className="w-full text-center space-y-6"
+                                    >
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-[var(--blue-text)] text-[9px] font-black uppercase tracking-widest border border-white/10">
+                                            <Zap size={10} className="text-[var(--blue)]" /> THE PROFESSOR'S VERDICT
+                                        </div>
+                                        <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 min-h-[140px] flex items-center justify-center text-center shadow-inner">
+                                            {isGuest ? (
+                                                <div className="relative py-2">
+                                                    <p className="blur-[4px] select-none text-sm text-white font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
+                                                        Bolu, the Professor knows exactly how ready you are, but you need to sign up to unlock this final verdict and save your streak.
+                                                    </p>
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-2">Locked Assessment</span>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowWrapModal(false);
+                                                                setShowGuestModal(true);
+                                                            }}
+                                                            className="px-4 py-2 rounded-xl bg-white text-black text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all cursor-pointer shadow-md"
+                                                        >
+                                                            Sign Up to Unlock
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm sm:text-base text-white font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
+                                                    {(() => {
+                                                        if (effectiveQuizScore >= 95) return "Absolute genius. Bolu, your brain is full and the slides have been parsed. Flawless. You've fully absorbed this material. Close the tab and go live your life.";
+                                                        if (effectiveQuizScore >= 80) return "Solid run. You've locked in the high-yield parts. Amaka, grab some water and catch up on sleep. The hard work is done.";
+                                                        if (effectiveQuizScore >= 60) return "You passed, but it was close. Tunde, go get some rest now, but review these card decks one more time tomorrow morning.";
+                                                        return "Concept explorer. Some gaps remain, but cramming tired won't help. Rest your brain, sleep on it, and let the concepts settle.";
+                                                    })()}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex flex-col gap-2.5 max-w-md mx-auto pt-4">
+                                            <button 
+                                                onClick={() => {
+                                                    if (isGuest) {
+                                                        setShowWrapModal(false);
+                                                        setShowGuestModal(true);
+                                                    } else {
+                                                        const text = `I just wrapped up my study session on "${packTitle}" with The Professor! 🎓\n\n🎯 Quiz Score: ${effectiveQuizScore}%\n⚡ Cards Reviewed: ${effectiveFlashcardsCount}\n\nYour notes. Just the good parts. Get your time back:\n${window.location.origin}`;
+                                                        navigator.clipboard.writeText(text);
+                                                        addToast("Summary copied to clipboard!", "success");
+                                                    }
+                                                }}
+                                                className="w-full py-3.5 rounded-xl bg-white text-black font-black text-[10px] uppercase tracking-widest shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                            >
+                                                <Share2 size={14} /> 
+                                                {isGuest ? "SIGN UP TO SAVE PROGRESS" : "COPY SPRINT SUMMARY"}
+                                            </button>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button 
+                                                    onClick={() => { setShowWrapModal(false); setWrapSlide(0); router.push('/create'); }}
+                                                    className="py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all cursor-pointer"
+                                                >
+                                                    NEW SPRINT
+                                                </button>
+                                                <button 
+                                                    onClick={() => { setShowWrapModal(false); setWrapSlide(0); router.push('/dashboard'); }}
+                                                    className="py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all cursor-pointer"
+                                                >
+                                                    CLOSE LAB
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Footer Controls */}
+                        <div className="w-full max-w-xl mx-auto flex items-center justify-between z-20 pb-4">
+                            <button
+                                onClick={() => setWrapSlide(prev => Math.max(0, prev - 1))}
+                                disabled={wrapSlide === 0}
+                                className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 disabled:opacity-0 transition-opacity"
+                            >
+                                BACK
+                            </button>
+                            {wrapSlide < 3 ? (
+                                <button
+                                    onClick={() => setWrapSlide(prev => Math.min(3, prev + 1))}
+                                    className="px-6 py-2.5 rounded-xl bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
+                                >
+                                    NEXT
+                                </button>
+                            ) : (
+                                <div className="w-12" />
+                            )}
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
