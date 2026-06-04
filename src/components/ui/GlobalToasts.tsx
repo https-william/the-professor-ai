@@ -187,7 +187,7 @@ export const useToasts = create<ToastStore>((set, get) => ({
         });
         // Database update in background
         const supabase = createClient();
-        supabase.from('notifications').update({ read: true }).eq('id', id).then(({ error }) => {
+        supabase.from('notifications').update({ read: true }).eq('id', id).then(({ error }: { error: any }) => {
             if (error) console.error("Failed to mark notification as read in DB:", error);
         });
     },
@@ -205,7 +205,7 @@ export const useToasts = create<ToastStore>((set, get) => ({
         const supabase = createClient();
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id).then(({ error }) => {
+                supabase.from('notifications').update({ read: true }).eq('user_id', session.user.id).then(({ error }: { error: any }) => {
                     if (error) console.error("Failed to mark all notifications read in DB:", error);
                 });
             }
@@ -222,7 +222,7 @@ export const useToasts = create<ToastStore>((set, get) => ({
         const supabase = createClient();
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                supabase.from('notifications').delete().eq('user_id', session.user.id).then(({ error }) => {
+                supabase.from('notifications').delete().eq('user_id', session.user.id).then(({ error }: { error: any }) => {
                     if (error) console.error("Failed to clear notifications in DB:", error);
                 });
             }
