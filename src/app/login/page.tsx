@@ -7,6 +7,7 @@ import Link from "next/link";
 import { getRedirectUrl } from "@/lib/api-client";
 import BrandLogo from "@/components/ui/BrandLogo";
 import Turnstile, { TurnstileHandle } from "@/components/ui/Turnstile";
+import { Fingerprint } from "lucide-react";
 
 function LoginForm() {
     const [email, setEmail] = useState("");
@@ -84,6 +85,34 @@ function LoginForm() {
             options: { redirectTo: redirectUrl },
         });
         if (error) { setError(error.message); setLoading(false); }
+    };
+
+    const handlePasskeyLogin = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const { data, error: passkeyError } = await supabase.auth.signInWithPasskey();
+            if (passkeyError) {
+                setError(passkeyError.message);
+                setLoading(false);
+            } else if (data?.user) {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("has_onboarded")
+                    .eq("id", data.user.id)
+                    .single();
+
+                if (profile?.has_onboarded === false) {
+                    router.push(`/onboarding?next=${encodeURIComponent(nextUrl)}`);
+                } else {
+                    router.push(nextUrl);
+                }
+                router.refresh();
+            }
+        } catch (err: any) {
+            setError(err?.message || "An unexpected error occurred during Passkey verification.");
+            setLoading(false);
+        }
     };
 
     return (
@@ -188,6 +217,32 @@ function LoginForm() {
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
                     <span style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>Continue with Google</span>
+                </button>
+
+                {/* Passkey Auth */}
+                <button
+                    onClick={handlePasskeyLogin}
+                    disabled={loading}
+                    style={{
+                        width: "100%",
+                        background: "var(--bg-2)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "1.25rem",
+                        padding: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "10px",
+                        cursor: "pointer",
+                        transition: "all 150ms ease",
+                        marginTop: "10px",
+                        opacity: loading ? 0.5 : 1,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-3)"; e.currentTarget.style.borderColor = "var(--border-2)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
+                >
+                    <Fingerprint size={20} className="text-[var(--accent)]" />
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>Sign in with Passkey</span>
                 </button>
 
                 {/* Divider */}

@@ -34,7 +34,12 @@ export function createClient() {
       {
         global: {
           fetch: customFetch
-        }
+        },
+        auth: {
+          experimental: {
+            passkey: true,
+          },
+        } as any,
       }
     );
   }
@@ -49,7 +54,12 @@ export function createClient() {
       {
         global: {
           fetch: customFetch
-        }
+        },
+        auth: {
+          experimental: {
+            passkey: true,
+          },
+        } as any,
       }
     );
   }

@@ -13,7 +13,8 @@ import {
     Smartphone, 
     Target, 
     Zap,
-    CheckCircle2
+    CheckCircle2,
+    Fingerprint
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
@@ -32,6 +33,23 @@ export default function SettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isEditingName, setIsEditingName] = useState(false);
     const [newName, setNewName] = useState(user?.name || "");
+    const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+
+    const handleRegisterPasskey = async () => {
+        setIsRegisteringPasskey(true);
+        try {
+            const { data, error } = await supabase.auth.registerPasskey();
+            if (error) {
+                addToast(error.message, "error");
+            } else {
+                addToast("Passkey registered successfully! 🔒", "success");
+            }
+        } catch (err: any) {
+            addToast(err?.message || "An unexpected error occurred during Passkey registration.", "error");
+        } finally {
+            setIsRegisteringPasskey(false);
+        }
+    };
 
     const handleSignOut = async () => {
         await fetch('/api/auth/signout', { method: 'POST' });
@@ -143,7 +161,7 @@ export default function SettingsPage() {
                     <div className="space-y-8 md:space-y-12">
                         
                         {/* ─── Profile & Appearance ─── */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="scholar-card p-8 flex flex-col justify-between group">
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between">
@@ -156,7 +174,7 @@ export default function SettingsPage() {
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-1">Academy Email</p>
-                                        <p className="text-lg font-bold font-heading truncate">{user?.email}</p>
+                                        <p className="text-base font-bold font-heading truncate">{user?.email}</p>
                                     </div>
                                 </div>
                                 <div className="mt-8 pt-6 border-t border-[var(--border)] flex items-center justify-between">
@@ -182,6 +200,30 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="mt-8 pt-6 border-t border-[var(--border)] flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
                                     Adaptive Depth System
+                                </div>
+                            </div>
+
+                            <div className="scholar-card p-8 flex flex-col justify-between group">
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="w-12 h-12 rounded-2xl bg-[var(--foreground)]/[0.03] border border-[var(--border)] flex items-center justify-center shadow-inner">
+                                            <Fingerprint size={22} className="text-[var(--accent)]" />
+                                        </div>
+                                        <button 
+                                            onClick={handleRegisterPasskey}
+                                            disabled={isRegisteringPasskey}
+                                            className="btn-skeuo px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-[var(--background-secondary)] cursor-pointer"
+                                        >
+                                            {isRegisteringPasskey ? "Registering..." : "Add Passkey"}
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-1">Passkey Protection</p>
+                                        <p className="text-lg font-bold font-heading">Biometric Login</p>
+                                    </div>
+                                </div>
+                                <div className="mt-8 pt-6 border-t border-[var(--border)] flex items-center justify-between text-[10px] text-[var(--foreground-muted)] font-medium leading-normal">
+                                    Unlock your account instantly using FaceID, TouchID, or security keys.
                                 </div>
                             </div>
                         </div>
