@@ -99,8 +99,8 @@ export default function BillingPage() {
                         <div className="p-12 rounded-[32px] flex flex-col items-center gap-6 bg-[var(--card)] border border-[var(--border)] shadow-2xl">
                             <div className="w-12 h-12 rounded-full border-2 border-[var(--blue)]/20 border-t-[var(--blue)] animate-spin" />
                             <div className="text-center">
-                                <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider">Activating Lab</h3>
-                                <p className="text-xs text-[var(--foreground-muted)] mt-1">Refueling your study reserves...</p>
+                                <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider">Getting things ready</h3>
+                                <p className="text-xs text-[var(--foreground-muted)] mt-1">Setting things up...</p>
                             </div>
                         </div>
                     </motion.div>
@@ -133,16 +133,16 @@ export default function BillingPage() {
                             {/* Study Guide Mockup Title */}
                             <div className="flex items-center justify-between mb-6">
                                 <div className="px-3 py-1 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/30 text-[var(--blue)] text-[9px] font-black uppercase tracking-widest">
-                                    Study Pack Active
+                                    Study Pack Ready
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Phase 01</span>
                             </div>
                             
                             <h3 className="text-xl font-black italic uppercase tracking-tight text-[var(--foreground)] mb-2">
-                                Cardiovascular Pathologies
+                                Human Anatomy
                             </h3>
                             <p className="text-xs text-[var(--foreground-muted)] font-medium leading-relaxed mb-6">
-                                The Professor's distilled breakdown of high-yield exam topics. Just the parts that keep you out of trouble.
+                                The Professor's simple breakdown of the important topics. Just the parts that keep you out of trouble.
                             </p>
 
                             {/* Bullet Preview */}
@@ -152,7 +152,7 @@ export default function BillingPage() {
                                         <Check size={10} className="text-[var(--blue)]" />
                                     </div>
                                     <p className="text-xs text-white/70 leading-relaxed font-medium">
-                                        <strong>Mitral Regurgitation:</strong> Systolic murmur radiating to the left axilla. High-yield association with infective endocarditis.
+                                        <strong>Photosynthesis:</strong> The simple way plants turn sunlight to food. Light reactions happen in the membrane.
                                     </p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-black/20 border border-white/5 flex items-start gap-3">
@@ -160,7 +160,7 @@ export default function BillingPage() {
                                         <Check size={10} className="text-[var(--blue)]" />
                                     </div>
                                     <p className="text-xs text-white/70 leading-relaxed font-medium">
-                                        <strong>Aortic Stenosis:</strong> Crescendo-decrescendo murmur. Classic triad of syncope, angina, and dyspnea on exertion.
+                                        <strong>Mitochondria:</strong> Yes, it is the powerhouse of the cell. But it also helps control cell growth.
                                     </p>
                                 </div>
                             </div>
@@ -169,10 +169,10 @@ export default function BillingPage() {
                             <div className="absolute -bottom-8 -right-8 w-64 p-5 rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-300">
                                 <div className="flex items-center gap-1.5 mb-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-amber-400">Memory Card</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-amber-400">Study Card</span>
                                 </div>
                                 <h4 className="text-xs font-black text-white/80 leading-snug">
-                                    What is the key clinical finding in Cardiac Tamponade?
+                                    What part of a cell makes energy?
                                 </h4>
                                 <div className="mt-4 pt-2 border-t border-white/5 flex justify-between items-center text-[8px] text-white/30 uppercase font-black">
                                     <span>Press space to flip</span>
@@ -202,7 +202,7 @@ export default function BillingPage() {
                                 Plus Scholar Plan
                             </h1>
                             <p className="text-sm text-[var(--foreground-muted)] font-medium leading-relaxed">
-                                Get 1,000 monthly credits to ingest your lecture slides, build cards instantly, and download PDFs to study offline when power is out.
+                                Get 1,000 monthly credits to turn your lecture slides into simple study guides, build cards easily, and download PDFs to study offline when power is out.
                             </p>
                         </div>
 
