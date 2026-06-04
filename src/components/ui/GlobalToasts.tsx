@@ -171,7 +171,7 @@ export const useToasts = create<ToastStore>((set, get) => ({
         });
         // Database update in background
         const supabase = createClient();
-        supabase.from('notifications').delete().eq('id', id).then(({ error }) => {
+        supabase.from('notifications').delete().eq('id', id).then(({ error }: { error: any }) => {
             if (error) console.error("Failed to delete notification from DB:", error);
         });
     },
