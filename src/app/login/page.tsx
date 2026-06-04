@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useRef, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getRedirectUrl } from "@/lib/api-client";
 import BrandLogo from "@/components/ui/BrandLogo";
-import Turnstile, { TurnstileHandle } from "@/components/ui/Turnstile";
-import { Fingerprint } from "lucide-react";
 
 function LoginForm() {
     const [email, setEmail] = useState("");
@@ -15,7 +13,6 @@ function LoginForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const turnstileRef = useRef<TurnstileHandle>(null);
     const router = useRouter();
     const supabase = createClient();
     const searchParams = useSearchParams();
@@ -26,25 +23,10 @@ function LoginForm() {
         e.preventDefault();
         setLoading(true);
         setError(null);
-
-        // Always get a fresh captcha token before submitting to Supabase.
-        // Without this, Supabase rejects the request with "invalid login credentials"
-        // even when the email/password are correct.
-        let captchaToken: string | undefined;
-        try {
-            const token = await turnstileRef.current?.getToken();
-            captchaToken = token || undefined;
-        } catch (captchaErr: unknown) {
-            const msg = captchaErr instanceof Error ? captchaErr.message : "Captcha verification failed. Please refresh and try again.";
-            setError(msg);
-            setLoading(false);
-            return;
-        }
         
         const { data: { user: authUser }, error: loginError } = await supabase.auth.signInWithPassword({ 
             email, 
             password,
-            options: { captchaToken },
         });
         
         if (loginError) { 
@@ -57,8 +39,6 @@ function LoginForm() {
                 msg = "Whoa, slow down a bit! You've tried logging in too many times recently. Take a breath and try again in a minute.";
             }
             setError(msg);
-            // Reset turnstile so a fresh token is issued on the next attempt
-            turnstileRef.current?.reset();
             setLoading(false); 
         } else if (authUser) {
             const { data: profile } = await supabase
@@ -85,42 +65,6 @@ function LoginForm() {
             options: { redirectTo: redirectUrl },
         });
         if (error) { setError(error.message); setLoading(false); }
-    };
-
-    const handlePasskeyLogin = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data, error: passkeyError } = await supabase.auth.signInWithPasskey();
-            if (passkeyError) {
-                let msg = passkeyError.message;
-                if (msg.toLowerCase().includes("timed out") || msg.toLowerCase().includes("not allowed")) {
-                    msg = "Oops! Looks like the passkey request timed out or was cancelled. Let's try that again!";
-                }
-                setError(msg);
-                setLoading(false);
-            } else if (data?.user) {
-                const { data: profile } = await supabase
-                    .from("profiles")
-                    .select("has_onboarded")
-                    .eq("id", data.user.id)
-                    .single();
-
-                if (profile?.has_onboarded === false) {
-                    router.push(`/onboarding?next=${encodeURIComponent(nextUrl)}`);
-                } else {
-                    router.push(nextUrl);
-                }
-                router.refresh();
-            }
-        } catch (err: any) {
-            let msg = err?.message || "An unexpected error occurred during Passkey verification.";
-            if (msg.toLowerCase().includes("timed out") || msg.toLowerCase().includes("not allowed")) {
-                msg = "Oops! Looks like the passkey request timed out or was cancelled. Let's try that again!";
-            }
-            setError(msg);
-            setLoading(false);
-        }
     };
 
     return (
@@ -227,32 +171,6 @@ function LoginForm() {
                     <span style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>Continue with Google</span>
                 </button>
 
-                {/* Passkey Auth */}
-                <button
-                    onClick={handlePasskeyLogin}
-                    disabled={loading}
-                    style={{
-                        width: "100%",
-                        background: "var(--bg-2)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "1.25rem",
-                        padding: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "10px",
-                        cursor: "pointer",
-                        transition: "all 150ms ease",
-                        marginTop: "10px",
-                        opacity: loading ? 0.5 : 1,
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-3)"; e.currentTarget.style.borderColor = "var(--border-2)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-                >
-                    <Fingerprint size={20} className="text-[var(--accent)]" />
-                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>Sign in with Passkey</span>
-                </button>
-
                 {/* Divider */}
                 <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "20px 0" }}>
                     <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
@@ -345,7 +263,6 @@ function LoginForm() {
                     <button type="submit" disabled={loading} className="btn-jelly-primary" style={{ width: "100%", marginTop: "8px" }}>
                         {loading ? "Signing in..." : "Sign in"}
                     </button>
-                    <Turnstile ref={turnstileRef} />
                 </form>
 
                 <p style={{

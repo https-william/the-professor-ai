@@ -23,9 +23,17 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   return fetch(input, init); // fallback
 };
 
+const REAL_SUPABASE_URL = 'https://hzdjctvkrsmtjqhndckk.supabase.co';
+const REAL_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6ZGpjdHZrcnNtdGpxaG5kY2trIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MDUxNzcsImV4cCI6MjA4MzM4MTE3N30.p-9JcWoljflIo0qF401eTz_NKGFxxhULuxhtl8_NEcw';
+
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+  let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || REAL_SUPABASE_URL;
+  let supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || REAL_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder')) {
+    supabaseUrl = REAL_SUPABASE_URL;
+    supabaseAnonKey = REAL_SUPABASE_ANON_KEY;
+  }
 
   if (typeof window === 'undefined') {
     return createBrowserClient(
@@ -34,32 +42,19 @@ export function createClient() {
       {
         global: {
           fetch: customFetch
-        },
-        auth: {
-          experimental: {
-            passkey: true,
-          },
-        } as any,
+        }
       }
     );
   }
 
   if (!supabaseInstance) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
-
     supabaseInstance = createBrowserClient(
       supabaseUrl,
       supabaseAnonKey,
       {
         global: {
           fetch: customFetch
-        },
-        auth: {
-          experimental: {
-            passkey: true,
-          },
-        } as any,
+        }
       }
     );
   }
