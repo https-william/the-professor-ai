@@ -299,7 +299,7 @@ export default function DashboardPage() {
         return <DashboardSkeleton />;
     }
 
-    const firstName = user.name?.split(" ")[0] || "Scholar";
+    const firstName = user.firstName || (user.name !== "Scholar" ? user.name?.split(" ")[0] : null) || user.username || user.email?.split("@")[0] || "Scholar";
 
     // Common props passed to each platform orchestrator
     const dashboardProps = {

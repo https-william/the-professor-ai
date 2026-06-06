@@ -403,18 +403,26 @@ export default function DashboardWeb({
                             {/* Welcome Banner for Power Learner */}
                             <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl mb-6" style={{ borderRadius: "28px" }}>
                                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
-                                <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-                                    <div>
-                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm mb-3">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                            <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">Power Learner</span>
+                                <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+                                    <div className="flex-1 min-w-[280px]">
+                                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint} (Power Learner)</span>
+                                            </div>
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
+                                            </div>
+                                            <FocusTimer widget={true} />
                                         </div>
-                                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-1">
+                                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-2">
                                             Hey {firstName},
                                         </h2>
-                                        <p className="text-sm text-[var(--text-3)] font-bold">{dailyLine}</p>
+                                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
+                                            &ldquo;{dailyLine}&rdquo;
+                                        </h1>
                                     </div>
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-4 shrink-0">
                                         <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
                                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                                                 <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" />

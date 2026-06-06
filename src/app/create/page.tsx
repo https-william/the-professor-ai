@@ -404,11 +404,11 @@ function CreatorStudio() {
             <StandardContainer>
                 <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
                     {/* Header Banner */}
-                    <div className="mb-5 text-center">
-                        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--blue)] mb-1">
-                            Hey {user.name?.split(" ")[0] || "Scholar"}
+                    <div className="mb-8 text-center">
+                        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--blue)] mb-2">
+                            Hey {user.firstName || (user.name !== "Scholar" ? user.name?.split(" ")[0] : null) || user.username || user.email?.split("@")[0] || "Scholar"}
                         </h2>
-                        <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2 leading-none uppercase italic">
+                        <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-3 leading-none uppercase italic">
                             Exam <span className="text-[var(--blue)]">Sprint</span>
                         </h1>
                         <p className="text-xs text-[var(--foreground-muted)] font-bold leading-relaxed max-w-xl mx-auto opacity-75">
@@ -417,7 +417,7 @@ function CreatorStudio() {
                     </div>
 
                     {/* Compact Pill-Shaped Pipeline Flow */}
-                    <div className="mb-4 p-3 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-md relative">
+                    <div className="mb-6 p-4 rounded-2xl bg-[var(--bg-2)] border border-[var(--border)] shadow-md relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-1.5 h-full bg-[var(--blue)]/30" />
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mr-2 flex items-center gap-1.5 shrink-0">
@@ -457,38 +457,38 @@ function CreatorStudio() {
                     </div>
 
                     {/* Main Flat 2.0 Ingestion Area */}
-                    <div className="rounded-[2rem] bg-[var(--card)] border border-[var(--border)] shadow-xl overflow-hidden">
+                    <div className="rounded-[2rem] bg-[var(--bg-2)] border border-[var(--border)] shadow-xl overflow-hidden mb-6">
                         
                         {/* Tab Headers */}
-                        <div className="flex bg-[var(--bg-3)]/40 border-b border-[var(--border)] p-1">
+                        <div className="flex bg-[var(--bg-3)]/30 border-b border-[var(--border)] p-1.5">
                             <button
                                 onClick={() => setActiveTab('upload')}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 py-2.5 text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer",
+                                    "flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-xl",
                                     activeTab === 'upload' 
-                                        ? 'bg-[var(--background)] border border-[var(--border)] rounded-xl text-[var(--foreground)] shadow-sm' 
+                                        ? 'bg-[var(--bg-2)] border border-[var(--border)] text-[var(--foreground)] shadow-sm' 
                                         : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                                 )}
                             >
-                                <Upload size={12} strokeWidth={2.5} />
+                                <Upload size={13} strokeWidth={2.5} />
                                 Upload Study File
                             </button>
                             <button
                                 onClick={() => setActiveTab('text')}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 py-2.5 text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer",
+                                    "flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-xl",
                                     activeTab === 'text' 
-                                        ? 'bg-[var(--background)] border border-[var(--border)] rounded-xl text-[var(--foreground)] shadow-sm' 
+                                        ? 'bg-[var(--bg-2)] border border-[var(--border)] text-[var(--foreground)] shadow-sm' 
                                         : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                                 )}
                             >
-                                <Type size={12} strokeWidth={2.5} />
+                                <Type size={13} strokeWidth={2.5} />
                                 Paste Raw Text
                             </button>
                         </div>
 
                         {/* Workspace body */}
-                        <div className="p-6 sm:p-8 space-y-5 bg-[var(--card)] relative">
+                        <div className="p-6 sm:p-10 space-y-8 relative">
                             
                             {/* File Upload Ingestion Area */}
                             {activeTab === 'upload' ? (
@@ -502,35 +502,28 @@ function CreatorStudio() {
                                 >
                                     <div 
                                         className={cn(
-                                            "py-4 px-6 flex items-center justify-between transition-all duration-300 rounded-xl",
-                                            "shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]",
-                                            "border border-dashed border-zinc-700",
-                                            dragActive ? "bg-[var(--blue)]/[0.04] border-[var(--blue)]/50 scale-[0.99]" : "bg-[var(--bg-3)]/20 hover:bg-[var(--bg-3)]/30"
+                                            "py-12 px-6 flex flex-col items-center justify-center text-center transition-all duration-300 rounded-2xl border border-dashed border-[var(--border)]",
+                                            dragActive ? "bg-[var(--blue-dim)] border-[var(--blue)]/60 scale-[0.99]" : "bg-[var(--bg-3)]/20 hover:bg-[var(--bg-3)]/30"
                                         )}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className={cn(
-                                                "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 bg-[var(--background)]",
-                                                "shadow-[2px_2px_5px_rgba(0,0,0,0.3)] border border-[var(--border)]",
-                                                dragActive ? "bg-[var(--blue)] text-white scale-110" : "text-[var(--blue)]"
-                                            )}>
-                                                <Upload className="w-4.5 h-4.5" strokeWidth={2} />
-                                            </div>
-                                            <div className="text-left">
-                                                <h4 className="text-xs font-black text-[var(--foreground)]">Drop notes here or click to browse</h4>
-                                                <p className="text-[8px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold">PDF, PPTX, DOCX, or Images</p>
-                                            </div>
+                                        <div className={cn(
+                                            "w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 bg-[var(--bg-3)] border border-[var(--border)]",
+                                            dragActive ? "text-[var(--blue)] scale-110" : "text-[var(--blue)]"
+                                        )}>
+                                            <Upload className="w-5 h-5" strokeWidth={2} />
                                         </div>
-                                        {!isDesktop && (
-                                            <input type="file" className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
-                                        )}
+                                        <h4 className="text-sm font-black text-[var(--foreground)]">Drag & drop your study materials or click to browse</h4>
+                                        <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold mt-1.5">Supports PDF, PPTX, DOCX, TXT, or Images</p>
                                     </div>
+                                    {!isDesktop && (
+                                        <input type="file" className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
+                                    )}
                                 </div>
                             ) : (
-                                <div className="space-y-2 animate-in fade-in duration-300">
+                                <div className="space-y-3 animate-in fade-in duration-300">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)]">Paste Lecture Notes</label>
-                                        <span className={`text-[9px] font-mono font-black tracking-tighter ${inputText.length > MAX_CHARS * 0.8 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
+                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Paste Lecture Notes</label>
+                                        <span className={`text-[10px] font-mono font-black tracking-tighter ${inputText.length > MAX_CHARS * 0.8 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
                                             {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
                                         </span>
                                     </div>
@@ -540,16 +533,16 @@ function CreatorStudio() {
                                             if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
                                         }}
                                         placeholder="Paste syllabus, textbook pages, raw lecture text, or transcripts here..."
-                                        className="w-full h-40 p-4 rounded-2xl bg-[var(--bg-3)]/30 border border-[var(--border)] text-xs leading-relaxed outline-none font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 resize-none custom-scrollbar shadow-[inset_6px_6px_12px_rgba(0,0,0,0.2),_inset_-6px_-6px_12px_rgba(255,255,255,0.05)]"
+                                        className="w-full h-48 p-5 rounded-2xl bg-[var(--bg-3)]/20 border border-[var(--border)] text-xs leading-relaxed outline-none font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 resize-none custom-scrollbar transition-all"
                                         disabled={isQueueProcessing}
                                     />
                                 </div>
                             )}
 
                             {/* Title & Stats */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="flex flex-col justify-center">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                                <div className="flex flex-col justify-center space-y-2.5">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
                                         Sprint Name
                                     </label>
                                     <input 
@@ -560,127 +553,82 @@ function CreatorStudio() {
                                             setUserEditedTitle(true);
                                         }}
                                         placeholder="e.g., 'Bio-Chem Prep' or 'Law 101 Exam'"
-                                        className="w-full bg-[var(--bg-3)]/20 border border-[var(--border)] rounded-xl px-4 py-3 text-xs font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 outline-none transition-all shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2),_inset_-4px_-4px_8px_rgba(255,255,255,0.05)]"
+                                        className="w-full bg-[var(--bg-3)]/20 border border-[var(--border)] rounded-xl px-4 py-3.5 text-xs font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 outline-none transition-all"
                                     />
                                 </div>
-                                <div className="p-4 rounded-xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col justify-center shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2),_inset_-4px_-4px_8px_rgba(255,255,255,0.05)]">
-                                    <span className="text-[8px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Calculated Cost</span>
-                                    <div className="flex items-center gap-2 mt-0.5">
+                                <div className="p-5 rounded-xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col justify-center">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Calculated Cost</span>
+                                    <div className="flex items-center gap-2 mt-1">
                                         <Zap size={14} className="text-[var(--blue)] fill-current" />
-                                        <span className="text-lg font-black italic tracking-tight leading-none uppercase">10 CREDITS</span>
+                                        <span className="text-base font-black italic tracking-tight leading-none uppercase">10 CREDITS</span>
                                     </div>
-                                    <p className="text-[8px] text-[var(--foreground-muted)] mt-1 font-bold">You currently have {user.credits} credits.</p>
+                                    <p className="text-[10px] text-[var(--foreground-muted)] mt-1.5 font-bold">You currently have {user.credits} credits.</p>
                                 </div>
                             </div>
 
                             {/* Ingestion Progress Queue */}
                             {queue.length > 0 && (
-                                <div className="space-y-4 pt-6 border-t border-[var(--border)] flex flex-col items-center justify-center">
+                                <div className="space-y-4 pt-6 border-t border-[var(--border)] w-full">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-2">
+                                        Ingestion Queue
+                                    </h3>
                                     {queue.map((item) => (
                                         <div 
                                             key={item.id} 
-                                            className="p-5 sm:p-6 rounded-[2rem] bg-[var(--card)]/90 border border-white/5 shadow-[0_15px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl flex flex-col gap-4 relative overflow-hidden animate-in fade-in duration-300"
+                                            className="p-5 rounded-2xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col gap-4 relative overflow-hidden animate-in fade-in duration-300 w-full"
                                         >
-                                            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                                            
-                                            <div className="flex gap-4 items-start w-full">
-                                                {/* Left Column: Rich visual document layout preview badge */}
-                                                <div className="relative w-14 h-18 rounded-lg bg-zinc-950 flex flex-col justify-between p-2 shrink-0 border border-zinc-800 overflow-hidden shadow-2xl">
-                                                    {/* Mock Document Header layout */}
-                                                    <div className="flex items-center justify-between gap-1 w-full border-b border-zinc-800 pb-1 mb-1">
-                                                        <FileText size={10} className="text-zinc-400" />
-                                                        <div className="h-1 w-6 bg-zinc-800 rounded-full" />
+                                            <div className="flex items-center justify-between gap-4 w-full">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-10 h-10 rounded-xl bg-[var(--bg-3)] border border-[var(--border)] flex items-center justify-center text-[var(--foreground-muted)] shrink-0">
+                                                        <FileText size={18} />
                                                     </div>
-                                                    
-                                                    {/* Mock Document content lines */}
-                                                    <div className="space-y-1 flex-1">
-                                                        <div className="h-1 w-full bg-zinc-800 rounded-full" />
-                                                        <div className="h-1 w-5/6 bg-zinc-800 rounded-full" />
-                                                        <div className="h-1 w-3/4 bg-zinc-800 rounded-full" />
-                                                    </div>
-
-                                                    {/* Visual status badge overlay */}
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[0.5px]">
-                                                        {item.status === 'success' ? (
-                                                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shadow-lg">
-                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                                            </div>
-                                                        ) : item.status === 'error' ? (
-                                                            <div className="w-6 h-6 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center shadow-lg">
-                                                                <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-6 h-6 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-lg">
-                                                                <Loader2 className="w-3 h-3 text-[var(--blue)] animate-spin" />
-                                                            </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="text-xs font-black text-[var(--foreground)] truncate">{item.name}</h4>
+                                                        {item.file && (
+                                                            <p className="text-[10px] text-[var(--foreground-muted)] font-bold">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
                                                         )}
                                                     </div>
                                                 </div>
-
-                                                {/* Middle: Content Info */}
-                                                <div className="flex-1 min-w-0">
-                                                    {item.status === 'success' ? (
-                                                        <p className="text-xs font-black text-[var(--foreground)] leading-snug">
-                                                            Mastered <span className="text-[var(--blue)] italic font-black uppercase">{item.name}</span>.
-                                                        </p>
-                                                    ) : item.status === 'error' ? (
-                                                        <p className="text-xs font-black text-[var(--crimson)] leading-snug uppercase">
-                                                            {item.errorMessage || `Failed to read ${item.name}`}
-                                                        </p>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center justify-between gap-4">
-                                                                <p className="text-[11px] font-black text-[var(--foreground)] leading-snug truncate pr-2">
-                                                                    {customStatusMsg[item.id] || loadingPhrases[filePhraseIndex[item.id] || 0]}
-                                                                </p>
-                                                                <span className="text-[10px] font-mono font-black text-[var(--blue)] shrink-0">{trickleProgress[item.id] || item.progress || 20}%</span>
-                                                            </div>
-                                                            <div className="w-full bg-[var(--background)] rounded-full h-1.5 overflow-hidden border border-[var(--border)] relative shadow-inner">
-                                                                <motion.div 
-                                                                    initial={{ width: 0 }}
-                                                                    animate={{ width: `${trickleProgress[item.id] || item.progress || 20}%` }}
-                                                                    className="h-full bg-gradient-to-r from-[var(--blue-light)] to-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
-                                                                />
-                                                            </div>
-                                                        </div>
+                                                
+                                                <div className="shrink-0">
+                                                    {item.status === 'success' && (
+                                                        <span className="px-2.5 py-1 rounded-full bg-[var(--emerald)]/10 border border-[var(--emerald)]/20 text-[9px] font-black uppercase text-[var(--emerald)]">Ready</span>
+                                                    )}
+                                                    {item.status === 'error' && (
+                                                        <span className="px-2.5 py-1 rounded-full bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 text-[9px] font-black uppercase text-[var(--crimson)]">Error</span>
+                                                    )}
+                                                    {(item.status === 'reading' || item.status === 'learning') && (
+                                                        <span className="px-2.5 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[9px] font-black uppercase text-[var(--blue-text)] flex items-center gap-1.5">
+                                                            <Loader2 size={10} className="animate-spin" />
+                                                            <span>Ingesting</span>
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            {/* Bottom: Ingestion Monospace Terminal Log */}
-                                            <div className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 font-mono text-[10px] text-[var(--foreground-muted)] space-y-1.5 select-none relative overflow-hidden">
-                                                {/* Terminal Top Dot Controls */}
-                                                <div className="flex items-center gap-1.5 text-white/30 border-b border-white/5 pb-2 mb-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500/60" />
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/60" />
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
-                                                    <span className="ml-1 text-[8px] font-black uppercase tracking-[0.25em]">Ingestion Pipeline Console</span>
+                                            {/* Progress / Status Description */}
+                                            {item.status === 'error' ? (
+                                                <p className="text-[10px] font-bold text-[var(--crimson)] uppercase tracking-wide">
+                                                    {item.errorMessage || "Failed to process document."}
+                                                </p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <p className="text-[10px] font-black text-[var(--foreground-muted)]">
+                                                            {customStatusMsg[item.id] || (item.status === 'success' ? "All notes successfully absorbed" : loadingPhrases[filePhraseIndex[item.id] || 0])}
+                                                        </p>
+                                                        <span className="text-[10px] font-mono font-black text-[var(--blue-text)]">{trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-[var(--bg-3)] rounded-full h-2 overflow-hidden border border-[var(--border)]">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%` }}
+                                                            className="h-full bg-[var(--blue)] rounded-full"
+                                                            transition={{ ease: "easeOut" }}
+                                                        />
+                                                    </div>
                                                 </div>
-                                                
-                                                <p className="text-white/60"><span className="text-[var(--blue)]">&gt;</span> PIPELINE INITIALIZED: {item.name}</p>
-                                                {item.file && (
-                                                    <p className="text-white/40"><span className="text-[var(--blue)]">&gt;</span> Payload details: {(item.file.size / (1024 * 1024)).toFixed(2)} MB | MIME: {item.file.type || "unknown"}</p>
-                                                )}
-                                                
-                                                {item.status === 'reading' && (
-                                                    <p className="text-[var(--blue)] animate-pulse"><span className="text-[var(--blue)]">&gt;</span> STATUS: Extracting text stream & de-formatting tables...</p>
-                                                )}
-                                                {item.status === 'learning' && (
-                                                    <>
-                                                        <p className="text-amber-500/80"><span className="text-amber-500/80">&gt;</span> STATUS: Scanned document detected. OCR Engine active.</p>
-                                                        <p className="text-[var(--blue)] animate-pulse"><span className="text-[var(--blue)]">&gt;</span> {customStatusMsg[item.id] || "Initializing WASM Tesseract workers..."}</p>
-                                                    </>
-                                                )}
-                                                {item.status === 'success' && (
-                                                    <>
-                                                        <p className="text-[var(--emerald)] font-bold"><span className="text-[var(--emerald)]">&gt;</span> STATUS: 100% of notes successfully absorbed.</p>
-                                                        <p className="text-white/35"><span className="text-white/35">&gt;</span> SYSTEM: Study pack ready for compilation.</p>
-                                                    </>
-                                                )}
-                                                {item.status === 'error' && (
-                                                    <p className="text-[var(--crimson)] font-bold"><span className="text-[var(--crimson)]">&gt;</span> FATAL ERROR: {item.errorMessage || "Failed to parse document content."}</p>
-                                                )}
-                                            </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

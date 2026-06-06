@@ -156,9 +156,9 @@ export const useUserStore = create<UserStore>()(
                     set({
                         id: session.user.id,
                         email: email || session.user.email || "",
-                        name: localDisplayName || profile?.alias || profile?.first_name || get().name || session.user.email?.split("@")[0] || "Scholar",
-                        firstName: profile?.first_name || get().firstName || "",
-                        lastName: profile?.last_name || get().lastName || "",
+                        name: localDisplayName || profile?.alias || profile?.first_name || session.user.user_metadata?.full_name || session.user.user_metadata?.name || get().name || session.user.email?.split("@")[0] || "Scholar",
+                        firstName: profile?.first_name || session.user.user_metadata?.first_name || session.user.user_metadata?.full_name?.split(" ")[0] || get().firstName || "",
+                        lastName: profile?.last_name || session.user.user_metadata?.last_name || session.user.user_metadata?.full_name?.split(" ").slice(1).join(" ") || get().lastName || "",
                         username: profile?.username || get().username || "",
                         age: profile?.age || get().age || 0,
                         avatar: (profile?.avatar_url && (profile.avatar_url.startsWith("http") || profile.avatar_url.includes("://"))) 
