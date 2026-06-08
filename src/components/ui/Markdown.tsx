@@ -34,9 +34,34 @@ const mdComponents = {
         </motion.li>
     ),
     strong: ({node, ...props}: any) => <strong className="font-black text-[var(--foreground)]" {...props} />,
-    code: ({node, ...props}: any) => (
-        <code className="px-2 py-0.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--border)] font-mono text-[13px] text-[var(--blue)] font-bold" {...props} />
-    ),
+    code: ({node, inline, className, children, ...props}: any) => {
+        const match = /language-(\w+)/.exec(className || '');
+        const codeString = String(children).replace(/\n$/, '');
+        return !inline ? (
+            <div className="my-6 rounded-2xl border border-[var(--border)] bg-[var(--foreground)]/[0.01] backdrop-blur-sm overflow-hidden font-mono text-sm shadow-xl">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--foreground)]/[0.02]">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
+                        {match ? match[1] : 'code'}
+                    </span>
+                    <button 
+                        onClick={() => navigator.clipboard.writeText(codeString)}
+                        className="text-[10px] font-black uppercase tracking-wider text-[var(--blue)] hover:underline cursor-pointer"
+                    >
+                        Copy
+                    </button>
+                </div>
+                <pre className="p-5 overflow-x-auto text-[var(--foreground)]/90 bg-transparent leading-relaxed custom-scrollbar m-0">
+                    <code className={className} {...props}>
+                        {children}
+                    </code>
+                </pre>
+            </div>
+        ) : (
+            <code className="px-2 py-0.5 rounded-lg bg-[var(--foreground)]/5 border border-[var(--border)] font-mono text-[13px] text-[var(--blue)] font-bold" {...props}>
+                {children}
+            </code>
+        );
+    },
     blockquote: ({node, ...props}: any) => (
         <motion.blockquote variants={revealVariants} className="border-l-4 border-[var(--border)] pl-6 py-4 my-10 italic text-[var(--foreground-muted)] bg-[var(--foreground)]/[0.02] rounded-r-3xl" {...props} />
     ),

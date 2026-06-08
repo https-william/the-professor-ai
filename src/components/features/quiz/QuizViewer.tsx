@@ -9,8 +9,9 @@ import SessionComplete from "@/components/features/SessionComplete";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     X, Flag, Share2, GraduationCap, ClipboardList, 
-    RotateCcw, Lightbulb, CheckCircle2, XCircle, FileText 
+    RotateCcw, Lightbulb, CheckCircle2, XCircle, FileText, Download
 } from "lucide-react";
+import { downloadQuizOffline } from "@/lib/offline-download";
 
 interface Question {
     question: string;
@@ -137,9 +138,14 @@ export default function QuizViewer({ questions, title, generationId, initialTime
         return (
             <div className="min-h-screen w-full flex flex-col items-center bg-transparent">
                  <header className="w-full max-w-4xl p-6 flex items-center justify-between z-20">
-                    <button onClick={() => setIsShareOpen(true)} className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
-                        <Share2 size={18} />
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={() => downloadQuizOffline(title, questions, initialTimer)} className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all" title="Download Offline Version">
+                            <Download size={18} />
+                        </button>
+                        <button onClick={() => setIsShareOpen(true)} className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
+                            <Share2 size={18} />
+                        </button>
+                    </div>
                     <div className="text-center">
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50">Results</p>
                         <h1 className="text-sm font-bold">{title}</h1>
@@ -224,11 +230,16 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                     </button>
                     <h2 className="text-sm font-bold truncate max-w-[200px]">{title}</h2>
                 </div>
-                {initialTimer > 0 && (
-                    <div className={`px-4 py-1.5 rounded-xl font-mono text-xs font-bold border ${timeLeft < 60 ? 'text-red-500 border-red-500/20 bg-red-500/5 animate-pulse' : 'text-white/50 border-white/10 bg-white/5'}`}>
-                        {formatTime(timeLeft)}
-                    </div>
-                )}
+                <div className="flex items-center gap-3">
+                    <button onClick={() => downloadQuizOffline(title, questions, initialTimer)} className="p-2 rounded-xl hover:bg-white/5 transition-colors text-white/50 hover:text-white" title="Download Offline Version">
+                        <Download size={18} />
+                    </button>
+                    {initialTimer > 0 && (
+                        <div className={`px-4 py-1.5 rounded-xl font-mono text-xs font-bold border ${timeLeft < 60 ? 'text-red-500 border-red-500/20 bg-red-500/5 animate-pulse' : 'text-white/50 border-white/10 bg-white/5'}`}>
+                            {formatTime(timeLeft)}
+                        </div>
+                    )}
+                </div>
             </header>
 
             <main className="flex-1 w-full max-w-3xl px-6 py-12">

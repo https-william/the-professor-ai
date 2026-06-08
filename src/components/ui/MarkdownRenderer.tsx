@@ -107,6 +107,35 @@ export default function MarkdownRenderer({
                     // TermPopover definition lookup
                     strong: ({ node, ...props }) => <TermPopover {...props} />,
 
+                    code: ({ node, inline, className, children, ...props }: any) => {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const codeString = String(children).replace(/\n$/, '');
+                        return !inline ? (
+                            <div className="my-6 rounded-2xl border border-white/10 bg-white/[0.01] backdrop-blur-sm overflow-hidden font-mono text-sm shadow-xl">
+                                <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/5">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                                        {match ? match[1] : 'code'}
+                                    </span>
+                                    <button 
+                                        onClick={() => navigator.clipboard.writeText(codeString)}
+                                        className="text-[10px] font-black uppercase tracking-wider text-[var(--blue-light)] hover:underline cursor-pointer"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                                <pre className="p-5 overflow-x-auto text-white/90 bg-transparent leading-relaxed custom-scrollbar m-0">
+                                    <code className={className} {...props}>
+                                        {children}
+                                    </code>
+                                </pre>
+                            </div>
+                        ) : (
+                            <code className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 font-mono text-[13px] text-amber-400 font-bold" {...props}>
+                                {children}
+                            </code>
+                        );
+                    },
+
                     // Custom rendering for headings to add "weight"
                     h1: ({ node, ...props }) => <h1 className="text-2xl md:text-4xl font-black mt-12 mb-6 bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent tracking-tight border-b border-white/5 pb-3" {...props} />,
                     h2: ({ node, children, ...props }) => {

@@ -7,7 +7,8 @@ import ShareCard from "@/components/ShareCard";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import SessionComplete from "@/components/features/SessionComplete";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, ChevronLeft, Baby, Check, X, HelpCircle } from "lucide-react";
+import { Share2, ChevronLeft, Baby, Check, X, HelpCircle, Download } from "lucide-react";
+import { downloadFlashcardsOffline } from "@/lib/offline-download";
 
 interface Flashcard {
     id?: string;
@@ -279,6 +280,10 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button onClick={() => downloadFlashcardsOffline(title, flashcards)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 cursor-pointer" title="Download for Offline Use">
+                        <Download size={16} />
+                        <span className="text-[11px] font-bold">Download</span>
+                    </button>
                     <button onClick={() => setIsShareOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 cursor-pointer">
                         <Share2 size={16} />
                         <span className="text-[11px] font-bold">Share</span>

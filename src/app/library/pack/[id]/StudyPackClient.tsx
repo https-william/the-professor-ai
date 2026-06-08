@@ -40,6 +40,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/context/UserContext";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
 import { BubblyThinkingLoader } from "@/components/ui/Markdown";
+import { smartFetch } from "@/lib/fetch-client";
 
 // Import Interactive Components
 import { InteractiveSummary } from "@/components/features/InteractiveSummary";
@@ -255,7 +256,7 @@ export default function StudyPackPage() {
 
         setGeneratingPhases(prev => ({ ...prev, [targetPhaseId]: 'loading' }));
         try {
-            const res = await fetch("/api/generate/pack-phase", {
+            const res = await smartFetch("/api/generate/pack-phase", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -623,7 +624,7 @@ export default function StudyPackPage() {
         setGeneratingPhases(prev => ({ ...prev, [phase.id]: 'loading' }));
         setIsPerforming(true); // Transition immediately to task view so bubbly loader can display
         try {
-            const res = await fetch("/api/generate/pack-phase", {
+            const res = await smartFetch("/api/generate/pack-phase", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -956,7 +957,7 @@ export default function StudyPackPage() {
         });
 
         try {
-            const res = await fetch("/api/generate/pack-phase", {
+            const res = await smartFetch("/api/generate/pack-phase", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
