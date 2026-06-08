@@ -157,6 +157,72 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // Polyfills for legacy engines (e.g. Safari 12 / iOS 12 on iPod Touch 6th Gen)
+                if (typeof globalThis === "undefined") {
+                  window.globalThis = window;
+                }
+                if (typeof Promise.allSettled === "undefined") {
+                  Promise.allSettled = function(promises) {
+                    return Promise.all(
+                      promises.map(function(p) {
+                        return Promise.resolve(p).then(
+                          function(val) { return { status: "fulfilled", value: val }; },
+                          function(err) { return { status: "rejected", reason: err }; }
+                        );
+                      })
+                    );
+                  };
+                }
+                if (typeof window.ResizeObserver === "undefined") {
+                  window.ResizeObserver = function() {
+                    return {
+                      observe: function() {},
+                      unobserve: function() {},
+                      disconnect: function() {}
+                    };
+                  };
+                }
+                if (typeof Object.fromEntries === "undefined") {
+                  Object.fromEntries = function(entries) {
+                    var obj = {};
+                    var it = entries[Symbol.iterator] ? entries[Symbol.iterator]() : null;
+                    if (it) {
+                      var step;
+                      while (!(step = it.next()).done) {
+                        var pair = step.value;
+                        obj[pair[0]] = pair[1];
+                      }
+                    } else if (Array.isArray(entries)) {
+                      for (var i = 0; i < entries.length; i++) {
+                        var pair = entries[i];
+                        obj[pair[0]] = pair[1];
+                      }
+                    }
+                    return obj;
+                  };
+                }
+                if (!String.prototype.matchAll) {
+                  String.prototype.matchAll = function(rx) {
+                    if (!rx.global) {
+                      throw new TypeError('String.prototype.matchAll called with a non-global RegExp');
+                    }
+                    var str = this;
+                    var res = [];
+                    var m;
+                    while ((m = rx.exec(str)) !== null) {
+                      res.push(m);
+                    }
+                    var index = 0;
+                    return {
+                      next: function() {
+                        return index < res.length
+                          ? { value: res[index++], done: false }
+                          : { value: undefined, done: true };
+                      }
+                    };
+                  };
+                }
+
                 var updatePlatformAttribute = function() {
                   var isNative = window.location.protocol === 'tauri:' || 
                                  window.location.protocol === 'asset:' || 

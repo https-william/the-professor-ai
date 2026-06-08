@@ -3,6 +3,14 @@ import type { NextConfig } from "next";
 const isTauri = process.env.NEXT_PUBLIC_TAURI === "1" || process.env.TAURI_ENV_PLATFORM !== undefined;
 
 const nextConfig: NextConfig = {
+  transpilePackages: [
+    "lucide-react",
+    "framer-motion",
+    "zustand",
+    "sonner",
+    "@supabase/supabase-js",
+    "@supabase/ssr"
+  ],
   output: isTauri ? "export" : undefined,
   images: {
     unoptimized: isTauri ? true : false,
