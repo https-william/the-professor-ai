@@ -132,7 +132,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} w-full min-h-screen overflow-x-hidden`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" className={`${outfit.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} w-full min-h-screen`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -180,6 +180,32 @@ export default function RootLayout({
                       unobserve: function() {},
                       disconnect: function() {}
                     };
+                  };
+                }
+                if (typeof window.IntersectionObserver === "undefined") {
+                  window.IntersectionObserver = function(callback) {
+                    return {
+                      observe: function(element) {
+                        if (typeof callback === 'function') {
+                          setTimeout(function() {
+                            callback([{ target: element, isIntersecting: true }]);
+                          }, 0);
+                        }
+                      },
+                      unobserve: function() {},
+                      disconnect: function() {}
+                    };
+                  };
+                }
+                if (typeof crypto === "undefined") {
+                  window.crypto = {};
+                }
+                if (typeof crypto.randomUUID === "undefined") {
+                  window.crypto.randomUUID = function() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                      return v.toString(16);
+                    });
                   };
                 }
                 if (typeof Object.fromEntries === "undefined") {
@@ -266,7 +292,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased w-full min-h-screen m-0 p-0 overflow-x-hidden flex flex-col" suppressHydrationWarning>
+      <body className="font-sans antialiased w-full min-h-screen m-0 p-0 flex flex-col" suppressHydrationWarning>
         <ThemeProvider>
           <PWAProvider>
             <UserProvider>

@@ -39,9 +39,9 @@ import { useToasts } from "@/components/ui/GlobalToasts";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/context/UserContext";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
-import { BubblyThinkingLoader } from "@/components/ui/Markdown";
+import Markdown, { BubblyThinkingLoader } from "@/components/ui/Markdown";
 import { smartFetch } from "@/lib/fetch-client";
-import { downloadFlashcardsOffline, downloadQuizOffline } from "@/lib/offline-download";
+import { downloadFlashcardsOffline, downloadQuizOffline, downloadSummaryOffline } from "@/lib/offline-download";
 
 // Import Interactive Components
 import { InteractiveSummary } from "@/components/features/InteractiveSummary";
@@ -836,6 +836,7 @@ export default function StudyPackPage() {
         addToast("Study pack link copied! Share it with anyone.", "success");
     };
 
+    const [showDownloadMenu, setShowDownloadMenu] = useState(false);
     const [isExportingPDF, setIsExportingPDF] = useState(false);
     const [pdfDownloadProgress, setPdfDownloadProgress] = useState(0);
     const [pdfDownloadSpeed, setPdfDownloadSpeed] = useState("");
@@ -931,6 +932,28 @@ export default function StudyPackPage() {
             setIsExportingPDF(false);
             setPdfDownloadProgress(0);
             setPdfDownloadSpeed("");
+        }
+    };
+
+    const handleExportHTML = () => {
+        if (!phasesData.distill) {
+            addToast("Generate the Deep Summary first to download your HTML.", "warn");
+            return;
+        }
+        addToast("Compiling offline HTML document...", "info");
+        try {
+            const container = document.querySelector("#summary-export-container .prose");
+            const renderedHtml = container ? container.innerHTML : "";
+            
+            if (!renderedHtml) {
+                addToast("Failed to compile content", "error");
+                return;
+            }
+
+            downloadSummaryOffline(packTitle, renderedHtml);
+            addToast("HTML Download successful", "success");
+        } catch (error) {
+            addToast("Failed to compile HTML", "error");
         }
     };
 
@@ -1076,7 +1099,6 @@ export default function StudyPackPage() {
                         autoReveal={true}
                         isStreaming={isPhaseStreaming && phase.id === "distill"}
                         onFinish={() => handleMasterPhase()}
-                        onDownloadPDF={handleExportPDF}
                     />
                 );
             case "retain":
@@ -1109,7 +1131,7 @@ export default function StudyPackPage() {
     }
 
     return (
-        <div className="min-h-screen bg-transparent pb-16 pt-12 overflow-x-hidden transition-all duration-700">
+        <div className="min-h-screen bg-transparent pb-16 pt-12 transition-all duration-700">
             <StandardContainer className="print-hidden">
                 {isGuest && (
                   <div className="mb-6 p-4 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-between gap-4">
@@ -1301,7 +1323,7 @@ export default function StudyPackPage() {
                         className="fixed inset-0 z-[300] bg-[var(--background)] overflow-y-auto flex flex-col print-overlay"
                     >
                         {/* Immersive Header */}
-                        <div className="px-4 sm:px-6 h-14 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-md z-20 sticky top-0 shrink-0">
+                        <div className="px-4 sm:px-6 h-14 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm z-20 sticky top-0 shrink-0">
                             <div className="flex items-center gap-3 sm:gap-6">
                                 <button
                                     onClick={() => setViewingPhaseIndex(null)}
@@ -1317,23 +1339,65 @@ export default function StudyPackPage() {
 
                             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                                 {currentPhase.id === 'distill' && (
-                                    <button
-                                        onClick={handleExportPDF}
-                                        disabled={isExportingPDF}
-                                        className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md disabled:opacity-50 overflow-hidden min-w-[34px] sm:min-w-[140px]"
-                                        title="Download PDF Summary"
-                                    >
-                                        {isExportingPDF && (
-                                            <div 
-                                                className="absolute inset-0 bg-emerald-500 transition-all duration-200 z-0 opacity-80"
-                                                style={{ width: `${pdfDownloadProgress}%` }}
-                                            />
-                                        )}
-                                        <div className="relative z-10 flex items-center justify-center gap-1.5">
-                                            {isExportingPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                                            <span className="hidden sm:inline">{isExportingPDF ? (pdfDownloadSpeed ? `${pdfDownloadProgress}% (${pdfDownloadSpeed})` : "Downloading...") : "Download PDF"}</span>
-                                        </div>
-                                    </button>
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowDownloadMenu(prev => !prev)}
+                                            disabled={isExportingPDF}
+                                            className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md disabled:opacity-50 min-w-[34px] sm:min-w-[140px]"
+                                            title="Download Summary Options"
+                                        >
+                                            {isExportingPDF && (
+                                                <div 
+                                                    className="absolute inset-0 bg-emerald-500 transition-all duration-200 z-0 opacity-80"
+                                                    style={{ width: `${pdfDownloadProgress}%` }}
+                                                />
+                                            )}
+                                            <div className="relative z-10 flex items-center justify-center gap-1.5">
+                                                {isExportingPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                                                <span className="hidden sm:inline">
+                                                    {isExportingPDF 
+                                                        ? (pdfDownloadSpeed ? `${pdfDownloadProgress}% (${pdfDownloadSpeed})` : "Downloading...") 
+                                                        : "Download"}
+                                                </span>
+                                            </div>
+                                        </button>
+                                        
+                                        <AnimatePresence>
+                                            {showDownloadMenu && (
+                                                <>
+                                                    <div className="fixed inset-0 z-[100]" onClick={() => setShowDownloadMenu(false)} />
+                                                    <motion.div 
+                                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                        transition={{ duration: 0.15 }}
+                                                        className="absolute right-0 mt-2 min-w-[160px] bg-zinc-950 border border-white/10 rounded-xl p-2 shadow-2xl flex flex-col gap-1 z-[110]"
+                                                    >
+                                                        <button
+                                                            onClick={async () => {
+                                                                setShowDownloadMenu(false);
+                                                                await handleExportPDF();
+                                                            }}
+                                                            className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                                        >
+                                                            <FileText size={12} />
+                                                            <span>Download PDF</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowDownloadMenu(false);
+                                                                handleExportHTML();
+                                                            }}
+                                                            className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                                        >
+                                                            <Download size={12} />
+                                                            <span>Download HTML</span>
+                                                        </button>
+                                                    </motion.div>
+                                                </>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 )}
 
                                 {currentPhase.id === 'retain' && phasesData.retain && (
@@ -1701,6 +1765,63 @@ export default function StudyPackPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {phasesData.distill && (
+                <div className="fixed left-[-9999px] top-0 pointer-events-none">
+                    <div id="summary-export-container" className="w-[800px] bg-[#040406] text-[#F2EDE4] p-20 font-sans">
+                        <style dangerouslySetInnerHTML={{ __html: `
+                            #summary-export-container table {
+                                width: 100% !important;
+                                border-collapse: collapse !important;
+                                margin: 32px 0 !important;
+                                border: 1px solid rgba(242, 237, 228, 0.15) !important;
+                                background: rgba(255, 255, 255, 0.01) !important;
+                                display: table !important;
+                            }
+                            #summary-export-container th {
+                                background-color: rgba(242, 237, 228, 0.05) !important;
+                                color: #F2EDE4 !important;
+                                font-weight: 800 !important;
+                                text-transform: uppercase !important;
+                                letter-spacing: 0.1em !important;
+                                font-size: 11px !important;
+                                padding: 14px 20px !important;
+                                border-bottom: 2px solid rgba(242, 237, 228, 0.15) !important;
+                                border-right: 1px solid rgba(242, 237, 228, 0.1) !important;
+                            }
+                            #summary-export-container td {
+                                padding: 14px 20px !important;
+                                border-bottom: 1px solid rgba(242, 237, 228, 0.1) !important;
+                                border-right: 1px solid rgba(242, 237, 228, 0.05) !important;
+                                color: rgba(242, 237, 228, 0.85) !important;
+                                font-size: 14px !important;
+                            }
+                            #summary-export-container tr:last-child td {
+                                border-bottom: none !important;
+                            }
+                            #summary-export-container tr td:last-child, #summary-export-container tr th:last-child {
+                                border-right: none !important;
+                            }
+                            #summary-export-container tr:nth-child(even) {
+                                background-color: rgba(242, 237, 228, 0.02) !important;
+                            }
+                        `}} />
+                        <div className="mb-20 pb-10 border-b border-white/10">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-4">Official Synthesis Report</p>
+                            <h1 className="text-5xl font-black tracking-tight leading-tight">{packTitle}</h1>
+                        </div>
+                        <div className="prose prose-invert prose-amber max-w-none">
+                            <Markdown>
+                                {(() => {
+                                    const summaryData = phasesData.distill;
+                                    const summaryText = typeof summaryData === 'string' ? summaryData : (summaryData?.summary ? (typeof summaryData.summary === 'string' ? summaryData.summary : JSON.stringify(summaryData.summary)) : "");
+                                    return summaryText.replace(/\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\}/g, "");
+                                })()}
+                            </Markdown>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <GuestSignupModal
                 isOpen={showGuestModal}

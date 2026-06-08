@@ -89,6 +89,39 @@ export async function POST(req: NextRequest) {
                         border-radius: 4px;
                         font-size: 0.9em;
                     }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 2rem 0;
+                        font-size: 0.95rem;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        overflow: hidden;
+                    }
+                    th {
+                        background-color: #f1f5f9;
+                        color: #0f172a;
+                        font-weight: 700;
+                        text-align: left;
+                        padding: 12px 16px;
+                        border-bottom: 2px solid #e2e8f0;
+                        border-right: 1px solid #e2e8f0;
+                    }
+                    td {
+                        padding: 12px 16px;
+                        border-bottom: 1px solid #e2e8f0;
+                        border-right: 1px solid #e2e8f0;
+                        color: #334155;
+                    }
+                    tr:last-child td {
+                        border-bottom: none;
+                    }
+                    tr td:last-child, tr th:last-child {
+                        border-right: none;
+                    }
+                    tr:nth-child(even) {
+                        background-color: #f8fafc;
+                    }
                     pre {
                         background: #1e293b;
                         color: #f8fafc;

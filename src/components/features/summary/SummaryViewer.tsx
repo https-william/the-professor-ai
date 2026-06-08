@@ -17,6 +17,7 @@ import {
     Loader2
 } from "lucide-react";
 import { exportToPDF } from "@/lib/pdf-bridge";
+import { downloadSummaryOffline } from "@/lib/offline-download";
 
 interface SummaryViewerProps {
     data: string;
@@ -77,6 +78,25 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     const [checkpointPassed, setCheckpointPassed] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+ 
+    const handleExportHTML = () => {
+        addToast("Compiling offline HTML document...", "info");
+        try {
+            const container = document.querySelector("#summary-export-container .prose");
+            const renderedHtml = container ? container.innerHTML : "";
+            
+            if (!renderedHtml) {
+                addToast("Failed to compile content", "error");
+                return;
+            }
+ 
+            downloadSummaryOffline(title, renderedHtml);
+            addToast("HTML Download successful", "success");
+        } catch (error) {
+            addToast("Failed to compile HTML", "error");
+        }
+    };
 
     const fullMarkdownContent = useMemo(() => {
         if (!data) return "";
@@ -274,23 +294,98 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                     <span>{copySuccess ? "Copied!" : "Share Link"}</span>
                 </button>
                 <div className="w-[1px] h-4 bg-white/10 mx-1" />
-                <button 
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    className="p-3 rounded-full hover:bg-white/5 transition-colors disabled:opacity-50" 
-                    title="Download PDF"
-                >
-                    {isExporting ? (
-                        <Loader2 size={16} className="animate-spin text-[var(--accent)]" />
-                    ) : (
-                        <Download size={16} className="opacity-40 hover:opacity-100 transition-opacity" />
-                    )}
-                </button>
+                <div className="relative">
+                    <button 
+                        onClick={() => setShowDownloadMenu(prev => !prev)}
+                        disabled={isExporting}
+                        className="p-3 rounded-full hover:bg-white/5 transition-colors disabled:opacity-50 flex items-center justify-center" 
+                        title="Download options"
+                    >
+                        {isExporting ? (
+                            <Loader2 size={16} className="animate-spin text-[var(--accent)]" />
+                        ) : (
+                            <Download size={16} className="opacity-40 hover:opacity-100 transition-opacity" />
+                        )}
+                    </button>
+                    
+                    <AnimatePresence>
+                        {showDownloadMenu && (
+                            <>
+                                <div className="fixed inset-0 z-[-1]" onClick={() => setShowDownloadMenu(false)} />
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute bottom-14 right-0 min-w-[160px] bg-zinc-950 border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 z-[110]"
+                                >
+                                    <button
+                                        onClick={async () => {
+                                            setShowDownloadMenu(false);
+                                            await handleExportPDF();
+                                        }}
+                                        className="w-full px-4 py-2.5 rounded-xl text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                    >
+                                        <FileText size={12} />
+                                        <span>Download PDF</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowDownloadMenu(false);
+                                            handleExportHTML();
+                                        }}
+                                        className="w-full px-4 py-2.5 rounded-xl text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                    >
+                                        <Download size={12} />
+                                        <span>Download HTML</span>
+                                    </button>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
             {/* Hidden Export Container */}
             <div className="fixed left-[-9999px] top-0 pointer-events-none">
                 <div id="summary-export-container" className="w-[800px] bg-[#040406] text-[#F2EDE4] p-20 font-sans">
+                    <style dangerouslySetInnerHTML={{ __html: `
+                        #summary-export-container table {
+                            width: 100% !important;
+                            border-collapse: collapse !important;
+                            margin: 32px 0 !important;
+                            border: 1px solid rgba(242, 237, 228, 0.15) !important;
+                            background: rgba(255, 255, 255, 0.01) !important;
+                            display: table !important;
+                        }
+                        #summary-export-container th {
+                            background-color: rgba(242, 237, 228, 0.05) !important;
+                            color: #F2EDE4 !important;
+                            font-weight: 800 !important;
+                            text-transform: uppercase !important;
+                            letter-spacing: 0.1em !important;
+                            font-size: 11px !important;
+                            padding: 14px 20px !important;
+                            border-bottom: 2px solid rgba(242, 237, 228, 0.15) !important;
+                            border-right: 1px solid rgba(242, 237, 228, 0.1) !important;
+                        }
+                        #summary-export-container td {
+                            padding: 14px 20px !important;
+                            border-bottom: 1px solid rgba(242, 237, 228, 0.1) !important;
+                            border-right: 1px solid rgba(242, 237, 228, 0.05) !important;
+                            color: rgba(242, 237, 228, 0.85) !important;
+                            font-size: 14px !important;
+                        }
+                        #summary-export-container tr:last-child td {
+                            border-bottom: none !important;
+                        }
+                        #summary-export-container tr td:last-child, #summary-export-container tr th:last-child {
+                            border-right: none !important;
+                        }
+                        #summary-export-container tr:nth-child(even) {
+                            background-color: rgba(242, 237, 228, 0.02) !important;
+                        }
+                    `}} />
                     <div className="mb-20 pb-10 border-b border-white/10">
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-4">Official Synthesis Report</p>
                         <h1 className="text-5xl font-black tracking-tight leading-tight">{title}</h1>
