@@ -41,6 +41,7 @@ import { useUser } from "@/context/UserContext";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
 import { BubblyThinkingLoader } from "@/components/ui/Markdown";
 import { smartFetch } from "@/lib/fetch-client";
+import { downloadFlashcardsOffline, downloadQuizOffline } from "@/lib/offline-download";
 
 // Import Interactive Components
 import { InteractiveSummary } from "@/components/features/InteractiveSummary";
@@ -1331,6 +1332,43 @@ export default function StudyPackPage() {
                                         <div className="relative z-10 flex items-center justify-center gap-1.5">
                                             {isExportingPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
                                             <span className="hidden sm:inline">{isExportingPDF ? (pdfDownloadSpeed ? `${pdfDownloadProgress}% (${pdfDownloadSpeed})` : "Downloading...") : "Download PDF"}</span>
+                                        </div>
+                                    </button>
+                                )}
+
+                                {currentPhase.id === 'retain' && phasesData.retain && (
+                                    <button
+                                        onClick={() => {
+                                            const rawCards = phasesData.retain ? (Array.isArray(phasesData.retain) ? phasesData.retain : (phasesData.retain.flashcards || phasesData.retain.cards || [])) : [];
+                                            const cards = rawCards.map((c: any) => ({
+                                                front: c?.front || c?.question || (typeof c === 'string' ? c : "Term"),
+                                                back: c?.back || c?.answer || (typeof c === 'string' ? c : "Definition"),
+                                                topic: c?.topic || "Active Recall"
+                                            }));
+                                            downloadFlashcardsOffline(packTitle + " - Flashcards", cards);
+                                        }}
+                                        className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md overflow-hidden min-w-[34px] sm:min-w-[140px]"
+                                        title="Download Offline HTML Flashcards"
+                                    >
+                                        <div className="relative z-10 flex items-center justify-center gap-1.5">
+                                            <Download size={12} />
+                                            <span className="hidden sm:inline">Download HTML</span>
+                                        </div>
+                                    </button>
+                                )}
+
+                                {currentPhase.id === 'test' && phasesData.test && (
+                                    <button
+                                        onClick={() => {
+                                            const quizQuestions = Array.isArray(phasesData.test) ? phasesData.test : (phasesData.test.questions || [phasesData.test]);
+                                            downloadQuizOffline(packTitle + " - Quiz", quizQuestions);
+                                        }}
+                                        className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md overflow-hidden min-w-[34px] sm:min-w-[140px]"
+                                        title="Download Offline HTML Quiz"
+                                    >
+                                        <div className="relative z-10 flex items-center justify-center gap-1.5">
+                                            <Download size={12} />
+                                            <span className="hidden sm:inline">Download HTML</span>
                                         </div>
                                     </button>
                                 )}
