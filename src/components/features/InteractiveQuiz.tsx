@@ -3,9 +3,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Zap, Share2, CheckCircle2, XCircle, Clock, ChevronRight, AlertCircle } from "lucide-react";
+import { Zap, Share2, CheckCircle2, XCircle, Clock, ChevronRight, AlertCircle, Download } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
-
+import { downloadQuizOffline } from "@/lib/offline-download";
 
 export const InteractiveQuiz = ({ 
     questions = [
@@ -17,6 +17,7 @@ export const InteractiveQuiz = ({
             explanation: "Conservation of angular momentum means spinning radius and speed are inversely linked."
         }
     ],
+    title = "Quiz",
     onFinish
 }: { 
     questions?: Array<{
@@ -26,6 +27,7 @@ export const InteractiveQuiz = ({
         analogy?: string;
         explanation?: string;
     }>;
+    title?: string;
     onFinish?: (stats: { score: number; correct: number; time: string; total: number }) => void;
 }) => {
     const [currentIdx, setCurrentIdx] = useState(0);
@@ -240,17 +242,29 @@ export const InteractiveQuiz = ({
                     </div>
                 </div>
 
-                <button 
-                    onClick={() => onFinish?.({ 
-                        score: scorePercent, 
-                        correct: totalCorrect, 
-                        time: timeString,
-                        total: questions.length
-                    })}
-                    className="btn-skeuo-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 shrink-0"
-                >
-                    <CheckCircle2 size={18} /> Finalize Session
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full shrink-0">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            downloadQuizOffline(title, questions);
+                        }}
+                        className="btn-skeuo flex-1 py-4 text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 border-[var(--border-3)]"
+                        title="Download Offline HTML"
+                    >
+                        <Download size={16} /> Offline Quiz
+                    </button>
+                    <button 
+                        onClick={() => onFinish?.({ 
+                            score: scorePercent, 
+                            correct: totalCorrect, 
+                            time: timeString,
+                            total: questions.length
+                        })}
+                        className="btn-skeuo-primary flex-[2] py-4 text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                    >
+                        <CheckCircle2 size={18} /> Finalize Session
+                    </button>
+                </div>
             </motion.div>
         );
     };
@@ -266,13 +280,25 @@ export const InteractiveQuiz = ({
                                 <span className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
                                     Question {currentIdx + 1} of {questions.length}
                                 </span>
-                                <button 
-                                    onClick={handleShareSection}
-                                    className="p-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all active:scale-95"
-                                    title="Share Quiz"
-                                >
-                                    <Share2 size={10} />
-                                </button>
+                                <div className="flex items-center gap-1.5">
+                                    <button 
+                                        onClick={handleShareSection}
+                                        className="p-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all active:scale-95"
+                                        title="Share Quiz"
+                                    >
+                                        <Share2 size={10} />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            downloadQuizOffline(title, questions);
+                                        }}
+                                        className="p-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all active:scale-95"
+                                        title="Download Offline HTML"
+                                    >
+                                        <Download size={10} />
+                                    </button>
+                                </div>
                             </div>
                             <h4 className="text-[12px] md:text-[16px] font-bold leading-relaxed text-[var(--foreground)]">
                                 {currentQuestion.question}

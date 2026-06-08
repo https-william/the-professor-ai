@@ -1085,10 +1085,10 @@ export default function StudyPackPage() {
                     back: c?.back || c?.answer || (typeof c === 'string' ? c : "Definition"),
                     topic: c?.topic || "Active Recall"
                 }));
-                return <InteractiveFlashcards cards={cards} onFinish={(stats) => handleMasterPhase(stats)} onRetry={() => handleRetryPhase("retain")} />;
+                return <InteractiveFlashcards cards={cards} title={packTitle + " - Flashcards"} onFinish={(stats) => handleMasterPhase(stats)} onRetry={() => handleRetryPhase("retain")} />;
             case "test":
                 const quizQuestions = Array.isArray(data) ? data : (data.questions || [data]);
-                return <InteractiveQuiz questions={quizQuestions} onFinish={(stats) => handleMasterPhase(stats)} />;
+                return <InteractiveQuiz questions={quizQuestions} title={packTitle + " - Quiz"} onFinish={(stats) => handleMasterPhase(stats)} />;
             case "predict":
                 return <StudyRoadmap data={data} isStreaming={isStreamingPhase && phase.id === "predict"} />;
             default:

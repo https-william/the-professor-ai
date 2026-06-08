@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Brain, Lightbulb, Share2, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Brain, Lightbulb, Share2, CheckCircle2, Download } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
+import { downloadFlashcardsOffline } from "@/lib/offline-download";
 
 export const InteractiveFlashcards = ({
   cards = [
@@ -14,6 +15,7 @@ export const InteractiveFlashcards = ({
       topic: "Topic"
     }
   ],
+  title = "Flashcards",
   onFinish,
   onRetry
 }: {
@@ -22,6 +24,7 @@ export const InteractiveFlashcards = ({
     back: string;
     topic?: string;
   }>;
+  title?: string;
   onFinish?: (stats: { totalCards: number }) => void;
   onRetry?: () => void;
 }) => {
@@ -187,6 +190,16 @@ export const InteractiveFlashcards = ({
             title="Share Flashcards"
           >
             <Share2 size={20} strokeWidth={2} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              downloadFlashcardsOffline(title, cards);
+            }}
+            className="w-14 h-14 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border-2)] flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-all active:scale-95 shadow-lg"
+            title="Download Offline HTML"
+          >
+            <Download size={20} strokeWidth={2} />
           </button>
         </div>
         <button onClick={handleNext} className={cn(
