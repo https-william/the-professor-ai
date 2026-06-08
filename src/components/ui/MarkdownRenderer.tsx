@@ -35,9 +35,40 @@ const TermPopover = ({ children }: { children?: React.ReactNode }) => {
     };
 
     const lowercaseTerm = termText.toLowerCase().trim();
-    const definition = definitions[lowercaseTerm] || `Key study concept: ${termText}. Hover or tap this definition to explore the high-yield parts and lock it in.`;
+    const staticDefinition = definitions[lowercaseTerm];
 
     const [isVisible, setIsVisible] = useState(false);
+    const [dynamicDefinition, setDynamicDefinition] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (staticDefinition || dynamicDefinition || !isVisible) return;
+
+        let active = true;
+        setIsLoading(true);
+
+        fetch(`/api/define?term=${encodeURIComponent(termText)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (active && data.definition) {
+                    setDynamicDefinition(data.definition);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+            })
+            .finally(() => {
+                if (active) {
+                    setIsLoading(false);
+                }
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [isVisible, termText, staticDefinition, dynamicDefinition]);
+
+    const displayDefinition = staticDefinition || dynamicDefinition || (isLoading ? "Consulting The Professor..." : "Key study concept. Hover to explore...");
 
     return (
         <span 
@@ -61,7 +92,14 @@ const TermPopover = ({ children }: { children?: React.ReactNode }) => {
                         <span className="block font-black text-white uppercase tracking-wider mb-1 text-[10px] text-[var(--blue-text)]">
                             Definition
                         </span>
-                        {definition}
+                        {isLoading ? (
+                            <span className="flex items-center justify-center gap-2 text-zinc-400 py-1 font-medium italic animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-ping shrink-0" />
+                                {displayDefinition}
+                            </span>
+                        ) : (
+                            displayDefinition
+                        )}
                         <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-950/90" />
                     </motion.span>
                 )}
