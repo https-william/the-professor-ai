@@ -96,6 +96,7 @@ export default function OnboardingPage() {
     const [topic, setTopic] = useState("");
     const [topicError, setTopicError] = useState("");
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [isBypassing, setIsBypassing] = useState(false);
 
     // ── Effect Hooks ──
     useEffect(() => {
@@ -109,6 +110,14 @@ export default function OnboardingPage() {
             if (persisted) setTopic(persisted);
         }
     }, []);
+
+    // Auto-onboard/bypass to remove friction
+    useEffect(() => {
+        if (mounted && user.isAuthenticated && !user.hasOnboarded && !isBypassing) {
+            setIsBypassing(true);
+            handleSkipOnboarding();
+        }
+    }, [mounted, user.isAuthenticated, user.hasOnboarded, isBypassing]);
 
     useEffect(() => {
         if (step !== 1) return;
@@ -153,6 +162,23 @@ export default function OnboardingPage() {
 
     // Don't mount on landing, auth pages, or if unauthenticated
     if (!mounted || isLanding || isAuthPage || user.hasOnboarded || !user.isAuthenticated) return null;
+
+    if (isBypassing) {
+        return (
+            <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 font-sans bg-[var(--background)] relative">
+                <div className="absolute inset-0 bg-[#06060B]/90 backdrop-blur-[100px]" />
+                <div className="relative z-10 flex flex-col items-center gap-6 p-10 rounded-[32px] bg-[var(--card)] border border-white/10 shadow-2xl text-center max-w-sm">
+                    <div className="w-16 h-16 rounded-3xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center text-[var(--blue)] animate-spin shadow-[0_0_30px_var(--blue-glow)]">
+                        <RotateCw className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-black text-white uppercase tracking-wider mb-2">Initializing Study Vault</h2>
+                        <p className="text-xs text-white/50 leading-relaxed font-medium">The Professor is preparing your workspace. Just a moment...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const handleNext = async () => {
         setIsSaving(true);

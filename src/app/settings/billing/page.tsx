@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { ArrowLeft, Database, ShieldCheck, Clock, Bell, Sparkles, Check, ChevronRight } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { cn } from "@/lib/utils";
 
 export default function BillingPage() {
     const { user, refreshUser } = useUser();
@@ -14,6 +15,7 @@ export default function BillingPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<'sprint_pass' | 'plus'>('plus');
 
     const supabase = createClient();
 
@@ -24,14 +26,18 @@ export default function BillingPage() {
     const handleStartTrial = async () => {
         setIsLoading(true);
         try {
-            // Plus Scholar Plan Details: ₦1,499/mo
+            const isWeekly = selectedPlan === 'sprint_pass';
+            const amount = isWeekly ? 399 * 100 : 1499 * 100;
+            const plan = selectedPlan;
+            const credits = isWeekly ? 250 : 1000;
+
             const res = await fetch("/api/paystack/initialize", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
-                    amount: 1499 * 100, // ₦1,499 in kobo
-                    plan: "plus", 
-                    credits: 1000 
+                    amount,
+                    plan, 
+                    credits 
                 }),
             });
 
@@ -54,7 +60,7 @@ export default function BillingPage() {
             popup.resumeTransaction(data.reference, {
                 onSuccess: async () => {
                     setIsProcessing(true);
-                    addToast("Trial initiated! Plus Scholar features unlocked. Let's get to work!", 'success', 'sparkles', undefined, true);
+                    addToast(`Trial initiated! ${isWeekly ? "Weekly Sprint Pass" : "Plus Scholar"} features unlocked. Let's get to work!`, 'success', 'sparkles', undefined, true);
                     
                     setTimeout(async () => {
                         await refreshUser();
@@ -199,11 +205,58 @@ export default function BillingPage() {
                                 <Sparkles size={10} /> The Sweet Spot
                             </span>
                             <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-none italic uppercase">
-                                Plus Scholar Plan
+                                Upgrade Your Brain
                             </h1>
                             <p className="text-sm text-[var(--foreground-muted)] font-medium leading-relaxed">
-                                Get 1,000 monthly credits to turn your lecture slides into simple study guides, build cards easily, and download PDFs to study offline when power is out.
+                                Get credits to turn your lecture slides into simple study guides, build cards easily, and download PDFs to study offline when power is out.
                             </p>
+                        </div>
+
+                        {/* Plan Choice Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Sprint Pass (Weekly) */}
+                            <button
+                                onClick={() => setSelectedPlan('sprint_pass')}
+                                className={cn(
+                                    "p-5 rounded-2xl text-left border transition-all cursor-pointer relative overflow-hidden",
+                                    selectedPlan === 'sprint_pass'
+                                        ? "bg-[var(--blue)]/10 border-[var(--blue)] shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+                                        : "bg-[var(--bg-2)]/60 border-[var(--border)] hover:border-[var(--blue)]/30"
+                                )}
+                            >
+                                {selectedPlan === 'sprint_pass' && (
+                                    <div className="absolute top-0 right-0 bg-[var(--blue)] text-black font-black text-[8px] uppercase px-2 py-0.5 rounded-bl-lg">
+                                        Active
+                                    </div>
+                                )}
+                                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)] mb-1 block">WEEKLY PASS</span>
+                                <div className="text-lg font-black tracking-tight text-white mb-1">₦399<span className="text-xs font-bold text-[var(--foreground-muted)]">/week</span></div>
+                                <p className="text-[10px] text-[var(--foreground-muted)] leading-relaxed font-bold">
+                                    Great for instant exam prep. Gives 250 credits/week.
+                                </p>
+                            </button>
+
+                            {/* Scholar Plan (Monthly) */}
+                            <button
+                                onClick={() => setSelectedPlan('plus')}
+                                className={cn(
+                                    "p-5 rounded-2xl text-left border transition-all cursor-pointer relative overflow-hidden",
+                                    selectedPlan === 'plus'
+                                        ? "bg-[var(--blue)]/10 border-[var(--blue)] shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+                                        : "bg-[var(--bg-2)]/60 border-[var(--border)] hover:border-[var(--blue)]/30"
+                                )}
+                            >
+                                {selectedPlan === 'plus' && (
+                                    <div className="absolute top-0 right-0 bg-[var(--blue)] text-black font-black text-[8px] uppercase px-2 py-0.5 rounded-bl-lg">
+                                        Best Value
+                                    </div>
+                                )}
+                                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)] mb-1 block">SCHOLAR PLAN</span>
+                                <div className="text-lg font-black tracking-tight text-white mb-1">₦1,499<span className="text-xs font-bold text-[var(--foreground-muted)]">/month</span></div>
+                                <p className="text-[10px] text-[var(--foreground-muted)] leading-relaxed font-bold">
+                                    Save 40% over weekly. Gives 1,000 credits/mo.
+                                </p>
+                            </button>
                         </div>
 
                         {/* Interactive Timeline Module */}
@@ -239,10 +292,10 @@ export default function BillingPage() {
                                 <div className="relative">
                                     <div className="absolute -left-[30px] top-1.5 w-4 h-4 rounded-full bg-zinc-700 border-4 border-[var(--background)]" />
                                     <h4 className="text-xs font-black uppercase text-[var(--foreground)] mb-1">
-                                        Day 7: Premium Access
+                                        Day 7: First Charge
                                     </h4>
                                     <p className="text-xs text-[var(--foreground-muted)] leading-relaxed font-medium">
-                                        Plus Scholar begins at <strong>₦1,499/mo</strong>. Cancel anytime with a single click.
+                                        First charge ({selectedPlan === 'sprint_pass' ? "₦399" : "₦1,499"}). Billed via Paystack. Cancel anytime in one click.
                                     </p>
                                 </div>
                             </div>
@@ -258,7 +311,7 @@ export default function BillingPage() {
                                 {isLoading ? (
                                     <span className="w-4 h-4 rounded-full border-2 border-zinc-950 border-t-transparent animate-spin" />
                                 ) : (
-                                    "Start my free trial"
+                                    `Start my ${selectedPlan === 'sprint_pass' ? "Weekly Pass" : "monthly Scholar"} trial`
                                 )}
                             </button>
                             

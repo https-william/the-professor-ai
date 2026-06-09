@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { 
@@ -37,73 +37,43 @@ const ICON_MAP: Record<string, any> = {
    ═══════════════════════════════════════════════════ */
 const CONFETTI_COLORS = ["#F59E0B", "#10B981", "#818CF8", "#F472B6", "#34D399", "#FBBF24", "#A78BFA"];
 
-interface Particle {
-    id: number;
+interface CanvasParticle {
     x: number;
     y: number;
-    color: string;
     size: number;
-    rotation: number;
+    color: string;
+    shape: 'square' | 'circle' | 'strip';
     velocityX: number;
     velocityY: number;
-    delay: number;
-    shape: "square" | "circle" | "strip";
+    rotation: number;
+    rotationSpeed: number;
+    gravity: number;
+    wind: number;
+    friction: number;
+    opacity: number;
+    fadeSpeed: number;
 }
 
-function generateParticles(count: number): Particle[] {
-    return Array.from({ length: count }, (_, i) => ({
-        id: i,
-        x: 40 + Math.random() * 20, // Center cluster (40-60% of width)
-        y: 30 + Math.random() * 10,
+const createParticle = (x: number, y: number, angleRange: [number, number], speedRange: [number, number]): CanvasParticle => {
+    const angle = angleRange[0] + Math.random() * (angleRange[1] - angleRange[0]);
+    const speed = speedRange[0] + Math.random() * (speedRange[1] - speedRange[0]);
+    return {
+        x,
+        y,
+        size: 6 + Math.random() * 8,
         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-        size: 4 + Math.random() * 8,
+        shape: (['square', 'circle', 'strip'] as const)[Math.floor(Math.random() * 3)],
+        velocityX: Math.cos(angle) * speed,
+        velocityY: Math.sin(angle) * speed,
         rotation: Math.random() * 360,
-        velocityX: (Math.random() - 0.5) * 60,
-        velocityY: -(20 + Math.random() * 40),
-        delay: Math.random() * 0.3,
-        shape: (["square", "circle", "strip"] as const)[Math.floor(Math.random() * 3)],
-    }));
-}
-
-function ConfettiParticle({ particle }: { particle: Particle }) {
-    const shapeStyle =
-        particle.shape === "circle"
-            ? { borderRadius: "50%" }
-            : particle.shape === "strip"
-            ? { width: particle.size * 0.4, height: particle.size * 2 }
-            : {};
-
-    return (
-        <motion.div
-            className="absolute pointer-events-none"
-            initial={{
-                left: `${particle.x}%`,
-                top: `${particle.y}%`,
-                rotate: 0,
-                scale: 0,
-                opacity: 1,
-            }}
-            animate={{
-                left: `${particle.x + particle.velocityX}%`,
-                top: `${particle.y + 80 + Math.random() * 30}%`,
-                rotate: particle.rotation + 720 * (Math.random() > 0.5 ? 1 : -1),
-                scale: [0, 1.2, 1, 0.8, 0],
-                opacity: [0, 1, 1, 0.6, 0],
-            }}
-            transition={{
-                duration: 2.5 + Math.random(),
-                delay: particle.delay,
-                ease: [0.25, 0.46, 0.45, 0.94],
-            }}
-            style={{
-                width: particle.size,
-                height: particle.size,
-                backgroundColor: particle.color,
-                ...shapeStyle,
-            }}
-        />
-    );
-}
+        rotationSpeed: (Math.random() - 0.5) * 8,
+        gravity: 0.15 + Math.random() * 0.15,
+        wind: (Math.random() - 0.5) * 0.05,
+        friction: 0.97,
+        opacity: 1,
+        fadeSpeed: 0.005 + Math.random() * 0.005
+    };
+};
 
 /* ═══════════════════════════════════════════════════
    ANIMATED XP COUNTER
@@ -201,7 +171,7 @@ export default function SessionComplete({
     items = [],
 }: SessionCompleteProps) {
     const { user } = useUser();
-    const [particles, setParticles] = useState<Particle[]>([]);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [tip, setTip] = useState("");
     const [isShareOpen, setIsShareOpen] = useState(false);
     
@@ -224,10 +194,117 @@ export default function SessionComplete({
     } : baseConfig;
 
     useEffect(() => {
-        if (isVisible) {
-            setParticles(generateParticles(60));
-            setTip(PROFESSOR_TIPS[Math.floor(Math.random() * PROFESSOR_TIPS.length)]);
+        if (!isVisible) return;
+
+        setTip(PROFESSOR_TIPS[Math.floor(Math.random() * PROFESSOR_TIPS.length)]);
+
+        // Play arpeggio chord: C4 (261.63 Hz) -> E4 (329.63 Hz) -> G4 (392.00 Hz) -> C5 (523.25 Hz)
+        const playArpeggio = () => {
+            try {
+                const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                if (!AudioContextClass) return;
+                const ctx = new AudioContextClass();
+                const now = ctx.currentTime;
+                
+                const chord = [261.63, 329.63, 392.00, 523.25];
+                chord.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    
+                    gain.gain.setValueAtTime(0.08, now + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.6);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.7);
+                });
+            } catch (e) {
+                console.warn("Arpeggio synthesis blocked or failed", e);
+            }
+        };
+
+        playArpeggio();
+
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        let animationFrameId: number;
+        let particlesPool: CanvasParticle[] = [];
+
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        // Center burst (50 particles)
+        for (let i = 0; i < 50; i++) {
+            particlesPool.push(createParticle(canvas.width / 2, canvas.height * 0.4, [0, Math.PI * 2], [3, 10]));
         }
+        // Bottom-left burst (45 particles)
+        for (let i = 0; i < 45; i++) {
+            particlesPool.push(createParticle(0, canvas.height, [-Math.PI / 2 + 0.15, -0.1], [10, 24]));
+        }
+        // Bottom-right burst (45 particles)
+        for (let i = 0; i < 45; i++) {
+            particlesPool.push(createParticle(canvas.width, canvas.height, [-Math.PI, -Math.PI / 2 - 0.15], [10, 24]));
+        }
+
+        const tick = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particlesPool.forEach((p) => {
+                p.velocityY += p.gravity;
+                p.velocityX += p.wind;
+                p.velocityX *= p.friction;
+                p.velocityY *= p.friction;
+                p.x += p.velocityX;
+                p.y += p.velocityY;
+                p.rotation += p.rotationSpeed;
+                p.opacity -= p.fadeSpeed;
+
+                if (p.opacity > 0) {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.globalAlpha = p.opacity;
+                    ctx.fillStyle = p.color;
+
+                    if (p.shape === "circle") {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (p.shape === "strip") {
+                        ctx.fillRect(-p.size * 0.2, -p.size, p.size * 0.4, p.size * 2);
+                    } else {
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    }
+
+                    ctx.restore();
+                }
+            });
+
+            particlesPool = particlesPool.filter(p => p.opacity > 0 && p.y < canvas.height + 50 && p.x > -50 && p.x < canvas.width + 50);
+
+            if (particlesPool.length > 0) {
+                animationFrameId = requestAnimationFrame(tick);
+            }
+        };
+
+        tick();
+
+        return () => {
+            window.removeEventListener("resize", resizeCanvas);
+            cancelAnimationFrame(animationFrameId);
+        };
     }, [isVisible]);
 
     return (
@@ -248,12 +325,11 @@ export default function SessionComplete({
                         onClick={onDismiss}
                     />
 
-                    {/* Confetti Layer */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        {particles.map((p) => (
-                            <ConfettiParticle key={p.id} particle={p} />
-                        ))}
-                    </div>
+                    {/* Canvas Confetti Layer */}
+                    <canvas 
+                        ref={canvasRef} 
+                        className="absolute inset-0 w-full h-full pointer-events-none z-0" 
+                    />
 
                     {/* Central Card */}
                     <motion.div

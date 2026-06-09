@@ -249,17 +249,17 @@ export default function DashboardWeb({
                                     
                                     {/* ERS Donut Progress Meter */}
                                     <div className="relative w-32 h-32 shrink-0 flex items-center justify-center">
-                                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                            <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" />
+                                        <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
                                             <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
-                                                strokeDasharray={251.2}
-                                                initial={{ strokeDashoffset: 251.2 }}
-                                                animate={{ strokeDashoffset: 251.2 * (1 - readinessScore / 100) }}
+                                                strokeDasharray="188.4 62.8"
+                                                initial={{ strokeDashoffset: 188.4 }}
+                                                animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
                                                 transition={{ duration: 1.5, ease: "easeOut" }}
                                                 strokeLinecap="round" />
                                         </svg>
                                         <div className="absolute flex flex-col items-center justify-center">
-                                            <span className="font-mono text-2xl font-black text-[var(--text)]">{readinessScore}%</span>
+                                            <span className="font-mono text-2xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
                                             <span className="text-[8px] font-black uppercase tracking-wider text-[var(--text-3)]">Ready</span>
                                         </div>
                                     </div>
@@ -302,7 +302,7 @@ export default function DashboardWeb({
                                             )}
                                         >
                                             <Flame size={12} className={cn("text-[var(--amber)]", userStreak > 0 && "animate-pulse")} />
-                                            <span>{userStreak}d Streak</span>
+                                            <span><strong className="font-mono tabular-nums">{userStreak}</strong>d Streak</span>
                                         </button>
 
                                         <button
@@ -376,7 +376,11 @@ export default function DashboardWeb({
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {recentPacks.map((pack) => (
                                             <Link key={pack.id} href={`/library/pack/${pack.id}`}>
-                                                <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--blue)]/40 transition-all flex flex-col justify-between h-40 group cursor-pointer" style={{ borderRadius: "24px" }}>
+                                                <motion.div 
+                                                    layoutId={`pack-card-${pack.id}`}
+                                                    className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--blue)]/40 transition-all flex flex-col justify-between h-40 group cursor-pointer" 
+                                                    style={{ borderRadius: "24px" }}
+                                                >
                                                     <div>
                                                         <span className="text-[9px] font-black uppercase tracking-widest text-[var(--blue-text)]">Active Sprint</span>
                                                         <h4 className="text-base font-black text-[var(--text)] mt-1 line-clamp-2 uppercase tracking-tight italic group-hover:text-[var(--blue-light)] transition-colors">
@@ -389,7 +393,7 @@ export default function DashboardWeb({
                                                             Enter Lab <ArrowRight size={10} className="group-hover:translate-x-1 transition-transform" />
                                                         </span>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             </Link>
                                         ))}
                                     </div>
@@ -424,17 +428,17 @@ export default function DashboardWeb({
                                     </div>
                                     <div className="flex items-center gap-4 shrink-0">
                                         <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
-                                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                                <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" />
+                                            <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
                                                 <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
-                                                    strokeDasharray={251.2}
-                                                    initial={{ strokeDashoffset: 251.2 }}
-                                                    animate={{ strokeDashoffset: 251.2 * (1 - readinessScore / 100) }}
+                                                    strokeDasharray="188.4 62.8"
+                                                    initial={{ strokeDashoffset: 188.4 }}
+                                                    animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
                                                     transition={{ duration: 1.5, ease: "easeOut" }}
                                                     strokeLinecap="round" />
                                             </svg>
                                             <div className="absolute flex flex-col items-center justify-center">
-                                                <span className="font-mono text-xl font-black text-[var(--text)]">{readinessScore}%</span>
+                                                <span className="font-mono text-xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
                                                 <span className="text-[7px] font-black uppercase tracking-wider text-[var(--text-3)]">ERS™</span>
                                             </div>
                                         </div>
@@ -451,27 +455,26 @@ export default function DashboardWeb({
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
                                             Learning Telemetry
                                         </h3>
-                                    </div>
-                                    <div className="space-y-4">
+                                                                    <div className="space-y-4">
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Total XP</span>
-                                            <span className="font-mono text-xs font-black text-[var(--blue)]">{userXp.toLocaleString()} XP</span>
+                                            <span className="font-mono text-xs font-black text-[var(--blue)] tabular-nums">{userXp.toLocaleString()} XP</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Level</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)]">Lvl {level} · {title}</span>
+                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">Lvl {level} · {title}</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Active Streak</span>
-                                            <span className="font-mono text-xs font-black text-[var(--amber)]">{userStreak}d 🔥</span>
+                                            <span className="font-mono text-xs font-black text-[var(--amber)] tabular-nums">{userStreak}d 🔥</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Study Packs</span>
-                                            <span className="font-mono text-xs font-black text-[var(--emerald)]">{recentPacks.length}+ active</span>
+                                            <span className="font-mono text-xs font-black text-[var(--emerald)] tabular-nums">{recentPacks.length}+ active</span>
                                         </div>
                                     </div>
                                 </div>
-
+ 
                                 {/* Column 2: Concept Retention Curves */}
                                 <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
@@ -483,7 +486,7 @@ export default function DashboardWeb({
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Exam Readiness</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)]">{readinessScore}%</span>
+                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
                                         </div>
                                         <div className="w-full bg-[var(--bg-3)] h-2 rounded-full overflow-hidden">
                                             <motion.div
@@ -493,19 +496,19 @@ export default function DashboardWeb({
                                                 transition={{ duration: 1.2, ease: "easeOut" }}
                                             />
                                         </div>
-
+ 
                                         <div className="flex justify-between items-center pt-2">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Cards Due</span>
-                                            <span className={cn("font-mono text-xs font-black", dueCardsCount > 0 ? "text-[var(--amber)]" : "text-[var(--emerald)]")}>
+                                            <span className={cn("font-mono text-xs font-black tabular-nums", dueCardsCount > 0 ? "text-[var(--amber)]" : "text-[var(--emerald)]")}>
                                                 {dueCardsCount > 0 ? `${dueCardsCount} due` : "0 due ✓"}
                                             </span>
                                         </div>
-
+ 
                                         <div className="flex justify-between items-center pt-2">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Degrades In</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)]">{degradesIn}h</span>
+                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">{degradesIn}h</span>
                                         </div>
-                                    </div>
+                                    </div>            </div>
                                 </div>
 
                                 {/* Column 3: Recent Packs */}

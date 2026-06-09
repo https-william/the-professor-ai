@@ -34,7 +34,7 @@ export interface UserState {
     dailyGoalMinutes: number;
     difficultyPreference: string;
     themePreference: string;
-    planStatus: 'free' | 'plus' | 'unlimited';
+    planStatus: 'free' | 'plus' | 'unlimited' | 'sprint_pass';
     subscriptionEndDate: string | null;
 }
 

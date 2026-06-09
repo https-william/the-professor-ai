@@ -249,6 +249,7 @@ function CreatorStudio() {
 
     const hasSuccess = queue.some(item => item.status === 'success') || inputText.trim().length > 50;
     const isQueueProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
+    const showConfigAndActions = inputText.trim().length > 0 || queue.length > 0;
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) addFiles(Array.from(e.target.files));
@@ -539,142 +540,154 @@ function CreatorStudio() {
                                 </div>
                             )}
 
-                            {/* Title & Stats */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                                <div className="flex flex-col justify-center space-y-2.5">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
-                                        Sprint Name
-                                    </label>
-                                    <input 
-                                        type="text"
-                                        value={missionTitle}
-                                        onChange={(e) => {
-                                            setMissionTitle(e.target.value);
-                                            setUserEditedTitle(true);
-                                        }}
-                                        placeholder="e.g., 'Bio-Chem Prep' or 'Law 101 Exam'"
-                                        className="w-full bg-[var(--bg-3)]/20 border border-[var(--border)] rounded-xl px-4 py-3.5 text-xs font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 outline-none transition-all"
-                                    />
-                                </div>
-                                <div className="p-5 rounded-xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col justify-center">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Calculated Cost</span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <Zap size={14} className="text-[var(--blue)] fill-current" />
-                                        <span className="text-base font-black italic tracking-tight leading-none uppercase">10 CREDITS</span>
-                                    </div>
-                                    <p className="text-[10px] text-[var(--foreground-muted)] mt-1.5 font-bold">You currently have {user.credits} credits.</p>
-                                </div>
-                            </div>
+                            <AnimatePresence>
+                                {showConfigAndActions && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="space-y-8 overflow-hidden"
+                                    >
+                                        {/* Title & Stats */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                                            <div className="flex flex-col justify-center space-y-2.5">
+                                                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
+                                                    Sprint Name
+                                                </label>
+                                                <input 
+                                                    type="text"
+                                                    value={missionTitle}
+                                                    onChange={(e) => {
+                                                        setMissionTitle(e.target.value);
+                                                        setUserEditedTitle(true);
+                                                    }}
+                                                    placeholder="e.g., 'Bio-Chem Prep' or 'Law 101 Exam'"
+                                                    className="w-full bg-[var(--bg-3)]/20 border border-[var(--border)] rounded-xl px-4 py-3.5 text-xs font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 outline-none transition-all"
+                                                />
+                                            </div>
+                                            <div className="p-5 rounded-xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col justify-center">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Calculated Cost</span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Zap size={14} className="text-[var(--blue)] fill-current" />
+                                                    <span className="text-base font-black italic tracking-tight leading-none uppercase">10 CREDITS</span>
+                                                </div>
+                                                <p className="text-[10px] text-[var(--foreground-muted)] mt-1.5 font-bold">You currently have {user.credits} credits.</p>
+                                            </div>
+                                        </div>
 
-                            {/* Ingestion Progress Queue */}
-                            {queue.length > 0 && (
-                                <div className="space-y-4 pt-6 border-t border-[var(--border)] w-full">
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-2">
-                                        Ingestion Queue
-                                    </h3>
-                                    {queue.map((item) => (
-                                        <div 
-                                            key={item.id} 
-                                            className="p-5 rounded-2xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col gap-4 relative overflow-hidden animate-in fade-in duration-300 w-full"
-                                        >
-                                            <div className="flex items-center justify-between gap-4 w-full">
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-10 h-10 rounded-xl bg-[var(--bg-3)] border border-[var(--border)] flex items-center justify-center text-[var(--foreground-muted)] shrink-0">
-                                                        <FileText size={18} />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <h4 className="text-xs font-black text-[var(--foreground)] truncate">{item.name}</h4>
-                                                        {item.file && (
-                                                            <p className="text-[10px] text-[var(--foreground-muted)] font-bold">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                        {/* Ingestion Progress Queue */}
+                                        {queue.length > 0 && (
+                                            <div className="space-y-4 pt-6 border-t border-[var(--border)] w-full">
+                                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-2">
+                                                    Ingestion Queue
+                                                </h3>
+                                                {queue.map((item) => (
+                                                    <div 
+                                                        key={item.id} 
+                                                        className="p-5 rounded-2xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col gap-4 relative overflow-hidden animate-in fade-in duration-300 w-full"
+                                                    >
+                                                        <div className="flex items-center justify-between gap-4 w-full">
+                                                            <div className="flex items-center gap-3 min-w-0">
+                                                                <div className="w-10 h-10 rounded-xl bg-[var(--bg-3)] border border-[var(--border)] flex items-center justify-center text-[var(--foreground-muted)] shrink-0">
+                                                                    <FileText size={18} />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <h4 className="text-xs font-black text-[var(--foreground)] truncate">{item.name}</h4>
+                                                                    {item.file && (
+                                                                        <p className="text-[10px] text-[var(--foreground-muted)] font-bold">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="shrink-0">
+                                                                {item.status === 'success' && (
+                                                                    <span className="px-2.5 py-1 rounded-full bg-[var(--emerald)]/10 border border-[var(--emerald)]/20 text-[9px] font-black uppercase text-[var(--emerald)]">Ready</span>
+                                                                )}
+                                                                {item.status === 'error' && (
+                                                                    <span className="px-2.5 py-1 rounded-full bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 text-[9px] font-black uppercase text-[var(--crimson)]">Error</span>
+                                                                )}
+                                                                {(item.status === 'reading' || item.status === 'learning') && (
+                                                                    <span className="px-2.5 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[9px] font-black uppercase text-[var(--blue-text)] flex items-center gap-1.5">
+                                                                        <Loader2 size={10} className="animate-spin" />
+                                                                        <span>Ingesting</span>
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Progress / Status Description */}
+                                                        {item.status === 'error' ? (
+                                                            <p className="text-[10px] font-bold text-[var(--crimson)] uppercase tracking-wide">
+                                                                {item.errorMessage || "Failed to process document."}
+                                                            </p>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center justify-between gap-4">
+                                                                    <p className="text-[10px] font-black text-[var(--foreground-muted)]">
+                                                                        {customStatusMsg[item.id] || (item.status === 'success' ? "All notes successfully absorbed" : loadingPhrases[filePhraseIndex[item.id] || 0])}
+                                                                    </p>
+                                                                    <span className="text-[10px] font-mono font-black text-[var(--blue-text)]">{trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%</span>
+                                                                </div>
+                                                                <div className="w-full bg-[var(--bg-3)] rounded-full h-2 overflow-hidden border border-[var(--border)]">
+                                                                    <motion.div 
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%` }}
+                                                                        className="h-full bg-[var(--blue)] rounded-full"
+                                                                        transition={{ ease: "easeOut" }}
+                                                                    />
+                                                                </div>
+                                                            </div>
                                                         )}
                                                     </div>
-                                                </div>
-                                                
-                                                <div className="shrink-0">
-                                                    {item.status === 'success' && (
-                                                        <span className="px-2.5 py-1 rounded-full bg-[var(--emerald)]/10 border border-[var(--emerald)]/20 text-[9px] font-black uppercase text-[var(--emerald)]">Ready</span>
-                                                    )}
-                                                    {item.status === 'error' && (
-                                                        <span className="px-2.5 py-1 rounded-full bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 text-[9px] font-black uppercase text-[var(--crimson)]">Error</span>
-                                                    )}
-                                                    {(item.status === 'reading' || item.status === 'learning') && (
-                                                        <span className="px-2.5 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[9px] font-black uppercase text-[var(--blue-text)] flex items-center gap-1.5">
-                                                            <Loader2 size={10} className="animate-spin" />
-                                                            <span>Ingesting</span>
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                ))}
                                             </div>
+                                        )}
 
-                                            {/* Progress / Status Description */}
-                                            {item.status === 'error' ? (
-                                                <p className="text-[10px] font-bold text-[var(--crimson)] uppercase tracking-wide">
-                                                    {item.errorMessage || "Failed to process document."}
-                                                </p>
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center justify-between gap-4">
-                                                        <p className="text-[10px] font-black text-[var(--foreground-muted)]">
-                                                            {customStatusMsg[item.id] || (item.status === 'success' ? "All notes successfully absorbed" : loadingPhrases[filePhraseIndex[item.id] || 0])}
-                                                        </p>
-                                                        <span className="text-[10px] font-mono font-black text-[var(--blue-text)]">{trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%</span>
-                                                    </div>
-                                                    <div className="w-full bg-[var(--bg-3)] rounded-full h-2 overflow-hidden border border-[var(--border)]">
-                                                        <motion.div 
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%` }}
-                                                            className="h-full bg-[var(--blue)] rounded-full"
-                                                            transition={{ ease: "easeOut" }}
-                                                        />
-                                                    </div>
+                                        {/* Errors */}
+                                        {setupError && (
+                                            <div className="flex items-center justify-between p-4 rounded-[20px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
+                                                <div className="flex items-center gap-2.5 text-[11px] font-black text-[var(--crimson)] uppercase tracking-wider">
+                                                    <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
+                                                    <span className="leading-snug">{setupError}</span>
                                                 </div>
+                                                <button
+                                                    onClick={() => { setSetupError(null); }}
+                                                    className="px-3 py-1.5 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-[var(--crimson)]/30 transition-colors cursor-pointer shrink-0 ml-2"
+                                                >
+                                                    Dismiss
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Trigger buttons */}
+                                        <div className="flex gap-3 pt-2">
+                                            {inputText.trim().length > 0 && (
+                                                <button
+                                                    onClick={resetSelection}
+                                                    className="px-6 py-4 border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg-3)]/60 transition-all cursor-pointer"
+                                                >
+                                                    Clear All
+                                                </button>
                                             )}
+                                            <button
+                                                onClick={handleGenerate}
+                                                disabled={!hasSuccess || isQueueProcessing}
+                                                className={cn(
+                                                    "flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
+                                                    !hasSuccess || isQueueProcessing
+                                                        ? 'opacity-50 cursor-not-allowed bg-[var(--bg-3)]/80 border border-[var(--border)] text-[var(--foreground-muted)]/40' 
+                                                        : 'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:scale-[0.98]'
+                                                )}
+                                            >
+                                                <Zap size={16} strokeWidth={2.5} className={hasSuccess && !isQueueProcessing ? "animate-pulse" : ""} />
+                                                <span>Start Exam Sprint</span>
+                                                <ArrowRight size={14} strokeWidth={2.5} />
+                                            </button>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Errors */}
-                            {setupError && (
-                                <div className="flex items-center justify-between p-4 rounded-[20px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
-                                    <div className="flex items-center gap-2.5 text-[11px] font-black text-[var(--crimson)] uppercase tracking-wider">
-                                        <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
-                                        <span className="leading-snug">{setupError}</span>
-                                    </div>
-                                    <button
-                                        onClick={() => { setSetupError(null); }}
-                                        className="px-3 py-1.5 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-[var(--crimson)]/30 transition-colors cursor-pointer shrink-0 ml-2"
-                                    >
-                                        Dismiss
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Trigger buttons */}
-                            <div className="flex gap-3 pt-2">
-                                {inputText.trim().length > 0 && (
-                                    <button
-                                        onClick={resetSelection}
-                                        className="px-6 py-4 border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg-3)]/60 transition-all cursor-pointer"
-                                    >
-                                        Clear All
-                                    </button>
+                                    </motion.div>
                                 )}
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={!hasSuccess || isQueueProcessing}
-                                    className={cn(
-                                        "flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
-                                        !hasSuccess || isQueueProcessing
-                                            ? 'opacity-50 cursor-not-allowed bg-[var(--bg-3)]/80 border border-[var(--border)] text-[var(--foreground-muted)]/40' 
-                                            : 'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:scale-[0.98]'
-                                    )}
-                                >
-                                    <Zap size={16} strokeWidth={2.5} className={hasSuccess && !isQueueProcessing ? "animate-pulse" : ""} />
-                                    <span>Start Exam Sprint</span>
-                                    <ArrowRight size={14} strokeWidth={2.5} />
-                                </button>
-                            </div>
+                            </AnimatePresence>
 
                         </div>
                     </div>

@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
         // Map plan identifiers to Paystack plan codes
         const planCodes: Record<string, string | undefined> = {
             plus: process.env.PAYSTACK_PLAN_PLUS || "PLN_mock_plus_code",
-            unlimited: process.env.PAYSTACK_PLAN_UNLIMITED || "PLN_mock_unlimited_code"
+            unlimited: process.env.PAYSTACK_PLAN_UNLIMITED || "PLN_mock_unlimited_code",
+            sprint_pass: process.env.PAYSTACK_PLAN_SPRINT_PASS || "PLN_mock_sprint_pass_code"
         };
 
         // Initialize Paystack Transaction parameters
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
         };
 
         // If it is a subscription plan, inject the Paystack Plan Code
-        if (plan === "plus" || plan === "unlimited") {
+        if (plan === "plus" || plan === "unlimited" || plan === "sprint_pass") {
             params.plan = planCodes[plan];
         }
 

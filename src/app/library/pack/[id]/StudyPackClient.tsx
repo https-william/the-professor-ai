@@ -1072,6 +1072,38 @@ export default function StudyPackPage() {
     const effectiveQuizTime = sessionStats.quiz?.time ?? (phasesData.test ? "3m 15s" : "Fast");
     const effectiveFlashcardsCount = sessionStats.flashcards?.totalCards ?? (phasesData.retain ? (Array.isArray(phasesData.retain) ? phasesData.retain.length : (phasesData.retain.flashcards?.length || phasesData.retain.cards?.length || 8)) : 0);
 
+    const userFirstName = user.firstName || (user.name !== "Scholar" ? user.name?.split(" ")[0] : null) || user.username || user.email?.split("@")[0] || "Scholar";
+
+    const getStudyArchetype = () => {
+        const durationMs = sessionStats.finishTime ? (sessionStats.finishTime - sessionStats.startTime) : 0;
+        const minutes = durationMs / 60000;
+        
+        if (durationMs > 0 && minutes < 3) {
+            return {
+                title: "The Blitz Synthesizer",
+                description: "You don't read text, you absorb it. You sprinted through this pack, skipping the fluff. You want your time back."
+            };
+        }
+        if (effectiveQuizScore >= 80) {
+            return {
+                title: "The High-Yield Sniper",
+                description: "You hit the target with surgical precision. 80%+ accuracy. The details had nowhere to hide. You're here to conquer the calendar."
+            };
+        }
+        if (effectiveFlashcardsCount >= 15) {
+            return {
+                title: "The Active Recall Purist",
+                description: "No passive highlighting. You grilled yourself on cards. You know memory is built under pressure. Elite."
+            };
+        }
+        return {
+            title: "The Focused Refiner",
+            description: "Methodical, focused, and steady. You took your time to connect the dots. You're building memory that won't fade."
+        };
+    };
+
+    const studyArchetype = getStudyArchetype();
+
     const renderPhaseInteractive = (phase: Phase) => {
         const data = phasesData[phase.id];
         const isPhaseLoading = isLoadingPhase || generatingPhases[phase.id] === 'loading';
@@ -1158,7 +1190,10 @@ export default function StudyPackPage() {
                 </div>
 
                 {/* Hero Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8 bg-[var(--background-secondary)]/40 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-[var(--border)] shadow-lg">
+                <motion.div 
+                    layoutId={`pack-card-${packId}`}
+                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8 bg-[var(--background-secondary)]/40 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-[var(--border)] shadow-lg"
+                >
                     <div className="max-w-2xl">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
                             <div className="px-3 py-1 rounded-full bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-md shadow-[var(--blue-glow)]">
@@ -1195,7 +1230,32 @@ export default function StudyPackPage() {
                             <Share2 size={12} /> Share Guide
                         </button>
                     </div>
-                </div>
+                </motion.div>
+
+                {!packLoading && user.planStatus === 'free' && (
+                    <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-[var(--blue-dim)]/40 to-transparent border border-[var(--blue-border)]/50 shadow-lg relative overflow-hidden backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-300">
+                        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[var(--blue)]/5 rounded-full blur-[80px] pointer-events-none" />
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                            <div>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider mb-2">
+                                    <Sparkles size={8} /> SPRINT UNLOCK
+                                </span>
+                                <h3 className="text-sm font-black uppercase tracking-tight text-white mb-1">
+                                    Unlock Weekly Sprint Pass (₦399)
+                                </h3>
+                                <p className="text-xs text-[var(--foreground-muted)] font-medium leading-relaxed max-w-xl">
+                                    Get the Feynman vocabulary highlights, active memory deck expansions, and clean PDF exports for offline revision. Cancel in one click anytime.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => router.push('/settings/billing')}
+                                className="px-5 py-2.5 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-md shrink-0 self-start sm:self-center"
+                            >
+                                Unlock Now
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Phase Rows */}
                 <div className="space-y-3 mb-12">
@@ -1557,7 +1617,7 @@ export default function StudyPackPage() {
                         {/* Story Progress Indicators */}
                         <div className="w-full max-w-xl mx-auto z-20 pt-4 flex flex-col gap-4">
                             <div className="flex gap-1.5 w-full">
-                                {Array.from({ length: 4 }).map((_, idx) => (
+                                {Array.from({ length: 5 }).map((_, idx) => (
                                     <button 
                                         key={idx} 
                                         onClick={() => setWrapSlide(idx)}
@@ -1570,7 +1630,7 @@ export default function StudyPackPage() {
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/40">
-                                    Sprint Wrap • Slide {wrapSlide + 1} of 4
+                                    Sprint Wrap • Slide {wrapSlide + 1} of 5
                                 </span>
                                 <button
                                     onClick={() => { setShowWrapModal(false); setWrapSlide(0); }}
@@ -1631,7 +1691,7 @@ export default function StudyPackPage() {
                                             </div>
                                         </div>
                                         <p className="text-xs text-white/50 max-w-sm font-medium">
-                                            Amaka increased her exam preparedness score significantly with a card run like this.
+                                            {userFirstName} increased their exam preparedness score significantly with a card run like this.
                                         </p>
                                     </motion.div>
                                 )}
@@ -1657,7 +1717,7 @@ export default function StudyPackPage() {
                                             Fast and focused study pace.
                                         </h3>
                                         <p className="text-xs text-white/60 max-w-sm mx-auto font-medium">
-                                            Tunde keeps his memory loops sharp by completing sprints in record time.
+                                            {userFirstName} keeps their memory loops sharp by completing sprints in record time.
                                         </p>
                                     </motion.div>
                                 )}
@@ -1665,6 +1725,27 @@ export default function StudyPackPage() {
                                 {wrapSlide === 3 && (
                                     <motion.div
                                         key="slide3"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 1.05 }}
+                                        className="text-center space-y-6 flex flex-col items-center justify-center"
+                                    >
+                                        <div className="w-16 h-16 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center text-[var(--blue)] mb-2 shadow-[0_0_20px_var(--blue-glow)]">
+                                            <BrainCircuit size={28} />
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--blue-text)]">YOUR STUDY ARCHETYPE</span>
+                                        <h3 className="text-3xl font-black uppercase tracking-tight italic">
+                                            {studyArchetype.title}
+                                        </h3>
+                                        <p className="text-sm text-white/70 max-w-sm mx-auto leading-relaxed">
+                                            {studyArchetype.description}
+                                        </p>
+                                    </motion.div>
+                                )}
+
+                                {wrapSlide === 4 && (
+                                    <motion.div
+                                        key="slide4"
                                         initial={{ opacity: 0, y: 50 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -50 }}
@@ -1677,7 +1758,7 @@ export default function StudyPackPage() {
                                             {isGuest ? (
                                                 <div className="relative py-2">
                                                     <p className="blur-[4px] select-none text-sm text-white font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                                        Bolu, the Professor knows exactly how ready you are, but you need to sign up to unlock this final verdict and save your streak.
+                                                        {userFirstName}, the Professor knows exactly how ready you are, but you need to sign up to unlock this final verdict and save your streak.
                                                     </p>
                                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
                                                         <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-2">Locked Assessment</span>
@@ -1695,9 +1776,9 @@ export default function StudyPackPage() {
                                             ) : (
                                                 <p className="text-sm sm:text-base text-white font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
                                                     {(() => {
-                                                        if (effectiveQuizScore >= 95) return "Absolute genius. Bolu, your brain is full and the slides have been parsed. Flawless. You've fully absorbed this material. Close the tab and go live your life.";
-                                                        if (effectiveQuizScore >= 80) return "Solid run. You've locked in the high-yield parts. Amaka, grab some water and catch up on sleep. The hard work is done.";
-                                                        if (effectiveQuizScore >= 60) return "You passed, but it was close. Tunde, go get some rest now, but review these card decks one more time tomorrow morning.";
+                                                        if (effectiveQuizScore >= 95) return `Absolute genius. ${userFirstName}, your brain is full and the slides have been parsed. Flawless. You've fully absorbed this material. Close the tab and go live your life.`;
+                                                        if (effectiveQuizScore >= 80) return `Solid run. You've locked in the high-yield parts. ${userFirstName}, grab some water and catch up on sleep. The hard work is done.`;
+                                                        if (effectiveQuizScore >= 60) return `You passed, but it was close. ${userFirstName}, go get some rest now, but review these card decks one more time tomorrow morning.`;
                                                         return "Concept explorer. Some gaps remain, but cramming tired won't help. Rest your brain, sleep on it, and let the concepts settle.";
                                                     })()}
                                                 </p>
@@ -1751,9 +1832,9 @@ export default function StudyPackPage() {
                             >
                                 BACK
                             </button>
-                            {wrapSlide < 3 ? (
+                            {wrapSlide < 4 ? (
                                 <button
-                                    onClick={() => setWrapSlide(prev => Math.min(3, prev + 1))}
+                                    onClick={() => setWrapSlide(prev => Math.min(4, prev + 1))}
                                     className="px-6 py-2.5 rounded-xl bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
                                 >
                                     NEXT

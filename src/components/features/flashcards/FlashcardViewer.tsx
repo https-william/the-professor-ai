@@ -6,7 +6,7 @@ import { useUser } from "@/context/UserContext";
 import ShareCard from "@/components/ShareCard";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import SessionComplete from "@/components/features/SessionComplete";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { Share2, ChevronLeft, Baby, Check, X, HelpCircle, Download } from "lucide-react";
 import { downloadFlashcardsOffline } from "@/lib/offline-download";
 
@@ -44,10 +44,43 @@ const cardVariants = {
     }),
 };
 
+const playVictoryChime = () => {
+    try {
+        const AudioContextClass = typeof window !== "undefined" && (window.AudioContext || (window as any).webkitAudioContext);
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const now = ctx.currentTime;
+        
+        // Ascending chime: C5 (523.25 Hz) -> E5 (659.25 Hz) -> G5 (783.99 Hz)
+        const notes = [523.25, 659.25, 783.99];
+        notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            
+            gain.gain.setValueAtTime(0.12, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.35);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.4);
+        });
+    } catch (e) {
+        console.warn("Audio Context synthesis blocked or failed", e);
+    }
+};
+
 export default function FlashcardViewer({ flashcards, title, generationId }: FlashcardViewerProps) {
     const router = useRouter();
     const { user, refreshUser } = useUser();
     const { addToast } = useToasts();
+
+    const dragX = useMotionValue(0);
+    const rotate = useTransform(dragX, [-200, 200], [-15, 15]);
     
     // Core states
     const [cardQueue, setCardQueue] = useState<number[]>([]);
@@ -131,10 +164,11 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 next.add(currentCardIndex);
                 return next;
             });
+            playVictoryChime();
             addToast("Card marked as mastered! 🎯", "success", undefined, undefined, true);
         } else {
             setCardQueue(prev => [...prev, currentCardIndex]);
-            addToast("Re-queued for review. Keep going! 💪", "info", undefined, undefined, true);
+            addToast("No penalties here! Card is silently re-queued for your review. 🔄", "info", undefined, undefined, true);
         }
 
         // Wait for exit transition
@@ -330,9 +364,21 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                 opacity: { duration: 0.18 },
                             }}
                             className="w-full h-full relative cursor-pointer"
-                            onClick={handleFlip}
                             onMouseMove={handleMouseMove}
                             onMouseLeave={handleMouseLeave}
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={0.8}
+                            style={{ x: dragX, rotate }}
+                            onDragEnd={(event, info) => {
+                                const threshold = 120;
+                                if (info.offset.x > threshold) {
+                                    handleEvaluate(true);
+                                } else if (info.offset.x < -threshold) {
+                                    handleEvaluate(false);
+                                }
+                            }}
+                            onTap={handleFlip}
                         >
                             <div style={cardInnerStyle}>
                                 

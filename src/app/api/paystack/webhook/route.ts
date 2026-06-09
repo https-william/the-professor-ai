@@ -78,16 +78,18 @@ export async function POST(req: NextRequest) {
 
             const profileUpdates: any = {};
 
-            if (planId === "plus" || planId === "unlimited") {
+            if (planId === "plus" || planId === "unlimited" || planId === "sprint_pass") {
                 // Subscription activation / replenishment
                 profileUpdates.plan_status = planId;
                 profileUpdates.paystack_customer_code = customer?.customer_code || profile.paystack_customer_code;
                 profileUpdates.paystack_subscription_code = subscription?.subscription_code || profile.paystack_subscription_code;
                 
                 // Calculate end date (default 30 days if not returned by Paystack)
+                // If it is a weekly plan, default to 7 days
+                const defaultDays = planId === "sprint_pass" ? 7 : 30;
                 const nextPaymentDate = subscription?.next_payment_date 
                     ? new Date(subscription.next_payment_date)
-                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    : new Date(Date.now() + defaultDays * 24 * 60 * 60 * 1000);
                 profileUpdates.subscription_end_date = nextPaymentDate.toISOString();
 
                 // Credit allocation
@@ -96,6 +98,9 @@ export async function POST(req: NextRequest) {
                     // We can replenish up to 1,000 or append 1,000 credits to user balance.
                     // To be customer-friendly, let's append 1,000 credits!
                     profileUpdates.credits = (profile.credits || 0) + 1000;
+                } else if (planId === "sprint_pass") {
+                    // Sprint Pass yields 250 credits per week.
+                    profileUpdates.credits = (profile.credits || 0) + 250;
                 } else if (planId === "unlimited") {
                     // Unlimited tier has infinite credits. We set a high number for safety,
                     // but the guards will bypass checks automatically.
@@ -172,6 +177,8 @@ export async function POST(req: NextRequest) {
                     // Replenish credits on renewal
                     if (profile.plan_status === "plus") {
                         profileUpdates.credits = (profile.credits || 0) + 1000;
+                    } else if (profile.plan_status === "sprint_pass") {
+                        profileUpdates.credits = (profile.credits || 0) + 250;
                     }
                     
                     if (subscription?.next_payment_date) {
