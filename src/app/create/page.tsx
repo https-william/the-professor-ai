@@ -29,6 +29,8 @@ import {
     Sparkles,
     Type,
     ArrowRight,
+    Lock,
+    Sparkle
 } from "lucide-react";
 
 const MAX_CHARS = 50000;
@@ -43,8 +45,6 @@ const loadingPhrases = [
     "Almost there. Polishing the wisdom..."
 ];
 
-
-
 function CreatorStudio() {
     const router = useRouter();
     const { user, spendCredits } = useUser();
@@ -52,6 +52,7 @@ function CreatorStudio() {
     const { queue, addFiles, addLocalPaths, updateFileStatus, clearQueue, isProcessing } = useIngestStore();
     const { isDesktop } = useAppPlatform();
     const supabase = createClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [inputText, setInputText] = useState("");
     const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
@@ -104,8 +105,6 @@ function CreatorStudio() {
         }
         setActiveTab('text');
     };
-    
-
 
     // Queue processing states
     const processedIds = useRef<Set<string>>(new Set());
@@ -313,8 +312,10 @@ function CreatorStudio() {
     };
 
     const handleUploadClick = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         if (isDesktop) {
-            e.preventDefault();
             try {
                 const { open } = await import("@tauri-apps/plugin-dialog");
                 const selected = await open({
@@ -336,6 +337,9 @@ function CreatorStudio() {
             } catch (err) {
                 console.error("Tauri dialog open error:", err);
             }
+        } else {
+            // Programmatically trigger hidden native file selector on web
+            fileInputRef.current?.click();
         }
     };
 
@@ -425,14 +429,16 @@ function CreatorStudio() {
 
     if (isGeneratingPack) {
         return (
-            <div className="min-h-screen bg-transparent pt-20 flex flex-col items-center justify-center">
-                <StandardContainer>
+            <div className="min-h-screen bg-transparent pt-20 flex flex-col items-center justify-center relative overflow-hidden">
+                {/* CSS grid overlay */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-40 z-0" />
+                <StandardContainer className="relative z-10">
                     <div className="mb-8 text-center">
                         <button 
                             onClick={() => setIsGeneratingPack(false)}
-                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-2 cursor-pointer"
+                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-white transition-colors inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl bg-white/5 border border-white/5"
                         >
-                            <X size={14} /> Cancel Generation
+                            <X size={12} /> Cancel Generation
                         </button>
                     </div>
                     <ProfessorCeremony className="w-full py-12" />
@@ -442,162 +448,182 @@ function CreatorStudio() {
     }
 
     return (
-        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-24 pt-16 relative min-h-screen flex flex-col flex-1 overflow-x-hidden">
-            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--blue-glow)] opacity-[0.03] rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-28 pt-20 relative min-h-screen flex flex-col flex-1 overflow-x-hidden">
+            {/* $45,200 Luxury Visual Assets */}
             
-            <StandardContainer>
-                <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+            {/* Grid Line Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
+            
+            {/* Ambient Radial Halos */}
+            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#10B981]/5 via-[#6366F1]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
+            <div className="absolute bottom-[-150px] right-[-100px] w-[500px] h-[500px] bg-[#3B82F6]/5 rounded-full blur-[130px] pointer-events-none z-0" />
+
+            <StandardContainer className="relative z-10">
+                <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-600 max-w-4xl mx-auto space-y-10">
+                    
                     {/* Header Banner */}
-                    <div className="mb-8 text-center">
-                        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--blue)] mb-2">
-                            Hey {user.firstName || (user.name !== "Scholar" ? user.name?.split(" ")[0] : null) || user.username || user.email?.split("@")[0] || "Scholar"}
-                        </h2>
-                        <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-3 leading-none uppercase italic">
-                            Exam <span className="text-[var(--blue)]">Sprint</span>
+                    <div className="text-center space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 backdrop-blur-md">
+                            <Sparkle size={12} className="text-[var(--accent)] animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
+                                Lab Session for {user.firstName || (user.name !== "Scholar" ? user.name?.split(" ")[0] : null) || user.username || "Scholar"}
+                            </span>
+                        </div>
+                        <h1 className="text-4xl sm:text-6xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
+                            Exam <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">Sprint</span>
                         </h1>
-                        <p className="text-xs text-[var(--foreground-muted)] font-bold leading-relaxed max-w-xl mx-auto opacity-75">
-                            Your notes. Just the good parts. Let's break them down and lock them in.
+                        <p className="text-sm text-[var(--foreground-muted)] max-w-xl mx-auto font-medium opacity-80 leading-relaxed">
+                            Upload your slides or paste text. The Professor will deconstruct the noise and give you just the good parts.
                         </p>
                     </div>
 
                     {/* Compact Pill-Shaped Pipeline Flow */}
-                    <div className="mb-6 p-4 rounded-2xl bg-[var(--bg-2)] border border-[var(--border)] shadow-md relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[var(--blue)]/30" />
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mr-2 flex items-center gap-1.5 shrink-0">
-                                <Sparkles size={11} className="text-[var(--blue)]" /> Sprint Pipeline:
+                    <div className="p-1 border border-white/5 rounded-3xl bg-zinc-950/40 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+                        <div className="flex flex-wrap items-center gap-1.5 p-2">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mr-2 flex items-center gap-1.5 shrink-0 ml-2">
+                                <Sparkles size={11} className="text-[#F59E0B]" /> Ingest Pipeline:
                             </span>
                             
                             {/* Pill 1 */}
-                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--blue)]/30 transition-all shrink-0">
-                                <FileText size={11} className="text-[var(--blue)]" />
-                                <span className="text-[9px] font-black uppercase tracking-tight">01. Summary</span>
+                            <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/25 transition-all shrink-0">
+                                <FileText size={12} className="text-emerald-400" />
+                                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">01. Summary</span>
                             </div>
 
-                            <span className="text-[var(--foreground-muted)]/30 text-[10px] shrink-0">➔</span>
+                            <span className="text-[var(--foreground-muted)]/30 text-[10px] shrink-0 font-bold">➔</span>
 
                             {/* Pill 2 */}
-                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--amber)]/30 transition-all shrink-0">
-                                <Layers size={11} className="text-[var(--amber)]" />
-                                <span className="text-[9px] font-black uppercase tracking-tight">02. Cards</span>
+                            <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-indigo-500/25 transition-all shrink-0">
+                                <Layers size={12} className="text-indigo-400" />
+                                <span className="text-[9px] font-black uppercase tracking-wider text-indigo-400">02. Cards</span>
                             </div>
 
-                            <span className="text-[var(--foreground-muted)]/30 text-[10px] shrink-0">➔</span>
+                            <span className="text-[var(--foreground-muted)]/30 text-[10px] shrink-0 font-bold">➔</span>
 
                             {/* Pill 3 */}
-                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--crimson)]/30 transition-all shrink-0">
-                                <Sword size={11} className="text-[var(--crimson)]" />
-                                <span className="text-[9px] font-black uppercase tracking-tight">03. Quiz</span>
+                            <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-red-500/25 transition-all shrink-0">
+                                <Sword size={12} className="text-red-400" />
+                                <span className="text-[9px] font-black uppercase tracking-wider text-red-400">03. Quiz</span>
                             </div>
 
-                            <span className="text-[var(--foreground-muted)]/30 text-[10px] shrink-0">➔</span>
+                            <span className="text-[var(--foreground-muted)]/30 text-[10px] shrink-0 font-bold">➔</span>
 
                             {/* Pill 4 */}
-                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--emerald)]/30 transition-all shrink-0">
-                                <MapIcon size={11} className="text-[var(--emerald)]" />
-                                <span className="text-[9px] font-black uppercase tracking-tight">04. Roadmap</span>
+                            <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-amber-500/25 transition-all shrink-0">
+                                <MapIcon size={12} className="text-amber-400" />
+                                <span className="text-[9px] font-black uppercase tracking-wider text-amber-400">04. Roadmap</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Main Flat 2.0 Ingestion Area */}
-                    <div className="rounded-[2rem] bg-[var(--bg-2)] border border-[var(--border)] shadow-xl overflow-hidden mb-6">
+                    {/* Main Flat 2.0 Ingestion Area - $45,200 Double-Elevated Glassmorphism Card */}
+                    <div className="rounded-[2.5rem] bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_24px_80px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.05)] overflow-hidden">
                         
                         {/* Tab Headers */}
-                        <div className="flex bg-[var(--bg-3)]/30 border-b border-[var(--border)] p-1.5">
+                        <div className="flex bg-white/[0.02] border-b border-white/5 p-2 gap-2">
                             <button
                                 onClick={() => setActiveTab('upload')}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-xl",
+                                    "flex-1 flex items-center justify-center gap-2.5 py-4 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-2xl",
                                     activeTab === 'upload' 
-                                        ? 'bg-[var(--bg-2)] border border-[var(--border)] text-[var(--foreground)] shadow-sm' 
-                                        : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                        ? 'bg-white/10 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/5' 
+                                        : 'text-[var(--foreground-muted)] hover:text-white hover:bg-white/[0.02]'
                                 )}
                             >
-                                <Upload size={13} strokeWidth={2.5} />
+                                <Upload size={14} strokeWidth={2.5} />
                                 Upload Study File
                             </button>
                             <button
                                 onClick={() => setActiveTab('text')}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-xl",
+                                    "flex-1 flex items-center justify-center gap-2.5 py-4 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-2xl",
                                     activeTab === 'text' 
-                                        ? 'bg-[var(--bg-2)] border border-[var(--border)] text-[var(--foreground)] shadow-sm' 
-                                        : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                        ? 'bg-white/10 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/5' 
+                                        : 'text-[var(--foreground-muted)] hover:text-white hover:bg-white/[0.02]'
                                 )}
                             >
-                                <Type size={13} strokeWidth={2.5} />
+                                <Type size={14} strokeWidth={2.5} />
                                 Paste Raw Text
                             </button>
                         </div>
 
                         {/* Workspace body */}
-                        <div className="p-6 sm:p-10 space-y-8 relative">
+                        <div className="p-8 sm:p-12 space-y-8 relative">
                             
+                            {/* Hidden file input for web, fully controlled by fileInputRef */}
+                            <input 
+                                ref={fileInputRef}
+                                type="file" 
+                                multiple 
+                                className="hidden" 
+                                onChange={handleFileSelect} 
+                                accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" 
+                            />
+
                             {/* File Upload Ingestion Area */}
                             {activeTab === 'upload' ? (
-                                <div className="space-y-4">
-                                    <label 
+                                <div className="space-y-6">
+                                    <div 
                                         onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
                                         onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
                                         onDragOver={(e) => { e.preventDefault(); }}
                                         onDrop={handleDrop}
                                         onClick={handleUploadClick}
-                                        className="block cursor-pointer group"
-                                    >
-                                        <div 
-                                            className={cn(
-                                                "py-12 px-6 flex flex-col items-center justify-center text-center transition-all duration-350 rounded-2xl border border-dashed border-[var(--border)]",
-                                                dragActive ? "bg-[var(--blue-dim)] border-[var(--blue)]/60 scale-[0.99]" : "bg-[var(--bg-3)]/20 hover:bg-[var(--bg-3)]/30"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 bg-[var(--bg-3)] border border-[var(--border)]",
-                                                dragActive ? "text-[var(--blue)] scale-110" : "text-[var(--blue)]"
-                                            )}>
-                                                <Upload className="w-5 h-5" strokeWidth={2} />
-                                            </div>
-                                            <h4 className="text-sm font-black text-[var(--foreground)]">Drag & drop your study materials or click to browse</h4>
-                                            <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold mt-1.5">Supports PDF, PPTX, DOCX, TXT, or Images</p>
-                                        </div>
-                                        {!isDesktop && (
-                                            <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
+                                        className={cn(
+                                            "py-16 px-6 flex flex-col items-center justify-center text-center transition-all duration-350 rounded-3xl border border-dashed cursor-pointer relative overflow-hidden group select-none",
+                                            dragActive 
+                                                ? "bg-white/[0.04] border-white/30 scale-[0.99] shadow-inner" 
+                                                : "bg-white/[0.01] border-white/10 hover:bg-white/[0.03] hover:border-white/20"
                                         )}
-                                    </label>
+                                    >
+                                        <div className={cn(
+                                            "w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 bg-white/5 border border-white/5 shadow-lg group-hover:scale-110 group-hover:bg-white/10 group-hover:border-white/10",
+                                            dragActive ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.2)]" : "text-white"
+                                        )}>
+                                            <Upload className="w-6 h-6" strokeWidth={2} />
+                                        </div>
+                                        <h4 className="text-sm font-black text-white tracking-wide">Drag & drop your notes here, or click to browse</h4>
+                                        <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-[0.15em] font-bold mt-2">Supports PDF, PPTX, DOCX, TXT, or Images</p>
+                                        
+                                        {/* Hover Highlight Ring */}
+                                        <div className="absolute inset-0 border border-white/0 group-hover:border-white/5 rounded-3xl pointer-events-none transition-all duration-300" />
+                                    </div>
                                     
-                                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)] opacity-60">No notes handy? Try a demo:</span>
+                                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)] opacity-60">No materials handy? Try a demo:</span>
                                         <button 
                                             onClick={() => loadDemo('mitosis')}
-                                            className="px-3 py-1.5 rounded-xl bg-[var(--bg-3)]/60 hover:bg-[var(--bg-3)] border border-[var(--border)] text-[10px] font-bold text-[var(--foreground)] hover:border-[var(--blue)]/30 transition-all cursor-pointer"
+                                            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer shadow-md hover-scale-md active:scale-95"
                                         >
                                             Biology (Mitosis)
                                         </button>
                                         <button 
                                             onClick={() => loadDemo('contract')}
-                                            className="px-3 py-1.5 rounded-xl bg-[var(--bg-3)]/60 hover:bg-[var(--bg-3)] border border-[var(--border)] text-[10px] font-bold text-[var(--foreground)] hover:border-[var(--blue)]/30 transition-all cursor-pointer"
+                                            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer shadow-md hover-scale-md active:scale-95"
                                         >
                                             Contract Law
                                         </button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="space-y-3 animate-in fade-in duration-300">
+                                <div className="space-y-4 animate-in fade-in duration-300">
                                     <div className="flex items-center justify-between">
                                         <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Paste Lecture Notes</label>
-                                        <span className={`text-[10px] font-mono font-black tracking-tighter ${inputText.length > MAX_CHARS * 0.8 ? 'text-[var(--crimson)]' : 'text-[var(--foreground-muted)]/40'}`}>
+                                        <span className={`text-[10px] font-mono font-black tracking-tighter ${inputText.length > MAX_CHARS * 0.8 ? 'text-red-400' : 'text-[var(--foreground-muted)]/40'}`}>
                                             {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
                                         </span>
                                     </div>
-                                    <textarea
-                                        value={inputText}
-                                        onChange={(e) => {
-                                            if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
-                                        }}
-                                        placeholder="Paste syllabus, textbook pages, raw lecture text, or transcripts here..."
-                                        className="w-full h-48 p-5 rounded-2xl bg-[var(--bg-3)]/20 border border-[var(--border)] text-xs leading-relaxed outline-none font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 resize-none custom-scrollbar transition-all"
-                                        disabled={isQueueProcessing}
-                                    />
+                                    <div className="relative group rounded-3xl overflow-hidden border border-white/5 focus-within:border-white/20 transition-all bg-white/[0.01]">
+                                        <textarea
+                                            value={inputText}
+                                            onChange={(e) => {
+                                                if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
+                                            }}
+                                            placeholder="Paste your syllabus, textbook pages, raw lecture text, or class transcripts here..."
+                                            className="w-full h-52 p-6 bg-transparent text-xs leading-relaxed outline-none font-bold text-white placeholder:text-[var(--foreground-muted)]/35 resize-none custom-scrollbar transition-all"
+                                            disabled={isQueueProcessing}
+                                        />
+                                    </div>
                                 </div>
                             )}
 
@@ -611,112 +637,120 @@ function CreatorStudio() {
                                         className="space-y-8 overflow-hidden"
                                     >
                                         {/* Title & Stats */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                                            <div className="flex flex-col justify-center space-y-2.5">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                                            <div className="flex flex-col space-y-2.5">
                                                 <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
                                                     Sprint Name
                                                 </label>
-                                                <input 
-                                                    type="text"
-                                                    value={missionTitle}
-                                                    onChange={(e) => {
-                                                        setMissionTitle(e.target.value);
-                                                        setUserEditedTitle(true);
-                                                    }}
-                                                    placeholder="e.g., 'Bio-Chem Prep' or 'Law 101 Exam'"
-                                                    className="w-full bg-[var(--bg-3)]/20 border border-[var(--border)] rounded-xl px-4 py-3.5 text-xs font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/30 focus:border-[var(--blue)]/40 outline-none transition-all"
-                                                />
-                                            </div>
-                                            <div className="p-5 rounded-xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col justify-center">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Calculated Cost</span>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <Zap size={14} className="text-[var(--blue)] fill-current" />
-                                                    <span className="text-base font-black italic tracking-tight leading-none uppercase">10 CREDITS</span>
+                                                <div className="relative rounded-2xl border border-white/5 focus-within:border-white/20 transition-all bg-white/[0.01] overflow-hidden">
+                                                    <input 
+                                                        type="text"
+                                                        value={missionTitle}
+                                                        onChange={(e) => {
+                                                            setMissionTitle(e.target.value);
+                                                            setUserEditedTitle(true);
+                                                        }}
+                                                        placeholder="e.g., 'Bio-Chem Prep' or 'Law 101 Exam'"
+                                                        className="w-full bg-transparent px-5 py-4 text-xs font-bold text-white placeholder:text-[var(--foreground-muted)]/30 outline-none transition-all"
+                                                    />
                                                 </div>
-                                                <p className="text-[10px] text-[var(--foreground-muted)] mt-1.5 font-bold">You currently have {user.credits} credits.</p>
+                                            </div>
+                                            <div className="p-6 rounded-2xl bg-white/[0.01] border border-white/5 flex flex-col justify-center shadow-lg relative">
+                                                <div className="absolute top-0 right-0 p-3 opacity-10">
+                                                    <Zap size={24} className="text-[#F59E0B]" />
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Calculated Cost</span>
+                                                <div className="flex items-center gap-2 mt-1.5">
+                                                    <Zap size={14} className="text-emerald-400 fill-current" />
+                                                    <span className="text-lg font-black italic tracking-tight leading-none uppercase text-white">10 CREDITS</span>
+                                                </div>
+                                                <p className="text-[10px] text-[var(--foreground-muted)] mt-2 font-bold">You currently have {user.credits} credits.</p>
                                             </div>
                                         </div>
 
                                         {/* Ingestion Progress Queue */}
                                         {queue.length > 0 && (
-                                            <div className="space-y-4 pt-6 border-t border-[var(--border)] w-full">
+                                            <div className="space-y-4 pt-6 border-t border-white/5 w-full">
                                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-2">
                                                     Ingestion Queue
                                                 </h3>
-                                                {queue.map((item) => (
-                                                    <div 
-                                                        key={item.id} 
-                                                        className="p-5 rounded-2xl bg-[var(--bg-3)]/20 border border-[var(--border)] flex flex-col gap-4 relative overflow-hidden animate-in fade-in duration-300 w-full"
-                                                    >
-                                                        <div className="flex items-center justify-between gap-4 w-full">
-                                                            <div className="flex items-center gap-3 min-w-0">
-                                                                <div className="w-10 h-10 rounded-xl bg-[var(--bg-3)] border border-[var(--border)] flex items-center justify-center text-[var(--foreground-muted)] shrink-0">
-                                                                    <FileText size={18} />
+                                                <div className="grid gap-3 w-full">
+                                                    {queue.map((item) => (
+                                                        <div 
+                                                            key={item.id} 
+                                                            className="p-5 rounded-2xl bg-white/[0.01] border border-white/5 flex flex-col gap-4 relative overflow-hidden animate-in fade-in duration-300 w-full"
+                                                        >
+                                                            <div className="flex items-center justify-between gap-4 w-full">
+                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white shrink-0">
+                                                                        <FileText size={18} />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <h4 className="text-xs font-black text-white truncate">{item.name}</h4>
+                                                                        {item.file && (
+                                                                            <p className="text-[9px] text-[var(--foreground-muted)] font-mono font-bold uppercase">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="min-w-0">
-                                                                    <h4 className="text-xs font-black text-[var(--foreground)] truncate">{item.name}</h4>
-                                                                    {item.file && (
-                                                                        <p className="text-[10px] text-[var(--foreground-muted)] font-bold">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                                
+                                                                <div className="shrink-0">
+                                                                    {item.status === 'success' && (
+                                                                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase text-emerald-400">Ready</span>
+                                                                    )}
+                                                                    {item.status === 'error' && (
+                                                                        <span className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-[9px] font-black uppercase text-red-400">Error</span>
+                                                                    )}
+                                                                    {(item.status === 'reading' || item.status === 'learning') && (
+                                                                        <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase text-white flex items-center gap-1.5">
+                                                                            <Loader2 size={10} className="animate-spin text-white" />
+                                                                            <span>Ingesting</span>
+                                                                        </span>
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            
-                                                            <div className="shrink-0">
-                                                                {item.status === 'success' && (
-                                                                    <span className="px-2.5 py-1 rounded-full bg-[var(--emerald)]/10 border border-[var(--emerald)]/20 text-[9px] font-black uppercase text-[var(--emerald)]">Ready</span>
-                                                                )}
-                                                                {item.status === 'error' && (
-                                                                    <span className="px-2.5 py-1 rounded-full bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 text-[9px] font-black uppercase text-[var(--crimson)]">Error</span>
-                                                                )}
-                                                                {(item.status === 'reading' || item.status === 'learning') && (
-                                                                    <span className="px-2.5 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[9px] font-black uppercase text-[var(--blue-text)] flex items-center gap-1.5">
-                                                                        <Loader2 size={10} className="animate-spin" />
-                                                                        <span>Ingesting</span>
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
 
-                                                        {/* Progress / Status Description */}
-                                                        {item.status === 'error' ? (
-                                                            <p className="text-[10px] font-bold text-[var(--crimson)] uppercase tracking-wide">
-                                                                {item.errorMessage || "Failed to process document."}
-                                                            </p>
-                                                        ) : (
-                                                            <div className="space-y-2">
-                                                                <div className="flex items-center justify-between gap-4">
-                                                                    <p className="text-[10px] font-black text-[var(--foreground-muted)]">
-                                                                        {customStatusMsg[item.id] || (item.status === 'success' ? "All notes successfully absorbed" : loadingPhrases[filePhraseIndex[item.id] || 0])}
-                                                                    </p>
-                                                                    <span className="text-[10px] font-mono font-black text-[var(--blue-text)]">
-                                                                        {item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%
-                                                                    </span>
+                                                            {/* Progress / Status Description */}
+                                                            {item.status === 'error' ? (
+                                                                <p className="text-[10px] font-bold text-red-400 uppercase tracking-wide flex items-center gap-1.5">
+                                                                    <AlertCircle size={12} />
+                                                                    <span>{item.errorMessage || "Failed to process document."}</span>
+                                                                </p>
+                                                            ) : (
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center justify-between gap-4">
+                                                                        <p className="text-[10px] font-bold text-[var(--foreground-muted)]">
+                                                                            {customStatusMsg[item.id] || (item.status === 'success' ? "All notes successfully absorbed" : loadingPhrases[filePhraseIndex[item.id] || 0])}
+                                                                        </p>
+                                                                        <span className="text-[10px] font-mono font-black text-white">
+                                                                            {item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden border border-white/5">
+                                                                        <motion.div 
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: `${item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%` }}
+                                                                            className="h-full bg-white rounded-full shadow-[0_0_10px_white]"
+                                                                            transition={{ ease: "easeOut" }}
+                                                                        />
+                                                                    </div>
                                                                 </div>
-                                                                <div className="w-full bg-[var(--bg-3)] rounded-full h-2 overflow-hidden border border-[var(--border)]">
-                                                                    <motion.div 
-                                                                        initial={{ width: 0 }}
-                                                                        animate={{ width: `${item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%` }}
-                                                                        className="h-full bg-[var(--blue)] rounded-full"
-                                                                        transition={{ ease: "easeOut" }}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))}
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
 
                                         {/* Errors */}
                                         {setupError && (
-                                            <div className="flex items-center justify-between p-4 rounded-[20px] bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 animate-in shake duration-500">
-                                                <div className="flex items-center gap-2.5 text-[11px] font-black text-[var(--crimson)] uppercase tracking-wider">
+                                            <div className="flex items-center justify-between p-5 rounded-2xl bg-red-500/10 border border-red-500/20 animate-in shake duration-500">
+                                                <div className="flex items-center gap-2.5 text-[11px] font-black text-red-400 uppercase tracking-wider">
                                                     <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
                                                     <span className="leading-snug">{setupError}</span>
                                                 </div>
                                                 <button
                                                     onClick={() => { setSetupError(null); }}
-                                                    className="px-3 py-1.5 bg-[var(--crimson)]/20 text-[var(--crimson)] text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-[var(--crimson)]/30 transition-colors cursor-pointer shrink-0 ml-2"
+                                                    className="px-3 py-1.5 bg-red-500/20 text-red-400 text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-red-500/30 transition-colors cursor-pointer shrink-0 ml-2"
                                                 >
                                                     Dismiss
                                                 </button>
@@ -724,11 +758,11 @@ function CreatorStudio() {
                                         )}
 
                                         {/* Trigger buttons */}
-                                        <div className="flex gap-3 pt-2">
+                                        <div className="flex gap-4 pt-2">
                                             {inputText.trim().length > 0 && (
                                                 <button
                                                     onClick={resetSelection}
-                                                    className="px-6 py-4 border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--bg-3)]/60 transition-all cursor-pointer"
+                                                    className="px-8 py-5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-white hover:bg-white/5 transition-all cursor-pointer"
                                                 >
                                                     Clear All
                                                 </button>
@@ -739,12 +773,12 @@ function CreatorStudio() {
                                                 onMouseLeave={handleMouseLeave}
                                                 disabled={!hasSuccess || isQueueProcessing}
                                                 className={cn(
-                                                    "flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
+                                                    "flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl cursor-pointer",
                                                     !hasSuccess || isQueueProcessing
-                                                        ? 'opacity-50 cursor-not-allowed bg-[var(--bg-3)]/80 border border-[var(--border)] text-[var(--foreground-muted)]/40' 
+                                                        ? 'opacity-40 cursor-not-allowed bg-white/5 border border-white/5 text-white/20 shadow-none' 
                                                         : isHesitating
-                                                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-[0_0_25px_rgba(245,158,11,0.45)] scale-[1.01] border-orange-400'
-                                                            : 'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:scale-[0.98]'
+                                                            ? 'bg-gradient-to-r from-emerald-500 to-indigo-500 text-black shadow-[0_0_35px_rgba(16,185,129,0.35)] scale-[1.01] border border-white/10'
+                                                            : 'bg-white text-black hover:bg-white/95 active:scale-[0.98]'
                                                 )}
                                             >
                                                 <Zap size={16} strokeWidth={2.5} className={hasSuccess && !isQueueProcessing ? "animate-pulse" : ""} />

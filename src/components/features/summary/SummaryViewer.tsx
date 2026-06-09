@@ -14,7 +14,8 @@ import {
     Download, 
     CheckCircle2,
     ArrowRight,
-    Loader2
+    Loader2,
+    Lock
 } from "lucide-react";
 import { exportToPDF } from "@/lib/pdf-bridge";
 import { downloadSummaryOffline } from "@/lib/offline-download";
@@ -26,47 +27,60 @@ interface SummaryViewerProps {
 }
 
 function SummaryCheckpoint({ block, onCorrect }: { block: any; onCorrect: () => void }) {
-    const [isAnswered, setIsAnswered] = useState(false);
-    const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    // Track clicked choices and whether the correct one was hit
+    const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+    const [isPassed, setIsPassed] = useState(false);
 
     const handleAnswer = (idx: number) => {
-        if (isAnswered) return;
-        setSelectedOption(idx);
-        setIsAnswered(true);
-        if (idx === block.correctIndex) onCorrect();
+        if (isPassed || selectedIndices.includes(idx)) return;
+        
+        setSelectedIndices(prev => [...prev, idx]);
+        
+        if (idx === block.correctIndex) {
+            setIsPassed(true);
+            onCorrect();
+        }
     };
 
     return (
         <div className="mt-8 p-8 rounded-[32px] bg-white/[0.03] border border-white/5 shadow-2xl animate-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center gap-2 mb-6">
                 <HelpCircle size={14} className="text-[#F59E0B]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Knowledge Check</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Professor's Spot Check</span>
             </div>
             <p className="text-base font-bold mb-6 leading-relaxed">{block.question}</p>
             <div className="grid gap-3">
-                {block.options.map((opt: string, i: number) => (
-                    <button
-                        key={i}
-                        onClick={() => handleAnswer(i)}
-                        disabled={isAnswered}
-                        className={cn(
-                            "w-full p-5 rounded-2xl text-left text-sm font-medium transition-all border",
-                            isAnswered 
-                                ? i === block.correctIndex 
-                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                                    : selectedOption === i 
-                                        ? "bg-red-500/10 border-red-500/20 text-red-400" 
-                                        : "bg-white/5 border-white/5 opacity-30"
-                                : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
-                        )}
-                    >
-                        <div className="flex items-center justify-between">
+                {block.options.map((opt: string, i: number) => {
+                    const isSelected = selectedIndices.includes(i);
+                    const isCorrect = i === block.correctIndex;
+                    const showFeedback = isSelected || (isPassed && isCorrect);
+                    
+                    return (
+                        <button
+                            key={i}
+                            onClick={() => handleAnswer(i)}
+                            disabled={isPassed || isSelected}
+                            className={cn(
+                                "w-full p-5 rounded-2xl text-left text-sm font-medium transition-all border flex items-center justify-between",
+                                showFeedback
+                                    ? isCorrect
+                                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 font-bold shadow-[0_8px_32px_rgba(16,185,129,0.1)]"
+                                        : "bg-red-500/10 border-red-500/20 text-red-400"
+                                    : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+                            )}
+                        >
                             <span>{opt}</span>
-                            {isAnswered && i === block.correctIndex && <CheckCircle2 size={16} />}
-                        </div>
-                    </button>
-                ))}
+                            {showFeedback && isCorrect && <CheckCircle2 size={16} className="text-emerald-500 shrink-0 ml-2" />}
+                            {showFeedback && !isCorrect && <span className="text-red-500 font-black text-xs shrink-0 ml-2">✗</span>}
+                        </button>
+                    );
+                })}
             </div>
+            {selectedIndices.length > 0 && !isPassed && (
+                <p className="mt-4 text-xs text-red-400/80 italic animate-pulse">
+                    Ah, not quite! Try another option to find the key concept.
+                </p>
+            )}
         </div>
     );
 }
@@ -128,12 +142,30 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
 
     const processedChapters = useMemo(() => {
         if (!data) return [];
-        // Completely strip out [KNOWLEDGE_CHECK] and its trailing JSON block from the data before splitting
-        const cleanData = data.replace(/\[KNOWLEDGE_CHECK\][\s\S]*?(\n\n|\n#|$)/g, "\n\n");
-        const rawSections = cleanData.split(/\n## /g);
+        
+        // We split by \n## to divide into major sections/chapters
+        const rawSections = data.split(/\n## /g);
+        
         return rawSections.map((s, i) => {
-            const cleanText = i > 0 ? "## " + s : s;
-            return { text: cleanText, checkpoint: null };
+            const sectionText = i > 0 ? "## " + s : s;
+            let checkpoint = null;
+            let text = sectionText;
+            
+            // Extract [KNOWLEDGE_CHECK]
+            const match = sectionText.match(/\[KNOWLEDGE_CHECK\]\s*(\{[\s\S]*?\})/);
+            if (match) {
+                try {
+                    checkpoint = JSON.parse(match[1]);
+                    text = sectionText.replace(/\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\}/, "").trim();
+                } catch (e) {
+                    console.error("Failed to parse knowledge check JSON:", e);
+                }
+            }
+            
+            // Clean up any remaining "Checking Understanding" headers
+            text = text.replace(/([#*\s_]*)(Checking\s+Understanding|CHECKINGUNDERSTANDING|CheckingUnderstanding|checking\s+understanding)([#*\s_:]*)(\n|$)/gi, "\n");
+            
+            return { text, checkpoint };
         });
     }, [data]);
 
@@ -168,6 +200,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     if (processedChapters.length === 0) return null;
 
     const currentChapter = processedChapters[currentSlide];
+    const isChapterLocked = currentChapter.checkpoint && !checkpointPassed;
 
     return (
         <div className="min-h-screen w-full flex flex-col items-center bg-transparent">
@@ -266,22 +299,44 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                         {currentSlide < processedChapters.length - 1 ? (
                             <button 
                                 onClick={() => {
+                                    if (isChapterLocked) {
+                                        addToast("Solve the Professor's Spot Check to proceed!", "error");
+                                        return;
+                                    }
                                     setCurrentSlide(prev => prev + 1);
                                     setCheckpointPassed(false);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className="group flex items-center gap-4 bg-[var(--accent)] text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-amber-500/10"
+                                disabled={isChapterLocked}
+                                className={cn(
+                                    "group flex items-center gap-4 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl",
+                                    isChapterLocked 
+                                        ? "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed shadow-none" 
+                                        : "bg-[var(--accent)] text-black hover-scale-lg active:scale-95 shadow-amber-500/10"
+                                )}
                             >
-                                <span>Proceed</span>
-                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                <span>{isChapterLocked ? "Locked" : "Proceed"}</span>
+                                {isChapterLocked ? <Lock size={14} /> : <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
                             </button>
                         ) : (
                             <button 
-                                onClick={handleFinish}
-                                className="group flex items-center gap-4 bg-emerald-500 text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-emerald-500/10"
+                                onClick={() => {
+                                    if (isChapterLocked) {
+                                        addToast("Solve the Professor's Spot Check to proceed!", "error");
+                                        return;
+                                    }
+                                    handleFinish();
+                                }}
+                                disabled={isChapterLocked}
+                                className={cn(
+                                    "group flex items-center gap-4 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl",
+                                    isChapterLocked 
+                                        ? "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed shadow-none" 
+                                        : "bg-emerald-500 text-black hover-scale-lg active:scale-95 shadow-emerald-500/10"
+                                )}
                             >
-                                <span>Finish Summary</span>
-                                <CheckCircle2 size={16} />
+                                <span>{isChapterLocked ? "Locked" : "Finish Summary"}</span>
+                                {isChapterLocked ? <Lock size={14} /> : <CheckCircle2 size={16} />}
                             </button>
                         )}
                     </div>
@@ -387,6 +442,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                         }
                         #summary-export-container tr:nth-child(even) {
                             background-color: rgba(242, 237, 228, 0.02) !important;
+                            color: rgba(242, 237, 228, 0.85) !important;
                         }
                     `}} />
                     <div className="mb-20 pb-10 border-b border-white/10">

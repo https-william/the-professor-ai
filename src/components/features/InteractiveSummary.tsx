@@ -1,34 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Zap } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-import { CheckCircle2, Share2, ArrowRight, Download } from "lucide-react";
+import { 
+    Zap, 
+    CheckCircle2, 
+    Share2, 
+    ArrowRight, 
+    Download, 
+    Lock, 
+    HelpCircle 
+} from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-const KnowledgeCheck = ({ data }: { data: any }) => {
-    const [selected, setSelected] = useState<number | null>(null);
-    const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+interface KnowledgeCheckProps {
+    data: any;
+    onCorrect: () => void;
+}
+
+const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
+    const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+    const [isPassed, setIsPassed] = useState(false);
     const { addToast } = useToasts();
 
     const handleSelect = (idx: number) => {
-        if (selected !== null) return;
-        setSelected(idx);
+        if (isPassed || selectedIndices.includes(idx)) return;
+        
+        setSelectedIndices(prev => [...prev, idx]);
         const correct = idx === data.correctIndex;
-        setIsCorrect(correct);
+        
         if (correct) {
+            setIsPassed(true);
             addToast("Spot Check Mastered!", "success");
+            onCorrect();
         }
     };
 
     return (
-        <div className="p-6 md:p-8 rounded-[2.5rem] bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto">
+        <div className="p-6 md:p-8 rounded-[2.5rem] bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-8 animate-in slide-in-from-bottom-4 duration-500">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Zap size={40} className="text-[var(--accent)]" />
             </div>
@@ -44,43 +55,59 @@ const KnowledgeCheck = ({ data }: { data: any }) => {
                 </h5>
 
                 <div className="grid grid-cols-1 gap-3">
-                    {data.options.map((opt: string, i: number) => (
-                        <button
-                            key={i}
-                            onClick={() => handleSelect(i)}
-                            disabled={selected !== null}
-                            className={cn(
-                                "w-full p-5 text-left text-[11px] font-bold rounded-2xl transition-all border flex items-center gap-4 group/opt relative overflow-hidden",
-                                selected === i 
-                                    ? (i === data.correctIndex 
-                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_8px_32px_rgba(16,185,129,0.1)]" 
-                                        : "bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_8px_32px_rgba(239,68,68,0.1)]")
-                                    : (selected !== null && i === data.correctIndex
-                                        ? "bg-emerald-500/5 text-emerald-400/40 border-emerald-500/10"
-                                        : "bg-[var(--background-secondary)] border-white/5 text-[var(--foreground-muted)] hover:bg-[var(--background)] hover:border-[var(--accent)]/30 hover:text-[var(--foreground)] hover:shadow-xl shadow-md")
-                            )}
-                        >
-                            <div className={cn(
-                                "w-7 h-7 rounded-xl flex items-center justify-center border text-[10px] shrink-0 font-black transition-all",
-                                selected === i && i === data.correctIndex ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]" :
-                                selected === i ? "bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]" :
-                                "bg-white/5 border-white/10 group-hover/opt:border-[var(--accent)]/30"
-                            )}>
-                                {String.fromCharCode(65 + i)}
-                            </div>
-                            <span className="relative z-10">{opt}</span>
-                            
-                            {/* Inner Glow Hover */}
-                            {!selected && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent)]/5 to-transparent opacity-0 group-hover/opt:opacity-100 transition-opacity pointer-events-none" />
-                            )}
-                        </button>
-                    ))}
+                    {data.options.map((opt: string, i: number) => {
+                        const isSelected = selectedIndices.includes(i);
+                        const isCorrect = i === data.correctIndex;
+                        const showFeedback = isSelected || (isPassed && isCorrect);
+
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => handleSelect(i)}
+                                disabled={isPassed || isSelected}
+                                className={cn(
+                                    "w-full p-5 text-left text-[11px] font-bold rounded-2xl transition-all border flex items-center gap-4 group/opt relative overflow-hidden",
+                                    showFeedback 
+                                        ? isCorrect 
+                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_8px_32px_rgba(16,185,129,0.1)]" 
+                                            : "bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_8px_32px_rgba(239,68,68,0.1)]"
+                                        : "bg-[var(--background-secondary)] border-white/5 text-[var(--foreground-muted)] hover:bg-[var(--background)] hover:border-[var(--accent)]/30 hover:text-[var(--foreground)] hover:shadow-xl shadow-md"
+                                )}
+                            >
+                                <div className={cn(
+                                    "w-7 h-7 rounded-xl flex items-center justify-center border text-[10px] shrink-0 font-black transition-all",
+                                    showFeedback && isCorrect ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]" :
+                                    isSelected && !isCorrect ? "bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]" :
+                                    "bg-white/5 border-white/10 group-hover/opt:border-[var(--accent)]/30"
+                                )}>
+                                    {String.fromCharCode(65 + i)}
+                                </div>
+                                <span className="relative z-10">{opt}</span>
+                                
+                                {/* Inner Glow Hover */}
+                                {!isSelected && !isPassed && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent)]/5 to-transparent opacity-0 group-hover/opt:opacity-100 transition-opacity pointer-events-none" />
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
+                {selectedIndices.length > 0 && !isPassed && (
+                    <p className="mt-4 text-[10px] text-red-400/80 italic animate-pulse">
+                        Ah, not quite! Pick another option to sync your understanding.
+                    </p>
+                )}
             </div>
         </div>
     );
 };
+
+interface ContentBlock {
+    type: "markdown" | "checkpoint";
+    content: string;
+    checkpointData?: any;
+    id: string;
+}
 
 export const InteractiveSummary = ({ 
     rawText = "",
@@ -93,8 +120,8 @@ export const InteractiveSummary = ({
 }: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; isStreaming?: boolean; onFinish?: () => void; onDownloadPDF?: () => void }) => {
     const [isRefining, setIsRefining] = useState(autoReveal || isStreaming);
     const [progress, setProgress] = useState((autoReveal || isStreaming) ? 100 : 0);
+    const [completedCheckpoints, setCompletedCheckpoints] = useState<string[]>([]);
     const { addToast } = useToasts();
-
 
     const handleRefine = () => {
         setIsRefining(true);
@@ -115,37 +142,75 @@ export const InteractiveSummary = ({
         addToast("Section link copied to clipboard!", "success");
     };
 
-    // Parser for [KNOWLEDGE_CHECK]
-    const renderContent = (text: string) => {
-        // Completely strip out [KNOWLEDGE_CHECK] and its trailing JSON block from the text before rendering
-        const cleanData = text.replace(/\[KNOWLEDGE_CHECK\][\s\S]*?(\n\n|\n#|$)/g, "\n\n");
-        const parts = [cleanData];
+    // Segment refined text into alternating markdown and knowledge check blocks
+    const parsedBlocks = useMemo(() => {
+        if (!refinedText) return [];
+        const blocks: ContentBlock[] = [];
+        const checkRegex = /\[KNOWLEDGE_CHECK\]\s*(\{[\s\S]*?\})/g;
         
-        return parts.map((part, index) => {
-            const cleanPart = part
-                .replace(/[ \t]+:[ \t]*/g, ': ')
-                .replace(/:[ \t]+/g, ': ');
+        let lastIndex = 0;
+        let match;
+        let blockIndex = 0;
+        
+        while ((match = checkRegex.exec(refinedText)) !== null) {
+            const markdownBefore = refinedText.slice(lastIndex, match.index);
+            if (markdownBefore.trim()) {
+                blocks.push({
+                    type: "markdown",
+                    content: markdownBefore,
+                    id: `md-${blockIndex++}`
+                });
+            }
+            
+            try {
+                const checkpointData = JSON.parse(match[1]);
+                blocks.push({
+                    type: "checkpoint",
+                    content: match[0],
+                    checkpointData,
+                    id: `check-${blockIndex++}`
+                });
+            } catch (e) {
+                console.error("Failed to parse inline knowledge check JSON:", e);
+            }
+            
+            lastIndex = checkRegex.lastIndex;
+        }
+        
+        const remainingMarkdown = refinedText.slice(lastIndex);
+        if (remainingMarkdown.trim()) {
+            blocks.push({
+                type: "markdown",
+                content: remainingMarkdown,
+                id: `md-${blockIndex++}`
+            });
+        }
+        
+        return blocks;
+    }, [refinedText]);
 
-            return (
-                <div key={index} className="prose prose-invert prose-sm md:max-w-4xl md:mx-auto text-[16px] md:text-[18px] font-medium leading-relaxed text-[var(--foreground)]">
-                    <ReactMarkdown 
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                            h1: ({node, ...props}) => <h1 className="text-3xl md:text-5xl font-black mt-12 mb-6 text-[var(--foreground)] tracking-tight border-b border-[var(--border)] pb-2" {...props} />,
-                            h2: ({node, ...props}) => <h2 className="text-2xl md:text-4xl font-black mt-10 mb-5 text-[var(--foreground)] tracking-tight" {...props} />,
-                            h3: ({node, ...props}) => <h3 className="text-xl md:text-3xl font-black mt-8 mb-4 text-[var(--foreground)] tracking-tight" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-6 opacity-90" {...props} />,
-                            strong: ({node, ...props}) => <strong className="font-black text-[var(--accent)]" {...props} />,
-                            ul: ({node, ...props}) => <ul className="mb-8 space-y-3" {...props} />,
-                            li: ({node, ...props}) => <li className="flex items-start gap-3" {...props} />,
-                        }}
-                    >
-                        {cleanPart}
-                    </ReactMarkdown>
-                </div>
-            );
-        });
-    };
+    // Determine blocks to display based on progressive unlocking
+    const visibleBlocks = useMemo(() => {
+        if (isStreaming) return parsedBlocks; // Show all blocks during streaming
+
+        const visible: ContentBlock[] = [];
+        for (const block of parsedBlocks) {
+            visible.push(block);
+            if (block.type === "checkpoint" && !completedCheckpoints.includes(block.id)) {
+                break; // Lock further rendering until this checkpoint is cleared
+            }
+        }
+        return visible;
+    }, [parsedBlocks, completedCheckpoints, isStreaming]);
+
+    const allCheckpoints = useMemo(() => {
+        return parsedBlocks.filter(b => b.type === "checkpoint");
+    }, [parsedBlocks]);
+
+    const isLocked = useMemo(() => {
+        if (isStreaming) return false;
+        return allCheckpoints.some(c => !completedCheckpoints.includes(c.id));
+    }, [allCheckpoints, completedCheckpoints, isStreaming]);
 
     return (
         <div className="relative w-full min-h-full p-4 sm:p-6 flex flex-col">
@@ -231,11 +296,28 @@ export const InteractiveSummary = ({
                                       ))}
                                    </div>
                                )}
-                                <div className="space-y-2">
-                                    <MarkdownRenderer 
-                                        content={(refinedText || "").replace(/\[KNOWLEDGE_CHECK\][\s\S]*?(\n\n|\n#|$)/g, "\n\n")} 
-                                        isStreaming={isStreaming} 
-                                    />
+                                <div className="space-y-4">
+                                    {visibleBlocks.map((block) => {
+                                        if (block.type === "markdown") {
+                                            return (
+                                                <MarkdownRenderer 
+                                                    key={block.id}
+                                                    content={block.content}
+                                                    isStreaming={isStreaming} 
+                                                />
+                                            );
+                                        } else {
+                                            return (
+                                                <KnowledgeCheck
+                                                    key={block.id}
+                                                    data={block.checkpointData}
+                                                    onCorrect={() => {
+                                                        setCompletedCheckpoints(prev => [...prev, block.id]);
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                    })}
                                 </div>
                            </motion.div>
                         )}
@@ -251,13 +333,33 @@ export const InteractiveSummary = ({
                     )}
                 </div>
 
+                {isLocked && (
+                    <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 flex items-center justify-center gap-3 mt-8 animate-pulse text-[11px] font-black uppercase tracking-wider text-[var(--foreground-muted)] select-none">
+                        <Lock size={12} className="text-[#F59E0B]" />
+                        <span>Resolve the Spot Check above to unlock more concepts</span>
+                    </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 pt-6 border-t border-[var(--border)] mt-8 pb-4">
                     {onFinish && (
                         <button
-                            onClick={onFinish}
-                            className="px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest shadow-xl hover-scale-lg active:scale-95 transition-all flex items-center justify-center gap-2 group"
+                            onClick={() => {
+                                if (isLocked) {
+                                    addToast("Complete all Professor's Spot Checks to continue!", "error");
+                                    return;
+                                }
+                                onFinish();
+                            }}
+                            disabled={isLocked}
+                            className={cn(
+                                "px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-2 group",
+                                isLocked 
+                                    ? "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed shadow-none"
+                                    : "bg-[var(--foreground)] text-[var(--background)] hover-scale-lg active:scale-95"
+                            )}
                         >
-                            Finish & Continue <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                            <span>{isLocked ? "Locked" : "Finish & Continue"}</span>
+                            {isLocked ? <Lock size={14} /> : <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
                         </button>
                     )}
                 </div>
@@ -265,4 +367,3 @@ export const InteractiveSummary = ({
         </div>
     );
 };
-
