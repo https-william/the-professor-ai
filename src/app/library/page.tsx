@@ -108,19 +108,29 @@ export default function LibraryPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [showGuestModal, setShowGuestModal] = useState(false);
 
-    // Offline auto-fallback detection
+    // Offline: gracefully switch to Offline Vault view instead of redirecting
+    // (redirecting causes an infinite loop: /library -> /library/offline -> back -> /library -> ...)
     useEffect(() => {
         if (typeof window !== "undefined") {
             if (!navigator.onLine) {
-                router.push("/library/offline");
+                setIsOfflineView(true);
             }
 
             const handleOffline = () => {
-                router.push("/library/offline");
+                setIsOfflineView(true);
+            };
+
+            const handleOnline = () => {
+                // Optionally switch back to cloud view when connection returns
+                setIsOfflineView(false);
             };
 
             window.addEventListener("offline", handleOffline);
-            return () => window.removeEventListener("offline", handleOffline);
+            window.addEventListener("online", handleOnline);
+            return () => {
+                window.removeEventListener("offline", handleOffline);
+                window.removeEventListener("online", handleOnline);
+            };
         }
     }, [router]);
 
