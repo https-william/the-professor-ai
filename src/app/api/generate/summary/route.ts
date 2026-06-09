@@ -11,6 +11,8 @@ import { canUserGenerate, deductCredits } from "@/lib/saas/guard";
 import { generateAITitle } from "@/lib/ai/titling";
 import { recordActivity } from "@/lib/xp";
 
+import { startGenerating, finishGenerating } from "@/lib/queue";
+
 const COST = 2;
 
 export async function POST(req: NextRequest) {
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
 
         const stream = new ReadableStream({
             async start(controller) {
+                startGenerating(user.id);
                 try {
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: "Distilling core concepts...", wasTruncated })}\n\n`));
 
@@ -121,6 +124,8 @@ export async function POST(req: NextRequest) {
                     console.error("Summary Stream Error:", error);
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", error: error.message })}\n\n`));
                     controller.close();
+                } finally {
+                    finishGenerating();
                 }
             }
         });

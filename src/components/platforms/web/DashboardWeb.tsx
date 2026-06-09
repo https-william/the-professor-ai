@@ -412,7 +412,7 @@ export default function DashboardWeb({
                                         <div className="flex flex-wrap items-center gap-2 mb-4">
                                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint} (Power Learner)</span>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint} (On a roll!)</span>
                                             </div>
                                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
                                                 <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
@@ -453,7 +453,7 @@ export default function DashboardWeb({
                                     <div className="flex items-center gap-2 mb-4">
                                         <Layers className="text-[var(--violet)] w-5 h-5" />
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
-                                            Learning Telemetry
+                                            Study Stats
                                         </h3>
                                     </div>
                                     <div className="space-y-4">

@@ -28,21 +28,35 @@ interface ProfessorCeremonyProps {
 export default function ProfessorCeremony({ className }: ProfessorCeremonyProps) {
     const { user } = useUser();
     
-    // Simulate queue for Free plan. Plus & Unlimited bypass queue (queuePosition = 0)
+    // Fetch real queue position for Free plan. Plus & Unlimited bypass queue (queuePosition = 0)
     const isFreePlan = user?.planStatus === "free";
-    const [queuePosition, setQueuePosition] = useState(isFreePlan ? 3 : 0);
+    const [queuePosition, setQueuePosition] = useState(isFreePlan ? 1 : 0);
     const [index, setIndex] = useState(0);
     const [secondsLeft, setSecondsLeft] = useState(15);
 
-    // Decrement queue position every 3 seconds
+    // Poll the backend queue endpoint every 3 seconds for free plan users
     useEffect(() => {
-        if (queuePosition > 0) {
-            const timer = setTimeout(() => {
-                setQueuePosition((prev) => prev - 1);
-            }, 3000);
-            return () => clearTimeout(timer);
+        if (!isFreePlan) {
+            setQueuePosition(0);
+            return;
         }
-    }, [queuePosition]);
+
+        const checkQueue = () => {
+            fetch("/api/generate/queue")
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data && typeof data.queuePosition === "number") {
+                        // If queuePosition is 1, it means they are first in line and can start generating (position 0)
+                        setQueuePosition(data.queuePosition > 1 ? data.queuePosition - 1 : 0);
+                    }
+                })
+                .catch((err) => console.error("Queue check failed:", err));
+        };
+
+        checkQueue();
+        const interval = setInterval(checkQueue, 3000);
+        return () => clearInterval(interval);
+    }, [isFreePlan]);
 
     // Decrement countdown every second
     useEffect(() => {

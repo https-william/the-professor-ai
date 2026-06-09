@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { startGenerating, finishGenerating } from "@/lib/queue";
 import { hydraChatStream, hydraGenerateStream } from "@/lib/ai/hydra";
 import { 
     buildBreakdownPrompt,
@@ -17,6 +19,10 @@ export async function POST(req: NextRequest) {
     try {
         const { packId, phaseId, sourceText } = await req.json();
         const supabase = supabaseAdmin;
+        
+        const supabaseClient = await createClient();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const userId = user?.id || "anonymous";
 
         if (!packId || !phaseId || !sourceText) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -105,6 +111,7 @@ export async function POST(req: NextRequest) {
 
         const stream = new ReadableStream({
             async start(controller) {
+                startGenerating(userId);
                 try {
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "generating", message: `Generating ${phaseId} phase...`, wasTruncated })}\n\n`));
 
@@ -176,6 +183,8 @@ export async function POST(req: NextRequest) {
                     console.error("Pack Phase Stream Error:", error);
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "error", error: error.message })}\n\n`));
                     controller.close();
+                } finally {
+                    finishGenerating();
                 }
             }
         });
