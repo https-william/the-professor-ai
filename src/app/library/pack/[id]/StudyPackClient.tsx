@@ -1501,7 +1501,7 @@ export default function StudyPackPage() {
                         </div>
 
                         {/* Immersive Content Area */}
-                        <div className="flex-1 w-full relative bg-[var(--background)] overflow-visible flex flex-col items-center">
+                        <div className="flex-1 w-full relative bg-[var(--background)] overflow-y-auto flex flex-col items-center custom-scrollbar">
                             <AnimatePresence mode="wait">
                                 {!isPerforming ? (
                                     <motion.div
@@ -1612,7 +1612,7 @@ export default function StudyPackPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[500] flex flex-col justify-between p-6 sm:p-10 bg-[#060608] text-white selection:bg-[var(--blue-dim)] overflow-hidden"
+                        className="fixed inset-0 z-[500] flex flex-col justify-between p-6 sm:p-10 bg-[#060608] text-white selection:bg-[var(--blue-dim)] overflow-y-auto custom-scrollbar"
                     >
                         {/* Story Progress Indicators */}
                         <div className="w-full max-w-xl mx-auto z-20 pt-4 flex flex-col gap-4">

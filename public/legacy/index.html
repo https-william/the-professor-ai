@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Professor AI — Legacy Workspace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050508;
+            --bg2: #0c0c16;
+            --bg3: #111120;
+            --border: #1e1e36;
+            --blue: #2563eb;
+            --blue-dim: rgba(37, 99, 235, 0.12);
+            --blue-border: rgba(37, 99, 235, 0.25);
+            --blue-light: #60a5fa;
+            --emerald: #10b981;
+            --emerald-dim: rgba(16, 185, 129, 0.1);
+            --emerald-border: rgba(16, 185, 129, 0.2);
+            --amber: #f59e0b;
+            --amber-dim: rgba(245, 158, 11, 0.1);
+            --amber-border: rgba(245, 158, 11, 0.2);
+            --text: #f8f8ff;
+            --text-muted: #8e8e9f;
+            --text-dim: rgba(248, 248, 255, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Header Navigation */
+        header {
+            width: 100%;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .logo-text {
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text);
+        }
+
+        .logo-sub {
+            color: var(--blue-light);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.03);
+        }
+
+        .nav-tab.active {
+            color: var(--text);
+            background: var(--blue-dim);
+            border-color: var(--blue-border);
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px 80px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view-panel {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .view-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards and Elements */
+        .glass-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .text-blue { color: var(--blue-light); }
+        .text-emerald { color: var(--emerald); }
+        .text-amber { color: var(--amber); }
+
+        p.description {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        /* Dashboard specific */
+        .stats-grid {
+            display: grid;
+            grid-template-cols: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-box {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        /* Ingest / Create Form */
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 16px;
+        }
+
+        textarea:focus {
+            border-color: var(--blue);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            flex: 1;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--blue);
+        }
+
+        .btn {
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            padding: 14px 24px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-blue {
+            background: var(--blue);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 9px;
+        }
+
+        /* Packs List */
+        .packs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pack-item {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .pack-item:hover {
+            border-color: var(--blue-border);
+        }
+
+        .pack-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .pack-title {
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-style: italic;
+            color: var(--text);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pack-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .pack-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* Immersive Pack Viewer */
+        .pack-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .pack-viewer-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .pack-content-panel {
+            display: none;
+        }
+
+        .pack-content-panel.active {
+            display: block;
+        }
+
+        /* Summary Tab Styles */
+        .summary-prose {
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-size: 16px;
+            line-height: 1.65;
+            color: var(--text-dim);
+            max-width: 740px;
+            margin: 0 auto;
+        }
+
+        .summary-prose h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--text);
+            margin-top: 32px;
+            margin-bottom: 12px;
+            border-left: 2px solid var(--blue);
+            padding-left: 10px;
+        }
+
+        .summary-prose p {
+            margin-bottom: 16px;
+        }
+
+        .summary-prose ul {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        .summary-prose li {
+            margin-bottom: 6px;
+        }
+
+        /* Flashcard Tab Styles */
+        .flashcard-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .card-perspective {
+            width: 100%;
+            max-width: 500px;
+            height: 320px;
+            perspective: 1000px;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            background: var(--bg2);
+            text-align: center;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background: var(--bg3);
+            border-color: var(--blue-border);
+        }
+
+        .card-text {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .card-back-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--blue-light);
+            font-style: italic;
+            max-height: 140px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+
+        .card-tip {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            width: 100%;
+            text-align: left;
+            overflow-y: auto;
+            max-height: 80px;
+        }
+
+        .card-tip-label {
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--amber);
+            margin-bottom: 2px;
+        }
+
+        .card-footer {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            opacity: 0.4;
+            margin-top: 10px;
+        }
+
+        .flashcard-actions {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 380px;
+            margin-bottom: 20px;
+        }
+
+        .flashcard-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 380px;
+            font-size: 12px;
+        }
+
+        /* Quiz Tab Styles */
+        .quiz-stage {
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .quiz-q-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 900;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+        }
+
+        .quiz-q-text {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .quiz-option {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: left;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quiz-option:hover:not(:disabled) {
+            border-color: var(--blue-border);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .quiz-option-letter {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 900;
+            background: var(--bg2);
+            color: var(--text-muted);
+        }
+
+        .quiz-option.correct {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--emerald);
+        }
+
+        .quiz-option.correct .quiz-option-letter {
+            background: var(--emerald);
+            color: var(--bg);
+            border-color: var(--emerald);
+        }
+
+        .quiz-option.incorrect {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .quiz-option.incorrect .quiz-option-letter {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+
+        .quiz-verdict {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        /* Roadmap Tab */
+        .roadmap-timeline {
+            position: relative;
+            padding-left: 24px;
+            border-left: 2px solid var(--border);
+            margin-left: 10px;
+            margin-top: 20px;
+        }
+
+        .roadmap-node {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .roadmap-node-dot {
+            position: absolute;
+            left: -31px;
+            top: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 6px;
+            background: var(--blue);
+            border: 2px solid var(--bg);
+        }
+
+        .roadmap-node-title {
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .roadmap-node-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5,5,8,0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--blue-dim);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-title {
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .loading-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            max-width: 250px;
+            line-height: 1.4;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 12px;
+                padding: 12px;
+            }
+            .nav-links {
+                width: 100%;
+                justify-content: space-around;
+            }
+            .card-perspective {
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-area">
+            <svg class="logo-svg" viewBox="0 0 816 816">
+                <path fill="#eee" d="M201 0h417q21 0 41 4l2 1a178 178 0 0 1 53 21l2 1 2 1v2l3 1-46 20-11 2-1 2-66 4H198q-21 0-41-4l-3-1-7-2-39-17-6-3v-2l15-8q21-10 44-16h3q20-5 41-4"/>
+                <path fill="#2563eb" d="m444 214 39 25 5 2-47 29-2 2-80 50c-24 14-24 14-28 25q-3 24 5 6h2l38-23 2-1 2-2 2-1 30-18h2v-2l6-2v-2l2-1-16 10-5 1v-2l-40 25-3 2-26 16-11 6-10 7-4 1v2l-11 7-5 3-5 4v7l25 16 42 26 2 1 10 7 2 1 11 6v2l8 5 5 2 13 9 39 23v2l8 5 5 3 8 5 2 1 13 8c8 6 8 6 16 9v97c0 14-6 26-1 2l-1-103-3 3-2 1-5-6-2-3-1-2-2-2-5-20v-63c0-25 6-34 1-2q21-11 44-14l4-2 23-4-3-1-11-5-18-15v-2h-2q-8-20-5-41v-94c0-6 3-11 8-5z"/>
+            </svg>
+            <div class="logo-text">The Professor <span class="logo-sub">Legacy</span></div>
+        </div>
+        <div class="nav-links">
+            <button class="nav-tab active" onclick="switchTab('dashboard')">Vault</button>
+            <button class="nav-tab" onclick="switchTab('create')">Create</button>
+            <button class="nav-tab" onclick="switchTab('library')">Library</button>
+            <button class="nav-tab" onclick="switchTab('chat')">Chat</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- ── TAB 1: DASHBOARD / VAULT ── -->
+        <div id="panel-dashboard" class="view-panel active">
+            <div class="glass-card">
+                <h2>Welcome back, <span id="dash-username">Scholar</span>!</h2>
+                <p class="description">Your offline legacy workspace is synced. Sprints help you absorb concepts 4x faster and maintain active recall before exams.</p>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-packs">0</div>
+                        <div class="stat-label">Study Packs</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value text-blue">150</div>
+                        <div class="stat-label">Total XP</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value text-amber">1d</div>
+                        <div class="stat-label">Streak</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h2>Your Study Sprints</h2>
+                <p class="description">Select a study guide to open the lab and start revision.</p>
+                <div class="packs-list" id="dash-packs-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 2: CREATE / INGEST ── -->
+        <div id="panel-create" class="view-panel">
+            <div class="glass-card">
+                <h2>Create Study Sprint</h2>
+                <p class="description">Paste your lecture notes, slides text, or textbook syllabus below. The Professor will generate a comprehensive interactive study kit.</p>
+                
+                <div class="input-group">
+                    <label for="create-title">Sprint Name</label>
+                    <input type="text" id="create-title" placeholder="e.g. CARDIOVASCULAR PHYSIOLOGY" style="margin-bottom: 16px;">
+                </div>
+
+                <div class="input-group">
+                    <label for="create-text">Source Material</label>
+                    <textarea id="create-text" placeholder="Paste your study materials or notes here..."></textarea>
+                </div>
+
+                <button class="btn btn-blue" onclick="handleGenerate()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/></svg>
+                    Start Analysis
+                </button>
+            </div>
+        </div>
+
+        <!-- ── TAB 3: LIBRARY ── -->
+        <div id="panel-library" class="view-panel">
+            <div class="glass-card">
+                <h2>Offline Vault</h2>
+                <p class="description">Manage your locally saved study packs. Everything in this vault is cached on your device for offline learning.</p>
+                <div class="packs-list" id="lib-packs-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 5: CHAT WITH THE PROFESSOR ── -->
+        <div id="panel-chat" class="view-panel">
+            <div class="glass-card">
+                <h2>Chat with The Professor</h2>
+                <p class="description">Ask questions, clarify concepts, or review study material with your witty mentor.</p>
+                <div id="chat-messages-container" style="height: 320px; overflow-y: auto; background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="background: var(--blue-dim); border: 1px solid var(--blue-border); padding: 12px; border-radius: 14px; max-width: 85%; align-self: flex-start;">
+                        <div style="font-size: 8px; font-weight: 900; color: var(--blue-light); text-transform: uppercase; margin-bottom: 4px;">The Professor</div>
+                        <div style="font-size: 13px; line-height: 1.4;">Hello, Scholar! What concept or topic should we explore today? I'm ready.</div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="chat-input" placeholder="Type your message here..." style="flex: 1; margin-bottom: 0;" onkeypress="if(event.keyCode===13) handleSendChatMessage()">
+                    <button class="btn btn-blue" onclick="handleSendChatMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 4: PACK VIEWER (DYNAMIC) ── -->
+        <div id="panel-viewer" class="view-panel">
+            <div class="pack-header">
+                <div>
+                    <span class="text-blue text-[9px] font-black uppercase tracking-[0.2em] mb-1 block">Active Study Lab</span>
+                    <h2 id="viewer-pack-title" class="text-2xl font-black">Study Guide</h2>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="switchTab('dashboard')">Exit Lab</button>
+            </div>
+
+            <div class="pack-viewer-tabs">
+                <button class="nav-tab active viewer-tab-btn" onclick="switchViewerSubTab('distill')">Summary</button>
+                <button class="nav-tab viewer-tab-btn" onclick="switchViewerSubTab('retain')">Flashcards</button>
+                <button class="nav-tab viewer-tab-btn" onclick="switchViewerSubTab('test')">Quiz</button>
+                <button class="nav-tab viewer-tab-btn" onclick="switchViewerSubTab('predict')">Roadmap</button>
+            </div>
+
+            <!-- Summary Sub Tab -->
+            <div id="viewer-sub-distill" class="pack-content-panel active">
+                <div class="glass-card">
+                    <div id="viewer-summary-content" class="summary-prose">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flashcard Sub Tab -->
+            <div id="viewer-sub-retain" class="pack-content-panel">
+                <div class="glass-card">
+                    <div class="flashcard-stage">
+                        <div class="card-perspective" onclick="flipCard()">
+                            <div class="card-inner" id="legacy-card-inner">
+                                <div class="card-face card-front">
+                                    <p class="card-text" id="legacy-card-front-text">Front Card Question</p>
+                                    <div class="card-footer">Click to Flip</div>
+                                </div>
+                                <div class="card-face card-back">
+                                    <div class="card-back-text" id="legacy-card-back-text">Back Card Answer</div>
+                                    <div class="card-tip">
+                                        <div class="card-tip-label">Professor's Tip</div>
+                                        <div id="legacy-card-tip-text">Concept detail definition...</div>
+                                    </div>
+                                    <div class="card-footer">Click to Flip Back</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flashcard-actions">
+                            <button class="btn btn-outline" style="flex: 1; border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" onclick="gradeFlashcard(false)">Review Again</button>
+                            <button class="btn btn-blue" style="flex: 1; background: var(--emerald); color: var(--bg);" onclick="gradeFlashcard(true)">Got It</button>
+                        </div>
+
+                        <div class="flashcard-nav">
+                            <button class="btn btn-outline btn-sm" onclick="navFlashcard(-1)">Prev</button>
+                            <span id="legacy-card-counter">Card 1 / 1</span>
+                            <button class="btn btn-outline btn-sm" onclick="navFlashcard(1)">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Sub Tab -->
+            <div id="viewer-sub-test" class="pack-content-panel">
+                <div class="glass-card">
+                    <div class="quiz-stage" id="legacy-quiz-stage">
+                        <div class="quiz-q-header">
+                            <span>Question Tracker</span>
+                            <span id="legacy-quiz-counter">Q 1 / 1</span>
+                        </div>
+                        <h4 id="legacy-quiz-question-text" class="quiz-q-text">Is this a legacy question?</h4>
+                        <div class="quiz-options" id="legacy-quiz-options-container">
+                            <!-- Options rendered dynamically -->
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <button class="btn btn-outline btn-sm" onclick="navQuiz(-1)">Prev</button>
+                            <button class="btn btn-blue btn-sm" onclick="navQuiz(1)" id="legacy-quiz-next-btn">Next</button>
+                        </div>
+                    </div>
+
+                    <div class="quiz-verdict" id="legacy-quiz-verdict" style="display: none;">
+                        <h3 class="text-blue text-4xl font-black mb-2" id="legacy-quiz-final-score">100%</h3>
+                        <p class="description">You completed the quiz! Review your answers above or retry.</p>
+                        <button class="btn btn-blue" onclick="resetQuiz()">Restart Quiz</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roadmap Sub Tab -->
+            <div id="viewer-sub-predict" class="pack-content-panel">
+                <div class="glass-card">
+                    <h2>Study Roadmap</h2>
+                    <p class="description">A clear, step-by-step path to master this topic.</p>
+                    <div class="roadmap-timeline" id="legacy-roadmap-timeline">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-title" id="loading-title">Generating Study Guide</div>
+        <div class="loading-sub" id="loading-sub">The Professor is deconstructing your notes...</div>
+    </div>
+
+    <script>
+        // Store packs in local storage
+        var packs = {};
+        try {
+            var cachedPacks = localStorage.getItem("offline_study_packs");
+            if (cachedPacks) {
+                packs = JSON.parse(cachedPacks);
+            }
+        } catch (e) {
+            console.error("Local storage not accessible:", e);
+        }
+
+        var activeTab = "dashboard";
+        var currentPack = null;
+        var fcIndex = 0;
+        var fcFlipped = false;
+        var quizIndex = 0;
+        var quizAnswers = {}; // questionIdx -> selectedOptionIdx
+
+        // Load initial lists
+        updatePacksUI();
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            var panels = ["dashboard", "create", "library", "viewer", "chat"];
+            for (var i = 0; i < panels.length; i++) {
+                var p = panels[i];
+                var el = document.getElementById("panel-" + p);
+                if (p === tabId) {
+                    el.classList.add("active");
+                } else {
+                    el.classList.remove("active");
+                }
+            }
+
+            // Update nav tab styling
+            var tabs = document.getElementsByClassName("nav-tab");
+            for (var j = 0; j < tabs.length; j++) {
+                var tab = tabs[j];
+                if (tab.getAttribute("onclick").indexOf("'" + tabId + "'") !== -1) {
+                    tab.classList.add("active");
+                } else {
+                    tab.classList.remove("active");
+                }
+            }
+
+            if (tabId === "dashboard" || tabId === "library") {
+                updatePacksUI();
+            }
+        }
+
+        function switchViewerSubTab(subTabId) {
+            var subPanels = ["distill", "retain", "test", "predict"];
+            for (var i = 0; i < subPanels.length; i++) {
+                var sp = subPanels[i];
+                var el = document.getElementById("viewer-sub-" + sp);
+                if (sp === subTabId) {
+                    el.classList.add("active");
+                } else {
+                    el.classList.remove("active");
+                }
+            }
+
+            // Update tab button styling
+            var buttons = document.getElementsByClassName("viewer-tab-btn");
+            for (var j = 0; j < buttons.length; j++) {
+                var btn = buttons[j];
+                if (btn.getAttribute("onclick").indexOf("'" + subTabId + "'") !== -1) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            }
+        }
+
+        function updatePacksUI() {
+            var keys = Object.keys(packs);
+            var dashList = document.getElementById("dash-packs-list");
+            var libList = document.getElementById("lib-packs-list");
+            
+            document.getElementById("stat-packs").textContent = keys.length;
+
+            var html = "";
+            if (keys.length === 0) {
+                html = "<div style='text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px;'>No study packs saved. Paste notes in 'Create' to begin.</div>";
+                dashList.innerHTML = html;
+                libList.innerHTML = html;
+                return;
+            }
+
+            // Sort packs by saved date descending
+            var sortedPacks = [];
+            for (var k = 0; k < keys.length; k++) {
+                sortedPacks.push(packs[keys[k]]);
+            }
+            sortedPacks.sort(function(a, b) {
+                return (b.savedAt || 0) - (a.savedAt || 0);
+            });
+
+            for (var i = 0; i < sortedPacks.length; i++) {
+                var pack = sortedPacks[i];
+                var packDate = new Date(pack.savedAt || Date.now()).toLocaleDateString();
+                html += '<div class="pack-item" onclick="openPack(\'' + pack.id + '\')">';
+                html += '  <div class="pack-info">';
+                html += '    <div class="pack-title">' + escapeStr(pack.title) + '</div>';
+                html += '    <div class="pack-meta">Saved ' + packDate + ' &bull; ' + Object.keys(pack.phases_data || {}).length + ' phases</div>';
+                html += '  </div>';
+                html += '  <div class="pack-actions" onclick="event.stopPropagation()">';
+                html += '    <button class="btn btn-outline btn-sm" onclick="deletePack(\'' + pack.id + '\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>';
+                html += '  </div>';
+                html += '</div>';
+            }
+
+            dashList.innerHTML = html;
+            libList.innerHTML = html;
+        }
+
+        function deletePack(id) {
+            if (confirm("Are you sure you want to delete this study pack?")) {
+                delete packs[id];
+                try {
+                    localStorage.setItem("offline_study_packs", JSON.stringify(packs));
+                } catch (e) {}
+                updatePacksUI();
+            }
+        }
+
+        function openPack(id) {
+            currentPack = packs[id];
+            if (!currentPack) return;
+
+            document.getElementById("viewer-pack-title").textContent = currentPack.title;
+
+            // Render Summary
+            var distill = currentPack.phases_data.distill || "";
+            var summaryHtml = "";
+            var summaryText = typeof distill === "string" ? distill : (distill.summary || "");
+            
+            // Basic markdown regex parser for legacy rendering
+            var paragraphs = summaryText.split("\n\n");
+            for (var p = 0; p < paragraphs.length; p++) {
+                var line = paragraphs[p].trim();
+                if (line.indexOf("###") === 0) {
+                    summaryHtml += "<h3>" + escapeStr(line.replace("###", "").trim()) + "</h3>";
+                } else if (line.indexOf("##") === 0) {
+                    summaryHtml += "<h3>" + escapeStr(line.replace("##", "").trim()) + "</h3>";
+                } else if (line.indexOf("-") === 0) {
+                    summaryHtml += "<ul>";
+                    var items = line.split("\n");
+                    for (var it = 0; it < items.length; it++) {
+                        summaryHtml += "<li>" + escapeStr(items[it].replace(/^[-\*\+]\s+/, "")) + "</li>";
+                    }
+                    summaryHtml += "</ul>";
+                } else {
+                    summaryHtml += "<p>" + escapeStr(line) + "</p>";
+                }
+            }
+            document.getElementById("viewer-summary-content").innerHTML = summaryHtml || "<p>No summary generated.</p>";
+
+            // Reset Subtabs
+            fcIndex = 0;
+            fcFlipped = false;
+            quizIndex = 0;
+            quizAnswers = {};
+            document.getElementById("legacy-quiz-stage").style.display = "block";
+            document.getElementById("legacy-quiz-verdict").style.display = "none";
+
+            updateFlashcardUI();
+            updateQuizUI();
+            updateRoadmapUI();
+
+            switchTab("viewer");
+            switchViewerSubTab("distill");
+        }
+
+        // Flashcards Logic
+        function updateFlashcardUI() {
+            var retain = currentPack.phases_data.retain || [];
+            var cards = Array.isArray(retain) ? retain : (retain.flashcards || []);
+            
+            if (cards.length === 0) {
+                document.getElementById("legacy-card-front-text").textContent = "No flashcards in this pack.";
+                document.getElementById("legacy-card-back-text").textContent = "";
+                document.getElementById("legacy-card-counter").textContent = "0 / 0";
+                return;
+            }
+
+            var card = cards[fcIndex];
+            document.getElementById("legacy-card-front-text").textContent = card.front || card.question || "";
+            
+            var backParts = (card.back || card.answer || "").split("💡");
+            var answer = backParts[0].trim();
+            var tip = backParts[1] ? backParts[1].replace(/Professor's Protocol:|Protocol:/i, "").trim() : "Review the concept core details.";
+
+            document.getElementById("legacy-card-back-text").textContent = answer;
+            document.getElementById("legacy-card-tip-text").textContent = tip;
+            document.getElementById("legacy-card-counter").textContent = "Card " + (fcIndex + 1) + " / " + cards.length;
+
+            var inner = document.getElementById("legacy-card-inner");
+            if (fcFlipped) {
+                inner.classList.add("flipped");
+            } else {
+                inner.classList.remove("flipped");
+            }
+        }
+
+        function flipCard() {
+            fcFlipped = !fcFlipped;
+            updateFlashcardUI();
+        }
+
+        function gradeFlashcard(gotIt) {
+            fcFlipped = false;
+            var retain = currentPack.phases_data.retain || [];
+            var cards = Array.isArray(retain) ? retain : (retain.flashcards || []);
+            
+            if (gotIt) {
+                // If mastered, advance
+                if (fcIndex < cards.length - 1) {
+                    fcIndex++;
+                } else {
+                    alert("Mastery complete! You've reviewed all cards.");
+                }
+            } else {
+                // Keep in rotation, push card to end of local array for session
+                var currentCard = cards[fcIndex];
+                cards.push(currentCard);
+                fcIndex++;
+            }
+            updateFlashcardUI();
+        }
+
+        function navFlashcard(dir) {
+            var retain = currentPack.phases_data.retain || [];
+            var cards = Array.isArray(retain) ? retain : (retain.flashcards || []);
+            
+            fcFlipped = false;
+            var target = fcIndex + dir;
+            if (target >= 0 && target < cards.length) {
+                fcIndex = target;
+                updateFlashcardUI();
+            }
+        }
+
+        // Quiz Logic
+        function updateQuizUI() {
+            var test = currentPack.phases_data.test || [];
+            var questions = Array.isArray(test) ? test : (test.questions || []);
+
+            if (questions.length === 0) {
+                document.getElementById("legacy-quiz-question-text").textContent = "No quiz questions in this pack.";
+                document.getElementById("legacy-quiz-options-container").innerHTML = "";
+                document.getElementById("legacy-quiz-counter").textContent = "0 / 0";
+                return;
+            }
+
+            var q = questions[quizIndex];
+            document.getElementById("legacy-quiz-question-text").textContent = q.question;
+            document.getElementById("legacy-quiz-counter").textContent = "Question " + (quizIndex + 1) + " / " + questions.length;
+
+            var container = document.getElementById("legacy-quiz-options-container");
+            var html = "";
+            var options = q.options || [];
+
+            for (var i = 0; i < options.length; i++) {
+                var opt = options[i];
+                var letter = String.fromCharCode(65 + i);
+                var isSelected = quizAnswers[quizIndex] === i;
+                
+                var className = "quiz-option";
+                if (isSelected) {
+                    if (i === q.correctIndex) {
+                        className += " correct";
+                    } else {
+                        className += " incorrect";
+                    }
+                } else if (quizAnswers[quizIndex] !== undefined && i === q.correctIndex) {
+                    // Reveal correct answer if selected incorrect
+                    className += " correct";
+                }
+
+                var isDisabled = quizAnswers[quizIndex] !== undefined ? "disabled" : "";
+
+                html += '<button class="' + className + '" ' + isDisabled + ' onclick="selectQuizOption(' + i + ')">';
+                html += '  <div class="quiz-option-letter">' + letter + '</div>';
+                html += '  <span>' + escapeStr(opt) + '</span>';
+                html += '</button>';
+            }
+
+            container.innerHTML = html;
+
+            var nextBtn = document.getElementById("legacy-quiz-next-btn");
+            if (quizIndex === questions.length - 1) {
+                nextBtn.textContent = "Finish Quiz";
+            } else {
+                nextBtn.textContent = "Next";
+            }
+        }
+
+        function selectQuizOption(optIdx) {
+            if (quizAnswers[quizIndex] !== undefined) return; // already answered
+
+            quizAnswers[quizIndex] = optIdx;
+            updateQuizUI();
+
+            var test = currentPack.phases_data.test || [];
+            var questions = Array.isArray(test) ? test : (test.questions || []);
+            var q = questions[quizIndex];
+            
+            if (optIdx === q.correctIndex) {
+                // Correct!
+            }
+        }
+
+        function navQuiz(dir) {
+            var test = currentPack.phases_data.test || [];
+            var questions = Array.isArray(test) ? test : (test.questions || []);
+
+            var target = quizIndex + dir;
+            if (target >= 0 && target < questions.length) {
+                quizIndex = target;
+                updateQuizUI();
+            } else if (target === questions.length) {
+                // Complete
+                showQuizResults();
+            }
+        }
+
+        function showQuizResults() {
+            var test = currentPack.phases_data.test || [];
+            var questions = Array.isArray(test) ? test : (test.questions || []);
+            
+            var correctCount = 0;
+            for (var i = 0; i < questions.length; i++) {
+                if (quizAnswers[i] === questions[i].correctIndex) {
+                    correctCount++;
+                }
+            }
+
+            var pct = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+            document.getElementById("legacy-quiz-final-score").textContent = pct + "%";
+            
+            document.getElementById("legacy-quiz-stage").style.display = "none";
+            document.getElementById("legacy-quiz-verdict").style.display = "block";
+        }
+
+        function resetQuiz() {
+            quizIndex = 0;
+            quizAnswers = {};
+            document.getElementById("legacy-quiz-stage").style.display = "block";
+            document.getElementById("legacy-quiz-verdict").style.display = "none";
+            updateQuizUI();
+        }
+
+        // Roadmap UI
+        function updateRoadmapUI() {
+            var predict = currentPack.phases_data.predict || {};
+            var roadmapText = typeof predict === "string" ? predict : (predict.roadmap || "");
+            
+            var container = document.getElementById("legacy-roadmap-timeline");
+            if (!roadmapText) {
+                container.innerHTML = "<p class='description'>No roadmap available.</p>";
+                return;
+            }
+
+            var html = "";
+            var steps = roadmapText.split(/\n(?=\d\.)/); // split by "1.", "2."
+            for (var i = 0; i < steps.length; i++) {
+                var step = steps[i].trim();
+                if (!step) continue;
+                
+                var firstLine = step.split("\n")[0];
+                var descLines = step.replace(firstLine, "").trim();
+
+                html += '<div class="roadmap-node">';
+                html += '  <div class="roadmap-node-dot"></div>';
+                html += '  <div class="roadmap-node-title">' + escapeStr(firstLine) + '</div>';
+                html += '  <div class="roadmap-node-desc">' + escapeStr(descLines).replace(/\n/g, "<br/>") + '</div>';
+                html += '</div>';
+            }
+
+            container.innerHTML = html || escapeStr(roadmapText).replace(/\n/g, "<br/>");
+        }
+
+        // Generate Pack Logic
+        function handleGenerate() {
+            var title = document.getElementById("create-title").value.trim();
+            var text = document.getElementById("create-text").value.trim();
+
+            if (!text) {
+                alert("Please paste some source notes to build your pack.");
+                return;
+            }
+
+            if (!title) {
+                title = text.substring(0, 30).replace(/[^a-zA-Z0-9\s]/g, "").toUpperCase() || "UNTITLED SPRINT";
+            }
+
+            // Show Loader
+            showLoader("Starting Analysis", "Creating sandbox environment...");
+
+            // Execute series of HTTP requests
+            var packId = "legacy_" + Math.random().toString(36).substring(2, 11);
+            var payload = {
+                content: text,
+                context: text,
+                title: title,
+                count: 8,
+                difficulty: "medium"
+            };
+
+            // Phase 1: Summary
+            updateLoader("Distilling Core Concepts", "Summarizing text and finding analogies...");
+            postAPI("/api/generate/summary", payload, function(err, summaryRes) {
+                if (err) {
+                    hideLoader();
+                    alert("Analysis failed. Please make sure you are online.");
+                    return;
+                }
+
+                // Phase 2: Flashcards
+                updateLoader("Constructing Memory Cards", "Formulating active recall deck...");
+                postAPI("/api/generate/flashcards", payload, function(err, fcRes) {
+                    if (err) {
+                        hideLoader();
+                        alert("Flashcard generation failed.");
+                        return;
+                    }
+
+                    // Phase 3: Quiz
+                    updateLoader("Drafting Assessment", "Generating practice questions...");
+                    postAPI("/api/generate/quiz", payload, function(err, quizRes) {
+                        if (err) {
+                            hideLoader();
+                            alert("Quiz generation failed.");
+                            return;
+                        }
+
+                        // Phase 4: Roadmap
+                        updateLoader("Mapping Study Timeline", "Creating your personalized study plan...");
+                        postAPI("/api/generate/roadmap", payload, function(err, roadmapRes) {
+                            hideLoader();
+
+                            var summaryContent = typeof summaryRes === "string" ? summaryRes : (summaryRes.summary || "");
+                            var flashcardsList = Array.isArray(fcRes) ? fcRes : (fcRes.flashcards || fcRes.data || []);
+                            var quizList = Array.isArray(quizRes) ? quizRes : (quizRes.questions || quizRes.quiz || quizRes.data || []);
+                            var roadmapContent = typeof roadmapRes === "string" ? roadmapRes : (roadmapRes.roadmap || "");
+
+                            // Save pack
+                            var newPack = {
+                                id: packId,
+                                title: title,
+                                source_text: text.substring(0, 100) + "...",
+                                savedAt: Date.now(),
+                                phases_data: {
+                                    distill: summaryContent,
+                                    retain: flashcardsList,
+                                    test: quizList,
+                                    predict: roadmapContent
+                                }
+                            };
+
+                            packs[packId] = newPack;
+                            try {
+                                localStorage.setItem("offline_study_packs", JSON.stringify(packs));
+                            } catch (e) {}
+
+                            // Open pack
+                            openPack(packId);
+                        });
+                    });
+                });
+            });
+        }
+
+        // ES5 HTTP POST helper
+        function postAPI(url, data, callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", url, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            var responseText = xhr.responseText;
+                            // Handle potential Server-Sent Event streaming outputs
+                            if (responseText.indexOf("data: ") !== -1) {
+                                // Extract and stitch stream chunks together
+                                var lines = responseText.split("\n");
+                                var accumulated = "";
+                                var finalObj = null;
+                                for (var i = 0; i < lines.length; i++) {
+                                    var line = lines[i].trim();
+                                    if (line.indexOf("data: ") === 0) {
+                                        try {
+                                            var parsed = JSON.parse(line.substring(6));
+                                            if (parsed.type === "chunk" && parsed.chunk) {
+                                                accumulated += parsed.chunk;
+                                            }
+                                            if (parsed.status === "complete") {
+                                                finalObj = parsed;
+                                            }
+                                        } catch (e) {}
+                                    }
+                                }
+                                if (finalObj) {
+                                    callback(null, finalObj);
+                                } else {
+                                    callback(null, accumulated || responseText);
+                                }
+                            } else {
+                                callback(null, JSON.parse(responseText));
+                            }
+                        } catch (e) {
+                            callback(null, xhr.responseText);
+                        }
+                    } else {
+                        callback(new Error("HTTP Error " + xhr.status));
+                    }
+                }
+            };
+            xhr.send(JSON.stringify(data));
+        }
+
+        function showLoader(title, sub) {
+            document.getElementById("loading-title").textContent = title;
+            document.getElementById("loading-sub").textContent = sub;
+            document.getElementById("loading-overlay").style.display = "flex";
+        }
+
+        function updateLoader(title, sub) {
+            document.getElementById("loading-title").textContent = title;
+            document.getElementById("loading-sub").textContent = sub;
+        }
+
+        function hideLoader() {
+            document.getElementById("loading-overlay").style.display = "none";
+        }
+
+        // Chat Logic
+        var chatMessages = [
+            { role: "assistant", content: "Hello, Scholar! What concept or topic should we explore today? I'm ready." }
+        ];
+
+        function handleSendChatMessage() {
+            var input = document.getElementById("chat-input");
+            var content = input.value.trim();
+            if (!content) return;
+
+            input.value = "";
+
+            // Add user message
+            chatMessages.push({ role: "user", content: content });
+            updateChatUI();
+
+            // Check if offline
+            if (!navigator.onLine) {
+                setTimeout(function() {
+                    chatMessages.push({
+                        role: "assistant",
+                        content: "We're currently in the offline study cave! I can help you review your saved packs in the Vault or Library, but for a deep chat, let's get back online!"
+                    });
+                    updateChatUI();
+                }, 1000);
+                return;
+            }
+
+            // Call API
+            var container = document.getElementById("chat-messages-container");
+            var typingBubble = document.createElement("div");
+            typingBubble.style.cssText = "background: var(--blue-dim); border: 1px solid var(--blue-border); padding: 12px; border-radius: 14px; max-width: 85%; align-self: flex-start; font-style: italic; color: var(--text-muted); font-size: 12px;";
+            typingBubble.textContent = "The Professor is writing...";
+            container.appendChild(typingBubble);
+            container.scrollTop = container.scrollHeight;
+
+            var payload = {
+                messages: chatMessages,
+                threadId: "legacy_" + Math.random().toString(36).substring(2, 11)
+            };
+
+            postAPI("/api/chat", payload, function(err, response) {
+                try { container.removeChild(typingBubble); } catch(e) {}
+                if (err) {
+                    chatMessages.push({
+                        role: "assistant",
+                        content: "I ran into a hiccup connecting to the server. Please check your connection or make sure you're logged in."
+                    });
+                    updateChatUI();
+                    return;
+                }
+
+                var replyContent = "";
+                if (typeof response === "string") {
+                    replyContent = response;
+                } else if (response && response.response) {
+                    replyContent = response.response;
+                } else if (response && response.content) {
+                    replyContent = response.content;
+                } else if (response && typeof response === "object" && response.type === "complete") {
+                    // Stitched SSE response
+                    replyContent = response.chunk || JSON.stringify(response);
+                } else {
+                    replyContent = JSON.stringify(response);
+                }
+
+                // If response is SSE parsed format
+                if (response && response.chunk && response.status === "complete") {
+                     replyContent = response.chunk;
+                }
+
+                chatMessages.push({ role: "assistant", content: replyContent });
+                updateChatUI();
+            });
+        }
+
+        function updateChatUI() {
+            var container = document.getElementById("chat-messages-container");
+            var html = "";
+            for (var i = 0; i < chatMessages.length; i++) {
+                var msg = chatMessages[i];
+                var isUser = msg.role === "user";
+                var align = isUser ? "flex-end" : "flex-start";
+                var bg = isUser ? "rgba(255,255,255,0.03)" : "var(--blue-dim)";
+                var border = isUser ? "var(--border)" : "var(--blue-border)";
+                var label = isUser ? "You" : "The Professor";
+                var labelColor = isUser ? "var(--text-muted)" : "var(--blue-light)";
+
+                html += '<div style="background: ' + bg + '; border: 1px solid ' + border + '; padding: 12px; border-radius: 14px; max-width: 85%; align-self: ' + align + ';">';
+                html += '  <div style="font-size: 8px; font-weight: 900; color: ' + labelColor + '; text-transform: uppercase; margin-bottom: 4px;">' + label + '</div>';
+                html += '  <div style="font-size: 13px; line-height: 1.4; white-space: pre-wrap;">' + escapeStr(msg.content) + '</div>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeStr(str) {
+            if (!str) return "";
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

@@ -100,8 +100,10 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
 
     const fullMarkdownContent = useMemo(() => {
         if (!data) return "";
-        // Clean up knowledge check markers for the export
-        return data.replace(/\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\}/g, "");
+        // Clean up knowledge check markers and "Checking Understanding" headings for the export
+        return data
+            .replace(/\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\}/g, "")
+            .replace(/([#*\s_]*)(Checking\s+Understanding|CHECKINGUNDERSTANDING|CheckingUnderstanding|checking\s+understanding)([#*\s_:]*)(\n|$)/gi, "\n");
     }, [data]);
 
     const handleExportPDF = async () => {
@@ -113,7 +115,8 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
             await exportToPDF("summary-export-container", {
                 title: title,
                 filename: `The_Professor_${title.replace(/\s+/g, '_')}`,
-                author: "The Professor AI"
+                author: "The Professor AI",
+                markdownContent: fullMarkdownContent
             });
             addToast("PDF Export successful", "success");
         } catch (error) {
@@ -390,7 +393,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-4">Official Synthesis Report</p>
                         <h1 className="text-5xl font-black tracking-tight leading-tight">{title}</h1>
                     </div>
-                    <div className="prose prose-invert prose-amber max-w-none">
+                    <div className="prose prose-invert max-w-none">
                         <Markdown>{fullMarkdownContent}</Markdown>
                     </div>
                 </div>

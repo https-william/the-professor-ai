@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
         source: "/api/markitdown",
         destination: "http://localhost:5000/api/markitdown",
       },
+      {
+        source: "/legacy",
+        destination: "/legacy/index.html",
+      },
     ];
   },
   async headers() {

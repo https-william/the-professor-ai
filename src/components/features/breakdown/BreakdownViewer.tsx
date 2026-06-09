@@ -47,7 +47,8 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
             await exportToPDF("breakdown-export-container", {
                 title: title,
                 filename: `The_Professor_Breakdown_${title.replace(/\s+/g, '_')}`,
-                author: "The Professor AI"
+                author: "The Professor AI",
+                markdownContent: fullMarkdownContent
             });
             addToast("PDF Export successful", "success");
         } catch (error) {
@@ -232,7 +233,7 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-4">The Professor Breakdown Report</p>
                         <h1 className="text-5xl font-black tracking-tight leading-tight">{title}</h1>
                     </div>
-                    <div className="prose prose-invert prose-amber max-w-none">
+                    <div className="prose prose-invert max-w-none">
                         <Markdown>{fullMarkdownContent}</Markdown>
                     </div>
                 </div>

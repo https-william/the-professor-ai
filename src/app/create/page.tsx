@@ -493,7 +493,7 @@ function CreatorStudio() {
                             
                             {/* File Upload Ingestion Area */}
                             {activeTab === 'upload' ? (
-                                <div 
+                                <label 
                                     onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
                                     onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
                                     onDragOver={(e) => { e.preventDefault(); }}
@@ -517,9 +517,9 @@ function CreatorStudio() {
                                         <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold mt-1.5">Supports PDF, PPTX, DOCX, TXT, or Images</p>
                                     </div>
                                     {!isDesktop && (
-                                        <input type="file" className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
+                                        <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
                                     )}
-                                </div>
+                                </label>
                             ) : (
                                 <div className="space-y-3 animate-in fade-in duration-300">
                                     <div className="flex items-center justify-between">
@@ -627,12 +627,14 @@ function CreatorStudio() {
                                                                     <p className="text-[10px] font-black text-[var(--foreground-muted)]">
                                                                         {customStatusMsg[item.id] || (item.status === 'success' ? "All notes successfully absorbed" : loadingPhrases[filePhraseIndex[item.id] || 0])}
                                                                     </p>
-                                                                    <span className="text-[10px] font-mono font-black text-[var(--blue-text)]">{trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%</span>
+                                                                    <span className="text-[10px] font-mono font-black text-[var(--blue-text)]">
+                                                                        {item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%
+                                                                    </span>
                                                                 </div>
                                                                 <div className="w-full bg-[var(--bg-3)] rounded-full h-2 overflow-hidden border border-[var(--border)]">
                                                                     <motion.div 
                                                                         initial={{ width: 0 }}
-                                                                        animate={{ width: `${trickleProgress[item.id] || item.progress || (item.status === 'success' ? 100 : 20)}%` }}
+                                                                        animate={{ width: `${item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%` }}
                                                                         className="h-full bg-[var(--blue)] rounded-full"
                                                                         transition={{ ease: "easeOut" }}
                                                                     />

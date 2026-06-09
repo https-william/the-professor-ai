@@ -18,7 +18,17 @@ try {
     const nextDir = path.join(__dirname, '.next');
     if (fs.existsSync(nextDir)) {
       console.log('Tauri build detected: Cleaning .next cache to prevent stale API routes TypeScript errors...');
-      fs.rmSync(nextDir, { recursive: true, force: true });
+      try {
+        fs.rmSync(nextDir, { recursive: true, force: true });
+      } catch (rmError) {
+        console.warn('Warning: Could not clean .next cache fully (possibly locked by active dev server):', rmError.message);
+        try {
+          const cacheDir = path.join(nextDir, 'cache');
+          if (fs.existsSync(cacheDir)) {
+            fs.rmSync(cacheDir, { recursive: true, force: true });
+          }
+        } catch (_) {}
+      }
     }
     
     if (fs.existsSync(apiDir)) {

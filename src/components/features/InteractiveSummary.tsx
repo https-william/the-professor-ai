@@ -83,9 +83,9 @@ const KnowledgeCheck = ({ data }: { data: any }) => {
 };
 
 export const InteractiveSummary = ({ 
-    rawText = "The reward circuitry in the brain, connecting the ventral tegmental area to the nucleus accumbens, is crucial for reinforcement learning. This pathway reacts to unexpected rewards, triggering dopamine spikes that drive synaptic changes and behavior reinforcement.",
-    refinedText = "The brain's reward pathway connects the VTA to the NAc shell. When you get a surprise win, it triggers dopamine bursts. These bursts literally rewire your brain to help you repeat that success later.",
-    tags = ["Reward Pathway", "Synaptic Growth", "Reinforcement"],
+    rawText = "",
+    refinedText = "",
+    tags = [],
     autoReveal = false,
     isStreaming = false,
     onFinish,
@@ -224,11 +224,13 @@ export const InteractiveSummary = ({
                              animate={{ opacity: 1, y: 0 }}
                              className="space-y-6"
                            >
-                               <div className="flex flex-wrap gap-2">
-                                  {tags.map(tag => (
-                                     <span key={tag} className="px-2 py-0.5 rounded-md bg-[var(--accent)]/10 text-[9px] font-bold text-[var(--accent)] border border-[var(--accent)]/10">{tag}</span>
-                                  ))}
-                               </div>
+                               {tags && tags.length > 0 && (
+                                   <div className="flex flex-wrap gap-2">
+                                      {tags.map(tag => (
+                                         <span key={tag} className="px-2 py-0.5 rounded-md bg-[var(--accent)]/10 text-[9px] font-bold text-[var(--accent)] border border-[var(--accent)]/10">{tag}</span>
+                                      ))}
+                                   </div>
+                               )}
                                 <div className="space-y-2">
                                     <MarkdownRenderer 
                                         content={(refinedText || "").replace(/\[KNOWLEDGE_CHECK\][\s\S]*?(\n\n|\n#|$)/g, "\n\n")} 

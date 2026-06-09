@@ -85,8 +85,8 @@ export async function callOpenAICompatible(
     const startIdx = Math.floor(Math.random() * availableKeys);
     let lastError: Error | null = null;
     
-    // We try models in priority: llama-3.3-70b-versatile, gemma2-9b-it, llama-3.1-8b-instant
-    const models = [config.model, 'gemma2-9b-it', 'llama-3.1-8b-instant'];
+    // We try models in priority: llama-3.3-70b-versatile, llama-3.1-8b-instant
+    const models = [config.model, 'llama-3.1-8b-instant'];
 
     for (const model of models) {
         for (let i = 0; i < availableKeys; i++) {
@@ -125,19 +125,9 @@ export async function callOpenAICompatible(
                     const errorText = await response.text();
                     lastError = new Error(`${config.name} API error (Model ${model}, Key ${keyIdx+1}/${availableKeys}): ${response.status} - ${errorText.substring(0, 150)}`);
                     
-                    if (response.status === 429 || response.status === 503 || response.status >= 500) {
-                        console.warn(`[AI Key Rotation] ${provider} key ${keyIdx+1} failed with ${response.status} for model ${model}. Trying next key/model.`);
-                        clearTimeout(timeoutId);
-                        continue;
-                    }
-                    
-                    if (response.status === 401) {
-                        console.warn(`[AI Key Rotation] ${provider} key ${keyIdx+1} unauthorized (401). Trying next key.`);
-                        clearTimeout(timeoutId);
-                        continue;
-                    }
-
-                    throw lastError;
+                    console.warn(`[AI Key Rotation] ${provider} key ${keyIdx+1} failed with ${response.status} for model ${model}. Trying next key/model.`);
+                    clearTimeout(timeoutId);
+                    continue;
                 }
 
                 const data = await response.json();
@@ -181,7 +171,7 @@ export async function callOpenAICompatibleStream(
     const startIdx = Math.floor(Math.random() * availableKeys);
     let lastError: Error | null = null;
     
-    const models = [config.model, 'gemma2-9b-it', 'llama-3.1-8b-instant'];
+    const models = [config.model, 'llama-3.1-8b-instant'];
 
     for (const model of models) {
         for (let i = 0; i < availableKeys; i++) {
@@ -220,19 +210,9 @@ export async function callOpenAICompatibleStream(
                     const errorText = await response.text();
                     lastError = new Error(`${config.name} API error (Model ${model}, Key ${keyIdx+1}/${availableKeys}): ${response.status} - ${errorText.substring(0, 150)}`);
                     
-                    if (response.status === 429 || response.status === 503 || response.status >= 500) {
-                        console.warn(`[AI Key Rotation Stream] ${provider} key ${keyIdx+1} failed with ${response.status} for model ${model}. Trying next key/model.`);
-                        clearTimeout(timeoutId);
-                        continue;
-                    }
-
-                    if (response.status === 401) {
-                        console.warn(`[AI Key Rotation Stream] ${provider} key ${keyIdx+1} unauthorized (401). Trying next key.`);
-                        clearTimeout(timeoutId);
-                        continue;
-                    }
-                    
-                    throw lastError;
+                    console.warn(`[AI Key Rotation Stream] ${provider} key ${keyIdx+1} failed with status ${response.status} for model ${model}. Trying next key/model.`);
+                    clearTimeout(timeoutId);
+                    continue;
                 }
 
                 clearTimeout(timeoutId);

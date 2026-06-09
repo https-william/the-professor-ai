@@ -274,13 +274,13 @@ export default function RootLayout({
                   };
                 }
 
-                // Legacy browser redirect — if browser can't handle modern JS, send to /legacy
+                // Legacy browser redirect — if browser can't handle modern JS, send to /legacy/index.html
                 // Test for optional chaining + nullish coalescing (ES2020 minimum)
                 try {
                   eval('({}?.x ?? 0)');
                 } catch(e) {
-                  if (window.location.pathname !== '/legacy') {
-                    window.location.replace('/legacy');
+                  if (window.location.pathname !== '/legacy/index.html' && window.location.pathname !== '/legacy') {
+                    window.location.replace('/legacy/index.html');
                   }
                 }
 
