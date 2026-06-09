@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Professor AI — Update Your Browser</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+
+    :root {
+      --bg: #050508;
+      --bg2: #0d0d18;
+      --border: #1e1e36;
+      --blue: #2563eb;
+      --blue-light: #60a5fa;
+      --blue-dim: rgba(37, 99, 235, 0.12);
+      --text: #f8f8ff;
+      --text-muted: #8e8e9f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      min-height: 100%;
+      padding: 24px;
+      text-align: center;
+    }
+
+    /* Background radial glow */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      -webkit-transform: translateX(-50%);
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 32px;
+      padding: 48px 36px;
+      -webkit-box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+    }
+
+    .logo-wrap {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-justify-content: center;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-wrap svg {
+      width: 52px;
+      height: 52px;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--blue-light);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 36px;
+    }
+
+    .subtitle strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Browser options grid */
+    .browsers {
+      display: -webkit-flex;
+      display: flex;
+      gap: 12px;
+      -webkit-justify-content: center;
+      justify-content: center;
+      margin-bottom: 32px;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+    }
+
+    .browser-btn {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-align-items: center;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+      -webkit-transition: all 0.2s;
+      transition: all 0.2s;
+      min-width: 90px;
+    }
+
+    .browser-btn:hover {
+      background: var(--blue-dim);
+      border-color: rgba(37,99,235,0.4);
+      color: var(--blue-light);
+    }
+
+    .browser-btn svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 0 24px;
+    }
+
+    .alt-label {
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .site-link {
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-align-items: center;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue-light);
+      text-decoration: none;
+      padding: 12px 24px;
+      border: 1px solid rgba(37,99,235,0.3);
+      border-radius: 99px;
+      background: var(--blue-dim);
+      -webkit-transition: all 0.2s;
+      transition: all 0.2s;
+    }
+
+    .site-link:hover {
+      background: rgba(37,99,235,0.2);
+      border-color: rgba(37,99,235,0.5);
+    }
+
+    .footer-note {
+      margin-top: 28px;
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0.5;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 816 816">
+      <path fill="#07092b" d="M201 0h417q21 0 41 4l2 1a178 178 0 0 1 53 21l2 1 2 1v2l3 1 12 7 4 3v2l2 1 8 5 3 3 4 6 4 2q13 13 24 29l1 1c3 5 3 5 3 8h2q16 28 24 59v2a168 168 0 0 1 4 47v412q0 18-3 34l-1 3-1 8-1 2a232 232 0 0 1-22 53h-2l-1 3-7 12-3 4h-2l-1 2c-7 13-21 26-33 34h-2v2l-8 6-2 1-2 2-2 1-5 1v2l-46 20-11 2-1 2c-20 7-45 5-66 4H198q-21 0-41-4l-3-1-7-2-4-1q-19-6-39-17l-6-3v-2h-2q-6-2-10-6l-2-1-5-4v-2l-2-1q-9-6-17-14v-2h-2v-2l-2-1q-4-2-6-6l-2-1-5-7v-2h-2l-5-7-1-2-5-10h-2q-16-28-24-59v-2a168 168 0 0 1-4-47V198q0-20 4-41l1-2a190 190 0 0 1 23-57h2v-2q2-6 6-10l1-2 4-5h2l1-2 5-8 3-3 6-4 2-4h2l1-2 7-8 2-1 7-4v-2l7-5 2-1 10-5v-2l15-8q21-10 44-16h3q20-5 41-4"/>
+      <path fill="#eee" d="m444 214 39 25 5 2v2l3 1q6 2 11 6l4 3 3 2 10 6 2 1 47 29 2 2 80 50c24 14 24 14 28 25q4 13-3 24l-5 6h-2v2l-4 1v2l-5 3-15 9-2 1-19 13-2 1-2 1q-6 3-12 2-5-3-8-8-2-7 0-12 8-9 20-15l12-8 3-1 3-2 2-1 4-6v-9l-3-1v-2l-2-1q-6-1-10-6l-3-1-25-16-29-18-52-32-45-29-4-2-15-9-17-11-3-1-2-2-4-2-2-2-2-1q-9-4-20-1l-15 8-11 7-2 1-24 15-5 2v2l-3 1-14 9-7 3v2l-2 1-16 10-5 1v2l-40 25-3 2-26 16-11 6-10 7-4 1v2l-2 1-11 7-5 3-5 4v7l1 5 25 16 42 26 2 1 10 7 2 1 11 6v2l2 1 8 5 5 2 13 9 39 23v2l3 1 8 5 5 3 8 5 2 1 13 8 3 2 4 3q13 11 29 9 10-3 17-9l5-3 3-2 7-4 2-2 82-51c11-6 11-6 18-4l7 6q2 7 0 13-9 10-22 16h-2v2l-2 1-30 18-2 1-2 2-2 1-38 23-6 3v2l-2 1-12 7q-17 10-35 8-9-1-16-6v-2h-2q-8-4-17-10l-9-6-4-2-45-29-7-4-13-8-18-11c-8-6-8-6-16-9v97c0 14 0 14 6 26l8 5 9 4a115 115 0 0 0 34 10l19 4h2q38 5 75 5h3q40 1 81-6l4-1 43-11c9-3 21-7 25-16l1-8v-10l1-103 3 3 2 1 5 6 2 3 1 2 2 2q6 9 5 20v63c0 25 0 25-6 34l-1 2q-7 10-18 13v2q-21 11-44 14l-4 2-23 4a386 386 0 0 1-228-20l-3-1q-11-5-18-15v-2h-2q-8-20-5-41v-94c0-6 0-6-3-11l-8-5-23-15-5-2-14-9-16-10q-14-6-20-20-2-13 3-24 9-9 20-16l62-39 21-13 77-47 47-30c23-15 42-19 66-3"/>
+    </svg>
+  </div>
+
+  <p class="eyebrow">The Professor AI</p>
+  <h1>Your browser is a bit behind.</h1>
+  <p class="subtitle">
+    Our app uses some modern web features that <strong>your current browser doesn't support yet.</strong>
+    The fix is quick — just update to a newer browser and you'll be in.
+  </p>
+
+  <!-- Browser options -->
+  <div class="browsers">
+    <a class="browser-btn" href="https://www.google.com/chrome/" target="_blank" rel="noopener">
+      <!-- Chrome icon -->
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="4" fill="#60a5fa"/>
+        <path d="M12 8h8.5A9 9 0 1 0 15.5 19.5" stroke="#60a5fa" stroke-width="1.5" fill="none"/>
+        <path d="M8 12a4 4 0 0 0 6.93 2" stroke="#60a5fa" stroke-width="1.5" fill="none"/>
+      </svg>
+      Chrome
+    </a>
+    <a class="browser-btn" href="https://www.mozilla.org/firefox/" target="_blank" rel="noopener">
+      <!-- Firefox icon -->
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="9" stroke="#60a5fa" stroke-width="1.5" fill="none"/>
+        <path d="M12 3C12 3 8 7 8 12s4 9 4 9" stroke="#60a5fa" stroke-width="1.5" fill="none"/>
+        <path d="M3 12h18" stroke="#60a5fa" stroke-width="1.5"/>
+      </svg>
+      Firefox
+    </a>
+    <a class="browser-btn" href="https://www.apple.com/safari/" target="_blank" rel="noopener">
+      <!-- Safari icon -->
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="9" stroke="#60a5fa" stroke-width="1.5" fill="none"/>
+        <path d="M12 3v18M3 12h18" stroke="#60a5fa" stroke-width="1" opacity="0.4"/>
+        <path d="M15 9l-3 3-3 3" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Safari
+    </a>
+  </div>
+
+  <hr class="divider">
+
+  <p class="alt-label">Already on a modern browser?</p>
+  <a class="site-link" href="https://theprofessor.xyz">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="2" y1="12" x2="22" y2="12"/>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+    Try theprofessor.xyz again
+  </a>
+
+  <p class="footer-note">
+    The Professor AI works best on Chrome, Firefox, or Safari 15+.<br>
+    Your notes. Just the good parts.
+  </p>
+</div>
+
+</body>
+</html>

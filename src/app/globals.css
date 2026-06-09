@@ -2761,19 +2761,20 @@ html:not(.light) .text-3d {
   vertical-align: middle !important;
 }
 
-/* Block global horizontal scrolling — on body only to avoid Safari scroll-blocking BFC */
+/* Horizontal overflow clipping — use `clip` not `hidden` to avoid scroll container side-effects.
+   `overflow-x: hidden` on <body> propagates to the viewport (per CSS spec) when html has overflow: visible,
+   which can block vertical scrolling on Firefox/Chrome. `clip` clips without creating a scroll container. */
 html {
-  max-width: 100vw !important;
-  /* DO NOT set overflow-x here: hidden on <html> creates a new scroll context
-     that blocks all vertical scrolling on iOS Safari / WebKit. */
+  max-width: 100vw;
+  overflow-x: clip; /* clip: no scroll container, no propagation */
 }
 
 body {
-  max-width: 100vw !important;
-  overflow-x: hidden !important; /* Clip horizontal overflow on body only */
+  max-width: 100vw;
+  overflow-x: clip;
 }
 
-/* Automatic Scroll-Locking propagation from body to html */
+/* Automatic Scroll-Locking propagation from body to html when modals are open */
 body[style*="overflow: hidden"],
 body[style*="overflow:hidden"] {
   overflow: hidden !important;

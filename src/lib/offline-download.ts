@@ -732,7 +732,7 @@ export function downloadFlashcardsOffline(title: string, flashcards: any[]) {
 </body>
 </html>`;
 
-    triggerDownload(`${safeTitle}_Flashcards.html`, html);
+    triggerDownload(`Flashcards - ${safeTitle}.html`, html);
 }
 
 export function downloadQuizOffline(title: string, quizQuestions: any[], timerSeconds = 600) {
@@ -1552,7 +1552,7 @@ export function downloadQuizOffline(title: string, quizQuestions: any[], timerSe
 </body>
 </html>`;
 
-    triggerDownload(`${safeTitle}_Assessment.html`, html);
+    triggerDownload(`Quiz - ${safeTitle}.html`, html);
 }
 
 export function downloadSummaryOffline(title: string, renderedHtml: string) {
@@ -1563,235 +1563,340 @@ export function downloadSummaryOffline(title: string, renderedHtml: string) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${safeTitle} - Offline Study Guide</title>
+    <title>${safeTitle} — The Professor AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --background: #050508;
-            --card: #0c0c16;
-            --border: #1a1a2e;
+            --bg: #050508;
+            --bg2: #0c0c16;
+            --bg3: #111120;
+            --border: #1e1e36;
             --blue: #2563eb;
+            --blue-dim: rgba(37, 99, 235, 0.12);
+            --blue-border: rgba(37, 99, 235, 0.25);
             --blue-light: #60a5fa;
-            --text: #ffffff;
+            --emerald: #10b981;
+            --emerald-dim: rgba(16, 185, 129, 0.1);
+            --emerald-border: rgba(16, 185, 129, 0.2);
+            --amber: #f59e0b;
+            --amber-dim: rgba(245, 158, 11, 0.1);
+            --amber-border: rgba(245, 158, 11, 0.2);
+            --violet: #8b5cf6;
+            --violet-dim: rgba(139, 92, 246, 0.1);
+            --violet-border: rgba(139, 92, 246, 0.2);
+            --text: #f8f8ff;
             --text-muted: #8e8e9f;
+            --text-dim: rgba(248, 248, 255, 0.7);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
 
         body {
-            background-color: var(--background);
+            background-color: var(--bg);
             color: var(--text);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             overflow-x: hidden;
-            padding-bottom: 80px;
+            padding-bottom: 100px;
         }
 
+        /* ── Header ── */
         header {
             width: 100%;
-            max-width: 900px;
-            padding: 24px;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 28px 24px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border);
         }
 
-        .brand-logo {
-            width: 32px;
-            height: 32px;
-        }
+        .brand-logo { width: 28px; height: 28px; }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
 
-        .study-mode-label {
-            font-size: 10px;
+        .doc-type {
+            font-size: 9px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
+            letter-spacing: 0.25em;
             color: var(--blue-light);
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
-        h1 {
-            font-size: 14px;
+        .doc-title {
+            font-size: 15px;
             font-weight: 700;
             color: var(--text);
+            max-width: 500px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .offline-badge {
+        .offline-pill {
             font-size: 8px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 4px 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 5px 10px;
             border-radius: 99px;
             color: var(--text-muted);
+            white-space: nowrap;
         }
 
+        /* ── Main Content ── */
         main {
-            flex: 1;
             width: 100%;
-            max-width: 750px;
-            padding: 40px 24px;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
             font-family: 'Source Serif 4', Georgia, serif;
             font-size: 18px;
-            line-height: 1.7;
-            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.75;
+            color: var(--text-dim);
         }
 
-        h2, h3, h4 {
+        /* ── Typography ── */
+        h1 {
             font-family: 'Inter', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
             color: var(--text);
-            margin-top: 1.8em;
-            margin-bottom: 0.6em;
+            line-height: 1.2;
+            margin-top: 0;
+            margin-bottom: 32px;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-family: 'Inter', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--text);
+            margin-top: 56px;
+            margin-bottom: 16px;
+            padding-left: 16px;
+            border-left: 3px solid var(--blue);
+            letter-spacing: -0.01em;
+        }
+
+        h3 {
+            font-family: 'Inter', sans-serif;
+            font-size: 18px;
             font-weight: 800;
-            line-height: 1.3;
+            color: rgba(255,255,255,0.9);
+            margin-top: 36px;
+            margin-bottom: 12px;
+            padding-left: 12px;
+            border-left: 2px solid rgba(255,255,255,0.15);
         }
 
-        h2 { font-size: 28px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        h3 { font-size: 22px; }
-        h4 { font-size: 18px; }
-
-        p {
-            margin-bottom: 1.4em;
+        h4 {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.7);
+            margin-top: 24px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
-        ul, ol {
-            margin-bottom: 1.4em;
-            padding-left: 24px;
+        p { margin-bottom: 1.5em; }
+
+        /* Bold terms get a subtle glow treatment */
+        strong {
+            font-weight: 700;
+            color: var(--text);
+            background: rgba(37, 99, 235, 0.08);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
         }
+
+        em { font-style: italic; color: rgba(255,255,255,0.7); }
+
+        ul, ol { margin-bottom: 1.5em; padding-left: 20px; }
 
         li {
             margin-bottom: 0.6em;
+            padding-left: 6px;
         }
 
-        strong {
-            color: #ffffff;
-            font-weight: 700;
-        }
+        ul li::marker { color: var(--blue); }
+        ol li::marker { color: var(--blue-light); font-weight: 700; }
 
+        /* ── Blockquote (Key Professor Insights) ── */
         blockquote {
-            border-left: 4px solid var(--blue);
-            margin: 24px 0;
-            padding: 8px 20px;
-            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid var(--violet);
+            margin: 28px 0;
+            padding: 16px 20px;
+            background: var(--violet-dim);
+            border-radius: 0 12px 12px 0;
             font-style: italic;
-            border-radius: 0 8px 8px 0;
+            color: rgba(255,255,255,0.8);
+            border-top: 1px solid var(--violet-border);
+            border-bottom: 1px solid var(--violet-border);
+            border-right: 1px solid var(--violet-border);
         }
 
-        /* Tables */
+        /* ── Tables ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 32px 0;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 32px 0;
             font-family: 'Inter', sans-serif;
             font-size: 14px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
         }
 
         th {
-            background-color: rgba(255, 255, 255, 0.04);
-            color: #ffffff;
-            font-weight: 700;
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--blue-light);
+            font-weight: 800;
             text-align: left;
             padding: 12px 16px;
-            border-bottom: 2px solid var(--border);
-            border-right: 1px solid var(--border);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid var(--blue-border);
         }
 
         td {
             padding: 12px 16px;
             border-bottom: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            color: var(--text-muted);
+            color: var(--text-dim);
         }
 
-        tr:last-child td {
-            border-bottom: none;
-        }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
 
-        tr td:last-child, tr th:last-child {
-            border-right: none;
-        }
-
-        tr:nth-child(even) {
-            background-color: rgba(255, 255, 255, 0.01);
-        }
-
-        /* Code & Pre */
+        /* ── Code ── */
         code {
-            font-family: monospace;
-            background: rgba(255, 255, 255, 0.08);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 15px;
+            font-family: 'Courier New', monospace;
+            background: rgba(37,99,235,0.08);
+            border: 1px solid var(--blue-border);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 14px;
             color: var(--blue-light);
         }
 
         pre {
-            background: #0c0c16;
-            padding: 20px;
-            border-radius: 12px;
-            overflow-x: auto;
+            background: var(--bg2);
             border: 1px solid var(--border);
+            padding: 20px 24px;
+            border-radius: 16px;
+            overflow-x: auto;
             margin: 24px 0;
         }
 
         pre code {
             background: transparent;
-            color: var(--text);
+            border: none;
             padding: 0;
+            color: var(--text);
             font-size: 14px;
         }
 
+        /* ── Section Divider ── */
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 48px 0;
+        }
+
+        /* ── Key Takeaway Callout (injected for bold-heavy sections) ── */
+        .callout {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin: 28px 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .callout-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .callout-label {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 4px;
+        }
+        .callout.tip {
+            background: var(--amber-dim);
+            border: 1px solid var(--amber-border);
+            color: rgba(255,255,255,0.8);
+        }
+        .callout.tip .callout-label { color: var(--amber); }
+        .callout.key {
+            background: var(--blue-dim);
+            border: 1px solid var(--blue-border);
+            color: rgba(255,255,255,0.85);
+        }
+        .callout.key .callout-label { color: var(--blue-light); }
+        .callout.fact {
+            background: var(--emerald-dim);
+            border: 1px solid var(--emerald-border);
+            color: rgba(255,255,255,0.8);
+        }
+        .callout.fact .callout-label { color: var(--emerald); }
+
+        /* ── Action Bar ── */
         .action-bar {
             position: fixed;
-            bottom: 30px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 12px;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 8px 16px;
+            gap: 10px;
+            background: rgba(5, 5, 8, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 8px 14px;
             border-radius: 99px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03);
             z-index: 100;
         }
 
         .btn {
             background: transparent;
             border: none;
-            color: white;
+            color: rgba(255,255,255,0.7);
             font-family: 'Inter', sans-serif;
             font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            padding: 10px 20px;
+            letter-spacing: 0.12em;
+            padding: 10px 18px;
             border-radius: 99px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             transition: all 0.2s;
         }
 
@@ -1800,62 +1905,65 @@ export function downloadSummaryOffline(title: string, renderedHtml: string) {
             color: #000000;
         }
 
-        .btn-primary:hover {
-            opacity: 0.9;
+        .btn-primary:hover { opacity: 0.88; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.06); color: white; }
+
+        /* ── Footer ── */
+        footer {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            text-align: center;
         }
 
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .footer-disclaimer {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0.45;
+            max-width: 480px;
+            line-height: 1.5;
         }
 
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .footer-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--blue-light);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
         }
 
+        .footer-link:hover { opacity: 1; }
+
+        /* ── Print ── */
         @media print {
-            .action-bar {
-                display: none;
-            }
-            body {
-                background: white;
-                color: black;
-            }
-            main {
-                color: #1a1a1a;
-                max-width: 100%;
-                padding: 0;
-            }
-            h2, h3, h4, strong {
-                color: black;
-            }
-            h2 {
-                border-bottom-color: #e2e8f0;
-            }
-            table, th, td, pre {
-                border-color: #e2e8f0;
-            }
-            th {
-                background-color: #f1f5f9;
-                color: black;
-            }
-            td {
-                color: #334155;
-            }
-            tr:nth-child(even) {
-                background-color: #f8fafc;
-            }
-            code {
-                background: #f1f5f9;
-                color: #2563eb;
-            }
-            pre {
-                background: #f8fafc;
-                border-color: #e2e8f0;
-            }
-            pre code {
-                color: #1a1a1a;
-            }
+            .action-bar { display: none; }
+            body { background: white; color: black; }
+            main { color: #1a1a1a; max-width: 100%; padding: 0; }
+            h1, h2, h3, h4 { color: black; -webkit-text-fill-color: black; background: none; }
+            h2 { border-left-color: #2563eb; }
+            strong { background: #eff6ff; color: #1e40af; }
+            blockquote { background: #f5f3ff; border-color: #8b5cf6; color: #374151; }
+            .callout.tip { background: #fffbeb; border-color: #f59e0b; color: #374151; }
+            .callout.key { background: #eff6ff; border-color: #93c5fd; color: #374151; }
+            .callout.fact { background: #ecfdf5; border-color: #6ee7b7; color: #374151; }
+            table, th, td { border-color: #e2e8f0; }
+            th { background: #f1f5f9; color: #1e40af; }
+            td { color: #374151; }
+            code { background: #f1f5f9; color: #2563eb; border-color: #bfdbfe; }
+            pre { background: #f8fafc; border-color: #e2e8f0; }
+            footer { display: none; }
         }
     </style>
 </head>
@@ -1864,21 +1972,36 @@ export function downloadSummaryOffline(title: string, renderedHtml: string) {
         <div class="header-left">
             ${BRAND_LOGO_SVG}
             <div>
-                <p class="study-mode-label">The Professor AI | Study Guide</p>
-                <h1>${safeTitle}</h1>
+                <p class="doc-type">The Professor AI &nbsp;&bull;&nbsp; Summary</p>
+                <h1 class="doc-title">${safeTitle}</h1>
             </div>
         </div>
-        <div class="offline-badge">Offline Active</div>
+        <div class="offline-pill">Saved Copy</div>
     </header>
 
     <main>
         ${renderedHtml}
     </main>
 
+    <footer>
+        <p class="footer-disclaimer">
+            This is an AI-generated summary &mdash; double-check anything critical before your exam.
+            Your own notes are still the source of truth.
+        </p>
+        <a class="footer-link" href="https://theprofessor.xyz" target="_blank" rel="noopener">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Continue studying on theprofessor.xyz &rarr;
+        </a>
+    </footer>
+
     <div class="action-bar">
         <button class="btn btn-primary" onclick="window.print();">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print / Save PDF
+            Save as PDF
         </button>
         <button class="btn btn-secondary" onclick="window.close();">
             Close
@@ -1887,7 +2010,7 @@ export function downloadSummaryOffline(title: string, renderedHtml: string) {
 </body>
 </html>`;
 
-    triggerDownload(`${safeTitle}_Summary.html`, html);
+    triggerDownload(`Summary - ${safeTitle}.html`, html);
 }
 
 function triggerDownload(filename: string, text: string) {

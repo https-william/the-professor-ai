@@ -249,6 +249,41 @@ export default function RootLayout({
                   };
                 }
 
+                // Array.prototype.at — Safari 15.3 and below
+                if (!Array.prototype.at) {
+                  Array.prototype.at = function(idx) {
+                    var n = Math.trunc(idx) || 0;
+                    if (n < 0) n += this.length;
+                    if (n < 0 || n >= this.length) return undefined;
+                    return this[n];
+                  };
+                }
+
+                // structuredClone — Safari 15.3 and below
+                if (typeof structuredClone === 'undefined') {
+                  window.structuredClone = function(obj) {
+                    try { return JSON.parse(JSON.stringify(obj)); }
+                    catch(e) { return obj; }
+                  };
+                }
+
+                // Object.hasOwn — Safari 15.3 and below
+                if (!Object.hasOwn) {
+                  Object.hasOwn = function(obj, prop) {
+                    return Object.prototype.hasOwnProperty.call(obj, prop);
+                  };
+                }
+
+                // Legacy browser redirect — if browser can't handle modern JS, send to /legacy
+                // Test for optional chaining + nullish coalescing (ES2020 minimum)
+                try {
+                  eval('({}?.x ?? 0)');
+                } catch(e) {
+                  if (window.location.pathname !== '/legacy') {
+                    window.location.replace('/legacy');
+                  }
+                }
+
                 var updatePlatformAttribute = function() {
                   var isNative = window.location.protocol === 'tauri:' || 
                                  window.location.protocol === 'asset:' || 
