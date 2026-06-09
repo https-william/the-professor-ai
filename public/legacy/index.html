@@ -738,6 +738,7 @@
             <button class="nav-tab" onclick="switchTab('create')">Create</button>
             <button class="nav-tab" onclick="switchTab('library')">Library</button>
             <button class="nav-tab" onclick="switchTab('chat')">Chat</button>
+            <button class="nav-tab" onclick="handleSignOut()">Sign Out</button>
         </div>
     </header>
 
@@ -953,6 +954,7 @@
 
         // Load initial lists
         updatePacksUI();
+        checkSession();
 
         function switchTab(tabId) {
             activeTab = tabId;
@@ -1566,6 +1568,72 @@
             }
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
+        }
+
+        function getAPI(url, callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            callback(null, JSON.parse(xhr.responseText));
+                        } catch (e) {
+                            callback(null, xhr.responseText);
+                        }
+                    } else {
+                        callback({ status: xhr.status, message: "HTTP Error " + xhr.status });
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function checkSession() {
+            getAPI("/api/user/profile", function(err, data) {
+                if (err) {
+                    if (err.status === 401) {
+                        window.location.replace("/fallback-login.html");
+                    } else {
+                        console.error("Session check failed:", err);
+                    }
+                    return;
+                }
+
+                if (data && data.profile) {
+                    var profile = data.profile;
+                    
+                    var nameEl = document.getElementById("dash-username");
+                    if (nameEl) {
+                        nameEl.textContent = profile.alias || profile.username || data.email || "Scholar";
+                    }
+
+                    var xpBoxes = document.getElementsByClassName("text-blue");
+                    for (var i = 0; i < xpBoxes.length; i++) {
+                        if (xpBoxes[i].className.indexOf("stat-value") !== -1) {
+                            xpBoxes[i].textContent = profile.xp_total !== undefined ? profile.xp_total : "0";
+                        }
+                    }
+
+                    var streakBoxes = document.getElementsByClassName("text-amber");
+                    for (var j = 0; j < streakBoxes.length; j++) {
+                        if (streakBoxes[j].className.indexOf("stat-value") !== -1) {
+                            streakBoxes[j].textContent = (profile.current_streak !== undefined ? profile.current_streak : "0") + "d";
+                        }
+                    }
+                }
+            });
+        }
+
+        function handleSignOut() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/auth/signout", true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    window.location.replace("/fallback-login.html");
+                }
+            };
+            xhr.send();
         }
 
         function escapeStr(str) {

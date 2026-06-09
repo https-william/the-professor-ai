@@ -455,7 +455,8 @@ export default function DashboardWeb({
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
                                             Learning Telemetry
                                         </h3>
-                                                                    <div className="space-y-4">
+                                    </div>
+                                    <div className="space-y-4">
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Total XP</span>
                                             <span className="font-mono text-xs font-black text-[var(--blue)] tabular-nums">{userXp.toLocaleString()} XP</span>
@@ -508,7 +509,7 @@ export default function DashboardWeb({
                                             <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Degrades In</span>
                                             <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">{degradesIn}h</span>
                                         </div>
-                                    </div>            </div>
+                                    </div>
                                 </div>
 
                                 {/* Column 3: Recent Packs */}

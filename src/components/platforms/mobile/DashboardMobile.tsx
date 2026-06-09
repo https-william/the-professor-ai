@@ -22,6 +22,7 @@ interface DashboardMobileProps {
     user: any;
     activityData: any;
     dueCount: number;
+    dueData: any;
     studyPlan: string | null;
     planLoading: boolean;
     greeting: string;
@@ -42,7 +43,7 @@ const fadeUp = {
 };
 
 export default function DashboardMobile({
-    user, activityData, dueCount, firstName,
+    user, activityData, dueCount, dueData, firstName,
     handleRecover, canRecover, isProcessingAction,
 }: DashboardMobileProps) {
 
@@ -59,7 +60,7 @@ export default function DashboardMobile({
     // Fetch recent study packs
     const [recentPacks, setRecentPacks] = useState<any[]>([]);
     const [packsLoading, setPacksLoading] = useState(true);
-    useState(() => {
+    useEffect(() => {
         if (!user?.id) return;
         setPacksLoading(true);
         fetch('/api/library')
@@ -72,7 +73,34 @@ export default function DashboardMobile({
             })
             .catch(err => console.error("Failed to fetch library packs:", err))
             .finally(() => setPacksLoading(false));
-    });
+    }, [user?.id]);
+
+    // Dynamic ERS calculation
+    const totalCards = dueData?.totalCardsCount || 0;
+    const dueCardsCount = dueCount;
+    const readinessScore = totalCards > 0 ? Math.max(30, Math.round(((totalCards - dueCardsCount) / totalCards) * 100)) : 100;
+
+    // Highest due deck
+    const highestDueDeck = dueData?.decks?.reduce((max: any, deck: any) => deck.dueCount > max.dueCount ? deck : max, { dueCount: 0 });
+    const dueDeckTitle = highestDueDeck?.dueCount > 0 ? highestDueDeck.title : "your study packs";
+
+    // Dynamic degrades hours and sprint duration
+    const degradesIn = dueCardsCount > 0 ? Math.max(2, Math.round(24 - (dueCardsCount * 0.5))) : 24;
+    const sprintMin = dueData?.estimatedMinutes || 4;
+
+    // Dynamic social proof
+    const socialProof = useMemo(() => {
+        const names = ["Tunde", "Amaka", "Ifeanyi", "Bolu"];
+        let hash = 0;
+        if (user?.id) {
+            for (let i = 0; i < user.id.length; i++) {
+                hash = ((hash << 5) - hash) + user.id.charCodeAt(i);
+            }
+        }
+        const nameIdx = Math.abs(hash) % names.length;
+        const percent = 12 + (Math.abs(hash) % 8); // 12% to 19%
+        return `💡 ${names[nameIdx]} increased score by ${percent}% last week.`;
+    }, [user?.id]);
 
 
     // Time-based category hint
@@ -134,6 +162,59 @@ export default function DashboardMobile({
                                 <h1 className="text-base font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
                                     &ldquo;{dailyLine}&rdquo;
                                 </h1>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Exam Readiness Score (ERS) Card */}
+                    <motion.div variants={fadeUp} className="mb-4">
+                        <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)] shadow-xl flex flex-col items-center gap-6" style={{ borderRadius: "24px" }}>
+                            {/* ERS Donut Progress Meter */}
+                            <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
+                                <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
+                                    <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
+                                        strokeDasharray="188.4 62.8"
+                                        initial={{ strokeDashoffset: 188.4 }}
+                                        animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
+                                        transition={{ duration: 1.5, ease: "easeOut" }}
+                                        strokeLinecap="round" />
+                                </svg>
+                                <div className="absolute flex flex-col items-center justify-center">
+                                    <span className="font-mono text-xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
+                                    <span className="text-[7px] font-black uppercase tracking-wider text-[var(--text-3)]">Ready</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 text-center w-full">
+                                <div className="flex items-center justify-center gap-2">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--blue-text)]">ERS™ Gauge</span>
+                                </div>
+                                <h3 className="text-lg font-black tracking-tight text-[var(--text)] leading-tight">
+                                    Exam Readiness Score
+                                </h3>
+                                <div className="space-y-2 border-t border-[var(--border)] pt-2.5">
+                                    <p className="text-xs font-bold text-[var(--text-2)] leading-relaxed">
+                                        {dueCardsCount > 0 ? (
+                                            <>
+                                                Your retention loop for <span className="text-[var(--blue-text)] font-black">{dueDeckTitle}</span> degrades in {degradesIn} hours. Run a {sprintMin}-minute Flashcard Sprint right now.
+                                            </>
+                                        ) : (
+                                            <>
+                                                All caught up! Your memory retention is in perfect shape. Keep it up!
+                                            </>
+                                        )}
+                                    </p>
+                                    <p className="text-[9px] text-[var(--text-3)] font-medium">
+                                        {socialProof}
+                                    </p>
+                                </div>
+                                <Link href="/review" className="inline-block mt-1 w-full">
+                                    <div className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[var(--text)] text-[var(--bg)] font-black text-[10px] uppercase tracking-[0.15em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
+                                        <Zap size={12} className="fill-current animate-pulse text-[var(--bg)]" />
+                                        <span>Resume Active Sprint</span>
+                                    </div>
+                                </Link>
                             </div>
                         </div>
                     </motion.div>

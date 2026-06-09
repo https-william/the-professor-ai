@@ -295,6 +295,10 @@
       </div>
 
       <!-- Form -->
+      <!-- Error Box -->
+      <div id="error-container" style="display:none; background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.4); color: #fecaca; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; font-weight: 700; line-height: 1.4;">
+        ⚠ <span id="error-message"></span>
+      </div>
       <form action="/api/auth/login" method="POST">
         <label for="email">Email</label>
         <input class="input-field" type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
@@ -316,5 +320,25 @@
     <a href="/fallback.html" class="back-link">← Back to home</a>
   </div>
 
+  <script>
+    (function() {
+      var params = {};
+      var parts = window.location.search.substring(1).split('&');
+      for (var i = 0; i < parts.length; i++) {
+        var pair = parts[i].split('=');
+        if (pair[0]) {
+          params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+        }
+      }
+      if (params.error) {
+        var errBox = document.getElementById('error-container');
+        var errMsg = document.getElementById('error-message');
+        if (errBox && errMsg) {
+          errMsg.textContent = params.error;
+          errBox.style.display = 'block';
+        }
+      }
+    })();
+  </script>
 </body>
 </html>

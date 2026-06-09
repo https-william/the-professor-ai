@@ -274,12 +274,19 @@ export default function RootLayout({
                   };
                 }
 
-                // Legacy browser redirect — if browser can't handle modern JS, send to /legacy/index.html
+                // Legacy browser redirect — if browser can't handle modern JS, route to specific fallback pages
                 // Test for optional chaining + nullish coalescing (ES2020 minimum)
                 try {
                   eval('({}?.x ?? 0)');
                 } catch(e) {
-                  if (window.location.pathname !== '/legacy/index.html' && window.location.pathname !== '/legacy') {
+                  var path = window.location.pathname;
+                  if (path === '/login' || path === '/login/') {
+                    window.location.replace('/fallback-login.html');
+                  } else if (path === '/signup' || path === '/signup/') {
+                    window.location.replace('/fallback-signup.html');
+                  } else if (path === '/' || path === '/index.html') {
+                    window.location.replace('/fallback.html');
+                  } else if (path !== '/legacy/index.html' && path !== '/legacy') {
                     window.location.replace('/legacy/index.html');
                   }
                 }

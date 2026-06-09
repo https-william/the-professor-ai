@@ -16,7 +16,6 @@ import StandardContainer from "@/components/ui/StandardContainer";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
 import { getDailyTip } from "@/lib/education-tips";
-import { useDashboardStore } from "@/store/useDashboardStore";
 
 interface DashboardDesktopProps {
     user: any;
@@ -46,7 +45,6 @@ export default function DashboardDesktop({
     user, activityData, dueCount, dueData, firstName,
     handleRecover, canRecover, isProcessingAction,
 }: DashboardDesktopProps) {
-    const { userState, setUserState } = useDashboardStore();
 
     const level = calculateLevel(user.xp);
     const progress = getLevelProgress(user.xp);
@@ -106,6 +104,16 @@ export default function DashboardDesktop({
             .finally(() => setPacksLoading(false));
     }, [user?.id]);
 
+    // Auto-derive userState from real data — no dev toggle needed
+    const userState = useMemo(() => {
+        if (packsLoading) return 'RETURNING_STUDENT'; // show returning while loading
+        const xp = user?.xp ?? 0;
+        const packCount = recentPacks.length;
+        if (packCount === 0 && xp < 50) return 'NEW_USER';
+        if (xp >= 500 && packCount >= 3) return 'POWER_LEARNER';
+        return 'RETURNING_STUDENT';
+    }, [recentPacks, packsLoading, user?.xp]);
+
     // Time-based category hint
     const timeHint = useMemo(() => {
         const hour = new Date().getHours();
@@ -144,23 +152,6 @@ export default function DashboardDesktop({
         <div className="w-full min-h-screen relative bg-[var(--bg)] selection:bg-[var(--blue-dim)]">
             <StandardContainer className="pt-24 pb-20 relative z-10" wide={true}>
                 <motion.div variants={stagger} initial="hidden" animate="show">
-                    {/* View Switcher Controls */}
-                    <div className="mb-6 flex justify-end gap-2">
-                        {(['NEW_USER', 'RETURNING_STUDENT', 'POWER_LEARNER'] as const).map((s) => (
-                            <button
-                                key={s}
-                                onClick={() => setUserState(s)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer",
-                                    userState === s
-                                        ? "bg-[var(--text)] border-transparent text-[var(--bg)] shadow-md"
-                                        : "bg-[var(--bg-2)] border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text)]"
-                                )}
-                            >
-                                {s.replace("_", " ")}
-                            </button>
-                        ))}
-                    </div>
 
                     {userState === 'NEW_USER' && (
                         <motion.div variants={fadeUp} className="space-y-6">
@@ -510,32 +501,74 @@ export default function DashboardDesktop({
 
                     {userState === 'POWER_LEARNER' && (
                         <motion.div variants={fadeUp} className="space-y-6">
+                            {/* Welcome Banner for Power Learner */}
+                            <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl mb-6" style={{ borderRadius: "28px" }}>
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
+                                <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+                                    <div className="flex-1 min-w-[280px]">
+                                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint} (Power Learner)</span>
+                                            </div>
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
+                                            </div>
+                                            <FocusTimer widget={true} />
+                                        </div>
+                                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-2">
+                                            Hey {firstName},
+                                        </h2>
+                                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
+                                            &ldquo;{dailyLine}&rdquo;
+                                        </h1>
+                                    </div>
+                                    <div className="flex items-center gap-4 shrink-0">
+                                        <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                                            <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
+                                                <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
+                                                    strokeDasharray="188.4 62.8"
+                                                    initial={{ strokeDashoffset: 188.4 }}
+                                                    animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
+                                                    transition={{ duration: 1.5, ease: "easeOut" }}
+                                                    strokeLinecap="round" />
+                                            </svg>
+                                            <div className="absolute flex flex-col items-center justify-center">
+                                                <span className="font-mono text-xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
+                                                <span className="text-[7px] font-black uppercase tracking-wider text-[var(--text-3)]">ERS™</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Three Column Telemetry Dashboard */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* Column 1: SQLite Storage Stats */}
+                                {/* Column 1: Stats */}
                                 <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
                                         <Layers className="text-[var(--violet)] w-5 h-5" />
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
-                                            Local Caching Telemetry
+                                            Learning Telemetry
                                         </h3>
                                     </div>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Index Status</span>
-                                            <span className="font-mono text-xs font-black text-[var(--emerald)]">OPTIMIZED</span>
+                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Total XP</span>
+                                            <span className="font-mono text-xs font-black text-[var(--blue)] tabular-nums">{user.xp?.toLocaleString()} XP</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">SQLite File Size</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)]">14.8 MB</span>
+                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Level</span>
+                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">Lvl {level} · {title}</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Cached Concept Cards</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)]">1,248</span>
+                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Active Streak</span>
+                                            <span className="font-mono text-xs font-black text-[var(--amber)] tabular-nums">{user.streak}d 🔥</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Cache Hit Rate</span>
-                                            <span className="font-mono text-xs font-black text-[var(--blue)]">99.4%</span>
+                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Study Packs</span>
+                                            <span className="font-mono text-xs font-black text-[var(--emerald)] tabular-nums">{recentPacks.length}+ active</span>
                                         </div>
                                     </div>
                                 </div>
@@ -545,52 +578,59 @@ export default function DashboardDesktop({
                                     <div className="flex items-center gap-2 mb-4">
                                         <BrainCircuit className="text-[var(--blue)] w-5 h-5" />
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
-                                            Retention Stability Curve
+                                            Retention Stability
                                         </h3>
                                     </div>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Active Stability</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)]">84%</span>
+                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Exam Readiness</span>
+                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
                                         </div>
                                         <div className="w-full bg-[var(--bg-3)] h-2 rounded-full overflow-hidden">
-                                            <div className="bg-[var(--blue)] h-full rounded-full" style={{ width: "84%" }} />
+                                            <motion.div
+                                                className="bg-[var(--blue)] h-full rounded-full"
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${readinessScore}%` }}
+                                                transition={{ duration: 1.2, ease: "easeOut" }}
+                                            />
                                         </div>
 
                                         <div className="flex justify-between items-center pt-2">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Recall Strength</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)]">91%</span>
-                                        </div>
-                                        <div className="w-full bg-[var(--bg-3)] h-2 rounded-full overflow-hidden">
-                                            <div className="bg-[var(--emerald)] h-full rounded-full" style={{ width: "91%" }} />
+                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Cards Due</span>
+                                            <span className={cn("font-mono text-xs font-black tabular-nums", dueCardsCount > 0 ? "text-[var(--amber)]" : "text-[var(--emerald)]")}>
+                                                {dueCardsCount > 0 ? `${dueCardsCount} due` : "0 due ✓"}
+                                            </span>
                                         </div>
 
                                         <div className="flex justify-between items-center pt-2">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Overdue Concepts</span>
-                                            <span className="font-mono text-xs font-black text-[var(--amber)]">0 due</span>
+                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Degrades In</span>
+                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">{degradesIn}h</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Column 3: Heavily Reviewed Text Assets */}
+                                {/* Column 3: Active Packs */}
                                 <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
                                         <FileText className="text-[var(--cyan)] w-5 h-5" />
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
-                                            Active Text Assets
+                                            Active Packs
                                         </h3>
                                     </div>
                                     <div className="space-y-3">
-                                        {[
-                                            { title: "Neuro-Anatomy Block 1", reps: 48, rate: "94%" },
-                                            { title: "Pathology - Cardiovascular", reps: 32, rate: "88%" },
-                                            { title: "Pharmacology - Antimicrobials", reps: 24, rate: "81%" }
-                                        ].map((asset, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-2.5 rounded-lg bg-[var(--bg-3)]/40 border border-[var(--border)] text-xs">
-                                                <span className="font-bold text-[var(--text)] truncate max-w-[140px]">{asset.title}</span>
-                                                <span className="font-mono text-[10px] text-[var(--text-3)] font-black uppercase">{asset.reps} reps · {asset.rate}</span>
-                                            </div>
-                                        ))}
+                                        {recentPacks.length > 0 ? recentPacks.map((pack) => {
+                                            const packId = pack.id || pack.generation_id;
+                                            return (
+                                                <Link key={packId} href={`/library/pack/${packId}`}>
+                                                    <div className="flex justify-between items-center p-2.5 rounded-lg bg-[var(--bg-3)]/40 border border-[var(--border)] text-xs hover:border-[var(--blue)]/40 transition-all cursor-pointer">
+                                                        <span className="font-bold text-[var(--text)] truncate max-w-[140px]">{pack.title || "Untitled Pack"}</span>
+                                                        <ArrowRight size={10} className="text-[var(--text-3)]" />
+                                                    </div>
+                                                </Link>
+                                            );
+                                        }) : (
+                                            <p className="text-xs text-[var(--text-3)] font-bold text-center py-4">No packs yet</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
