@@ -32,6 +32,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
     const isFreePlan = user?.planStatus === "free";
     const [queuePosition, setQueuePosition] = useState(isFreePlan ? 3 : 0);
     const [index, setIndex] = useState(0);
+    const [secondsLeft, setSecondsLeft] = useState(15);
 
     // Decrement queue position every 3 seconds
     useEffect(() => {
@@ -42,6 +43,16 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
             return () => clearTimeout(timer);
         }
     }, [queuePosition]);
+
+    // Decrement countdown every second
+    useEffect(() => {
+        if (queuePosition > 0) return;
+        if (secondsLeft <= 0) return;
+        const timer = setInterval(() => {
+            setSecondsLeft((prev) => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [secondsLeft, queuePosition]);
 
     // Advance generation steps after queue reaches 0
     useEffect(() => {
@@ -98,6 +109,19 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                     />
                 </motion.div>
             </div>
+
+            {/* 15-Second Anticipation Countdown Bar */}
+            {queuePosition === 0 && (
+                <div className="w-full max-w-xl mx-auto mb-6 p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between text-left font-mono">
+                    <div>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-[var(--accent)]">Anticipation Phase</span>
+                        <p className="text-[10px] text-[var(--foreground-muted)]">Synthesizing study pack contents...</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                        <span className="text-2xl font-black text-white">{secondsLeft}s</span>
+                    </div>
+                </div>
+            )}
 
             {/* Glassmorphic Terminal Card */}
             <div className="w-full bg-[var(--card)]/90 backdrop-blur-xl border border-[var(--card-border)] rounded-3xl p-6 sm:p-8 text-left shadow-[0_20px_50px_rgba(0,0,0,0.35)] relative overflow-hidden mb-6">

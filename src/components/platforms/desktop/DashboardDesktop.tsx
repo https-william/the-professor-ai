@@ -256,17 +256,17 @@ export default function DashboardDesktop({
                                     
                                     {/* ERS Donut Progress Meter */}
                                     <div className="relative w-32 h-32 shrink-0 flex items-center justify-center">
-                                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                            <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" />
+                                        <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
                                             <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
-                                                strokeDasharray={251.2}
-                                                initial={{ strokeDashoffset: 251.2 }}
-                                                animate={{ strokeDashoffset: 251.2 * (1 - readinessScore / 100) }}
+                                                strokeDasharray="188.4 62.8"
+                                                initial={{ strokeDashoffset: 188.4 }}
+                                                animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
                                                 transition={{ duration: 1.5, ease: "easeOut" }}
                                                 strokeLinecap="round" />
                                         </svg>
                                         <div className="absolute flex flex-col items-center justify-center">
-                                            <span className="font-mono text-2xl font-black text-[var(--text)]">{readinessScore}%</span>
+                                            <span className="font-mono text-2xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
                                             <span className="text-[8px] font-black uppercase tracking-wider text-[var(--text-3)]">Ready</span>
                                         </div>
                                     </div>

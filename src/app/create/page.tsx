@@ -61,6 +61,49 @@ function CreatorStudio() {
     const [dragActive, setDragActive] = useState(false);
     const [missionTitle, setMissionTitle] = useState("");
     const [userEditedTitle, setUserEditedTitle] = useState(false);
+
+    // Hover hesitation tracking
+    const [hoverStartTime, setHoverStartTime] = useState<number | null>(null);
+    const [isHesitating, setIsHesitating] = useState(false);
+
+    const handleMouseEnter = () => {
+        setHoverStartTime(Date.now());
+    };
+
+    const handleMouseLeave = () => {
+        setHoverStartTime(null);
+        setIsHesitating(false);
+    };
+
+    useEffect(() => {
+        if (hoverStartTime === null) return;
+        const interval = setInterval(() => {
+            if (Date.now() - hoverStartTime > 500) {
+                setIsHesitating(true);
+            }
+        }, 100);
+        return () => clearInterval(interval);
+    }, [hoverStartTime]);
+
+    // Demo loader
+    const loadDemo = (type: 'mitosis' | 'contract') => {
+        if (type === 'mitosis') {
+            setInputText(
+                "Mitosis is a process of cell duplication, or reproduction, during which one cell gives rise to two genetically identical daughter cells. It is divided into five main phases: Prophase, Prometaphase, Metaphase, Anaphase, and Telophase. During Prophase, chromatin condenses into visible chromosomes. Prometaphase involves nuclear envelope breakdown. Metaphase aligns chromosomes at the equatorial plate. Anaphase separates sister chromatids to opposite poles. Telophase reconstructs the nuclear envelopes around the separated sets of chromosomes, followed by Cytokinesis which splits the cell cytoplasm."
+            );
+            setMissionTitle("Mitosis Cell Division Prep");
+            setUserEditedTitle(true);
+            addToast("Biology (Mitosis) demo notes loaded. Tap 'Start Exam Sprint' below!", "success");
+        } else if (type === 'contract') {
+            setInputText(
+                "A contract is a legally binding agreement between two or more parties. The essential elements of a contract are: Offer, Acceptance, Consideration, Intention to create legal relations, and Capacity. An Offer is an expression of willingness to contract on specific terms. Acceptance is the unconditional assent to all the terms of the offer. Consideration represents the price paid for the promise, which must have some economic value. Both parties must intend for the agreement to have legal consequences. Finally, the parties must possess the legal capacity to contract (e.g., being of sound mind and legal age)."
+            );
+            setMissionTitle("Contract Law 101 Prep");
+            setUserEditedTitle(true);
+            addToast("Contract Law demo notes loaded. Tap 'Start Exam Sprint' below!", "success");
+        }
+        setActiveTab('text');
+    };
     
 
 
@@ -493,33 +536,51 @@ function CreatorStudio() {
                             
                             {/* File Upload Ingestion Area */}
                             {activeTab === 'upload' ? (
-                                <label 
-                                    onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
-                                    onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
-                                    onDragOver={(e) => { e.preventDefault(); }}
-                                    onDrop={handleDrop}
-                                    onClick={handleUploadClick}
-                                    className="block cursor-pointer group"
-                                >
-                                    <div 
-                                        className={cn(
-                                            "py-12 px-6 flex flex-col items-center justify-center text-center transition-all duration-300 rounded-2xl border border-dashed border-[var(--border)]",
-                                            dragActive ? "bg-[var(--blue-dim)] border-[var(--blue)]/60 scale-[0.99]" : "bg-[var(--bg-3)]/20 hover:bg-[var(--bg-3)]/30"
-                                        )}
+                                <div className="space-y-4">
+                                    <label 
+                                        onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
+                                        onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
+                                        onDragOver={(e) => { e.preventDefault(); }}
+                                        onDrop={handleDrop}
+                                        onClick={handleUploadClick}
+                                        className="block cursor-pointer group"
                                     >
-                                        <div className={cn(
-                                            "w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 bg-[var(--bg-3)] border border-[var(--border)]",
-                                            dragActive ? "text-[var(--blue)] scale-110" : "text-[var(--blue)]"
-                                        )}>
-                                            <Upload className="w-5 h-5" strokeWidth={2} />
+                                        <div 
+                                            className={cn(
+                                                "py-12 px-6 flex flex-col items-center justify-center text-center transition-all duration-350 rounded-2xl border border-dashed border-[var(--border)]",
+                                                dragActive ? "bg-[var(--blue-dim)] border-[var(--blue)]/60 scale-[0.99]" : "bg-[var(--bg-3)]/20 hover:bg-[var(--bg-3)]/30"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 bg-[var(--bg-3)] border border-[var(--border)]",
+                                                dragActive ? "text-[var(--blue)] scale-110" : "text-[var(--blue)]"
+                                            )}>
+                                                <Upload className="w-5 h-5" strokeWidth={2} />
+                                            </div>
+                                            <h4 className="text-sm font-black text-[var(--foreground)]">Drag & drop your study materials or click to browse</h4>
+                                            <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold mt-1.5">Supports PDF, PPTX, DOCX, TXT, or Images</p>
                                         </div>
-                                        <h4 className="text-sm font-black text-[var(--foreground)]">Drag & drop your study materials or click to browse</h4>
-                                        <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold mt-1.5">Supports PDF, PPTX, DOCX, TXT, or Images</p>
+                                        {!isDesktop && (
+                                            <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
+                                        )}
+                                    </label>
+                                    
+                                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)] opacity-60">No notes handy? Try a demo:</span>
+                                        <button 
+                                            onClick={() => loadDemo('mitosis')}
+                                            className="px-3 py-1.5 rounded-xl bg-[var(--bg-3)]/60 hover:bg-[var(--bg-3)] border border-[var(--border)] text-[10px] font-bold text-[var(--foreground)] hover:border-[var(--blue)]/30 transition-all cursor-pointer"
+                                        >
+                                            Biology (Mitosis)
+                                        </button>
+                                        <button 
+                                            onClick={() => loadDemo('contract')}
+                                            className="px-3 py-1.5 rounded-xl bg-[var(--bg-3)]/60 hover:bg-[var(--bg-3)] border border-[var(--border)] text-[10px] font-bold text-[var(--foreground)] hover:border-[var(--blue)]/30 transition-all cursor-pointer"
+                                        >
+                                            Contract Law
+                                        </button>
                                     </div>
-                                    {!isDesktop && (
-                                        <input type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" />
-                                    )}
-                                </label>
+                                </div>
                             ) : (
                                 <div className="space-y-3 animate-in fade-in duration-300">
                                     <div className="flex items-center justify-between">
@@ -674,12 +735,16 @@ function CreatorStudio() {
                                             )}
                                             <button
                                                 onClick={handleGenerate}
+                                                onMouseEnter={handleMouseEnter}
+                                                onMouseLeave={handleMouseLeave}
                                                 disabled={!hasSuccess || isQueueProcessing}
                                                 className={cn(
                                                     "flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg cursor-pointer",
                                                     !hasSuccess || isQueueProcessing
                                                         ? 'opacity-50 cursor-not-allowed bg-[var(--bg-3)]/80 border border-[var(--border)] text-[var(--foreground-muted)]/40' 
-                                                        : 'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:scale-[0.98]'
+                                                        : isHesitating
+                                                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-[0_0_25px_rgba(245,158,11,0.45)] scale-[1.01] border-orange-400'
+                                                            : 'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:scale-[0.98]'
                                                 )}
                                             >
                                                 <Zap size={16} strokeWidth={2.5} className={hasSuccess && !isQueueProcessing ? "animate-pulse" : ""} />
