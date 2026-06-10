@@ -20,7 +20,7 @@ export default function WaitingRoom({ onRetry }: WaitingRoomProps) {
                     <BrandLogo size="md" />
                 </div>
                 <motion.div 
-                    className="absolute -top-2 -right-2 px-3 py-1 rounded-full bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest"
+                    className="absolute -top-2 -right-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-white text-[9px] font-black uppercase tracking-widest"
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                 >

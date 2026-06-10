@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     try {
         const { type, customXp } = await req.json();
 
-        if (!['quiz', 'flashcards', 'summary', 'daily_challenge', 'exam_sprint', 'tour_complete'].includes(type)) {
+        if (!['quiz', 'flashcards', 'summary', 'daily_challenge', 'exam_sprint', 'tour_complete', 'trivia_duel'].includes(type)) {
             return NextResponse.json({ error: "Invalid activity type" }, { status: 400 });
         }
 

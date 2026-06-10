@@ -10,7 +10,7 @@ const STREAK_MILESTONES = [7, 14, 30, 60, 100];
  * @param userId optional userId to avoid re-auth
  */
 export async function recordActivity(
-    type: 'quiz' | 'flashcards' | 'summary' | 'roadmap' | 'daily_challenge' | 'mind-map' | 'podcast' | 'exam_sprint' | 'tour_complete', 
+    type: 'quiz' | 'flashcards' | 'summary' | 'roadmap' | 'daily_challenge' | 'mind-map' | 'podcast' | 'exam_sprint' | 'tour_complete' | 'trivia_duel', 
     existingSupabase?: any,
     userId?: string,
     customXp?: number
@@ -30,7 +30,8 @@ export async function recordActivity(
         "mind-map": 35,
         podcast: 40,
         exam_sprint: 100,
-        tour_complete: 100
+        tour_complete: 100,
+        trivia_duel: 50
     };
     const xpToAdd = customXp !== undefined ? customXp : (xpMap[type] || 0);
 

@@ -32,15 +32,17 @@ export async function POST(req: NextRequest) {
                     const question = parsed.question || "";
                     const options = parsed.options || [];
                     const correctIndex = parsed.correctIndex ?? 0;
-                    const correctAnswer = options[correctIndex] || "";
                     
-                    return `\n\n<div class="knowledge-check-box" style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 1.5rem; margin: 2rem 0; border-radius: 0 12px 12px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
-                            <span style="background: #2563eb; color: white; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.1em;">Knowledge Check</span>
-                        </div>
-                        <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.5rem 0; font-size: 1.1rem;">${question}</p>
-                        <p style="margin: 0; color: #10b981; font-weight: 600; font-size: 0.95rem;">✓ ${correctAnswer}</p>
-                    </div>\n\n`;
+                    let markdown = `\n\n> 💡 **Professor's Spot Check**\n> \n> **Question:** ${question}\n> \n`;
+                    options.forEach((opt: string, idx: number) => {
+                        if (idx === correctIndex) {
+                            markdown += `> * **✓ ${opt} (Correct)**\n`;
+                        } else {
+                            markdown += `> * ${opt}\n`;
+                        }
+                    });
+                    markdown += `\n`;
+                    return markdown;
                 } catch (e) {
                     // If JSON parsing fails, remove the block entirely to avoid leaking raw JSON
                     return "";

@@ -138,28 +138,28 @@ export default function DashboardMobile({
     }, [activityData, user?.streak]);
 
     return (
-        <div className="w-full relative bg-[var(--bg)] selection:bg-[var(--blue-dim)] pt-24 pb-32">
+        <div className="w-full relative bg-transparent selection:bg-white/10 pt-24 pb-32">
             <StandardContainer className="relative z-10 flex flex-col gap-6">
                 <motion.div variants={stagger} initial="hidden" animate="show">
                     {/* Welcome Banner */}
                     <motion.div variants={fadeUp} className="mb-4">
-                        <div className="scholar-card relative p-6 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl animate-in fade-in duration-300" style={{ borderRadius: "24px" }}>
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={120} /></div>
+                        <div className="scholar-card relative p-6 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 animate-in fade-in duration-300" style={{ borderRadius: "24px" }}>
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-white/60 pointer-events-none"><Sparkles size={120} /></div>
                             <div className="relative z-10">
                                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 shadow-sm">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint}</span>
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/70 font-bold">{timeHint}</span>
                                     </div>
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/40 font-bold">{dateStr}</span>
                                     </div>
                                     <FocusTimer widget={true} />
                                 </div>
-                                <h2 className="text-2xl font-black tracking-tight text-[var(--text)] mb-1">
+                                <h2 className="text-2xl font-black tracking-tight text-white mb-1">
                                     Hey {firstName},
                                 </h2>
-                                <h1 className="text-base font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
+                                <h1 className="text-base font-black tracking-tight text-white/70 leading-relaxed mb-3 italic uppercase">
                                     &ldquo;{dailyLine}&rdquo;
                                 </h1>
                             </div>
@@ -168,36 +168,35 @@ export default function DashboardMobile({
 
                     {/* Exam Readiness Score (ERS) Card */}
                     <motion.div variants={fadeUp} className="mb-4">
-                        <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)] shadow-xl flex flex-col items-center gap-6" style={{ borderRadius: "24px" }}>
+                        <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 flex flex-col items-center gap-6" style={{ borderRadius: "24px" }}>
                             {/* ERS Donut Progress Meter */}
                             <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
                                 <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                    <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
-                                        strokeDasharray="188.4 62.8"
+                                    <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
+                                    <motion.circle cx="50" cy="50" r="40" stroke="white" strokeWidth="8" fill="transparent" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.5))" }} strokeDasharray="188.4 62.8"
                                         initial={{ strokeDashoffset: 188.4 }}
                                         animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
                                         strokeLinecap="round" />
                                 </svg>
                                 <div className="absolute flex flex-col items-center justify-center">
-                                    <span className="font-mono text-xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
-                                    <span className="text-[7px] font-black uppercase tracking-wider text-[var(--text-3)]">Ready</span>
+                                    <span className="font-mono text-xl font-black text-white tabular-nums">{readinessScore}%</span>
+                                    <span className="text-[7px] font-black uppercase tracking-wider text-white/40">Ready</span>
                                 </div>
                             </div>
 
                             <div className="space-y-3 text-center w-full">
                                 <div className="flex items-center justify-center gap-2">
-                                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--blue-text)]">ERS™ Gauge</span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/70">ERS™ Gauge</span>
                                 </div>
-                                <h3 className="text-lg font-black tracking-tight text-[var(--text)] leading-tight">
+                                <h3 className="text-lg font-black tracking-tight text-white leading-tight">
                                     Exam Readiness Score
                                 </h3>
                                 <div className="space-y-2 border-t border-[var(--border)] pt-2.5">
-                                    <p className="text-xs font-bold text-[var(--text-2)] leading-relaxed">
+                                    <p className="text-xs font-bold text-white/70 leading-relaxed">
                                         {dueCardsCount > 0 ? (
                                             <>
-                                                Your retention loop for <span className="text-[var(--blue-text)] font-black">{dueDeckTitle}</span> degrades in {degradesIn} hours. Run a {sprintMin}-minute Flashcard Sprint right now.
+                                                Your retention loop for <span className="text-white/70 font-black">{dueDeckTitle}</span> degrades in {degradesIn} hours. Run a {sprintMin}-minute Flashcard Sprint right now.
                                             </>
                                         ) : (
                                             <>
@@ -205,13 +204,13 @@ export default function DashboardMobile({
                                             </>
                                         )}
                                     </p>
-                                    <p className="text-[9px] text-[var(--text-3)] font-medium">
+                                    <p className="text-[9px] text-white/40 font-medium">
                                         {socialProof}
                                     </p>
                                 </div>
                                 <Link href="/review" className="inline-block mt-1 w-full">
-                                    <div className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[var(--text)] text-[var(--bg)] font-black text-[10px] uppercase tracking-[0.15em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
-                                        <Zap size={12} className="fill-current animate-pulse text-[var(--bg)]" />
+                                    <div className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-black font-black text-[10px] uppercase tracking-[0.15em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
+                                        <Zap size={12} className="fill-current animate-pulse text-black" />
                                         <span>Resume Active Sprint</span>
                                     </div>
                                 </Link>
@@ -223,16 +222,16 @@ export default function DashboardMobile({
                     <motion.div variants={fadeUp} className="mb-4 flex flex-wrap gap-2 items-center">
                         {/* Start Session Pill */}
                         <Link href="/create" className="group">
-                            <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[var(--text)] text-[var(--bg)] font-black text-[10px] uppercase tracking-[0.15em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
-                                <Zap size={12} className="fill-current animate-pulse text-[var(--bg)]" />
+                            <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-black font-black text-[10px] uppercase tracking-[0.15em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
+                                <Zap size={12} className="fill-current animate-pulse text-black" />
                                 <span>Start Session</span>
                             </div>
                         </Link>
                         
                         {/* Library Pill */}
                         <Link href="/library" className="group">
-                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                <Library size={11} className="text-[var(--violet)]" />
+                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 text-white font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <Library size={11} className="text-white/60" />
                                 <span>Library</span>
                             </div>
                         </Link>
@@ -241,8 +240,8 @@ export default function DashboardMobile({
 
                         {/* Blog Pill */}
                         <Link href="/blog" className="group">
-                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                <BookOpen size={11} className="text-[var(--cyan)]" />
+                            <div className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 text-white font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                <BookOpen size={11} className="text-white/60" />
                                 <span>Blog</span>
                             </div>
                         </Link>
@@ -254,7 +253,7 @@ export default function DashboardMobile({
                                 setShowWrappedDetails(false);
                             }}
                             className={cn(
-                                "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-white font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                 showStreakDetails 
                                     ? "bg-[var(--amber-dim)] border-[var(--amber-border)]" 
                                     : "bg-[var(--bg-2)] border-[var(--border)]"
@@ -271,13 +270,13 @@ export default function DashboardMobile({
                                 setShowStreakDetails(false);
                             }}
                             className={cn(
-                                "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-[var(--text)] font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-white font-black text-[9px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                 showWrappedDetails 
                                     ? "bg-[var(--blue-dim)] border-[var(--blue-border)]" 
                                     : "bg-[var(--bg-2)] border-[var(--border)]"
                             )}
                         >
-                            <TrendingUp size={11} className="text-[var(--blue)]" />
+                            <TrendingUp size={11} className="text-white/60" />
                             <span>Wrapped</span>
                         </button>
                     </motion.div>
@@ -292,11 +291,11 @@ export default function DashboardMobile({
                                 className="mb-4 overflow-hidden"
                                 key="streak-details"
                             >
-                                <div className="p-5 rounded-[20px] bg-[var(--bg-2)] border border-[var(--border)] shadow-md">
+                                <div className="p-5 rounded-[20px] bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 shadow-md">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2">
                                             <Flame size={14} className="text-[var(--amber)]" />
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-2)]">Daily Loop</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-white/70">Daily Loop</span>
                                         </div>
                                         <div className="text-[10px] font-mono font-black text-[var(--amber)]">{user.streak}d active</div>
                                     </div>
@@ -309,7 +308,7 @@ export default function DashboardMobile({
                                                         ? "bg-[var(--amber)] border-[var(--amber-light)]/20 text-black shadow-[0_0_10px_var(--amber-glow)]" 
                                                         : day.isToday 
                                                         ? "border-2 border-dashed border-[var(--amber)] bg-[var(--amber-dim)] text-[var(--amber)]" 
-                                                        : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--text-3)]"
+                                                        : "bg-[var(--bg-3)] border-[var(--border)] text-white/40"
                                                 )}>
                                                     {day.label}
                                                 </div>
@@ -340,9 +339,9 @@ export default function DashboardMobile({
                             { label: "Streak", value: `${user.streak}d`, color: "var(--amber)" },
                             { label: "Credits", value: user.credits, color: "var(--violet)" },
                         ].map(({ label, value, color }) => (
-                            <div key={label} className="scholar-card flex flex-col p-4 bg-[var(--bg-2)] border border-[var(--border)] shadow-sm" style={{ borderRadius: "16px" }}>
-                                <span className="text-[8px] font-black uppercase tracking-wider text-[var(--text-3)] mb-1" style={{ color }}>{label}</span>
-                                <span className="font-mono text-base font-black text-[var(--text)] tabular-nums leading-none">{value}</span>
+                            <div key={label} className="scholar-card flex flex-col p-4 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 shadow-sm" style={{ borderRadius: "16px" }}>
+                                <span className="text-[8px] font-black uppercase tracking-wider text-white/40 mb-1" style={{ color }}>{label}</span>
+                                <span className="font-mono text-base font-black text-white tabular-nums leading-none">{value}</span>
                             </div>
                         ))}
                     </motion.div>
@@ -358,9 +357,9 @@ export default function DashboardMobile({
                                                 Priority
                                             </span>
                                             <h3 className="text-xl font-black text-black tracking-tighter leading-none mb-1">Resume Session</h3>
-                                            <p className="text-xs font-bold text-[var(--text-2)]">{dueCount} topics pending.</p>
+                                            <p className="text-xs font-bold text-white/70">{dueCount} topics pending.</p>
                                         </div>
-                                        <div className="w-12 h-12 rounded-full bg-black text-[var(--blue)] flex items-center justify-center flex-shrink-0 shadow-xl">
+                                        <div className="w-12 h-12 rounded-full bg-black text-white/60 flex items-center justify-center flex-shrink-0 shadow-xl">
                                             <ArrowRight size={20} strokeWidth={3} />
                                         </div>
                                     </div>
@@ -376,7 +375,7 @@ export default function DashboardMobile({
                                 >
                                     <div className="flex flex-col items-start gap-0.5">
                                         <span className="text-[9px] font-black text-[var(--amber)] uppercase tracking-[0.15em]">Streak Rescue</span>
-                                        <span className="text-sm font-bold text-[var(--text)]">Restore {user.lastStreak} Days</span>
+                                        <span className="text-sm font-bold text-white">Restore {user.lastStreak} Days</span>
                                     </div>
                                     <div className="px-3 py-1.5 bg-[var(--amber)] text-black rounded-lg text-xs font-black">3 CR</div>
                                 </button>
@@ -386,24 +385,24 @@ export default function DashboardMobile({
 
                     {/* Recent Study Packs */}
                     <motion.div variants={fadeUp} className="mt-2">
-                        <div className="scholar-card p-5 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
+                        <div className="scholar-card p-5 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "24px" }}>
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-3)] flex items-center gap-2">
-                                    <Library size={12} className="text-[var(--blue)]" /> Recent Study Packs
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+                                    <Library size={12} className="text-white/60" /> Recent Study Packs
                                 </h3>
-                                <Link href="/library" className="text-[9px] font-black uppercase tracking-widest text-[var(--blue)] hover:underline flex items-center gap-1 transition-all">
+                                <Link href="/library" className="text-[9px] font-black uppercase tracking-widest text-white/60 hover:underline flex items-center gap-1 transition-all">
                                     View Library <ArrowRight size={10} />
                                 </Link>
                             </div>
                             {packsLoading ? (
                                 <div className="py-6 flex flex-col items-center justify-center gap-2">
-                                    <Loader2 className="animate-spin text-[var(--text-3)]" size={16} />
-                                    <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-3)]">Loading...</p>
+                                    <Loader2 className="animate-spin text-white/40" size={16} />
+                                    <p className="text-[9px] font-bold uppercase tracking-wider text-white/40">Loading...</p>
                                 </div>
                             ) : recentPacks.length === 0 ? (
-                                 <div className="py-6 flex flex-col items-center justify-center bg-[var(--bg-3)]/60 rounded-2xl border border-[var(--border)]">
-                                     <BookOpen size={40} className="text-[var(--text-3)]/40 mb-2" />
-                                     <p className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider mb-2">No study packs yet</p>
+                                 <div className="py-6 flex flex-col items-center justify-center bg-white/5 rounded-2xl border border-[var(--border)]">
+                                     <BookOpen size={40} className="text-white/40/40 mb-2" />
+                                     <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">No study packs yet</p>
                                      <Link href="/create" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--foreground)] text-[var(--background)] font-black text-[8px] uppercase tracking-wider">
                                          Create Pack
                                      </Link>
@@ -413,8 +412,8 @@ export default function DashboardMobile({
                                     {recentPacks.map((pack) => {
                                         const packType = pack.type || "summary";
                                         const typeBadgeColor = 
-                                            packType === "flashcards" ? "bg-[var(--blue-dim)] border-[var(--blue-border)] text-[var(--blue)]" :
-                                            packType === "quiz" ? "bg-[var(--cyan-dim)] border-[var(--cyan-border)] text-[var(--cyan)]" :
+                                            packType === "flashcards" ? "bg-[var(--blue-dim)] border-[var(--blue-border)] text-white/60" :
+                                            packType === "quiz" ? "bg-[var(--cyan-dim)] border-[var(--cyan-border)] text-white/60" :
                                             "bg-[var(--emerald-dim)] border-[var(--emerald-border)] text-[var(--emerald)]";
                                         const packUrl = packType === "summary" 
                                             ? `/summary/${pack.id || pack.generation_id}` 
@@ -422,10 +421,10 @@ export default function DashboardMobile({
 
                                         return (
                                             <Link href={packUrl} key={pack.id || pack.generation_id} className="group block">
-                                                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--text-3)]/30 transition-all gap-2">
+                                                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-[var(--border)] hover:border-[var(--text-3)]/30 transition-all gap-2">
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="font-sans text-xs font-bold text-[var(--foreground)] truncate group-hover:text-[var(--blue)] transition-colors">{pack.title || "Untitled Pack"}</p>
-                                                        <p className="text-[9px] text-[var(--text-3)] font-mono mt-0.5">
+                                                        <p className="font-sans text-xs font-bold text-white truncate group-hover:text-white/60 transition-colors">{pack.title || "Untitled Pack"}</p>
+                                                        <p className="text-[9px] text-white/40 font-mono mt-0.5">
                                                             {new Date(pack.created_at || pack.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                                                         </p>
                                                     </div>
@@ -433,7 +432,7 @@ export default function DashboardMobile({
                                                         <span className={cn("px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-wider", typeBadgeColor)}>
                                                             {packType}
                                                         </span>
-                                                        <ChevronRight size={12} className="text-[var(--text-3)]" />
+                                                        <ChevronRight size={12} className="text-white/40" />
                                                     </div>
                                                 </div>
                                             </Link>

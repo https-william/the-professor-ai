@@ -91,9 +91,9 @@ function NavigationLoaderContent() {
                             damping: 15,
                             mass: 0.8
                         }}
-                        className="h-full bg-[var(--blue)] shadow-[0_0_20px_var(--blue-glow)]"
+                        className="h-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.4)]"
                         style={{
-                            background: "linear-gradient(90deg, transparent, var(--blue), var(--blue))",
+                            background: "linear-gradient(90deg, transparent, #ffffff, #ffffff)",
                         }}
                     />
 
@@ -106,7 +106,7 @@ function NavigationLoaderContent() {
                         transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
                         className="absolute top-0 right-0 w-48 h-full"
                         style={{
-                            background: "radial-gradient(circle at center, var(--blue) 0%, transparent 70%)",
+                            background: "radial-gradient(circle at center, #ffffff 0%, transparent 70%)",
                             filter: "blur(8px)",
                         }}
                     />

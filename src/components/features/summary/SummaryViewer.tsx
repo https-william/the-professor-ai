@@ -85,6 +85,35 @@ function SummaryCheckpoint({ block, onCorrect }: { block: any; onCorrect: () => 
     );
 }
 
+export function convertKnowledgeChecksToMarkdown(text: string): string {
+    if (!text) return "";
+    let processed = text.replace(/([#*\s_]*)(Checking\s+Understanding|CHECKINGUNDERSTANDING|CheckingUnderstanding|checking\s+understanding)([#*\s_:]*)(\n|$)/gi, "\n");
+
+    processed = processed.replace(/\[KNOWLEDGE_CHECK\]\s*(\{[\s\S]*?\})/g, (match, jsonStr) => {
+        try {
+            const parsed = JSON.parse(jsonStr);
+            const question = parsed.question || "";
+            const options = parsed.options || [];
+            const correctIndex = parsed.correctIndex ?? 0;
+            
+            let markdown = `\n\n> 💡 **Professor's Spot Check**\n> \n> **Question:** ${question}\n> \n`;
+            options.forEach((opt: string, idx: number) => {
+                if (idx === correctIndex) {
+                    markdown += `> * **✓ ${opt} (Correct)**\n`;
+                } else {
+                    markdown += `> * ${opt}\n`;
+                }
+            });
+            markdown += `\n`;
+            return markdown;
+        } catch (e) {
+            return "";
+        }
+    });
+
+    return processed.replace(/\[KNOWLEDGE_CHECK\]/g, "");
+}
+
 export default function SummaryViewer({ data, title, generationId }: SummaryViewerProps) {
     const router = useRouter();
     const { addToast } = useToasts();
@@ -114,10 +143,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
 
     const fullMarkdownContent = useMemo(() => {
         if (!data) return "";
-        // Clean up knowledge check markers and "Checking Understanding" headings for the export
-        return data
-            .replace(/\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\}/g, "")
-            .replace(/([#*\s_]*)(Checking\s+Understanding|CHECKINGUNDERSTANDING|CheckingUnderstanding|checking\s+understanding)([#*\s_:]*)(\n|$)/gi, "\n");
+        return convertKnowledgeChecksToMarkdown(data);
     }, [data]);
 
     const handleExportPDF = async () => {

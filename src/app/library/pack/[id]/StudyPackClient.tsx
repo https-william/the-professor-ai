@@ -61,6 +61,35 @@ interface Phase {
     content: string;
 }
 
+export function convertKnowledgeChecksToMarkdown(text: string): string {
+    if (!text) return "";
+    let processed = text.replace(/([#*\s_]*)(Checking\s+Understanding|CHECKINGUNDERSTANDING|CheckingUnderstanding|checking\s+understanding)([#*\s_:]*)(\n|$)/gi, "\n");
+
+    processed = processed.replace(/\[KNOWLEDGE_CHECK\]\s*(\{[\s\S]*?\})/g, (match, jsonStr) => {
+        try {
+            const parsed = JSON.parse(jsonStr);
+            const question = parsed.question || "";
+            const options = parsed.options || [];
+            const correctIndex = parsed.correctIndex ?? 0;
+            
+            let markdown = `\n\n> 💡 **Professor's Spot Check**\n> \n> **Question:** ${question}\n> \n`;
+            options.forEach((opt: string, idx: number) => {
+                if (idx === correctIndex) {
+                    markdown += `> * **✓ ${opt} (Correct)**\n`;
+                } else {
+                    markdown += `> * ${opt}\n`;
+                }
+            });
+            markdown += `\n`;
+            return markdown;
+        } catch (e) {
+            return "";
+        }
+    });
+
+    return processed.replace(/\[KNOWLEDGE_CHECK\]/g, "");
+}
+
 export default function StudyPackPage() {
     const params = useParams();
     const router = useRouter();
@@ -1380,7 +1409,7 @@ export default function StudyPackPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[300] bg-[var(--background)] overflow-y-auto flex flex-col print-overlay"
+                        className="fixed inset-0 z-[300] bg-[var(--background)] overflow-hidden flex flex-col print-overlay"
                     >
                         {/* Immersive Header */}
                         <div className="px-4 sm:px-6 h-14 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm z-20 sticky top-0 shrink-0">
@@ -1561,7 +1590,7 @@ export default function StudyPackPage() {
                                         key="task"
                                         initial={{ opacity: 0, scale: 0.98 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="w-full min-h-full overflow-visible flex flex-col items-center px-2 sm:px-4 py-4 sm:py-6 max-w-5xl mx-auto"
+                                        className="w-full flex-grow overflow-visible flex flex-col items-center px-2 sm:px-4 py-4 sm:py-6 max-w-5xl mx-auto"
                                     >
                                         <div className="text-center mb-4 shrink-0">
                                             {currentPhase.id !== 'predict' && (
@@ -1896,7 +1925,7 @@ export default function StudyPackPage() {
                                 {(() => {
                                     const summaryData = phasesData.distill;
                                     const summaryText = typeof summaryData === 'string' ? summaryData : (summaryData?.summary ? (typeof summaryData.summary === 'string' ? summaryData.summary : JSON.stringify(summaryData.summary)) : "");
-                                    return summaryText.replace(/\[KNOWLEDGE_CHECK\]\s*\{[\s\S]*?\}/g, "");
+                                    return convertKnowledgeChecksToMarkdown(summaryText);
                                 })()}
                             </Markdown>
                         </div>

@@ -102,9 +102,9 @@ export function BubblyThinkingLoader() {
     return (
         <div className="flex flex-col gap-3 py-4 pl-1">
             <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[var(--blue-light)] thinking-dot" />
-                <span className="w-2 h-2 rounded-full bg-[var(--blue-light)] thinking-dot" />
-                <span className="w-2 h-2 rounded-full bg-[var(--blue-light)] thinking-dot" />
+                <span className="w-2 h-2 rounded-full bg-white/40 thinking-dot" />
+                <span className="w-2 h-2 rounded-full bg-white/40 thinking-dot" />
+                <span className="w-2 h-2 rounded-full bg-white/40 thinking-dot" />
             </div>
             <p className="text-[10px] font-mono font-bold tracking-widest text-[var(--foreground-muted)] uppercase animate-pulse">
                 {phrase}

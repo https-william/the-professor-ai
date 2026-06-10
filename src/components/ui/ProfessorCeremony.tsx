@@ -90,14 +90,14 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                 
                 {/* Rotating Compass Ticks */}
                 <motion.div 
-                    className="absolute inset-2 rounded-full border border-dashed border-[var(--accent)]/20"
+                    className="absolute inset-2 rounded-full border border-dashed border-white/10"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 />
 
                 {/* Sweeping Laser Line */}
                 <motion.div 
-                    className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent"
+                    className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/5 to-transparent"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                     style={{ originX: 0.5, originY: 0.5 }}
@@ -109,7 +109,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                     animate={{ 
                         boxShadow: [
                             "0 8px 32px rgba(0,0,0,0.4)",
-                            "0 8px 40px rgba(var(--accent-rgb, 255, 193, 7), 0.15)",
+                            "0 8px 40px rgba(255, 255, 255, 0.05)",
                             "0 8px 32px rgba(0,0,0,0.4)"
                         ] 
                     }}
@@ -117,7 +117,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                 >
                     <BrandLogo size="sm" />
                     <motion.div 
-                        className="absolute inset-x-0 bottom-0 h-1 bg-[var(--accent)]"
+                        className="absolute inset-x-0 bottom-0 h-1 bg-white"
                         animate={{ y: ["100%", "-200%"] }}
                         transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                     />
@@ -128,7 +128,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
             {queuePosition === 0 && (
                 <div className="w-full max-w-xl mx-auto mb-6 p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between text-left font-mono">
                     <div>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-[var(--accent)]">Anticipation Phase</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-white/60">Anticipation Phase</span>
                         <p className="text-[10px] text-[var(--foreground-muted)]">Synthesizing study pack contents...</p>
                     </div>
                     <div className="text-right shrink-0">
@@ -138,7 +138,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
             )}
 
             {/* Glassmorphic Terminal Card */}
-            <div className="w-full bg-[var(--card)]/90 backdrop-blur-xl border border-[var(--card-border)] rounded-3xl p-6 sm:p-8 text-left shadow-[0_20px_50px_rgba(0,0,0,0.35)] relative overflow-hidden mb-6">
+            <div className="w-full bg-zinc-950/45 backdrop-blur-2xl border border-white/5 rounded-3xl p-6 sm:p-8 text-left shadow-[0_20px_50px_rgba(0,0,0,0.35)] relative overflow-hidden mb-6">
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                 
                 {/* Terminal Header */}
@@ -176,16 +176,16 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                                 <p className="text-[10px] text-white/40 mt-1 font-mono">Estimated wait: ~{queuePosition * 3} seconds</p>
                             </div>
 
-                            <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div className="text-left">
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-[var(--accent)] uppercase tracking-wider">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-white/80 uppercase tracking-wider">
                                         <Sparkles size={11} /> Skip the Line
                                     </div>
                                     <p className="text-[10px] text-[var(--foreground-muted)] mt-0.5">Plus & Unlimited scholars bypass queues instantly.</p>
                                 </div>
                                 <button 
                                     onClick={() => window.location.href = "/settings/billing"}
-                                    className="px-4 py-2 bg-[var(--foreground)] text-[var(--background)] hover:bg-[var(--foreground-muted)] font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-md"
+                                    className="px-4 py-2 bg-white text-black hover:bg-white/80 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-md"
                                 >
                                     Upgrade ➔
                                 </button>
@@ -208,17 +208,17 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                                     <div 
                                         key={step.key}
                                         className={`flex items-center justify-between transition-all duration-300 ${
-                                            isDone ? "text-white/80" : isActive ? "text-[var(--accent)] font-bold" : "text-white/25"
+                                            isDone ? "text-white/80" : isActive ? "text-white font-bold" : "text-white/25"
                                         }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             {isDone ? (
-                                                <div className="w-4 h-4 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center">
-                                                    <Check size={10} className="text-[var(--accent)]" />
+                                                <div className="w-4 h-4 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                                                    <Check size={10} className="text-white" />
                                                 </div>
                                             ) : isActive ? (
-                                                <div className="w-4 h-4 rounded-full bg-[var(--accent)]/20 border border-[var(--accent)] flex items-center justify-center animate-spin">
-                                                    <Loader2 size={10} className="text-[var(--accent)]" />
+                                                <div className="w-4 h-4 rounded-full bg-white/10 border border-white flex items-center justify-center animate-spin">
+                                                    <Loader2 size={10} className="text-white" />
                                                 </div>
                                             ) : (
                                                 <div className="w-4 h-4 rounded-full bg-white/5 border border-white/10 flex items-center justify-center" />

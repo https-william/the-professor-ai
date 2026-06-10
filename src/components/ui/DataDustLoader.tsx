@@ -54,8 +54,8 @@ function InkMoteCanvas() {
         };
         window.addEventListener("resize", onResize);
 
-        // Brand blue + cyan palette
-        const COLORS = ["rgba(37,99,235,", "rgba(6,182,212,", "rgba(56,189,248,", "rgba(29,78,216,"];
+        // Monochrome ink shades palette
+        const COLORS = ["rgba(255,255,255,", "rgba(200,200,200,", "rgba(150,150,150,", "rgba(100,100,100,"];
 
         const motes = Array.from({ length: 48 }, () => ({
             x:   Math.random() * W,
@@ -80,7 +80,7 @@ function InkMoteCanvas() {
                         ctx.beginPath();
                         ctx.moveTo(motes[i].x, motes[i].y);
                         ctx.lineTo(motes[j].x, motes[j].y);
-                        ctx.strokeStyle = `rgba(37,99,235,${0.09 * (1 - d / 70)})`;
+                        ctx.strokeStyle = `rgba(255,255,255,${0.08 * (1 - d / 70)})`;
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
                     }
@@ -132,15 +132,15 @@ function OrbitRing() {
                 <circle
                     cx="48" cy="48" r="44"
                     fill="none"
-                    stroke="rgba(37,99,235,0.15)"
+                    stroke="rgba(255,255,255,0.08)"
                     strokeWidth="1"
                     strokeDasharray="12 6"
                 />
-                {/* Blue traveller node */}
+                {/* White traveller node */}
                 <circle
                     cx="48" cy="4" r="3.5"
-                    fill="var(--blue)"
-                    style={{ filter: "drop-shadow(0 0 6px var(--blue-glow))" }}
+                    fill="white"
+                    style={{ filter: "drop-shadow(0 0 6px white)" }}
                 />
             </svg>
 
@@ -153,14 +153,14 @@ function OrbitRing() {
                 <circle
                     cx="28" cy="28" r="24"
                     fill="none"
-                    stroke="rgba(6,182,212,0.18)"
+                    stroke="rgba(255,255,255,0.05)"
                     strokeWidth="1"
                     strokeDasharray="4 10"
                 />
                 <circle
                     cx="28" cy="4" r="2.5"
-                    fill="var(--cyan)"
-                    style={{ filter: "drop-shadow(0 0 5px var(--cyan))" }}
+                    fill="white"
+                    style={{ filter: "drop-shadow(0 0 5px white)" }}
                 />
             </svg>
 
@@ -168,15 +168,15 @@ function OrbitRing() {
             <div
                 className="relative z-10 w-12 h-12 rounded-2xl flex items-center justify-center"
                 style={{
-                    background: "var(--blue-dim)",
-                    border: "1px solid var(--blue-border)",
-                    boxShadow: "0 0 24px var(--blue-glow), inset 0 1px 1px rgba(255,255,255,0.06)",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    boxShadow: "0 0 24px rgba(255,255,255,0.2), inset 0 1px 1px rgba(255,255,255,0.06)",
                     animation: "professor-pulse 2.4s ease-in-out infinite",
                 }}
             >
                 <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 36 L8 14 L12 10 L20 24 L28 10 L32 14 Z" fill="var(--blue)" />
-                    <path d="M20 24 V36" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M20 36 L8 14 L12 10 L20 24 L28 10 L32 14 Z" fill="white" />
+                    <path d="M20 24 V36" stroke="white" strokeWidth="2" strokeLinecap="round" />
                 </svg>
             </div>
         </div>
@@ -212,8 +212,8 @@ export default function DataDustLoader({
                     to   { transform: rotate(360deg); }
                 }
                 @keyframes professor-pulse {
-                    0%, 100% { box-shadow: 0 0 24px var(--blue-glow), inset 0 1px 1px rgba(255,255,255,0.06); }
-                    50%       { box-shadow: 0 0 40px var(--blue-glow), inset 0 1px 1px rgba(255,255,255,0.06); }
+                    0%, 100% { box-shadow: 0 0 24px rgba(255,255,255,0.2), inset 0 1px 1px rgba(255,255,255,0.06); }
+                    50%       { box-shadow: 0 0 40px rgba(255,255,255,0.2), inset 0 1px 1px rgba(255,255,255,0.06); }
                 }
                 @keyframes professor-shimmer {
                     from { transform: translateX(-100%); }
@@ -222,19 +222,19 @@ export default function DataDustLoader({
             `}</style>
 
             <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden"
-                style={{ background: "var(--bg)" }}>
+                style={{ background: "#060608" }}>
 
                 {/* Canvas backdrop */}
                 <div className="absolute inset-0">
                     <InkMoteCanvas />
                 </div>
 
-                {/* Radial blue glow behind the ring */}
+                {/* Radial white glow behind the ring */}
                 <div
                     className="absolute rounded-full pointer-events-none"
                     style={{
                         width: "320px", height: "320px",
-                        background: "radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)",
+                        background: "radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%)",
                     }}
                 />
 
@@ -250,7 +250,7 @@ export default function DataDustLoader({
                     <div className="w-full text-center space-y-3">
                         {label && (
                             <p
-                                className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--blue)] opacity-70"
+                                className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60 opacity-70"
                             >
                                 {label}
                             </p>
@@ -273,16 +273,16 @@ export default function DataDustLoader({
                             </AnimatePresence>
                         </div>
 
-                        {/* Animated blue progress bar */}
+                        {/* Animated progress bar */}
                         <div
                             className="relative h-[2px] w-48 mx-auto rounded-full overflow-hidden"
-                            style={{ background: "var(--border)" }}
+                            style={{ background: "rgba(255,255,255,0.05)" }}
                         >
                             <div
                                 className="absolute inset-y-0 left-0 rounded-full"
                                 style={{
                                     width: "40%",
-                                    background: "var(--blue)",
+                                    background: "white",
                                     animation: "professor-shimmer 1.8s ease-in-out infinite",
                                 }}
                             />
@@ -302,16 +302,16 @@ export default function DataDustLoader({
                                         className="w-2 h-2 rounded-full"
                                         style={{
                                             background: done || active
-                                                ? "var(--blue)"
-                                                : "var(--text-3)",
+                                                ? "white"
+                                                : "rgba(255,255,255,0.2)",
                                             opacity: done ? 1 : active ? 1 : 0.3,
-                                            boxShadow: active ? "0 0 8px var(--blue-glow)" : "none",
+                                            boxShadow: active ? "0 0 8px rgba(255,255,255,0.4)" : "none",
                                         }}
                                     />
                                     <span
                                         className="text-[9px] font-bold uppercase tracking-wider"
                                         style={{
-                                            color: active ? "var(--blue)" : "var(--text-3)",
+                                            color: active ? "white" : "rgba(255,255,255,0.4)",
                                             opacity: done || active ? 1 : 0.35,
                                         }}
                                     >

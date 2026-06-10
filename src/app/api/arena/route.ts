@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { generation_id, time_limit_seconds = 600 } = body;
+        const { generation_id, time_limit_seconds = 600, wager_xp = 50 } = body;
 
         if (!generation_id) {
             return NextResponse.json({ error: "Generation ID is required" }, { status: 400 });
@@ -68,7 +68,8 @@ export async function POST(req: NextRequest) {
                 host_id: user.id,
                 generation_id,
                 status: 'WAITING',
-                time_limit_seconds
+                time_limit_seconds,
+                wager_xp
             })
             .select(`
                 *,
@@ -106,7 +107,8 @@ export async function POST(req: NextRequest) {
                     title: generation.title,
                     questionCount: generation.content?.questions?.length || 0
                 },
-                timeLimit: time_limit_seconds
+                timeLimit: time_limit_seconds,
+                wagerXp: duel.wager_xp || wager_xp
             }
         });
     } catch (error) {
@@ -257,12 +259,41 @@ export async function GET(req: NextRequest) {
                     challenger: d.challenger ? {
                         id: d.challenger.id,
                         name: d.challenger.username || d.challenger.first_name || 'Challenger'
-                    } : null
+                    } : null,
+                    wagerXp: d.wager_xp || 50
                 }))
             });
         }
 
-        return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+        // Return open public duels (status = 'WAITING')
+        const { data: openDuels, error: openDuelsError } = await supabase
+            .from("duels")
+            .select(`
+                *,
+                host:profiles!host_id(id, username, first_name, avatar_url),
+                generation:generations(id, title)
+            `)
+            .eq("status", "WAITING")
+            .order("created_at", { ascending: false })
+            .limit(20);
+
+        if (openDuelsError) {
+            return NextResponse.json({ error: "Failed to fetch open duels" }, { status: 500 });
+        }
+
+        return NextResponse.json({
+            success: true,
+            duels: openDuels?.map(d => ({
+                id: d.id,
+                code: d.code,
+                status: d.status.toLowerCase(),
+                hostName: d.host?.first_name || d.host?.username || 'Classmate',
+                packTitle: d.generation?.title || 'Study Quiz',
+                wagerXp: d.wager_xp || 50,
+                spectators: 0,
+                hostId: d.host_id
+            }))
+        });
     } catch (error) {
         console.error("Arena GET Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

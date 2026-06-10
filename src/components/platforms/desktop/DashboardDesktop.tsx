@@ -149,33 +149,33 @@ export default function DashboardDesktop({
     }, [activityData, user?.streak]);
 
     return (
-        <div className="w-full min-h-screen relative bg-[var(--bg)] selection:bg-[var(--blue-dim)]">
+        <div className="w-full min-h-screen relative bg-transparent selection:bg-white/10">
             <StandardContainer className="pt-24 pb-20 relative z-10" wide={true}>
                 <motion.div variants={stagger} initial="hidden" animate="show">
 
                     {userState === 'NEW_USER' && (
                         <motion.div variants={fadeUp} className="space-y-6">
-                            <div className="scholar-card relative p-8 sm:p-12 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl" style={{ borderRadius: "28px" }}>
-                                <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
+                            <div className="scholar-card relative p-8 sm:p-12 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "28px" }}>
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-white/60 pointer-events-none"><Sparkles size={160} /></div>
                                 <div className="relative z-10 max-w-xl">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm mb-4">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 shadow-sm mb-4">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">Getting Started</span>
+                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/70 font-bold">Getting Started</span>
                                     </div>
-                                    <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-3">
+                                    <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white mb-3">
                                         Welcome, {firstName}!
                                     </h2>
-                                    <p className="text-sm text-[var(--text-3)] font-bold leading-relaxed mb-6">
+                                    <p className="text-sm text-white/40 font-bold leading-relaxed mb-6">
                                         Let's get your study program up and running. Drop in your lecture materials below to build your very first Study Pack.
                                     </p>
 
                                     <Link href="/create">
                                         <div className="p-8 flex flex-col items-center justify-center text-center transition-all duration-300 rounded-2xl border border-dashed border-zinc-700 bg-[var(--bg-3)]/20 hover:bg-[var(--bg-3)]/35 cursor-pointer shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]">
-                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 bg-[var(--background)] shadow-[2px_2px_5px_rgba(0,0,0,0.3)] border border-[var(--border)] text-[var(--blue)]">
+                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 bg-[var(--background)] shadow-[2px_2px_5px_rgba(0,0,0,0.3)] border border-[var(--border)] text-white/60">
                                                 <Zap className="w-5 h-5 fill-current" />
                                             </div>
-                                            <h4 className="text-sm font-black text-[var(--foreground)]">Drop a lecture slide deck or PDF here to spin up your first Study Pack</h4>
-                                            <p className="text-[9px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold mt-1">PDF, PPTX, DOCX, or Images</p>
+                                            <h4 className="text-sm font-black text-white">Drop a lecture slide deck or PDF here to spin up your first Study Pack</h4>
+                                            <p className="text-[9px] text-white/60 uppercase tracking-wider font-bold mt-1">PDF, PPTX, DOCX, or Images</p>
                                         </div>
                                     </Link>
                                 </div>
@@ -187,23 +187,23 @@ export default function DashboardDesktop({
                         <div className="space-y-6">
                             {/* Welcome Banner */}
                             <motion.div variants={fadeUp} className="mb-6">
-                                <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl" style={{ borderRadius: "28px" }}>
-                                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
+                                <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "28px" }}>
+                                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-white/60 pointer-events-none"><Sparkles size={160} /></div>
                                     <div className="relative z-10">
                                         <div className="flex flex-wrap items-center gap-2 mb-4">
-                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 shadow-sm">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint}</span>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/70 font-bold">{timeHint}</span>
                                             </div>
                                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
-                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/40 font-bold">{dateStr}</span>
                                             </div>
                                             <FocusTimer widget={true} />
                                         </div>
-                                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-2">
+                                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2">
                                             Hey {firstName},
                                         </h2>
-                                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
+                                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white/70 leading-relaxed mb-3 italic uppercase">
                                             &ldquo;{dailyLine}&rdquo;
                                         </h1>
                                     </div>
@@ -212,20 +212,20 @@ export default function DashboardDesktop({
 
                             {/* Exam Readiness Score (ERS) & Actionable Narrative Layer */}
                             <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="scholar-card p-8 bg-[var(--bg-2)] border border-[var(--border)] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6" style={{ borderRadius: "28px" }}>
+                                <div className="scholar-card p-8 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 flex flex-col sm:flex-row items-center justify-between gap-6" style={{ borderRadius: "28px" }}>
                                     <div className="space-y-4 flex-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--blue-text)]">Proprietary Metric</span>
-                                            <span className="px-2 py-0.5 rounded bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[8px] font-black uppercase text-[var(--blue-text)]">ERS™</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Proprietary Metric</span>
+                                            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[8px] font-black uppercase text-white/70">ERS™</span>
                                         </div>
-                                        <h3 className="text-xl font-black tracking-tight text-[var(--text)] leading-tight">
+                                        <h3 className="text-xl font-black tracking-tight text-white leading-tight">
                                             Exam Readiness Score
                                         </h3>
                                         <div className="space-y-2 border-t border-[var(--border)] pt-3 mt-2">
-                                            <p className="text-xs font-bold text-[var(--text-2)] leading-relaxed">
+                                            <p className="text-xs font-bold text-white/70 leading-relaxed">
                                                 {dueCardsCount > 0 ? (
                                                     <>
-                                                        Your retention loop for <span className="text-[var(--blue-text)] font-black">{dueDeckTitle}</span> degrades in {degradesIn} hours. Run a {sprintMin}-minute Flashcard Sprint right now to preserve your streak.
+                                                        Your retention loop for <span className="text-white/70 font-black">{dueDeckTitle}</span> degrades in {degradesIn} hours. Run a {sprintMin}-minute Flashcard Sprint right now to preserve your streak.
                                                     </>
                                                 ) : (
                                                     <>
@@ -233,13 +233,13 @@ export default function DashboardDesktop({
                                                     </>
                                                 )}
                                             </p>
-                                            <p className="text-[10px] text-[var(--text-3)] font-medium">
+                                            <p className="text-[10px] text-white/40 font-medium">
                                                 {socialProof}
                                             </p>
                                         </div>
                                         <Link href="/review" className="inline-block mt-2">
-                                            <div className="flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--text)] text-[var(--bg)] font-black text-[11px] uppercase tracking-[0.2em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
-                                                <Zap size={13} className="fill-current animate-pulse text-[var(--bg)]" />
+                                            <div className="flex items-center gap-2 px-5 py-3 rounded-full bg-white text-black font-black text-[11px] uppercase tracking-[0.2em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
+                                                <Zap size={13} className="fill-current animate-pulse text-black" />
                                                 <span>Resume Active Sprint</span>
                                             </div>
                                         </Link>
@@ -248,17 +248,16 @@ export default function DashboardDesktop({
                                     {/* ERS Donut Progress Meter */}
                                     <div className="relative w-32 h-32 shrink-0 flex items-center justify-center">
                                         <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
-                                            <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                            <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
-                                                strokeDasharray="188.4 62.8"
+                                            <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
+                                            <motion.circle cx="50" cy="50" r="40" stroke="white" strokeWidth="8" fill="transparent" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.5))" }} strokeDasharray="188.4 62.8"
                                                 initial={{ strokeDashoffset: 188.4 }}
                                                 animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
                                                 transition={{ duration: 1.5, ease: "easeOut" }}
                                                 strokeLinecap="round" />
                                         </svg>
                                         <div className="absolute flex flex-col items-center justify-center">
-                                            <span className="font-mono text-2xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
-                                            <span className="text-[8px] font-black uppercase tracking-wider text-[var(--text-3)]">Ready</span>
+                                            <span className="font-mono text-2xl font-black text-white tabular-nums">{readinessScore}%</span>
+                                            <span className="text-[8px] font-black uppercase tracking-wider text-white/40">Ready</span>
                                         </div>
                                     </div>
                                 </div>
@@ -267,22 +266,22 @@ export default function DashboardDesktop({
                                     {/* Compact Navigation & Status Pills Row */}
                                     <div className="flex flex-wrap gap-2.5 items-center">
                                         <Link href="/create" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--blue)]/40 text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <Zap size={12} className="text-[var(--blue)]" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                                <Zap size={12} className="text-white/60" />
                                                 <span>New Session</span>
                                             </div>
                                         </Link>
                                         
                                         <Link href="/library" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--violet)]/40 text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <Library size={12} className="text-[var(--violet)]" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                                <Library size={12} className="text-white/60" />
                                                 <span>Library</span>
                                             </div>
                                         </Link>
 
                                         <Link href="/blog" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--bg-2)] border border-[var(--border)] hover:border-[var(--cyan)]/40 text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <BookOpen size={12} className="text-[var(--cyan)]" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                                <BookOpen size={12} className="text-white/60" />
                                                 <span>Blog</span>
                                             </div>
                                         </Link>
@@ -293,10 +292,10 @@ export default function DashboardDesktop({
                                                 setShowWrappedDetails(false);
                                             }}
                                             className={cn(
-                                                "flex items-center gap-2 px-4 py-2.5 rounded-full border text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                                "flex items-center gap-2 px-4 py-2.5 rounded-full border text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                                 showStreakDetails 
                                                     ? "bg-[var(--amber-dim)] border-[var(--amber-border)]" 
-                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-[var(--amber)]/40"
+                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-white/20"
                                             )}
                                         >
                                             <Flame size={12} className={cn("text-[var(--amber)]", user.streak > 0 && "animate-pulse")} />
@@ -309,13 +308,13 @@ export default function DashboardDesktop({
                                                 setShowStreakDetails(false);
                                             }}
                                             className={cn(
-                                                "flex items-center gap-2 px-4 py-2.5 rounded-full border text-[var(--text)] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
+                                                "flex items-center gap-2 px-4 py-2.5 rounded-full border text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                                 showWrappedDetails 
                                                     ? "bg-[var(--blue-dim)] border-[var(--blue-border)]" 
-                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-[var(--blue)]/40"
+                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-white/20"
                                             )}
                                         >
-                                            <TrendingUp size={12} className="text-[var(--blue)]" />
+                                            <TrendingUp size={12} className="text-white/60" />
                                             <span>Weekly Wrapped</span>
                                         </button>
                                     </div>
@@ -331,8 +330,8 @@ export default function DashboardDesktop({
                                                     <Icon size={16} style={{ color }} className="opacity-80 group-hover:opacity-100 transition-opacity" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="font-mono text-lg font-black text-[var(--text)] tabular-nums leading-tight">{value}</p>
-                                                    <p className="text-[10px] text-[var(--text-3)] uppercase tracking-wider leading-tight font-bold">{sub}</p>
+                                                    <p className="font-mono text-lg font-black text-white tabular-nums leading-tight">{value}</p>
+                                                    <p className="text-[10px] text-white/40 uppercase tracking-wider leading-tight font-bold">{sub}</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -349,11 +348,11 @@ export default function DashboardDesktop({
                                         className="mb-6 overflow-hidden"
                                         key="streak-details"
                                     >
-                                        <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)] shadow-md" style={{ borderRadius: "24px" }}>
+                                        <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 shadow-md" style={{ borderRadius: "24px" }}>
                                             <div className="flex items-center justify-between mb-4">
                                                 <div className="flex items-center gap-2">
                                                     <Flame size={16} className="text-[var(--amber)]" />
-                                                    <span className="text-[11px] font-black uppercase tracking-wider text-[var(--text-2)]">Momentum Daily Loop</span>
+                                                    <span className="text-[11px] font-black uppercase tracking-wider text-white/70">Momentum Daily Loop</span>
                                                 </div>
                                                 <div className="text-[11px] font-mono font-black text-[var(--amber)]">{user.streak} Days Active</div>
                                             </div>
@@ -366,7 +365,7 @@ export default function DashboardDesktop({
                                                                 ? "bg-[var(--amber)] border-[var(--amber-light)]/20 text-black shadow-[0_0_15px_var(--amber-glow)]" 
                                                                 : day.isToday 
                                                                 ? "border-2 border-dashed border-[var(--amber)] bg-[var(--amber-dim)] text-[var(--amber)]" 
-                                                                : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--text-3)]"
+                                                                : "bg-[var(--bg-3)] border-[var(--border)] text-white/40"
                                                         )}>
                                                             {day.label}
                                                         </div>
@@ -394,11 +393,11 @@ export default function DashboardDesktop({
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                                 <div className="lg:col-span-8 flex flex-col gap-6">
                                     <div className="flex items-center gap-4 py-4 border-t border-b border-[var(--border)]">
-                                        <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--text-2)] font-bold">Level {level}</span>
+                                        <span className="font-mono text-[11px] uppercase tracking-wider text-white/70 font-bold">Level {level}</span>
                                         <div className="flex-1 h-2 bg-[var(--bg-3)] rounded-full overflow-hidden shadow-inner">
                                             <div className="h-full rounded-full bg-[var(--blue)] shadow-[0_0_12px_var(--blue-glow)]" style={{ width: `${progress}%` }} />
                                         </div>
-                                        <span className="font-mono text-[11px] text-[var(--text-3)] tabular-nums font-bold">{xpToNext > 0 ? `${xpToNext.toLocaleString()} XP left` : "Max!"}</span>
+                                        <span className="font-mono text-[11px] text-white/40 tabular-nums font-bold">{xpToNext > 0 ? `${xpToNext.toLocaleString()} XP left` : "Max!"}</span>
                                     </div>
                                 </div>
                             </div>
@@ -413,9 +412,9 @@ export default function DashboardDesktop({
                                                         Priority Task
                                                     </span>
                                                     <h3 className="text-2xl font-black text-black tracking-tighter leading-none mb-1">Resume Session</h3>
-                                                    <p className="text-xs font-bold text-[var(--text-2)]">{dueCount} topics pending review.</p>
+                                                    <p className="text-xs font-bold text-white/70">{dueCount} topics pending review.</p>
                                                 </div>
-                                                <div className="w-14 h-14 rounded-full bg-black text-[var(--blue)] flex items-center justify-center shadow-xl group-hover-scale-md transition-transform">
+                                                <div className="w-14 h-14 rounded-full bg-black text-white/60 flex items-center justify-center shadow-xl group-hover-scale-md transition-transform">
                                                     <ArrowRight size={20} strokeWidth={3} />
                                                 </div>
                                             </div>
@@ -427,7 +426,7 @@ export default function DashboardDesktop({
                                         <div className="p-6 rounded-[28px] bg-[var(--amber-dim)] border border-[var(--amber-border)] flex items-center justify-between">
                                             <div>
                                                 <h3 className="text-xs font-black text-[var(--amber)] uppercase tracking-[0.4em] mb-2">Streak Recovery</h3>
-                                                <p className="text-xs text-[var(--text-3)] font-medium">Restore {user.lastStreak} days of momentum.</p>
+                                                <p className="text-xs text-white/40 font-medium">Restore {user.lastStreak} days of momentum.</p>
                                             </div>
                                             <button onClick={handleRecover} disabled={isProcessingAction} className="px-5 py-2.5 rounded-xl bg-[var(--amber)] text-black font-black text-[10px] uppercase tracking-widest shadow-md">
                                                 Restore (3 CR)
@@ -439,24 +438,24 @@ export default function DashboardDesktop({
 
                             {/* Recent Study Packs */}
                             <motion.div variants={fadeUp} className="mt-8">
-                                <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)] max-w-4xl" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 max-w-4xl" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center justify-between mb-5">
-                                        <h3 className="text-xs font-black uppercase tracking-[0.25em] text-[var(--text-3)] flex items-center gap-2">
-                                            <Library size={14} className="text-[var(--blue)]" /> Recent Study Packs
+                                        <h3 className="text-xs font-black uppercase tracking-[0.25em] text-white/40 flex items-center gap-2">
+                                            <Library size={14} className="text-white/60" /> Recent Study Packs
                                         </h3>
-                                        <Link href="/library" className="text-[10px] font-black uppercase tracking-widest text-[var(--blue)] hover:underline flex items-center gap-1.5 transition-all">
+                                        <Link href="/library" className="text-[10px] font-black uppercase tracking-widest text-white/60 hover:underline flex items-center gap-1.5 transition-all">
                                             View Library <ArrowRight size={12} />
                                         </Link>
                                     </div>
                                     {packsLoading ? (
                                         <div className="py-8 flex flex-col items-center justify-center gap-2">
-                                            <Loader2 className="animate-spin text-[var(--text-3)]" size={20} />
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)]">Loading packs...</p>
+                                            <Loader2 className="animate-spin text-white/40" size={20} />
+                                            <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Loading packs...</p>
                                         </div>
                                     ) : recentPacks.length === 0 ? (
-                                        <div className="py-8 flex flex-col items-center justify-center bg-[var(--bg-3)]/60 rounded-2xl border border-[var(--border)]">
-                                            <BookOpen size={48} className="text-[var(--text-3)]/40 mb-3" />
-                                            <p className="text-[11px] font-bold text-[var(--text-3)] uppercase tracking-wider mb-3">No study packs generated yet</p>
+                                        <div className="py-8 flex flex-col items-center justify-center bg-white/5 rounded-2xl border border-[var(--border)]">
+                                            <BookOpen size={48} className="text-white/40/40 mb-3" />
+                                            <p className="text-[11px] font-bold text-white/40 uppercase tracking-wider mb-3">No study packs generated yet</p>
                                             <Link href="/create" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--foreground)] text-[var(--background)] font-black text-[9px] uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all">
                                                 Create First Pack
                                             </Link>
@@ -466,8 +465,8 @@ export default function DashboardDesktop({
                                             {recentPacks.map((pack) => {
                                                 const packType = pack.type || "summary";
                                                 const typeBadgeColor = 
-                                                    packType === "flashcards" ? "bg-[var(--blue-dim)] border-[var(--blue-border)] text-[var(--blue)]" :
-                                                    packType === "quiz" ? "bg-[var(--cyan-dim)] border-[var(--cyan-border)] text-[var(--cyan)]" :
+                                                    packType === "flashcards" ? "bg-[var(--blue-dim)] border-[var(--blue-border)] text-white/60" :
+                                                    packType === "quiz" ? "bg-[var(--cyan-dim)] border-[var(--cyan-border)] text-white/60" :
                                                     "bg-[var(--emerald-dim)] border-[var(--emerald-border)] text-[var(--emerald)]";
                                                 const packUrl = packType === "summary" 
                                                     ? `/summary/${pack.id || pack.generation_id}` 
@@ -475,10 +474,10 @@ export default function DashboardDesktop({
 
                                                 return (
                                                     <Link href={packUrl} key={pack.id || pack.generation_id} className="group block">
-                                                        <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-3)]/60 border border-[var(--border)] hover:border-[var(--text-3)]/40 transition-all flex-wrap sm:flex-nowrap gap-3">
+                                                        <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-[var(--border)] hover:border-[var(--text-3)]/40 transition-all flex-wrap sm:flex-nowrap gap-3">
                                                             <div className="min-w-0 flex-1">
-                                                                <p className="font-sans text-sm font-bold text-[var(--foreground)] truncate group-hover:text-[var(--blue)] transition-colors">{pack.title || "Untitled Pack"}</p>
-                                                                <p className="text-[10px] text-[var(--text-3)] font-mono mt-0.5">
+                                                                <p className="font-sans text-sm font-bold text-white truncate group-hover:text-white/60 transition-colors">{pack.title || "Untitled Pack"}</p>
+                                                                <p className="text-[10px] text-white/40 font-mono mt-0.5">
                                                                     {new Date(pack.created_at || pack.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                                                 </p>
                                                             </div>
@@ -486,7 +485,7 @@ export default function DashboardDesktop({
                                                                 <span className={cn("px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-wider", typeBadgeColor)}>
                                                                     {packType}
                                                                 </span>
-                                                                <ChevronRight size={14} className="text-[var(--text-3)] group-hover:translate-x-0.5 transition-transform" />
+                                                                <ChevronRight size={14} className="text-white/40 group-hover:translate-x-0.5 transition-transform" />
                                                             </div>
                                                         </div>
                                                     </Link>
@@ -502,41 +501,40 @@ export default function DashboardDesktop({
                     {userState === 'POWER_LEARNER' && (
                         <motion.div variants={fadeUp} className="space-y-6">
                             {/* Welcome Banner for Power Learner */}
-                            <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-[var(--bg-2)] border border-[var(--border)] shadow-xl mb-6" style={{ borderRadius: "28px" }}>
-                                <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-[var(--blue)] pointer-events-none"><Sparkles size={160} /></div>
+                            <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 mb-6" style={{ borderRadius: "28px" }}>
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-white/60 pointer-events-none"><Sparkles size={160} /></div>
                                 <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
                                     <div className="flex-1 min-w-[280px]">
                                         <div className="flex flex-wrap items-center gap-2 mb-4">
-                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] shadow-sm">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 shadow-sm">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--blue-text)] font-bold">{timeHint} (On a roll!)</span>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/70 font-bold">{timeHint} (On a roll!)</span>
                                             </div>
                                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
-                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[var(--text-3)] font-bold">{dateStr}</span>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/40 font-bold">{dateStr}</span>
                                             </div>
                                             <FocusTimer widget={true} />
                                         </div>
-                                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-2">
+                                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2">
                                             Hey {firstName},
                                         </h2>
-                                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-2)] leading-relaxed mb-3 italic uppercase">
+                                        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white/70 leading-relaxed mb-3 italic uppercase">
                                             &ldquo;{dailyLine}&rdquo;
                                         </h1>
                                     </div>
                                     <div className="flex items-center gap-4 shrink-0">
                                         <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
                                             <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
-                                                <circle cx="50" cy="50" r="40" stroke="var(--border)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                                <motion.circle cx="50" cy="50" r="40" stroke="var(--blue)" strokeWidth="8" fill="transparent"
-                                                    strokeDasharray="188.4 62.8"
+                                                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
+                                                <motion.circle cx="50" cy="50" r="40" stroke="white" strokeWidth="8" fill="transparent" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.5))" }} strokeDasharray="188.4 62.8"
                                                     initial={{ strokeDashoffset: 188.4 }}
                                                     animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
                                                     transition={{ duration: 1.5, ease: "easeOut" }}
                                                     strokeLinecap="round" />
                                             </svg>
                                             <div className="absolute flex flex-col items-center justify-center">
-                                                <span className="font-mono text-xl font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
-                                                <span className="text-[7px] font-black uppercase tracking-wider text-[var(--text-3)]">ERS™</span>
+                                                <span className="font-mono text-xl font-black text-white tabular-nums">{readinessScore}%</span>
+                                                <span className="text-[7px] font-black uppercase tracking-wider text-white/40">ERS™</span>
                                             </div>
                                         </div>
                                     </div>
@@ -546,45 +544,45 @@ export default function DashboardDesktop({
                             {/* Three Column Telemetry Dashboard */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* Column 1: Stats */}
-                                <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <Layers className="text-[var(--violet)] w-5 h-5" />
-                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
+                                        <Layers className="text-white/60 w-5 h-5" />
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
                                             Study Stats
                                         </h3>
                                     </div>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Total XP</span>
-                                            <span className="font-mono text-xs font-black text-[var(--blue)] tabular-nums">{user.xp?.toLocaleString()} XP</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase">Total XP</span>
+                                            <span className="font-mono text-xs font-black text-white/60 tabular-nums">{user.xp?.toLocaleString()} XP</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Level</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">Lvl {level} · {title}</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase">Level</span>
+                                            <span className="font-mono text-xs font-black text-white tabular-nums">Lvl {level} · {title}</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Active Streak</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase">Active Streak</span>
                                             <span className="font-mono text-xs font-black text-[var(--amber)] tabular-nums">{user.streak}d 🔥</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Study Packs</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase">Study Packs</span>
                                             <span className="font-mono text-xs font-black text-[var(--emerald)] tabular-nums">{recentPacks.length}+ active</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Column 2: Concept Retention Curves */}
-                                <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <BrainCircuit className="text-[var(--blue)] w-5 h-5" />
-                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
+                                        <BrainCircuit className="text-white/60 w-5 h-5" />
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
                                             Retention Stability
                                         </h3>
                                     </div>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Exam Readiness</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">{readinessScore}%</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase">Exam Readiness</span>
+                                            <span className="font-mono text-xs font-black text-white tabular-nums">{readinessScore}%</span>
                                         </div>
                                         <div className="w-full bg-[var(--bg-3)] h-2 rounded-full overflow-hidden">
                                             <motion.div
@@ -596,24 +594,24 @@ export default function DashboardDesktop({
                                         </div>
 
                                         <div className="flex justify-between items-center pt-2">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Cards Due</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase">Cards Due</span>
                                             <span className={cn("font-mono text-xs font-black tabular-nums", dueCardsCount > 0 ? "text-[var(--amber)]" : "text-[var(--emerald)]")}>
                                                 {dueCardsCount > 0 ? `${dueCardsCount} due` : "0 due ✓"}
                                             </span>
                                         </div>
 
                                         <div className="flex justify-between items-center pt-2">
-                                            <span className="text-[11px] font-bold text-[var(--text-2)] uppercase">Degrades In</span>
-                                            <span className="font-mono text-xs font-black text-[var(--text)] tabular-nums">{degradesIn}h</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase">Degrades In</span>
+                                            <span className="font-mono text-xs font-black text-white tabular-nums">{degradesIn}h</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Column 3: Active Packs */}
-                                <div className="scholar-card p-6 bg-[var(--bg-2)] border border-[var(--border)]" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <FileText className="text-[var(--cyan)] w-5 h-5" />
-                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
+                                        <FileText className="text-white/60 w-5 h-5" />
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
                                             Active Packs
                                         </h3>
                                     </div>
@@ -622,14 +620,14 @@ export default function DashboardDesktop({
                                             const packId = pack.id || pack.generation_id;
                                             return (
                                                 <Link key={packId} href={`/library/pack/${packId}`}>
-                                                    <div className="flex justify-between items-center p-2.5 rounded-lg bg-[var(--bg-3)]/40 border border-[var(--border)] text-xs hover:border-[var(--blue)]/40 transition-all cursor-pointer">
-                                                        <span className="font-bold text-[var(--text)] truncate max-w-[140px]">{pack.title || "Untitled Pack"}</span>
-                                                        <ArrowRight size={10} className="text-[var(--text-3)]" />
+                                                    <div className="flex justify-between items-center p-2.5 rounded-lg bg-white/5 border border-[var(--border)] text-xs hover:border-white/20 transition-all cursor-pointer">
+                                                        <span className="font-bold text-white truncate max-w-[140px]">{pack.title || "Untitled Pack"}</span>
+                                                        <ArrowRight size={10} className="text-white/40" />
                                                     </div>
                                                 </Link>
                                             );
                                         }) : (
-                                            <p className="text-xs text-[var(--text-3)] font-bold text-center py-4">No packs yet</p>
+                                            <p className="text-xs text-white/40 font-bold text-center py-4">No packs yet</p>
                                         )}
                                     </div>
                                 </div>

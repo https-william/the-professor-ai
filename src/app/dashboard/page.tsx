@@ -318,17 +318,26 @@ export default function DashboardPage() {
     };
 
     return (
-        <main className="min-h-screen bg-transparent text-[var(--text)] overflow-x-hidden">
-            <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
-            <SEOHead type="BreadcrumbList" data={getBreadcrumbSchema([{ name: "Home", url: "/" }, { name: "Dashboard", url: "/dashboard" }])} />
+        <main className="min-h-screen bg-[#060608] text-[var(--text)] overflow-x-hidden relative">
+            {/* Grid Line Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
+            
+            {/* Desaturated Ambient Radial Halos */}
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.03),transparent_60%)] filter blur-[120px] pointer-events-none z-0" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.02),transparent_60%)] filter blur-[120px] pointer-events-none z-0" />
 
-            {/* Robust Platform Selection through PlatformShell */}
-            <PlatformShell
-                web={<DashboardWeb {...dashboardProps} />}
-                desktop={<DashboardDesktop {...dashboardProps} />}
-                mobile={<DashboardMobile {...dashboardProps} />}
-                loading={<DashboardSkeleton />}
-            />
+            <div className="relative z-10">
+                <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
+                <SEOHead type="BreadcrumbList" data={getBreadcrumbSchema([{ name: "Home", url: "/" }, { name: "Dashboard", url: "/dashboard" }])} />
+
+                {/* Robust Platform Selection through PlatformShell */}
+                <PlatformShell
+                    web={<DashboardWeb {...dashboardProps} />}
+                    desktop={<DashboardDesktop {...dashboardProps} />}
+                    mobile={<DashboardMobile {...dashboardProps} />}
+                    loading={<DashboardSkeleton />}
+                />
+            </div>
 
             <StreakMilestone 
                 count={milestoneToCelebrate || 0}

@@ -33,7 +33,8 @@ import {
     ChevronDown,
     Sparkles,
     Trophy,
-    PlusCircle
+    PlusCircle,
+    Sword
 } from "lucide-react";
 import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
@@ -200,15 +201,15 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 <Link
                     href={user.isAuthenticated ? "/dashboard" : "/"}
                     className={cn(
-                        "group relative flex items-center gap-2.5 p-1.5 md:pr-4 rounded-full transition-all active:scale-95",
-                        isApp ? "bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)] hover:shadow-[0_0_15px_var(--accent-glow)]" : "hover:bg-[var(--foreground)]/[0.08]"
-                    )}
+                    "group relative flex items-center gap-2.5 p-1.5 md:pr-4 rounded-full transition-all active:scale-95",
+                    isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "hover:bg-white/[0.08]"
+                )}
+            >
+                <div
+                    className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all bg-zinc-900 border border-white/5 shadow-sm group-hover:border-white/20"
                 >
-                    <div
-                        className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all bg-[var(--background)] border border-[var(--border)] shadow-sm group-hover:border-[var(--accent)] group-hover:shadow-[0_0_15px_var(--accent-glow)]"
-                    >
-                        <BrandLogo size="sm" />
-                    </div>
+                    <BrandLogo size="sm" />
+                </div>
                     {!isPill && (
                         <span className="hidden lg:block font-sans font-black text-[var(--foreground)] tracking-tighter text-sm uppercase">
                             The Professor
@@ -288,17 +289,18 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             </div>
                         </div>
                     ) : isApp ? (
-                        <div className="hidden md:flex items-center gap-1 p-1 bg-[var(--background-secondary)]/95 backdrop-blur-md border border-[var(--border)] rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+                        <div className="hidden md:flex items-center gap-1 p-1 bg-zinc-950/45 backdrop-blur-2xl border border-white/5 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.3)]">
                             {[
                                 { name: "Home", href: "/dashboard", icon: LayoutDashboard },
                                 { name: "Create", href: "/create", icon: PlusCircle },
                                 { name: "Library", href: "/library", icon: Library },
+                                { name: "Arena", href: "/arena", icon: Sword },
                                 ...(pathname.startsWith("/hub") ? [{ name: "Hub", href: "/hub", icon: Users }] : []),
                                 { name: "Profile", href: "/profile", icon: User },
                             ].map((item) => {
                                 const isActive = item.href === "/dashboard"
                                     ? (pathname === "/dashboard" || pathname === "/")
-                                    : pathname.startsWith(item.href);
+                                    : (item.href === "/arena" ? pathname.startsWith("/arena") : pathname.startsWith(item.href));
                                 
                                 return (
                                     <Link
@@ -341,7 +343,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 {user.isAuthenticated && (
                     <div className={cn(
                         "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
-                        isApp ? "bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)]" : "bg-[var(--background)] border border-[var(--border)]"
+                        isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "bg-zinc-950/45 border border-white/5"
                     )} title="Available Credits">
                         <Zap size={14} className="text-[var(--amber)] animate-pulse w-3.5 h-3.5 md:w-4 md:h-4" />
                         <span className="font-mono text-[11px] md:text-xs font-bold text-[var(--foreground)] tabular-nums">
@@ -356,7 +358,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setToastsOpen(true)}
-                        className="relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full transition-all bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)] hover:shadow-[0_0_15px_var(--accent-glow)] active:scale-95"
+                        className="relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full transition-all bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20 active:scale-95"
                     >
                         <Bell size={15} strokeWidth={2.5} className="text-[var(--foreground)] w-3.5 h-3.5 md:w-4 md:h-4" />
                         {unreadCount > 0 && (
@@ -385,8 +387,8 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setShowUserMenu(!showUserMenu)}
                             className={cn(
-                                "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all border border-[var(--border)] shadow-sm overflow-hidden active:scale-95",
-                                isApp ? "bg-[var(--background-secondary)] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-[var(--accent)] hover:shadow-[0_0_15px_var(--accent-glow)]" : "hover:border-[var(--accent)]"
+                                "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all border border-white/5 shadow-sm overflow-hidden active:scale-95",
+                                isApp ? "bg-zinc-950/45 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "hover:border-white/20"
                             )}
                         >
                             {user.avatar && user.avatar.length > 2 ? (
@@ -419,7 +421,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute right-0 mt-4 w-60 rounded-[32px] p-3 bg-[var(--bg-3)] border border-[var(--border)] shadow-2xl z-[10001]"
+                                    className="absolute right-0 mt-4 w-60 rounded-[32px] p-3 bg-zinc-950/90 border border-white/5 backdrop-blur-2xl shadow-2xl z-[10001]"
                                 >
                                     <div className="px-4 py-4 mb-2 border-b border-[var(--border)]">
                                         <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-widest mb-1">Scholar</p>
