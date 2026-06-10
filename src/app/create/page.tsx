@@ -429,7 +429,7 @@ function CreatorStudio() {
 
     if (isGeneratingPack) {
         return (
-            <div className="min-h-screen bg-transparent pt-20 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="min-h-[calc(100vh-5rem)] bg-transparent pt-20 flex flex-col items-center justify-center relative overflow-hidden">
                 {/* CSS grid overlay */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-40 z-0" />
                 <StandardContainer className="relative z-10">
@@ -448,7 +448,7 @@ function CreatorStudio() {
     }
 
     return (
-        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-28 pt-20 relative min-h-screen flex flex-col flex-1 overflow-x-hidden">
+        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative flex flex-col flex-1 overflow-x-clip">
             {/* $45,200 Luxury Visual Assets */}
             
             {/* Grid Line Background */}

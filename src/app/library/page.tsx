@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import { generateLibraryExportHTML } from "@/lib/export-utils";
+import { cn } from "@/lib/utils";
 
 import ProfessorEmptyState from "@/components/ui/ProfessorEmptyState";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
@@ -368,299 +369,295 @@ export default function LibraryPage() {
     const sprintCount = items.filter(g => g.type === "exam_sprint").length;
 
     return (
-        <StandardContainer className="min-h-[100dvh] bg-transparent text-[var(--foreground)] pb-28 relative overflow-hidden py-12">
+        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative flex flex-col flex-1 overflow-x-clip font-sans">
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
-            {/* Ambient */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute w-[500px] h-[500px] rounded-full animate-pulse"
-                    style={{ top: "-20%", left: "-15%", background: "radial-gradient(circle, var(--foreground-muted), transparent 60%)", opacity: 0.03, filter: "blur(80px)", animationDuration: "7s" }} />
-                <div className="absolute w-[400px] h-[400px] rounded-full animate-pulse"
-                    style={{ bottom: "10%", right: "-10%", background: "radial-gradient(circle, var(--foreground-muted), transparent 60%)", opacity: 0.02, filter: "blur(70px)", animationDuration: "9s" }} />
-            </div>
+            {/* Grid Line Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
+            
+            {/* Ambient Radial Halos */}
+            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#10B981]/5 via-[#6366F1]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
+            <div className="absolute bottom-[-150px] right-[-100px] w-[500px] h-[500px] bg-[#3B82F6]/5 rounded-full blur-[130px] pointer-events-none z-0" />
 
-            <div className="relative z-10 max-w-5xl mx-auto">
-                {/* Header & Offline Toggle Bar */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                    <div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
-                                <Library size={18} strokeWidth={2} className="text-[var(--foreground)]" />
+            <StandardContainer className="relative z-10">
+                <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-600 max-w-5xl mx-auto space-y-10">
+                    
+                    {/* Header & Offline Toggle Bar */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 shadow-sm">
+                                    <Library size={18} strokeWidth={2} className="text-white" />
+                                </div>
+                                <span className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--foreground-muted)]">Unified Storage</span>
                             </div>
-                            <span className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--foreground-muted)]">Unified Storage</span>
+                            <h1 className="text-4xl sm:text-6xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
+                                Study <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">Vault</span>
+                            </h1>
+                            <p className="text-xs text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] mt-1.5 opacity-80">
+                                {isOfflineView ? "Local Device Storage · Zero Latency" : "Real-time Cloud Synchronization"}
+                            </p>
                         </div>
-                        <h1 className="font-serif text-3xl sm:text-4xl font-black italic text-[var(--foreground)] tracking-tighter mb-1.5 leading-tight uppercase">
-                            Your Study Vault.
-                        </h1>
-                        <p className="text-[11px] text-[var(--foreground-muted)] font-bold uppercase tracking-[0.2em] opacity-80">
-                            {isOfflineView ? "Local Device Storage · Zero Latency" : "Real-time Cloud Synchronization"}
-                        </p>
+
+                        {/* Actions & Offline Toggle */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <ThemeToggle />
+                            {/* Offline Toggle */}
+                            <div className="flex items-center p-1 rounded-xl bg-zinc-950/40 border border-white/5 backdrop-blur-md shadow-inner">
+                                <button
+                                    onClick={() => { setIsOfflineView(false); exitSelectionMode(); }}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${!isOfflineView ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"}`}
+                                >
+                                    <Cloud size={13} /> Cloud History
+                                </button>
+                                <button
+                                    onClick={() => { setIsOfflineView(true); exitSelectionMode(); }}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${isOfflineView ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-md" : "text-white/60 hover:text-white"}`}
+                                >
+                                    <WifiOff size={13} /> Offline Vault ({offlineItems.length})
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Actions & Offline Toggle */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        <ThemeToggle />
-                        {/* Offline Toggle */}
-                        <div className="flex items-center p-1 rounded-xl bg-[var(--bg-2)] border border-[var(--border)] shadow-inner">
-                            <button
-                                onClick={() => { setIsOfflineView(false); exitSelectionMode(); }}
-                                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all ${!isOfflineView ? "bg-[var(--foreground)] text-[var(--background)] shadow-md" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}
-                            >
-                                <Cloud size={13} /> Cloud History
-                            </button>
-                            <button
-                                onClick={() => { setIsOfflineView(true); exitSelectionMode(); }}
-                                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all ${isOfflineView ? "bg-[var(--emerald)] text-[var(--background)] shadow-md" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}
-                            >
-                                <WifiOff size={13} /> Offline Vault ({offlineItems.length})
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ═══ Stats — Flat 2.0 Bento Row ═══ */}
-                {!isOfflineView && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-                        {[
-                            { label: "Exam Sprints", count: sprintCount, icon: BookOpen, color: "#10B981" },
-                            { label: "Flashcards", count: flashcardCount, icon: Layers, color: "#F59E0B" },
-                            { label: "Quizzes", count: quizCount, icon: HelpCircle, color: "#818CF8" },
-                            { label: "Summaries", count: summaryCount, icon: FileText, color: "#6366F1" },
-                        ].map((s) => (
-                            <div key={s.label} className="p-4 sm:p-5 transition-all duration-300 hover:-translate-y-0.5 bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-sm flex flex-col justify-between">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--background)] border border-[var(--border)] shadow-inner" style={{ color: s.color }}>
-                                        <s.icon size={16} strokeWidth={2} />
+                    {/* Stats — Flat 2.0 Bento Row */}
+                    {!isOfflineView && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            {[
+                                { label: "Exam Sprints", count: sprintCount, icon: BookOpen, color: "#10B981" },
+                                { label: "Flashcards", count: flashcardCount, icon: Layers, color: "#F59E0B" },
+                                { label: "Quizzes", count: quizCount, icon: HelpCircle, color: "#818CF8" },
+                                { label: "Summaries", count: summaryCount, icon: FileText, color: "#6366F1" },
+                            ].map((s) => (
+                                <div key={s.label} className="p-5 transition-all duration-300 hover:scale-[1.01] bg-zinc-950/45 border border-white/5 rounded-2xl shadow-lg flex flex-col justify-between relative overflow-hidden group">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 shadow-inner" style={{ color: s.color }}>
+                                            <s.icon size={16} strokeWidth={2} />
+                                        </div>
+                                        <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Active</span>
                                     </div>
-                                    <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Active</span>
+                                    <div>
+                                        <div className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight mb-1">{s.count}</div>
+                                        <div className="text-[9px] text-[var(--foreground-muted)] font-black uppercase tracking-widest opacity-80">{s.label}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="text-2xl sm:text-3xl font-black text-[var(--foreground)] leading-none tracking-tight mb-1">{s.count}</div>
-                                    <div className="text-[9px] text-[var(--foreground-muted)] font-black uppercase tracking-widest opacity-80">{s.label}</div>
-                                </div>
-                            </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Filter Pills — Flex Wrap */}
+                    <div className="flex flex-wrap gap-2">
+                        {filters.map(f => (
+                            <button key={f.id} onClick={() => setFilter(f.id)}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                    filter === f.id
+                                        ? isOfflineView 
+                                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                            : "bg-white/10 text-white border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                                        : "bg-white/5 text-[var(--foreground-muted)] hover:text-white border border-white/5"
+                                )}>
+                                <f.icon size={14} strokeWidth={2} />
+                                {f.label}
+                            </button>
                         ))}
                     </div>
-                )}
 
-                {/* ═══ Filter Pills — Flex Wrap ═══ */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                    {filters.map(f => (
-                        <button key={f.id} onClick={() => setFilter(f.id)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-sm"
-                            style={{
-                                ...(filter === f.id ? {
-                                    background: isOfflineView ? "var(--emerald)" : "var(--foreground)",
-                                    color: "var(--background)",
-                                    border: "1px solid transparent",
-                                    transform: "translateY(-1px)",
-                                } : {
-                                    background: "var(--background-secondary)",
-                                    color: "var(--foreground-muted)",
-                                    border: "1px solid var(--border)",
-                                }),
-                            }}>
-                            <f.icon size={14} strokeWidth={2} />
-                            {f.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Search Bar */}
-                <div className="relative mb-6">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-[var(--foreground-muted)]">
-                        {searchQuery.includes("type:") ? <Filter size={16} strokeWidth={2} /> : <Search size={16} strokeWidth={2} />}
-                    </div>
-                    <input
-                        type="text"
-                        placeholder={isOfflineView ? "Search offline vault..." : 'Search "type:exam_sprint", "type:quiz history" or "biology"...'}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onFocus={() => setShowSearch(true)}
-                        onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-                        className="w-full pl-11 pr-14 py-3.5 rounded-2xl text-xs font-medium bg-[var(--bg-2)] border border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:outline-none focus:border-[var(--foreground)] transition-all shadow-inner"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery("")}
-                                className="p-1.5 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)] transition-all"
-                                title="Clear search"
+                    {/* Search Bar */}
+                    <div className="relative mb-6 rounded-2xl border border-white/5 focus-within:border-white/20 transition-all bg-zinc-950/40 overflow-hidden">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-white/40">
+                            {searchQuery.includes("type:") ? <Filter size={16} strokeWidth={2} /> : <Search size={16} strokeWidth={2} />}
+                        </div>
+                        <input
+                            type="text"
+                            placeholder={isOfflineView ? "Search offline vault..." : 'Search "type:exam_sprint", "type:quiz history" or "biology"...'}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => setShowSearch(true)}
+                            onBlur={() => setTimeout(() => setShowSearch(false), 200)}
+                            className="w-full pl-11 pr-14 py-4 text-xs font-bold text-white placeholder:text-[var(--foreground-muted)]/30 outline-none transition-all bg-transparent"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery("")}
+                                    className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                                    title="Clear search"
+                                >
+                                    <X size={15} strokeWidth={2} />
+                                </button>
+                            )}
+                            <div className="w-px h-4 bg-white/5 mx-0.5" />
+                            <button 
+                                onClick={() => setSearchQuery(prev => prev.includes("type:") ? "" : "type:")}
+                                className={`p-1.5 rounded-lg transition-all cursor-pointer ${searchQuery.includes("type:") ? "text-black bg-white" : "text-white/40 hover:text-white"}`}
+                                title="Filter by type"
                             >
-                                <X size={15} strokeWidth={2} />
+                                <Tag size={15} strokeWidth={2} />
                             </button>
-                        )}
-                        <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
-                        <button 
-                            onClick={() => setSearchQuery(prev => prev.includes("type:") ? "" : "type:")}
-                            className={`p-1.5 rounded-lg transition-all ${searchQuery.includes("type:") ? "text-[var(--background)] bg-[var(--foreground)]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}
-                            title="Filter by type"
-                        >
-                            <Tag size={15} strokeWidth={2} />
-                        </button>
-                    </div>
+                        </div>
 
-                    {/* Suggestions Panel */}
-                    <AnimatePresence>
-                        {showSearch && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="absolute left-0 right-0 top-full mt-2 p-5 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-2xl z-50 text-left space-y-4"
-                            >
-                                <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-[var(--text-3)] mb-2 flex items-center gap-1.5">
-                                        <Clock size={11} /> Recent Study Packs
-                                    </h4>
-                                    <div className="flex flex-col gap-1.5">
-                                        {activeItems.slice(0, 2).map((item) => (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => handleOpen(item)}
-                                                className="text-left text-xs font-bold text-[var(--text)] hover:text-[var(--blue)] transition-colors truncate"
-                                            >
-                                                {item.title || "Untitled Study Pack"}
-                                            </button>
-                                        ))}
-                                        {activeItems.length === 0 && (
-                                            <span className="text-xs text-[var(--text-3)] italic">No packs generated yet.</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="border-t border-[var(--border)] pt-3">
-                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-[var(--text-3)] mb-2 flex items-center gap-1.5">
-                                        <Sparkles size={11} className="text-[var(--blue)]" /> Highly Reviewed Core Concepts
-                                    </h4>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {["Action Potentials", "Cardiac Cycle", "Renal Clearance"].map((concept) => (
-                                            <button
-                                                key={concept}
-                                                onClick={() => setSearchQuery(concept)}
-                                                className="px-2.5 py-1 rounded-lg bg-[var(--bg-3)] border border-[var(--border)] text-[10px] font-bold text-[var(--text-2)] hover:text-[var(--foreground)] hover:border-[var(--text-3)] transition-all"
-                                            >
-                                                {concept}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="border-t border-[var(--border)] pt-3">
-                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-[var(--text-3)] mb-2 flex items-center gap-1.5">
-                                        <BellRing size={11} className="text-[var(--amber)]" /> Flagged Exam Questions
-                                    </h4>
-                                    <div className="flex flex-col gap-1.5 text-xs text-[var(--text-2)] font-medium">
-                                        <button onClick={() => setSearchQuery("murmur")} className="text-left hover:text-[var(--amber)] transition-colors truncate">
-                                            Q: "What is the classic murmur triad?"
-                                        </button>
-                                        <button onClick={() => setSearchQuery("action potential")} className="text-left hover:text-[var(--amber)] transition-colors truncate">
-                                            Q: "Explain phase 0 depolarization dynamics."
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {/* ═══ Content ═══ */}
-                {loading && !isOfflineView ? (
-                    <div className="space-y-3">
-                        {[0, 1, 2, 3].map(i => (
-                            <div key={i} className="h-18 rounded-2xl animate-pulse bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm" />
-                        ))}
-                    </div>
-                ) : searchFiltered.length === 0 ? (
-                    <ProfessorEmptyState 
-                        type={searchQuery ? "search" : filter !== "all" ? filter as any : isOfflineView ? "library" : "library"}
-                        actionLabel={isOfflineView ? "Browse Cloud Library" : "Start Creating"}
-                        actionHref={isOfflineView ? "/library" : "/create"}
-                    />
-                ) : (
-                    <div className="space-y-2.5">
-                        {searchFiltered.map((item) => {
-                            const cfg = typeConfig[item.type] ?? typeConfig.summary;
-                            const count = getItemCount(item);
-                            const isSelected = selectedIds.includes(item.id);
-                            const itemDate = new Date(item.created_at).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                            });
-
-                            return (
-                                <div key={item.id} className="relative flex items-center group">
-                                    <button 
-                                        onContextMenu={(e) => {
-                                            e.preventDefault();
-                                            toggleSelection(item.id);
-                                        }}
-                                        onClick={() => handleOpen(item)}
-                                        className="flex-1 flex items-center gap-4 py-3.5 px-4 sm:px-6 rounded-2xl bg-[var(--card)] border border-[var(--border)] hover:border-[var(--foreground)] transition-all shadow-sm text-left outline-none">
-
-                                        {/* Selection Indicator */}
-                                        <AnimatePresence>
-                                            {isSelectionMode && (
-                                                <motion.div 
-                                                    initial={{ scale: 0, opacity: 0 }}
-                                                    animate={{ scale: 1, opacity: 1 }}
-                                                    exit={{ scale: 0, opacity: 0 }}
-                                                    className="w-5 h-5 rounded-lg border border-[var(--border)] flex items-center justify-center mr-1 shadow-xs flex-shrink-0"
-                                                    style={{ 
-                                                        borderColor: isSelected ? "var(--foreground)" : "var(--border)",
-                                                        background: isSelected ? "var(--foreground)" : "transparent"
-                                                    }}
+                        {/* Suggestions Panel */}
+                        <AnimatePresence>
+                            {showSearch && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute left-0 right-0 top-full mt-2 p-6 rounded-2xl bg-zinc-950/90 backdrop-blur-2xl border border-white/10 shadow-2xl z-50 text-left space-y-4"
+                                >
+                                    <div>
+                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
+                                            <Clock size={11} /> Recent Study Packs
+                                        </h4>
+                                        <div className="flex flex-col gap-1.5">
+                                            {activeItems.slice(0, 2).map((item) => (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => handleOpen(item)}
+                                                    className="text-left text-xs font-bold text-white hover:text-white/80 transition-colors truncate cursor-pointer"
                                                 >
-                                                    {isSelected && <Check size={13} strokeWidth={3} className="text-[var(--background)]" />}
-                                                </motion.div>
+                                                    {item.title || "Untitled Study Pack"}
+                                                </button>
+                                            ))}
+                                            {activeItems.length === 0 && (
+                                                <span className="text-xs text-white/40 italic">No packs generated yet.</span>
                                             )}
-                                        </AnimatePresence>
-
-                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--background)] border border-[var(--border)] shadow-sm group-hover-scale-sm transition-transform"
-                                            style={{ color: cfg.color }}>
-                                            <cfg.icon size={18} strokeWidth={2} />
                                         </div>
+                                    </div>
 
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-xs sm:text-sm font-black text-[var(--foreground)] truncate group-hover:text-[var(--emerald)] transition-colors uppercase italic tracking-tight">
-                                                    {item.title || "Untitled Scholarly Work"}
-                                                </span>
-                                                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0 border border-[var(--border)] shadow-xs"
-                                                    style={{ background: "var(--background)", color: cfg.color }}>
-                                                    {cfg.label}
-                                                </span>
-                                                {dueIds.has(item.id) && !isOfflineView && (
-                                                    <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#F59E0B] text-[#06060B] shadow-xs animate-pulse">
-                                                        DUE
-                                                    </span>
-                                                )}
-                                                {item.isOffline && (
-                                                    <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-[var(--emerald)] text-[var(--background)] shadow-xs flex items-center gap-1">
-                                                        <WifiOff size={8} /> OFFLINE
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-2.5 text-[11px] font-bold text-[var(--foreground-muted)] truncate">
-                                                {count && <span className="flex items-center gap-1 shrink-0"><BookOpen size={12} /> {count}</span>}
-                                                {count && <span className="text-[var(--border)] shrink-0">•</span>}
-                                                <span className="flex items-center gap-1 truncate"><Clock size={12} className="shrink-0" /> {itemDate}</span>
-                                            </div>
+                                    <div className="border-t border-white/5 pt-3">
+                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
+                                            <Sparkles size={11} className="text-white" /> Highly Reviewed Core Concepts
+                                        </h4>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {["Action Potentials", "Cardiac Cycle", "Renal Clearance"].map((concept) => (
+                                                <button
+                                                    key={concept}
+                                                    onClick={() => setSearchQuery(concept)}
+                                                    className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-white/80 hover:text-white hover:border-white/20 transition-all cursor-pointer"
+                                                >
+                                                    {concept}
+                                                </button>
+                                            ))}
                                         </div>
+                                    </div>
 
-                                        <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors shrink-0">
-                                            Open <ExternalLink size={14} />
+                                    <div className="border-t border-white/5 pt-3">
+                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
+                                            <BellRing size={11} className="text-[#F59E0B]" /> Flagged Exam Questions
+                                        </h4>
+                                        <div className="flex flex-col gap-1.5 text-xs text-white/70 font-medium">
+                                            <button onClick={() => setSearchQuery("murmur")} className="text-left hover:text-white transition-colors truncate cursor-pointer">
+                                                Q: "What is the classic murmur triad?"
+                                            </button>
+                                            <button onClick={() => setSearchQuery("action potential")} className="text-left hover:text-white transition-colors truncate cursor-pointer">
+                                                Q: "Explain phase 0 depolarization dynamics."
+                                            </button>
                                         </div>
-                                    </button>
-                                </div>
-                            );
-                        })}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
-                )}
-            </div>
 
-            {/* ═══ Batch Action Bar — Floating Flat 2.0 ═══ */}
+                    {/* Content */}
+                    {loading && !isOfflineView ? (
+                        <div className="space-y-3">
+                            {[0, 1, 2, 3].map(i => (
+                                <div key={i} className="h-18 rounded-2xl animate-pulse bg-white/5 border border-white/5 shadow-sm" />
+                            ))}
+                        </div>
+                    ) : searchFiltered.length === 0 ? (
+                        <ProfessorEmptyState 
+                            type={searchQuery ? "search" : filter !== "all" ? filter as any : isOfflineView ? "library" : "library"}
+                            actionLabel={isOfflineView ? "Browse Cloud Library" : "Start Creating"}
+                            actionHref={isOfflineView ? "/library" : "/create"}
+                        />
+                    ) : (
+                        <div className="space-y-2.5">
+                            {searchFiltered.map((item) => {
+                                const cfg = typeConfig[item.type] ?? typeConfig.summary;
+                                const count = getItemCount(item);
+                                const isSelected = selectedIds.includes(item.id);
+                                const itemDate = new Date(item.created_at).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                });
+
+                                return (
+                                    <div key={item.id} className="relative flex items-center group">
+                                        <button 
+                                            onContextMenu={(e) => {
+                                                e.preventDefault();
+                                                toggleSelection(item.id);
+                                            }}
+                                            onClick={() => handleOpen(item)}
+                                            className="flex-1 flex items-center gap-4 py-4 px-6 rounded-2xl bg-zinc-950/40 border border-white/5 hover:border-white/20 hover:scale-[1.005] transition-all shadow-sm text-left outline-none cursor-pointer">
+
+                                            {/* Selection Indicator */}
+                                            <AnimatePresence>
+                                                {isSelectionMode && (
+                                                    <motion.div 
+                                                        initial={{ scale: 0, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        exit={{ scale: 0, opacity: 0 }}
+                                                        className="w-5 h-5 rounded-lg border flex items-center justify-center mr-1 shadow-xs flex-shrink-0"
+                                                        style={{ 
+                                                            borderColor: isSelected ? "white" : "rgba(255,255,255,0.1)",
+                                                            background: isSelected ? "white" : "transparent"
+                                                        }}
+                                                    >
+                                                        {isSelected && <Check size={13} strokeWidth={3} className="text-black" />}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/5 shadow-sm group-hover-scale-sm transition-transform"
+                                                style={{ color: cfg.color }}>
+                                                <cfg.icon size={18} strokeWidth={2} />
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-xs sm:text-sm font-black text-white truncate group-hover:text-white/80 transition-colors uppercase italic tracking-tight">
+                                                        {item.title || "Untitled Scholarly Work"}
+                                                    </span>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md flex-shrink-0 border border-white/10 bg-white/5 text-white">
+                                                        {cfg.label}
+                                                    </span>
+                                                    {dueIds.has(item.id) && !isOfflineView && (
+                                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#F59E0B] text-[#06060B] shadow-xs animate-pulse">
+                                                            DUE
+                                                        </span>
+                                                    )}
+                                                    {item.isOffline && (
+                                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-xs flex items-center gap-1">
+                                                            <WifiOff size={8} /> OFFLINE
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2.5 text-[11px] font-bold text-white/40 truncate">
+                                                    {count && <span className="flex items-center gap-1 shrink-0"><BookOpen size={12} /> {count}</span>}
+                                                    {count && <span className="text-white/10 shrink-0">•</span>}
+                                                    <span className="flex items-center gap-1 truncate"><Clock size={12} className="shrink-0" /> {itemDate}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors shrink-0">
+                                                Open <ExternalLink size={14} />
+                                            </div>
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </StandardContainer>
+
+            {/* Batch Action Bar — Floating Flat 2.0 */}
             <AnimatePresence>
                 {selectedIds.length > 0 && (
                     <motion.div 
@@ -669,32 +666,32 @@ export default function LibraryPage() {
                         exit={{ y: 100, x: "-50%", opacity: 0 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-40px)] max-w-xl"
                     >
-                        <div className="bg-[var(--card)] backdrop-blur-2xl border-2 border-[var(--border)] rounded-[32px] p-5 flex items-center justify-between shadow-2xl overflow-hidden relative">
+                        <div className="bg-zinc-950/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-5 flex items-center justify-between shadow-[0_24px_80px_rgba(0,0,0,0.9)] overflow-hidden relative">
                             <div className="flex items-center gap-4 pl-3">
-                                <div className="w-10 h-10 rounded-2xl bg-[var(--foreground)] text-[var(--background)] flex items-center justify-center font-black text-sm shadow-md">
+                                <div className="w-10 h-10 rounded-2xl bg-white text-black flex items-center justify-center font-black text-sm shadow-lg">
                                     {selectedIds.length}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-black text-[var(--foreground)] leading-none uppercase tracking-wider">Items Selected</span>
-                                    <span className="text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-widest mt-1">Batch Management Active</span>
+                                    <span className="text-xs font-black text-white leading-none uppercase tracking-wider">Items Selected</span>
+                                    <span className="text-[9px] text-white/40 font-black uppercase tracking-widest mt-1.5">Batch Management Active</span>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-3">
                                 {!isOfflineView && (
                                     <button onClick={handleBatchExport}
-                                        className="p-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] hover:bg-[var(--bg-2)] text-[var(--foreground)] transition-all shadow-md">
+                                        className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white transition-all shadow-md cursor-pointer">
                                         <FileDown size={20} strokeWidth={2} />
                                     </button>
                                 )}
                                 <button onClick={handleBatchDelete} disabled={isProcessing}
-                                    className="p-3 rounded-2xl bg-red-500 text-white hover:bg-red-600 transition-all shadow-md disabled:opacity-50 flex items-center gap-2 font-black text-xs uppercase tracking-wider">
-                                    {isProcessing ? <Loader2 size={20} className="animate-spin" /> : <Trash2 size={20} strokeWidth={2} />}
+                                    className="p-3 px-5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all shadow-md disabled:opacity-50 flex items-center gap-2 font-black text-[10px] uppercase tracking-wider cursor-pointer">
+                                    {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} strokeWidth={2} />}
                                     Delete
                                 </button>
-                                <div className="w-px h-8 bg-[var(--border)] mx-1" />
+                                <div className="w-px h-8 bg-white/10 mx-1" />
                                 <button onClick={exitSelectionMode}
-                                    className="px-5 py-3 rounded-2xl bg-[var(--background)] border border-[var(--border)] hover:bg-[var(--bg-2)] text-[var(--foreground)] text-xs font-black uppercase tracking-wider transition-all shadow-md">
+                                    className="px-5 py-3 rounded-2xl bg-white text-black hover:bg-white/95 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer">
                                     Cancel
                                 </button>
                             </div>
@@ -707,6 +704,6 @@ export default function LibraryPage() {
                 isOpen={showGuestModal}
                 onClose={() => setShowGuestModal(false)}
             />
-        </StandardContainer>
+        </div>
     );
 }

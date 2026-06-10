@@ -145,17 +145,40 @@ export default function ProfilePage() {
     }, [user?.id, user?.xp, user?.streak, user?.wins, level]);
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] selection:bg-blue-500/10 pb-24 font-sans">
-            <div className="pt-20 md:pt-28">
-                <StandardContainer narrow>
+        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative flex flex-col flex-1 overflow-x-clip font-sans">
+            {/* Grid Line Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
+            
+            {/* Ambient Radial Halos */}
+            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#10B981]/5 via-[#6366F1]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
+            <div className="absolute bottom-[-150px] right-[-100px] w-[500px] h-[500px] bg-[#3B82F6]/5 rounded-full blur-[130px] pointer-events-none z-0" />
+
+            <StandardContainer narrow className="relative z-10">
+                <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-600 space-y-10">
                     
-                    {/* ═══ Header Section (Flat 2.0 Branding Card) ═══ */}
+                    {/* Header Banner */}
+                    <div className="text-center space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 backdrop-blur-md">
+                            <Trophy size={12} className="text-[#F59E0B] animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
+                                Scholar Profile
+                            </span>
+                        </div>
+                        <h1 className="text-4xl sm:text-6xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
+                            Academic <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">Identity</span>
+                        </h1>
+                        <p className="text-sm text-[var(--foreground-muted)] max-w-xl mx-auto font-medium opacity-80 leading-relaxed">
+                            Track your academic tier, unlock milestones, and configure your cognitive preferences.
+                        </p>
+                    </div>
+
+                    {/* Header Section (Flat 2.0 Branding Card) */}
                     <div className="mb-8 relative">
-                        <div className="p-6 md:p-8 relative overflow-hidden border border-[var(--border)] bg-[var(--card)] rounded-[28px] shadow-lg">
-                          
+                        <div className="rounded-[2.5rem] bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_24px_80px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.05)] overflow-hidden p-8 sm:p-10 relative">
+                           
                             {/* Ambient Brand Glowing Orbs */}
-                            <div className="absolute top-[-30%] right-[-20%] w-80 h-80 rounded-full bg-blue-500/5 filter blur-[60px] pointer-events-none select-none" />
-                            <div className="absolute bottom-[-30%] left-[-20%] w-80 h-80 rounded-full bg-amber-500/3 filter blur-[60px] pointer-events-none select-none" />
+                            <div className="absolute top-[-30%] right-[-20%] w-80 h-80 rounded-full bg-white/[0.02] filter blur-[60px] pointer-events-none select-none" />
+                            <div className="absolute bottom-[-30%] left-[-20%] w-80 h-80 rounded-full bg-white/[0.01] filter blur-[60px] pointer-events-none select-none" />
 
                             {/* Sign Out Trigger */}
                             <button 
@@ -163,7 +186,7 @@ export default function ProfilePage() {
                                     await supabase.auth.signOut();
                                     router.push('/login');
                                 }}
-                                className="absolute top-5 right-5 p-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-2)] hover:bg-red-500/10 hover:border-red-500/20 text-[var(--foreground-muted)] hover:text-red-400 transition-all z-20 shadow-sm cursor-pointer"
+                                className="absolute top-6 right-6 p-2.5 rounded-xl border border-white/5 bg-white/5 hover:bg-red-500/10 hover:border-red-500/20 text-white/50 hover:text-red-400 transition-all z-20 shadow-sm cursor-pointer"
                                 title="Sign Out"
                             >
                                 <LogOut size={14} />
@@ -171,52 +194,52 @@ export default function ProfilePage() {
 
                             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div className="flex items-center gap-5">
-                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500/10 to-amber-500/5 border border-[var(--border)] flex items-center justify-center text-2xl shadow-sm shrink-0 select-none">
+                                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-3xl shadow-lg shrink-0 select-none">
                                         <span>{user?.avatar || "🎓"}</span>
                                     </div>
                                     
                                     <div className="space-y-1">
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-wider text-blue-400">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-wider text-white">
                                             Level {level} · {levelTitle}
                                         </div>
-                                        <h1 className="text-xl md:text-2xl font-black tracking-tight text-[var(--foreground)]">{user?.name || "Scholar"}</h1>
+                                        <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">{user?.name || "Scholar"}</h1>
                                         <p className="text-[11px] text-[var(--foreground-muted)] font-mono tracking-wide">{user?.email || "student@theprofessor.xyz"}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-8 border-t md:border-t-0 md:border-l border-[var(--border)]/60 pt-4 md:pt-0 md:pl-8">
+                                <div className="flex items-center gap-8 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-8">
                                     <div>
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] mb-0.5">Total XP</p>
-                                        <p className="text-xl md:text-2xl font-black font-mono text-blue-400 tabular-nums">{stats.xp.toLocaleString()}</p>
+                                        <p className="text-xl md:text-2xl font-black font-mono text-white tracking-tight tabular-nums">{stats.xp.toLocaleString()}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)] mb-0.5">Study Streak</p>
-                                        <p className="text-xl md:text-2xl font-black font-mono text-amber-500 tabular-nums">🔥 {user?.streak || 0} days</p>
+                                        <p className="text-xl md:text-2xl font-black font-mono text-[#F59E0B] tracking-tight tabular-nums">🔥 {user?.streak || 0} days</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Level Progress Slider */}
-                            <div className="mt-6 pt-4 border-t border-[var(--border)]/50 space-y-2 relative z-10">
+                            <div className="mt-6 pt-4 border-t border-white/5 space-y-2 relative z-10">
                                 <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[var(--foreground-muted)]">
                                     <span>Targeting Level {level + 1}</span>
                                     <span>{stats.xp} / {nextLevelXp} XP</span>
                                 </div>
-                                <div className="h-2 rounded-full bg-[var(--bg-3)] overflow-hidden border border-[var(--border)]">
+                                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/5">
                                     <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${levelProgress}%` }}
                                         transition={{ duration: 1 }}
-                                        className="h-full bg-gradient-to-r from-blue-500 to-amber-500"
+                                        className="h-full bg-white rounded-full shadow-[0_0_10px_white]"
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* ═══ Segmented Tab Controller (Flat 2.0 Styled) ═══ */}
+                    {/* Segmented Tab Controller (Flat 2.0 Styled) */}
                     <div className="flex justify-center mb-8">
-                        <div className="inline-flex p-1 rounded-2xl bg-[var(--bg-2)] border border-[var(--border)] shadow-sm">
+                        <div className="inline-flex p-1 border border-white/5 rounded-2xl bg-zinc-950/40 backdrop-blur-xl shadow-2xl relative overflow-hidden">
                             {TABS.map((tab) => {
                                 const isActive = activeSection === tab.id;
                                 const IconComponent = tab.icon;
@@ -226,13 +249,13 @@ export default function ProfilePage() {
                                         onClick={() => setActiveSection(tab.id)}
                                         className={cn(
                                             "relative px-5 py-2.5 rounded-xl flex items-center gap-2 text-xs font-bold transition-all z-10 cursor-pointer",
-                                            isActive ? "text-blue-400 shadow-sm" : "text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)]"
+                                            isActive ? "text-white shadow-sm" : "text-[var(--foreground-muted)] hover:text-white"
                                         )}
                                     >
                                         {isActive && (
                                             <motion.div 
                                                 layoutId="active-profile-tab-bg"
-                                                className="absolute inset-0 bg-blue-500/5 border border-blue-500/15 rounded-xl"
+                                                className="absolute inset-0 bg-white/10 border border-white/5 rounded-xl"
                                                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                                             />
                                         )}
@@ -244,13 +267,13 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* ═══ Tab Contents (Dynamic & Personalised) ═══ */}
+                    {/* Tab Contents (Dynamic & Personalised) */}
                     <div className="animate-in fade-in duration-500">
                         {activeSection === "achievements" && (
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between px-2">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Unlocked Badges</p>
-                                    <Link href="/achievements" className="text-[10px] font-black uppercase tracking-wider text-blue-400 hover:text-blue-500 flex items-center gap-1">
+                                    <Link href="/achievements" className="text-[10px] font-black uppercase tracking-wider text-white hover:underline flex items-center gap-1">
                                         <span>Trophy Room</span>
                                         <ChevronRight size={12} />
                                     </Link>
@@ -266,25 +289,25 @@ export default function ProfilePage() {
                                                 className={cn(
                                                     "p-5 flex items-center gap-4 border transition-all duration-300 relative overflow-hidden",
                                                     unlocked 
-                                                        ? "bg-[var(--bg-2)] border-[var(--border)] hover:border-blue-500/20 hover-lift-sm" 
-                                                        : "bg-[var(--bg-2)]/30 border-[var(--border)]/40 opacity-30 grayscale pointer-events-none"
+                                                        ? "bg-zinc-950/40 border-white/10 hover:border-white/20 hover:scale-[1.01]" 
+                                                        : "bg-zinc-950/10 border-white/5 opacity-25 grayscale pointer-events-none"
                                                 )} 
                                                 style={{ borderRadius: "20px" }}
                                             >
                                                 {/* Mini Background Glow for Unlocked Badges */}
                                                 {unlocked && (
-                                                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-blue-500/5 filter blur-[20px] pointer-events-none" />
+                                                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-white/[0.02] filter blur-[20px] pointer-events-none" />
                                                 )}
                                                 
                                                 <div className={cn(
                                                     "w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 shadow-sm",
-                                                    unlocked ? `${badge.bg} ${badge.border} ${badge.color}` : "bg-[var(--bg-3)] border-[var(--border)] text-[var(--foreground-muted)]"
+                                                    unlocked ? `bg-white/5 border-white/10 text-white` : "bg-transparent border-white/5 text-white/20"
                                                 )}>
                                                     <BadgeIcon size={20} />
                                                 </div>
                                                 <div className="space-y-0.5 flex-1 min-w-0 z-10">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <h3 className="text-xs font-black uppercase tracking-wider text-[var(--foreground)] truncate">{badge.label}</h3>
+                                                        <h3 className="text-xs font-black uppercase tracking-wider text-white truncate">{badge.label}</h3>
                                                         {unlocked && (
                                                             <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                                                         )}
@@ -300,12 +323,12 @@ export default function ProfilePage() {
 
                         {activeSection === "habits" && (
                             <div className="space-y-6 max-w-2xl mx-auto">
-                                <div className="border border-[var(--border)] bg-[var(--card)] rounded-[28px] overflow-hidden shadow-md">
-                                    <div className="p-6 border-b border-[var(--border)]">
-                                        <h3 className="text-base font-black text-[var(--foreground)] tracking-tight">The Study Lab</h3>
+                                <div className="border border-white/5 bg-zinc-950/45 backdrop-blur-2xl rounded-[2.5rem] overflow-hidden shadow-2xl">
+                                    <div className="p-6 sm:p-8 border-b border-white/5">
+                                        <h3 className="text-base font-black text-white tracking-tight">The Study Lab</h3>
                                         <p className="text-xs text-[var(--foreground-muted)] mt-1 font-medium">Configure your preferred default parameters for new syntheses.</p>
                                     </div>
-                                    <div className="p-6 space-y-8">
+                                    <div className="p-6 sm:p-8 space-y-8">
                                         
                                         {/* Daily Goal Input Selector */}
                                         <div className="space-y-3">
@@ -318,8 +341,8 @@ export default function ProfilePage() {
                                                         className={cn(
                                                             "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer",
                                                             user?.dailyGoalMinutes === goal 
-                                                                ? "bg-blue-500/10 border-blue-500 text-blue-400 font-extrabold shadow-sm shadow-blue-500/5" 
-                                                                : "bg-[var(--bg-2)]/60 text-[var(--foreground-secondary)] border-[var(--border)] hover:bg-[var(--border)]"
+                                                                ? "bg-white text-black font-extrabold border-white/15 shadow-[0_0_15px_rgba(255,255,255,0.15)]" 
+                                                                : "bg-white/5 text-white/70 border-white/5 hover:bg-white/10 hover:text-white"
                                                         )}
                                                     >
                                                         {goal} mins
@@ -339,8 +362,8 @@ export default function ProfilePage() {
                                                         className={cn(
                                                             "py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer",
                                                             user?.difficultyPreference === diff 
-                                                                ? "bg-blue-500/10 border-blue-500 text-blue-400 font-extrabold shadow-sm shadow-blue-500/5" 
-                                                                : "bg-[var(--bg-2)]/60 text-[var(--foreground-secondary)] border-[var(--border)] hover:bg-[var(--border)]"
+                                                                ? "bg-white text-black font-extrabold border-white/15 shadow-[0_0_15px_rgba(255,255,255,0.15)]" 
+                                                                : "bg-white/5 text-white/70 border-white/5 hover:bg-white/10 hover:text-white"
                                                         )}
                                                     >
                                                         {diff}
@@ -364,43 +387,43 @@ export default function ProfilePage() {
 
                         {activeSection === "plan" && (
                             <div className="max-w-xl mx-auto">
-                                <div className="p-8 flex flex-col items-center text-center gap-6 border border-[var(--border)] bg-[var(--card)] rounded-[28px] shadow-md relative overflow-hidden">
+                                <div className="p-8 flex flex-col items-center text-center gap-6 border border-white/5 bg-zinc-950/45 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl relative overflow-hidden">
                                     
                                     {/* Subtle Ambient Radial Glow */}
-                                    <div className="absolute top-[-30%] left-[-30%] w-72 h-72 rounded-full bg-blue-500/5 filter blur-[50px] pointer-events-none" />
+                                    <div className="absolute top-[-30%] left-[-30%] w-72 h-72 rounded-full bg-white/[0.02] filter blur-[50px] pointer-events-none" />
 
                                     <div className="space-y-2 relative z-10">
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-wider text-blue-400">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-wider text-white">
                                             Protocol Status
                                         </div>
-                                        <h3 className="text-xl font-black tracking-tight text-[var(--foreground)]">Scholar Free</h3>
+                                        <h3 className="text-xl font-black tracking-tight text-white">Scholar Free</h3>
                                         <p className="text-xs text-[var(--foreground-muted)] max-w-xs mx-auto leading-relaxed font-medium">You are currently on the foundational protocol. Upgrade for unlimited leverage and speed.</p>
                                     </div>
                                     
-                                    <div className="flex items-center gap-12 py-4 border-y border-[var(--border)]/60 w-full justify-center relative z-10">
+                                    <div className="flex items-center gap-12 py-4 border-y border-white/5 w-full justify-center relative z-10">
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-wider">Monthly Credits</p>
-                                            <p className="text-2xl font-black font-mono text-[var(--foreground)] tabular-nums">{user?.credits || 0}<span className="text-xs text-[var(--foreground-muted)] ml-1">/ 100</span></p>
+                                            <p className="text-2xl font-black font-mono text-white tabular-nums">{user?.credits || 0}<span className="text-xs text-[var(--foreground-muted)] ml-1">/ 100</span></p>
                                         </div>
-                                        <div className="w-px h-10 bg-[var(--border)]" />
+                                        <div className="w-px h-10 bg-white/5" />
                                         <div className="space-y-1 text-left">
                                             <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-wider">Service Health</p>
                                             <div className="flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse" />
-                                                <p className="text-base font-black uppercase tracking-tight text-[var(--foreground)]">Optimal</p>
+                                                <p className="text-base font-black uppercase tracking-tight text-white">Optimal</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <Link href="/settings/billing" className="w-full py-4.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest active:scale-[0.98] transition-all text-center shadow-lg hover:shadow-blue-500/10 relative z-10">
+                                    <Link href="/settings/billing" className="w-full py-4.5 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-black uppercase tracking-widest active:scale-[0.98] transition-all text-center shadow-[0_8px_32px_rgba(255,255,255,0.05)] relative z-10 cursor-pointer">
                                         Upgrade Now
                                     </Link>
                                 </div>
                             </div>
                         )}
                     </div>
-                </StandardContainer>
-            </div>
+                </div>
+            </StandardContainer>
         </div>
     );
 }
