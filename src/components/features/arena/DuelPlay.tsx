@@ -14,6 +14,7 @@ import {
     ArrowRight
 } from "lucide-react";
 import { useDuelRealtime } from "@/hooks/useRealtime";
+import { cn } from "@/lib/utils";
 
 interface Question {
     id?: string;
@@ -42,9 +43,14 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
     const [timeLeft, setTimeLeft] = useState(timeLimit);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
+    const [showAbandonModal, setShowAbandonModal] = useState(false);
+    const [showForfeitVictoryModal, setShowForfeitVictoryModal] = useState(false);
+    
     const [opponentProgress, setOpponentProgress] = useState(0);
     const [opponentFinished, setOpponentFinished] = useState(false);
+    const [opponentActive, setOpponentActive] = useState(true);
     const [syncError, setSyncError] = useState(false);
+    
     const lastSyncRef = useRef<number>(0);
     const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -71,17 +77,17 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
             if (!newData) return;
 
             // Update opponent progress in real-time
-            if (newData.user_id !== (isHost ? undefined : undefined)) {
-                // Get opponent's progress
+            if (newData.user_id === opponent.id) {
                 if (newData.current_question_index !== undefined) {
                     setOpponentProgress(newData.current_question_index);
                 }
-                
                 if (newData.finished_at) {
                     setOpponentFinished(true);
                 }
+                // Refresh activity on session ping
+                setOpponentActive(true);
             }
-        }, [isHost]),
+        }, [opponent.id]),
 
         onDuelUpdate: useCallback((payload: any) => {
             const newData = payload.new;
@@ -89,10 +95,62 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
 
             // Check if duel completed
             if (newData.status === 'COMPLETED') {
-                router.push(`/arena/${duelId}/results`);
+                router.push(`/arena/results?id=${duelId}`);
+            }
+
+            // Check if opponent forfeited (cancelled during duel)
+            if (newData.status === 'CANCELLED') {
+                setShowForfeitVictoryModal(true);
             }
         }, [duelId, router])
     });
+
+    // Check opponent active state periodically by polling their latest session ping
+    const checkOpponentActive = useCallback(async () => {
+        if (opponentFinished) return;
+        try {
+            const res = await fetch(`/api/arena/${duelId}`);
+            const data = await res.json();
+            if (data.success && data.duel) {
+                const opp = isHost ? data.duel.challenger : data.duel.host;
+                if (opp && opp.session) {
+                    const lastPingTime = opp.session.lastPing ? new Date(opp.session.lastPing).getTime() : 0;
+                    const isActive = (Date.now() - lastPingTime) < 15000;
+                    setOpponentActive(isActive);
+                }
+            }
+        } catch (e) {
+            console.error("Presence check error:", e);
+        }
+    }, [duelId, isHost, opponentFinished]);
+
+    useEffect(() => {
+        const interval = setInterval(checkOpponentActive, 5000);
+        return () => clearInterval(interval);
+    }, [checkOpponentActive]);
+
+    // Heartbeat ping every 5 seconds to let the server know we are active
+    useEffect(() => {
+        const pingInterval = setInterval(async () => {
+            if (isSubmitting) return;
+            try {
+                await fetch('/api/arena/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        duel_id: duelId,
+                        current_question_index: currentIndex,
+                        answers,
+                        is_finished: false
+                    })
+                });
+            } catch (err) {
+                console.error("Heartbeat error:", err);
+            }
+        }, 5000);
+
+        return () => clearInterval(pingInterval);
+    }, [duelId, currentIndex, answers, isSubmitting]);
 
     // Sync with server on answer change
     const syncProgress = useCallback(async () => {
@@ -164,6 +222,19 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
         }
     }, [isSubmitting, duelId, currentIndex, answers, router]);
 
+    const handleAbandon = async () => {
+        try {
+            await fetch(`/api/arena/${duelId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "cancel" })
+            });
+            router.push("/hub?s=arena");
+        } catch (error) {
+            console.error("Abandon error:", error);
+        }
+    };
+
     // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
@@ -193,19 +264,35 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                     />
                 </div>
 
-                    <div className="flex items-center justify-between px-4 py-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 shadow-[0_0_12px_rgba(244,63,94,0.1)]">
-                                <Swords size={14} className="text-[var(--error)]" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--error)]">Live Duel</span>
-                            </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 shadow-[0_0_12px_rgba(244,63,94,0.1)]">
+                            <Swords size={14} className="text-[var(--error)]" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--error)]">Live Duel</span>
                         </div>
+                        <button
+                            onClick={() => setShowAbandonModal(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/5 bg-white/[0.02] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 text-zinc-400 transition-all text-[10px] font-black uppercase tracking-wider"
+                        >
+                            <Flag size={12} />
+                            Forfeit Match
+                        </button>
+                    </div>
 
                     <div className="flex items-center gap-4">
-                        {/* Opponent Status */}
-                        <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${opponentFinished ? 'bg-[var(--success)]' : 'bg-[var(--accent)] animate-pulse'}`} />
-                            <span className="text-[10px] text-[var(--foreground-muted)]">{opponent.name}: {opponentProgress}/{questions.length}</span>
+                        {/* Opponent Presence Status */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.02] border border-white/5">
+                            <span className={cn(
+                                "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                                opponentFinished 
+                                    ? "bg-emerald-400" 
+                                    : opponentActive 
+                                        ? "bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.5)]" 
+                                        : "bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+                            )} />
+                            <span className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-wider font-bold">
+                                {opponent.name}: {opponentActive ? (opponentFinished ? "Finished" : "Dueling") : "Disconnected"}
+                            </span>
                         </div>
 
                         {/* Timer */}
@@ -304,14 +391,14 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
             {/* Footer */}
             <footer className="sticky bottom-0 border-t border-white/5 bg-[#06060B]/90 backdrop-blur-xl p-4">
                 <div className="max-w-3xl mx-auto flex items-center justify-between">
-                        <button
-                            onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-                            disabled={currentIndex === 0}
-                            className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 disabled:hover:text-[var(--foreground-muted)] transition-all flex items-center gap-2"
-                        >
-                            <ArrowLeft size={14} />
-                            Prev
-                        </button>
+                    <button
+                        onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                        disabled={currentIndex === 0}
+                        className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 disabled:hover:text-[var(--foreground-muted)] transition-all flex items-center gap-2"
+                    >
+                        <ArrowLeft size={14} />
+                        Prev
+                    </button>
 
                     <div className="flex items-center gap-2">
                         {syncError && (
@@ -388,6 +475,82 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                                     Submit
                                 </button>
                             </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Forfeit Modal */}
+            <AnimatePresence>
+                {showAbandonModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="w-full max-w-sm bg-[var(--background)] rounded-3xl border border-[var(--border)] p-8 text-center"
+                        >
+                            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-xl">
+                                <Flag size={32} className="text-red-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Forfeit Duel?</h3>
+                            <p className="text-sm text-[var(--foreground-muted)] mb-6 leading-relaxed">
+                                Are you sure you want to run? Leaving the pit counts as an automatic defeat and your wager will be lost.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowAbandonModal(false)}
+                                    className="flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 transition-all"
+                                >
+                                    Stay & Fight
+                                </button>
+                                <button
+                                    onClick={handleAbandon}
+                                    className="flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+                                    style={{
+                                        background: "var(--error)",
+                                        color: "var(--background)"
+                                    }}
+                                >
+                                    Forfeit
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Forfeit Victory Modal */}
+            <AnimatePresence>
+                {showForfeitVictoryModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="w-full max-w-sm bg-[var(--background)] rounded-3xl border border-[var(--border)] p-8 text-center"
+                        >
+                            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-xl">
+                                <Swords size={32} className="text-emerald-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Victory by Forfeit! 🏆</h3>
+                            <p className="text-sm text-[var(--foreground-muted)] mb-6 leading-relaxed">
+                                Your classmate has fled the pit. You win the duel by default! Your wager rewards have been secured.
+                            </p>
+                            <button
+                                onClick={() => router.push(`/arena`)}
+                                className="w-full py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest text-[var(--background)] bg-[var(--foreground)] hover:opacity-90 transition-all active:scale-[0.98]"
+                            >
+                                Back to Arena
+                            </button>
                         </motion.div>
                     </motion.div>
                 )}

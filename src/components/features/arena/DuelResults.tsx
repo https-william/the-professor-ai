@@ -15,7 +15,7 @@ import {
     ArrowRight,
     Search,
     Swords,
-    Frown,
+    Coffee,
     Handshake
 } from "lucide-react";
 import GlobalLeaderboard from "./GlobalLeaderboard";
@@ -109,8 +109,8 @@ export default function DuelResults({
                                         <Handshake size={48} className="text-[var(--secondary)]" />
                                     </div>
                                     <div>
-                                        <h1 className="text-3xl font-black text-[var(--secondary)]">IT&apos;S A DRAW!</h1>
-                                        <p className="text-[var(--foreground-muted)] mt-2">A worthy battle of equals</p>
+                                        <h1 className="text-3xl font-black text-[var(--secondary)]">IT&apos;S A DRAW! 🤝</h1>
+                                        <p className="text-[var(--foreground-muted)] mt-2">A worthy match of equal minds. You both read the same notes, clearly.</p>
                                     </div>
                                 </div>
                             ) : isWinner ? (
@@ -119,18 +119,18 @@ export default function DuelResults({
                                         <Trophy size={48} className="text-[var(--accent)]" />
                                     </div>
                                     <div>
-                                        <h1 className="text-3xl font-black text-[var(--accent)]">VICTORY!</h1>
-                                        <p className="text-[var(--foreground-muted)] mt-2">You dominated the arena</p>
+                                        <h1 className="text-3xl font-black text-[var(--accent)]">YOU ACED IT! 🏆</h1>
+                                        <p className="text-[var(--foreground-muted)] mt-2">The Professor is impressed. Your study stash just grew richer.</p>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--error)]/5 border-2 border-[var(--error)]/20 flex items-center justify-center shadow-[0_0_40px_var(--error-glow)]">
-                                        <Frown size={48} className="text-[var(--error)]" />
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--foreground)]/5 border-2 border-[var(--foreground)]/10 flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.02)]">
+                                        <Coffee size={48} className="text-[var(--foreground-muted)]" />
                                     </div>
                                     <div>
-                                        <h1 className="text-3xl font-black text-[var(--error)]">DEFEAT</h1>
-                                        <p className="text-[var(--foreground-muted)] mt-2">Better luck next time, scholar</p>
+                                        <h1 className="text-3xl font-black text-[var(--foreground)]">NICE HUSTLE! ☕</h1>
+                                        <p className="text-[var(--foreground-muted)] mt-2">Close battle! A few concepts slipped away this time. Round two?</p>
                                     </div>
                                 </div>
                             )}
@@ -220,6 +220,13 @@ export default function DuelResults({
                                 className="w-full py-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-[#06060B] hover:bg-white/90 shadow-[0_4px_24px_rgba(255,255,255,0.1)]"
                             >
                                 Review Answers
+                            </button>
+
+                            <button
+                                onClick={() => router.push("/arena")}
+                                className="w-full py-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] border border-[var(--border)] bg-transparent hover:bg-[var(--foreground)]/5 text-[var(--foreground)]"
+                            >
+                                Run It Back 🔄
                             </button>
 
                              <button

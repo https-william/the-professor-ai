@@ -66,7 +66,8 @@ export async function GET(
                 session: hostSession ? {
                     currentQuestionIndex: hostSession.current_question_index,
                     isReady: hostSession.is_ready,
-                    answers: hostSession.answers || {}
+                    answers: hostSession.answers || {},
+                    lastPing: hostSession.last_ping
                 } : undefined
             },
             challenger: duel.challenger_id ? {
@@ -79,7 +80,8 @@ export async function GET(
                 session: challengerSession ? {
                     currentQuestionIndex: challengerSession.current_question_index,
                     isReady: challengerSession.is_ready,
-                    answers: challengerSession.answers || {}
+                    answers: challengerSession.answers || {},
+                    lastPing: challengerSession.last_ping
                 } : undefined
             } : null,
             generation: {
@@ -208,10 +210,15 @@ export async function PATCH(
                 return NextResponse.json({ error: "Not a participant" }, { status: 403 });
             }
 
-            // Update status to CANCELLED
+            // Determine winner by forfeit if the other player exists
+            const winnerId = duel.challenger_id
+                ? (isHost ? duel.challenger_id : duel.host_id)
+                : null;
+
+            // Update status to CANCELLED and award forfeit victory
             await supabase
                 .from("duels")
-                .update({ status: 'CANCELLED' })
+                .update({ status: 'CANCELLED', winner_id: winnerId })
                 .eq("id", duelId);
 
             return NextResponse.json({ success: true });
