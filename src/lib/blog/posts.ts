@@ -1341,6 +1341,101 @@ Stop running in circles on a single topic. Mix it up. Give your brain the contra
       { question: "Why is block studying ineffective?", answer: "Block studying creates a false sense of security (the fluency illusion) because you practice the same type of problem repeatedly. Once you switch topics, your brain struggles to identify which method to apply. Interleaving solves this by training your brain to choose the right strategy on the spot." }
     ],
   },
+  {
+    slug: "spaced-repetition-sleep-blueprint",
+    title: "The Sleep Protocol: How Ifeanyi Reclaimed 4 Hours of Sleep with Spaced Repetition",
+    excerpt: "Cramming is a massive tax on your brain and your mental health. Here is how Ifeanyi swapped the 3 AM library grind for a high-leverage memory algorithm.",
+    content: `
+Let's look at the standard student budget.
+
+You have 24 hours in a day. Between classes, chores, and ignoring your group chats, you're left with a choice: study or sleep. Most students choose study, leading to the 3 AM library zombie walk. 
+
+Meet Ifeanyi. Ifeanyi used to study 10 hours a day, drank three energy drinks per night, and walked around with a permanent cortisol twitch. Then he discovered **Spaced Repetition**. Now, he gets 8 hours of sleep, plays soccer, and still aces his exams. 
+
+Here is the exact protocol he used to get his life back.
+
+## The Mathematics of Memory Decay
+
+**What is spaced repetition?** Spaced repetition is a study technique where review intervals are expanded over time based on your retrieval success. Instead of cramming all information at once, you space out reviews (e.g., 1 day, 3 days, 7 days, 14 days).
+
+This is based on the **Ebbinghaus Forgetting Curve**. Your brain is a highly efficient filter; it is designed to discard anything that isn't actively retrieved. When you cram, you're just renting information for a few hours. When you space it, you're buying it for life.
+
+### Why Cramming is a Scam
+
+Cramming works for about 12 hours. It fills your short-term buffer, allowing you to scrape a pass if the exam is immediately after. But your brain discards the buffer during the next sleep cycle. 
+
+Spaced repetition forces your brain to retrieve the concept just as it’s on the verge of slipping away. This active effort signals your hippocampus to store the information in your long-term memory.
+
+## Ifeanyi's Sleep Protocol
+
+Stop the martyrdom of sleepless nights. Follow these simple steps:
+
+1. **The 24-Hour Review**: Review new lecture slides exactly 24 hours after seeing them. This flattens the initial, steepest drop of the forgetting curve.
+2. **Double the Interval**: If you recall the card successfully, double the time before the next review (1 day, then 2, then 4, then 8). If you fail, reset the interval to 1 day.
+3. **Automate the Math**: Don't calculate these intervals manually. Use **The Professor** to track your retrieval speed and automatically present cards exactly when they are about to fade.
+
+Your bed misses you. Reclaim your sleep, optimize your retrieval, and let the algorithm do the work.
+`,
+    author: "The Professor",
+    date: "2026-06-12",
+    readTime: "8 min read",
+    category: "Student Lifestyle",
+    tags: ["spaced repetition", "sleep", "study tips", "learning science"],
+    coverGradient: "linear-gradient(135deg, #6366F1 0%, #EC4899 100%)",
+    icon: "Schedule",
+    faqs: [
+      { question: "How does spaced repetition improve sleep?", answer: "Spaced repetition reduces study time by up to 70% by predicting when your brain is about to forget a concept and prompting review at that exact moment. This efficiency eliminates the need for 3 AM cramming sessions, allowing you to get 8 hours of restorative sleep." },
+      { question: "What is the forgetting curve?", answer: "The forgetting curve describes how mathematical memory decay happens over time. Without active retrieval practice, your brain discards up to 90% of new information within 72 hours. Spaced repetition flattens this curve." }
+    ],
+  },
+  {
+    slug: "focus-fortress-flow-state",
+    title: "The Focus Fortress: Why Your 25-Minute Pomodoro Timer is Sabotaging Your Flow",
+    excerpt: "Standard Pomodoro timers break you out of your natural cognitive flow. Here is how Bolu built a fortress of deep attention that lasts hours.",
+    content: `
+Let's talk about the 25-minute trap.
+
+You've probably been told that the Pomodoro technique is the holy grail of productivity. You set a timer, study for 25 minutes, and then eat a snack for 5 minutes. But have you noticed that just as you're finally beginning to understand the logic of that complex theorem, your alarm rings? You're forced to stop.
+
+This is not productivity. This is cognitive interruption.
+
+Meet Bolu. Bolu was a devotee of the 25-minute timer. She felt busy, but she wasn't getting deep work done. When she switched to the **Focus Fortress** protocol, she mastered her assignments in half the time. Here is the science behind why.
+
+## The Myth of the 25-Minute Focus
+
+**What is flow state?** Flow state is a cognitive state of deep focus where you are fully absorbed in an activity. In flow, your prefrontal cortex slows down, self-criticism vanishes, and your processing speed spikes.
+
+Getting into flow isn't instant. It takes your brain an average of 20 to 30 minutes of continuous concentration to enter this elite state. If you set a timer for 25 minutes, you are literally pulling your brain out of the flow state the exact second it arrives. 
+
+### Ultradian Rhythms: The 90-Minute Wave
+
+Our bodies operate on **Ultradian Rhythms**—90 to 120-minute cycles of high cognitive arousal followed by a brief recovery period. To align with your biology, your study blocks should match these natural waves.
+
+A single 90-minute block of deep, uninterrupted focus yields more cognitive value than three hours of fragmented, Pomodoro-broken studying.
+
+## Building Your Focus Fortress
+
+Here is Bolu's blueprint for deep attention:
+
+1. **The 90-Minute Block**: Set a timer for 90 minutes. Commit to one single task. No switching tabs, no checking emails, no exceptions.
+2. **Remove Cognitive Anchors**: Place your phone in another room. Close every browser tab that isn't directly related to your study goal. If a notification is visible, your brain is wasting energy ignoring it.
+3. **The Socratic On-Ramp**: Don't start with passive reading. Start with a quick 5-minute active retrieval exercise or a simulation on **The Professor** to warm up your brain's logic circuits.
+4. **Rest Deeply**: When the 90 minutes are up, rest for 15 minutes. No screens, no inputs. Go for a walk or make a cup of tea. Let your brain consolidate the neural patterns in silence.
+
+Stop breaking your own focus. Build your fortress, match your biology, and do your best work in half the time.
+`,
+    author: "The Professor",
+    date: "2026-06-12",
+    readTime: "9 min read",
+    category: "High Performance",
+    tags: ["focus", "flow state", "productivity", "deep work"],
+    coverGradient: "linear-gradient(135deg, #10B981 0%, #3B82F6 100%)",
+    icon: "Zap",
+    faqs: [
+      { question: "Why does Pomodoro sabotage flow state?", answer: "The standard Pomodoro technique forces a break every 25 minutes. However, research shows that entering a deep flow state takes 20-30 minutes. A rigid 25-minute timer interrupts your brain just as it is entering its most productive, high-leverage cognitive mode." },
+      { question: "What is a Focus Fortress?", answer: "A Focus Fortress is a study strategy that prioritizes 90-minute uninterrupted work blocks (matching ultradian rhythm cycles) while systematically removing cognitive friction and notification alerts." }
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
