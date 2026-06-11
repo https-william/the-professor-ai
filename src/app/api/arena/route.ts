@@ -182,7 +182,7 @@ export async function GET(req: NextRequest) {
             // Join as challenger
             const { data: updatedDuel, error: joinError } = await supabase
                 .from("duels")
-                .update({ challenger_id: user.id, status: 'READY' })
+                .update({ challenger_id: user.id })
                 .eq("id", duel.id)
                 .select(`
                     *,

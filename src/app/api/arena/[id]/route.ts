@@ -139,33 +139,49 @@ export async function PATCH(
                 return NextResponse.json({ error: "Not a participant" }, { status: 403 });
             }
 
+            // Get current session status to toggle
+            const { data: currentSession } = await supabase
+                .from("duel_sessions")
+                .select("is_ready")
+                .eq("duel_id", duelId)
+                .eq("user_id", user.id)
+                .single();
+
+            const nextReady = !currentSession?.is_ready;
+
             // Update user readiness session
             await supabase
                 .from("duel_sessions")
-                .update({ is_ready: true })
+                .update({ is_ready: nextReady })
                 .eq("duel_id", duelId)
                 .eq("user_id", user.id);
 
-            // Fetch updated sessions to verify if all are ready
+            // Fetch updated sessions to verify if challenger is ready
             const { data: sessions } = await supabase
                 .from("duel_sessions")
-                .select("is_ready")
+                .select("user_id, is_ready")
                 .eq("duel_id", duelId);
 
-            // All participants are ready if we have 2 ready sessions (or if challenger exists and both are ready)
-            const challengerExists = !!duel.challenger_id;
-            const allReady = challengerExists && sessions && sessions.length >= 2 && sessions.every(s => s.is_ready);
+            const challengerSession = duel.challenger_id
+                ? sessions?.find(s => s.user_id === duel.challenger_id)
+                : null;
 
-            if (allReady) {
+            const challengerExists = !!duel.challenger_id;
+            const allReady = challengerExists && !!challengerSession?.is_ready;
+
+            const nextStatus = allReady ? 'READY' : 'WAITING';
+
+            if (duel.status !== nextStatus && (duel.status === 'WAITING' || duel.status === 'READY')) {
                 await supabase
                     .from("duels")
-                    .update({ status: 'READY' })
+                    .update({ status: nextStatus })
                     .eq("id", duelId);
             }
 
             return NextResponse.json({
                 success: true,
-                allReady
+                allReady,
+                isReady: nextReady
             });
         }
 
