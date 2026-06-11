@@ -22,7 +22,8 @@ import {
     ChevronUp,
     Sun,
     Moon,
-    Trophy
+    Trophy,
+    Swords
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { usePWA } from "@/context/PWAContext";
@@ -141,23 +142,21 @@ export default function DesktopSidebar() {
                         </span>
                     </Link>
 
-                    {pathname.startsWith("/hub") && (
-                        <Link
-                            href="/hub"
-                            className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/item border ${
-                                pathname.startsWith("/hub")
-                                ? "bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-md"
-                                : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--bg-3)]/20 hover:bg-[var(--foreground)]/[0.04] border-[var(--border)]"
-                            }`}
-                        >
-                            <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname.startsWith("/hub") ? "scale-110" : "group-hover/item:scale-110"}`}>
-                                <Users size={20} strokeWidth={pathname.startsWith("/hub") ? 2.5 : 2} />
-                            </div>
-                            <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
-                                Hub
-                            </span>
-                        </Link>
-                    )}
+                    <Link
+                        href="/arena"
+                        className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/item border ${
+                            pathname.startsWith("/arena")
+                            ? "bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-md"
+                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--bg-3)]/20 hover:bg-[var(--foreground)]/[0.04] border-[var(--border)]"
+                        }`}
+                    >
+                        <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname.startsWith("/arena") ? "scale-110" : "group-hover/item:scale-110"}`}>
+                            <Swords size={20} strokeWidth={pathname.startsWith("/arena") ? 2.5 : 2} />
+                        </div>
+                        <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
+                            Arena
+                        </span>
+                    </Link>
                 </nav>
                 {/* Profile/Footer Section */}
                 <div className="px-4 mt-auto space-y-2">

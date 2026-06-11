@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
@@ -19,6 +19,7 @@ import {
     Handshake
 } from "lucide-react";
 import GlobalLeaderboard from "./GlobalLeaderboard";
+import { createClient } from "@/lib/supabase/client";
 
 interface DuelResultsProps {
     duelId: string;
@@ -58,6 +59,75 @@ export default function DuelResults({
     const router = useRouter();
     const [showAnswers, setShowAnswers] = useState(false);
     const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+    const [opponentRematchId, setOpponentRematchId] = useState<string | null>(null);
+    const [isInitiatingRematch, setIsInitiatingRematch] = useState(false);
+
+    const opponentId = isHost ? challenger?.id : host.id;
+
+    useEffect(() => {
+        const supabase = createClient();
+
+        const checkOpponentRematch = async () => {
+            if (!opponentId) return;
+            const { data } = await supabase
+                .from("duel_sessions")
+                .select("answers")
+                .eq("duel_id", duelId)
+                .eq("user_id", opponentId)
+                .single();
+            
+            if (data?.answers?.rematch_duel_id) {
+                setOpponentRematchId(data.answers.rematch_duel_id);
+            }
+        };
+
+        checkOpponentRematch();
+
+        // Realtime subscription to notice when opponent sets a rematch ID in their session
+        const channel = supabase
+            .channel(`duel-rematch-${duelId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "duel_sessions",
+                    filter: `duel_id=eq.${duelId}`
+                },
+                (payload: any) => {
+                    const session = payload.new;
+                    if (session.user_id === opponentId && session.answers?.rematch_duel_id) {
+                        setOpponentRematchId(session.answers.rematch_duel_id);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [duelId, opponentId]);
+
+    const handleInitiateRematch = async () => {
+        if (!opponentId) return;
+        setIsInitiatingRematch(true);
+        try {
+            const res = await fetch(`/api/arena/${duelId}/rematch`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            });
+            const data = await res.json();
+            if (data.success && data.rematchDuelId) {
+                router.push(`/arena?id=${data.rematchDuelId}`);
+            } else {
+                console.error("Failed to create rematch", data.error);
+            }
+        } catch (err) {
+            console.error("Rematch error:", err);
+        } finally {
+            setIsInitiatingRematch(false);
+        }
+    };
 
     const userId = isHost ? host.id : challenger?.id;
     const userScore = isHost ? host.score : challenger?.score || 0;
@@ -84,7 +154,7 @@ export default function DuelResults({
         <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
             {/* Header */}
             <header className="h-16 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl px-4 flex items-center justify-between">
-                <button onClick={() => router.push("/hub?s=arena")} className="p-2 rounded-xl text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 transition-all">
+                <button onClick={() => router.push("/arena")} className="p-2 rounded-xl text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 transition-all">
                     <X size={20} strokeWidth={1.5} />
                 </button>
                 <div className="flex flex-col items-center">
@@ -222,15 +292,31 @@ export default function DuelResults({
                                 Review Answers
                             </button>
 
-                            <button
-                                onClick={() => router.push("/arena")}
-                                className="w-full py-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] border border-[var(--border)] bg-transparent hover:bg-[var(--foreground)]/5 text-[var(--foreground)]"
-                            >
-                                Run It Back 🔄
-                            </button>
+                            {opponentRematchId && (
+                                <p className="text-xs text-[var(--accent)] font-bold text-center animate-bounce mb-1">
+                                    {isHost ? challenger?.name || "Opponent" : host.name} wants a rematch! 🤝
+                                </p>
+                            )}
+
+                            {opponentRematchId ? (
+                                <button
+                                    onClick={() => router.push(`/arena?id=${opponentRematchId}`)}
+                                    className="w-full py-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-black hover:bg-white/95 shadow-[0_4px_24px_rgba(255,255,255,0.15)]"
+                                >
+                                    Accept Rematch 🤝
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleInitiateRematch}
+                                    disabled={isInitiatingRematch || !opponentId}
+                                    className="w-full py-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] border border-[var(--border)] bg-transparent hover:bg-[var(--foreground)]/5 text-[var(--foreground)] disabled:opacity-50"
+                                >
+                                    {isInitiatingRematch ? "Drafting Rematch..." : "Run It Back 🔄"}
+                                </button>
+                            )}
 
                              <button
-                                onClick={() => router.push("/hub?s=arena")}
+                                onClick={() => router.push("/arena")}
                                 className="w-full py-3 text-[11px] font-bold uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                             >
                                 Back to Arena

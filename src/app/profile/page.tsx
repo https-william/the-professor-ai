@@ -40,7 +40,7 @@ const ACHIEVEMENTS = [
     { id: "perfect_score", icon: Award, label: "Perfect 10", desc: "Score 100% on any quiz", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
     { id: "night_owl", icon: Moon, label: "Night Owl", desc: "Study after midnight", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
     { id: "early_bird", icon: Sun, label: "Early Bird", desc: "Study before 7am", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-    { id: "social", icon: Users, label: "Team Player", desc: "Join a Hub room", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { id: "social", icon: Users, label: "Team Player", desc: "Join a Duel Room", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
     { id: "marathon", icon: Clock, label: "Marathon", desc: "60+ min session", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
     { id: "centurion", icon: Star, label: "Centurion", desc: "Review 100 flashcards", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
     { id: "duel_win", icon: Swords, label: "Victor", desc: "Win your first Duel", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },

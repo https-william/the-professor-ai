@@ -3,7 +3,7 @@ Allow: /
 Allow: /blog
 Allow: /blog/*
 Allow: /library
-Allow: /hub
+Allow: /arena
 Allow: /roadmap
 Allow: /s/*
 Allow: /share/*

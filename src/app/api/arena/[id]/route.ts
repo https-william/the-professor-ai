@@ -38,10 +38,26 @@ export async function GET(
             .single();
 
         // Fetch sessions
-        const { data: sessions } = await supabase
+        let { data: sessions } = await supabase
             .from("duel_sessions")
             .select("*")
             .eq("duel_id", duelId);
+
+        // Auto-create challenger session if they are designated but have no session record yet
+        if (user.id === duel.challenger_id && sessions && !sessions.some(s => s.user_id === user.id)) {
+            const { data: newSession } = await supabase
+                .from("duel_sessions")
+                .insert({
+                    duel_id: duelId,
+                    user_id: user.id,
+                    is_ready: false
+                })
+                .select()
+                .single();
+            if (newSession) {
+                sessions.push(newSession);
+            }
+        }
 
         const hostSession = sessions?.find(s => s.user_id === duel.host_id);
         const challengerSession = duel.challenger_id 

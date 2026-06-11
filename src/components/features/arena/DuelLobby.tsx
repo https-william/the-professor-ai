@@ -129,7 +129,7 @@ export default function DuelLobby({
 
             // Check if duel cancelled
             if (newData.status === 'CANCELLED' || newData.status === 'EXPIRED') {
-                router.push("/hub?s=arena");
+                router.push("/arena");
             }
         }, [duelId, router, onDuelStart, onDuelEnd]),
 
@@ -213,7 +213,7 @@ export default function DuelLobby({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "cancel" })
             });
-            router.push("/hub?s=arena");
+            router.push("/arena");
         } catch (error) {
             console.error("Cancel error:", error);
         }

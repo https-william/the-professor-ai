@@ -34,7 +34,8 @@ import {
     Sparkles,
     Trophy,
     PlusCircle,
-    Sword
+    Sword,
+    Swords
 } from "lucide-react";
 import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
@@ -64,7 +65,7 @@ const MODES = [
     { id: "DASHBOARD", label: "Dashboard", href: "/dashboard", color: "var(--emerald)", glow: "var(--emerald-glow)", icon: LayoutDashboard },
     { id: "CREATE",    label: "Create",    href: "/create",    color: "var(--blue)",    glow: "var(--blue-glow)",    icon: Lightbulb },
     { id: "LIBRARY",  label: "Library",   href: "/library",   color: "var(--violet)",  glow: "var(--violet-glow)",  icon: Library },
-    { id: "HUB",      label: "Hub",       href: "/hub",       color: "var(--cyan)",    glow: "var(--cyan-glow)",    icon: Users },
+    { id: "ARENA",    label: "Arena",     href: "/arena",     color: "var(--cyan)",    glow: "var(--cyan-glow)",    icon: Swords },
 ] as const;
 
 export type AppMode = (typeof MODES)[number]["id"] | string;
@@ -138,7 +139,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const unreadCount = toasts.filter(t => !t.read).length;
 
     const currentMode: string = activeMode ?? (() => {
-        if (pathname.startsWith("/hub"))      return "HUB";
+        if (pathname.startsWith("/arena"))    return "ARENA";
         if (pathname.startsWith("/library"))  return "LIBRARY";
         if (pathname.startsWith("/create") || pathname.startsWith("/summary") || pathname.startsWith("/quiz") || pathname.startsWith("/flashcards")) return "CREATE";
         return "DASHBOARD";
@@ -294,8 +295,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                 { name: "Home", href: "/dashboard", icon: LayoutDashboard },
                                 { name: "Create", href: "/create", icon: PlusCircle },
                                 { name: "Library", href: "/library", icon: Library },
-                                { name: "Arena", href: "/arena", icon: Sword },
-                                ...(pathname.startsWith("/hub") ? [{ name: "Hub", href: "/hub", icon: Users }] : []),
+                                { name: "Arena", href: "/arena", icon: Swords },
                                 { name: "Profile", href: "/profile", icon: User },
                             ].map((item) => {
                                 const isActive = item.href === "/dashboard"
@@ -341,15 +341,29 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     </Link>
                 )}
                 {user.isAuthenticated && (
-                    <div className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
-                        isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "bg-zinc-950/45 border border-white/5"
-                    )} title="Available Credits">
-                        <Zap size={14} className="text-[var(--amber)] animate-pulse w-3.5 h-3.5 md:w-4 md:h-4" />
-                        <span className="font-mono text-[11px] md:text-xs font-bold text-[var(--foreground)] tabular-nums">
-                            {user.credits ?? 100}
-                        </span>
-                    </div>
+                    <>
+                        {/* XP Reserves */}
+                        <div className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
+                            isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "bg-zinc-950/45 border border-white/5"
+                        )} title="Study XP Reserves">
+                            <Trophy size={14} className="text-[#F59E0B] w-3.5 h-3.5 md:w-4 md:h-4" />
+                            <span className="font-mono text-[11px] md:text-xs font-bold text-[var(--foreground)] tabular-nums">
+                                {user.xp?.toLocaleString() ?? "0"} XP
+                            </span>
+                        </div>
+
+                        {/* AI Credits */}
+                        <div className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
+                            isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "bg-zinc-950/45 border border-white/5"
+                        )} title="Available AI Credits">
+                            <Zap size={14} className="text-[var(--amber)] animate-pulse w-3.5 h-3.5 md:w-4 md:h-4" />
+                            <span className="font-mono text-[11px] md:text-xs font-bold text-[var(--foreground)] tabular-nums">
+                                {user.credits ?? 100} Credits
+                            </span>
+                        </div>
+                    </>
                 )}
                 <div className="hidden sm:block">
                     <ThemeToggle />

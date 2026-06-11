@@ -229,7 +229,7 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "cancel" })
             });
-            router.push("/hub?s=arena");
+            router.push("/arena");
         } catch (error) {
             console.error("Abandon error:", error);
         }

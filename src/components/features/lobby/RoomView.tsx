@@ -124,7 +124,7 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "leave" })
             });
-            router.push("/hub?s=lobby");
+            router.push("/arena");
         } catch (error) {
             console.error("Leave error:", error);
         }
@@ -240,7 +240,7 @@ export default function RoomView({ roomId, currentUserId }: RoomViewProps) {
                 <p className="text-white/40 mb-2">Room not found</p>
                 {error && <p className="text-[#EF4444] text-xs mb-4">{error}</p>}
                 <button 
-                    onClick={() => router.push("/hub?s=lobby")}
+                    onClick={() => router.push("/arena")}
                     className="text-[var(--foreground)] font-bold text-sm mt-2 hover:underline underline-offset-4"
                 >
                     Back to Lobby

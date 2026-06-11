@@ -8,7 +8,7 @@ const STATIC_ASSETS = [
   '/dashboard',
   '/create',
   '/library',
-  '/hub'
+  '/arena'
 ];
 
 // Maximum dynamic items to store in cache on 1GB RAM / budget devices

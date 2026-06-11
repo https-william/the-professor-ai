@@ -203,7 +203,7 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
         router.push("/library");
         break;
       case "social":
-        router.push("/hub");
+        router.push("/arena");
         break;
       default:
         router.push("/dashboard");

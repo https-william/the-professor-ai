@@ -41,6 +41,9 @@ function ArenaContent() {
     const [wagerXp, setWagerXp] = useState<number>(50);
     const [joinCodeInput, setJoinCodeInput] = useState<string>("");
     const [wagerError, setWagerError] = useState<string | null>(null);
+    const [hostMode, setHostMode] = useState<'notes' | 'topic'>('notes');
+    const [quickTopicInput, setQuickTopicInput] = useState("");
+    const [isQuickGenerating, setIsQuickGenerating] = useState(false);
 
     // Duel Detail State when loading a specific duel
     const [duel, setDuel] = useState<any>(null);
@@ -148,22 +151,52 @@ function ArenaContent() {
     }, [duelId]);
 
     const handleCreateLobby = async () => {
-        if (!selectedQuizId) {
-            addToast("Please select a quiz to host", "error");
-            return;
-        }
         if (user.xp < wagerXp) {
             setWagerError(`You need at least ${wagerXp} XP to wager this match.`);
             return;
         }
         setWagerError(null);
+
+        let finalQuizId = selectedQuizId;
+
+        if (hostMode === 'topic') {
+            if (!quickTopicInput || quickTopicInput.trim().length < 2) {
+                addToast("Please enter a topic for the quiz", "error");
+                return;
+            }
+            setIsQuickGenerating(true);
+            try {
+                const genRes = await fetch("/api/arena/quick-generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ topic: quickTopicInput.trim() })
+                });
+                const genData = await genRes.json();
+                if (!genRes.ok || !genData.success) {
+                    addToast(genData.error || "Failed to generate quick quiz questions.", "error");
+                    setIsQuickGenerating(false);
+                    return;
+                }
+                finalQuizId = genData.generation_id;
+            } catch (err) {
+                console.error(err);
+                addToast("Error generating quick quiz", "error");
+                setIsQuickGenerating(false);
+                return;
+            }
+        } else {
+            if (!finalQuizId) {
+                addToast("Please select a quiz to host", "error");
+                return;
+            }
+        }
         
         try {
             const res = await fetch("/api/arena", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    generation_id: selectedQuizId,
+                    generation_id: finalQuizId,
                     wager_xp: wagerXp
                 })
             });
@@ -176,6 +209,8 @@ function ArenaContent() {
         } catch (err) {
             console.error(err);
             addToast("Error hosting duel", "error");
+        } finally {
+            setIsQuickGenerating(false);
         }
     };
 
@@ -314,25 +349,78 @@ function ArenaContent() {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <div className="flex flex-col space-y-2.5">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Select Study Quiz</label>
-                                            <select
-                                                value={selectedQuizId}
-                                                onChange={(e) => setSelectedQuizId(e.target.value)}
-                                                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3.5 text-xs font-bold text-white outline-none focus:border-white/20 transition-all cursor-pointer"
-                                                disabled={loadingPacks}
-                                            >
-                                                {loadingPacks ? (
-                                                    <option>Loading your quizzes...</option>
-                                                ) : quizzes.length > 0 ? (
-                                                    quizzes.map(q => (
-                                                        <option key={q.id} value={q.id} className="bg-zinc-950 text-white">{q.title}</option>
-                                                    ))
-                                                ) : (
-                                                    <option>No quizzes available</option>
+                                        {/* Host Mode Toggles */}
+                                        <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-xl">
+                                            <button
+                                                onClick={() => setHostMode('notes')}
+                                                className={cn(
+                                                    "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                                    hostMode === 'notes'
+                                                        ? "bg-white text-black font-black"
+                                                        : "text-[var(--foreground-muted)] hover:text-white"
                                                 )}
-                                            </select>
+                                            >
+                                                From Notes 📚
+                                            </button>
+                                            <button
+                                                onClick={() => setHostMode('topic')}
+                                                className={cn(
+                                                    "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                                    hostMode === 'topic'
+                                                        ? "bg-white text-black font-black"
+                                                        : "text-[var(--foreground-muted)] hover:text-white"
+                                                )}
+                                            >
+                                                Quick Play Topic ⚡
+                                            </button>
                                         </div>
+
+                                        {hostMode === 'notes' ? (
+                                            <div className="flex flex-col space-y-2.5">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Select Study Quiz</label>
+                                                <select
+                                                    value={selectedQuizId}
+                                                    onChange={(e) => setSelectedQuizId(e.target.value)}
+                                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3.5 text-xs font-bold text-white outline-none focus:border-white/20 transition-all cursor-pointer"
+                                                    disabled={loadingPacks}
+                                                >
+                                                    {loadingPacks ? (
+                                                        <option>Loading your quizzes...</option>
+                                                    ) : quizzes.length > 0 ? (
+                                                        quizzes.map(q => (
+                                                            <option key={q.id} value={q.id} className="bg-zinc-950 text-white">{q.title}</option>
+                                                        ))
+                                                    ) : (
+                                                        <option>No quizzes available</option>
+                                                    )}
+                                                </select>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col space-y-2.5">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Topic to Study</label>
+                                                <input
+                                                    type="text"
+                                                    value={quickTopicInput}
+                                                    onChange={(e) => setQuickTopicInput(e.target.value)}
+                                                    placeholder="E.g. Photosynthesis, General Science, World War II..."
+                                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3.5 text-xs font-bold text-white outline-none focus:border-white/20 transition-all"
+                                                />
+                                                <div className="flex flex-wrap gap-1.5 mt-1">
+                                                    {["General Knowledge 🌍", "Pop Culture 🎬", "Science & Tech 🚀", "World History ⏳", "Basic Mathematics 🧮"].map(suggestion => {
+                                                        const cleanVal = suggestion.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "").trim();
+                                                        return (
+                                                            <button
+                                                                key={suggestion}
+                                                                onClick={() => setQuickTopicInput(cleanVal)}
+                                                                className="px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 text-[9px] font-bold text-[var(--foreground-muted)] hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                                                            >
+                                                                {suggestion}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <div className="flex flex-col space-y-2.5">
                                             <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Match Wager (XP)</label>
@@ -345,7 +433,7 @@ function ArenaContent() {
                                                             setWagerError(null);
                                                         }}
                                                         className={cn(
-                                                            "py-2.5 rounded-lg text-xs font-black uppercase transition-all border",
+                                                            "py-2.5 rounded-lg text-xs font-black uppercase transition-all border cursor-pointer",
                                                             wagerXp === val 
                                                                 ? "bg-white text-black border-white"
                                                                 : "bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:bg-white/10"
@@ -368,16 +456,25 @@ function ArenaContent() {
 
                                 <button
                                     onClick={handleCreateLobby}
-                                    disabled={quizzes.length === 0}
+                                    disabled={isQuickGenerating || (hostMode === 'notes' && quizzes.length === 0)}
                                     className={cn(
-                                        "w-full py-4 rounded-xl font-black text-xs uppercase tracking-wider mt-6 transition-all flex items-center justify-center gap-2",
-                                        quizzes.length === 0
+                                        "w-full py-4 rounded-xl font-black text-xs uppercase tracking-wider mt-6 transition-all flex items-center justify-center gap-2 cursor-pointer",
+                                        (hostMode === 'notes' && quizzes.length === 0)
                                             ? "bg-white/5 text-white/20 border border-white/5 cursor-not-allowed"
                                             : "bg-white text-black hover:bg-white/90 active:scale-98"
                                     )}
                                 >
-                                    <Play size={12} fill="currentColor" />
-                                    <span>Generate Lobby Code</span>
+                                    {isQuickGenerating ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin text-black" />
+                                            <span>Writing Questions...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play size={12} fill="currentColor" />
+                                            <span>Generate Lobby Code</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
 
