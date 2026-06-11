@@ -1197,6 +1197,150 @@ Turbolearn focuses on speed. But speed without depth is just shallow learning. I
     coverGradient: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
     icon: "FastForward",
   },
+  {
+    slug: "active-recall-handbook",
+    title: "The Ultimate Active Recall Handbook: How to Build Unbreakable Memory",
+    excerpt: "Stop re-reading your slides. Your brain is a muscle, and passive reviewing is like watching someone else lift weights. Here is the definitive retrieval protocol.",
+    content: `
+Let's settle a debate once and for all. 
+
+**What is Active Recall?** Active recall is the practice of retrieving information from your memory by testing yourself, rather than passively reading notes. It is scientifically proven to build stronger neural pathways and increase retention by up to 150%.
+
+## The Socratic Retrieval Engine
+
+If you are just reading your textbook or highlighting, you are wasting your time. You are building familiarity, not recall. Here is the difference:
+1. **Passive Review**: You look at the page and say "Ah, I know this." (No, you just recognize it).
+2. **Active Recall**: You look at a question, close the book, and force your brain to generate the answer.
+
+## The Active Recall Protocol:
+1. **The Closed-Book Test**: Read a chapter, close the book, and write down everything you remember. This is painful, but this pain is where learning happens.
+2. **Flashcards**: Use spaced-repetition flashcards. **The Professor** automates this by turning your PDFs into memory drills in 3 seconds.
+3. **The Socratic Sparring**: Have an AI question you on the concepts. 
+
+Stop reading. Start testing.
+`,
+    author: "The Professor",
+    date: "2026-05-24",
+    readTime: "9 min read",
+    category: "Learning Science",
+    tags: ["active recall", "memory tips", "exam prep", "how to study"],
+    coverGradient: "linear-gradient(135deg, #EF4444 0%, #F59E0B 100%)",
+    icon: "Brain",
+    featured: true,
+    faqs: [
+      { question: "How does Active Recall compare to re-reading?", answer: "Active Recall forces the brain to retrieve information, strengthening neural connections. Re-reading is passive and creates a 'fluency illusion' where you confuse recognition with understanding." },
+      { question: "Is Active Recall hard?", answer: "Yes, it is cognitively demanding. But this difficulty is precisely what drives neuroplasticity and long-term memory retention." }
+    ],
+  },
+  {
+    slug: "conquer-exam-anxiety-socratic",
+    title: "How to Conquer Exam Anxiety: The Socratic Blueprint",
+    excerpt: "Walking into the exam hall with your heart racing is not a mindset problem; it is a simulation problem. Here is how to conquer the anxiety.",
+    content: `
+Why do you feel anxious before an exam? 
+
+**What causes exam anxiety?** Exam anxiety is caused by the fear of the unknown—specifically, walking into an exam hall without having tested your actual retrieval capabilities. You can cure it by running high-fidelity simulation tests in advance.
+
+## The Illusion of Preparedness
+
+Anxiety lives in the gap between what you *think* you know and what you *actually* know. When you cram or re-read, you build a false sense of security. But deep down, your subconscious knows you haven't actually retrieved this information under pressure.
+
+## The Socratic Cure for Anxiety:
+1. **Desensitization**: Test yourself under exam conditions. Use a timer. Sit in silence.
+2. **Socratic AI Simulation**: Use **The Professor** to generate mock exams that match the difficulty of your course.
+3. **Ignorance Mapping**: Find your gaps early. It is better to fail a mock quiz in your room than the real exam in the hall.
+
+Confidence is just a side effect of preparation. Build the simulation, and the anxiety will vanish.
+`,
+    author: "The Professor",
+    date: "2026-05-25",
+    readTime: "8 min read",
+    category: "Mindset",
+    tags: ["exam anxiety", "mental prep", "study tips", "success"],
+    coverGradient: "linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%)",
+    icon: "Psychology",
+    faqs: [
+      { question: "Why does exam anxiety happen?", answer: "Exam anxiety happens because of the uncertainty of retrieval under pressure. When your brain has never practiced active retrieval in a simulated environment, it reacts with fear." },
+      { question: "How can I reduce exam anxiety?", answer: "By taking timed mock exams in a silent environment. Desensitizing your brain to the test conditions replaces fear with familiarity." }
+    ],
+  },
+  {
+    slug: "is-college-worth-it-2026",
+    title: "Is College Still Worth It in 2026? An Honest Audit",
+    excerpt: "The market doesn't care about your degree certificate anymore. It cares about your skill stack. Here is how to make university worth your time.",
+    content: `
+Let's audit the value of higher education.
+
+**Is college worth it in 2026?** Yes, but only if you use your time to build a robust skill stack and establish professional leverage, rather than relying solely on your degree certificate. You must treat college as an active lab, not a passive lecture hall.
+
+## The Degree Inflation Crisis
+
+A degree is no longer a differentiator. It is a commodity. If you graduate with just a piece of paper and no real-world portfolio, you are entering the job market with zero leverage.
+
+## The 2026 Student Strategy:
+1. **The 80/20 Rule**: Automate your university coursework. Use **The Professor** to learn the syllabus in 20% of the time.
+2. **Build a Portfolio**: Use the remaining 80% of your time to build real projects. Coders should push code, writers should publish, and creators should build.
+3. **Establish AI Intuition**: The most valuable skill in 2026 is knowing how to leverage AI to achieve 10x output. 
+
+Stop being a passive student. Start being a builder.
+`,
+    author: "The Professor",
+    date: "2026-05-26",
+    readTime: "10 min read",
+    category: "High Performance",
+    tags: ["college worth", "skills stack", "future of work", "success"],
+    coverGradient: "linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)",
+    icon: "School",
+    faqs: [
+      { question: "Are college degrees still valued by employers?", answer: "While some industries still require them, most modern employers prioritize verified skills, portfolios, and practical problem-solving capabilities over degree credentials." },
+      { question: "How can I make my degree more valuable?", answer: "By building a secondary skill stack (like programming, copywriting, or sales) and creating a public portfolio of your work while in school." }
+    ],
+  },
+  {
+    slug: "socratic-interleaving-protocol",
+    title: "The Interleaving Blueprint: How to Study 3 Subjects Without Brain Rot",
+    excerpt: "Cramming a single topic for 6 hours is a recipe for memory decay. Interleaving is the cognitive science secret to double your learning efficiency.",
+    content: `
+Let's talk about the standard 6-hour marathon.
+
+You sit down at your desk with your Chemistry textbook. You decide that today is "Chemistry Day." You read about acid-base equilibria for four hours. By hour five, your eyes are glazing over, and your brain feels like lukewarm porridge. This is **Block Studying**, and it is one of the least efficient ways to learn.
+
+In cognitive science, we have a name for the solution: **Interleaving**. 
+
+## The Science of Interleaving
+
+**What is interleaving?** Interleaving is a learning strategy where you mix different topics or subjects within a single study session. Instead of studying topic A for three hours, then B, then C, you study A, then B, then C in shorter, alternating intervals.
+
+Think of it like training for a sport. If you only practice free throws for three hours, you get very good at shooting from that exact spot. But in a real match, you never shoot free throws in a row. You run, you dribble, you pass, and then you shoot. Interleaving trains your brain for the actual "match" (the exam).
+
+### Why Your Brain Hates (and Needs) It
+
+When you practice the same concept repeatedly, your brain goes on autopilot. It knows the formula for the next question because it’s the same as the last one. This is a false sense of security.
+
+When you interleave, you force your brain to look at a question and ask: *'Wait, what kind of problem is this? Which tool do I need to solve it?'* That active selection process is where the deep neural pathways are forged. Studies show interleaving increases test performance by up to 43% compared to block study.
+
+## The Professor's Interleaving Protocol
+
+Here is how to set up your study session for maximum leverage:
+
+1. **The 30-Minute Rotation**: Select three related subjects or different sub-topics (e.g., Chemistry, Physics, Mathematics). Set a timer for 30 minutes. Study the first topic, then immediately switch to the second when the timer rings.
+2. **Dynamic Context-Switching**: Do not wait until you "finish" a chapter to switch. The discomfort of switching mid-way is exactly what triggers neuroplasticity.
+3. **Automate with The Professor**: Use **The Professor** to build randomized mock sessions where questions from different modules are mixed together. This desensitizes your brain to the exam format.
+
+Stop running in circles on a single topic. Mix it up. Give your brain the contrast it needs to build real intuition.
+`,
+    author: "The Professor",
+    date: "2026-06-11",
+    readTime: "9 min read",
+    category: "Learning Science",
+    tags: ["interleaving", "study tips", "learning science", "efficiency"],
+    coverGradient: "linear-gradient(135deg, #F59E0B 0%, #10B981 100%)",
+    icon: "Zap",
+    faqs: [
+      { question: "What is interleaving in studying?", answer: "Interleaving is a study technique where you mix different topics or subjects during a single study session, rather than focusing on one topic for a long block of time. It forces the brain to constantly retrieve and distinguish between different concepts, which dramatically improves long-term memory." },
+      { question: "Why is block studying ineffective?", answer: "Block studying creates a false sense of security (the fluency illusion) because you practice the same type of problem repeatedly. Once you switch topics, your brain struggles to identify which method to apply. Interleaving solves this by training your brain to choose the right strategy on the spot." }
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {

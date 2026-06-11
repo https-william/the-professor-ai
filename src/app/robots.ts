@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: '/',
-      disallow: ['/admin/', '/debug/', '/private/'],
+      allow: ['/', '/blog', '/blog/*', '/library', '/arena', '/roadmap', '/s/*', '/share/*'],
+      disallow: ['/dashboard', '/settings', '/profile', '/chat', '/api/', '/login', '/signup', '/admin/', '/debug/'],
     },
     sitemap: 'https://theprofessor.xyz/sitemap.xml',
   };

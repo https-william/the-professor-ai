@@ -15,32 +15,32 @@ export const newsItems: NewsItem[] = [
   {
     id: "news-1",
     category: "AI Research",
-    title: "Large Language Models now simulate Socratic tutoring",
-    summary: "Recent studies show that AI agents can increase student retention by 30% when using inquiry-based methods rather than direct answers.",
+    title: "Socratic AI beats passive lecturing in study tests",
+    summary: "New research shows that AI study partners driving active inquiry increase retention by 30%. Simply giving students the answers leads to empty brains.",
     source: "EdTech Insights",
     date: "Apr 20, 2026"
   },
   {
     id: "news-2",
     category: "Neuroscience",
-    title: "The 'Spacing Effect' confirmed in long-term linguistic study",
-    summary: "New brain scans reveal that interval-based retrieval strengthens neural connections in the hippocampus faster than traditional repetition.",
+    title: "Brain scans confirm spacing beats cramming",
+    summary: "Neuroscience studies show that retrieval practice spaced over intervals builds durable memory pathways. Your 3 AM library grind is officially a waste.",
     source: "Nature Learning",
     date: "Apr 18, 2026"
   },
   {
     id: "news-3",
     category: "Productivity",
-    title: "Monotasking is the new superpower in 2026",
-    summary: "In a world of fragments, the ability to maintain deep focus on a single mathematical or creative task is the top predictor of academic success.",
+    title: "Monotasking: the rare superpower of 2026",
+    summary: "Focusing on one single task without checking your phone is now the top predictor of academic success. Multitasking is just being mediocre at three things at once.",
     source: "Scholar Weekly",
     date: "Apr 15, 2026"
   },
   {
     id: "news-4",
     category: "AI in Ed",
-    title: "Regional Trends: AI-Assisted Retrieval on the Rise",
-    summary: "New reports indicate a significant increase in students across West African universities adopting AI-native retrieval strategies to combat exam anxiety and improve recall accuracy.",
+    title: "West African students lead AI retrieval wave",
+    summary: "From Lagos to Accra, students like Tunde and Bolu are swapping passive summaries for automated active recall simulations to pass their WAEC and university exams.",
     source: "Academic Sentinel",
     date: "May 02, 2026"
   }

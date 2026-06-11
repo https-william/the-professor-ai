@@ -478,6 +478,51 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
           </p>
         </div>
 
+        {/* FAQ Section for AEO/GEO */}
+        {post.faqs && post.faqs.length > 0 && (
+          <div className="mt-16 pt-12 border-t border-[var(--border)]">
+            <h2 className="text-xl font-bold font-heading text-[var(--foreground)] mb-6 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_var(--accent-glow)]" />
+              Frequently Answered Questions
+            </h2>
+            <div className="space-y-4">
+              {post.faqs.map((faq, index) => (
+                <details 
+                  key={index}
+                  className="group rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] p-5 [&_summary::-webkit-details-marker]:hidden transition-all duration-300 open:bg-[var(--foreground)]/[0.02]"
+                >
+                  <summary className="flex items-center justify-between font-bold text-sm uppercase tracking-tight text-[var(--foreground-secondary)] cursor-pointer outline-none select-none">
+                    <span>{faq.question}</span>
+                    <span className="ml-4 shrink-0 transition-transform duration-300 group-open:rotate-180 text-[var(--accent)] font-black">
+                      ↓
+                    </span>
+                  </summary>
+                  <p className="mt-4 text-sm leading-relaxed text-[var(--foreground-muted)] font-medium">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Author Bio for EEAT - Mobile View (Hidden on desktop) */}
+        <div className="lg:hidden mt-16 p-8 rounded-3xl bg-zinc-950/45 border border-[var(--border)] shadow-xl relative overflow-hidden group">
+          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[var(--accent)]/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-dark)] flex items-center justify-center text-white font-black text-3xl shadow-lg shrink-0 select-none">
+              🎓
+            </div>
+            <div className="space-y-2 text-center sm:text-left">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">About the Author</span>
+              <h4 className="text-lg font-black uppercase text-[var(--foreground)] font-heading">The Professor</h4>
+              <p className="text-xs text-[var(--foreground-muted)] font-medium leading-relaxed">
+                The Professor is an AI study strategist trained in cognitive psychology, active recall frameworks, and automated learning optimization.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mt-10 mb-20">
           {post.tags.map((tag) => (
@@ -527,6 +572,30 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
       {/* Sidebar */}
       <aside className="hidden lg:block sticky top-28 self-start space-y-6">
         <StudyPersonaQuiz />
+
+        {/* Author Bio for EEAT */}
+        <div className="glass-panel p-6 rounded-3xl relative overflow-hidden group">
+          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[var(--accent)]/5 rounded-full blur-xl pointer-events-none" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-dark)] flex items-center justify-center text-white font-black text-xl shadow-md shrink-0 select-none">
+              🎓
+            </div>
+            <div>
+              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--accent)]">Author Profile</span>
+              <h4 className="text-sm font-black uppercase text-[var(--foreground)] font-heading">The Professor</h4>
+            </div>
+          </div>
+          <p className="text-[11px] text-[var(--foreground-muted)] font-medium leading-relaxed mb-4">
+            AI study strategist trained in cognitive psychology, active recall frameworks, and learning science.
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {["Recall Loop", "EEAT", "AI Study"].map((expert) => (
+              <span key={expert} className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[var(--foreground-muted)]">
+                {expert}
+              </span>
+            ))}
+          </div>
+        </div>
 
         <div className="glass-panel p-6 rounded-3xl">
            <h4 className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-[0.2em] mb-4 opacity-50">
