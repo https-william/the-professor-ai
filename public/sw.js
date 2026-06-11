@@ -13,8 +13,8 @@ const STATIC_ASSETS = [
 
 // Maximum dynamic items to store in cache on 1GB RAM / budget devices
 const MAX_DYNAMIC_CACHE_ITEMS = 50;
-// 5-second timeout for navigation requests on 2G / flaky networks
-const NAVIGATION_TIMEOUT_MS = 5000;
+// 15-second timeout for navigation requests to accommodate cold-starts/flaky networks
+const NAVIGATION_TIMEOUT_MS = 15000;
 
 // In-memory request de-duplication map to prevent 2G connection storms
 const activeRequests = new Map();

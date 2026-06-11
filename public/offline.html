@@ -186,9 +186,59 @@
         <h1>Connection Lost</h1>
         <p>No internet? No worries. Your study packs are cached locally so you can keep studying without interruption.</p>
         <div class="button-group">
-            <button class="btn btn-primary" onclick="window.location.reload()">Try Again</button>
+            <button class="btn btn-primary" onclick="retryConnection()">Try Again</button>
             <a href="/library" class="btn btn-secondary">Go to Library</a>
         </div>
     </div>
+
+    <script>
+        // Force clean cache-busting reload to bypass Service Worker caching
+        function retryConnection() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('retry', Date.now());
+            window.location.href = url.toString();
+        }
+
+        // Background auto-connectivity check
+        let isReconnecting = false;
+        async function runAutoRetry() {
+            if (isReconnecting) return;
+            try {
+                // Fetch a small logo file with a cache buster
+                const res = await fetch('/logo.svg?ping=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+                if (res.ok) {
+                    isReconnecting = true;
+                    
+                    // Visual updates to wow the user
+                    const desc = document.querySelector('p');
+                    if (desc) {
+                        desc.innerHTML = "<span style='color: #10B981; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; animation: pulse 1s infinite;'>✓ CONNECTION RESTORED! Re-syncing your study room...</span>";
+                    }
+                    const badge = document.querySelector('.badge');
+                    if (badge) {
+                        badge.innerHTML = "Sync Active";
+                        badge.style.color = "#10B981";
+                        badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+                    }
+                    const btn = document.querySelector('.btn-primary');
+                    if (btn) {
+                        btn.innerHTML = "Reconnecting...";
+                        btn.style.backgroundColor = "#10B981";
+                        btn.disabled = true;
+                    }
+                    
+                    // Execute auto-reload after a short window for smooth visual feedback
+                    setTimeout(retryConnection, 1200);
+                }
+            } catch (err) {
+                // Ping failed, still offline
+            }
+        }
+
+        // Verify status every 3 seconds
+        setInterval(runAutoRetry, 3000);
+        // Also listen to browser event for instant wake-up
+        window.addEventListener('online', runAutoRetry);
+    </script>
 </body>
 </html>
