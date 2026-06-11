@@ -22,8 +22,7 @@ export async function GET(
             .select(`
                 *,
                 host:profiles!host_id(id, username, first_name, last_name, avatar_url, xp_total, current_streak),
-                challenger:profiles!challenger_id(id, username, first_name, last_name, avatar_url, xp_total, current_streak),
-                generation:generations(id, title, content, type)
+                challenger:profiles!challenger_id(id, username, first_name, last_name, avatar_url, xp_total, current_streak)
             `)
             .eq("id", duelId)
             .single();
@@ -31,6 +30,12 @@ export async function GET(
         if (duelError || !duel) {
             return NextResponse.json({ error: "Duel not found" }, { status: 404 });
         }
+
+        const { data: gen } = await supabase
+            .from("generations")
+            .select("id, title, content, type")
+            .eq("id", duel.generation_id)
+            .single();
 
         // Fetch sessions
         const { data: sessions } = await supabase
@@ -78,13 +83,14 @@ export async function GET(
                 } : undefined
             } : null,
             generation: {
-                id: duel.generation?.id,
-                title: duel.generation?.title || 'Quiz',
-                questionCount: duel.generation?.content?.questions?.length || 0,
-                questions: duel.generation?.content?.questions || []
+                id: gen?.id,
+                title: gen?.title || 'Quiz',
+                questionCount: gen?.content?.questions?.length || 0,
+                questions: gen?.content?.questions || []
             },
             timeLimit: duel.time_limit_seconds || 600,
-            winnerId: duel.winner_id
+            winnerId: duel.winner_id,
+            wagerXp: duel.wager_xp || 50
         };
 
         return NextResponse.json({

@@ -431,7 +431,7 @@ export default function LibraryPage() {
                             ].map((s) => (
                                 <div key={s.label} className="p-5 transition-all duration-300 hover:scale-[1.01] bg-zinc-950/45 border border-white/5 rounded-2xl shadow-lg flex flex-col justify-between relative overflow-hidden group">
                                     <div className="flex items-center justify-between mb-4">
-                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 shadow-inner" style={{ color: s.color }}>
+                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center border shadow-inner transition-all" style={{ color: s.color, backgroundColor: `${s.color}10`, borderColor: `${s.color}25` }}>
                                             <s.icon size={16} strokeWidth={2} />
                                         </div>
                                         <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Active</span>
@@ -614,8 +614,8 @@ export default function LibraryPage() {
                                                 )}
                                             </AnimatePresence>
 
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/5 shadow-sm group-hover-scale-sm transition-transform"
-                                                style={{ color: cfg.color }}>
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-sm group-hover-scale-sm transition-all"
+                                                style={{ color: cfg.color, backgroundColor: `${cfg.color}10`, borderColor: `${cfg.color}25` }}>
                                                 <cfg.icon size={18} strokeWidth={2} />
                                             </div>
 
@@ -624,7 +624,8 @@ export default function LibraryPage() {
                                                     <span className="text-xs sm:text-sm font-black text-white truncate group-hover:text-white/80 transition-colors uppercase italic tracking-tight">
                                                         {item.title || "Untitled Scholarly Work"}
                                                     </span>
-                                                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md flex-shrink-0 border border-white/10 bg-white/5 text-white">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md flex-shrink-0 border transition-all"
+                                                        style={{ borderColor: `${cfg.color}40`, backgroundColor: `${cfg.color}15`, color: cfg.color }}>
                                                         {cfg.label}
                                                     </span>
                                                     {dueIds.has(item.id) && !isOfflineView && (

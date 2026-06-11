@@ -272,7 +272,7 @@ function ArenaContent() {
     }
 
     return (
-        <div className="bg-[var(--bg)] text-[var(--foreground)] pb-28 pt-20 relative min-h-screen flex flex-col flex-1 overflow-x-hidden">
+        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative min-h-screen flex flex-col flex-1 overflow-x-hidden">
             {/* Ambient Background Grid & Radial Halos */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
             <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#6366F1]/5 via-[#EF4444]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
@@ -295,7 +295,7 @@ function ArenaContent() {
                             Join a lobby, wager XP, and duel your classmates in real-time speed battles generated from your class notes.
                         </p>
                     </div>
-
+ 
                     {/* Main Panels */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Left Column: Actions */}
@@ -304,7 +304,7 @@ function ArenaContent() {
                             <div className="p-8 rounded-[2rem] bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-2xl flex flex-col justify-between relative overflow-hidden">
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-indigo-400 shadow-md">
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-md">
                                             <UserPlus size={18} />
                                         </div>
                                         <div>

@@ -113,6 +113,12 @@ export default function DashboardWeb({
     const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
     const dailyLine = getDailyTip(user?.id || "");
 
+    const readinessColor = useMemo(() => {
+        if (readinessScore >= 80) return { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.6)", text: "text-emerald-400" };
+        if (readinessScore >= 50) return { stroke: "var(--amber)", glow: "rgba(229,169,60,0.6)", text: "text-amber-400" };
+        return { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.6)", text: "text-rose-400" };
+    }, [readinessScore]);
+
     const [showStreakDetails, setShowStreakDetails] = useState(false);
     const [showWrappedDetails, setShowWrappedDetails] = useState(false);
 
@@ -251,8 +257,8 @@ export default function DashboardWeb({
                                     <div className="relative w-32 h-32 shrink-0 flex items-center justify-center">
                                         <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
                                             <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                            <motion.circle cx="50" cy="50" r="40" stroke="white" strokeWidth="8" fill="transparent"
-                                                style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.5))" }}
+                                            <motion.circle cx="50" cy="50" r="40" stroke={readinessColor.stroke} strokeWidth="8" fill="transparent"
+                                                style={{ filter: `drop-shadow(0 0 6px ${readinessColor.glow})` }}
                                                 strokeDasharray="188.4 62.8"
                                                 initial={{ strokeDashoffset: 188.4 }}
                                                 animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
@@ -260,36 +266,35 @@ export default function DashboardWeb({
                                                 strokeLinecap="round" />
                                         </svg>
                                         <div className="absolute flex flex-col items-center justify-center">
-                                            <span className="font-mono text-2xl font-black text-white tabular-nums">{readinessScore}%</span>
+                                            <span className={cn("font-mono text-2xl font-black tabular-nums", readinessColor.text)}>{readinessScore}%</span>
                                             <span className="text-[8px] font-black uppercase tracking-wider text-white/40">Ready</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4 flex flex-col justify-between">
-                                    {/* Compact Navigation & Status Pills Row */}
                                     <div className="flex flex-wrap gap-2.5 items-center">
                                         <Link href="/create" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900/50 border border-white/5 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <Zap size={12} className="text-white/60" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900/50 border border-white/5 hover:border-emerald-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                                <Zap size={12} className="text-emerald-400 group-hover:scale-110 transition-transform" />
                                                 <span>New Session</span>
                                             </div>
                                         </Link>
                                         
                                         <Link href="/library" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900/50 border border-white/5 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <Library size={12} className="text-white/60" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900/50 border border-white/5 hover:border-blue-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                                <Library size={12} className="text-blue-400 group-hover:scale-110 transition-transform" />
                                                 <span>Library</span>
                                             </div>
                                         </Link>
-
+ 
                                         <Link href="/blog" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900/50 border border-white/5 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <BookOpen size={12} className="text-white/60" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900/50 border border-white/5 hover:border-indigo-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
+                                                <BookOpen size={12} className="text-indigo-400 group-hover:scale-110 transition-transform" />
                                                 <span>Blog</span>
                                             </div>
                                         </Link>
-
+ 
                                         <button
                                             onClick={() => {
                                                 setShowStreakDetails(!showStreakDetails);
@@ -299,13 +304,13 @@ export default function DashboardWeb({
                                                 "flex items-center gap-2 px-4 py-2.5 rounded-full border text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                                 showStreakDetails 
                                                     ? "bg-amber-500/10 border-amber-500/30 text-amber-400" 
-                                                    : "bg-zinc-900/50 border-white/5 hover:border-white/20"
+                                                    : "bg-zinc-900/50 border-white/5 hover:border-amber-500/20"
                                             )}
                                         >
-                                            <Flame size={12} className={cn("text-[var(--amber)]", userStreak > 0 && "animate-pulse")} />
+                                            <Flame size={12} className={cn("text-amber-400", userStreak > 0 && "animate-pulse")} />
                                             <span><strong className="font-mono tabular-nums">{userStreak}</strong>d Streak</span>
                                         </button>
-
+ 
                                         <button
                                             onClick={() => {
                                                 setShowWrappedDetails(!showWrappedDetails);
@@ -314,11 +319,11 @@ export default function DashboardWeb({
                                             className={cn(
                                                 "flex items-center gap-2 px-4 py-2.5 rounded-full border text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                                 showWrappedDetails 
-                                                    ? "bg-white/10 border-white/20" 
-                                                    : "bg-zinc-900/50 border-white/5 hover:border-white/20"
+                                                    ? "bg-white/10 border-white/20 text-violet-400" 
+                                                    : "bg-zinc-900/50 border-white/5 hover:border-violet-500/20"
                                             )}
                                         >
-                                            <TrendingUp size={12} className="text-white/60" />
+                                            <TrendingUp size={12} className="text-violet-400" />
                                             <span>Weekly Wrapped</span>
                                         </button>
                                     </div>
@@ -326,7 +331,7 @@ export default function DashboardWeb({
                                     {/* Stat Ribbon */}
                                     <div className="flex flex-wrap gap-4">
                                         {[
-                                            { icon: Zap, label: "XP", value: userXp?.toLocaleString(), sub: `Lvl ${level} · ${title}`, color: "white" },
+                                            { icon: Zap, label: "XP", value: userXp?.toLocaleString(), sub: `Lvl ${level} · ${title}`, color: "var(--blue)" },
                                             { icon: Flame, label: "Streak", value: `${userStreak}d`, sub: userStreak > 0 ? "Active" : "Start today", color: "var(--amber)" },
                                         ].map(({ icon: Icon, label, value, sub, color }) => (
                                             <div key={label} className="scholar-card flex items-center gap-4 px-5 py-4 transition-all group flex-1 min-w-[140px] bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl" style={{ borderRadius: "20px" }}>
@@ -379,7 +384,7 @@ export default function DashboardWeb({
                                             <Link key={pack.id} href={`/library/pack/${pack.id}`}>
                                                 <motion.div 
                                                     layoutId={`pack-card-${pack.id}`}
-                                                    className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all flex flex-col justify-between h-40 group cursor-pointer" 
+                                                    className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-blue-500/20 hover:shadow-[0_0_20px_rgba(74,124,245,0.15)] transition-all flex flex-col justify-between h-40 group cursor-pointer" 
                                                     style={{ borderRadius: "24px" }}
                                                 >
                                                     <div>
@@ -431,8 +436,8 @@ export default function DashboardWeb({
                                         <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
                                             <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
                                                 <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                                <motion.circle cx="50" cy="50" r="40" stroke="white" strokeWidth="8" fill="transparent"
-                                                    style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.5))" }}
+                                                <motion.circle cx="50" cy="50" r="40" stroke={readinessColor.stroke} strokeWidth="8" fill="transparent"
+                                                    style={{ filter: `drop-shadow(0 0 6px ${readinessColor.glow})` }}
                                                     strokeDasharray="188.4 62.8"
                                                     initial={{ strokeDashoffset: 188.4 }}
                                                     animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
@@ -440,7 +445,7 @@ export default function DashboardWeb({
                                                     strokeLinecap="round" />
                                             </svg>
                                             <div className="absolute flex flex-col items-center justify-center">
-                                                <span className="font-mono text-xl font-black text-white tabular-nums">{readinessScore}%</span>
+                                                <span className={cn("font-mono text-xl font-black tabular-nums", readinessColor.text)}>{readinessScore}%</span>
                                                 <span className="text-[7px] font-black uppercase tracking-wider text-white/40">ERS™</span>
                                             </div>
                                         </div>
@@ -451,9 +456,9 @@ export default function DashboardWeb({
                             {/* Three Column Telemetry Dashboard */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* Column 1: Stats */}
-                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-blue-500/20 transition-all duration-300" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <Layers className="text-white/60 w-5 h-5" />
+                                        <Layers className="text-blue-400 w-5 h-5" />
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] italic text-white/50">
                                             Study Stats
                                         </h3>
@@ -479,9 +484,9 @@ export default function DashboardWeb({
                                 </div>
  
                                 {/* Column 2: Concept Retention Curves */}
-                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-violet-500/20 transition-all duration-300" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <BrainCircuit className="text-white/60 w-5 h-5" />
+                                        <BrainCircuit className="text-violet-400 w-5 h-5" />
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] italic text-white/50">
                                             Retention Stability
                                         </h3>
@@ -493,7 +498,7 @@ export default function DashboardWeb({
                                         </div>
                                         <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden border border-white/5">
                                             <motion.div
-                                                className="bg-white h-full rounded-full"
+                                                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${readinessScore}%` }}
                                                 transition={{ duration: 1.2, ease: "easeOut" }}
@@ -515,9 +520,9 @@ export default function DashboardWeb({
                                 </div>
 
                                 {/* Column 3: Recent Packs */}
-                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "24px" }}>
+                                <div className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-emerald-500/20 transition-all duration-300" style={{ borderRadius: "24px" }}>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <FileText className="text-white/60 w-5 h-5" />
+                                        <FileText className="text-emerald-400 w-5 h-5" />
                                         <h3 className="text-xs font-black uppercase tracking-[0.2em] italic text-white/50">
                                             Active Packs
                                         </h3>
@@ -525,7 +530,7 @@ export default function DashboardWeb({
                                     <div className="space-y-3">
                                         {recentPacks.length > 0 ? recentPacks.map((pack, idx) => (
                                             <Link key={pack.id} href={`/library/pack/${pack.id}`}>
-                                                <div className="flex justify-between items-center p-2.5 rounded-lg bg-white/5 border border-white/5 text-xs hover:border-white/20 transition-all cursor-pointer">
+                                                <div className="flex justify-between items-center p-2.5 rounded-lg bg-white/5 border border-white/5 text-xs hover:border-emerald-500/35 hover:bg-emerald-500/5 transition-all cursor-pointer">
                                                     <span className="font-bold text-white/80 truncate max-w-[140px]">{pack.title || "Untitled Pack"}</span>
                                                     <ArrowRight size={10} className="text-white/40" />
                                                 </div>

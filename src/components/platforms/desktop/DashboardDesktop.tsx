@@ -63,6 +63,12 @@ export default function DashboardDesktop({
     const dueCardsCount = dueCount;
     const readinessScore = totalCards > 0 ? Math.max(30, Math.round(((totalCards - dueCardsCount) / totalCards) * 100)) : 100;
 
+    const readinessColor = useMemo(() => {
+        if (readinessScore >= 80) return { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.6)", text: "text-emerald-400" };
+        if (readinessScore >= 50) return { stroke: "var(--amber)", glow: "rgba(229,169,60,0.6)", text: "text-amber-400" };
+        return { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.6)", text: "text-rose-400" };
+    }, [readinessScore]);
+
     // Highest due deck
     const highestDueDeck = dueData?.decks?.reduce((max: any, deck: any) => deck.dueCount > max.dueCount ? deck : max, { dueCount: 0 });
     const dueDeckTitle = highestDueDeck?.dueCount > 0 ? highestDueDeck.title : "your study packs";
@@ -249,43 +255,42 @@ export default function DashboardDesktop({
                                     <div className="relative w-32 h-32 shrink-0 flex items-center justify-center">
                                         <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
                                             <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                            <motion.circle cx="50" cy="50" r="40" stroke="white" strokeWidth="8" fill="transparent" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.5))" }} strokeDasharray="188.4 62.8"
+                                            <motion.circle cx="50" cy="50" r="40" stroke={readinessColor.stroke} strokeWidth="8" fill="transparent" style={{ filter: `drop-shadow(0 0 6px ${readinessColor.glow})` }} strokeDasharray="188.4 62.8"
                                                 initial={{ strokeDashoffset: 188.4 }}
                                                 animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
                                                 transition={{ duration: 1.5, ease: "easeOut" }}
                                                 strokeLinecap="round" />
                                         </svg>
                                         <div className="absolute flex flex-col items-center justify-center">
-                                            <span className="font-mono text-2xl font-black text-white tabular-nums">{readinessScore}%</span>
+                                            <span className={cn("font-mono text-2xl font-black tabular-nums", readinessColor.text)}>{readinessScore}%</span>
                                             <span className="text-[8px] font-black uppercase tracking-wider text-white/40">Ready</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4 flex flex-col justify-between">
-                                    {/* Compact Navigation & Status Pills Row */}
                                     <div className="flex flex-wrap gap-2.5 items-center">
                                         <Link href="/create" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <Zap size={12} className="text-white/60" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-emerald-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm cursor-pointer">
+                                                <Zap size={12} className="text-emerald-400 group-hover:scale-110 transition-transform" />
                                                 <span>New Session</span>
                                             </div>
                                         </Link>
                                         
                                         <Link href="/library" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <Library size={12} className="text-white/60" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-blue-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm cursor-pointer">
+                                                <Library size={12} className="text-blue-400 group-hover:scale-110 transition-transform" />
                                                 <span>Library</span>
                                             </div>
                                         </Link>
-
+ 
                                         <Link href="/blog" className="group">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 hover:border-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                                <BookOpen size={12} className="text-white/60" />
+                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-indigo-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm cursor-pointer">
+                                                <BookOpen size={12} className="text-indigo-400 group-hover:scale-110 transition-transform" />
                                                 <span>Blog</span>
                                             </div>
                                         </Link>
-
+ 
                                         <button
                                             onClick={() => {
                                                 setShowStreakDetails(!showStreakDetails);
@@ -294,14 +299,14 @@ export default function DashboardDesktop({
                                             className={cn(
                                                 "flex items-center gap-2 px-4 py-2.5 rounded-full border text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                                 showStreakDetails 
-                                                    ? "bg-[var(--amber-dim)] border-[var(--amber-border)]" 
-                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-white/20"
+                                                    ? "bg-[var(--amber-dim)] border-[var(--amber-border)] text-amber-400" 
+                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-amber-500/20"
                                             )}
                                         >
-                                            <Flame size={12} className={cn("text-[var(--amber)]", user.streak > 0 && "animate-pulse")} />
+                                            <Flame size={12} className={cn("text-amber-400", user.streak > 0 && "animate-pulse")} />
                                             <span>{user.streak}d Streak</span>
                                         </button>
-
+ 
                                         <button
                                             onClick={() => {
                                                 setShowWrappedDetails(!showWrappedDetails);
@@ -310,11 +315,11 @@ export default function DashboardDesktop({
                                             className={cn(
                                                 "flex items-center gap-2 px-4 py-2.5 rounded-full border text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer",
                                                 showWrappedDetails 
-                                                    ? "bg-[var(--blue-dim)] border-[var(--blue-border)]" 
-                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-white/20"
+                                                    ? "bg-[var(--blue-dim)] border-[var(--blue-border)] text-violet-400" 
+                                                    : "bg-[var(--bg-2)] border-[var(--border)] hover:border-violet-500/20"
                                             )}
                                         >
-                                            <TrendingUp size={12} className="text-white/60" />
+                                            <TrendingUp size={12} className="text-violet-400" />
                                             <span>Weekly Wrapped</span>
                                         </button>
                                     </div>

@@ -73,8 +73,7 @@ export async function POST(req: NextRequest) {
             })
             .select(`
                 *,
-                host:profiles!host_id(id, username, first_name, avatar_url),
-                generation:generations(id, title, content, type)
+                host:profiles!host_id(id, username, first_name, avatar_url)
             `)
             .single();
 
@@ -137,8 +136,7 @@ export async function GET(req: NextRequest) {
                 .select(`
                     *,
                     host:profiles!host_id(id, username, first_name, last_name, avatar_url, xp_total),
-                    challenger:profiles!challenger_id(id, username, first_name, last_name, avatar_url, xp_total),
-                    generation:generations(id, title, content, type)
+                    challenger:profiles!challenger_id(id, username, first_name, last_name, avatar_url, xp_total)
                 `)
                 .eq("code", code.toUpperCase())
                 .single();
@@ -146,6 +144,12 @@ export async function GET(req: NextRequest) {
             if (duelError || !duel) {
                 return NextResponse.json({ error: "Duel not found" }, { status: 404 });
             }
+
+            const { data: gen } = await supabase
+                .from("generations")
+                .select("id, title, content, type")
+                .eq("id", duel.generation_id)
+                .single();
 
             // Check if duel is joinable
             if (duel.status !== 'WAITING') {
@@ -167,9 +171,9 @@ export async function GET(req: NextRequest) {
                         },
                         challenger: null,
                         generation: {
-                            id: duel.generation?.id,
-                            title: duel.generation?.title,
-                            questionCount: duel.generation?.content?.questions?.length || 0
+                            id: gen?.id,
+                            title: gen?.title || 'Quiz',
+                            questionCount: gen?.content?.questions?.length || 0
                         }
                     }
                 });
@@ -183,8 +187,7 @@ export async function GET(req: NextRequest) {
                 .select(`
                     *,
                     host:profiles!host_id(id, username, first_name, last_name, avatar_url, xp_total),
-                    challenger:profiles!challenger_id(id, username, first_name, last_name, avatar_url, xp_total),
-                    generation:generations(id, title, content, type)
+                    challenger:profiles!challenger_id(id, username, first_name, last_name, avatar_url, xp_total)
                 `)
                 .single();
 
@@ -192,6 +195,12 @@ export async function GET(req: NextRequest) {
                 console.error("Join duel error:", joinError);
                 return NextResponse.json({ error: "Failed to join duel" }, { status: 500 });
             }
+
+            const { data: updatedGen } = await supabase
+                .from("generations")
+                .select("id, title, content, type")
+                .eq("id", updatedDuel.generation_id)
+                .single();
 
             // Create challenger session
             await supabase
@@ -219,9 +228,9 @@ export async function GET(req: NextRequest) {
                         name: 'You'
                     },
                     generation: {
-                        id: updatedDuel.generation?.id,
-                        title: updatedDuel.generation?.title,
-                        questionCount: updatedDuel.generation?.content?.questions?.length || 0
+                        id: updatedGen?.id,
+                        title: updatedGen?.title || 'Quiz',
+                        questionCount: updatedGen?.content?.questions?.length || 0
                     }
                 }
             });
@@ -270,8 +279,7 @@ export async function GET(req: NextRequest) {
             .from("duels")
             .select(`
                 *,
-                host:profiles!host_id(id, username, first_name, avatar_url),
-                generation:generations(id, title)
+                host:profiles!host_id(id, username, first_name, avatar_url)
             `)
             .eq("status", "WAITING")
             .order("created_at", { ascending: false })
@@ -281,18 +289,31 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Failed to fetch open duels" }, { status: 500 });
         }
 
-        return NextResponse.json({
-            success: true,
-            duels: openDuels?.map(d => ({
+        let duelsWithGen: any[] = [];
+        if (openDuels && openDuels.length > 0) {
+            const genIds = Array.from(new Set(openDuels.map(d => d.generation_id)));
+            const { data: gens } = await supabase
+                .from("generations")
+                .select("id, title")
+                .in("id", genIds);
+            
+            const genMap = new Map(gens?.map(g => [g.id, g]) || []);
+            
+            duelsWithGen = openDuels.map(d => ({
                 id: d.id,
                 code: d.code,
                 status: d.status.toLowerCase(),
                 hostName: d.host?.first_name || d.host?.username || 'Classmate',
-                packTitle: d.generation?.title || 'Study Quiz',
+                packTitle: genMap.get(d.generation_id)?.title || 'Study Quiz',
                 wagerXp: d.wager_xp || 50,
                 spectators: 0,
                 hostId: d.host_id
-            }))
+            }));
+        }
+
+        return NextResponse.json({
+            success: true,
+            duels: duelsWithGen
         });
     } catch (error) {
         console.error("Arena GET Error:", error);

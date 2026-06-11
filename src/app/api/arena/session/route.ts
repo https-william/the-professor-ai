@@ -25,13 +25,19 @@ export async function POST(req: NextRequest) {
         // Get duel to verify user is a participant
         const { data: duel, error: duelError } = await supabase
             .from("duels")
-            .select("id, host_id, challenger_id, status, generation:generations(id, content)")
+            .select("id, host_id, challenger_id, status, generation_id")
             .eq("id", duel_id)
             .single();
 
         if (duelError || !duel) {
             return NextResponse.json({ error: "Duel not found" }, { status: 404 });
         }
+
+        const { data: gen } = await supabase
+            .from("generations")
+            .select("id, content")
+            .eq("id", duel.generation_id)
+            .single();
 
         const isHost = duel.host_id === user.id;
         const isChallenger = duel.challenger_id === user.id;
@@ -59,7 +65,7 @@ export async function POST(req: NextRequest) {
 
         // Calculate score
         let score = 0;
-        const generation = duel.generation as { content?: { questions?: any[] } } | null;
+        const generation = gen as { content?: { questions?: any[] } } | null;
         const questions = generation?.content?.questions || [];
         if (answers && typeof answers === 'object') {
             score = questions.filter((q: any, idx: number) => 

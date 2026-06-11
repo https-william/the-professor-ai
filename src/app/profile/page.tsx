@@ -230,7 +230,7 @@ export default function ProfilePage() {
                                         initial={{ width: 0 }}
                                         animate={{ width: `${levelProgress}%` }}
                                         transition={{ duration: 1 }}
-                                        className="h-full bg-white rounded-full shadow-[0_0_10px_white]"
+                                        className="h-full bg-gradient-to-r from-[#4A7CF5] to-[#9673F5] rounded-full shadow-[0_0_10px_rgba(150,115,245,0.5)]"
                                     />
                                 </div>
                             </div>
@@ -300,8 +300,8 @@ export default function ProfilePage() {
                                                 )}
                                                 
                                                 <div className={cn(
-                                                    "w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 shadow-sm",
-                                                    unlocked ? `bg-white/5 border-white/10 text-white` : "bg-transparent border-white/5 text-white/20"
+                                                    "w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 shadow-sm transition-all",
+                                                    unlocked ? `${badge.bg} ${badge.border} ${badge.color}` : "bg-transparent border-white/5 text-white/20"
                                                 )}>
                                                     <BadgeIcon size={20} />
                                                 </div>
