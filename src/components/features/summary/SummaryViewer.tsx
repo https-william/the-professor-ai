@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Markdown from "@/components/ui/Markdown";
@@ -122,6 +122,18 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     const [copySuccess, setCopySuccess] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+
+    useEffect(() => {
+        // Force unlock body scroll on mount to prevent any sticky modal locks
+        document.body.style.overflow = "unset";
+        document.documentElement.style.overflow = "unset";
+        
+        // Also ensure container has correct overflow if set
+        const container = document.getElementById("main-scroll-container");
+        if (container) {
+            container.style.overflow = "unset";
+        }
+    }, []);
  
     const handleExportHTML = () => {
         addToast("Compiling offline HTML document...", "info");
@@ -173,7 +185,11 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
         const rawSections = data.split(/\n## /g);
         
         return rawSections.map((s, i) => {
-            const sectionText = i > 0 ? "## " + s : s;
+            let sectionText = s;
+            if (i > 0 && !s.startsWith("## ")) {
+                sectionText = "## " + s;
+            }
+            
             let checkpoint = null;
             let text = sectionText;
             
@@ -191,9 +207,25 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
             // Clean up any remaining "Checking Understanding" headers
             text = text.replace(/([#*\s_]*)(Checking\s+Understanding|CHECKINGUNDERSTANDING|CheckingUnderstanding|checking\s+understanding)([#*\s_:]*)(\n|$)/gi, "\n");
             
-            return { text, checkpoint };
+            // Extract section title and body text
+            let sectionTitle = "";
+            let bodyText = text;
+            
+            const lines = text.split("\n");
+            const firstLine = lines[0].trim();
+            if (firstLine.startsWith("## ")) {
+                sectionTitle = firstLine.replace("## ", "").trim();
+                bodyText = lines.slice(1).join("\n").trim();
+            } else if (firstLine.startsWith("# ")) {
+                sectionTitle = firstLine.replace("# ", "").trim();
+                bodyText = lines.slice(1).join("\n").trim();
+            } else {
+                sectionTitle = i === 0 ? title : `Chapter ${i + 1}`;
+            }
+            
+            return { title: sectionTitle, text: bodyText, checkpoint };
         });
-    }, [data]);
+    }, [data, title]);
 
     const handleCopyLink = () => {
         const url = generationId ? `${window.location.origin}/summary/${generationId}` : window.location.href;
@@ -262,11 +294,12 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                             </span>
                         </div>
                         <h2 className="text-4xl font-black tracking-tight leading-tight mb-6">
-                            {currentSlide === 0 ? title : currentChapter.text.split("\n")[0].replace("## ", "")}
+                            {currentChapter.title}
                         </h2>
                     </div>
 
-                    <div className="mb-32">
+                    <div className="scholar-card p-8 md:p-12 mb-16 bg-zinc-950/40 border border-white/5 backdrop-blur-md relative overflow-hidden" style={{ borderRadius: '32px' }}>
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.01] to-transparent pointer-events-none" />
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentSlide}
@@ -281,7 +314,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                                 }}
                             >
                                 <Markdown className="reveal-ceremony">
-                                    {currentSlide === 0 ? currentChapter.text : currentChapter.text.split("\n").slice(1).join("\n")}
+                                    {currentChapter.text}
                                 </Markdown>
                             </motion.div>
                         </AnimatePresence>

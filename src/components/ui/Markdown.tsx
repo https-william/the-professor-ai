@@ -20,17 +20,17 @@ const revealVariants = {
 };
 
 const mdComponents = {
-    h1: ({node, ...props}: any) => <motion.h1 variants={revealVariants} className="text-3xl font-black text-[var(--foreground)] mb-8 mt-4 tracking-tighter" {...props} />,
-    h2: ({node, ...props}: any) => <motion.h2 variants={revealVariants} className="text-xl font-bold text-[var(--foreground)] mb-6 mt-12 flex items-center gap-3 border-b border-[var(--border)] pb-3" {...props} />,
-    h3: ({node, ...props}: any) => <motion.h3 variants={revealVariants} className="text-lg font-bold text-[var(--foreground)]/90 mb-4 mt-10" {...props} />,
-    h4: ({node, ...props}: any) => <motion.h4 variants={revealVariants} className="text-sm font-bold text-[var(--foreground-muted)] mb-2 mt-8 uppercase tracking-[0.2em]" {...props} />,
-    p: ({node, ...props}: any) => <motion.p variants={revealVariants} className="mb-8 leading-relaxed text-[17px] text-[var(--foreground)]/80 font-medium" {...props} />,
-    ul: ({node, ...props}: any) => <motion.ul variants={revealVariants} className="mb-10 space-y-4 list-none" {...props} />,
-    ol: ({node, ...props}: any) => <motion.ol variants={revealVariants} className="mb-10 space-y-5 list-decimal pl-6 text-[var(--foreground-muted)]" {...props} />,
+    h1: ({node, ...props}: any) => <motion.h1 variants={revealVariants} className="text-3xl font-black text-[var(--foreground)] mb-6 mt-4 tracking-tighter" {...props} />,
+    h2: ({node, ...props}: any) => <motion.h2 variants={revealVariants} className="text-2xl font-black text-[var(--foreground)] mb-5 mt-10 pb-2 border-b border-white/5 flex items-center gap-3" {...props} />,
+    h3: ({node, ...props}: any) => <motion.h3 variants={revealVariants} className="text-lg font-bold text-[var(--foreground-secondary)] mb-4 mt-8" {...props} />,
+    h4: ({node, ...props}: any) => <motion.h4 variants={revealVariants} className="text-xs font-bold text-[var(--foreground-muted)] mb-2 mt-6 uppercase tracking-[0.2em]" {...props} />,
+    p: ({node, ...props}: any) => <motion.p variants={revealVariants} className="mb-6 leading-[1.8] text-[16px] md:text-[17px] text-[var(--foreground-secondary)] font-medium" {...props} />,
+    ul: ({node, ...props}: any) => <motion.ul variants={revealVariants} className="mb-8 space-y-3 list-none pl-1" {...props} />,
+    ol: ({node, ...props}: any) => <motion.ol variants={revealVariants} className="mb-8 space-y-4 list-decimal pl-6 text-[var(--foreground-secondary)] leading-[1.8]" {...props} />,
     li: ({node, ...props}: any) => (
-        <motion.li variants={revealVariants} className="flex gap-4 text-base text-[var(--foreground-muted)] items-start group" {...props}>
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--foreground)]/20 mt-2.5 flex-shrink-0 group-hover:bg-[var(--foreground)]/40 transition-colors" />
-            <span className="opacity-90 leading-relaxed">{props.children}</span>
+        <motion.li variants={revealVariants} className="flex gap-3 text-[15px] md:text-[16px] text-[var(--foreground-secondary)] items-start group leading-[1.8]" {...props}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]/45 mt-[11px] flex-shrink-0 group-hover:bg-[var(--accent)] transition-colors" />
+            <span className="opacity-95">{props.children}</span>
         </motion.li>
     ),
     strong: ({node, ...props}: any) => <strong className="font-black text-[var(--foreground)]" {...props} />,
