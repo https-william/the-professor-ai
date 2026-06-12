@@ -318,7 +318,7 @@ export default function DashboardPage() {
     };
 
     return (
-        <main className="min-h-screen bg-transparent text-[var(--text)] overflow-x-hidden relative">
+        <div className="relative w-full text-[var(--text)]">
             {/* Grid Line Background */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
             
@@ -354,7 +354,7 @@ export default function DashboardPage() {
             )}
 
             <LateNightGuard />
-        </main>
+        </div>
     );
 }
 

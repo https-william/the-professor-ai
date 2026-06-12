@@ -16,22 +16,26 @@ export async function GET(request: NextRequest) {
 
         const now = new Date().toISOString();
 
-        // Fetch all cards due for review (next_review_at <= now)
-        const { data: dueCards, error } = await supabase
-            .from("card_reviews")
-            .select("*")
-            .eq("user_id", user.id)
-            .lte("next_review_at", now)
-            .order("next_review_at", { ascending: true })
-            .limit(50);
+        // Fetch due cards and total count concurrently
+        const [dueCardsResult, totalCardsCountResult] = await Promise.all([
+            supabase
+                .from("card_reviews")
+                .select("*")
+                .eq("user_id", user.id)
+                .lte("next_review_at", now)
+                .order("next_review_at", { ascending: true })
+                .limit(50),
+            supabase
+                .from("card_reviews")
+                .select("*", { count: 'exact', head: true })
+                .eq("user_id", user.id)
+        ]);
+
+        const dueCards = dueCardsResult.data;
+        const error = dueCardsResult.error;
+        const totalCardsCount = totalCardsCountResult.count;
 
         if (error) throw error;
-
-        // Fetch total count of card reviews for this user
-        const { count: totalCardsCount } = await supabase
-            .from("card_reviews")
-            .select("*", { count: 'exact', head: true })
-            .eq("user_id", user.id);
 
         // Group by generation_id for deck info
         const deckMap = new Map<string, any[]>();

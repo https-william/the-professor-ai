@@ -94,7 +94,7 @@ export default function BillingPage() {
     const isUnlimited = user.planStatus === 'unlimited';
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans selection:bg-[var(--blue)]/30 overflow-x-hidden">
+        <div className="relative w-full text-[var(--foreground)] font-sans selection:bg-[var(--blue)]/30">
             {/* Processing Overlay */}
             <AnimatePresence>
                 {isProcessing && (
@@ -113,7 +113,7 @@ export default function BillingPage() {
                 )}
             </AnimatePresence>
 
-            <main className="min-h-screen grid grid-cols-1 lg:grid-cols-12">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-12">
                 {/* LEFT SIDE: Active Study Pack Preview Panel */}
                 <section className="lg:col-span-6 relative bg-zinc-950/80 border-r border-[var(--border)] overflow-hidden hidden lg:flex flex-col justify-between p-12">
                     <div className="absolute inset-0 bg-gradient-to-tr from-[var(--blue)]/10 via-transparent to-transparent opacity-60 pointer-events-none" />
@@ -334,7 +334,7 @@ export default function BillingPage() {
                         </div>
                     </div>
                 </section>
-            </main>
+            </div>
         </div>
     );
 }

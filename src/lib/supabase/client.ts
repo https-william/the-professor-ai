@@ -6,14 +6,23 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   let retries = 3;
   let delay = 300; // ms
   while (retries > 0) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
     try {
-      const res = await fetch(input, init);
+      const res = await fetch(input, {
+        ...init,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
       // Retry on common server errors or rate limits
       if (res.status === 502 || res.status === 503 || res.status === 504 || res.status === 429) {
         throw new Error(`Transient status: ${res.status}`);
       }
       return res;
     } catch (err) {
+      clearTimeout(timeoutId);
       retries--;
       if (retries === 0) throw err;
       await new Promise(r => setTimeout(r, delay));

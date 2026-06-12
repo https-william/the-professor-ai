@@ -28,41 +28,47 @@ export async function GET(req: NextRequest) {
         monday.setDate(now.getDate() + mondayOffset);
         monday.setHours(0, 0, 0, 0);
 
-        // Fetch profile for streak data
-        let { data: profile } = await supabase
-            .from("profiles")
-            .select("xp_total, current_streak, last_study_date, education_level, study_goal")
-            .eq("id", user.id)
-            .single();
+        // Fetch profile, weekly activities, recent feed activities, and total stats concurrently
+        const [
+            profileResult,
+            weekGenerationsResult,
+            weekPacksResult,
+            weekActivitiesResult,
+            recentGenActivityResult,
+            recentPackActivityResult,
+            totalFlashcardsResult,
+            totalQuizzesResult,
+            totalSummariesResult,
+            totalStudyPacksResult
+        ] = await Promise.all([
+            supabase.from("profiles").select("xp_total, current_streak, last_study_date, education_level, study_goal").eq("id", user.id).single(),
+            supabase.from("generations").select("created_at, type, title").eq("user_id", user.id).gte("created_at", monday.toISOString()).order("created_at", { ascending: false }),
+            supabase.from("study_packs").select("created_at, title").eq("user_id", user.id).gte("created_at", monday.toISOString()).order("created_at", { ascending: false }),
+            supabase.from("user_activity").select("created_at").eq("user_id", user.id).gte("created_at", monday.toISOString()),
+            supabase.from("generations").select("id, title, type, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
+            supabase.from("study_packs").select("id, title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
+            supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("type", "flashcards"),
+            supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("type", "quiz"),
+            supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("type", "summary"),
+            supabase.from("study_packs").select("id", { count: "exact", head: true }).eq("user_id", user.id)
+        ]);
+
+        const profile = profileResult.data;
+        const weekGenerations = weekGenerationsResult.data;
+        const weekPacks = weekPacksResult.data;
+        const weekActivities = weekActivitiesResult.data;
+        const recentGenActivity = recentGenActivityResult.data;
+        const recentPackActivity = recentPackActivityResult.data;
+        const totalFlashcards = totalFlashcardsResult.count;
+        const totalQuizzes = totalQuizzesResult.count;
+        const totalSummaries = totalSummariesResult.count;
+        const totalStudyPacks = totalStudyPacksResult.count;
 
         // Ensure current date is considered active if streak is active
         if (profile && profile.current_streak > 0) {
             const todayStr = new Date().toISOString().split('T')[0];
             // Will be added to activeDates set below
         }
-
-        // Fetch this week's generations (for activity dots on streak calendar)
-        const { data: weekGenerations } = await supabase
-            .from("generations")
-            .select("created_at, type, title")
-            .eq("user_id", user.id)
-            .gte("created_at", monday.toISOString())
-            .order("created_at", { ascending: false });
-
-        // Fetch this week's study packs (Exam Sprints)
-        const { data: weekPacks } = await supabase
-            .from("study_packs")
-            .select("created_at, title")
-            .eq("user_id", user.id)
-            .gte("created_at", monday.toISOString())
-            .order("created_at", { ascending: false });
-
-        // Fetch this week's generic activities
-        const { data: weekActivities } = await supabase
-            .from("user_activity")
-            .select("created_at")
-            .eq("user_id", user.id)
-            .gte("created_at", monday.toISOString());
 
         // Extract unique active dates this week
         const activeDates = new Set<string>();
@@ -87,52 +93,12 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Fetch recent activity (last 8 generations for the activity feed)
-        const { data: recentGenActivity } = await supabase
-            .from("generations")
-            .select("id, title, type, created_at")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(8);
-
-        // Fetch recent study packs
-        const { data: recentPackActivity } = await supabase
-            .from("study_packs")
-            .select("id, title, created_at")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(8);
-
         // Combine and sort recent activity
         const combinedRecent = [
             ...(recentGenActivity || []),
             ...(recentPackActivity || []).map((p: any) => ({ ...p, type: "exam_sprint" }))
         ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
          .slice(0, 8);
-
-        // Fetch total counts by type
-        const { count: totalFlashcards } = await supabase
-            .from("generations")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("type", "flashcards");
-
-        const { count: totalQuizzes } = await supabase
-            .from("generations")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("type", "quiz");
-
-        const { count: totalSummaries } = await supabase
-            .from("generations")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("type", "summary");
-
-        const { count: totalStudyPacks } = await supabase
-            .from("study_packs")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id);
 
         return NextResponse.json({
             streak: profile?.current_streak || 0,

@@ -99,7 +99,7 @@ export default function DownloadPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#08080E] text-[var(--foreground)] selection:bg-[var(--blue-dim)] overflow-x-hidden font-sans">
+        <div className="relative w-full text-[var(--foreground)] selection:bg-[var(--blue-dim)] font-sans">
             {/* ═══ Advanced AEO/SEO Layer ═══ */}
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 

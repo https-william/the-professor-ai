@@ -159,10 +159,10 @@ export default function DashboardWeb({
     return (
         <div className="w-full min-h-screen relative bg-transparent selection:bg-white/10">
             <StandardContainer className="pt-24 pb-20 relative z-10">
-                <motion.div variants={stagger} initial="hidden" animate="show">
+                <motion.div key={userState} variants={stagger} initial="hidden" animate="show">
 
                     {userState === 'NEW_USER' && (
-                        <motion.div variants={fadeUp} className="space-y-6">
+                        <motion.div key="new_user" variants={fadeUp} className="space-y-6">
                             <div className="scholar-card relative p-8 sm:p-12 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "28px" }}>
                                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-white pointer-events-none"><Sparkles size={160} /></div>
                                 <div className="relative z-10 max-w-xl">
@@ -192,7 +192,7 @@ export default function DashboardWeb({
                     )}
 
                     {userState === 'RETURNING_STUDENT' && (
-                        <div className="space-y-6">
+                        <motion.div key="returning_student" variants={fadeUp} className="space-y-6">
                             {/* Welcome Banner */}
                             <motion.div variants={fadeUp} className="mb-6">
                                 <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300" style={{ borderRadius: "28px" }}>
@@ -405,11 +405,11 @@ export default function DashboardWeb({
                                     </div>
                                 )}
                             </motion.div>
-                        </div>
+                        </motion.div>
                     )}
 
                     {userState === 'POWER_LEARNER' && (
-                        <motion.div variants={fadeUp} className="space-y-6">
+                        <motion.div key="power_learner" variants={fadeUp} className="space-y-6">
                             {/* Welcome Banner for Power Learner */}
                             <div className="scholar-card relative p-6 sm:p-10 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300 mb-6" style={{ borderRadius: "28px" }}>
                                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-white pointer-events-none"><Sparkles size={160} /></div>

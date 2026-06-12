@@ -307,7 +307,7 @@ function ArenaContent() {
     }
 
     return (
-        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative min-h-screen flex flex-col flex-1 overflow-x-hidden">
+        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative flex flex-col flex-1">
             {/* Ambient Background Grid & Radial Halos */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
             <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#6366F1]/5 via-[#EF4444]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
