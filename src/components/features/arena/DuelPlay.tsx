@@ -54,9 +54,9 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
     const lastSyncRef = useRef<number>(0);
     const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const currentQuestion = questions[currentIndex];
-    const progress = ((currentIndex + 1) / questions.length) * 100;
-    const opponentProgressPercent = (opponentProgress / questions.length) * 100;
+    const currentQuestion = (questions && questions.length > 0) ? questions[currentIndex] : null;
+    const progress = (questions && questions.length > 0) ? ((currentIndex + 1) / questions.length) * 100 : 0;
+    const opponentProgressPercent = (questions && questions.length > 0) ? (opponentProgress / questions.length) * 100 : 0;
 
     // Timer
     useEffect(() => {
@@ -250,6 +250,31 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
         return `${m}:${s.toString().padStart(2, '0')}`;
     };
 
+    if (!questions || questions.length === 0) {
+        return (
+            <div className="min-h-screen bg-[#06060B] text-[var(--foreground)] flex flex-col items-center justify-center p-6 text-center select-none w-full">
+                <div className="max-w-md w-full bg-[#06060B]/60 border border-[var(--border)] rounded-[32px] p-8 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-[0.02] text-7xl font-black border-4 border-[var(--foreground)] p-6 text-[var(--foreground)] rounded-2xl select-none pointer-events-none">
+                        EMPTY
+                    </div>
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle size={32} className="text-[var(--foreground-muted)] animate-pulse" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3 text-[var(--foreground)]">No Questions Found</h3>
+                    <p className="text-sm text-[var(--foreground-muted)] leading-relaxed mb-8">
+                        A cup of coffee without beans is just hot water, and a duel without questions is... well, quiet. Let's get you back to the arena to prepare a fresh session.
+                    </p>
+                    <button
+                        onClick={() => router.push('/arena')}
+                        className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 active:scale-[0.98] transition-all"
+                    >
+                        Back to Arena
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col">
             {/* Header */}
@@ -344,16 +369,16 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                             <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[var(--secondary)]/10 text-[var(--secondary)] border border-[var(--secondary)]/20">
                                 Question {currentIndex + 1}
                             </span>
-                            <span className="text-[10px] text-[var(--foreground-muted)]">{questions.length - currentIndex - 1} remaining</span>
+                            <span className="text-[10px] text-[var(--foreground-muted)]">{(questions ? questions.length : 0) - currentIndex - 1} remaining</span>
                         </div>
                         <p className="text-lg md:text-xl font-medium text-[var(--foreground)] leading-relaxed">
-                            {currentQuestion.question}
+                            {currentQuestion?.question}
                         </p>
                     </div>
 
                     {/* Options */}
                     <div className="space-y-3">
-                        {currentQuestion.options.map((option, idx) => {
+                        {currentQuestion?.options?.map((option, idx) => {
                             const isSelected = answers[currentIndex] === idx;
 
                             return (

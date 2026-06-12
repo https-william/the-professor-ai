@@ -39,7 +39,7 @@ export const InteractiveQuiz = ({
 
 
 
-    const currentQuestion = questions[currentIdx] || questions[0];
+    const currentQuestion = (questions && questions.length > 0) ? (questions[currentIdx] || questions[0]) : null;
 
     const handleSelect = (idx: number) => {
         setAnswers(prev => ({
@@ -92,7 +92,7 @@ export const InteractiveQuiz = ({
         }));
 
         const totalCorrect = results.filter(r => r.isCorrect).length;
-        const scorePercent = Math.round((totalCorrect / questions.length) * 100);
+        const scorePercent = questions && questions.length > 0 ? Math.round((totalCorrect / questions.length) * 100) : 0;
         const skipped = results.filter(r => !r.wasAnswered).length;
 
         const scoreLabel =
@@ -258,7 +258,7 @@ export const InteractiveQuiz = ({
                             score: scorePercent, 
                             correct: totalCorrect, 
                             time: timeString,
-                            total: questions.length
+                            total: questions ? questions.length : 0
                         })}
                         className="btn-skeuo-primary flex-[2] py-4 text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                     >
@@ -269,6 +269,22 @@ export const InteractiveQuiz = ({
         );
     };
 
+    if (!questions || questions.length === 0) {
+        return (
+            <div className="w-full flex flex-col items-center justify-center py-12 px-6 text-center select-none">
+                <div className="max-w-md w-full bg-[var(--background-secondary)] border border-[var(--border)] rounded-[32px] p-8 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-in fade-in">
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle size={32} className="text-[var(--foreground-muted)] animate-pulse" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3 text-[var(--foreground)]">No Questions Found</h3>
+                    <p className="text-sm text-[var(--foreground-muted)] leading-relaxed mb-8">
+                        The Professor's desk is clean. It looks like this pack doesn't have any quiz questions ready yet.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="relative w-full min-h-full p-1 sm:p-2 flex flex-col items-center cursor-default overflow-visible">
             {showResults ? renderResults() : (
@@ -278,7 +294,7 @@ export const InteractiveQuiz = ({
                         <div className="p-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner shrink-0">
                             <div className="flex items-center justify-between mb-1.5">
                                 <span className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
-                                    Question {currentIdx + 1} of {questions.length}
+                                    Question {currentIdx + 1} of {questions ? questions.length : 0}
                                 </span>
                                 <div className="flex items-center gap-1.5">
                                     <button 
@@ -301,12 +317,12 @@ export const InteractiveQuiz = ({
                                 </div>
                             </div>
                             <h4 className="text-[12px] md:text-[16px] font-bold leading-relaxed text-[var(--foreground)]">
-                                {currentQuestion.question}
+                                {currentQuestion?.question}
                             </h4>
                         </div>
 
                         <div className="flex flex-col gap-2 md:gap-3">
-                            {currentQuestion.options.map((opt, i) => (
+                            {currentQuestion?.options?.map((opt, i) => (
                                 <button 
                                     key={i}
                                     onClick={() => handleSelect(i)}

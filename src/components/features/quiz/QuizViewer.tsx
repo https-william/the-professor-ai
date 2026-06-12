@@ -9,7 +9,7 @@ import SessionComplete from "@/components/features/SessionComplete";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     X, Flag, Share2, GraduationCap, ClipboardList, 
-    RotateCcw, Lightbulb, CheckCircle2, XCircle, FileText, Download
+    RotateCcw, Lightbulb, CheckCircle2, XCircle, FileText, Download, AlertCircle
 } from "lucide-react";
 import { downloadQuizOffline } from "@/lib/offline-download";
 
@@ -46,7 +46,7 @@ export default function QuizViewer({ questions, title, generationId, initialTime
 
     // Timer logic
     useEffect(() => {
-        if (status !== 'taking' || questions.length === 0 || initialTimer === 0) return;
+        if (status !== 'taking' || !questions || questions.length === 0 || initialTimer === 0) return;
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
@@ -91,8 +91,8 @@ export default function QuizViewer({ questions, title, generationId, initialTime
         setShowSubmitModal(false);
         setIsSubmitting(true);
 
-        const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.correctIndex ? 1 : 0), 0);
-        const percentage = Math.round((score / questions.length) * 100);
+        const score = questions ? questions.reduce((acc, q, i) => acc + (answers[i] === q.correctIndex ? 1 : 0), 0) : 0;
+        const percentage = questions && questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
 
         try {
             const res = await fetch('/api/generate/remark', {
@@ -127,7 +127,30 @@ export default function QuizViewer({ questions, title, generationId, initialTime
         } catch (err) {}
     };
 
-    if (questions.length === 0) return null;
+    if (!questions || questions.length === 0) {
+        return (
+            <div className="min-h-screen bg-[#06060B] text-[var(--foreground)] flex flex-col items-center justify-center p-6 text-center select-none w-full">
+                <div className="max-w-md w-full bg-[#06060B]/60 border border-[var(--border)] rounded-[32px] p-8 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-in fade-in">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-[0.02] text-7xl font-black border-4 border-[var(--foreground)] p-6 text-[var(--foreground)] rounded-2xl select-none pointer-events-none">
+                        EMPTY
+                    </div>
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle size={32} className="text-[var(--foreground-muted)] animate-pulse" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3 text-[var(--foreground)]">No Questions Found</h3>
+                    <p className="text-sm text-[var(--foreground-muted)] leading-relaxed mb-8">
+                        The exam paper is completely blank. Let's head back to the library and review your study materials.
+                    </p>
+                    <button
+                        onClick={() => router.push('/library')}
+                        className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 active:scale-[0.98] transition-all"
+                    >
+                        Back to Library
+                    </button>
+                </div>
+            </div>
+        );
+    }
     const currentQuestion = questions[currentIndex];
 
     // Verdict View
@@ -271,13 +294,13 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                         </button>
                     </div>
 
-                    <h3 className="text-xl font-medium leading-relaxed">{currentQuestion.question}</h3>
+                    <h3 className="text-xl font-medium leading-relaxed">{currentQuestion?.question}</h3>
 
                     <div className="grid grid-cols-1 gap-4">
-                        {currentQuestion.options.map((opt, idx) => {
+                        {currentQuestion?.options?.map((opt, idx) => {
                             const isSelected = answers[currentIndex] === idx;
                             const isReview = status === 'review';
-                            const isCorrect = currentQuestion.correctIndex === idx;
+                            const isCorrect = currentQuestion?.correctIndex === idx;
 
                             let styles = "w-full p-5 rounded-2xl text-left transition-all flex items-center gap-4 group ";
                             
@@ -306,7 +329,7 @@ export default function QuizViewer({ questions, title, generationId, initialTime
                                 <Lightbulb size={14} />
                                 Explanation
                             </h4>
-                            <p className="text-sm opacity-70 leading-relaxed">{currentQuestion.explanation}</p>
+                            <p className="text-sm opacity-70 leading-relaxed">{currentQuestion?.explanation}</p>
                         </div>
                     )}
                 </div>

@@ -134,8 +134,8 @@ export default function DuelResults({
     const opponentScore = isHost ? challenger?.score || 0 : host.score;
     const isWinner = winnerId === userId;
     const isDraw = winnerId === null && host.score === challenger?.score;
-    const userPercentage = Math.round((userScore / questions.length) * 100);
-    const opponentPercentage = challenger ? Math.round((opponentScore / questions.length) * 100) : 0;
+    const userPercentage = (questions && questions.length > 0) ? Math.round((userScore / questions.length) * 100) : 0;
+    const opponentPercentage = (challenger && questions && questions.length > 0) ? Math.round((opponentScore / questions.length) * 100) : 0;
 
     const getGrade = (percentage: number) => {
         if (percentage === 100) return { label: "S", color: "var(--accent)", glow: "var(--accent-glow)" };
@@ -149,6 +149,7 @@ export default function DuelResults({
 
     const userGrade = getGrade(userPercentage);
     const opponentGrade = getGrade(opponentPercentage);
+    const reviewQuestion = (questions && questions.length > 0) ? questions[currentReviewIndex] : null;
 
     return (
         <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -225,7 +226,7 @@ export default function DuelResults({
                                     </div>
                                     <p className={`font-bold ${isHost ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>{host.name}</p>
                                     {isHost && <p className="text-[10px] text-[var(--secondary)] uppercase tracking-wider">You</p>}
-                                    <p className="text-3xl font-black mt-2" style={{ color: userGrade.color }}>{host.score}/{questions.length}</p>
+                                    <p className="text-3xl font-black mt-2" style={{ color: userGrade.color }}>{host.score}/{questions ? questions.length : 0}</p>
                                     <p className="text-lg font-bold" style={{ color: userGrade.color }}>{userGrade.label}</p>
                                 </div>
 
@@ -250,7 +251,7 @@ export default function DuelResults({
                                             </div>
                                             <p className={`font-bold ${!isHost ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>{challenger.name}</p>
                                             {!isHost && <p className="text-[10px] text-[var(--secondary)] uppercase tracking-wider">You</p>}
-                                            <p className="text-3xl font-black mt-2" style={{ color: opponentGrade.color }}>{challenger.score}/{questions.length}</p>
+                                            <p className="text-3xl font-black mt-2" style={{ color: opponentGrade.color }}>{challenger.score}/{questions ? questions.length : 0}</p>
                                             <p className="text-lg font-bold" style={{ color: opponentGrade.color }}>{opponentGrade.label}</p>
                                         </>
                                     ) : (
@@ -285,12 +286,14 @@ export default function DuelResults({
                             transition={{ delay: 0.4 }}
                             className="w-full space-y-4"
                         >
-                            <button
-                                onClick={() => setShowAnswers(true)}
-                                className="w-full py-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-[#06060B] hover:bg-white/90 shadow-[0_4px_24px_rgba(255,255,255,0.1)]"
-                            >
-                                Review Answers
-                            </button>
+                            {questions && questions.length > 0 && (
+                                <button
+                                    onClick={() => setShowAnswers(true)}
+                                    className="w-full py-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-[#06060B] hover:bg-white/90 shadow-[0_4px_24px_rgba(255,255,255,0.1)]"
+                                >
+                                    Review Answers
+                                </button>
+                            )}
 
                             {opponentRematchId && (
                                 <p className="text-xs text-[var(--accent)] font-bold text-center animate-bounce mb-1">
@@ -343,19 +346,19 @@ export default function DuelResults({
                             <button onClick={() => setShowAnswers(false)} className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5">
                                 <ChevronLeft size={20} strokeWidth={1.5} />
                             </button>
-                            <span className="text-sm font-bold text-[var(--foreground-muted)]">Question {currentReviewIndex + 1} of {questions.length}</span>
+                            <span className="text-sm font-bold text-[var(--foreground-muted)]">Question {currentReviewIndex + 1} of {questions ? questions.length : 0}</span>
                             <div className="w-8" />
                         </div>
 
                         <div className="rounded-[32px] overflow-hidden bg-[var(--card)] border border-[var(--border)]">
                             <div className="px-6 py-6">
                                 <p className="text-lg font-medium text-[var(--foreground)] mb-6">
-                                    {questions[currentReviewIndex].question}
+                                    {reviewQuestion?.question}
                                 </p>
 
                                 <div className="space-y-3">
-                                    {questions[currentReviewIndex].options.map((option, idx) => {
-                                        const isCorrect = idx === questions[currentReviewIndex].correctIndex;
+                                    {reviewQuestion?.options?.map((option, idx) => {
+                                        const isCorrect = idx === reviewQuestion?.correctIndex;
                                         
                                         return (
                                             <div
@@ -390,7 +393,7 @@ export default function DuelResults({
                                         Explanation
                                     </h4>
                                     <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
-                                        {questions[currentReviewIndex].explanation}
+                                        {reviewQuestion?.explanation}
                                     </p>
                                 </div>
                             </div>
@@ -406,7 +409,7 @@ export default function DuelResults({
                                 Prev
                             </button>
 
-                            {currentReviewIndex === questions.length - 1 ? (
+                            {currentReviewIndex === (questions ? questions.length - 1 : 0) ? (
                                  <button
                                     onClick={() => setShowAnswers(false)}
                                     className="px-6 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider bg-[var(--success)] text-[var(--background)]"
@@ -415,7 +418,7 @@ export default function DuelResults({
                                 </button>
                             ) : (
                                  <button
-                                    onClick={() => setCurrentReviewIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                                    onClick={() => setCurrentReviewIndex(prev => Math.min(questions ? questions.length - 1 : 0, prev + 1))}
                                     className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[var(--foreground)] text-[var(--background)] flex items-center gap-2"
                                 >
                                     Next
