@@ -64,23 +64,15 @@ DISTILLED_AESTHETICS_PROMPT = """
 </brand_voice_tone>
 """
 
-### Branding: B&W Pen Tip Migration
-- **What Changed:**
-  - Migrated `BrandLogo.tsx` from Amber/accent colors to high-contrast monochrome using `var(--foreground)` and `var(--background)`.
-  - Replaced all legacy "P" markers and `GraduationCap` icons with the `BrandLogo` component.
-  - Copied user-generated rounded favicon files to `public/` (favicon.ico, favicon-16x16.png, favicon-32x32.png, apple-touch-icon.png, android-chrome-*.png).
-  - Dark mode favicon variants stored at `public/favicons/dark/` for future use.
-  - Updated `layout.tsx` metadata to reference proper favicon paths and `site.webmanifest`.
-  - Neutralized Indigo/Purple/Rose glows in `ErrorBoundary.tsx`.
-  - Neutralized Amber loading spinners to `var(--foreground)`.
+### Branding: Midnight Scholar Color Accentuation
+- **Brand Theme Identity:** Clarified that the brand is NOT monochromatic. It maintains the rich, prestigious "Midnight Scholar" visual identity: a deep volcanic dark canvas accented by warm amber/gold glows, deep blue/violet ambient orbs, and emerald success states.
+- **Favicon Integrations:** Copied user-generated rounded favicon files to `public/` (favicon.ico, favicon-16x16.png, favicon-32x32.png, apple-touch-icon.png, android-chrome-*.png).
+- **Favicon Variants:** Dark mode favicon variants stored at `public/favicons/dark/` for future use.
+- **Metadata Configuration:** Updated `layout.tsx` metadata to reference proper favicon paths and `site.webmanifest`.
 - **Files Modified:**
-  - `src/components/ui/BrandLogo.tsx` (monochrome SVG)
-  - `src/components/ui/Sidebar.tsx` (removed Indigo "P")
-  - `src/components/navigation/DesktopSidebar.tsx` (BrandLogo integration)
-  - `src/components/ui/ErrorBoundary.tsx` (neutral glows)
-  - `src/app/summary/page.tsx` (B&W watermark in exports)
+  - `src/components/ui/BrandLogo.tsx` (restored color favicon rendering)
   - `src/app/layout.tsx` (favicon metadata + neutral spinner)
-  - `src/app/dashboard/page.tsx` (useEffect import fix + neutral spinner)
+  - `src/app/dashboard/page.tsx` (useEffect import fix)
   - `public/site.webmanifest` (NEW)
   - `public/favicon.ico`, `public/favicon-*.png`, `public/apple-touch-icon.png`, `public/android-chrome-*.png` (NEW — user assets)
 
@@ -94,3 +86,20 @@ DISTILLED_AESTHETICS_PROMPT = """
   - `src/middleware.ts` (NEW)
   - `src/proxy.ts` (DELETED)
 - **Verified:** Running `npx tsc --noEmit` compiles cleanly with no errors, confirming correct TypeScript signature for Middleware.
+
+## 2026-06-16 (Update 11: Midnight Scholar Accentuation & Color Restoration)
+- **What Changed:**
+  - Overhauled brand guidelines to explicitly reject monochromatic constraints, establishing the rich, prestigious "Midnight Scholar" palette (amber/gold `#E5A93C`, violet/indigo `#9673F5`, and emerald `#2BB288`) as the project-wide source of truth.
+  - Restored deep ambient glowing colors to the landing page, removing the flat, sterile black-and-white look.
+  - Boosted background `AmbientOrbs.tsx` opacity to add warm amber and blue/violet glows.
+  - Overhauled landing page sections: `HeroSection.tsx`, `PainSection.tsx`, `TheManifesto.tsx`, `HowItWorksSection.tsx`, and `InteractiveDemo.tsx` to align with the warm Midnight Scholar accent colors and remove generic blue-500 components.
+  - Redesigned `NavPill.tsx` with a responsive hamburger mobile dropdown menu and removed the legacy "Download" link.
+- **Files Modified:**
+  - `gemini.md` (Update 11 branding guidelines)
+  - `src/components/landing/HeroSection.tsx` (restored gold CTA gradients, warm halos, and drop-shadow glows)
+  - `src/components/landing/PainSection.tsx` (restored amber, indigo, and purple problem card themes)
+  - `src/components/landing/TheManifesto.tsx` (restored amber/gold and violet card themes and text highlights)
+  - `src/components/landing/HowItWorksSection.tsx` (replaced blue timeline nodes and badges with amber and indigo)
+  - `src/components/landing/InteractiveDemo.tsx` (restored amber/gold active indicators and tab highlights, removing blue elements)
+  - `src/components/ui/AmbientOrbs.tsx` (boosted orb glows)
+

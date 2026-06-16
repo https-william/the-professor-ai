@@ -21,42 +21,45 @@ export default function HeroSection() {
     <section className="relative w-full min-h-[95dvh] flex flex-col items-center justify-start pt-32 pb-16 px-4 md:px-8 lg:px-12 overflow-hidden bg-transparent z-10">
 
       {/* Hero Content Container */}
-      <div className="relative w-full max-w-6xl mx-auto flex flex-col items-center gap-12 z-10">
+      <div className="relative w-full max-w-6xl mx-auto flex flex-col items-center z-10">
         
-        {/* Top Badges & Headings Group */}
-        <div className="flex flex-col items-center text-center gap-6 max-w-4xl relative">
+        {/* Hero Text & CTA Block */}
+        <div className="flex flex-col items-center text-center max-w-4xl relative">
           {/* Pre-Headline Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 shadow-sm animate-fade-in">
-            <div className="w-2 h-2 rounded-full bg-black/40 dark:bg-white/60 animate-pulse shadow-[0_0_8px_rgba(0,0,0,0.15)] dark:shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
-            <span className="font-mono text-[10px] md:text-[11px] font-black text-black/60 dark:text-white/80 tracking-[0.2em] uppercase">
-              The Professor AI · Study Less
+          <div className="inline-flex items-center gap-2.5 px-4.5 py-1.5 rounded-full bg-amber-500/5 border border-amber-500/15 shadow-[0_2px_10px_rgba(229,169,60,0.02)] animate-fade-in mb-6">
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(229,169,60,0.5)]" />
+            <span className="font-mono text-[9px] md:text-[10px] font-black text-amber-200/80 tracking-[0.2em] uppercase">
+              The Professor AI · Study Less, Ace More
             </span>
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-3d font-heading text-5xl md:text-7xl lg:text-8xl font-black text-[var(--foreground)] leading-[1.05] tracking-tight">
+          <h1 className="font-heading text-4xl sm:text-6xl md:text-7xl lg:text-[80px] font-black text-[var(--foreground)] leading-[1.05] tracking-tight mb-6 uppercase">
             Your notes. <br />
-            Just the <span className="border-b-4 border-[var(--foreground)]/20 pb-1">good parts.</span>
+            Just the <span className="bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(229,169,60,0.25)]">good parts.</span>
           </h1>
 
           {/* Subheading */}
-          <p className="font-sans text-base md:text-lg lg:text-xl font-medium text-[var(--foreground-secondary)] opacity-85 max-w-xl leading-relaxed">
+          <p className="font-sans text-sm sm:text-base md:text-lg font-medium text-[var(--foreground-secondary)] opacity-85 max-w-2xl leading-relaxed mb-8">
             Uni is a lot, we get it. Drop your notes here and we'll turn them into simple, structured study guides so you can actually enjoy your day. Get your time back.
           </p>
-        </div>
 
-        {/* CTA Button Group */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in [--animation-delay:200ms]">
-          <Link
-            href="/signup"
-            className="px-10 py-5 text-[14px] font-black uppercase tracking-[0.15em] rounded-2xl flex items-center gap-2 bg-zinc-950 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-black shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_25px_rgba(255,255,255,0.08)] hover:shadow-[0_4px_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_4px_35px_rgba(255,255,255,0.15)] active:scale-[0.98] hover-lift-md transition-all duration-300"
-          >
-            Get Started <ArrowRight size={18} />
-          </Link>
+          {/* CTA Button Group */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in [--animation-delay:200ms] mb-16">
+            <Link
+              href="/signup"
+              className="px-10 py-4.5 rounded-2xl flex items-center gap-2 bg-gradient-to-b from-[#F2BE65] to-[#B8821F] text-zinc-950 font-sans font-black text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(229,169,60,0.35),inset_0_2px_0_0_rgba(255,255,255,0.4)] hover:shadow-[0_4px_25px_rgba(229,169,60,0.55),inset_0_2px_0_0_rgba(255,255,255,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300"
+            >
+              Get Started <ArrowRight size={16} />
+            </Link>
+          </div>
         </div>
 
         {/* Flat 2.0 Product Mockup Workspace Preview (Aesthetic Centerpiece) */}
-        <div className="w-full max-w-5xl rounded-[32px] border border-[var(--border)] bg-[var(--card)] shadow-[0_30px_70px_rgba(0,0,0,0.4)] overflow-hidden animate-fade-in [--animation-delay:350ms]">
+        <div className="relative w-full max-w-5xl animate-fade-in [--animation-delay:350ms]">
+          {/* Ambient Glow Halo behind Mockup */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/5 to-amber-500/10 rounded-[32px] filter blur-[80px] opacity-80 pointer-events-none -z-10" />
+          <div className="w-full rounded-[32px] border border-[var(--border)] bg-[var(--card)] shadow-[0_30px_70px_rgba(0,0,0,0.4)] overflow-hidden">
           
           {/* Simulated Browser Bar */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-2)]">
@@ -254,6 +257,7 @@ export default function HeroSection() {
 
           </div>
 
+        </div>
         </div>
 
         {/* Social Proof Ticker */}

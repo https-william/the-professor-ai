@@ -74,7 +74,7 @@ export default function PWAInstallBanner() {
 
                         <button
                             onClick={installApp}
-                            className="w-full py-2.5 px-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[12px] font-black uppercase tracking-wider shadow-xl hover-scale-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[12px] font-black uppercase tracking-wider shadow-[0_4px_15px_rgba(99,102,241,0.25)] hover-scale-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
                             <Download size={14} />
                             {isMobile ? "Save to Home" : "Save for Offline"}
@@ -92,20 +92,20 @@ export default function PWAInstallBanner() {
                     className="fixed bottom-6 left-6 right-6 z-[95] md:hidden"
                 >
                 <div 
-                    className="w-full p-3 rounded-full bg-[var(--foreground)] text-[var(--background)] shadow-[0_15px_40px_rgba(0,0,0,0.4)] flex items-center justify-between px-5 border border-white/10"
+                    className="w-full p-3 rounded-full bg-zinc-900 text-white shadow-[0_15px_40px_rgba(0,0,0,0.4)] flex items-center justify-between px-5 border border-violet-500/20"
                 >
                     <button
                         onClick={installApp}
-                        className="flex items-center gap-3 flex-1"
+                        className="flex items-center gap-3 flex-1 text-left"
                     >
-                        <div className="w-7 h-7 rounded-full bg-[var(--background)] flex items-center justify-center p-1.5 shadow-sm">
+                        <div className="w-7 h-7 rounded-full bg-zinc-950 flex items-center justify-center p-1.5 shadow-sm border border-white/5">
                             <BrandLogo size="xs" />
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-[0.05em]">Your Study Cave, Offline</span>
                     </button>
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-                        className="p-2 rounded-full hover:bg-black/10 transition-colors ml-2"
+                        className="p-2 rounded-full hover:bg-white/5 transition-colors ml-2"
                         aria-label="Dismiss"
                     >
                         <X size={16} className="opacity-60" />
