@@ -50,7 +50,7 @@ export default function BillingPage() {
             // Lazy load Paystack Popup
             const PaystackPop = (await import("@paystack/inline-js")).default;
             const popup = new PaystackPop();
-            const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+            const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || process.env.NEXT_PUBLIC_PAYSTACK_KEY;
             
             if (!publicKey) {
                 window.location.href = data.authorization_url;

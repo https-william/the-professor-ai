@@ -43,7 +43,12 @@ export async function POST(req: NextRequest) {
 
         // If it is a subscription plan, inject the Paystack Plan Code
         if (plan === "plus" || plan === "unlimited" || plan === "sprint_pass") {
-            params.plan = planCodes[plan];
+            const planCode = planCodes[plan];
+            if (planCode && !planCode.startsWith("PLN_mock_")) {
+                params.plan = planCode;
+            } else {
+                console.warn(`Paystack plan code for '${plan}' is missing or mock ('${planCode}'). Falling back to one-time payment.`);
+            }
         }
 
         const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
