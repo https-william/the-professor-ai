@@ -105,7 +105,7 @@ export default function NavPill() {
           {user.isAuthenticated ? (
             <Link
               href="/dashboard"
-              className="px-5 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-sans font-black text-[11px] uppercase tracking-wider transition-all hover:shadow-[0_4px_20px_rgba(99,102,241,0.3)] active:scale-95"
+              className="px-5 py-2 rounded-full bg-[#4A7CF5] hover:bg-[#3b6ee0] text-white font-sans font-black text-[11px] uppercase tracking-wider transition-all hover:shadow-[0_4px_12px_rgba(74,124,245,0.25)] active:scale-95"
             >
               Go to Hub
             </Link>
@@ -119,7 +119,7 @@ export default function NavPill() {
               </Link>
               <Link
                 href="/signup"
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-sans font-black text-[11px] uppercase tracking-wider transition-all hover:shadow-[0_4px_20px_rgba(99,102,241,0.3)] active:scale-95"
+                className="px-5 py-2 rounded-full bg-[#4A7CF5] hover:bg-[#3b6ee0] text-white font-sans font-black text-[11px] uppercase tracking-wider transition-all hover:shadow-[0_4px_12px_rgba(74,124,245,0.25)] active:scale-95"
               >
                 Get Started
               </Link>
@@ -201,7 +201,7 @@ export default function NavPill() {
                   <Link
                     href="/dashboard"
                     onClick={() => setIsOpen(false)}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-sans font-black text-center text-xs uppercase tracking-wider transition-all"
+                    className="w-full py-3 rounded-xl bg-[#4A7CF5] text-white font-sans font-black text-center text-xs uppercase tracking-wider transition-all hover:bg-[#3b6ee0]"
                   >
                     Go to Hub
                   </Link>
@@ -217,7 +217,7 @@ export default function NavPill() {
                     <Link
                       href="/signup"
                       onClick={() => setIsOpen(false)}
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-sans font-black text-center text-xs uppercase tracking-wider transition-all"
+                      className="w-full py-3 rounded-xl bg-[#4A7CF5] text-white font-sans font-black text-center text-xs uppercase tracking-wider transition-all hover:bg-[#3b6ee0]"
                     >
                       Get Started
                     </Link>

@@ -5,12 +5,12 @@ import { Brain, Zap, Target } from "lucide-react";
 
 const PILLARS = [
   {
-    icon: <Brain className="text-amber-400" size={20} />,
+    icon: <Brain className="text-blue-400" size={20} />,
     title: "Actually learn it",
     body: "Reading notes for hours is exhausting and, let's be honest, kind of boring. We help you actually get it, so you can stop re-reading the same page 42 times.",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-    hoverBorder: "hover:border-amber-500/20",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    hoverBorder: "hover:border-blue-500/20",
   },
   {
     icon: <Zap className="text-indigo-400" size={20} />,
@@ -37,15 +37,15 @@ export default function TheManifesto() {
         
         {/* Left Side: Title */}
         <div className="flex flex-col items-start gap-4">
-          <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-amber-500 uppercase">
+          <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
             Why We're Here
           </span>
           <h2 className="font-heading text-3xl md:text-5xl lg:text-6xl font-black text-[var(--foreground)] leading-[1.05] tracking-tight">
             Studying shouldn't <br />
-            be <span className="bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(229,169,60,0.25)]">this hard.</span>
+            be <span className="bg-gradient-to-r from-white via-blue-100 to-[#4A7CF5] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">this hard.</span>
           </h2>
           <p className="font-sans text-sm md:text-base leading-relaxed text-[var(--foreground-secondary)] opacity-85 font-medium max-w-lg mt-2">
-            Let's be real — uni is a lot of work. We built The Professor to cut through the noise and give you <span className="text-amber-400 font-extrabold">just the good parts</span> of your notes, so you can spend less time studying and more time living.
+            Let's be real — uni is a lot of work. We built The Professor to cut through the noise and give you <span className="text-blue-400 font-extrabold">just the good parts</span> of your notes, so you can spend less time studying and more time living.
           </p>
         </div>
 

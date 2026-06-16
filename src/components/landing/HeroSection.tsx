@@ -25,18 +25,10 @@ export default function HeroSection() {
         
         {/* Hero Text & CTA Block */}
         <div className="flex flex-col items-center text-center max-w-4xl relative">
-          {/* Pre-Headline Badge */}
-          <div className="inline-flex items-center gap-2.5 px-4.5 py-1.5 rounded-full bg-amber-500/5 border border-amber-500/15 shadow-[0_2px_10px_rgba(229,169,60,0.02)] animate-fade-in mb-6">
-            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(229,169,60,0.5)]" />
-            <span className="font-mono text-[9px] md:text-[10px] font-black text-amber-200/80 tracking-[0.2em] uppercase">
-              The Professor AI · Study Less, Ace More
-            </span>
-          </div>
-
           {/* Main Headline */}
-          <h1 className="font-heading text-4xl sm:text-6xl md:text-7xl lg:text-[80px] font-black text-[var(--foreground)] leading-[1.05] tracking-tight mb-6 uppercase">
+          <h1 className="font-sans text-[44px] leading-[1.05] sm:text-6xl md:text-7xl lg:text-[80px] font-black text-[var(--foreground)] tracking-tight mb-6 uppercase text-3d">
             Your notes. <br />
-            Just the <span className="bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(229,169,60,0.25)]">good parts.</span>
+            Just the <span className="bg-gradient-to-r from-white via-blue-100 to-[#4A7CF5] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">good parts.</span>
           </h1>
 
           {/* Subheading */}
@@ -48,7 +40,7 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in [--animation-delay:200ms] mb-16">
             <Link
               href="/signup"
-              className="px-10 py-4.5 rounded-2xl flex items-center gap-2 bg-gradient-to-b from-[#F2BE65] to-[#B8821F] text-zinc-950 font-sans font-black text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(229,169,60,0.35),inset_0_2px_0_0_rgba(255,255,255,0.4)] hover:shadow-[0_4px_25px_rgba(229,169,60,0.55),inset_0_2px_0_0_rgba(255,255,255,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300"
+              className="px-10 py-4.5 rounded-2xl flex items-center gap-2 bg-[#4A7CF5] text-white font-sans font-black text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(74,124,245,0.3),inset_0_2px_0_0_rgba(255,255,255,0.2)] hover:bg-[#3b6ee0] hover:shadow-[0_4px_25px_rgba(74,124,245,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300"
             >
               Get Started <ArrowRight size={16} />
             </Link>
@@ -193,7 +185,7 @@ export default function HeroSection() {
                         4 Core Milestones
                       </span>
                       <span className="px-2.5 py-1 rounded-lg bg-[var(--bg-3)] border border-[var(--border)] text-[10px] font-bold text-[var(--foreground-secondary)] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
                         10 Active Recall Cards
                       </span>
                     </div>
@@ -239,8 +231,8 @@ export default function HeroSection() {
                     </div>
 
                     {/* Module 4: Match Game */}
-                    <div className="p-4 rounded-2xl bg-[var(--bg-2)] border border-[var(--border)] hover:border-amber-500/20 hover:bg-[var(--bg-3)] transition-all cursor-pointer flex flex-col gap-3 group">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
+                    <div className="p-4 rounded-2xl bg-[var(--bg-2)] border border-[var(--border)] hover:border-violet-500/20 hover:bg-[var(--bg-3)] transition-all cursor-pointer flex flex-col gap-3 group">
+                      <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 group-hover:scale-105 transition-transform">
                         <Gamepad2 size={16} />
                       </div>
                       <div>

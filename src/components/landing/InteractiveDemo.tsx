@@ -23,7 +23,7 @@ function StudyGuidePanel() {
         </p>
         <div className="bg-[var(--bg-2)] border border-[var(--border)] rounded-[20px] p-6 relative overflow-hidden h-full flex flex-col justify-between">
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-3.5 h-3.5 rounded bg-amber-500 shadow-[0_0_8px_rgba(229,169,60,0.3)]" />
+            <div className="w-3.5 h-3.5 rounded bg-blue-500 shadow-[0_0_8px_rgba(74,124,245,0.3)]" />
             <span className="font-sans text-xs font-bold text-[var(--foreground)] truncate">ECO 201 — Lecture Notes.pdf</span>
           </div>
           
@@ -51,11 +51,11 @@ function StudyGuidePanel() {
 
       {/* Right — Generated Output */}
       <div className="flex flex-col gap-3">
-        <p className="font-sans text-[10px] font-extrabold tracking-wider text-amber-400 uppercase">
+        <p className="font-sans text-[10px] font-extrabold tracking-wider text-blue-400 uppercase">
           The Professor's Archive
         </p>
-        <div className="bg-[var(--bg-2)] border border-amber-500/15 rounded-[20px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col justify-between h-full relative">
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-amber-500">
+        <div className="bg-[var(--bg-2)] border border-blue-500/15 rounded-[20px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col justify-between h-full relative">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-blue-500">
             <Sparkles size={120} />
           </div>
           
@@ -67,7 +67,7 @@ function StudyGuidePanel() {
             <div className="space-y-4">
               {concepts.map(c => (
                 <div key={c.n} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5 text-amber-400 font-sans text-xs font-black">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 mt-0.5 text-blue-400 font-sans text-xs font-black">
                     {c.n}
                   </div>
                   <div>
@@ -79,7 +79,7 @@ function StudyGuidePanel() {
             </div>
           </div>
 
-          <div className="font-sans text-xs text-amber-400 font-extrabold mt-6 pt-4 border-t border-[var(--border)]/50">
+          <div className="font-sans text-xs text-blue-400 font-extrabold mt-6 pt-4 border-t border-[var(--border)]/50">
             + 7 more key concepts detected
           </div>
         </div>
@@ -126,13 +126,13 @@ function QuizPanel() {
   return (
     <div className="max-w-xl mx-auto flex flex-col gap-6 animate-fade-in">
       <div className="text-center">
-        <p className="font-sans text-[10px] font-extrabold tracking-wider text-amber-400 uppercase mb-1">Test Yourself</p>
+        <p className="font-sans text-[10px] font-extrabold tracking-wider text-blue-400 uppercase mb-1">Test Yourself</p>
         <p className="font-sans text-xs text-[var(--foreground-muted)] font-bold">Question 2 — Macroeconomics</p>
       </div>
 
       {/* Progress Bar */}
       <div className="w-full h-1 bg-[var(--bg-3)] rounded-full overflow-hidden">
-        <div className="w-[16.7%] h-full bg-amber-500 rounded-full shadow-[0_0_8px_rgba(229,169,60,0.5)]" />
+        <div className="w-[16.7%] h-full bg-blue-500 rounded-full shadow-[0_0_8px_rgba(74,124,245,0.5)]" />
       </div>
 
       {/* Question Card */}
@@ -226,10 +226,10 @@ export default function InteractiveDemo() {
         
         {/* Section Header */}
         <div className="text-center flex flex-col items-center gap-3">
-          <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-amber-500 uppercase">Live Preview</span>
+          <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">Live Preview</span>
           <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
             Turn your notes into <br className="hidden sm:inline" />
-            <span className="text-amber-500 text-shadow-[0_0_30px_rgba(229,169,60,0.15)]">something useful.</span>
+            <span className="text-blue-500 text-shadow-[0_0_30px_rgba(74,124,245,0.15)]">something useful.</span>
           </h2>
           <p className="font-sans text-xs md:text-sm font-medium text-[var(--foreground-secondary)] opacity-80 max-w-md mt-2">
             This is what happens when you drop an ECO 201 lecture here. No fluff, just what you need to pass.
@@ -247,7 +247,7 @@ export default function InteractiveDemo() {
                   onClick={() => setActiveTab(tab)}
                   className={`px-6 py-2.5 rounded-full font-sans text-[10px] font-extrabold tracking-wider uppercase transition-all duration-200 ${
                     isActive
-                      ? "bg-[var(--border)] text-amber-500 border border-[var(--amber-border)]"
+                      ? "bg-[var(--border)] text-blue-500 border border-[var(--blue-border)]"
                       : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
                   }`}
                 >
@@ -262,7 +262,7 @@ export default function InteractiveDemo() {
         <div className="relative overflow-hidden border border-[var(--border)] rounded-[32px] bg-gradient-to-br from-[var(--bg-2)] to-[var(--bg)] p-6 md:p-10 lg:p-12 min-h-[420px] flex flex-col justify-center">
           
           {/* Subtle Ambient Radial Glow */}
-          <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-amber-500/5 filter blur-[100px] pointer-events-none rounded-full" />
+          <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-500/5 filter blur-[100px] pointer-events-none rounded-full" />
           
           <div key={activeTab} className="relative z-10 w-full">
             {activeTab === "Study Guide" && <StudyGuidePanel />}

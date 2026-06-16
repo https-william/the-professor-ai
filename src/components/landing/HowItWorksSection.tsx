@@ -13,7 +13,7 @@ const STEPS = [
         {["PDF", "DOCX", "PPTX", "JPG / PNG", "WhatsApp forwards"].map(f => (
           <span 
             key={f} 
-            className="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-wider"
+            className="px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-wider"
           >
             {f}
           </span>
@@ -48,7 +48,7 @@ const STEPS = [
         {["Study Guide", "Summary", "Quiz", "Match Game"].map(f => (
           <span 
             key={f} 
-            className="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-wider"
+            className="px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-wider"
           >
             {f}
           </span>
@@ -62,7 +62,7 @@ const STEPS = [
     body: "Track your quiz accuracy over time. Watch your comprehension scores climb. Set a daily study goal and let The Professor remind you before your streak breaks.",
     side: "left" as const,
     extra: (
-      <div className="text-xs font-bold text-amber-500 mt-4 flex items-center gap-1.5">
+      <div className="text-xs font-bold text-violet-400 mt-4 flex items-center gap-1.5">
         🔥 Keep your streak — The Professor will remind you
       </div>
     ),
@@ -75,12 +75,12 @@ export default function HowItWorksSection() {
       
       {/* Section Header */}
       <div className="text-center flex flex-col items-center gap-3 max-w-2xl mx-auto mb-20">
-        <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-amber-500 uppercase">
+        <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
           How It Works
         </span>
         <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
           From notes to exam-ready <br className="hidden sm:inline" />
-          in under <span className="text-amber-500 text-shadow-[0_0_30px_rgba(229,169,60,0.15)]">60 seconds.</span>
+          in under <span className="text-blue-500 text-shadow-[0_0_30px_rgba(74,124,245,0.15)]">60 seconds.</span>
         </h2>
       </div>
 
@@ -94,10 +94,10 @@ export default function HowItWorksSection() {
           {STEPS.map((step, i) => {
             const isEven = i % 2 === 0;
             const nodeStyle = isEven 
-              ? "bg-amber-500/10 border border-amber-500/25 text-amber-400 shadow-amber-500/5"
+              ? "bg-blue-500/10 border border-blue-500/25 text-blue-400 shadow-blue-500/5"
               : "bg-violet-500/10 border border-violet-500/25 text-violet-400 shadow-violet-500/5";
             const hoverBorder = isEven 
-              ? "hover:border-amber-500/20" 
+              ? "hover:border-blue-500/20" 
               : "hover:border-violet-500/20";
             return (
               <div
