@@ -307,54 +307,54 @@ function ArenaContent() {
     }
 
     return (
-        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative flex flex-col flex-1">
+        <div className="bg-transparent text-[var(--foreground)] pt-[76px] pb-3 md:pb-4 relative flex flex-col flex-1 h-auto md:h-[calc(100vh-68px)] max-h-none md:max-h-[850px] min-h-0 md:min-h-[550px] overflow-x-hidden overflow-y-auto md:overflow-hidden">
             {/* Ambient Background Grid & Radial Halos */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
             <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#6366F1]/5 via-[#EF4444]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
 
-            <StandardContainer className="relative z-10">
-                <div className="w-full max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StandardContainer className="relative z-10 flex-1 flex flex-col min-h-0 py-0 h-full">
+                <div className="w-full max-w-4xl mx-auto flex flex-col md:h-full justify-between gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 min-h-0">
                     
                     {/* Header Block */}
-                    <div className="text-center space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 backdrop-blur-md">
-                            <Sword size={12} className="text-indigo-400" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
+                    <div className="text-center space-y-1 md:space-y-1.5 shrink-0">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/5 backdrop-blur-md">
+                            <Sword size={9} className="text-indigo-400" />
+                            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
                                 Classmate Trivia Arena
                             </span>
                         </div>
-                        <h1 className="text-4xl sm:text-6xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
+                        <h1 className="text-2xl sm:text-4xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
                             Trivia <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">Arena</span>
                         </h1>
-                        <p className="text-sm text-[var(--foreground-muted)] max-w-xl mx-auto font-medium opacity-80 leading-relaxed">
-                            Join a lobby, wager XP, and duel your classmates in real-time speed battles generated from your class notes.
+                        <p className="text-[10px] sm:text-xs text-[var(--foreground-muted)] max-w-xl mx-auto font-medium opacity-80">
+                            Join a lobby, wager XP, and duel your classmates in real-time speed battles.
                         </p>
                     </div>
  
                     {/* Main Panels */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 flex-1 min-h-0 md:h-full">
                         {/* Left Column: Actions */}
-                        <div className="md:col-span-2 space-y-6">
+                        <div className="md:col-span-2 flex flex-col gap-3 md:gap-4 min-h-0 h-full">
                             {/* Action Box: Host a Duel */}
-                            <div className="p-8 rounded-[2rem] bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-2xl flex flex-col justify-between relative overflow-hidden">
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-md">
-                                            <UserPlus size={18} />
+                            <div className="p-4 md:p-5 rounded-3xl bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-2xl flex flex-col justify-between relative overflow-hidden flex-1 min-h-0">
+                                <div className="space-y-3 md:space-y-4 flex-1 flex flex-col min-h-0">
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-md">
+                                            <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-black uppercase tracking-wider text-white">Create a Custom Duel</h3>
-                                            <p className="text-[10px] text-[var(--foreground-muted)] font-bold uppercase mt-0.5">Invite a classmate using a room code</p>
+                                            <h3 className="text-xs font-black uppercase tracking-wider text-white">Create a Custom Duel</h3>
+                                            <p className="text-[8px] sm:text-[9px] text-[var(--foreground-muted)] font-bold uppercase mt-0.5">Invite a classmate using a room code</p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
+                                    <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
                                         {/* Host Mode Toggles */}
-                                        <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-xl">
+                                        <div className="flex p-0.5 bg-white/[0.02] border border-white/5 rounded-xl shrink-0">
                                             <button
                                                 onClick={() => setHostMode('notes')}
                                                 className={cn(
-                                                    "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                                    "flex-1 py-2 sm:py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer",
                                                     hostMode === 'notes'
                                                         ? "bg-white text-black font-black"
                                                         : "text-[var(--foreground-muted)] hover:text-white"
@@ -365,7 +365,7 @@ function ArenaContent() {
                                             <button
                                                 onClick={() => setHostMode('topic')}
                                                 className={cn(
-                                                    "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                                    "flex-1 py-2 sm:py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer",
                                                     hostMode === 'topic'
                                                         ? "bg-white text-black font-black"
                                                         : "text-[var(--foreground-muted)] hover:text-white"
@@ -376,12 +376,12 @@ function ArenaContent() {
                                         </div>
 
                                         {hostMode === 'notes' ? (
-                                            <div className="flex flex-col space-y-2.5">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Select Study Quiz</label>
+                                            <div className="flex flex-col space-y-1.5 shrink-0">
+                                                <label className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Select Study Quiz</label>
                                                 <select
                                                     value={selectedQuizId}
                                                     onChange={(e) => setSelectedQuizId(e.target.value)}
-                                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3.5 text-xs font-bold text-white outline-none focus:border-white/20 transition-all cursor-pointer"
+                                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 sm:py-2.5 text-xs font-bold text-white outline-none focus:border-white/20 transition-all cursor-pointer"
                                                     disabled={loadingPacks}
                                                 >
                                                     {loadingPacks ? (
@@ -396,23 +396,23 @@ function ArenaContent() {
                                                 </select>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col space-y-2.5">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Topic to Study</label>
+                                            <div className="flex flex-col space-y-1.5 shrink-0">
+                                                <label className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Topic to Study</label>
                                                 <input
                                                     type="text"
                                                     value={quickTopicInput}
                                                     onChange={(e) => setQuickTopicInput(e.target.value)}
-                                                    placeholder="E.g. Photosynthesis, General Science, World War II..."
-                                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3.5 text-xs font-bold text-white outline-none focus:border-white/20 transition-all"
+                                                    placeholder="E.g. Photosynthesis, General Science..."
+                                                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 sm:py-2.5 text-base sm:text-xs font-bold text-white outline-none focus:border-white/20 transition-all"
                                                 />
-                                                <div className="flex flex-wrap gap-1.5 mt-1">
+                                                <div className="flex flex-wrap gap-1 mt-1">
                                                     {["General Knowledge 🌍", "Pop Culture 🎬", "Science & Tech 🚀", "World History ⏳", "Basic Mathematics 🧮"].map(suggestion => {
                                                         const cleanVal = suggestion.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, "").trim();
                                                         return (
                                                             <button
                                                                 key={suggestion}
                                                                 onClick={() => setQuickTopicInput(cleanVal)}
-                                                                className="px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 text-[9px] font-bold text-[var(--foreground-muted)] hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                                                                className="px-2 py-1 sm:py-0.5 rounded-lg bg-white/[0.02] border border-white/5 text-[8px] font-bold text-[var(--foreground-muted)] hover:text-white hover:bg-white/5 transition-all cursor-pointer"
                                                             >
                                                                 {suggestion}
                                                             </button>
@@ -422,9 +422,9 @@ function ArenaContent() {
                                             </div>
                                         )}
 
-                                        <div className="flex flex-col space-y-2.5">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Match Wager (XP)</label>
-                                            <div className="grid grid-cols-4 gap-2">
+                                        <div className="flex flex-col space-y-1.5 shrink-0">
+                                            <label className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Match Wager (XP)</label>
+                                            <div className="grid grid-cols-4 gap-1.5">
                                                 {[50, 100, 250, 500].map(val => (
                                                     <button
                                                         key={val}
@@ -433,7 +433,7 @@ function ArenaContent() {
                                                             setWagerError(null);
                                                         }}
                                                         className={cn(
-                                                            "py-2.5 rounded-lg text-xs font-black uppercase transition-all border cursor-pointer",
+                                                            "py-2.5 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all border cursor-pointer",
                                                             wagerXp === val 
                                                                 ? "bg-white text-black border-white"
                                                                 : "bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:bg-white/10"
@@ -446,8 +446,8 @@ function ArenaContent() {
                                         </div>
 
                                         {wagerError && (
-                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                                                <AlertCircle size={12} />
+                                            <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider flex items-center gap-1.5 animate-pulse shrink-0">
+                                                <AlertCircle size={10} />
                                                 <span>{wagerError}</span>
                                             </p>
                                         )}
@@ -458,7 +458,7 @@ function ArenaContent() {
                                     onClick={handleCreateLobby}
                                     disabled={isQuickGenerating || (hostMode === 'notes' && quizzes.length === 0)}
                                     className={cn(
-                                        "w-full py-4 rounded-xl font-black text-xs uppercase tracking-wider mt-6 transition-all flex items-center justify-center gap-2 cursor-pointer",
+                                        "w-full py-3.5 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-xs uppercase tracking-wider mt-3 md:mt-4 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0",
                                         (hostMode === 'notes' && quizzes.length === 0)
                                             ? "bg-white/5 text-white/20 border border-white/5 cursor-not-allowed"
                                             : "bg-white text-black hover:bg-white/90 active:scale-98"
@@ -471,7 +471,7 @@ function ArenaContent() {
                                         </>
                                     ) : (
                                         <>
-                                            <Play size={12} fill="currentColor" />
+                                            <Play size={10} fill="currentColor" />
                                             <span>Generate Lobby Code</span>
                                         </>
                                     )}
@@ -479,34 +479,34 @@ function ArenaContent() {
                             </div>
 
                             {/* Action Box: Join / Quick Match */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="p-6 rounded-2xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col justify-between">
-                                    <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 shrink-0">
+                                <div className="p-3.5 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col justify-between h-[115px] sm:h-[120px]">
+                                    <div className="space-y-1.5">
                                         <h4 className="text-xs font-black uppercase tracking-wider text-white">Join Active Lobby</h4>
                                         <input
                                             type="text"
                                             value={joinCodeInput}
                                             onChange={(e) => setJoinCodeInput(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 6))}
-                                            placeholder="Enter 6-digit Code"
-                                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-mono font-bold text-center tracking-[0.2em] text-white outline-none focus:border-white/20 transition-all"
+                                            placeholder="6-digit Code"
+                                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-1.5 text-base sm:text-xs font-mono font-bold text-center tracking-[0.2em] text-white outline-none focus:border-white/20 transition-all"
                                         />
                                     </div>
                                     <button 
                                         onClick={handleJoinWithCode}
-                                        className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-wider border border-white/5 mt-4 transition-all"
+                                        className="w-full py-2.5 sm:py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-black text-xs sm:text-[10px] uppercase tracking-wider border border-white/5 transition-all"
                                     >
                                         Connect Room
                                     </button>
                                 </div>
 
-                                <div className="p-6 rounded-2xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col justify-between relative overflow-hidden">
-                                    <div className="space-y-2">
+                                <div className="p-3.5 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col justify-between h-[115px] sm:h-[120px] relative overflow-hidden">
+                                    <div className="space-y-1">
                                         <h4 className="text-xs font-black uppercase tracking-wider text-white">Matchmaking Match</h4>
-                                        <p className="text-[10px] text-[var(--foreground-muted)] font-bold uppercase leading-relaxed">Auto-pair with any classmate currently active online.</p>
+                                        <p className="text-[8px] sm:text-[9px] text-[var(--foreground-muted)] font-bold uppercase leading-none mt-0.5">Auto-pair with any classmate active online.</p>
                                     </div>
                                     <button 
                                         onClick={handleQuickMatch}
-                                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-rose-500 text-white font-black text-xs uppercase tracking-wider mt-4 transition-all shadow-[0_4px_20px_rgba(99,102,241,0.2)] hover:opacity-95 active:scale-98"
+                                        className="w-full py-2.5 sm:py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-rose-500 text-white font-black text-xs sm:text-[10px] uppercase tracking-wider transition-all shadow-[0_4px_20px_rgba(99,102,241,0.2)] hover:opacity-95 active:scale-98"
                                     >
                                         Find Match
                                     </button>
@@ -515,11 +515,11 @@ function ArenaContent() {
                         </div>
 
                         {/* Right Column: Active Lobbies & Stats */}
-                        <div className="space-y-6">
+                        <div className="flex flex-col gap-4 min-h-0 h-full">
                             {/* Stats panel */}
-                            <div className="p-6 rounded-[2rem] bg-zinc-950/45 border border-white/5 shadow-xl flex items-center justify-between">
+                            <div className="p-4 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex items-center justify-between shrink-0">
                                 <div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Your Wager Reserves</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Your Wager Reserves</span>
                                     <div className="flex items-center gap-2 mt-1">
                                         <Trophy size={14} className="text-[#F59E0B]" />
                                         <span className="text-xl font-black italic text-white">{user.xp?.toLocaleString() || "0"} XP</span>
@@ -530,21 +530,38 @@ function ArenaContent() {
                                 </div>
                             </div>
 
+                            {/* XP Explainer card */}
+                            <div className="p-4 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col gap-1.5 relative overflow-hidden shrink-0">
+                                <div className="absolute top-0 right-0 p-4 opacity-[0.02] text-white pointer-events-none">
+                                    <Zap size={60} />
+                                </div>
+                                <div className="flex items-center gap-1.5 text-white/50">
+                                    <Zap size={11} className="text-amber-400" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest">What is XP?</span>
+                                </div>
+                                <p className="text-[10px] text-white/70 leading-relaxed font-bold">
+                                    Think of XP as your academic sweat equity. You get it by reviewing notes, running flashcard sprints, and completing quizzes.
+                                </p>
+                                <p className="text-[10px] text-white/70 leading-relaxed font-bold border-t border-white/5 pt-1.5 mt-0.5">
+                                    In the Arena, you wager XP on speed duels against classmates. Win the speed battle, win the pot. It also determines your Rank title.
+                                </p>
+                            </div>
+
                             {/* Live lobbies list */}
-                            <div className="p-6 rounded-[2rem] bg-zinc-950/45 border border-white/5 shadow-xl space-y-4">
-                                <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                            <div className="p-4 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl space-y-3 flex-1 min-h-0 flex flex-col">
+                                <div className="flex items-center justify-between pb-2 border-b border-white/5 shrink-0">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-1.5">
                                         <Tv size={12} className="text-emerald-400" /> Live Rooms
                                     </span>
                                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                                 </div>
 
-                                <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                                <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0">
                                     {activeLobbies.length > 0 ? (
                                         activeLobbies.map(lobby => (
                                             <div 
                                                 key={lobby.id}
-                                                className="p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col gap-2 hover:border-white/10 transition-all"
+                                                className="p-3 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col gap-2 hover:border-white/10 transition-all"
                                             >
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-xs font-bold text-white">{lobby.hostName}</span>
@@ -573,7 +590,7 @@ function ArenaContent() {
                                                                 addToast(data.error || "Failed to join", "error");
                                                             }
                                                         }}
-                                                        className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-black uppercase text-white mt-2 transition-all"
+                                                        className="w-full py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-black uppercase text-white mt-1 transition-all"
                                                     >
                                                         Join Duel
                                                     </button>

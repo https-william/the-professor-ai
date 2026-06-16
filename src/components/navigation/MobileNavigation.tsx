@@ -35,7 +35,7 @@ export default function MobileNavigation() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className="relative flex-1 h-10 flex flex-col items-center justify-center transition-all duration-300 z-10 group active:scale-95"
+                            className="relative flex-1 h-11 flex flex-col items-center justify-center transition-all duration-300 z-10 group active:scale-95"
                         >
                             {isActive && (
                                 <motion.div
