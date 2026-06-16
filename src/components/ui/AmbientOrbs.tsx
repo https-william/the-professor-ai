@@ -25,7 +25,7 @@ export default function AmbientOrbs() {
         style={{
           background: "radial-gradient(circle, var(--blue), transparent 70%)",
           filter: "blur(80px)",
-          opacity: "calc(var(--orb-opacity) * 2.6)",
+          opacity: "calc(var(--orb-opacity) * 1.2)",
           willChange: "transform",
           transform: "translate3d(0,0,0)",
           backfaceVisibility: "hidden",
@@ -38,7 +38,7 @@ export default function AmbientOrbs() {
         style={{
           background: "radial-gradient(circle, #E5A93C, transparent 70%)",
           filter: "blur(90px)",
-          opacity: "calc(var(--orb-opacity) * 2.2)",
+          opacity: "calc(var(--orb-opacity) * 1.0)",
           willChange: "transform",
           transform: "translate3d(0,0,0)",
           backfaceVisibility: "hidden",
@@ -51,7 +51,7 @@ export default function AmbientOrbs() {
         style={{
           background: "radial-gradient(circle, var(--violet), transparent 70%)",
           filter: "blur(100px)",
-          opacity: "calc(var(--orb-opacity) * 2.0)",
+          opacity: "calc(var(--orb-opacity) * 1.0)",
           willChange: "transform",
           transform: "translate3d(0,0,0)",
           backfaceVisibility: "hidden",

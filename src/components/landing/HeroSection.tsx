@@ -26,7 +26,10 @@ export default function HeroSection() {
         {/* Hero Text & CTA Block */}
         <div className="flex flex-col items-center text-center max-w-4xl relative">
           {/* Main Headline */}
-          <h1 className="font-sans text-[44px] leading-[1.05] sm:text-6xl md:text-7xl lg:text-[80px] font-black text-[var(--foreground)] tracking-tight mb-6 uppercase text-3d">
+          <h1 
+            style={{ fontFamily: "var(--font-outfit)" }}
+            className="text-[44px] leading-[1.05] sm:text-6xl md:text-7xl lg:text-[80px] font-black text-[var(--foreground)] tracking-tight mb-6 uppercase text-3d"
+          >
             Your notes. <br />
             Just the <span className="bg-gradient-to-r from-white via-blue-100 to-[#4A7CF5] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">good parts.</span>
           </h1>

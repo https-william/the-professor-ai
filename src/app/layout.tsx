@@ -26,7 +26,7 @@ import PWAInstallBanner from "@/components/ui/PWAInstallBanner";
 import ProfessorTour from "@/components/features/ProfessorTour";
 import SiteHeader from "@/components/ui/SiteHeader";
 import NavigationLoader from "@/components/ui/NavigationLoader";
-import AmbientOrbs from "@/components/ui/AmbientOrbs";
+import MainLayoutWrapper from "@/components/ui/MainLayoutWrapper";
 import MotionConfigProvider from "@/components/providers/MotionConfigProvider";
 
 /* ═══ Typography Stack ═══
@@ -348,9 +348,7 @@ export default function RootLayout({
                     
                     <SiteHeader showLogo={true} />
                     <NavigationLoader />
-                <main className="platform-main-container relative min-h-screen w-full flex flex-col flex-1 bg-zinc-950/70 backdrop-blur-md border border-zinc-800/50">
-                  <div className="noise-overlay" />
-                  <AmbientOrbs />
+                <MainLayoutWrapper>
                   
                   <div id="main-scroll-container" className="flex-1 relative w-full z-[1] flex flex-col">
                     <div className="flex-1 flex flex-col relative z-[10]">
@@ -358,7 +356,7 @@ export default function RootLayout({
                     </div>
                     <Footer />
                   </div>
-                </main>
+                </MainLayoutWrapper>
     
                     {/* Mobile nav handled by PlatformLoader */}
                     <CookieBanner />

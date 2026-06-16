@@ -82,10 +82,10 @@ export default function ScholarShaderCanvas() {
         float val3 = smoothstep(0.65, 0.0, d3);
 
         // Colors
-        vec3 dark_bg = vec3(0.015, 0.015, 0.024);       // Deep near-black (#040406)
-        vec3 dark_blue = vec3(0.06, 0.18, 0.55);       // Rich brand blue (#0f2e8c)
-        vec3 dark_violet = vec3(0.22, 0.10, 0.50);     // Rich brand violet (#381a80)
-        vec3 dark_amber = vec3(0.40, 0.22, 0.02);      // Rich brand amber (#663805)
+        vec3 dark_bg = vec3(0.008, 0.008, 0.012);       // Deepest near-black (#020203)
+        vec3 dark_blue = vec3(0.015, 0.05, 0.18);       // Subdued prestigious blue
+        vec3 dark_violet = vec3(0.05, 0.02, 0.15);      // Subdued prestigious violet
+        vec3 dark_amber = vec3(0.08, 0.04, 0.005);     // Subdued prestigious amber
 
         vec3 light_bg = vec3(0.965, 0.965, 0.975);      // Soft cool white (#f6f6f9)
         vec3 light_blue = vec3(0.38, 0.60, 0.96);        // Vivid sky blue (#6199f4)
@@ -303,7 +303,7 @@ export default function ScholarShaderCanvas() {
       ref={canvasRef}
       id="scholar-shader-canvas"
       className="fixed inset-0 w-full h-full -z-10 bg-transparent pointer-events-none transition-opacity duration-1000"
-      style={{ opacity: 0.92 }}
+      style={{ opacity: 0.60 }}
     />
   );
 }
