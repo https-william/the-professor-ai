@@ -86,6 +86,124 @@ function LoginForm() {
         if (error) { setError(error.message); setLoading(false); }
     };
 
+    const renderError = () => {
+        if (!error) return null;
+
+        // Detect custom Google OAuth warning
+        if (error.includes("registered using Google")) {
+            return (
+                <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    padding: "16px",
+                    borderRadius: "1.25rem",
+                    marginBottom: "20px",
+                    background: "rgba(229, 169, 60, 0.1)",
+                    border: "1px solid rgba(229, 169, 60, 0.25)",
+                    color: "var(--amber-text)",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "13px",
+                    boxShadow: "0 4px 12px rgba(229, 169, 60, 0.05)"
+                }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700 }}>
+                        <span style={{ fontSize: "16px" }}>💡</span> Registered via Google
+                    </div>
+                    <div style={{ opacity: 0.85, lineHeight: "1.4" }}>
+                        Please use the <strong>Continue with Google</strong> button above to sign in to your account.
+                    </div>
+                </div>
+            );
+        }
+
+        // Detect unconfirmed email warning
+        if (error.includes("confirmation link") || error.includes("confirm your email")) {
+            return (
+                <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    padding: "16px",
+                    borderRadius: "1.25rem",
+                    marginBottom: "20px",
+                    background: "rgba(74, 124, 245, 0.1)",
+                    border: "1px solid rgba(74, 124, 245, 0.25)",
+                    color: "var(--blue-text)",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "13px",
+                    boxShadow: "0 4px 12px rgba(74, 124, 245, 0.05)"
+                }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700 }}>
+                        <span style={{ fontSize: "16px" }}>✉️</span> Confirm your email
+                    </div>
+                    <div style={{ opacity: 0.85, lineHeight: "1.4" }}>
+                        We sent a confirmation link to your email. Click it to unlock your account.
+                    </div>
+                </div>
+            );
+        }
+
+        // Default incorrect credentials error (cleaner, structured)
+        if (error.toLowerCase().includes("match our notes") || error.toLowerCase().includes("invalid login") || error.toLowerCase().includes("invalid credentials")) {
+            return (
+                <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    padding: "16px",
+                    borderRadius: "1.25rem",
+                    marginBottom: "20px",
+                    background: "rgba(232, 93, 117, 0.08)",
+                    border: "1px solid rgba(232, 93, 117, 0.2)",
+                    color: "var(--crimson-text)",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "13px",
+                    boxShadow: "0 4px 12px rgba(232, 93, 117, 0.05)"
+                }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700 }}>
+                        <span style={{ fontSize: "16px" }}>⚠️</span> Let's check those details
+                    </div>
+                    <div style={{ opacity: 0.85, lineHeight: "1.4" }}>
+                        That email or password doesn't match our notes.
+                    </div>
+                    <div style={{ 
+                        borderTop: "1px solid rgba(232, 93, 117, 0.15)", 
+                        paddingTop: "8px", 
+                        marginTop: "4px", 
+                        display: "flex", 
+                        flexDirection: "column", 
+                        gap: "6px",
+                        fontSize: "11px",
+                        opacity: 0.75
+                    }}>
+                        <div>• Typos in the email address or password?</div>
+                        <div>• Registered using Google? Try Google sign-in instead.</div>
+                        <div>• Newly signed up? Make sure your email link is confirmed.</div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Standard fallback error
+        return (
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 16px",
+                borderRadius: "1.25rem",
+                marginBottom: "20px",
+                background: "rgba(232, 93, 117, 0.08)",
+                border: "1px solid rgba(232, 93, 117, 0.2)",
+                color: "var(--crimson-text)",
+                fontFamily: "var(--font-sans)",
+                fontSize: "13px",
+            }}>
+                ⚠️ {error}
+            </div>
+        );
+    };
+
     return (
         <div style={{
             minHeight: "100dvh",
@@ -199,25 +317,7 @@ function LoginForm() {
                 </div>
 
                 {/* Error */}
-                {error && (
-                    <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "12px 16px",
-                        borderRadius: "1rem",
-                        marginBottom: "20px",
-                        background: "rgba(220, 38, 38, 0.2)",
-                        border: "1px solid rgba(220, 38, 38, 0.4)",
-                        color: "#fecaca",
-                        fontFamily: "'Outfit',sans-serif",
-                        fontSize: "13px",
-                        fontWeight: "700",
-                        boxShadow: "0 0 10px rgba(220, 38, 38, 0.15)"
-                    }}>
-                        ⚠ {error}
-                    </div>
-                )}
+                {renderError()}
 
                 {/* Form */}
                 <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
