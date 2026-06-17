@@ -179,19 +179,19 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 padding: isApp ? "8px 16px" : (isMobile ? "10px 16px" : "12px 24px"),
                 borderRadius: isApp ? "24px" : "9999px",
                 backgroundColor: scrolled 
-                    ? "rgba(var(--background-secondary-rgb), 0.95)" 
-                    : (isApp ? "transparent" : "rgba(var(--background-secondary-rgb), 0.5)"),
-                backdropFilter: scrolled 
-                    ? "blur(24px) saturate(180%)" 
-                    : (isApp ? "none" : "blur(12px) saturate(150%)"),
-                border: scrolled 
-                    ? "1px solid var(--border)" 
-                    : (isApp ? "1px solid transparent" : "1px solid var(--border)"),
+                    ? (resolvedTheme === "dark" ? "rgba(9, 9, 11, 0.70)" : "rgba(255, 255, 255, 0.75)")
+                    : (resolvedTheme === "dark" ? "rgba(9, 9, 11, 0.40)" : "rgba(255, 255, 255, 0.45)"),
+                backdropFilter: "blur(20px) saturate(160%)",
+                border: resolvedTheme === "dark"
+                    ? "1px solid rgba(255, 255, 255, 0.08)"
+                    : "1px solid rgba(15, 23, 42, 0.08)",
                 boxShadow: scrolled 
                     ? (resolvedTheme === "dark" 
-                        ? "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)" 
+                        ? "0 20px 60px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.08)" 
                         : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)") 
-                    : "none",
+                    : (resolvedTheme === "dark"
+                        ? "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.05)"
+                        : "0 8px 32px rgba(15, 23, 42, 0.03), inset 0 1px 1px rgba(255,255,255,0.4)"),
             }}
             className={cn(
                 "fixed z-[10000] items-center pointer-events-none [&>div]:pointer-events-auto transition-all duration-300 ease-in-out",

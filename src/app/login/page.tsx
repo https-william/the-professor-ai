@@ -32,7 +32,7 @@ function LoginForm() {
         if (loginError) { 
             let msg = loginError.message;
             if (msg.toLowerCase().includes("invalid login credentials") || msg.toLowerCase().includes("invalid credentials")) {
-                msg = "Hmm, that email or password doesn't match our notes. Try checking for typos?";
+                msg = "Hmm, that email or password doesn't match our notes. Try checking for typos? (Note: If you just signed up, make sure to confirm your email link. If you registered via Google, sign in with Google!)";
             } else if (msg.toLowerCase().includes("email not confirmed")) {
                 msg = "Almost there! We sent a confirmation link to your email. Click it to unlock your account.";
             } else if (msg.toLowerCase().includes("rate limit")) {
