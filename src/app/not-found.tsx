@@ -34,15 +34,8 @@ export default function NotFound() {
 
                 <div className="space-y-4">
                     <Link 
-                        href="/dashboard"
-                        className="block w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest transition-all hover-scale-md active:scale-[0.98] shadow-xl"
-                    >
-                        Return to Dashboard
-                    </Link>
-                    
-                    <Link 
                         href="/"
-                        className="block w-full py-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] font-bold text-xs uppercase tracking-widest transition-all hover:bg-[var(--background-tertiary)]"
+                        className="block w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest transition-all hover-scale-md active:scale-[0.98] shadow-xl"
                     >
                         Back to Campus
                     </Link>

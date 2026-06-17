@@ -13,6 +13,7 @@ function LoginForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [googleHighlight, setGoogleHighlight] = useState(false);
     const router = useRouter();
     const supabase = createClient();
     const searchParams = useSearchParams();
@@ -23,6 +24,23 @@ function LoginForm() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setGoogleHighlight(false);
+
+        // Pre-check if email is registered exclusively with Google OAuth
+        try {
+            const checkRes = await fetch(`/api/auth/check-provider?email=${encodeURIComponent(email)}`);
+            if (checkRes.ok) {
+                const checkData = await checkRes.json();
+                if (checkData.exists && checkData.isGoogleOnly) {
+                    setError("It looks like you registered using Google! Click the 'Continue with Google' button below to sign in.");
+                    setGoogleHighlight(true);
+                    setLoading(false);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error("Failed to check auth provider options:", err);
+        }
         
         const { data: { user: authUser }, error: loginError } = await supabase.auth.signInWithPassword({ 
             email, 
@@ -46,6 +64,7 @@ function LoginForm() {
                 .select("has_onboarded")
                 .eq("id", authUser.id)
                 .single();
+
 
             if (profile?.has_onboarded === false) {
                 router.push(`/onboarding?next=${encodeURIComponent(nextUrl)}`);
@@ -145,6 +164,7 @@ function LoginForm() {
                 <button
                     onClick={handleGoogleLogin}
                     disabled={loading}
+                    className={googleHighlight ? "google-shake-highlight" : ""}
                     style={{
                         width: "100%",
                         background: "var(--bg-2)",
@@ -208,7 +228,10 @@ function LoginForm() {
                             type="email"
                             placeholder="Email address"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                if (googleHighlight) setGoogleHighlight(false);
+                            }}
                             required
                             autoComplete="email"
                             className="input-redesign"
@@ -234,7 +257,10 @@ function LoginForm() {
                                 type={showPassword ? "text" : "password"}
                                 placeholder="••••••••"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    if (googleHighlight) setGoogleHighlight(false);
+                                }}
                                 required
                                 autoComplete="current-password"
                                 className="input-redesign"

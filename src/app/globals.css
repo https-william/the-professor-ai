@@ -2828,3 +2828,26 @@ html:has(body[style*="overflow:hidden"]) {
   }
 }
 
+/* Google Auth highlight animation when login is rejected due to Google-only account */
+@keyframes shake-google {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+@keyframes pulse-google-border {
+  0%, 100% {
+    box-shadow: 0 0 0 1px var(--border), 0 0 0 0px rgba(229, 169, 60, 0);
+    border-color: var(--border);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--amber), 0 0 25px rgba(229, 169, 60, 0.65);
+    border-color: var(--amber);
+  }
+}
+
+.google-shake-highlight {
+  animation: shake-google 0.6s ease-in-out, pulse-google-border 2s ease-in-out infinite 0.6s !important;
+}
+
+
