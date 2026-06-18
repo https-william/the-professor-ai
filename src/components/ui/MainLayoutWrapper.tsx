@@ -35,6 +35,9 @@ export default function MainLayoutWrapper({ children }: MainLayoutWrapperProps) 
           ? "bg-transparent backdrop-blur-none border-none shadow-none"
           : "bg-zinc-950/70 backdrop-blur-md border border-zinc-800/50"
       )}
+      style={!isMarketingOrAuth ? {
+        background: "linear-gradient(180deg, #0a0b12 0%, #07080c 100%)"
+      } : undefined}
     >
       <div className="noise-overlay" />
 
