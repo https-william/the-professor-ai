@@ -75,9 +75,6 @@ export default function HowItWorksSection() {
       
       {/* Section Header */}
       <div className="text-center flex flex-col items-center gap-3 max-w-2xl mx-auto mb-20">
-        <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
-          How It Works
-        </span>
         <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
           From notes to exam-ready <br className="hidden sm:inline" />
           in under <span className="text-blue-500 text-shadow-[0_0_30px_rgba(74,124,245,0.15)]">60 seconds.</span>

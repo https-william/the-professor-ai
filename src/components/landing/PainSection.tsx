@@ -2,6 +2,7 @@
 
 import React from "react";
 import { BookOpen, AlertCircle, Sparkles } from "lucide-react";
+import TiltCard from "@/components/ui/TiltCard";
 
 const CARDS = [
   {
@@ -35,9 +36,6 @@ export default function PainSection() {
     <section id="features" className="w-full py-20 px-4 md:px-8 lg:px-12 bg-transparent max-w-6xl mx-auto">
       {/* Section Header */}
       <div className="text-center flex flex-col items-center gap-3 max-w-2xl mx-auto mb-16">
-        <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
-          The Problem
-        </span>
         <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
           You&apos;re not struggling. <br />
           The tools are.
@@ -47,9 +45,14 @@ export default function PainSection() {
       {/* Card Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {CARDS.map((card, i) => (
-          <div 
-            key={i} 
-            className={`p-8 rounded-[28px] bg-[var(--bg-2)] border border-[var(--border)] ${card.hoverBorder} hover-lift-md transition-all duration-300 flex flex-col gap-5`}
+          <TiltCard
+            key={i}
+            maxTilt={6}
+            scale={1.025}
+            borderRadius="28px"
+            glowColor="rgba(255, 255, 255, 0.12)"
+            glowOpacity={0.2}
+            className={`p-8 bg-[var(--bg-2)] border border-[var(--border)] hover:border-white/10 transition-all duration-300 flex flex-col gap-5`}
           >
             {/* Icon Wrapper */}
             <div className={`w-12 h-12 rounded-2xl ${card.bg} border ${card.border} flex items-center justify-center shrink-0`}>
@@ -65,7 +68,7 @@ export default function PainSection() {
             <p className="font-sans text-xs md:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium">
               {card.body}
             </p>
-          </div>
+          </TiltCard>
         ))}
       </div>
     </section>

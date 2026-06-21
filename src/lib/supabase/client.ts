@@ -7,14 +7,22 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   let delay = 300; // ms
   while (retries > 0) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout is safer for slow networks/auth
+
+    const onAbort = () => controller.abort();
+    if (init?.signal) {
+      if (init.signal.aborted) {
+        controller.abort();
+      } else {
+        init.signal.addEventListener('abort', onAbort);
+      }
+    }
 
     try {
       const res = await fetch(input, {
         ...init,
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
       
       // Retry on common server errors or rate limits
       if (res.status === 502 || res.status === 503 || res.status === 504 || res.status === 429) {
@@ -22,11 +30,15 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
       }
       return res;
     } catch (err) {
-      clearTimeout(timeoutId);
       retries--;
       if (retries === 0) throw err;
       await new Promise(r => setTimeout(r, delay));
       delay *= 2; // exponential backoff
+    } finally {
+      clearTimeout(timeoutId);
+      if (init?.signal) {
+        init.signal.removeEventListener('abort', onAbort);
+      }
     }
   }
   return fetch(input, init); // fallback

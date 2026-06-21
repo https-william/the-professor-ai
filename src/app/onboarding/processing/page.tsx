@@ -68,7 +68,7 @@ export default function ProcessingPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center p-6 relative overflow-y-auto">
       {/* Cinematic Ambient Blur Background */}
       <div className="absolute inset-0 bg-[#08080E]/80 backdrop-blur-[100px]" />
       
@@ -80,7 +80,8 @@ export default function ProcessingPage() {
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      <StandardContainer narrow>
+      <StandardContainer narrow className="my-auto">
+
         <div className="relative z-10 w-full max-w-xl mx-auto flex flex-col items-center p-8 sm:p-12 bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl backdrop-blur-xl">
           
           {/* Logo & Status */}

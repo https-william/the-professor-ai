@@ -2,7 +2,6 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import AmbientOrbs from "@/components/ui/AmbientOrbs";
 import ScholarShaderCanvas from "@/components/ui/ScholarShaderCanvas";
 import { cn } from "@/lib/utils";
 
@@ -33,20 +32,13 @@ export default function MainLayoutWrapper({ children }: MainLayoutWrapperProps) 
         "platform-main-container relative min-h-screen w-full flex flex-col flex-1 transition-all duration-500",
         isMarketingOrAuth
           ? "bg-transparent backdrop-blur-none border-none shadow-none"
-          : "bg-zinc-950/70 backdrop-blur-md border border-zinc-800/50"
+          : "bg-zinc-950/40 backdrop-blur-sm border-none"
       )}
-      style={!isMarketingOrAuth ? {
-        background: "linear-gradient(180deg, #0a0b12 0%, #07080c 100%)"
-      } : undefined}
     >
       <div className="noise-overlay" />
 
-      {/* Conditionally render the WebGL Shader or Ambient Orbs */}
-      {isMarketingOrAuth ? (
-        <ScholarShaderCanvas />
-      ) : (
-        <AmbientOrbs />
-      )}
+      {/* WebGL Shader on all routes — dimmer on app routes for subtlety */}
+      <ScholarShaderCanvas opacity={isMarketingOrAuth ? 0.60 : 0.35} />
 
       {children}
     </main>

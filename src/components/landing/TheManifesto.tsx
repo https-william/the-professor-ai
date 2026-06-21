@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Brain, Zap, Target } from "lucide-react";
+import TiltCard from "@/components/ui/TiltCard";
 
 const PILLARS = [
   {
@@ -37,12 +38,9 @@ export default function TheManifesto() {
         
         {/* Left Side: Title */}
         <div className="flex flex-col items-start gap-4">
-          <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
-            Why We're Here
-          </span>
           <h2 className="font-heading text-3xl md:text-5xl lg:text-6xl font-black text-[var(--foreground)] leading-[1.05] tracking-tight">
             Studying shouldn't <br />
-            be <span className="bg-gradient-to-r from-white via-blue-100 to-[#4A7CF5] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">this hard.</span>
+            be <span className="text-[#4A7CF5] drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">this hard.</span>
           </h2>
           <p className="font-sans text-sm md:text-base leading-relaxed text-[var(--foreground-secondary)] opacity-85 font-medium max-w-lg mt-2">
             Let's be real — uni is a lot of work. We built The Professor to cut through the noise and give you <span className="text-blue-400 font-extrabold">just the good parts</span> of your notes, so you can spend less time studying and more time living.
@@ -52,9 +50,14 @@ export default function TheManifesto() {
         {/* Right Side: Cards */}
         <div className="flex flex-col gap-4">
           {PILLARS.map((pillar, i) => (
-            <div 
-              key={i} 
-              className={`p-6 md:p-8 rounded-[28px] bg-[var(--bg-2)] border border-[var(--border)] ${pillar.hoverBorder} hover-lift-sm transition-all duration-300`}
+            <TiltCard
+              key={i}
+              maxTilt={4}
+              scale={1.02}
+              borderRadius="28px"
+              glowColor="rgba(255, 255, 255, 0.12)"
+              glowOpacity={0.2}
+              className={`p-6 md:p-8 bg-[var(--bg-2)] border border-[var(--border)] hover:border-white/10 transition-all duration-300`}
             >
               <div className="flex items-start gap-5">
                 <div className={`w-11 h-11 rounded-2xl ${pillar.bg} border ${pillar.border} flex items-center justify-center shrink-0`}>
@@ -65,7 +68,7 @@ export default function TheManifesto() {
                   <p className="font-sans text-xs md:text-sm text-[var(--foreground-muted)] leading-relaxed font-medium">{pillar.body}</p>
                 </div>
               </div>
-            </div>
+            </TiltCard>
           ))}
         </div>
 

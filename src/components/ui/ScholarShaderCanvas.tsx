@@ -2,7 +2,11 @@
 
 import React, { useEffect, useRef } from "react";
 
-export default function ScholarShaderCanvas() {
+interface ScholarShaderCanvasProps {
+  opacity?: number;
+}
+
+export default function ScholarShaderCanvas({ opacity = 0.60 }: ScholarShaderCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -303,7 +307,7 @@ export default function ScholarShaderCanvas() {
       ref={canvasRef}
       id="scholar-shader-canvas"
       className="fixed inset-0 w-full h-full -z-10 bg-transparent pointer-events-none transition-opacity duration-1000"
-      style={{ opacity: 0.60 }}
+      style={{ opacity }}
     />
   );
 }

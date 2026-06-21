@@ -5,6 +5,7 @@ import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/context/UserContext";
+import { isAdmin } from "@/lib/admin";
 import { motion, AnimatePresence } from "framer-motion";
 import BrandLogo from "@/components/ui/BrandLogo";
 import React, { useState, useEffect, useRef } from "react";
@@ -43,7 +44,12 @@ import { useAppPlatform } from "@/hooks/useAppPlatform";
 const HIDDEN_PATHS = [
     "/arena/play",
     "/library/pack",
-    "/library/pack",
+    "/summary",
+    "/flashcards",
+    "/quiz",
+    "/roadmap",
+    "/breakdown",
+    "/eli5",
     "/login",
     "/signup",
     "/forgot-password",
@@ -54,6 +60,7 @@ const HIDDEN_PATHS = [
     "/best-ai-for",
     "/tools"
 ];
+
 
 const MINIMAL_PATHS = [
     "/onboarding",
@@ -442,21 +449,29 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                         <p className="text-sm font-black text-[var(--foreground)] truncate">{user.name || "Student"}</p>
                                     </div>
 
-                                    {[
-                                        { label: "Profile", icon: User, href: "/settings" },
-                                        { label: "Billing", icon: CreditCard, href: "/settings/billing" },
-                                        { label: "Achievements", icon: Trophy, href: "/achievements" },
-                                    ].map((item) => (
-                                        <Link
-                                            key={item.label}
-                                            href={item.href}
-                                            onClick={() => setShowUserMenu(false)}
-                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.05] transition-all active:scale-95"
-                                        >
-                                            <item.icon size={16} />
-                                            {item.label}
-                                        </Link>
-                                    ))}
+                                    {(() => {
+                                        const menuItems = [
+                                            { label: "Profile", icon: User, href: "/settings" },
+                                            { label: "Billing", icon: CreditCard, href: "/settings/billing" },
+                                            { label: "Achievements", icon: Trophy, href: "/achievements" },
+                                        ];
+
+                                        if (isAdmin(user.email, user.role)) {
+                                            menuItems.push({ label: "Admin Atrium", icon: Users, href: "/admin" });
+                                        }
+
+                                        return menuItems.map((item) => (
+                                            <Link
+                                                key={item.label}
+                                                href={item.href}
+                                                onClick={() => setShowUserMenu(false)}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/[0.05] transition-all active:scale-95"
+                                            >
+                                                <item.icon size={16} />
+                                                {item.label}
+                                            </Link>
+                                        ));
+                                    })()}
 
                                     <button
                                         onClick={async () => {

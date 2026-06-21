@@ -81,10 +81,10 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
     }, [index, queuePosition]);
 
     return (
-        <div className={`flex flex-col items-center justify-center p-4 sm:p-8 w-full max-w-xl mx-auto text-center ${className}`}>
+        <div className={`flex flex-col items-center justify-center p-4 sm:p-6 w-full max-w-xl mx-auto text-center ${className}`}>
             
             {/* Visualizer: Radar Ring + Glowing Brand Logo */}
-            <div className="relative w-36 h-36 flex items-center justify-center mb-8">
+            <div className="relative w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center mb-6 sm:mb-8">
                 {/* Radar Dial */}
                 <div className="absolute inset-0 rounded-full border border-white/5 bg-[var(--background-secondary)]/50 backdrop-blur-md shadow-inner" />
                 
@@ -105,7 +105,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
 
                 {/* Logo Wrapper */}
                 <motion.div 
-                    className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden z-10"
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden z-10"
                     animate={{ 
                         boxShadow: [
                             "0 8px 32px rgba(0,0,0,0.4)",
@@ -126,7 +126,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
 
             {/* 15-Second Anticipation Countdown Bar */}
             {queuePosition === 0 && (
-                <div className="w-full max-w-xl mx-auto mb-6 p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between text-left font-mono">
+                <div className="w-full max-w-xl mx-auto mb-4 sm:mb-6 p-3 sm:p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between text-left font-mono">
                     <div>
                         <span className="text-[9px] font-black uppercase tracking-wider text-white/60">Anticipation Phase</span>
                         <p className="text-[10px] text-[var(--foreground-muted)]">Synthesizing study pack contents...</p>
@@ -138,11 +138,11 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
             )}
 
             {/* Glassmorphic Terminal Card */}
-            <div className="w-full bg-zinc-950/45 backdrop-blur-2xl border border-white/5 rounded-3xl p-6 sm:p-8 text-left shadow-[0_20px_50px_rgba(0,0,0,0.35)] relative overflow-hidden mb-6">
+            <div className="w-full bg-zinc-950/45 backdrop-blur-2xl border border-white/5 rounded-3xl p-4 sm:p-8 text-left shadow-[0_20px_50px_rgba(0,0,0,0.35)] relative overflow-hidden mb-4 sm:mb-6">
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                 
                 {/* Terminal Header */}
-                <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/5">
+                <div className="flex items-center justify-between mb-4 sm:mb-6 pb-2 sm:pb-3 border-b border-white/5">
                     <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
                         <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
@@ -198,7 +198,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="space-y-3.5 font-mono text-[11px] sm:text-xs"
+                            className="space-y-2 sm:space-y-3.5 font-mono text-[11px] sm:text-xs"
                         >
                             {STEPS.map((step, sIdx) => {
                                 const isDone = sIdx < index;
@@ -237,9 +237,10 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
             </div>
 
             {/* Bottom Status text */}
-            <p className="text-[9px] font-mono font-black text-white/20 uppercase tracking-[0.4em] mt-4">
+            <p className="text-[9px] font-mono font-black text-white/20 uppercase tracking-[0.4em] mt-2">
                 The Professor • Clear Thinking
             </p>
         </div>
     );
+
 }

@@ -13,25 +13,26 @@ import {
   CheckCircle2
 } from "lucide-react";
 import Link from "next/link";
+import TiltCard from "@/components/ui/TiltCard";
 
 export default function HeroSection() {
   const [activeMockTab, setActiveMockTab] = useState<string>("Study Lab");
 
   return (
-    <section className="relative w-full min-h-[95dvh] flex flex-col items-center justify-start pt-32 pb-16 px-4 md:px-8 lg:px-12 overflow-hidden bg-transparent z-10">
+    <section className="relative w-full min-h-[95dvh] flex flex-col items-center justify-start pt-32 pb-24 md:pb-32 px-4 md:px-8 lg:px-12 overflow-hidden bg-transparent z-10">
 
       {/* Hero Content Container */}
-      <div className="relative w-full max-w-6xl mx-auto flex flex-col items-center z-10">
+      <div className="relative w-full max-w-6xl mx-auto flex flex-col items-center gap-12 md:gap-16 lg:gap-20 z-10">
         
         {/* Hero Text & CTA Block */}
         <div className="flex flex-col items-center text-center max-w-4xl relative">
           {/* Main Headline */}
           <h1 
             style={{ fontFamily: "var(--font-outfit)" }}
-            className="text-[44px] leading-[1.05] sm:text-6xl md:text-7xl lg:text-[80px] font-black text-[var(--foreground)] tracking-tight mb-6 uppercase text-3d"
+            className="text-[44px] leading-[1.05] sm:text-6xl md:text-7xl lg:text-[80px] font-black text-[var(--foreground)] tracking-tight mb-6 text-3d"
           >
             Your notes. <br />
-            Just the <span className="bg-gradient-to-r from-white via-blue-100 to-[#4A7CF5] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">good parts.</span>
+            Just the <span className="text-[#4A7CF5] drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">good parts.</span>
           </h1>
 
           {/* Subheading */}
@@ -40,7 +41,7 @@ export default function HeroSection() {
           </p>
 
           {/* CTA Button Group */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in [--animation-delay:200ms] mb-16">
+          <div className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in [--animation-delay:200ms]">
             <Link
               href="/signup"
               className="px-10 py-4.5 rounded-2xl flex items-center gap-2 bg-[#4A7CF5] text-white font-sans font-black text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(74,124,245,0.3),inset_0_2px_0_0_rgba(255,255,255,0.2)] hover:bg-[#3b6ee0] hover:shadow-[0_4px_25px_rgba(74,124,245,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300"
@@ -53,8 +54,15 @@ export default function HeroSection() {
         {/* Flat 2.0 Product Mockup Workspace Preview (Aesthetic Centerpiece) */}
         <div className="relative w-full max-w-5xl animate-fade-in [--animation-delay:350ms]">
           {/* Ambient Glow Halo behind Mockup */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/5 to-amber-500/10 rounded-[32px] filter blur-[80px] opacity-80 pointer-events-none -z-10" />
-          <div className="w-full rounded-[32px] border border-[var(--border)] bg-[var(--card)] shadow-[0_30px_70px_rgba(0,0,0,0.4)] overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/5 to-amber-500/10 rounded-[32px] filter blur-[40px] md:blur-[80px] opacity-80 pointer-events-none -z-10" />
+          <TiltCard
+            maxTilt={3.5}
+            scale={1.01}
+            borderRadius="32px"
+            glowColor="rgba(255, 255, 255, 0.12)"
+            glowOpacity={0.2}
+            className="w-full border border-[var(--border)] bg-[var(--card)] shadow-[0_30px_70px_rgba(0,0,0,0.4)] overflow-hidden"
+          >
           
           {/* Simulated Browser Bar */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-2)]">
@@ -132,7 +140,7 @@ export default function HeroSection() {
               {/* Top Row: Workspace Status */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
                 <div>
-                  <h3 className="text-lg font-black text-[var(--foreground)] tracking-tight">Biology 101: Lecture 3 Synthesis</h3>
+                  <div className="text-lg font-black text-[var(--foreground)] tracking-tight">Biology 101: Lecture 3 Synthesis</div>
                   <p className="text-xs text-[var(--foreground-muted)] font-medium">Uploaded 2 mins ago · 4 learning modules active</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-center">
@@ -252,7 +260,7 @@ export default function HeroSection() {
 
           </div>
 
-        </div>
+        </TiltCard>
         </div>
 
         {/* Social Proof Ticker */}

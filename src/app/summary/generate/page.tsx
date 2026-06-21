@@ -124,13 +124,13 @@ export default function SummaryGenerate() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center p-6 relative overflow-y-auto">
             {/* Ambient Background */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[var(--blue)]/5 blur-[120px] rounded-full animate-pulse" />
             </div>
 
-            <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
+            <div className="relative z-10 flex flex-col items-center w-full max-w-sm my-auto">
                 <ProfessorCeremony />
                 
                 <div className="w-full bg-white/5 h-1 rounded-full mt-8 mb-4 overflow-hidden border border-white/5">

@@ -36,6 +36,7 @@ export interface UserState {
     themePreference: string;
     planStatus: 'free' | 'plus' | 'unlimited' | 'sprint_pass';
     subscriptionEndDate: string | null;
+    role?: string;
 }
 
 export interface UserStore extends UserState {
@@ -77,6 +78,7 @@ export const defaultUser: UserState = {
     themePreference: "dark",
     planStatus: "free",
     subscriptionEndDate: null,
+    role: "user",
 };
 
 let isRefreshing = false;
@@ -183,6 +185,7 @@ export const useUserStore = create<UserStore>()(
                         themePreference: profile?.theme_preference ?? get().themePreference ?? "dark",
                         planStatus: profile?.plan_status ?? get().planStatus ?? "free",
                         subscriptionEndDate: profile?.subscription_end_date ?? get().subscriptionEndDate ?? null,
+                        role: profile?.role ?? get().role ?? "user",
                     });
 
                 } catch (error: any) {
@@ -224,7 +227,8 @@ export const useUserStore = create<UserStore>()(
                 difficultyPreference: state.difficultyPreference,
                 themePreference: state.themePreference,
                 planStatus: state.planStatus,
-                subscriptionEndDate: state.subscriptionEndDate
+                subscriptionEndDate: state.subscriptionEndDate,
+                role: state.role
             }),
         }
     )

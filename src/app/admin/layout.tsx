@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isAdmin } from "@/lib/admin";
 
 export default function AdminLayout({
   children,
@@ -14,13 +15,36 @@ export default function AdminLayout({
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient();
-      const { data: { session }, error } = await supabase.auth.getSession();
+      try {
+        const supabase = createClient();
+        const { data: { session }, error } = await supabase.auth.getSession();
 
-      if (error || !session) {
-        router.push("/login");
-      } else {
+        if (error || !session || !session.user) {
+          router.push("/login");
+          return;
+        }
+
+        // Fetch user profile from database to verify role
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        const userEmail = session.user.email;
+        const userRole = profile?.role;
+
+        // Perform authorization check
+        if (!isAdmin(userEmail, userRole)) {
+          console.warn("[AdminLayout] Unauthorized access attempt by:", userEmail);
+          router.push("/dashboard");
+          return;
+        }
+
         setLoading(false);
+      } catch (err) {
+        console.error("[AdminLayout] Error verifying authorization:", err);
+        router.push("/dashboard");
       }
     }
     checkAuth();
@@ -40,3 +64,4 @@ export default function AdminLayout({
     </div>
   );
 }
+

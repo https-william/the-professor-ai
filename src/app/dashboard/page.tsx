@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useToasts } from "@/components/ui/GlobalToasts";
+import { useIngestStore } from "@/store/useIngestStore";
 import { useQuery } from "@tanstack/react-query";
 import SEOHead, { getWebApplicationSchema, getBreadcrumbSchema } from "@/components/SEOHead";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
 import PlatformShell from "@/components/platforms/PlatformShell";
 import { createClient } from "@/lib/supabase/client";
+import { performOCR } from "@/lib/ocr-bridge";
+import GuestSignupModal from "@/components/ui/GuestSignupModal";
 
 import dynamic from "next/dynamic";
 import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
@@ -36,6 +40,17 @@ const DashboardMobile = dynamic(() => import("@/components/platforms/mobile/Dash
 import ShareCard from "@/components/ShareCard";
 import StreakMilestone from "@/components/features/StreakMilestone";
 import { LateNightGuard } from "@/components/features/LateNightGuard";
+
+const MAX_CHARS = 50000;
+
+const loadingPhrases = [
+    "Skimming the abstract...",
+    "Reviewing notes & parsing tables...",
+    "Translating academic jargon into plain English...",
+    "Connecting the dots across chapters...",
+    "Distilling high-yield survival concepts...",
+    "Almost there. Polishing the wisdom..."
+];
 
 /* ═══════════════════════════════════════════════════
    HELPERS
@@ -166,12 +181,335 @@ function getGreeting(userId?: string): string {
 }
 
 export default function DashboardPage() {
-    const { user, refreshUser, recoverStreak } = useUser();
+    const router = useRouter();
+    const { user, refreshUser, recoverStreak, spendCredits } = useUser();
     const { addToast } = useToasts();
-    const { isLoaded } = useAppPlatform();
+    const { isLoaded, isDesktop } = useAppPlatform();
     const [milestoneToCelebrate, setMilestoneToCelebrate] = useState<number | null>(null);
     const [isProcessingAction, setIsProcessingAction] = useState(false);
     const [shareData, setShareData] = useState<any>(null);
+
+    // ──────────────────────────────────────────────────
+    // CREATE/INGEST STATE (merged from create/page.tsx)
+    // ──────────────────────────────────────────────────
+    const { queue, addFiles, addLocalPaths, updateFileStatus, clearQueue, isProcessing } = useIngestStore();
+    const supabase = createClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [inputText, setInputText] = useState("");
+    const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
+    const [setupError, setSetupError] = useState<string | null>(null);
+    const [isGeneratingPack, setIsGeneratingPack] = useState(false);
+    const [showGuestModal, setShowGuestModal] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
+    const [missionTitle, setMissionTitle] = useState("");
+    const [userEditedTitle, setUserEditedTitle] = useState(false);
+
+    const processedIds = useRef<Set<string>>(new Set());
+    const [trickleProgress, setTrickleProgress] = useState<Record<string, number>>({});
+    const [filePhraseIndex, setFilePhraseIndex] = useState<Record<string, number>>({});
+    const [customStatusMsg, setCustomStatusMsg] = useState<Record<string, string>>({});
+
+    // Demo loader
+    const loadDemo = (type: 'mitosis' | 'contract') => {
+        if (type === 'mitosis') {
+            setInputText(
+                "Mitosis is a process of cell duplication, or reproduction, during which one cell gives rise to two genetically identical daughter cells. It is divided into five main phases: Prophase, Prometaphase, Metaphase, Anaphase, and Telophase. During Prophase, chromatin condenses into visible chromosomes. Prometaphase involves nuclear envelope breakdown. Metaphase aligns chromosomes at the equatorial plate. Anaphase separates sister chromatids to opposite poles. Telophase reconstructs the nuclear envelopes around the separated sets of chromosomes, followed by Cytokinesis which splits the cell cytoplasm."
+            );
+            setMissionTitle("Mitosis Cell Division Prep");
+            setUserEditedTitle(true);
+            addToast("Biology (Mitosis) demo notes loaded. Tap 'Start Exam Sprint' below!", "success");
+        } else if (type === 'contract') {
+            setInputText(
+                "A contract is a legally binding agreement between two or more parties. The essential elements of a contract are: Offer, Acceptance, Consideration, Intention to create legal relations, and Capacity. An Offer is an expression of willingness to contract on specific terms. Acceptance is the unconditional assent to all the terms of the offer. Consideration represents the price paid for the promise, which must have some economic value. Both parties must intend for the agreement to have legal consequences. Finally, the parties must possess the legal capacity to contract (e.g., being of sound mind and legal age)."
+            );
+            setMissionTitle("Contract Law 101 Prep");
+            setUserEditedTitle(true);
+            addToast("Contract Law demo notes loaded. Tap 'Start Exam Sprint' below!", "success");
+        }
+        setActiveTab('text');
+    };
+
+    // Trickle progress animation for file queue
+    useEffect(() => {
+        const readingItems = queue.filter(item => (item.status === 'reading' || item.status === 'learning') && !customStatusMsg[item.id]);
+        if (readingItems.length === 0) return;
+
+        const interval = setInterval(() => {
+            setTrickleProgress(prev => {
+                const next = { ...prev };
+                readingItems.forEach(item => {
+                    const current = next[item.id] || item.progress || 20;
+                    if (current < 90) {
+                        next[item.id] = current + Math.floor(Math.random() * 6) + 2;
+                    }
+                });
+                return next;
+            });
+        }, 400);
+
+        const phraseInterval = setInterval(() => {
+            setFilePhraseIndex(prev => {
+                const next = { ...prev };
+                readingItems.forEach(item => {
+                    const current = next[item.id] || 0;
+                    next[item.id] = (current + 1) % loadingPhrases.length;
+                });
+                return next;
+            });
+        }, 2500);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(phraseInterval);
+        };
+    }, [queue, customStatusMsg]);
+
+    // Document parsing
+    useEffect(() => {
+        const processNext = async () => {
+            const nextItem = queue.find(item => item.status === 'reading' && !processedIds.current.has(item.id));
+            if (!nextItem || (!nextItem.file && !nextItem.path)) return;
+
+            processedIds.current.add(nextItem.id);
+
+            if (nextItem.path) {
+                try {
+                    updateFileStatus(nextItem.id, 'reading', 20);
+                    const { invoke } = await import("@tauri-apps/api/core");
+                    updateFileStatus(nextItem.id, 'reading', 50);
+                    const extractedText = await invoke<string>("extract_document_text", { filePath: nextItem.path });
+                    updateFileStatus(nextItem.id, 'success', 100);
+                    if (extractedText) {
+                        setInputText(prev => {
+                            const nextVal = prev ? `${prev}\n\n${extractedText}` : extractedText;
+                            return nextVal.substring(0, MAX_CHARS);
+                        });
+                    }
+                } catch (err: any) {
+                    console.error("Tauri Local Ingestion Error:", err);
+                    updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to extract text locally");
+                }
+                return;
+            }
+
+            try {
+                updateFileStatus(nextItem.id, 'reading', 20);
+                const formData = new FormData();
+                formData.append("file", nextItem.file!);
+                const res = await fetch("/api/parse", { method: "POST", body: formData });
+                const result = await res.json().catch(() => ({ error: "Parser failed to respond" }));
+                
+                if (!res.ok || result.error) {
+                    throw new Error(result.error || "Failed to process document");
+                }
+
+                let finalWeightText = result.text || "";
+
+                if (result.isOcrRequired && result.images) {
+                    updateFileStatus(nextItem.id, 'learning', 50);
+                    const isLimited = !!result.isOcrLimited;
+                    const limitCount = result.ocrLimitCount || 15;
+                    const totalPages = result.images.length;
+
+                    const ocrText = await performOCR(result.images, (curr, total) => {
+                        const pct = Math.round(50 + (curr / total) * 45);
+                        setTrickleProgress(prev => ({ ...prev, [nextItem.id]: pct }));
+                        setCustomStatusMsg(prev => ({ 
+                            ...prev, 
+                            [nextItem.id]: isLimited 
+                                ? `OCR Limit (first ${limitCount} pgs): parsing page ${curr} of ${total}...` 
+                                : `Performing OCR: parsing page ${curr} of ${total}...` 
+                        }));
+                    });
+
+                    if (isLimited) {
+                        setCustomStatusMsg(prev => ({ ...prev, [nextItem.id]: `OCR complete: parsed first ${limitCount} pages.` }));
+                    } else {
+                        setCustomStatusMsg(prev => ({ ...prev, [nextItem.id]: `OCR complete: parsed all ${totalPages} pages.` }));
+                    }
+
+                    finalWeightText = `${result.baseText || ""}\n\n${ocrText}`;
+                }
+
+                updateFileStatus(nextItem.id, 'success', 100);
+                if (finalWeightText) {
+                    setInputText(prev => {
+                        const nextVal = prev ? `${prev}\n\n${finalWeightText}` : finalWeightText;
+                        return nextVal.substring(0, MAX_CHARS);
+                    });
+                }
+            } catch (err: any) {
+                console.error("Ingestion Error:", err);
+                updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to parse file");
+            }
+        };
+
+        if (isProcessing) {
+            processNext();
+        }
+    }, [queue, isProcessing, updateFileStatus]);
+
+    // Load initial title from session
+    useEffect(() => {
+        const saved = sessionStorage.getItem("lastSprintName") || "";
+        if (saved) {
+            setMissionTitle(saved);
+            setUserEditedTitle(true);
+        }
+    }, []);
+
+    // Clear queue on mount/unmount
+    useEffect(() => {
+        clearQueue();
+        return () => clearQueue();
+    }, [clearQueue]);
+
+    // Auto-suggest title
+    useEffect(() => {
+        if (!userEditedTitle && inputText.trim().length > 10) {
+            const firstLine = inputText.split('\n')[0].trim().replace(/[#*_\-[\]()]/g, '');
+            if (firstLine.length > 3) {
+                const words = firstLine.split(/\s+/).slice(0, 4).join(" ");
+                const cleaned = words.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+                if (cleaned) {
+                    const capitalized = cleaned.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                    setMissionTitle(capitalized + " Prep");
+                }
+            }
+        }
+    }, [inputText, userEditedTitle]);
+
+    // Guest modal
+    useEffect(() => {
+        if (typeof window !== "undefined" && !user.isAuthenticated && !user.isLoading) {
+            const isGuest = sessionStorage.getItem("shared_view") === "true";
+            if (isGuest) setShowGuestModal(true);
+        }
+    }, [user.isAuthenticated, user.isLoading]);
+
+    const hasSuccess = queue.some(item => item.status === 'success') || inputText.trim().length > 50;
+    const isQueueProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
+    const showConfigAndActions = inputText.trim().length > 0 || queue.length > 0;
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) addFiles(Array.from(e.target.files));
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const files = Array.from(e.dataTransfer.files);
+            const localPaths = files.filter(f => (f as any).path).map(f => ({ name: f.name, path: (f as any).path }));
+            if (isDesktop && localPaths.length > 0) {
+                addLocalPaths(localPaths);
+            } else {
+                addFiles(files);
+            }
+        }
+    };
+
+    const handleUploadClick = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (isDesktop) {
+            try {
+                const { open } = await import("@tauri-apps/plugin-dialog");
+                const selected = await open({
+                    multiple: true,
+                    filters: [{
+                        name: 'Study Materials',
+                        extensions: ['pdf', 'docx', 'pptx', 'txt']
+                    }]
+                });
+                
+                if (selected) {
+                    const paths = Array.isArray(selected) ? selected : [selected];
+                    const localFiles = paths.map(p => {
+                        const name = p.split(/[/\\]/).pop() || p;
+                        return { name, path: p };
+                    });
+                    addLocalPaths(localFiles);
+                }
+            } catch (err) {
+                console.error("Tauri dialog open error:", err);
+            }
+        } else {
+            fileInputRef.current?.click();
+        }
+    };
+
+    const handleGenerate = async () => {
+        if (!inputText.trim()) return;
+        const customTitle = missionTitle || "";
+
+        if (user.isAuthenticated) {
+            const success = await spendCredits(10);
+            if (!success) {
+                setSetupError("Insufficient credits for Exam Sprint. Please acquire more credits.");
+                return;
+            }
+        }
+
+        sessionStorage.setItem("examSprintContent", inputText);
+        setIsGeneratingPack(true);
+
+        const packId = crypto.randomUUID();
+        const cleanTitle = customTitle || (inputText.trim() ? inputText.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : `STUDY PACK: ${new Date().toLocaleDateString()}`);
+        
+        try {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (!authUser) {
+                const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                offlinePacks[packId] = {
+                    id: packId, title: cleanTitle, source_text: inputText,
+                    phases_data: {}, user_id: "guest", savedAt: Date.now()
+                };
+                localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
+                router.push(`/library/pack/${packId}?sprint=true`);
+                return;
+            }
+
+            const { error: dbError } = await supabase.from("study_packs").insert({
+                id: packId, user_id: authUser.id, title: cleanTitle,
+                description: "Comprehensive study sprint generated from your notes.",
+                source_text: inputText, phases_data: {},
+            });
+
+            if (dbError) throw dbError;
+            router.push(`/library/pack/${packId}?sprint=true`);
+        } catch (err) {
+            console.error("Failed to create pack in DB, falling back to offline storage:", err);
+            const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+            offlinePacks[packId] = {
+                id: packId, title: cleanTitle, source_text: inputText,
+                phases_data: {}, user_id: "guest", savedAt: Date.now()
+            };
+            localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
+            router.push(`/library/pack/${packId}?sprint=true`);
+        }
+    };
+
+    const resetSelection = () => {
+        setInputText("");
+        setSetupError(null);
+        sessionStorage.removeItem("isExamSprint");
+        sessionStorage.removeItem("examSprintContent");
+        sessionStorage.removeItem("customGenerationTitle");
+        setIsGeneratingPack(false);
+        setMissionTitle("");
+        setUserEditedTitle(false);
+        clearQueue();
+        processedIds.current.clear();
+        setTrickleProgress({});
+        setFilePhraseIndex({});
+    };
+
+    // ──────────────────────────────────────────────────
+    // ORIGINAL DASHBOARD STATE
+    // ──────────────────────────────────────────────────
 
     // Fetch activity data
     const { data: activityData, isLoading: activityLoading } = useQuery({
@@ -223,7 +561,6 @@ export default function DashboardPage() {
                 };
 
                 awardMilestone().then(() => {
-                    // Only refresh user data once after the reward is posted
                     refreshUser();
                     addToast(`Check your rewards! +${currentStreak} day Milestone reached.`, "success", undefined, undefined, true);
                 }).catch(err => console.error("Failed to award milestone XP:", err));
@@ -314,17 +651,47 @@ export default function DashboardPage() {
         handleRecover,
         canRecover,
         isProcessingAction,
-        handleShare: handleShareMilestone
+        handleShare: handleShareMilestone,
+        // Create-related props
+        inputText,
+        setInputText,
+        activeTab,
+        setActiveTab,
+        missionTitle,
+        setMissionTitle,
+        userEditedTitle,
+        setUserEditedTitle,
+        queue,
+        isQueueProcessing,
+        hasSuccess,
+        showConfigAndActions,
+        setupError,
+        setSetupError,
+        handleGenerate,
+        handleFileSelect,
+        handleDrop,
+        handleUploadClick,
+        resetSelection,
+        loadDemo,
+        isGeneratingPack,
+        setIsGeneratingPack,
+        trickleProgress,
+        filePhraseIndex,
+        customStatusMsg,
+        fileInputRef,
     };
 
     return (
         <div className="relative w-full text-[var(--text)]">
-            {/* Grid Line Background */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
-            
-            {/* Ambient Radial Halos (Vibrant Brand Colors) */}
-            <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[radial-gradient(circle,rgba(74,124,245,0.06),transparent_60%)] filter blur-[120px] pointer-events-none z-0" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.05),transparent_60%)] filter blur-[120px] pointer-events-none z-0" />
+            {/* Hidden file input for web, fully controlled by fileInputRef */}
+            <input 
+                ref={fileInputRef}
+                type="file" 
+                multiple 
+                className="hidden" 
+                onChange={handleFileSelect} 
+                accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp" 
+            />
 
             <div className="relative z-10">
                 <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
@@ -353,8 +720,12 @@ export default function DashboardPage() {
                 />
             )}
 
+            <GuestSignupModal
+                isOpen={showGuestModal}
+                onClose={() => setShowGuestModal(false)}
+            />
+
             <LateNightGuard />
         </div>
     );
 }
-

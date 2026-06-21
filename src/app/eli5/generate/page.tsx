@@ -98,12 +98,12 @@ export default function Eli5Generate() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center p-6 relative overflow-y-auto">
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[var(--blue)]/5 blur-[120px] rounded-full animate-pulse" />
             </div>
 
-            <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
+            <div className="relative z-10 flex flex-col items-center w-full max-w-sm my-auto">
                 <DataDustLoader />
                 <div className="text-center mt-12">
                     <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)] opacity-50 mb-2">

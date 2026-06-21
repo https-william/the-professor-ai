@@ -226,7 +226,6 @@ export default function InteractiveDemo() {
         
         {/* Section Header */}
         <div className="text-center flex flex-col items-center gap-3">
-          <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">Live Preview</span>
           <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
             Turn your notes into <br className="hidden sm:inline" />
             <span className="text-blue-500 text-shadow-[0_0_30px_rgba(74,124,245,0.15)]">something useful.</span>

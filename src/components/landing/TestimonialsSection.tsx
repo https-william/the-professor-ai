@@ -29,9 +29,6 @@ export default function TestimonialsSection() {
       
       {/* Section Header */}
       <div className="text-center flex flex-col items-center gap-3 max-w-2xl mx-auto mb-16">
-        <span className="font-sans text-[10px] font-extrabold tracking-[0.4em] text-blue-500 uppercase">
-          Student Stories
-        </span>
         <h2 className="font-heading text-3xl md:text-5xl font-black text-[var(--foreground)] leading-none tracking-tight">
           From upload to exam-ready.
         </h2>
