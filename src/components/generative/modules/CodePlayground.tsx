@@ -64,9 +64,9 @@ export default function CodePlayground({ data }: { data: string }) {
                             <Terminal size={12} /> Console Output
                         </h3>
                         <div className="p-3 bg-black/50 rounded-xl font-mono text-[10px] text-green-400">
-                            > Compilation successful.
-                            <br/>> Running test cases...
-                            <br/>> 5/5 Passed.
+                            &gt; Compilation successful.
+                            <br/>&gt; Running test cases...
+                            <br/>&gt; 5/5 Passed.
                         </div>
                     </div>
                 </div>
