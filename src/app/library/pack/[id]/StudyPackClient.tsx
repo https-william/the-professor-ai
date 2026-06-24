@@ -1857,22 +1857,37 @@ export default function StudyPackPage() {
                                             {renderPhaseInteractive(currentPhase)}
                                         </div>
 
-                                        {/* Final Phase Action - Only show for non-interactive phases */}
-                                        {currentPhase.id !== 'distill' && currentPhase.id !== 'breakdown' && currentPhase.id !== 'retain' && currentPhase.id !== 'test' && !isSharedView && (
+                                        {/* Final Phase Action */}
+                                        {!isSharedView && (
                                             <motion.div
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className="w-full max-w-md mx-auto shrink-0 pb-6"
+                                                className="w-full max-w-md mx-auto shrink-0 pb-6 mt-4"
                                             >
                                                 <button
-                                                    onClick={handleMasterPhase}
-                                                    className="w-full py-4 rounded-xl bg-[var(--blue)] text-white font-black text-[10px] uppercase tracking-widest shadow-xl hover-scale-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                    onClick={() => handleMasterPhase()}
+                                                    className={cn(
+                                                        "w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                                                        ['distill', 'breakdown', 'retain', 'test'].includes(currentPhase.id)
+                                                            ? "bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:border-[var(--blue)]/30 hover:bg-[var(--blue)]/5 opacity-60 hover:opacity-100 shadow-sm"
+                                                            : "bg-[var(--blue)] text-white shadow-xl hover-scale-sm active:scale-[0.98]"
+                                                    )}
                                                 >
-                                                    <CheckCircle2 size={16} /> Finish & Continue
+                                                    {['distill', 'breakdown', 'retain', 'test'].includes(currentPhase.id) ? (
+                                                        <>Fast Forward Phase <ArrowRight size={14} /></>
+                                                    ) : (
+                                                        <><CheckCircle2 size={16} /> Finish & Continue</>
+                                                    )}
                                                 </button>
-                                                <p className="text-center text-[9px] text-[var(--foreground-muted)] font-bold mt-3 uppercase tracking-widest opacity-60">
-                                                    Saving progress to study library
-                                                </p>
+                                                {['distill', 'breakdown', 'retain', 'test'].includes(currentPhase.id) ? (
+                                                    <p className="text-center text-[8px] text-[var(--foreground-muted)] font-black mt-3 uppercase tracking-widest opacity-40">
+                                                        Skip this activity
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-center text-[9px] text-[var(--foreground-muted)] font-bold mt-3 uppercase tracking-widest opacity-60">
+                                                        Saving progress to study library
+                                                    </p>
+                                                )}
                                             </motion.div>
                                         )}
                                     </motion.div>
