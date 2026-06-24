@@ -526,8 +526,8 @@ export const InteractiveFlashcards = ({
     transform: "rotateY(180deg)",
   };
 
-  return (
-    <div className="relative w-full min-h-[500px] flex flex-col items-center justify-center p-2 sm:p-4 cursor-default overflow-visible gap-6">
+    return (
+    <div className="relative w-full min-h-[500px] flex flex-col items-center justify-start sm:justify-center p-2 sm:p-4 cursor-default overflow-visible gap-6">
       
       {/* Visual top track */}
       <div className="w-full max-w-[400px] md:max-w-[620px] space-y-3">
@@ -599,7 +599,7 @@ export const InteractiveFlashcards = ({
       </div>
 
       {/* 3D Stack Card Area */}
-      <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[320px] md:h-[380px] perspective-1000">
+      <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[340px] md:h-[400px] [perspective:1000px]">
         
         {/* Background stack card 2 */}
         {cardQueue.length - queuePointer > 2 && (
@@ -624,7 +624,7 @@ export const InteractiveFlashcards = ({
             }}
           />
         )}
-        <AnimatePresence mode="wait" custom={exitDirection} initial={false}>
+        <AnimatePresence mode="popLayout" custom={exitDirection} initial={false}>
           <motion.div
             key={queuePointer}
             custom={exitDirection}
@@ -637,7 +637,7 @@ export const InteractiveFlashcards = ({
               y: { type: "spring", stiffness: 350, damping: 26 },
               opacity: { duration: 0.18 },
             }}
-            className="w-full h-full relative cursor-pointer"
+            className="w-full h-full relative cursor-pointer flex-shrink-0"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             drag="x"

@@ -598,14 +598,14 @@ export default function DashboardWeb({
             ═══════════════════════════════════════════════════════════ */}
             <AnimatePresence>
                 {isIngestModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-50 overflow-y-auto py-10 px-4 flex justify-center items-start sm:items-center">
                         {/* Backdrop */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={closeIngestModal}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                            className="fixed inset-0 bg-black/60 backdrop-blur-md"
                         />
 
                         {/* Modal content */}
@@ -613,7 +613,7 @@ export default function DashboardWeb({
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="scholar-card relative w-full max-w-2xl bg-zinc-950/90 ring-1 ring-white/5 backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-[2rem] overflow-hidden z-10 max-h-[90vh] flex flex-col"
+                            className="scholar-card relative w-full max-w-2xl bg-zinc-950/90 ring-1 ring-white/5 backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-[2rem] z-10 flex flex-col my-auto"
                         >
                             {/* Modal Header */}
                             <div className="flex items-center justify-between p-6 border-b border-white/5">
@@ -629,8 +629,8 @@ export default function DashboardWeb({
                                 </button>
                             </div>
 
-                            {/* Modal Body (Scrollable) */}
-                            <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
+                            {/* Modal Body (Scrollable naturally with window) */}
+                            <div className="p-6 space-y-6 flex-1">
                                 {/* Ingestion type tabs */}
                                 <div className="flex bg-white/[0.02] border border-white/5 p-1 rounded-2xl gap-1">
                                     <button
