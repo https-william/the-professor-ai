@@ -69,7 +69,7 @@ export default function ProcessingPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center p-6 relative overflow-y-auto">
+    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center p-6 relative">
       {/* Cinematic Ambient Blur Background */}
       <div className="absolute inset-0 bg-[#08080E]/80 backdrop-blur-[100px]" />
       

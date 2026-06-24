@@ -125,7 +125,7 @@ export default function BreakdownGenerate() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center p-6 relative overflow-y-auto">
+        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center p-6 relative">
             {/* Ambient Background */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[var(--blue)]/5 blur-[120px] rounded-full animate-pulse" />
