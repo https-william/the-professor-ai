@@ -11,18 +11,23 @@ interface ThemeToggleProps {
 }
 
 export default function ThemeToggle({ className = "", variant = "default" }: ThemeToggleProps) {
-    return null;
+    const { theme, toggleTheme } = useTheme();
+    return <ThemeButton theme={theme} toggleTheme={toggleTheme} className={className} />;
 }
 
-function ThemeButton({ theme, toggleTheme }: { theme: string; toggleTheme: () => void }) {
+function ThemeButton({ theme, toggleTheme, className = "" }: { theme: string; toggleTheme: () => void; className?: string }) {
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
+
+    if (!mounted) {
+        return <div className={`w-9 h-9 rounded-xl ${className}`} />;
+    }
 
     return (
         <motion.button
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            className="relative flex items-center justify-center w-9 h-9 rounded-xl overflow-hidden group active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-transform"
+            className={`relative flex items-center justify-center w-9 h-9 rounded-xl overflow-hidden group active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--blue)] transition-transform ${className}`}
             style={{
                 background:    "var(--background-secondary)",
                 backdropFilter: "blur(24px) saturate(2)",
@@ -36,8 +41,8 @@ function ThemeButton({ theme, toggleTheme }: { theme: string; toggleTheme: () =>
                 className="absolute inset-0 transition-opacity duration-300"
                 style={{
                     background: theme === "dark"
-                        ? "rgba(245,158,11,0.07)"
-                        : "rgba(245,158,11,0.14)",
+                        ? "color-mix(in srgb, var(--blue) 7%, transparent)"
+                        : "color-mix(in srgb, var(--blue) 14%, transparent)",
                 }}
             />
 
@@ -52,7 +57,7 @@ function ThemeButton({ theme, toggleTheme }: { theme: string; toggleTheme: () =>
                     style={{
                         color: theme === "dark"
                             ? "var(--foreground-secondary)"
-                            : "var(--accent)",
+                            : "var(--blue)",
                     }}
                 >
                     {theme === "dark"
