@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import remarkGfm from "remark-gfm";
@@ -137,8 +137,10 @@ export default function StudyPackPage() {
 
     const packId = params.id as string;
 
+    const phaseContainerRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
-        if (viewingPhaseIndex !== null || showWrapModal) {
+        if (showWrapModal) {
             document.body.style.overflow = 'hidden';
             const container = document.getElementById('main-scroll-container');
             if (container) container.style.overflow = 'hidden';
@@ -147,7 +149,16 @@ export default function StudyPackPage() {
                 if (container) container.style.overflow = 'auto';
             };
         }
-    }, [viewingPhaseIndex, showWrapModal]);
+    }, [showWrapModal]);
+
+    // Auto-scroll to phase when it opens
+    useEffect(() => {
+        if (viewingPhaseIndex !== null && phaseContainerRef.current) {
+            setTimeout(() => {
+                phaseContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }, [viewingPhaseIndex]);
 
     const [phasesData, setPhasesData] = useState<Record<string, any>>({});
     const [isLoadingPhase, setIsLoadingPhase] = useState(false);
@@ -1643,6 +1654,7 @@ export default function StudyPackPage() {
             <AnimatePresence>
                 {currentPhase && (
                     <motion.div
+                        ref={phaseContainerRef}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
