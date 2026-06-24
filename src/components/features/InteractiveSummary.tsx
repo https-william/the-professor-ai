@@ -41,7 +41,6 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
     return (
         <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-6 md:my-8 animate-in slide-in-from-bottom-4 duration-500">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Zap size={40} className="text-[var(--blue)]" />
             </div>
             

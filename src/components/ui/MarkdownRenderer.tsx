@@ -199,7 +199,6 @@ export default function MarkdownRenderer({
 
     return (
         <div className={cn(
-        <div className={cn(
             "prose dark:prose-invert max-w-none transition-all duration-300 font-serif",
             "prose-headings:font-black prose-headings:tracking-tight prose-headings:text-[var(--foreground)]",
             "prose-p:leading-relaxed prose-p:text-[var(--foreground-muted)]",
