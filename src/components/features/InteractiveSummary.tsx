@@ -39,15 +39,16 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
     };
 
     return (
-        <div className="p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-6 md:my-8 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-6 md:my-8 animate-in slide-in-from-bottom-4 duration-500">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Zap size={40} className="text-[var(--accent)]" />
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Zap size={40} className="text-[var(--blue)]" />
             </div>
             
             <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">Professor's Spot Check</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)]">Professor's Spot Check</span>
                 </div>
                 
                 <h5 className="text-[13px] font-bold text-[var(--foreground)] mb-4 leading-relaxed">
@@ -78,7 +79,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                                     "w-7 h-7 rounded-xl flex items-center justify-center border text-[10px] shrink-0 font-black transition-all",
                                     showFeedback && isCorrect ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]" :
                                     isSelected && !isCorrect ? "bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]" :
-                                    "bg-white/5 border-white/10 group-hover/opt:border-[var(--accent)]/30"
+                                    "bg-white/5 border-white/10 group-hover/opt:border-[var(--blue)]/30"
                                 )}>
                                     {String.fromCharCode(65 + i)}
                                 </div>
@@ -86,7 +87,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                                 
                                 {/* Inner Glow Hover */}
                                 {!isSelected && !isPassed && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent)]/5 to-transparent opacity-0 group-hover/opt:opacity-100 transition-opacity pointer-events-none" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--blue)]/5 to-transparent opacity-0 group-hover/opt:opacity-100 transition-opacity pointer-events-none" />
                                 )}
                             </button>
                         );
@@ -205,7 +206,7 @@ export const InteractiveSummary = ({
             <div className="relative z-10 space-y-4 md:space-y-6">
                 <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+                        <div className="w-2 h-2 rounded-full bg-[var(--blue)] animate-pulse" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Professor's Summary</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -280,7 +281,7 @@ export const InteractiveSummary = ({
                                {tags && tags.length > 0 && (
                                    <div className="flex flex-wrap gap-2">
                                       {tags.map(tag => (
-                                         <span key={tag} className="px-2 py-0.5 rounded-md bg-[var(--accent)]/10 text-[9px] font-bold text-[var(--accent)] border border-[var(--accent)]/10">{tag}</span>
+                                         <span key={tag} className="px-2 py-0.5 rounded-md bg-[var(--blue)]/10 text-[9px] font-bold text-[var(--blue)] border border-[var(--blue)]/10">{tag}</span>
                                       ))}
                                    </div>
                                )}
@@ -316,7 +317,7 @@ export const InteractiveSummary = ({
                             initial={{ top: "0%" }}
                             animate={{ top: "100%" }}
                             transition={{ duration: 1.5, ease: "linear" }}
-                            className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent blur-[2px] z-20"
+                            className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--blue)] to-transparent blur-[2px] z-20"
                         />
                     )}
                 </div>

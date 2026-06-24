@@ -1767,7 +1767,7 @@ export default function StudyPackPage() {
                         </div>
 
                         {/* Immersive Content Area */}
-                        <div className="flex-1 w-full relative bg-[var(--background)] overflow-y-auto flex flex-col items-center custom-scrollbar">
+                        <div className="flex-1 w-full relative bg-[var(--background)] overflow-y-auto flex flex-col items-center custom-scrollbar pb-32 sm:pb-16">
                             <AnimatePresence mode="wait">
                                 {!isPerforming ? (
                                     <motion.div

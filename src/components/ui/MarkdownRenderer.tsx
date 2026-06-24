@@ -199,12 +199,13 @@ export default function MarkdownRenderer({
 
     return (
         <div className={cn(
-            "prose prose-invert max-w-none transition-all duration-300 font-serif",
-            "prose-headings:font-black prose-headings:tracking-tight",
-            "prose-p:leading-relaxed prose-p:text-white/80",
-            "prose-strong:text-white prose-strong:font-bold",
-            "prose-code:text-amber-400 prose-code:bg-white/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",
-            "prose-li:text-white/70",
+        <div className={cn(
+            "prose dark:prose-invert max-w-none transition-all duration-300 font-serif",
+            "prose-headings:font-black prose-headings:tracking-tight prose-headings:text-[var(--foreground)]",
+            "prose-p:leading-relaxed prose-p:text-[var(--foreground-muted)]",
+            "prose-strong:text-[var(--foreground)] prose-strong:font-bold",
+            "prose-code:text-[var(--blue)] prose-code:bg-[var(--blue)]/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",
+            "prose-li:text-[var(--foreground-muted)]",
             isStreaming && "typing-cursor",
             className
         )}>
@@ -245,56 +246,56 @@ export default function MarkdownRenderer({
                     },
 
                     // Custom rendering for headings to add "weight"
-                    h1: ({ node, ...props }) => <h1 className="text-2xl md:text-4xl font-black mt-12 mb-6 bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent tracking-tight border-b border-white/5 pb-3" {...props} />,
+                    h1: ({ node, ...props }) => <h1 className="text-2xl md:text-4xl font-black mt-12 mb-6 text-[var(--foreground)] tracking-tight border-b border-[var(--border)] pb-3" {...props} />,
                     h2: ({ node, children, ...props }) => {
                         const isKeyFacts = typeof children === 'string' && children.toLowerCase().includes('key facts');
                         if (isKeyFacts) {
                             return (
-                                <h2 className="text-xl md:text-2xl font-black text-[var(--accent)] flex items-center gap-2 border-b border-[var(--accent)]/20 pb-3 mb-6 mt-12 tracking-tight" {...props}>
-                                    <Zap size={18} className="text-[var(--accent)] animate-pulse shrink-0" />
+                                <h2 className="text-xl md:text-2xl font-black text-[var(--blue)] flex items-center gap-2 border-b border-[var(--blue)]/20 pb-3 mb-6 mt-12 tracking-tight" {...props}>
+                                    <Zap size={18} className="text-[var(--blue)] animate-pulse shrink-0" />
                                     {children}
                                 </h2>
                             );
                         }
                         return (
-                            <h2 className="text-xl md:text-2xl font-black mt-12 mb-5 text-white border-l-4 border-[var(--blue)] pl-4 flex items-center gap-2 tracking-tight" {...props}>
+                            <h2 className="text-xl md:text-2xl font-black mt-12 mb-5 text-[var(--foreground)] border-l-4 border-[var(--blue)] pl-4 flex items-center gap-2 tracking-tight" {...props}>
                                 {children}
                             </h2>
                         );
                     },
                     h3: ({ node, children, ...props }) => (
-                        <h3 className="text-lg md:text-xl font-black mt-8 mb-4 text-white/95 border-l-2 border-white/20 pl-3 tracking-tight" {...props}>
+                        <h3 className="text-lg md:text-xl font-black mt-8 mb-4 text-[var(--foreground)] border-l-2 border-[var(--border)] pl-3 tracking-tight" {...props}>
                             {children}
                         </h3>
                     ),
                     
                     // Style horizontal rules
-                    hr: ({ node, ...props }) => <hr className="my-12 border-white/5" {...props} />,
+                    hr: ({ node, ...props }) => <hr className="my-12 border-[var(--border)]" {...props} />,
                     
                     // Special treatment for blockquotes (Professor's Insights)
                     blockquote: ({ node, ...props }) => (
                         <blockquote 
-                            className="border-l-4 border-[var(--blue)]/40 pl-6 my-8 italic text-white/80 bg-white/[0.01] py-5 pr-4 rounded-r-2xl border-dashed"
+                            className="border-l-4 border-[var(--blue)]/40 pl-6 my-8 italic text-[var(--foreground-muted)] bg-[var(--background-secondary)]/50 py-5 pr-4 rounded-r-2xl border-dashed"
                             {...props} 
                         />
                     ),
 
                     // Custom table styling
                     table: ({ node, ...props }) => (
-                        <div className="overflow-x-auto my-8 rounded-2xl border border-white/5 bg-white/[0.02]">
-                            <table className="min-w-full divide-y divide-white/10" {...props} />
+                        <div className="overflow-x-auto my-8 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/30">
+                            <table className="min-w-full divide-y divide-[var(--border)]" {...props} />
                         </div>
                     ),
-                    thead: ({ node, ...props }) => <thead className="bg-white/5" {...props} />,
-                    th: ({ node, ...props }) => <th className="px-6 py-4 text-left text-xs font-black uppercase tracking-widest text-white/40" {...props} />,
-                    td: ({ node, ...props }) => <td className="px-6 py-4 text-sm text-white/70 border-t border-white/5" {...props} />,
+                    thead: ({ node, ...props }) => <thead className="bg-[var(--background-secondary)]" {...props} />,
+                    th: ({ node, ...props }) => <th className="px-6 py-4 text-left text-xs font-black uppercase tracking-widest text-[var(--foreground-muted)]" {...props} />,
+                    td: ({ node, ...props }) => <td className="px-6 py-4 text-sm text-[var(--foreground)] border-t border-[var(--border)]" {...props} />,
 
                     // Stylized list rendering to prevent monotone look
                     ul: ({ node, ...props }) => <ul className="my-6 space-y-3.5 pl-0" {...props} />,
-                    ol: ({ node, ...props }) => <ol className="my-6 space-y-3.5 pl-6 list-decimal text-white/80" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="my-6 space-y-3.5 pl-6 list-decimal text-[var(--foreground-muted)]" {...props} />,
                     li: ({ node, ...props }) => (
-                        <li className="list-none flex items-start gap-3 mb-2 text-white/85 leading-relaxed text-sm md:text-base font-medium" {...props}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] mt-2.5 shrink-0 animate-pulse shadow-[0_0_8px_var(--blue-glow)]" />
+                        <li className="list-none flex items-start gap-3 mb-2 text-[var(--foreground)] leading-relaxed text-sm md:text-base font-medium" {...props}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] mt-2.5 shrink-0 shadow-[0_0_8px_var(--blue-glow)]" />
                             <span className="flex-1">{props.children}</span>
                         </li>
                     ),
