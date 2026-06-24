@@ -79,6 +79,36 @@ export default function WeeklyWrappedModal({
     archetypeDesc = "Deep work specialist. High-volume study marathons.";
   }
 
+  // Dynamic Comments
+  let welcomeText = `"Look, ${firstName}! You didn't come to play this week. Let's see how much sleep you traded for these study sprints."`;
+  if (hoursStudied === "0" && questionsAnswered === 0) {
+    welcomeText = `"It's been a quiet week, ${firstName}. Your bed misses you, but your books miss you more. Time to lock in."`;
+  } else if (accuracy >= 80) {
+    welcomeText = `"${firstName}, you absolutely aced this week. You're making this look too easy. Just the good parts, right?"`;
+  } else if (Number(hoursStudied) > 5) {
+    welcomeText = `"Wow, ${firstName}. You lived in the library this week. I hope you're staying hydrated."`;
+  }
+
+  let hoursText = `"That's like sitting through three separate Lagos-to-Ibadan gridlocks, but actually using your brain."`;
+  if (Number(hoursStudied) === 0) {
+    hoursText = `"No hours logged yet. The week is still young!"`;
+  } else if (Number(hoursStudied) < 2) {
+    hoursText = `"A light warmup. More time to ignore your group chat and rest."`;
+  } else if (Number(hoursStudied) >= 2 && Number(hoursStudied) < 8) {
+    hoursText = `"Solid focused time. That's enough to get your time back and still ace it."`;
+  } else if (Number(hoursStudied) >= 8) {
+    hoursText = `"Absolute marathon. You spent more time studying than people spend scrolling TikTok."`;
+  }
+
+  let recallText = "Your memory database is filling up. Spaced repetition queue is working overtime.";
+  if (flashcardsCount === 0 && quizzesCount === 0) {
+    recallText = "You haven't flipped any cards or taken quizzes. Active recall is where the magic happens!";
+  } else if (accuracy >= 85) {
+    recallText = `With ${accuracy}% accuracy, you're retaining almost everything. Peak performance!`;
+  } else if (flashcardsCount > 50) {
+    recallText = "Flipping cards like a pro. Your brain is a sponge right now.";
+  }
+
   // Play mount audio and manage timer
   useEffect(() => {
     if (isOpen) {
@@ -205,7 +235,7 @@ export default function WeeklyWrappedModal({
                       <span className="text-[var(--violet)]">In Review.</span>
                     </h2>
                     <p className="text-lg text-[var(--foreground-secondary)] font-medium font-serif italic max-w-sm mx-auto leading-relaxed pt-2">
-                      "Look, {firstName}! You didn't come to play this week. Let's see how much sleep you traded for these study sprints."
+                      {welcomeText}
                     </p>
                   </div>
                 )}
@@ -223,7 +253,7 @@ export default function WeeklyWrappedModal({
                       {hoursStudied} <span className="text-2xl text-[var(--foreground-muted)]">HRS</span>
                     </div>
                     <p className="text-lg text-[var(--foreground-secondary)] font-medium font-serif italic max-w-sm mx-auto leading-relaxed">
-                      "That's like sitting through three separate Lagos-to-Ibadan gridlocks, but actually using your brain."
+                      {hoursText}
                     </p>
                   </div>
                 )}
@@ -263,7 +293,7 @@ export default function WeeklyWrappedModal({
                     </div>
 
                     <p className="text-base text-[var(--foreground-secondary)] text-center font-medium font-serif italic max-w-sm mx-auto leading-relaxed pt-2">
-                      Your memory database is filling up. Spaced repetition queue is working overtime.
+                      {recallText}
                     </p>
                   </div>
                 )}
