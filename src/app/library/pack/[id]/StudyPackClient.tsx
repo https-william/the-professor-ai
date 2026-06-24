@@ -1643,13 +1643,13 @@ export default function StudyPackPage() {
             <AnimatePresence>
                 {currentPhase && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[300] bg-[var(--background)] overflow-hidden flex flex-col print-overlay"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="mt-8 w-full flex flex-col print-overlay bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-3xl overflow-hidden shadow-2xl"
                     >
                         {/* Immersive Header */}
-                        <div className="px-4 sm:px-6 h-14 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm z-20 sticky top-0 shrink-0">
+                        <div className="px-4 sm:px-6 h-14 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0">
                             <div className="flex items-center gap-3 sm:gap-6">
                                 <button
                                     onClick={() => setViewingPhaseIndex(null)}
@@ -1767,7 +1767,7 @@ export default function StudyPackPage() {
                         </div>
 
                         {/* Immersive Content Area */}
-                        <div className="flex-1 w-full relative bg-[var(--background)] overflow-y-auto flex flex-col items-center custom-scrollbar pb-32 sm:pb-16">
+                        <div className="w-full relative flex flex-col items-center pb-12">
                             <AnimatePresence mode="wait">
                                 {!isPerforming ? (
                                     <motion.div
