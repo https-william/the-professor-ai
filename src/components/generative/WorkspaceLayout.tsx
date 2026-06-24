@@ -61,7 +61,7 @@ export default function WorkspaceLayout({ title, sourceText, phasesData, onExit 
                 <div className="flex flex-col">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/50 mb-1">
                         <BrainCircuit size={12} className="text-[var(--violet)]" />
-                        <span>Generative Workspace</span>
+                        <span>Study Environment</span>
                     </div>
                     <h1 className="text-xl font-black text-white uppercase tracking-wider">{title}</h1>
                 </div>

@@ -41,7 +41,8 @@ import { useUser } from "@/context/UserContext";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
 import Markdown, { BubblyThinkingLoader } from "@/components/ui/Markdown";
 import { smartFetch } from "@/lib/fetch-client";
-import { downloadFlashcardsOffline, downloadQuizOffline, downloadSummaryOffline } from "@/lib/offline-download";
+import { downloadFlashcardsOffline, downloadQuizOffline, downloadSummaryOffline, getFlashcardsHtmlString, getQuizHtmlString, getSummaryHtmlString } from "@/lib/offline-download";
+import JSZip from "jszip";
 
 // Import Interactive Components
 import { InteractiveSummary } from "@/components/features/InteractiveSummary";
@@ -1006,82 +1007,39 @@ export default function StudyPackPage() {
 
     const handleExportFullPackPDF = async () => {
         setIsExportingFullPDF(true);
-        setFullPdfDownloadProgress(0);
-        setFullPdfDownloadSpeed("Connecting...");
-        addToast("Generating complete study blueprint PDF...", "info", undefined, undefined, false, undefined, true);
+        addToast("Generating complete offline study pack...", "info");
 
         try {
-            const markdownContent = compileFullPackMarkdown();
+            const zip = new JSZip();
 
-            const res = await fetch("/api/export/pdf", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: packTitle + " — Complete Study Blueprint",
-                    content: markdownContent,
-                    watermark: "The Professor AI | Your notes. Just the good parts."
-                })
-            });
-
-            if (!res.ok) {
-                throw new Error("Failed to generate PDF from server.");
+            if (phasesData.distill) {
+                const summaryData = phasesData.distill;
+                const summaryText = typeof summaryData === 'string' ? summaryData : (summaryData.summary ? (typeof summaryData.summary === 'string' ? summaryData.summary : JSON.stringify(summaryData.summary)) : "");
+                zip.file(`The_Professor_Summary_${packTitle.replace(/\s+/g, '_')}.html`, getSummaryHtmlString(packTitle, summaryText));
             }
 
-            const contentLengthHeader = res.headers.get("Content-Length");
-            const totalBytes = contentLengthHeader ? parseInt(contentLengthHeader, 10) : 4000000;
-            let loadedBytes = 0;
-            const startTime = Date.now();
-
-            if (!res.body) {
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `The_Professor_Full_Study_Pack_${packTitle.replace(/\s+/g, '_')}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } else {
-                const reader = res.body.getReader();
-                const chunks: Uint8Array[] = [];
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    if (value) {
-                        chunks.push(value);
-                        loadedBytes += value.length;
-                        const elapsedSec = (Date.now() - startTime) / 1000 || 0.1;
-                        const speedBps = loadedBytes / elapsedSec;
-                        const speedKbps = (speedBps / 1024).toFixed(1);
-                        const loadedMb = (loadedBytes / (1024 * 1024)).toFixed(2);
-                        const totalMb = (totalBytes / (1024 * 1024)).toFixed(2);
-                        const pct = Math.min(Math.round((loadedBytes / totalBytes) * 100), 100);
-
-                        setFullPdfDownloadProgress(pct);
-                        if (speedBps > 1024 * 1024) {
-                            setFullPdfDownloadSpeed(`${loadedMb}MB / ${totalMb}MB (${(speedBps / (1024 * 1024)).toFixed(1)} MB/s)`);
-                        } else {
-                            setFullPdfDownloadSpeed(`${loadedMb}MB / ${totalMb}MB (${speedKbps} KB/s)`);
-                        }
-                    }
-                }
-
-                const blob = new Blob(chunks as BlobPart[], { type: "application/pdf" });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `The_Professor_Full_Study_Pack_${packTitle.replace(/\s+/g, '_')}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+            if (phasesData.flashcards) {
+                zip.file(`The_Professor_Flashcards_${packTitle.replace(/\s+/g, '_')}.html`, getFlashcardsHtmlString(packTitle, phasesData.flashcards));
             }
 
-            addToast("Full Pack PDF Downloaded Successfully!", "success");
+            if (phasesData.quiz) {
+                zip.file(`The_Professor_Quiz_${packTitle.replace(/\s+/g, '_')}.html`, getQuizHtmlString(packTitle, phasesData.quiz));
+            }
+
+            const blob = await zip.generateAsync({ type: "blob" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `The_Professor_Study_Pack_${packTitle.replace(/\s+/g, '_')}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            addToast("Full Pack ZIP Downloaded Successfully!", "success");
         } catch (err: any) {
-            addToast("Failed to compile PDF. Downloading Markdown instead...", "warn");
+            console.error(err);
+            addToast("Failed to compile ZIP. Downloading Markdown instead...", "warn");
             handleExportFullPackMarkdown();
         } finally {
             setIsExportingFullPDF(false);
@@ -1490,7 +1448,7 @@ export default function StudyPackPage() {
                             onClick={() => setIsGenerativeMode(true)}
                             className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/30 text-[9px] font-black uppercase tracking-widest text-violet-400 hover:bg-violet-500/20 transition-all flex items-center justify-center gap-1.5 shadow-md"
                         >
-                            <BrainCircuit size={12} /> Generative Workspace
+                            <BrainCircuit size={12} /> Study Environment
                         </button>
                         
                         <div className="relative flex-1 sm:flex-none">
@@ -1757,7 +1715,7 @@ export default function StudyPackPage() {
                                                             className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
                                                         >
                                                             <FileText size={12} />
-                                                            <span>Download PDF</span>
+                                                            <span>Download Zip (HTML)</span>
                                                         </button>
                                                         <button
                                                             onClick={() => {
