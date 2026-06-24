@@ -116,7 +116,7 @@ export default function StudyPackPage() {
         setIsMounted(true);
         if (window.location.search.includes('sprint=true')) {
             setIsSprint(true);
-            setIsGenerativeMode(true);
+            // setIsGenerativeMode(true); // Removed based on user request
         }
     }, []);
 
@@ -399,7 +399,6 @@ export default function StudyPackPage() {
                         }
                     }
                 } else {
-                    let packData: any = null;
                     
                     const { data: spData } = await supabase
                         .from("study_packs")
@@ -1371,16 +1370,16 @@ export default function StudyPackPage() {
         );
     }
 
-    if (isGenerativeMode) {
-        return (
-            <WorkspaceLayout 
-                title={packTitle} 
-                sourceText={sourceText} 
-                phasesData={phasesData} 
-                onExit={() => setIsGenerativeMode(false)} 
-            />
-        );
-    }
+    // if (isGenerativeMode) {
+    //     return (
+    //         <WorkspaceLayout 
+    //             title={packTitle} 
+    //             sourceText={sourceText} 
+    //             phasesData={phasesData} 
+    //             onExit={() => setIsGenerativeMode(false)} 
+    //         />
+    //     );
+    // }
 
     return (
         <div className="min-h-screen bg-transparent pb-16 pt-12 transition-all duration-700">
@@ -1444,13 +1443,6 @@ export default function StudyPackPage() {
                             <Download size={12} /> {isSavedOffline ? "Saved Offline" : "Save Offline"}
                         </button>
 
-                        <button
-                            onClick={() => setIsGenerativeMode(true)}
-                            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/30 text-[9px] font-black uppercase tracking-widest text-violet-400 hover:bg-violet-500/20 transition-all flex items-center justify-center gap-1.5 shadow-md"
-                        >
-                            <BrainCircuit size={12} /> Study Environment
-                        </button>
-                        
                         <div className="relative flex-1 sm:flex-none">
                             <button
                                 onClick={() => setShowFullExportMenu(prev => !prev)}

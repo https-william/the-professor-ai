@@ -241,19 +241,13 @@ export default function DashboardWeb({
     // ─── ProfessorCeremony loading state ───
     if (isGeneratingPack) {
         return (
-            <div className="min-h-[calc(100vh-5rem)] bg-transparent pt-20 flex flex-col items-center relative overflow-y-auto">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-40 z-0" />
-                <StandardContainer className="relative z-10 my-auto">
-                    <div className="mb-8 text-center">
-                        <button
-                            onClick={() => setIsGeneratingPack(false)}
-                            className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-white transition-colors inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl bg-white/5 border border-white/5"
-                        >
-                            <X size={12} /> Cancel Generation
-                        </button>
-                    </div>
-                    <ProfessorCeremony className="w-full py-12" />
-                </StandardContainer>
+            <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 size={32} className="animate-spin text-[var(--violet)]" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] animate-pulse">
+                        Generating Study Pack...
+                    </span>
+                </div>
             </div>
         );
     }
