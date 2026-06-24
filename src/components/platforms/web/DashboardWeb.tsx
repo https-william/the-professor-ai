@@ -275,26 +275,56 @@ export default function DashboardWeb({
                             </p>
                         </div>
 
-                        {/* Status Badges Row */}
-                        <div className="flex flex-wrap items-center gap-2 bg-zinc-950/20 p-2.5 rounded-[1.5rem] border border-white/5 backdrop-blur-xl shrink-0 w-fit">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-sm">
-                                <Flame size={11} className={cn("text-amber-400", userStreak > 0 && "animate-pulse")} />
-                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-amber-400 font-black">{userStreak}d</span>
+                        {/* Clean Status Row */}
+                        <div className="flex flex-wrap items-center gap-6 shrink-0 w-fit">
+                            <div className="flex items-center gap-2">
+                                <Flame size={14} className={cn("text-white/40", userStreak > 0 && "text-amber-400 animate-pulse")} />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 leading-none mb-0.5">Streak</span>
+                                    <span className="font-mono text-sm leading-none font-black text-white">{userStreak}</span>
+                                </div>
                             </div>
-
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 shadow-sm">
-                                <Zap size={11} className="text-blue-400" />
-                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-blue-400 font-black">{userXp.toLocaleString()} XP</span>
+                            <div className="flex items-center gap-2">
+                                <Zap size={14} className="text-blue-400" />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 leading-none mb-0.5">XP</span>
+                                    <span className="font-mono text-sm leading-none font-black text-white">{userXp.toLocaleString()}</span>
+                                </div>
                             </div>
-
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-sm">
-                                <Coins size={11} className="text-emerald-400" />
-                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-emerald-400 font-black">{userCredits}</span>
+                            <div className="flex items-center gap-2">
+                                <Coins size={14} className="text-emerald-400" />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 leading-none mb-0.5">Credits</span>
+                                    <span className="font-mono text-sm leading-none font-black text-white">{userCredits}</span>
+                                </div>
                             </div>
-
-                            <div className="h-4 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+                            <div className="h-8 w-[1px] bg-white/10 mx-2 hidden sm:block" />
                             <FocusTimer widget={true} />
                         </div>
+                    </motion.div>
+
+                    {/* ═══════════════════════════════════════════════════════════
+                        PRIMARY ACTION CTA — Large Glowing Block
+                    ═══════════════════════════════════════════════════════════ */}
+                    <motion.div variants={fadeUp}>
+                        <button
+                            onClick={openIngestModal}
+                            className="w-full relative group cursor-pointer border-0 p-0 overflow-hidden rounded-[24px] bg-gradient-to-r from-blue-600 to-blue-800 shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:shadow-[0_0_60px_rgba(37,99,235,0.5)] transition-all duration-500 active:scale-[0.98]"
+                        >
+                            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay"></div>
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
+                            <div className="relative px-8 py-6 sm:py-8 flex items-center justify-between z-10">
+                                <div className="flex flex-col items-start text-left">
+                                    <span className="text-white/80 font-black text-[10px] uppercase tracking-[0.3em] mb-1">Create Study Pack</span>
+                                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                                        Begin a New Sprint <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+                                    </h3>
+                                </div>
+                                <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md items-center justify-center">
+                                    <Zap size={28} className="text-white group-hover:scale-110 transition-transform" />
+                                </div>
+                            </div>
+                        </button>
                     </motion.div>
 
                     {/* ═══════════════════════════════════════════════════════════
@@ -312,14 +342,6 @@ export default function DashboardWeb({
                                         <BookOpen size={13} className="text-[var(--violet)]" />
                                         <span>Active Study Packs</span>
                                     </h3>
-                                    
-                                    <button
-                                        onClick={openIngestModal}
-                                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white font-black text-[9px] uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-                                    >
-                                        <Zap size={10} className="fill-current text-white" />
-                                        <span>+ New Sprint</span>
-                                    </button>
                                 </div>
 
                                 {packsLoading ? (
@@ -348,55 +370,50 @@ export default function DashboardWeb({
                                         {recentPacks.map((pack) => {
                                             const completedPhases = Object.keys(pack.phases_data || {}).filter(k => k !== '_config' && k !== '_mastered');
                                             return (
-                                                <div
-                                                    key={pack.id}
-                                                    className="scholar-card p-4 sm:p-5 bg-gradient-to-b from-zinc-950/80 to-zinc-950/40 shadow-xl shadow-black/50 ring-1 ring-white/5 hover:ring-[var(--blue)]/30 hover:shadow-[0_8px_30px_var(--blue-glow)] backdrop-blur-3xl rounded-[24px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300 group"
-                                                >
-                                                    <div className="space-y-1 min-w-0 flex-1">
-                                                        <h4 className="text-sm font-black text-white group-hover:text-[var(--blue-text)] transition-colors uppercase tracking-wide truncate max-w-[280px]">
-                                                            {pack.title || "Untitled Pack"}
-                                                        </h4>
-                                                        <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">
-                                                            Created {new Date(pack.created_at || pack.createdAt).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-
-                                                    {/* Phase tracker icons */}
-                                                    <div className="flex items-center gap-1.5 bg-white/[0.02] p-1.5 rounded-2xl border border-white/5">
-                                                        {[
-                                                            { id: 'distill', icon: FileText, label: 'Summary' },
-                                                            { id: 'retain', icon: Layers, label: 'Cards' },
-                                                            { id: 'test', icon: Sword, label: 'Quiz' },
-                                                            { id: 'predict', icon: MapIcon, label: 'Roadmap' }
-                                                        ].map((ph) => {
-                                                            const isDone = completedPhases.includes(ph.id);
-                                                            const Icon = ph.icon;
-                                                            return (
-                                                                <div
-                                                                    key={ph.id}
-                                                                    className={cn(
-                                                                        "w-8 h-8 rounded-xl flex items-center justify-center border transition-all relative group/phase",
-                                                                        isDone
-                                                                            ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400 shadow-[0_0_8px_rgba(43,178,136,0.15)]"
-                                                                            : "bg-white/[0.02] border-white/5 text-white/20"
-                                                                    )}
-                                                                >
-                                                                    <Icon size={12} />
-                                                                    <span className="absolute bottom-full mb-2 hidden group-hover/phase:block bg-zinc-950 border border-white/10 text-[8px] font-black uppercase tracking-wider text-white px-2 py-0.5 rounded shadow-xl whitespace-nowrap z-50">
-                                                                        {ph.label}: {isDone ? "Ready" : "Pending"}
-                                                                    </span>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-
-                                                    <Link href={`/library/pack/${pack.id}`} className="shrink-0 w-full sm:w-auto">
-                                                        <div className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white hover:text-black font-black text-[9px] uppercase tracking-widest transition-all cursor-pointer text-center">
-                                                            <span>Resume Sprint</span>
-                                                            <ArrowRight size={10} />
+                                                <Link href={`/library/pack/${pack.id}`} key={pack.id} className="block group">
+                                                    <div className="scholar-card p-4 sm:p-5 bg-gradient-to-b from-zinc-950/80 to-zinc-950/40 shadow-xl shadow-black/50 ring-1 ring-white/5 group-hover:ring-[var(--blue)]/30 group-hover:shadow-[0_8px_30px_var(--blue-glow)] group-active:scale-[0.99] backdrop-blur-3xl rounded-[24px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300">
+                                                        <div className="space-y-1 min-w-0 flex-1">
+                                                            <h4 className="text-sm font-black text-white group-hover:text-[var(--blue-text)] transition-colors uppercase tracking-wide truncate max-w-[280px]">
+                                                                {pack.title || "Untitled Pack"}
+                                                            </h4>
+                                                            <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">
+                                                                Created {new Date(pack.created_at || pack.createdAt).toLocaleDateString()}
+                                                            </p>
                                                         </div>
-                                                    </Link>
-                                                </div>
+
+                                                        {/* Phase tracker icons */}
+                                                        <div className="flex items-center gap-2">
+                                                            {[
+                                                                { id: 'distill', icon: FileText, label: 'Summary' },
+                                                                { id: 'retain', icon: Layers, label: 'Cards' },
+                                                                { id: 'test', icon: Sword, label: 'Quiz' },
+                                                                { id: 'predict', icon: MapIcon, label: 'Roadmap' }
+                                                            ].map((ph) => {
+                                                                const isDone = completedPhases.includes(ph.id);
+                                                                const Icon = ph.icon;
+                                                                return (
+                                                                    <div
+                                                                        key={ph.id}
+                                                                        className={cn(
+                                                                            "flex items-center justify-center transition-all relative group/phase",
+                                                                            isDone
+                                                                                ? "text-emerald-400"
+                                                                                : "text-white/20"
+                                                                        )}
+                                                                    >
+                                                                        <Icon size={14} />
+                                                                        <span className="absolute bottom-full mb-2 hidden group-hover/phase:block bg-zinc-950 border border-white/10 text-[8px] font-black uppercase tracking-wider text-white px-2 py-0.5 rounded shadow-xl whitespace-nowrap z-50">
+                                                                            {ph.label}: {isDone ? "Ready" : "Pending"}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                            <div className="ml-4 pl-4 border-l border-white/5 text-white/20 group-hover:text-white transition-colors">
+                                                                <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </Link>
                                             );
                                         })}
                                     </div>
@@ -430,7 +447,7 @@ export default function DashboardWeb({
                                     </div>
 
                                     {/* Side-by-Side: ERS Donut (Left) + Streak dots (Right) */}
-                                    <div className="flex items-center justify-between gap-4 p-2 bg-white/[0.01] rounded-2xl border border-white/5">
+                                    <div className="flex items-center justify-between gap-4 p-4 bg-gradient-to-b from-white/[0.03] to-transparent rounded-2xl">
                                         
                                         {/* ERS Donut */}
                                         <div className="flex flex-col items-center justify-center flex-1 py-1 relative">
@@ -438,7 +455,7 @@ export default function DashboardWeb({
                                             
                                             {userState === 'NEW_USER' ? (
                                                 <div className="flex flex-col items-center justify-center">
-                                                    <div className="w-14 h-14 rounded-full border border-white/5 flex items-center justify-center bg-white/[0.01]">
+                                                    <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.02]">
                                                         <Sparkles size={14} className="text-white/20" />
                                                     </div>
                                                     <span className="text-[7px] font-black uppercase tracking-wider text-white/30 mt-1">Awaiting</span>
@@ -446,9 +463,9 @@ export default function DashboardWeb({
                                             ) : (
                                                 <div className="relative w-16 h-16 flex items-center justify-center">
                                                     <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
-                                                        <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="10" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
+                                                        <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.02)" strokeWidth="10" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
                                                         <motion.circle cx="50" cy="50" r="40" stroke={readinessColor.stroke} strokeWidth="10" fill="transparent"
-                                                            style={{ filter: `drop-shadow(0 0 5px ${readinessColor.glow})` }}
+                                                            style={{ filter: `drop-shadow(0 0 8px ${readinessColor.glow})` }}
                                                             strokeDasharray="188.4 62.8"
                                                             initial={{ strokeDashoffset: 188.4 }}
                                                             animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
@@ -470,27 +487,24 @@ export default function DashboardWeb({
                                         <div className="flex flex-col items-center justify-center flex-1 py-1">
                                             <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 mb-2">Weekly Streak</span>
                                             
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center gap-1.5">
                                                 {weekDays.map((day, i) => (
-                                                    <div key={i} className="flex flex-col items-center gap-1">
-                                                        <span className="text-[6px] font-black text-white/30 uppercase">{day.label}</span>
+                                                    <div key={i} className="flex flex-col items-center gap-1.5">
+                                                        <span className={cn("text-[7px] font-black uppercase", day.isToday ? "text-white" : "text-white/30")}>{day.label}</span>
                                                         <div
                                                             className={cn(
-                                                                "w-5 h-5 rounded-lg flex items-center justify-center border transition-all",
-                                                                day.active
-                                                                    ? "bg-amber-500/10 border-amber-500/35 shadow-[0_0_8px_rgba(229,169,60,0.15)]"
-                                                                    : day.isToday
-                                                                        ? "bg-white/5 border-white/20"
-                                                                        : day.isFuture
-                                                                            ? "bg-transparent border-white/5"
-                                                                            : "bg-white/[0.01] border-white/5"
+                                                                "w-5 h-5 flex items-center justify-center transition-all",
+                                                                day.active ? "text-amber-400 drop-shadow-[0_0_8px_rgba(229,169,60,0.6)]" : 
+                                                                day.isToday ? "bg-white/10 rounded-full" : ""
                                                             )}
                                                         >
                                                             {day.active ? (
-                                                                <Flame size={7} className="text-amber-400" />
+                                                                <Flame size={12} className="fill-current" />
                                                             ) : day.isToday ? (
-                                                                <div className="w-1 h-1 rounded-full bg-white/60" />
-                                                            ) : null}
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                                                            ) : (
+                                                                <div className="w-1 h-1 rounded-full bg-white/20" />
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
