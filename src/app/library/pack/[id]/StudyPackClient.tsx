@@ -398,13 +398,37 @@ export default function StudyPackPage() {
                         }
                     }
                 } else {
-                    const { data, error } = await supabase
+                    let packData: any = null;
+                    
+                    const { data: spData } = await supabase
                         .from("study_packs")
                         .select("*")
                         .eq("id", packId)
-                        .single();
+                        .maybeSingle();
+                    
+                    if (spData) {
+                        packData = spData;
+                    } else {
+                        // Fallback to generations table
+                        const { data: genData } = await supabase
+                            .from("generations")
+                            .select("*")
+                            .eq("id", packId)
+                            .maybeSingle();
+                        
+                        if (genData) {
+                            packData = {
+                                id: genData.id,
+                                title: genData.title || "Untitled Study Pack",
+                                type: "exam_sprint",
+                                created_at: genData.created_at,
+                                phases_data: genData.phases_data,
+                                source_text: genData.source_text
+                            };
+                        }
+                    }
 
-                    if (error) {
+                    if (!packData) {
                         // Try IndexedDB first
                         try {
                             const db = await openProfessorDB();
@@ -428,14 +452,13 @@ export default function StudyPackPage() {
                                 packData = offlinePacks[packId];
                                 setIsSavedOffline(true);
                             } else {
-                                console.error("Fetch Pack Error:", error.message, error.details, error.hint);
+                                console.error("Fetch Pack Error: Pack not found in either table");
                                 addToast("This study pack could not be found.", "error");
                                 router.push("/library");
                                 return;
                             }
                         }
                     } else {
-                        packData = data;
                         // Check if saved in IndexedDB
                         try {
                             const db = await openProfessorDB();
@@ -454,7 +477,7 @@ export default function StudyPackPage() {
                                     setIsSavedOffline(true);
                                 }
                             }
-                        } catch (dbErr) {
+                        } catch (e) {
                             const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
                             if (offlinePacks[packId]) {
                                 setIsSavedOffline(true);

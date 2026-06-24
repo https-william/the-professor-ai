@@ -23,24 +23,51 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const type = searchParams.get("type");
 
-        let query = supabase
+        let genQuery = supabase
             .from("generations")
             .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
+            .eq("user_id", user.id);
+
+        let packQuery = supabase
+            .from("study_packs")
+            .select("*")
+            .eq("user_id", user.id);
 
         if (type) {
-            query = query.eq("type", type);
+            genQuery = genQuery.eq("type", type);
+            // Assuming study_packs might not use 'type' column identically, 
+            // but we'll apply it if needed. If type is passed, perhaps it's specific.
         }
 
-        const { data: generations, error: fetchError } = await query;
+        const [genRes, packRes] = await Promise.all([
+            genQuery,
+            packQuery
+        ]);
 
-        if (fetchError) {
-            console.error("Library fetch error:", fetchError);
-            return NextResponse.json({ error: fetchError.message }, { status: 500 });
+        if (genRes.error) {
+            console.error("Generations fetch error:", genRes.error);
+        }
+        if (packRes.error) {
+            console.error("Study Packs fetch error:", packRes.error);
         }
 
-        return NextResponse.json({ success: true, generations });
+        const combined = [];
+        if (genRes.data) combined.push(...genRes.data);
+        if (packRes.data) {
+            const packsAsItems = packRes.data.map((p: any) => ({
+                id: p.id,
+                title: p.title || "Untitled Study Pack",
+                type: "exam_sprint",
+                created_at: p.created_at,
+                phases_data: p.phases_data,
+                source_text: p.source_text
+            }));
+            combined.push(...packsAsItems);
+        }
+
+        combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        return NextResponse.json({ success: true, generations: combined });
     } catch (error: any) {
         console.error("Library GET Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

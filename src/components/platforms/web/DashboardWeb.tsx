@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
     X, Zap, Upload, AlertTriangle, CheckCircle2, Loader2, AlertCircle,
     FileText, Layers, Sword, Map as MapIcon, Sparkles, Type, ArrowRight,
-    Flame, BookOpen, Swords, ChevronRight, BrainCircuit, TrendingUp, Coins, Sparkle
+    Flame, BookOpen, Swords, ChevronRight, BrainCircuit, TrendingUp, Coins, Sparkle, Target, Clock
 } from "lucide-react";
 import { calculateLevel, getLevelTitle, getLevelProgress } from "@/lib/profiles-client";
 import { cn } from "@/lib/utils";
@@ -145,14 +145,14 @@ export default function DashboardWeb({
     const userStreak = user?.streak ?? 0;
     const userCredits = user?.credits ?? 0;
 
-    // ─── ERS calculation ───
-    const totalCards = dueData?.totalCardsCount || 0;
-    const dueCardsCount = dueCount;
-    const readinessScore = totalCards > 0 ? Math.max(30, Math.round(((totalCards - dueCardsCount) / totalCards) * 100)) : 100;
-    const highestDueDeck = dueData?.decks?.reduce((max: any, deck: any) => deck.dueCount > max.dueCount ? deck : max, { dueCount: 0 });
-    const dueDeckTitle = highestDueDeck?.dueCount > 0 ? highestDueDeck.title : "your study packs";
-    const degradesIn = dueCardsCount > 0 ? Math.max(2, Math.round(24 - (dueCardsCount * 0.5))) : 24;
-    const sprintMin = dueData?.estimatedMinutes || 4;
+    // ─── Scholar Aura calculation ───
+    const auraScore = Math.min(100, Math.max(0, (userStreak * 5) + Math.min(50, userXp / 100)));
+    const auraData = useMemo(() => {
+        if (auraScore >= 90) return { label: "Limitless", color: { stroke: "var(--blue)", glow: "rgba(37,99,235,0.8)", text: "text-blue-400" }, icon: Sparkles };
+        if (auraScore >= 70) return { label: "Locked In", color: { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.6)", text: "text-emerald-400" }, icon: Target };
+        if (auraScore >= 40) return { label: "Cooking", color: { stroke: "var(--amber)", glow: "rgba(229,169,60,0.6)", text: "text-amber-400" }, icon: Flame };
+        return { label: "Needs Coffee", color: { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.4)", text: "text-rose-400" }, icon: Clock };
+    }, [auraScore]);
 
     // ─── Social proof / Dynamic Insight ───
     const socialProof = useMemo(() => {
@@ -180,12 +180,6 @@ export default function DashboardWeb({
     const today = new Date();
     const dateStr = today.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
     const dailyLine = getDailyTip(user?.id || "");
-
-    const readinessColor = useMemo(() => {
-        if (readinessScore >= 80) return { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.5)", text: "text-emerald-400" };
-        if (readinessScore >= 50) return { stroke: "var(--amber)", glow: "rgba(229,169,60,0.5)", text: "text-amber-400" };
-        return { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.5)", text: "text-rose-400" };
-    }, [readinessScore]);
 
     const [showStreakDetails, setShowStreakDetails] = useState(false);
     const [showWrappedDetails, setShowWrappedDetails] = useState(false);
@@ -266,11 +260,11 @@ export default function DashboardWeb({
                         WELCOME BAR — Elegant, borderless, text-based header
                     ═══════════════════════════════════════════════════════════ */}
                     <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-2 border-b border-white/5">
-                        <div className="space-y-1.5 max-w-xl">
-                            <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                        <div className="space-y-2 max-w-2xl">
+                            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white flex items-center gap-3">
                                 Hey {firstName},
                             </h2>
-                            <p className="text-xs text-white/50 font-bold italic leading-relaxed">
+                            <p className="text-sm text-white/50 font-bold italic leading-relaxed">
                                 &ldquo;{dailyLine}&rdquo;
                             </p>
                         </div>
@@ -294,43 +288,17 @@ export default function DashboardWeb({
                             <div className="flex items-center gap-2">
                                 <Coins size={14} className="text-emerald-400" />
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 leading-none mb-0.5">Credits</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 leading-none mb-0.5">Credits</span>
                                     <span className="font-mono text-sm leading-none font-black text-white">{userCredits}</span>
                                 </div>
                             </div>
-                            <div className="h-8 w-[1px] bg-white/10 mx-2 hidden sm:block" />
-                            <FocusTimer widget={true} />
                         </div>
-                    </motion.div>
-
-                    {/* ═══════════════════════════════════════════════════════════
-                        PRIMARY ACTION CTA — Large Glowing Block
-                    ═══════════════════════════════════════════════════════════ */}
-                    <motion.div variants={fadeUp}>
-                        <button
-                            onClick={openIngestModal}
-                            className="w-full relative group cursor-pointer border-0 p-0 overflow-hidden rounded-[24px] bg-gradient-to-r from-blue-600 to-blue-800 shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:shadow-[0_0_60px_rgba(37,99,235,0.5)] transition-all duration-500 active:scale-[0.98]"
-                        >
-                            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay"></div>
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
-                            <div className="relative px-8 py-6 sm:py-8 flex items-center justify-between z-10">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="text-white/80 font-black text-[10px] uppercase tracking-[0.3em] mb-1">Create Study Pack</span>
-                                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                                        Begin a New Sprint <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
-                                    </h3>
-                                </div>
-                                <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md items-center justify-center">
-                                    <Zap size={28} className="text-white group-hover:scale-110 transition-transform" />
-                                </div>
-                            </div>
-                        </button>
                     </motion.div>
 
                     {/* ═══════════════════════════════════════════════════════════
                         SYMMETRIC GRID: Left Column (65%) + Right Sidebar (35%)
                     ═══════════════════════════════════════════════════════════ */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-4">
 
                         {/* ─── LEFT COLUMN (65% width) ─── */}
                         <div className="lg:col-span-2 space-y-6">
@@ -338,10 +306,17 @@ export default function DashboardWeb({
                             {/* Section 1: Active Study Packs */}
                             <motion.div variants={fadeUp} className="space-y-4">
                                 <div className="flex items-center justify-between px-1">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.25em] text-white/50 flex items-center gap-2">
-                                        <BookOpen size={13} className="text-[var(--violet)]" />
+                                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/80 flex items-center gap-2">
+                                        <BookOpen size={16} className="text-[var(--violet)]" />
                                         <span>Active Study Packs</span>
                                     </h3>
+                                    <button
+                                        onClick={openIngestModal}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 active:scale-[0.98]"
+                                    >
+                                        <Zap size={12} className="fill-current text-white" />
+                                        <span>+ New Sprint</span>
+                                    </button>
                                 </div>
 
                                 {packsLoading ? (
@@ -449,9 +424,9 @@ export default function DashboardWeb({
                                     {/* Side-by-Side: ERS Donut (Left) + Streak dots (Right) */}
                                     <div className="flex items-center justify-between gap-4 p-4 bg-gradient-to-b from-white/[0.03] to-transparent rounded-2xl">
                                         
-                                        {/* ERS Donut */}
+                                        {/* Scholar Aura Donut */}
                                         <div className="flex flex-col items-center justify-center flex-1 py-1 relative">
-                                            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 mb-2">Readiness</span>
+                                            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 mb-2">Scholar Aura</span>
                                             
                                             {userState === 'NEW_USER' ? (
                                                 <div className="flex flex-col items-center justify-center">
@@ -464,17 +439,17 @@ export default function DashboardWeb({
                                                 <div className="relative w-16 h-16 flex items-center justify-center">
                                                     <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
                                                         <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.02)" strokeWidth="10" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                                        <motion.circle cx="50" cy="50" r="40" stroke={readinessColor.stroke} strokeWidth="10" fill="transparent"
-                                                            style={{ filter: `drop-shadow(0 0 8px ${readinessColor.glow})` }}
+                                                        <motion.circle cx="50" cy="50" r="40" stroke={auraData.color.stroke} strokeWidth="10" fill="transparent"
+                                                            style={{ filter: `drop-shadow(0 0 8px ${auraData.color.glow})` }}
                                                             strokeDasharray="188.4 62.8"
                                                             initial={{ strokeDashoffset: 188.4 }}
-                                                            animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
+                                                            animate={{ strokeDashoffset: 188.4 * (1 - auraScore / 100) }}
                                                             transition={{ duration: 1.2, ease: "easeOut" }}
                                                             strokeLinecap="round" />
                                                     </svg>
                                                     <div className="absolute flex flex-col items-center justify-center">
-                                                        <span className={cn("font-mono text-sm font-black leading-none tabular-nums", readinessColor.text)}>{readinessScore}%</span>
-                                                        <span className="text-[5px] font-black uppercase tracking-wider text-white/40 leading-none mt-0.5">ERS</span>
+                                                        <auraData.icon size={12} className={cn("mb-0.5", auraData.color.text)} />
+                                                        <span className={cn("text-[6px] font-black uppercase tracking-widest leading-none mt-0.5", auraData.color.text)}>{auraData.label}</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -513,32 +488,29 @@ export default function DashboardWeb({
 
                                     </div>
 
-                                    {/* ERS narratives / stats description */}
+                                    {/* Scholar Aura narratives / stats description */}
                                     <div className="space-y-3 pt-1">
                                         {userState === 'NEW_USER' ? (
                                             <p className="text-[11px] font-bold text-white/50 leading-relaxed text-center">
-                                                Drop your notes in Creator Studio. Your memory retention rate will automatically compute here after your first study sprint.
+                                                Drop your notes in Creator Studio. Your Scholar Aura will automatically compute here after your first study sprint.
                                             </p>
                                         ) : (
                                             <div className="space-y-2">
                                                 <p className="text-[11px] font-bold text-white/60 leading-relaxed text-center">
-                                                    {dueCardsCount > 0 ? (
-                                                        <>
-                                                            Memory retention for <span className="text-white font-black">{dueDeckTitle}</span> degrades in {degradesIn}h. Run a {sprintMin}-min review to preserve your streak.
-                                                        </>
-                                                    ) : (
-                                                        <>All caught up! Your memory retention is in perfect shape.</>
-                                                    )}
+                                                    {auraScore >= 90 ? "You're literally untouchable right now. Keep this up and exams are a joke." : 
+                                                     auraScore >= 70 ? "Solid momentum. Don't let the streak die, stay locked in." : 
+                                                     auraScore >= 40 ? "You're getting there, but we need more reps. Start a sprint." : 
+                                                     "Aura is dangerously low. Your bed misses you, but so do your grades. Wake up."}
                                                 </p>
                                                 <p className="text-[10px] text-white/40 font-bold text-center">{socialProof}</p>
                                             </div>
                                         )}
 
-                                        {dueCardsCount > 0 && userState !== 'NEW_USER' && (
+                                        {dueCount > 0 && userState !== 'NEW_USER' && (
                                             <Link href="/review" className="block w-full">
                                                 <div className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white text-black font-black text-[9px] uppercase tracking-[0.2em] shadow-md hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer border-0">
                                                     <Swords size={11} className="text-black" />
-                                                    <span>Resume Active Review</span>
+                                                    <span>Resume Active Review ({dueCount} Cards)</span>
                                                 </div>
                                             </Link>
                                         )}
