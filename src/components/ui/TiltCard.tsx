@@ -80,14 +80,28 @@ export default function TiltCard({
     >
       {/* 2.5D Light sweep reflection */}
       {isHovered && (
-        <div
-          className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-300 mix-blend-overlay"
-          style={{
-            borderRadius,
-            background: `radial-gradient(circle 220px at ${glowX}% ${glowY}%, ${glowColor}, transparent 80%)`,
-            opacity: glowOpacity,
-          }}
-        />
+        <>
+          {/* Radial mouse reflection glow */}
+          <div
+            className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-300 mix-blend-overlay"
+            style={{
+              borderRadius,
+              background: `radial-gradient(circle 220px at ${glowX}% ${glowY}%, ${glowColor}, transparent 80%)`,
+              opacity: glowOpacity,
+            }}
+          />
+          {/* Dynamic refraction glare sweep */}
+          <div
+            className="absolute inset-0 pointer-events-none z-35 transition-opacity duration-300 mix-blend-color-dodge"
+            style={{
+              borderRadius,
+              background: `linear-gradient(135deg, transparent 35%, rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.06) 55%, transparent 65%)`,
+              backgroundSize: "200% 200%",
+              backgroundPosition: `${(glowX - 50) * 1.5}% ${(glowY - 50) * 1.5}%`,
+              opacity: glowOpacity * 0.8,
+            }}
+          />
+        </>
       )}
       
       {/* Content wrapper */}

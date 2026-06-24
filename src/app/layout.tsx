@@ -28,6 +28,7 @@ import SiteHeader from "@/components/ui/SiteHeader";
 import NavigationLoader from "@/components/ui/NavigationLoader";
 import MainLayoutWrapper from "@/components/ui/MainLayoutWrapper";
 import MotionConfigProvider from "@/components/providers/MotionConfigProvider";
+import ThemePresetManager from "@/components/ui/ThemePresetManager";
 
 /* ═══ Typography Stack ═══
    Outfit → Geometric sans. Used for headings, UI chrome, user prompts.
@@ -342,6 +343,7 @@ export default function RootLayout({
                 <ErrorBoundary>
                   <MotionConfigProvider>
                     <FaviconSync />
+                    <ThemePresetManager />
 
                     <GlassRefractionProvider />
                     <PlatformLoader />

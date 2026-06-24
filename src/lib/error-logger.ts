@@ -6,6 +6,13 @@
  * Drop-in ready for Sentry or Axiom — just add the SDK call below the console.log.
  */
 
+import { createClient } from "@supabase/supabase-js";
+
+// Make sure these are defined in your env, otherwise fallback to prevent crashes
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
 type LogLevel = "info" | "warn" | "error";
 
 function log(level: LogLevel, event: string, data: Record<string, unknown>) {
@@ -23,7 +30,17 @@ function log(level: LogLevel, event: string, data: Record<string, unknown>) {
     } else {
         console.log(JSON.stringify(entry));
     }
-    // TODO: sentry.captureEvent(entry) or axiom.ingest(entry)
+    
+    // Asynchronously push to Supabase if configured
+    if (supabase) {
+        supabase.from("system_logs").insert([{
+            level,
+            event,
+            data
+        }]).then(({ error }) => {
+            if (error) console.error("Failed to push log to Supabase:", error);
+        });
+    }
 }
 
 // ─── Parser Events ────────────────────────────────────────────────────────────

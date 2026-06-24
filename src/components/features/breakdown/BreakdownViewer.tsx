@@ -7,8 +7,6 @@ import Markdown from "@/components/ui/Markdown";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { cn } from "@/lib/utils";
 import { 
-    HelpCircle, 
-    FileText, 
     ChevronLeft, 
     Share2, 
     Download, 
@@ -17,6 +15,8 @@ import {
     Loader2
 } from "lucide-react";
 import { exportToPDF } from "@/lib/pdf-bridge";
+import ProgressNodeTrack from "@/components/ui/ProgressNodeTrack";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 
 interface BreakdownViewerProps {
     data: string;
@@ -25,6 +25,41 @@ interface BreakdownViewerProps {
     onFinish?: () => void;
     isStreaming?: boolean;
 }
+
+// Programmatic Web Audio Synthesizer
+const playResultsSound = (type: "click" | "page-turn") => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const now = ctx.currentTime;
+
+        if (type === "click") {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(580, now);
+            gain.gain.setValueAtTime(0.012, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.06);
+        } else if (type === "page-turn") {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(450, now);
+            osc.frequency.exponentialRampToValueAtTime(700, now + 0.08);
+            gain.gain.setValueAtTime(0.008, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.12);
+        }
+    } catch (e) {}
+};
 
 export default function BreakdownViewer({ data, title, generationId, onFinish, isStreaming }: BreakdownViewerProps) {
     const router = useRouter();
@@ -102,26 +137,31 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
     const currentChapter = processedChapters[currentSlide];
 
     return (
-        <div className="min-h-screen w-full flex flex-col items-center bg-transparent">
+        <div className="h-[calc(100vh-68px)] w-full flex flex-col items-center bg-transparent overflow-hidden">
             {!onFinish && (
-                <header className="w-full max-w-5xl p-6 flex items-center justify-between z-20">
+                <header className="w-full max-w-3xl p-6 flex items-center justify-between z-20 flex-shrink-0">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => router.push('/library')} className="p-2 rounded-full hover:bg-white/5 transition-colors">
+                        <button 
+                            onClick={() => { playResultsSound("click"); router.push('/library'); }} 
+                            className="p-2 rounded-full hover:bg-white/5 transition-colors text-zinc-400 hover:text-white cursor-pointer"
+                        >
                             <ChevronLeft size={20} />
                         </button>
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#10B981] mb-0.5">The Breakdown</p>
-                            <h1 className="text-sm font-bold truncate max-w-[200px]">{title}</h1>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2BB288] mb-0.5">The Breakdown</p>
+                            <h1 className="text-sm font-bold truncate max-w-[200px] text-white">{title}</h1>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={handleCopyLink} className="p-2 rounded-xl hover:bg-white/5 transition-colors">
+                        <button 
+                            onClick={handleCopyLink} 
+                            className="p-2 rounded-xl hover:bg-white/5 transition-colors text-zinc-400 hover:text-white cursor-pointer"
+                        >
                             <Share2 size={18} />
                         </button>
                     </div>
                 </header>
             )}
-
 
             <AnimatePresence mode="wait">
                 <motion.main 
@@ -129,48 +169,39 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="flex-1 w-full max-w-3xl px-6 py-12"
+                    className="flex-1 w-full max-w-3xl px-6 py-4 flex flex-col overflow-hidden"
                 >
-                    <div className="mb-16">
-                        <div className="flex items-center gap-3 mb-6">
-                            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">
-                                Section {currentSlide + 1} / {processedChapters.length}
-                            </span>
+                    <div className="mb-6 flex-shrink-0">
+                        <div className="flex items-center gap-3 mb-4">
+                            <ProgressNodeTrack
+                                total={processedChapters.length}
+                                current={currentSlide}
+                                completed={Array.from({ length: currentSlide }, (_, i) => i)}
+                                activeColor="#2BB288"
+                                completedColor="#2BB288"
+                            />
                         </div>
-                        <h2 className="text-4xl font-black tracking-tight leading-tight mb-6">
+                        <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight mb-2 text-white">
                             {currentSlide === 0 ? title : currentChapter.text.split("\n")[0].replace("### ", "")}
                         </h2>
                     </div>
 
-                    <div className="mb-32">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={currentSlide}
-                                initial="hidden"
-                                animate="visible"
-                                variants={{
-                                    visible: {
-                                        transition: {
-                                            staggerChildren: 0.1
-                                        }
-                                    }
-                                }}
-                            >
-                                <Markdown className="reveal-ceremony">
-                                    {currentSlide === 0 ? currentChapter.text : currentChapter.text.split("\n").slice(1).join("\n")}
-                                </Markdown>
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
+                    <GlassmorphicCard intensity="medium" radius="24px" className="p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar mb-6">
+                        <div className="font-serif prose prose-invert max-w-none text-zinc-300 text-[15px] leading-relaxed">
+                            <Markdown className="reveal-ceremony font-serif">
+                                {currentSlide === 0 ? currentChapter.text : currentChapter.text.split("\n").slice(1).join("\n")}
+                            </Markdown>
+                        </div>
+                    </GlassmorphicCard>
 
-                    <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/5 pb-20">
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5 pb-20 flex-shrink-0">
                         <button 
                             onClick={() => {
+                                playResultsSound("page-turn");
                                 setCurrentSlide(prev => Math.max(0, prev - 1));
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                             className={cn(
-                                "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all",
+                                "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all text-white cursor-pointer",
                                 currentSlide === 0 && "opacity-0 pointer-events-none"
                             )}
                         >
@@ -181,19 +212,22 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                         {currentSlide < processedChapters.length - 1 ? (
                             <button 
                                 onClick={() => {
+                                    playResultsSound("page-turn");
                                     setCurrentSlide(prev => prev + 1);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className="group flex items-center gap-4 bg-[var(--accent)] text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-amber-500/10"
+                                className="group flex items-center gap-4 bg-[#E5A93C] text-zinc-950 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-amber-500/10 cursor-pointer"
                             >
                                 <span>Proceed</span>
                                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         ) : (
                             <button 
-                                onClick={handleFinish}
+                                onClick={() => {
+                                    playResultsSound("click");
+                                    handleFinish();
+                                }}
                                 disabled={isStreaming}
-                                className="group flex items-center gap-4 bg-emerald-500 text-black px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="group flex items-center gap-4 bg-[#2BB288] text-zinc-950 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <span>{isStreaming ? "Generating..." : "Finish Breakdown"}</span>
                                 {isStreaming ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
@@ -203,37 +237,40 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                 </motion.main>
             </AnimatePresence>
 
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
-                <button 
-                    onClick={handleCopyLink}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500 text-black font-black text-[10px] uppercase tracking-wider transition-all hover-scale-lg active:scale-95"
-                >
-                    <Share2 size={14} />
-                    <span>{copySuccess ? "Copied!" : "Share Link"}</span>
-                </button>
-                <div className="w-[1px] h-4 bg-white/10 mx-1" />
-                <button 
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    className="p-3 rounded-full hover:bg-white/5 transition-colors disabled:opacity-50" 
-                    title="Download PDF"
-                >
-                    {isExporting ? (
-                        <Loader2 size={16} className="animate-spin text-[var(--accent)]" />
-                    ) : (
-                        <Download size={16} className="opacity-40 hover:opacity-100 transition-opacity" />
-                    )}
-                </button>
+            {/* Floating Glass Capsule */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-1.5 flex-shrink-0">
+                <GlassmorphicCard intensity="heavy" radius="9999px" className="flex items-center gap-2 p-1.5 border border-white/10 shadow-2xl">
+                    <button 
+                        onClick={handleCopyLink}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#2BB288] text-zinc-950 font-black text-[10px] uppercase tracking-wider transition-all hover-scale-lg active:scale-95 cursor-pointer"
+                    >
+                        <Share2 size={14} />
+                        <span>{copySuccess ? "Copied!" : "Share Link"}</span>
+                    </button>
+                    <div className="w-[1px] h-4 bg-white/10 mx-1" />
+                    <button 
+                        onClick={handleExportPDF}
+                        disabled={isExporting}
+                        className="p-2.5 rounded-full hover:bg-white/5 transition-colors disabled:opacity-50 text-white cursor-pointer" 
+                        title="Download PDF"
+                    >
+                        {isExporting ? (
+                            <Loader2 size={16} className="animate-spin text-[#E5A93C]" />
+                        ) : (
+                            <Download size={16} className="opacity-40 hover:opacity-100 transition-opacity" />
+                        )}
+                    </button>
+                </GlassmorphicCard>
             </div>
 
             {/* Hidden Export Container */}
             <div className="fixed left-[-9999px] top-0 pointer-events-none">
-                <div id="breakdown-export-container" className="w-[800px] bg-[#040406] text-[#F2EDE4] p-20 font-sans">
+                <div id="breakdown-export-container" className="w-[800px] bg-[#09090b] text-zinc-100 p-20 font-sans">
                     <div className="mb-20 pb-10 border-b border-white/10">
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-4">The Professor Breakdown Report</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E5A93C] mb-4">The Professor Breakdown Report</p>
                         <h1 className="text-5xl font-black tracking-tight leading-tight">{title}</h1>
                     </div>
-                    <div className="prose prose-invert max-w-none">
+                    <div className="prose prose-invert max-w-none font-serif text-[16px] leading-relaxed">
                         <Markdown>{fullMarkdownContent}</Markdown>
                     </div>
                 </div>

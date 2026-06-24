@@ -7,13 +7,34 @@ import ShareCard from "@/components/ShareCard";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import SessionComplete from "@/components/features/SessionComplete";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
-import { Share2, ChevronLeft, Baby, Check, X, HelpCircle, Download } from "lucide-react";
+import { 
+    Share2, 
+    ChevronLeft, 
+    Baby, 
+    Check, 
+    X, 
+    HelpCircle, 
+    Download, 
+    Volume2, 
+    Lightbulb, 
+    RefreshCw, 
+    Shuffle, 
+    Type, 
+    Eye,
+    MessageSquare,
+    Sparkles
+} from "lucide-react";
 import { downloadFlashcardsOffline } from "@/lib/offline-download";
+import { createClient } from "@/lib/supabase/client";
+import { sm2, type SM2Card, formatInterval } from "@/lib/spaced-repetition";
+import ProgressNodeTrack from "@/components/ui/ProgressNodeTrack";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 
 interface Flashcard {
     id?: string;
     front: string;
     back: string;
+    topic?: string;
 }
 
 interface FlashcardViewerProps {
@@ -89,13 +110,31 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
     const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
     const [masteredSet, setMasteredSet] = useState<Set<number>>(new Set());
 
+    // Learning custom features
+    const [srsMap, setSrsMap] = useState<Record<string, any>>({});
+    const [userGuess, setUserGuess] = useState("");
+    const [isVerifyTextMode, setIsVerifyTextMode] = useState(false);
+    const [isReverseMode, setIsReverseMode] = useState(false);
+    const [isDyslexiaMode, setIsDyslexiaMode] = useState(false);
+    const [isPlayingTTS, setIsPlayingTTS] = useState(false);
+    const [secondsElapsed, setSecondsElapsed] = useState(0);
+    
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isTheaterMode, setIsTheaterMode] = useState(false);
     const [hasRecordedActivity, setHasRecordedActivity] = useState(false);
-    const [eli5Text, setEli5Text] = useState<Record<number, string>>({});
+    const [eli5Text, setEli5Text] = useState<Record<string, string>>({});
     const [isGeneratingEli5, setIsGeneratingEli5] = useState(false);
     const [sessionComplete, setSessionComplete] = useState(false);
     const [sessionStats, setSessionStats] = useState({ xp: 0, streak: 0, incremented: false });
+
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Map unique identifiers and original indices to cards
+    const originalCards = flashcards.map((card, index) => ({
+        ...card,
+        originalIndex: index,
+        stableId: card.id || `${generationId || 'temp'}_${index}`
+    }));
 
     // Initialize card queue
     useEffect(() => {
@@ -104,14 +143,69 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         }
     }, [flashcards]);
 
+    // Track active card review elapsed time
+    useEffect(() => {
+        if (cardState !== 'EVALUATED' && !sessionComplete && cardQueue.length > 0) {
+            setSecondsElapsed(0);
+            const interval = setInterval(() => {
+                setSecondsElapsed(prev => prev + 1);
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [queuePointer, cardState, sessionComplete, cardQueue]);
+
+    // Fetch and synchronize SRS queue on mount
+    useEffect(() => {
+        const loadSRS = async () => {
+            if (!generationId) return;
+            if (user) {
+                try {
+                    const supabase = createClient();
+                    const { data, error } = await supabase
+                        .from('srs_queue')
+                        .select('*')
+                        .eq('pack_id', generationId)
+                        .eq('item_type', 'card');
+                    if (data) {
+                        const map: Record<string, any> = {};
+                        data.forEach((item: any) => {
+                            map[item.item_id] = item;
+                        });
+                        setSrsMap(map);
+                    }
+                } catch (e) {
+                    console.warn("Failed to load SRS items from database", e);
+                }
+            } else {
+                try {
+                    const localData = localStorage.getItem(`srs_local_${generationId}`);
+                    if (localData) {
+                        setSrsMap(JSON.parse(localData));
+                    }
+                } catch (e) {
+                    console.warn("Failed to load SRS items from local storage", e);
+                }
+            }
+        };
+        loadSRS();
+    }, [generationId, user]);
+
     // Keyboard controls
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (isGeneratingEli5 || sessionComplete || cardQueue.length === 0) return;
             
-            // Bypass input fields
+            // Bypass input fields unless focused in card text verify mode
             const activeTag = document.activeElement?.tagName.toLowerCase();
-            if (activeTag === 'input' || activeTag === 'textarea') return;
+            if (activeTag === 'input' || activeTag === 'textarea') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (cardState === 'IDLE') {
+                        setCardState('FLIPPED');
+                    }
+                }
+                return;
+            }
 
             switch (e.key.toLowerCase()) {
                 case ' ':
@@ -124,16 +218,30 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                         setCardState('IDLE');
                     }
                     break;
+                case '1':
                 case 'j':
                     e.preventDefault();
                     if (cardState === 'FLIPPED') {
-                        handleEvaluate(false); // Flag/Re-queue
+                        handleRate(1); // Again
                     }
                     break;
+                case '2':
+                    e.preventDefault();
+                    if (cardState === 'FLIPPED') {
+                        handleRate(2); // Hard
+                    }
+                    break;
+                case '3':
                 case 'k':
                     e.preventDefault();
                     if (cardState === 'FLIPPED') {
-                        handleEvaluate(true); // Mastered
+                        handleRate(4); // Good
+                    }
+                    break;
+                case '4':
+                    e.preventDefault();
+                    if (cardState === 'FLIPPED') {
+                        handleRate(5); // Easy
                     }
                     break;
                 case 'escape':
@@ -145,33 +253,141 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [cardState, queuePointer, cardQueue, isGeneratingEli5, sessionComplete]);
+    }, [cardState, queuePointer, cardQueue, isGeneratingEli5, sessionComplete, userGuess]);
 
     const handleFlip = () => {
         if (cardState === 'IDLE') setCardState('FLIPPED');
         else if (cardState === 'FLIPPED') setCardState('IDLE');
     };
 
-    const handleEvaluate = async (mastered: boolean) => {
+    const submitSRSReview = async (stableId: string, quality: number) => {
+        const current = srsMap[stableId] || {
+            item_id: stableId,
+            ease_factor: 2.5,
+            interval_days: 0,
+            repetitions: 0,
+            status: 'new'
+        };
+
+        const cardStateObj: SM2Card = {
+            id: current.item_id,
+            easeFactor: Number(current.ease_factor || current.easeFactor || 2.5),
+            interval: Number(current.interval_days || current.interval || 0),
+            repetitions: Number(current.repetitions || 0),
+            nextReview: current.next_review_at || current.nextReview || new Date().toISOString(),
+            lastReview: current.last_review_at || current.lastReview || new Date().toISOString(),
+            status: (current.status || 'new') as SM2Card['status']
+        };
+
+        const result = sm2(cardStateObj, quality);
+
+        const updatedItem = {
+            item_id: stableId,
+            item_type: 'card',
+            pack_id: generationId || null,
+            ease_factor: result.easeFactor,
+            interval_days: result.interval,
+            repetitions: result.repetitions,
+            next_review_at: result.nextReview,
+            last_review_at: new Date().toISOString(),
+            status: result.status
+        };
+
+        // Update local state map
+        setSrsMap(prev => ({
+            ...prev,
+            [stableId]: updatedItem
+        }));
+
+        if (user && generationId) {
+            try {
+                const supabase = createClient();
+                await supabase
+                    .from('srs_queue')
+                    .upsert({
+                        user_id: user.id,
+                        ...updatedItem
+                    }, { onConflict: 'user_id,item_id,item_type' });
+            } catch (e) {
+                console.warn("Failed to save SRS item to database", e);
+            }
+        } else if (generationId) {
+            try {
+                const localData = localStorage.getItem(`srs_local_${generationId}`);
+                const localMap = localData ? JSON.parse(localData) : {};
+                localMap[stableId] = updatedItem;
+                localStorage.setItem(`srs_local_${generationId}`, JSON.stringify(localMap));
+            } catch (e) {
+                console.warn("Failed to save SRS item to local storage", e);
+            }
+        }
+    };
+
+    const getCardIntervalPreviews = (stableId: string) => {
+        const current = srsMap[stableId] || {
+            item_id: stableId,
+            ease_factor: 2.5,
+            interval_days: 0,
+            repetitions: 0,
+            status: 'new'
+        };
+
+        const cardStateObj: SM2Card = {
+            id: current.item_id,
+            easeFactor: Number(current.ease_factor || current.easeFactor || 2.5),
+            interval: Number(current.interval_days || current.interval || 0),
+            repetitions: Number(current.repetitions || 0),
+            nextReview: current.next_review_at || current.nextReview || new Date().toISOString(),
+            lastReview: current.last_review_at || current.lastReview || new Date().toISOString(),
+            status: (current.status || 'new') as SM2Card['status']
+        };
+
+        return {
+            again: formatInterval(sm2(cardStateObj, 1).interval),
+            hard: formatInterval(sm2(cardStateObj, 2).interval),
+            good: formatInterval(sm2(cardStateObj, 4).interval),
+            easy: formatInterval(sm2(cardStateObj, 5).interval)
+        };
+    };
+
+    const handleRate = async (quality: number) => {
+        if (cardState === 'EVALUATED') return;
         const currentCardIndex = cardQueue[queuePointer];
+        const activeCard = originalCards[currentCardIndex];
         
-        setExitDirection(mastered ? 'right' : 'left');
+        const isCorrect = quality >= 3;
+        setExitDirection(isCorrect ? 'right' : 'left');
         setCardState('EVALUATED');
 
-        if (mastered) {
+        // Stop any active TTS audio
+        if (isPlayingTTS) {
+            if (audioRef.current) audioRef.current.pause();
+            window.speechSynthesis.cancel();
+            setIsPlayingTTS(false);
+        }
+
+        // Save review progress
+        await submitSRSReview(activeCard.stableId, quality);
+
+        if (isCorrect) {
             setMasteredSet(prev => {
                 const next = new Set(prev);
                 next.add(currentCardIndex);
                 return next;
             });
             playVictoryChime();
-            addToast("Card marked as mastered! 🎯", "success", undefined, undefined, true);
+            const previews = getCardIntervalPreviews(activeCard.stableId);
+            const label = quality === 5 ? previews.easy : previews.good;
+            addToast(`Got it! Next review in ${label} 🎯`, "success", undefined, undefined, true);
         } else {
             setCardQueue(prev => [...prev, currentCardIndex]);
-            addToast("No penalties here! Card is silently re-queued for your review. 🔄", "info", undefined, undefined, true);
+            addToast("Re-queued for active recall review. 🔄", "info", undefined, undefined, true);
         }
 
-        // Wait for exit transition
+        // Reset user guess inputs
+        setUserGuess("");
+
+        // Transition delay
         setTimeout(async () => {
             if (queuePointer >= cardQueue.length - 1) {
                 if (!hasRecordedActivity) {
@@ -186,7 +402,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             const { stats } = await actRes.json();
                             setSessionStats({
                                 xp: stats?.xpGained || 5,
-                                streak: stats?.newStreak || user.streak || 0,
+                                streak: stats?.newStreak || user?.streak || 0,
                                 incremented: stats?.streakIncremented || false,
                             });
                             refreshUser();
@@ -204,8 +420,60 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         }, 220);
     };
 
+    const handlePlayTTS = async (text: string) => {
+        if (isPlayingTTS) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            window.speechSynthesis.cancel();
+            setIsPlayingTTS(false);
+            return;
+        }
+
+        setIsPlayingTTS(true);
+        try {
+            const res = await fetch("/api/tts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text })
+            });
+
+            if (!res.ok) throw new Error("AWS TTS proxy failed");
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            
+            if (audioRef.current) {
+                audioRef.current.src = url;
+            } else {
+                audioRef.current = new Audio(url);
+            }
+            
+            audioRef.current.onended = () => {
+                setIsPlayingTTS(false);
+            };
+            audioRef.current.play();
+        } catch (err) {
+            console.warn("TTS API failed, falling back to window.speechSynthesis", err);
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.onend = () => setIsPlayingTTS(false);
+                utterance.onerror = () => setIsPlayingTTS(false);
+                window.speechSynthesis.speak(utterance);
+            } catch (speechErr) {
+                setIsPlayingTTS(false);
+                addToast("Audio speech is not supported in this browser.", "error");
+            }
+        }
+    };
+
     const handleEli5 = async (e: React.MouseEvent, text: string, idx: number) => {
         e.stopPropagation();
+        if (!user) {
+            addToast("Please sign up or log in to generate 'Ask the Professor' AI explanations! 💡", "info");
+            return;
+        }
         if (isGeneratingEli5 || eli5Text[idx]) return;
         setIsGeneratingEli5(true);
         try {
@@ -225,13 +493,26 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 setEli5Text(prev => ({ ...prev, [idx]: buffer }));
             }
         } catch (err) {
-            addToast("Failed to simplify", "error");
+            addToast("Failed to simplify this card.", "error");
         } finally {
             setIsGeneratingEli5(false);
         }
     };
 
-    // 3D Parallax Mouse States
+    const shuffleDeck = () => {
+        setCardQueue(prev => {
+            const list = [...prev];
+            // Fisher-Yates shuffle remaining cards from queuePointer onwards
+            for (let i = list.length - 1; i > queuePointer; i--) {
+                const j = queuePointer + Math.floor(Math.random() * (i - queuePointer + 1));
+                [list[i], list[j]] = [list[j], list[i]];
+            }
+            addToast("Deck shuffled! 🔀", "info");
+            return list;
+        });
+    };
+
+    // 3D Parallax Mouse coordinates
     const [rotateX, setRotateX] = useState(0);
     const [rotateY, setRotateY] = useState(0);
 
@@ -243,7 +524,6 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         const mouseX = e.clientX - rect.left - width / 2;
         const mouseY = e.clientY - rect.top - height / 2;
         
-        // Calculate rotation degrees (cap at max 12 deg tilt)
         const calcY = (mouseX / (width / 2)) * 12;
         const calcX = -(mouseY / (height / 2)) * 12;
 
@@ -259,10 +539,21 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
     if (flashcards.length === 0 || cardQueue.length === 0) return null;
 
     const currentCardIndex = cardQueue[queuePointer];
-    const currentCard = flashcards[currentCardIndex];
+    const currentCard = originalCards[currentCardIndex];
     const progressPercent = Math.round((masteredSet.size / flashcards.length) * 100);
+    
+    // Dynamic text toggles for front/back swap (Reverse Study Mode)
+    const cardFrontText = isReverseMode ? currentCard.back : currentCard.front;
+    const cardBackText = isReverseMode ? currentCard.front : currentCard.back;
 
-    // 3D Card Inline Styles
+    // Load active card details
+    const activeSRS = srsMap[currentCard.stableId];
+    const srsStatus = activeSRS?.status || "new";
+
+    // Interval previews for buttons
+    const reviewIntervals = getCardIntervalPreviews(currentCard.stableId);
+
+    // 3D Card styles
     const cardInnerStyle: React.CSSProperties = {
         position: "relative",
         width: "100%",
@@ -279,77 +570,156 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
         borderRadius: "28px",
-        border: "1.5px solid var(--border)",
-        padding: "32px",
+        border: "1.5px solid rgba(255, 255, 255, 0.08)",
+        padding: "24px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        // Primary interactive card uses deep rich layout blur shadow, inactive uses shadow-none
-        boxShadow: cardState === 'EVALUATED' ? "none" : "0 20px 50px rgba(0, 0, 0, 0.5)",
+        boxShadow: cardState === 'EVALUATED' ? "none" : "0 25px 60px -15px rgba(0, 0, 0, 0.7)",
     };
 
     const cardFrontStyle: React.CSSProperties = {
         ...cardFaceStyle,
-        background: "var(--card)",
+        background: "rgba(18, 18, 24, 0.8)",
+        backdropFilter: "blur(20px)",
     };
 
     const cardBackStyle: React.CSSProperties = {
         ...cardFaceStyle,
-        background: "var(--card)",
+        background: "rgba(12, 12, 16, 0.9)",
+        backdropFilter: "blur(25px)",
         transform: "rotateY(180deg)",
     };
 
     return (
-        <div className={`min-h-screen w-full transition-colors duration-700 ${isTheaterMode ? 'bg-[#030305]' : 'bg-transparent'} flex flex-col items-center select-none`}>
-            {/* Header */}
+        <div className={`min-h-screen w-full transition-colors duration-700 ${isTheaterMode ? 'bg-[#030305]' : 'bg-transparent'} flex flex-col items-center select-none pb-12`}>
+            {/* Header Toolbar */}
             <header className={`w-full max-w-5xl p-6 flex items-center justify-between z-20 transition-opacity duration-500 ${isTheaterMode ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                 <div className="flex items-center gap-4">
-                    <button onClick={() => router.push('/library')} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+                    <button onClick={() => router.push('/library')} className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer">
                         <ChevronLeft size={20} />
                     </button>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-0.5">Study Mode</p>
-                        <h1 className="text-sm font-bold text-[var(--foreground)] truncate max-w-[200px]">{title}</h1>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--amber)] mb-0.5">Spaced Repetition Lab</p>
+                        <h1 className="text-sm font-bold text-[var(--foreground)] truncate max-w-[200px] md:max-w-xs">{title}</h1>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={() => downloadFlashcardsOffline(title, flashcards)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 cursor-pointer" title="Download for Offline Use">
+                    <button onClick={() => downloadFlashcardsOffline(title, flashcards)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 cursor-pointer" title="Download for Offline Use">
                         <Download size={16} />
-                        <span className="text-[11px] font-bold">Download</span>
+                        <span className="text-[11px] font-bold hidden sm:inline">Offline</span>
                     </button>
-                    <button onClick={() => setIsShareOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 cursor-pointer">
+                    <button onClick={() => setIsShareOpen(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 cursor-pointer">
                         <Share2 size={16} />
-                        <span className="text-[11px] font-bold">Share</span>
+                        <span className="text-[11px] font-bold hidden sm:inline">Share</span>
                     </button>
                 </div>
             </header>
 
-            <main className="flex-1 w-full max-w-2xl px-6 flex flex-col items-center justify-center relative z-10">
+            <main className="flex-1 w-full max-w-2xl px-6 flex flex-col items-center justify-center relative z-10 gap-6 mt-2">
                 
-                {/* Stats & Progress indicators */}
-                <div className="w-full mb-10 space-y-4">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-[var(--foreground-muted)] uppercase tracking-wider">
-                        <span>Sprint Progress</span>
-                        <span>{masteredSet.size} / {flashcards.length} Mastered</span>
+                {/* Visual Progress Node Track */}
+                <div className="w-full space-y-4">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-[var(--foreground-muted)] uppercase tracking-wider px-1">
+                        <span>Deck Progression</span>
+                        <span>{masteredSet.size} / {flashcards.length} correct</span>
                     </div>
 
-                    <div className="w-full bg-[var(--bg-3)] rounded-full h-2 overflow-hidden border border-white/5 relative shadow-inner">
-                        <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progressPercent}%` }}
-                            className="h-full bg-gradient-to-r from-[var(--blue-light)] to-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
-                        />
-                    </div>
+                    <ProgressNodeTrack
+                        total={flashcards.length}
+                        current={currentCard.originalIndex}
+                        completed={Array.from(masteredSet).map(idx => originalCards[idx]?.originalIndex || 0)}
+                        className="w-full"
+                    />
 
-                    <div className="flex items-center justify-between text-[10px] text-[var(--foreground-muted)]/60 font-mono">
+                    <div className="flex items-center justify-between text-[10px] text-[var(--foreground-muted)]/50 font-mono px-1">
                         <span>Card {queuePointer + 1} of {cardQueue.length} in round</span>
-                        <span>{cardQueue.length - queuePointer} remaining</span>
+                        <span className="flex items-center gap-2">
+                            {secondsElapsed}s elapsed
+                            {srsStatus !== 'new' && (
+                                <span className="px-1.5 py-0.5 rounded bg-[var(--violet)]/10 text-[var(--violet)] text-[8px] font-bold uppercase tracking-wider border border-[var(--violet)]/20">
+                                    {srsStatus}
+                                </span>
+                            )}
+                        </span>
                     </div>
                 </div>
 
-                {/* Animated 3D Cards container */}
-                <div className="relative w-full aspect-[4/3]" style={{ perspective: "1000px" }}>
+                {/* Sub-toolbar widgets */}
+                <div className="w-full flex items-center justify-end gap-2.5">
+                    <button 
+                        onClick={shuffleDeck}
+                        className="p-2 rounded-xl bg-white/5 border border-white/5 text-[var(--foreground-muted)] hover:text-white transition-all" 
+                        title="Shuffle Deck"
+                    >
+                        <Shuffle size={15} />
+                    </button>
+                    <button 
+                        onClick={() => setIsReverseMode(!isReverseMode)}
+                        className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold ${
+                            isReverseMode 
+                                ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                                : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                        }`}
+                        title="Swap Term & Definition"
+                    >
+                        <RefreshCw size={15} />
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider hidden sm:inline">Reverse Mode</span>
+                    </button>
+                    <button 
+                        onClick={() => setIsVerifyTextMode(!isVerifyTextMode)}
+                        className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold ${
+                            isVerifyTextMode 
+                                ? 'bg-[var(--violet)]/10 border-[var(--violet)]/30 text-[var(--violet)]' 
+                                : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                        }`}
+                        title="Type Guess Mode"
+                    >
+                        <MessageSquare size={15} />
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider hidden sm:inline">Type Input</span>
+                    </button>
+                    <button 
+                        onClick={() => setIsDyslexiaMode(!isDyslexiaMode)}
+                        className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold ${
+                            isDyslexiaMode 
+                                ? 'bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]' 
+                                : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                        }`}
+                        title="Dyslexia Friendly Font"
+                    >
+                        <Type size={15} />
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider hidden sm:inline">Dyslexia font</span>
+                    </button>
+                </div>
+
+                {/* Card Stack Depth Frame */}
+                <div className="relative w-full aspect-[16/11] max-h-[360px] md:max-h-[420px]" style={{ perspective: "1000px" }}>
+                    
+                    {/* Background Stack Card 2 */}
+                    {cardQueue.length - queuePointer > 2 && (
+                        <div 
+                            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-950/40 pointer-events-none transition-all duration-300"
+                            style={{
+                                transform: "translateY(20px) scale(0.93)",
+                                zIndex: -2,
+                                opacity: 0.2,
+                            }}
+                        />
+                    )}
+
+                    {/* Background Stack Card 1 */}
+                    {cardQueue.length - queuePointer > 1 && (
+                        <div 
+                            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-900/50 pointer-events-none transition-all duration-300"
+                            style={{
+                                transform: "translateY(10px) scale(0.97)",
+                                zIndex: -1,
+                                opacity: 0.45,
+                            }}
+                        />
+                    )}
+
                     <AnimatePresence mode="wait" custom={exitDirection} initial={false}>
                         <motion.div
                             key={queuePointer}
@@ -373,9 +743,9 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             onDragEnd={(event, info) => {
                                 const threshold = 120;
                                 if (info.offset.x > threshold) {
-                                    handleEvaluate(true);
+                                    handleRate(4); // Good
                                 } else if (info.offset.x < -threshold) {
-                                    handleEvaluate(false);
+                                    handleRate(1); // Again
                                 }
                             }}
                             onTap={handleFlip}
@@ -384,91 +754,210 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                 
                                 {/* Front Panel */}
                                 <div style={cardFrontStyle}>
-                                    <p className="text-2xl font-black text-center leading-tight tracking-tight text-[var(--text)] px-4">
-                                        {currentCard.front}
+                                    {/* Shimmer reflection streak */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
+                                    
+                                    {/* Circular SVG time ticker indicator */}
+                                    <div className="absolute top-6 left-6 flex items-center justify-center">
+                                        <svg className="w-8 h-8 transform -rotate-90">
+                                            <circle cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.05)" strokeWidth="2" fill="transparent" />
+                                            <circle 
+                                                cx="16" 
+                                                cy="16" 
+                                                r="13" 
+                                                stroke="var(--amber)" 
+                                                strokeWidth="2" 
+                                                fill="transparent" 
+                                                strokeDasharray={2 * Math.PI * 13}
+                                                strokeDashoffset={(2 * Math.PI * 13) * (1 - Math.min(secondsElapsed, 30) / 30)}
+                                                className="transition-all duration-1000"
+                                            />
+                                        </svg>
+                                        <span className="absolute text-[9px] font-mono text-[var(--foreground-muted)]">{secondsElapsed}</span>
+                                    </div>
+
+                                    {/* TTS button front */}
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handlePlayTTS(cardFrontText);
+                                        }}
+                                        className={`absolute top-6 right-6 p-2 rounded-xl transition-all border ${
+                                            isPlayingTTS 
+                                                ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                                                : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                                        }`}
+                                    >
+                                        <Volume2 size={14} />
+                                    </button>
+
+                                    <p className={`text-xl md:text-2xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-8 ${
+                                        isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-2xl' : 'font-serif'
+                                    }`}>
+                                        {cardFrontText}
                                     </p>
-                                    <div className="absolute bottom-8 flex flex-col items-center gap-2">
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 flex items-center gap-1.5">
-                                            Tap Card or Press [Space] to Flip
+
+                                    {/* Text guess verification input */}
+                                    {isVerifyTextMode && (
+                                        <div className="w-full max-w-xs mt-6 px-2 relative z-20" onClick={e => e.stopPropagation()}>
+                                            <input 
+                                                type="text"
+                                                value={userGuess}
+                                                onChange={e => setUserGuess(e.target.value)}
+                                                placeholder="Type your recall guess..."
+                                                className="w-full px-4 py-2.5 rounded-xl bg-zinc-950/60 border border-white/10 text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/40 transition-colors"
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        handleFlip();
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="absolute bottom-6 flex flex-col items-center gap-1">
+                                        <span className="text-[8px] font-bold uppercase tracking-[0.25em] opacity-40 flex items-center gap-1">
+                                            Tap card or press Space to reveal answer
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Back Panel */}
                                 <div style={cardBackStyle}>
-                                    <div className="flex flex-col items-center justify-between w-full h-full py-6">
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
+
+                                    <div className="flex flex-col items-center justify-between w-full h-full py-4 relative z-10">
                                         
+                                        {/* Header Row */}
+                                        <div className="w-full flex items-center justify-between px-2 shrink-0">
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground-muted)]/70">
+                                                Concept Definition
+                                            </span>
+                                            
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePlayTTS(eli5Text[currentCardIndex] || cardBackText);
+                                                }}
+                                                className={`p-2 rounded-xl transition-all border ${
+                                                    isPlayingTTS 
+                                                        ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                                                        : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                                                }`}
+                                            >
+                                                <Volume2 size={14} />
+                                            </button>
+                                        </div>
+
                                         {/* Back Text / Eli5 text */}
-                                        <div className="flex-1 flex items-center justify-center px-4 overflow-y-auto">
-                                            <p className="text-xl font-sans font-bold text-center italic text-[var(--blue)] leading-relaxed">
-                                                {eli5Text[currentCardIndex] || currentCard.back}
+                                        <div className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto my-4 w-full scrollbar-none">
+                                            
+                                            {/* Show side-by-side guess text */}
+                                            {isVerifyTextMode && userGuess && (
+                                                <div className="w-full p-2.5 rounded-xl bg-white/5 border border-white/5 text-left mb-3 shrink-0">
+                                                    <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/50 block mb-0.5">Your Guess</span>
+                                                    <span className="text-xs font-mono text-zinc-300 line-clamp-2">{userGuess}</span>
+                                                </div>
+                                            )}
+
+                                            <p className={`text-base md:text-lg font-medium text-center text-zinc-100 leading-relaxed ${
+                                                isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-lg' : 'font-serif'
+                                            }`}>
+                                                {eli5Text[currentCardIndex] || cardBackText}
                                             </p>
                                         </div>
 
-                                        {/* Actions footer */}
-                                        <div className="flex flex-col items-center gap-4 mt-6" onClick={(e) => e.stopPropagation()}>
+                                        {/* Metaphor Simplify action */}
+                                        <div className="flex flex-col items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
                                             {!eli5Text[currentCardIndex] && (
                                                 <button 
-                                                    onClick={(e) => handleEli5(e, currentCard.back, currentCardIndex)} 
-                                                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--blue-dim)] text-[var(--blue)] border border-[var(--blue-border)] text-[10px] font-black uppercase tracking-wider hover:bg-[var(--blue-active)] transition-all cursor-pointer"
+                                                    onClick={(e) => handleEli5(e, cardBackText, currentCardIndex)} 
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 text-[9px] font-black uppercase tracking-wider hover:bg-[var(--amber)]/25 transition-all cursor-pointer"
                                                 >
-                                                    <Baby size={14} />
-                                                    {isGeneratingEli5 ? "Simplifying..." : "ELI5"}
+                                                    <Baby size={12} />
+                                                    {isGeneratingEli5 ? "Simplifying..." : "ELI5 Metaphor"}
                                                 </button>
                                             )}
                                             
-                                            {/* Tap / Space indicator */}
-                                            <span className="text-[9px] font-black uppercase tracking-[0.25em] opacity-30">
-                                                Press [Space] to see Front
+                                            <span className="text-[8px] font-black uppercase tracking-[0.25em] opacity-35">
+                                                Press [Space] to view front
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
-                            </div>
+                             </div>
                         </motion.div>
                     </AnimatePresence>
                 </div>
 
-                {/* Grading Action Buttons / Keyboard key indicators */}
-                <div className="mt-12 w-full max-w-sm flex flex-col gap-6">
+                {/* Spaced Repetition Grading controls */}
+                <div className="w-full max-w-md flex flex-col gap-6 mt-4">
                     {cardState === 'FLIPPED' ? (
-                        <div className="flex items-center gap-4 animate-in fade-in zoom-in-95 duration-200">
-                            {/* Don't Know button */}
-                            <button 
-                                onClick={() => handleEvaluate(false)}
-                                className="flex-1 h-14 rounded-2xl border border-[var(--crimson-border)] bg-[var(--crimson-dim)]/20 text-[var(--crimson)] hover:bg-[var(--crimson-dim)]/40 font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
-                            >
-                                <X size={16} strokeWidth={2.5} />
-                                <span>Don't Know (J)</span>
-                            </button>
+                        <div className="grid grid-cols-4 gap-2 animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             
-                            {/* Got It button */}
+                            {/* Again Button */}
                             <button 
-                                onClick={() => handleEvaluate(true)}
-                                className="flex-1 h-14 rounded-2xl border border-[var(--emerald-border)] bg-[var(--emerald-dim)]/20 text-[var(--emerald)] hover:bg-[var(--emerald-dim)]/40 font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                                onClick={() => handleRate(1)}
+                                className="flex flex-col h-16 rounded-xl border border-red-500/20 bg-red-950/20 text-red-400 hover:bg-red-950/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
                             >
-                                <Check size={16} strokeWidth={2.5} />
-                                <span>Got It (K)</span>
+                                <X size={14} className="mb-0.5" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Again (1)</span>
+                                <span className="text-[8px] font-medium opacity-65 font-mono">{reviewIntervals.again}</span>
                             </button>
+
+                            {/* Hard Button */}
+                            <button 
+                                onClick={() => handleRate(2)}
+                                className="flex flex-col h-16 rounded-xl border border-[var(--amber-border)] bg-[var(--amber-dim)]/20 text-[var(--amber)] hover:bg-[var(--amber-dim)]/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+                            >
+                                <HelpCircle size={14} className="mb-0.5" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Hard (2)</span>
+                                <span className="text-[8px] font-medium opacity-65 font-mono">{reviewIntervals.hard}</span>
+                            </button>
+
+                            {/* Good Button */}
+                            <button 
+                                onClick={() => handleRate(4)}
+                                className="flex flex-col h-16 rounded-xl border border-[var(--violet-border)] bg-[var(--violet-dim)]/20 text-[var(--violet)] hover:bg-[var(--violet-dim)]/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+                            >
+                                <Check size={14} className="mb-0.5" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Good (3)</span>
+                                <span className="text-[8px] font-medium opacity-65 font-mono">{reviewIntervals.good}</span>
+                            </button>
+
+                            {/* Easy Button */}
+                            <button 
+                                onClick={() => handleRate(5)}
+                                className="flex flex-col h-16 rounded-xl border border-[var(--emerald-border)] bg-[var(--emerald-dim)]/20 text-[var(--emerald)] hover:bg-[var(--emerald-dim)]/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+                            >
+                                <Sparkles size={14} className="mb-0.5" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Easy (4)</span>
+                                <span className="text-[8px] font-medium opacity-65 font-mono">{reviewIntervals.easy}</span>
+                            </button>
+
                         </div>
                     ) : (
                         <button 
                             onClick={handleFlip} 
                             className="w-full h-14 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-2 hover:opacity-90 transition-all cursor-pointer"
                         >
-                            <HelpCircle size={16} />
+                            <Eye size={16} />
                             <span>Reveal Answer</span>
                         </button>
                     )}
 
-                    {/* Keyboard Shortcuts Overlay Row */}
-                    <div className="flex items-center justify-center gap-5 text-[9px] text-[var(--foreground-muted)]/50 font-mono">
-                        <span className="flex items-center gap-1.5">
-                            <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5">Space</kbd> Flip
+                    {/* Keyboard shortcuts row */}
+                    <div className="flex items-center justify-center gap-6 text-[9px] text-[var(--foreground-muted)]/50 font-mono">
+                        <span className="flex items-center gap-1">
+                            <kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">Space</kbd> Flip
                         </span>
-                        <span className="flex items-center gap-1.5">
-                            <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5">Esc</kbd> Exit
+                        <span className="flex items-center gap-1">
+                            <kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">1-4</kbd> Grade
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">Esc</kbd> Exit
                         </span>
                     </div>
                 </div>
@@ -482,7 +971,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 streakIncremented={sessionStats.incremented}
                 type="flashcards"
                 title={title}
-                extraStat={{ label: "Cards Mastered", value: String(masteredSet.size), icon: "style" }}
+                extraStat={{ label: "Cards Studied", value: String(masteredSet.size), icon: "style" }}
                 continueHref="/library"
             />
 

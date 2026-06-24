@@ -10,17 +10,29 @@ import { motion, AnimatePresence } from "framer-motion";
 import SessionComplete from "@/components/features/SessionComplete";
 import { X, Clock, RotateCcw, Zap, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 
 /* ════════════════════════════════════════════════════════════════════
-   MATCH GAME — Flat 2.0 Redesign
-   Vision: Numbered index cards on a corkboard. Tap term → tap definition.
-   Color coding: neutral → selected (accent ring) → matched (struck) → wrong (shake+red).
+   MATCH GAME — Midnight Scholar Redesign
+   Vision: Prestigious 2.5D visual cards floating over volcanic ambient orbs.
+   Color coding: selected (amber sweep) -> matched (emerald) -> wrong (crimson).
    ════════════════════════════════════════════════════════════════════ */
 
 interface MatchPair {
     id: string;
     term: string;
     definition: string;
+}
+
+interface Particle {
+    x: number;
+    y: number;
+    size: number;
+    color: string;
+    velocityX: number;
+    velocityY: number;
+    opacity: number;
+    decay: number;
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -32,17 +44,64 @@ function shuffleArray<T>(arr: T[]): T[] {
     return copy;
 }
 
-// Flat 2.0 card colors — subtle tinted surfaces, not garish
+// Prestigious Midnight Scholar tones
 const CARD_TINTS = [
-    { bg: "rgba(59,130,246,0.06)", border: "rgba(59,130,246,0.18)", text: "#3b82f6" },
-    { bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.18)", text: "#10b981" },
-    { bg: "rgba(168,85,247,0.06)", border: "rgba(168,85,247,0.18)", text: "#a855f7" },
-    { bg: "rgba(245,158,11,0.06)", border: "rgba(245,158,11,0.18)", text: "#f59e0b" },
-    { bg: "rgba(239,68,68,0.06)", border: "rgba(239,68,68,0.18)", text: "#ef4444" },
-    { bg: "rgba(20,184,166,0.06)", border: "rgba(20,184,166,0.18)", text: "#14b8a6" },
-    { bg: "rgba(249,115,22,0.06)", border: "rgba(249,115,22,0.18)", text: "#f97316" },
-    { bg: "rgba(99,102,241,0.06)", border: "rgba(99,102,241,0.18)", text: "#6366f1" },
+    { bg: "rgba(229,169,60,0.04)", border: "rgba(229,169,60,0.15)", text: "#E5A93C" }, // Amber
+    { bg: "rgba(150,115,245,0.04)", border: "rgba(150,115,245,0.15)", text: "#9673F5" }, // Violet
+    { bg: "rgba(43,178,136,0.04)", border: "rgba(43,178,136,0.15)", text: "#2BB288" }, // Emerald
+    { bg: "rgba(74,124,245,0.04)", border: "rgba(74,124,245,0.15)", text: "#4A7CF5" }, // Blue
 ];
+
+// Offline Sound Synthesizer via Web Audio API
+const playMatchSound = (isCorrect: boolean) => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const now = ctx.currentTime;
+
+        if (isCorrect) {
+            // High-yield success chime (arpeggio sweep)
+            const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5 -> E5 -> G5 -> C6
+            freqs.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                gain.gain.setValueAtTime(0.04, now + idx * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.35);
+            });
+        } else {
+            // Low-pitch wrong buzz (dissonant detuned wave)
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc1.type = "sawtooth";
+            osc1.frequency.setValueAtTime(140, now);
+            osc2.type = "sawtooth";
+            osc2.frequency.setValueAtTime(143, now); // slightly detuned
+
+            gain.gain.setValueAtTime(0.06, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + 0.3);
+            osc2.stop(now + 0.3);
+        }
+    } catch (e) {
+        console.warn("Audio synthesis failed", e);
+    }
+};
 
 function MatchGameContent() {
     const router = useRouter();
@@ -75,6 +134,77 @@ function MatchGameContent() {
     const [sessionStats, setSessionStats] = useState({ xp: 0, streak: 0, incremented: false });
 
     const progress = pairs.length > 0 ? (matchedIds.size / pairs.length) * 100 : 0;
+
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const particlesRef = useRef<Particle[]>([]);
+
+    // Confetti particles logic
+    const triggerMatchConfetti = (centerX: number, centerY: number) => {
+        const colors = ["#E5A93C", "#2BB288", "#9673F5", "#4A7CF5", "#E85D75"];
+        const newParticles: Particle[] = [];
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 5;
+            newParticles.push({
+                x: centerX,
+                y: centerY,
+                size: 4 + Math.random() * 5,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                velocityX: Math.cos(angle) * speed,
+                velocityY: Math.sin(angle) * speed - 1, // slight upward bias
+                opacity: 1,
+                decay: 0.02 + Math.random() * 0.02
+            });
+        }
+        particlesRef.current = [...particlesRef.current, ...newParticles];
+    };
+
+    // Canvas particle render tick
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        let animId: number;
+
+        const tick = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const activeParticles = particlesRef.current.filter(p => p.opacity > 0);
+            
+            activeParticles.forEach(p => {
+                p.x += p.velocityX;
+                p.y += p.velocityY;
+                p.velocityY += 0.1; // gravity
+                p.opacity -= p.decay;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.opacity);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            particlesRef.current = activeParticles;
+            animId = requestAnimationFrame(tick);
+        };
+
+        tick();
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        resize();
+        window.addEventListener("resize", resize);
+
+        return () => {
+            cancelAnimationFrame(animId);
+            window.removeEventListener("resize", resize);
+        };
+    }, [loading]);
 
     // ── INIT ──────────────────────────────────────────────────────────
     useEffect(() => {
@@ -158,6 +288,15 @@ function MatchGameContent() {
         if (selectedTerm === selectedDef) {
             const newMatched = new Set([...matchedIds, selectedTerm]);
             setMatchedIds(newMatched);
+            
+            // Audio check
+            playMatchSound(true);
+
+            // Confetti burst
+            if (typeof window !== "undefined") {
+                triggerMatchConfetti(window.innerWidth / 2, window.innerHeight * 0.4);
+            }
+
             const newCombo = combo + 1;
             setCombo(newCombo);
             if (newCombo > bestCombo) setBestCombo(newCombo);
@@ -165,6 +304,10 @@ function MatchGameContent() {
             if (newMatched.size === pairs.length) handleGameComplete();
         } else {
             setWrongPair({ term: selectedTerm, def: selectedDef });
+            
+            // Audio check
+            playMatchSound(false);
+
             setMistakes(prev => prev + 1);
             setCombo(0);
             setTimeout(() => { setWrongPair(null); setSelectedTerm(null); setSelectedDef(null); }, 500);
@@ -248,8 +391,6 @@ function MatchGameContent() {
         const isSelected = side === "term" ? selectedTerm === id : selectedDef === id;
         const isWrong = side === "term" ? wrongPair?.term === id : wrongPair?.def === id;
         const tint = CARD_TINTS[pairIndex % CARD_TINTS.length];
-
-        // Find the pair number for the matched indicator
         const pairNum = pairs.findIndex(p => p.id === id) + 1;
 
         return (
@@ -265,73 +406,81 @@ function MatchGameContent() {
                 transition={{ duration: 0.35 }}
                 className="w-full text-left group"
             >
-                <div
+                <GlassmorphicCard
+                    intensity={isMatched ? "light" : isSelected ? "medium" : "light"}
+                    glowColor={isSelected ? `${tint.text}20` : undefined}
+                    radius="16px"
+                    hoverLift={!isMatched}
                     className={cn(
-                        "relative px-3.5 py-3 rounded-xl border-2 transition-all duration-200 min-h-[56px] flex items-center gap-2.5",
+                        "relative px-4 py-3.5 border-2 transition-all duration-300 min-h-[64px] flex items-center gap-3 select-none",
                         isMatched
-                            ? "opacity-35 scale-[0.97]"
+                            ? "opacity-30 scale-[0.98] border-emerald-500/30 bg-emerald-500/5"
                             : isWrong
-                            ? "border-red-500/50 bg-red-500/8 scale-[0.98]"
+                            ? "border-red-500/50 bg-red-500/10"
                             : isSelected
-                            ? "scale-[1.02] shadow-lg"
-                            : "border-[var(--border)] bg-[var(--foreground)]/[0.02] hover:bg-[var(--foreground)]/[0.04] hover:border-[var(--foreground)]/15 active:scale-[0.98]"
+                            ? "border-[var(--accent)] scale-[1.03]"
+                            : "border-white/5 bg-zinc-950/20 hover:bg-zinc-950/40 hover:border-white/10 active:scale-[0.98]"
                     )}
-                    style={
-                        isMatched ? {
-                            background: tint.bg,
-                            borderColor: tint.border,
-                        } : isSelected ? {
-                            background: tint.bg,
-                            borderColor: tint.border,
-                            boxShadow: `0 0 20px ${tint.text}20`,
-                        } : {}
-                    }
+                    style={{
+                        borderColor: isMatched
+                            ? "rgba(43, 178, 136, 0.25)"
+                            : isSelected
+                            ? "var(--accent)"
+                            : isWrong
+                            ? "rgba(232, 93, 117, 0.4)"
+                            : "rgba(255,255,255,0.05)"
+                    }}
                 >
                     {/* Number badge */}
                     {isMatched ? (
                         <div
-                            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[9px] font-black"
-                            style={{ background: tint.bg, border: `1px solid ${tint.border}`, color: tint.text }}
+                            className="w-5.5 h-5.5 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-black"
+                            style={{ background: `${tint.text}10`, border: `1px solid ${tint.text}30`, color: tint.text }}
                         >
                             {pairNum}
                         </div>
                     ) : isSelected ? (
                         <div
-                            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-                            style={{ background: tint.bg, border: `1.5px solid ${tint.text}` }}
+                            className="w-5.5 h-5.5 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: `${tint.text}10`, border: `1.5px solid ${tint.text}` }}
                         >
                             <div className="w-1.5 h-1.5 rounded-full" style={{ background: tint.text }} />
                         </div>
                     ) : (
-                        <div className="w-5 h-5 rounded-md bg-[var(--foreground)]/5 border border-[var(--border)] shrink-0" />
+                        <div className="w-5.5 h-5.5 rounded-lg bg-white/5 border border-white/5 shrink-0" />
                     )}
 
                     <span
                         className={cn(
-                            "text-[11px] sm:text-[12px] font-semibold leading-snug flex-1",
-                            isMatched ? "line-through" : "",
+                            "text-[12px] sm:text-[13px] font-medium leading-relaxed flex-1 font-serif select-text",
+                            isMatched ? "line-through text-zinc-500" : "text-zinc-200",
                             isWrong ? "text-red-400" : ""
                         )}
-                        style={isMatched || isSelected ? { color: tint.text } : {}}
+                        style={isSelected ? { color: tint.text } : {}}
                     >
                         {text}
                     </span>
 
                     {isMatched && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}>
-                            <CheckCircle2 size={13} style={{ color: tint.text }} className="shrink-0" />
+                            <CheckCircle2 size={14} className="text-[var(--emerald)] shrink-0" />
                         </motion.div>
                     )}
-                </div>
+                </GlassmorphicCard>
             </motion.button>
         );
     };
 
     return (
         <div className="h-[100dvh] bg-[var(--background)] flex flex-col overflow-hidden relative">
+            {/* Particle Canvas */}
+            <canvas
+                ref={canvasRef}
+                className="absolute inset-0 w-full h-full pointer-events-none z-50"
+            />
 
             {/* ── Top Bar ── */}
-            <div className="shrink-0 px-4 py-3 flex items-center justify-between border-b border-[var(--border)]/40">
+            <div className="shrink-0 px-4 py-3 flex items-center justify-between border-b border-[var(--border)]/40 z-10">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.back()}
@@ -340,7 +489,7 @@ function MatchGameContent() {
                         <X size={14} className="text-[var(--foreground-muted)]" />
                     </button>
                     <div>
-                        <p className="text-xs font-bold text-[var(--foreground)] leading-tight">Match</p>
+                        <p className="text-xs font-black uppercase tracking-wider text-[var(--foreground)] leading-tight italic">Match Arena</p>
                         <p className="text-[9px] text-[var(--foreground-muted)] truncate max-w-[140px]">{title}</p>
                     </div>
                 </div>
@@ -377,7 +526,7 @@ function MatchGameContent() {
             </div>
 
             {/* ── Progress Bar ── */}
-            <div className="w-full h-[2px] bg-[var(--foreground)]/5 shrink-0">
+            <div className="w-full h-[2px] bg-[var(--foreground)]/5 shrink-0 z-10">
                 <motion.div
                     className="h-full bg-gradient-to-r from-emerald-400 to-[var(--accent)] rounded-r-full"
                     animate={{ width: `${progress}%` }}
@@ -386,7 +535,7 @@ function MatchGameContent() {
             </div>
 
             {/* ── Column headers ── */}
-            <div className="shrink-0 px-3 sm:px-6 pt-3 pb-1">
+            <div className="shrink-0 px-3 sm:px-6 pt-3 pb-1 z-10">
                 <div className="max-w-3xl mx-auto grid grid-cols-2 gap-3 sm:gap-4">
                     <p className="text-[8px] font-black text-[var(--foreground-muted)]/40 uppercase tracking-[0.4em] px-1">Terms</p>
                     <p className="text-[8px] font-black text-[var(--foreground-muted)]/40 uppercase tracking-[0.4em] px-1">Definitions</p>
@@ -394,17 +543,17 @@ function MatchGameContent() {
             </div>
 
             {/* ── Game Grid ── */}
-            <div className="flex-1 overflow-y-auto px-3 sm:px-6 pb-3">
+            <div className="flex-1 overflow-y-auto px-3 sm:px-6 pb-3 z-10">
                 <div className="max-w-3xl mx-auto grid grid-cols-2 gap-2 sm:gap-3">
                     {/* Terms column */}
                     <div className="flex flex-col gap-2">
-                        {shuffledTerms.map(({ id, text }, idx) => (
+                        {shuffledTerms.map(({ id, text }) => (
                             <MatchCard key={`term-${id}`} id={id} text={text} side="term" pairIndex={pairs.findIndex(p => p.id === id)} />
                         ))}
                     </div>
                     {/* Definitions column */}
                     <div className="flex flex-col gap-2">
-                        {shuffledDefs.map(({ id, text }, idx) => (
+                        {shuffledDefs.map(({ id, text }) => (
                             <MatchCard key={`def-${id}`} id={id} text={text} side="def" pairIndex={pairs.findIndex(p => p.id === id)} />
                         ))}
                     </div>
@@ -412,7 +561,7 @@ function MatchGameContent() {
             </div>
 
             {/* ── Bottom Stats Bar ── */}
-            <div className="shrink-0 px-4 py-2.5 border-t border-[var(--border)]/30 bg-[var(--background)]">
+            <div className="shrink-0 px-4 py-2.5 border-t border-[var(--border)]/30 bg-[var(--background)] z-10">
                 <div className="max-w-3xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">

@@ -7,6 +7,7 @@ import { useUser } from "@/context/UserContext";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { createClient } from "@/lib/supabase/client";
 import StandardContainer from "@/components/ui/StandardContainer";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 import { cn } from "@/lib/utils";
 import {
     Sword,
@@ -44,6 +45,7 @@ function ArenaContent() {
     const [hostMode, setHostMode] = useState<'notes' | 'topic'>('notes');
     const [quickTopicInput, setQuickTopicInput] = useState("");
     const [isQuickGenerating, setIsQuickGenerating] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
 
     // Duel Detail State when loading a specific duel
     const [duel, setDuel] = useState<any>(null);
@@ -236,18 +238,24 @@ function ArenaContent() {
     };
 
     const handleQuickMatch = async () => {
+        setIsSearching(true);
         addToast("Searching for online classmates...", "info");
+        
+        // Add artificial delay to make matchmaking search feel responsive
+        await new Promise(r => setTimeout(r, 1500));
+        
         try {
             const res = await fetch("/api/arena");
             const data = await res.json();
             if (data.success && data.duels && data.duels.length > 0) {
-                const joinable = data.duels.find((d: any) => d.hostId !== user.id);
+                const joinable = data.duels.find((d: any) => d.hostId !== user.id && d.status === 'waiting');
                 if (joinable) {
                     addToast("Match found! Joining room...", "success");
                     const joinRes = await fetch(`/api/arena?code=${joinable.code}`);
                     const joinData = await joinRes.json();
                     if (joinData.success) {
                         router.push(`/arena?id=${joinData.duel.id}`);
+                        setIsSearching(false);
                         return;
                     }
                 }
@@ -255,6 +263,7 @@ function ArenaContent() {
 
             if (quizzes.length === 0) {
                 addToast("You don't have any generated quizzes yet. Create one first!", "error");
+                setIsSearching(false);
                 return;
             }
 
@@ -276,6 +285,8 @@ function ArenaContent() {
         } catch (err) {
             console.error("Matchmaking error:", err);
             addToast("Matchmaking failed.", "error");
+        } finally {
+            setIsSearching(false);
         }
     };
 
@@ -306,25 +317,27 @@ function ArenaContent() {
         );
     }
 
+    const currentStudentName = user?.firstName || user?.name || "Scholar";
+
     return (
-        <div className="bg-transparent text-[var(--foreground)] pt-[76px] pb-3 md:pb-4 relative flex flex-col flex-1 h-auto md:h-[calc(100vh-68px)] max-h-none md:max-h-[850px] min-h-0 md:min-h-[550px] overflow-x-hidden overflow-y-auto md:overflow-hidden">
+        <div className="bg-transparent text-[var(--foreground)] pt-[84px] pb-3 md:pb-4 relative flex flex-col flex-1 h-[calc(100vh-68px)] overflow-hidden">
             {/* Ambient Background Grid & Radial Halos */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
-            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#6366F1]/5 via-[#EF4444]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
+            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#9673F5]/5 via-[#E5A93C]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
 
             <StandardContainer className="relative z-10 flex-1 flex flex-col min-h-0 py-0 h-full">
-                <div className="w-full max-w-4xl mx-auto flex flex-col md:h-full justify-between gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 min-h-0">
+                <div className="w-full max-w-4xl mx-auto flex flex-col justify-between gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 min-h-0">
                     
                     {/* Header Block */}
-                    <div className="text-center space-y-1 md:space-y-1.5 shrink-0">
+                    <div className="text-center space-y-1.5 shrink-0 mb-1">
                         <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/5 backdrop-blur-md">
-                            <Sword size={9} className="text-indigo-400" />
-                            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
+                            <Sword size={9} className="text-[var(--accent)]" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
                                 Classmate Trivia Arena
                             </span>
                         </div>
-                        <h1 className="text-2xl sm:text-4xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
-                            Trivia <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">Arena</span>
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase italic leading-none">
+                            Trivia <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">Arena</span>
                         </h1>
                         <p className="text-[10px] sm:text-xs text-[var(--foreground-muted)] max-w-xl mx-auto font-medium opacity-80">
                             Join a lobby, wager XP, and duel your classmates in real-time speed battles.
@@ -332,14 +345,18 @@ function ArenaContent() {
                     </div>
  
                     {/* Main Panels */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 flex-1 min-h-0 md:h-full">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 flex-1 min-h-0 h-full">
                         {/* Left Column: Actions */}
                         <div className="md:col-span-2 flex flex-col gap-3 md:gap-4 min-h-0 h-full">
                             {/* Action Box: Host a Duel */}
-                            <div className="p-4 md:p-5 rounded-3xl bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-2xl flex flex-col justify-between relative overflow-hidden flex-1 min-h-0">
+                            <GlassmorphicCard 
+                                intensity="medium" 
+                                radius="28px" 
+                                className="p-4 md:p-5 flex flex-col justify-between relative overflow-hidden flex-1 min-h-0 border border-white/5 shadow-2xl"
+                            >
                                 <div className="space-y-3 md:space-y-4 flex-1 flex flex-col min-h-0">
                                     <div className="flex items-center gap-3 shrink-0">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-md">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] shadow-md">
                                             <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
                                         </div>
                                         <div>
@@ -354,7 +371,7 @@ function ArenaContent() {
                                             <button
                                                 onClick={() => setHostMode('notes')}
                                                 className={cn(
-                                                    "flex-1 py-2 sm:py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                                    "flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer",
                                                     hostMode === 'notes'
                                                         ? "bg-white text-black font-black"
                                                         : "text-[var(--foreground-muted)] hover:text-white"
@@ -365,7 +382,7 @@ function ArenaContent() {
                                             <button
                                                 onClick={() => setHostMode('topic')}
                                                 className={cn(
-                                                    "flex-1 py-2 sm:py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                                    "flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer",
                                                     hostMode === 'topic'
                                                         ? "bg-white text-black font-black"
                                                         : "text-[var(--foreground-muted)] hover:text-white"
@@ -433,11 +450,15 @@ function ArenaContent() {
                                                             setWagerError(null);
                                                         }}
                                                         className={cn(
-                                                            "py-2.5 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all border cursor-pointer",
+                                                            "py-2 rounded-lg text-[10px] font-black uppercase transition-all border cursor-pointer",
                                                             wagerXp === val 
                                                                 ? "bg-white text-black border-white"
                                                                 : "bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:bg-white/10"
                                                         )}
+                                                        style={{
+                                                            boxShadow: wagerXp === val ? "0 0 12px rgba(229, 169, 60, 0.25)" : undefined,
+                                                            borderColor: wagerXp === val ? "var(--accent)" : "rgba(255,255,255,0.05)"
+                                                        }}
                                                     >
                                                         {val} XP
                                                     </button>
@@ -458,15 +479,15 @@ function ArenaContent() {
                                     onClick={handleCreateLobby}
                                     disabled={isQuickGenerating || (hostMode === 'notes' && quizzes.length === 0)}
                                     className={cn(
-                                        "w-full py-3.5 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-xs uppercase tracking-wider mt-3 md:mt-4 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0",
+                                        "w-full py-3.5 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-xs uppercase tracking-wider mt-3 md:mt-4 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-lg",
                                         (hostMode === 'notes' && quizzes.length === 0)
                                             ? "bg-white/5 text-white/20 border border-white/5 cursor-not-allowed"
-                                            : "bg-white text-black hover:bg-white/90 active:scale-98"
+                                            : "bg-[var(--accent)] text-zinc-950 hover:opacity-95 active:scale-98"
                                     )}
                                 >
                                     {isQuickGenerating ? (
                                         <>
-                                            <Loader2 className="w-4 h-4 animate-spin text-black" />
+                                            <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
                                             <span>Writing Questions...</span>
                                         </>
                                     ) : (
@@ -476,11 +497,11 @@ function ArenaContent() {
                                         </>
                                     )}
                                 </button>
-                            </div>
+                            </GlassmorphicCard>
 
                             {/* Action Box: Join / Quick Match */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 shrink-0">
-                                <div className="p-3.5 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col justify-between h-[115px] sm:h-[120px]">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 shrink-0 mb-1">
+                                <GlassmorphicCard intensity="light" radius="24px" className="p-3.5 border border-white/5 shadow-xl flex flex-col justify-between h-[115px] sm:h-[120px]">
                                     <div className="space-y-1.5">
                                         <h4 className="text-xs font-black uppercase tracking-wider text-white">Join Active Lobby</h4>
                                         <input
@@ -488,36 +509,48 @@ function ArenaContent() {
                                             value={joinCodeInput}
                                             onChange={(e) => setJoinCodeInput(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 6))}
                                             placeholder="6-digit Code"
-                                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-1.5 text-base sm:text-xs font-mono font-bold text-center tracking-[0.2em] text-white outline-none focus:border-white/20 transition-all"
+                                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-1.5 text-base sm:text-xs font-mono font-bold text-center tracking-[0.25em] text-white outline-none focus:border-white/20 transition-all uppercase"
                                         />
                                     </div>
                                     <button 
                                         onClick={handleJoinWithCode}
-                                        className="w-full py-2.5 sm:py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-black text-xs sm:text-[10px] uppercase tracking-wider border border-white/5 transition-all"
+                                        className="w-full py-2.5 sm:py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-black text-xs sm:text-[10px] uppercase tracking-wider border border-white/5 transition-all cursor-pointer"
                                     >
                                         Connect Room
                                     </button>
-                                </div>
+                                </GlassmorphicCard>
 
-                                <div className="p-3.5 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col justify-between h-[115px] sm:h-[120px] relative overflow-hidden">
+                                <GlassmorphicCard intensity="light" radius="24px" className={cn(
+                                    "p-3.5 border border-white/5 shadow-xl flex flex-col justify-between h-[115px] sm:h-[120px] relative overflow-hidden",
+                                    isSearching && "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-zinc-950"
+                                )}>
                                     <div className="space-y-1">
                                         <h4 className="text-xs font-black uppercase tracking-wider text-white">Matchmaking Match</h4>
                                         <p className="text-[8px] sm:text-[9px] text-[var(--foreground-muted)] font-bold uppercase leading-none mt-0.5">Auto-pair with any classmate active online.</p>
                                     </div>
                                     <button 
                                         onClick={handleQuickMatch}
-                                        className="w-full py-2.5 sm:py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-rose-500 text-white font-black text-xs sm:text-[10px] uppercase tracking-wider transition-all shadow-[0_4px_20px_rgba(99,102,241,0.2)] hover:opacity-95 active:scale-98"
+                                        disabled={isSearching}
+                                        className={cn(
+                                            "w-full py-2.5 sm:py-2 rounded-xl text-white font-black text-xs sm:text-[10px] uppercase tracking-wider transition-all shadow-lg cursor-pointer",
+                                            isSearching 
+                                                ? "bg-zinc-800 animate-pulse text-zinc-500"
+                                                : "bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-95 active:scale-98"
+                                        )}
+                                        style={{
+                                            boxShadow: isSearching ? "0 0 15px rgba(99,102,241,0.4)" : "0 4px 15px rgba(99,102,241,0.25)"
+                                        }}
                                     >
-                                        Find Match
+                                        {isSearching ? "Searching..." : "Find Match"}
                                     </button>
-                                </div>
+                                </GlassmorphicCard>
                             </div>
                         </div>
 
                         {/* Right Column: Active Lobbies & Stats */}
                         <div className="flex flex-col gap-4 min-h-0 h-full">
                             {/* Stats panel */}
-                            <div className="p-4 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex items-center justify-between shrink-0">
+                            <GlassmorphicCard intensity="light" radius="24px" className="p-4 border border-white/5 shadow-xl flex items-center justify-between shrink-0">
                                 <div>
                                     <span className="text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Your Wager Reserves</span>
                                     <div className="flex items-center gap-2 mt-1">
@@ -528,27 +561,24 @@ function ArenaContent() {
                                 <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-[#F59E0B]">
                                     <Shield size={18} />
                                 </div>
-                            </div>
+                            </GlassmorphicCard>
 
-                            {/* XP Explainer card */}
-                            <div className="p-4 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col gap-1.5 relative overflow-hidden shrink-0">
+                            {/* Socratic XP Explainer card */}
+                            <GlassmorphicCard intensity="light" radius="24px" className="p-4 border border-white/5 shadow-xl flex flex-col gap-1.5 relative overflow-hidden shrink-0">
                                 <div className="absolute top-0 right-0 p-4 opacity-[0.02] text-white pointer-events-none">
                                     <Zap size={60} />
                                 </div>
-                                <div className="flex items-center gap-1.5 text-white/50">
-                                    <Zap size={11} className="text-amber-400" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">What is XP?</span>
+                                <div className="flex items-center gap-1.5 text-[#E5A93C]">
+                                    <Zap size={11} fill="currentColor" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Professor's Advice</span>
                                 </div>
-                                <p className="text-[10px] text-white/70 leading-relaxed font-bold">
-                                    Think of XP as your academic sweat equity. You get it by reviewing notes, running flashcard sprints, and completing quizzes.
+                                <p className="text-[10px] text-zinc-300 leading-relaxed font-medium font-serif italic">
+                                    "Look sha, XP is just your study sweat equity. You review notes, run flashcard drills, you secure XP. In the Arena, you wager that XP on speed duels. You win the speed battle, you take the pot. Keep it burning, or the rank is lost."
                                 </p>
-                                <p className="text-[10px] text-white/70 leading-relaxed font-bold border-t border-white/5 pt-1.5 mt-0.5">
-                                    In the Arena, you wager XP on speed duels against classmates. Win the speed battle, win the pot. It also determines your Rank title.
-                                </p>
-                            </div>
+                            </GlassmorphicCard>
 
                             {/* Live lobbies list */}
-                            <div className="p-4 rounded-3xl bg-zinc-950/45 border border-white/5 shadow-xl space-y-3 flex-1 min-h-0 flex flex-col">
+                            <GlassmorphicCard intensity="light" radius="24px" className="p-4 border border-white/5 shadow-xl space-y-3 flex-1 min-h-0 flex flex-col">
                                 <div className="flex items-center justify-between pb-2 border-b border-white/5 shrink-0">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-1.5">
                                         <Tv size={12} className="text-emerald-400" /> Live Rooms
@@ -585,12 +615,12 @@ function ArenaContent() {
                                                             const res = await fetch(`/api/arena?code=${lobby.code}`);
                                                             const data = await res.json();
                                                             if (data.success) {
-                                                                router.push(`/arena?id=${data.duel.id}`);
+                                                                 router.push(`/arena?id=${data.duel.id}`);
                                                             } else {
                                                                 addToast(data.error || "Failed to join", "error");
                                                             }
                                                         }}
-                                                        className="w-full py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-black uppercase text-white mt-1 transition-all"
+                                                        className="w-full py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-black uppercase text-white mt-1 transition-all cursor-pointer"
                                                     >
                                                         Join Duel
                                                     </button>
@@ -601,7 +631,7 @@ function ArenaContent() {
                                         <p className="text-[10px] text-zinc-500 italic text-center py-4 uppercase font-bold">No active public lobbies</p>
                                     )}
                                 </div>
-                            </div>
+                            </GlassmorphicCard>
                         </div>
                     </div>
                 </div>

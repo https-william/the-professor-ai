@@ -51,11 +51,17 @@ export async function GET(req: NextRequest) {
         }
 
         const providers = foundUser.app_metadata?.providers || [];
-        const isGoogleOnly = providers.includes("google") && !providers.includes("email");
+        const hasGoogle = providers.includes("google");
+        const hasEmail = providers.includes("email");
+        const isGoogleOnly = hasGoogle && !hasEmail;
+        const emailConfirmed = !!foundUser.email_confirmed_at;
 
         return NextResponse.json({
             exists: true,
             isGoogleOnly,
+            hasGoogle,
+            hasEmail,
+            emailConfirmed,
             providers
         });
     } catch (err: any) {

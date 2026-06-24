@@ -17,7 +17,7 @@ import { MASTER_SYSTEM_PROMPT } from "@/lib/ai/professor-prompt";
 
 export async function POST(req: NextRequest) {
     try {
-        const { packId, phaseId, sourceText } = await req.json();
+        const { packId, phaseId, sourceText, cardCount: bodyCardCount, quizCount: bodyQuizCount } = await req.json();
         const supabase = supabaseAdmin;
         
         const supabaseClient = await createClient();
@@ -30,22 +30,28 @@ export async function POST(req: NextRequest) {
 
         const { content: safeContent, wasTruncated } = guardContentSize(sourceText);
 
-        // 1. Check if already generated
-        const { data: pack, error: fetchError } = await supabase
-            .from("study_packs")
-            .select("phases_data")
-            .eq("id", packId)
-            .single();
-
-        if (fetchError) throw fetchError;
+        // 1. Check if already generated (resilient DB lookup)
+        let packPhasesData: any = {};
+        try {
+            const { data, error: fetchError } = await supabase
+                .from("study_packs")
+                .select("phases_data")
+                .eq("id", packId)
+                .single();
+            if (!fetchError && data) {
+                packPhasesData = data.phases_data || {};
+            }
+        } catch (e) {
+            console.warn("Could not fetch pack from DB, using defaults/request options:", e);
+        }
         
         const encoder = new TextEncoder();
 
         // If already generated in DB, return as a stream complete event
-        if (pack.phases_data?.[phaseId]) {
+        if (packPhasesData?.[phaseId]) {
             const stream = new ReadableStream({
                 start(controller) {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "complete", data: pack.phases_data[phaseId] })}\n\n`));
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "complete", data: packPhasesData[phaseId] })}\n\n`));
                     controller.close();
                 }
             });
@@ -57,6 +63,10 @@ export async function POST(req: NextRequest) {
                 }
             });
         }
+
+        const config = packPhasesData?._config || {};
+        const cardCount = Number(bodyCardCount || config.cardCount) || 10;
+        const quizCount = Number(bodyQuizCount || config.quizCount) || 15;
 
         // 2. Generate based on Phase
         let prompt = "";
@@ -72,11 +82,11 @@ export async function POST(req: NextRequest) {
                 isChatStream = true;
                 break;
             case "retain":
-                prompt = buildFlashcardsPrompt(safeContent, 10, "medium");
+                prompt = buildFlashcardsPrompt(safeContent, cardCount, "medium");
                 isChatStream = false;
                 break;
             case "test":
-                prompt = buildQuizPrompt(safeContent, 15, "medium");
+                prompt = buildQuizPrompt(safeContent, quizCount, "medium");
                 isChatStream = false;
                 break;
             case "predict":
@@ -168,14 +178,18 @@ export async function POST(req: NextRequest) {
 
                     // 4. Save to Supabase
                     const newPhasesData = {
-                        ...(pack.phases_data || {}),
+                        ...packPhasesData,
                         [phaseId]: finalData
                     };
 
-                    await supabase
-                        .from("study_packs")
-                        .update({ phases_data: newPhasesData })
-                        .eq("id", packId);
+                    try {
+                        await supabase
+                            .from("study_packs")
+                            .update({ phases_data: newPhasesData })
+                            .eq("id", packId);
+                    } catch (dbErr) {
+                        console.error("Failed to update phases_data in DB:", dbErr);
+                    }
 
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: "complete", data: finalData })}\n\n`));
                     controller.close();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,10 +14,10 @@ import GuestSignupModal from "@/components/ui/GuestSignupModal";
 import StandardContainer from "@/components/ui/StandardContainer";
 import SEOHead, { getWebApplicationSchema } from "@/components/SEOHead";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 
 import { 
     Library, 
-    Plus, 
     Layers, 
     HelpCircle, 
     FileText, 
@@ -40,33 +40,12 @@ import {
     Sparkles
 } from "lucide-react";
 
-/* ═══ Flat 2.0 Design Tokens & Helpers ═══ */
-const flat20 = {
-    card: {
-        background: "var(--card)",
-        borderRadius: "28px",
-        border: "2px solid var(--border)",
-        boxShadow: "var(--shadow-md)",
-    } as React.CSSProperties,
-    pill: {
-        background: "var(--background-secondary)",
-        borderRadius: "16px",
-        border: "1px solid var(--border)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05), 0 2px 6px rgba(0,0,0,0.1)",
-    } as React.CSSProperties,
-    listContainer: {
-        background: "var(--card)",
-        borderRadius: "28px",
-        border: "2px solid var(--border)",
-        boxShadow: "var(--shadow-lg)",
-    } as React.CSSProperties,
-};
-
+// Branded Midnight Scholar Type Configuration
 const typeConfig: Record<string, { icon: any; label: string; color: string }> = {
-    flashcards: { icon: Layers, label: "Flashcards", color: "#F59E0B" },
-    quiz: { icon: HelpCircle, label: "Quiz", color: "#818CF8" },
-    summary: { icon: FileText, label: "Summary", color: "#6366F1" },
-    exam_sprint: { icon: BookOpen, label: "Exam Sprint", color: "#10B981" },
+    flashcards: { icon: Layers, label: "Flashcards", color: "#E5A93C" }, // Amber
+    quiz: { icon: HelpCircle, label: "Quiz", color: "#9673F5" }, // Violet
+    summary: { icon: FileText, label: "Summary", color: "#4A7CF5" }, // Blue
+    exam_sprint: { icon: BookOpen, label: "Exam Sprint", color: "#2BB288" }, // Emerald
 };
 
 const filters = [
@@ -89,6 +68,41 @@ interface LibraryItem {
     savedAt?: number;
 }
 
+// Programmatic Web Audio Synthesizer
+const playResultsSound = (type: "click" | "page-turn") => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const now = ctx.currentTime;
+
+        if (type === "click") {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(580, now);
+            gain.gain.setValueAtTime(0.012, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.06);
+        } else if (type === "page-turn") {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(450, now);
+            osc.frequency.exponentialRampToValueAtTime(700, now + 0.08);
+            gain.gain.setValueAtTime(0.008, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.12);
+        }
+    } catch (e) {}
+};
+
 export default function LibraryPage() {
     const { user } = useUser();
     const router = useRouter();
@@ -109,8 +123,7 @@ export default function LibraryPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [showGuestModal, setShowGuestModal] = useState(false);
 
-    // Offline: gracefully switch to Offline Vault view instead of redirecting
-    // (redirecting causes an infinite loop: /library -> /library/offline -> back -> /library -> ...)
+    // Offline view redirection lock
     useEffect(() => {
         if (typeof window !== "undefined") {
             if (!navigator.onLine) {
@@ -122,7 +135,6 @@ export default function LibraryPage() {
             };
 
             const handleOnline = () => {
-                // Optionally switch back to cloud view when connection returns
                 setIsOfflineView(false);
             };
 
@@ -175,7 +187,7 @@ export default function LibraryPage() {
                 try {
                     const parsed = JSON.parse(cached);
                     setItems(parsed);
-                    setLoading(false); // Instantly render cached items in 0ms!
+                    setLoading(false);
                 } catch (e) {}
             } else {
                 setLoading(true);
@@ -184,7 +196,6 @@ export default function LibraryPage() {
             const supabase = createClient();
             
             try {
-                // Fetch generations, study packs, and due cards in parallel
                 const [genRes, packRes, dueRes] = await Promise.all([
                     supabase
                         .from("generations")
@@ -216,7 +227,6 @@ export default function LibraryPage() {
                     combined.push(...packsAsItems);
                 }
 
-                // Sort combined by created_at descending
                 combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 setItems(combined);
                 localStorage.setItem(cacheKey, JSON.stringify(combined));
@@ -266,6 +276,7 @@ export default function LibraryPage() {
         : filtered;
 
     const handleOpen = (item: LibraryItem) => {
+        playResultsSound("click");
         if (isSelectionMode) {
             toggleSelection(item.id);
             return;
@@ -288,17 +299,19 @@ export default function LibraryPage() {
     };
 
     const toggleSelection = (id: string) => {
+        playResultsSound("click");
         setSelectedIds(prev => {
             if (prev.includes(id)) {
                 return prev.filter(i => i !== id);
             }
-            if (prev.length >= 10) return prev; // Maximum of 10 limit
+            if (prev.length >= 10) return prev;
             return [...prev, id];
         });
         if (!isSelectionMode) setIsSelectionMode(true);
     };
 
     const handleBatchDelete = async () => {
+        playResultsSound("click");
         if (selectedIds.length === 0) return;
         const confirmed = window.confirm(`Are you sure you want to delete ${selectedIds.length} items? This cannot be undone.`);
         if (!confirmed) return;
@@ -332,6 +345,7 @@ export default function LibraryPage() {
     };
 
     const handleBatchExport = () => {
+        playResultsSound("click");
         if (selectedIds.length === 0) return;
         const itemsToExport = activeItems.filter(g => selectedIds.includes(g.id));
         const html = generateLibraryExportHTML(itemsToExport as any);
@@ -349,6 +363,7 @@ export default function LibraryPage() {
     };
 
     const exitSelectionMode = () => {
+        playResultsSound("click");
         setSelectedIds([]);
         setIsSelectionMode(false);
     };
@@ -369,15 +384,15 @@ export default function LibraryPage() {
     const sprintCount = items.filter(g => g.type === "exam_sprint").length;
 
     return (
-        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative flex flex-col flex-1 overflow-x-clip font-sans">
+        <div className="bg-transparent text-zinc-100 pb-28 pt-20 relative flex flex-col flex-1 overflow-x-clip">
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
             {/* Grid Line Background */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
             
             {/* Ambient Radial Halos */}
-            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#10B981]/5 via-[#6366F1]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
-            <div className="absolute bottom-[-150px] right-[-100px] w-[500px] h-[500px] bg-[#3B82F6]/5 rounded-full blur-[130px] pointer-events-none z-0" />
+            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#9673F5]/5 via-[#4A7CF5]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
+            <div className="absolute bottom-[-150px] right-[-100px] w-[500px] h-[500px] bg-[#E5A93C]/5 rounded-full blur-[130px] pointer-events-none z-0" />
 
             <StandardContainer className="relative z-10">
                 <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-600 max-w-5xl mx-auto space-y-10">
@@ -387,14 +402,14 @@ export default function LibraryPage() {
                         <div>
                             <div className="flex items-center gap-2 mb-3">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 shadow-sm">
-                                    <Library size={18} strokeWidth={2} className="text-white" />
+                                    <Library size={18} className="text-white" />
                                 </div>
-                                <span className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--foreground-muted)]">Unified Storage</span>
+                                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-zinc-500">Unified Storage</span>
                             </div>
-                            <h1 className="text-4xl sm:text-6xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
-                                Study <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">Vault</span>
+                            <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-[0.9] uppercase italic font-sans">
+                                Study <span className="text-[#E5A93C] drop-shadow-[0_0_15px_rgba(229,169,60,0.15)]">Vault</span>
                             </h1>
-                            <p className="text-xs text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] mt-1.5 opacity-80">
+                            <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em] mt-1.5 opacity-80">
                                 {isOfflineView ? "Local Device Storage · Zero Latency" : "Real-time Cloud Synchronization"}
                             </p>
                         </div>
@@ -405,14 +420,20 @@ export default function LibraryPage() {
                             {/* Offline Toggle */}
                             <div className="flex items-center p-1 rounded-xl bg-zinc-950/40 border border-white/5 backdrop-blur-md shadow-inner">
                                 <button
-                                    onClick={() => { setIsOfflineView(false); exitSelectionMode(); }}
-                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${!isOfflineView ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"}`}
+                                    onClick={() => { playResultsSound("click"); setIsOfflineView(false); exitSelectionMode(); }}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
+                                        !isOfflineView ? "bg-white text-zinc-950 shadow-md" : "text-zinc-400 hover:text-white"
+                                    )}
                                 >
                                     <Cloud size={13} /> Cloud History
                                 </button>
                                 <button
-                                    onClick={() => { setIsOfflineView(true); exitSelectionMode(); }}
-                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${isOfflineView ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-md" : "text-white/60 hover:text-white"}`}
+                                    onClick={() => { playResultsSound("click"); setIsOfflineView(true); exitSelectionMode(); }}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer border border-transparent",
+                                        isOfflineView ? "bg-[#2BB288]/20 text-[#2BB288] border-[#2BB288]/30 shadow-md" : "text-zinc-400 hover:text-white"
+                                    )}
                                 >
                                     <WifiOff size={13} /> Offline Vault ({offlineItems.length})
                                 </button>
@@ -420,53 +441,71 @@ export default function LibraryPage() {
                         </div>
                     </div>
 
-                    {/* Stats — Flat 2.0 Bento Row */}
+                    {/* Stats Bento Row */}
                     {!isOfflineView && (
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {[
-                                { label: "Exam Sprints", count: sprintCount, icon: BookOpen, color: "#10B981" },
-                                { label: "Flashcards", count: flashcardCount, icon: Layers, color: "#F59E0B" },
-                                { label: "Quizzes", count: quizCount, icon: HelpCircle, color: "#818CF8" },
-                                { label: "Summaries", count: summaryCount, icon: FileText, color: "#6366F1" },
+                                { label: "Exam Sprints", count: sprintCount, icon: BookOpen, color: "#2BB288" },
+                                { label: "Flashcards", count: flashcardCount, icon: Layers, color: "#E5A93C" },
+                                { label: "Quizzes", count: quizCount, icon: HelpCircle, color: "#9673F5" },
+                                { label: "Summaries", count: summaryCount, icon: FileText, color: "#4A7CF5" },
                             ].map((s) => (
-                                <div key={s.label} className="p-5 transition-all duration-300 hover:scale-[1.01] bg-zinc-950/45 border border-white/5 rounded-2xl shadow-lg flex flex-col justify-between relative overflow-hidden group">
+                                <GlassmorphicCard 
+                                    key={s.label} 
+                                    intensity="medium" 
+                                    radius="20px" 
+                                    hoverLift={true}
+                                    className="p-5 flex flex-col justify-between overflow-hidden"
+                                >
                                     <div className="flex items-center justify-between mb-4">
-                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center border shadow-inner transition-all" style={{ color: s.color, backgroundColor: `${s.color}10`, borderColor: `${s.color}25` }}>
+                                        <div 
+                                            className="w-9 h-9 rounded-xl flex items-center justify-center border shadow-inner transition-all" 
+                                            style={{ color: s.color, backgroundColor: `${s.color}10`, borderColor: `${s.color}25` }}
+                                        >
                                             <s.icon size={16} strokeWidth={2} />
                                         </div>
-                                        <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Active</span>
+                                        <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Active</span>
                                     </div>
                                     <div>
                                         <div className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight mb-1">{s.count}</div>
-                                        <div className="text-[9px] text-[var(--foreground-muted)] font-black uppercase tracking-widest opacity-80">{s.label}</div>
+                                        <div className="text-[9px] text-zinc-400 font-black uppercase tracking-[0.2em]">{s.label}</div>
                                     </div>
-                                </div>
+                                </GlassmorphicCard>
                             ))}
                         </div>
                     )}
 
-                    {/* Filter Pills — Flex Wrap */}
+                    {/* Filter Pills */}
                     <div className="flex flex-wrap gap-2">
-                        {filters.map(f => (
-                            <button key={f.id} onClick={() => setFilter(f.id)}
-                                className={cn(
-                                    "flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer",
-                                    filter === f.id
-                                        ? isOfflineView 
-                                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                            : "bg-white/10 text-white border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-                                        : "bg-white/5 text-[var(--foreground-muted)] hover:text-white border border-white/5"
-                                )}>
-                                <f.icon size={14} strokeWidth={2} />
-                                {f.label}
-                            </button>
-                        ))}
+                        {filters.map(f => {
+                            const isActive = filter === f.id;
+                            return (
+                                <button 
+                                    key={f.id} 
+                                    onClick={() => {
+                                        playResultsSound("click");
+                                        setFilter(f.id);
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all cursor-pointer border",
+                                        isActive
+                                            ? isOfflineView 
+                                                ? "bg-[#2BB288]/10 text-[#2BB288] border-[#2BB288]/30 shadow-[0_0_15px_rgba(43,178,136,0.15)]"
+                                                : "bg-white/10 text-white border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                                            : "bg-white/5 text-zinc-400 hover:text-white border-white/5 hover:border-white/10"
+                                    )}
+                                >
+                                    <f.icon size={13} />
+                                    {f.label}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative mb-6 rounded-2xl border border-white/5 focus-within:border-white/20 transition-all bg-zinc-950/40 overflow-hidden">
+                    <div className="relative mb-6 rounded-2xl border border-white/5 focus-within:border-[#E5A93C]/30 focus-within:shadow-[0_0_15px_rgba(229,169,60,0.08)] transition-all bg-zinc-950/40 overflow-hidden">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-white/40">
-                            {searchQuery.includes("type:") ? <Filter size={16} strokeWidth={2} /> : <Search size={16} strokeWidth={2} />}
+                            {searchQuery.includes("type:") ? <Filter size={16} /> : <Search size={16} />}
                         </div>
                         <input
                             type="text"
@@ -475,7 +514,7 @@ export default function LibraryPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setShowSearch(true)}
                             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-                            className="w-full pl-11 pr-14 py-4 text-xs font-bold text-white placeholder:text-[var(--foreground-muted)]/30 outline-none transition-all bg-transparent"
+                            className="w-full pl-11 pr-14 py-4 text-xs font-bold text-white placeholder:text-zinc-600 outline-none transition-all bg-transparent font-sans"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                             {searchQuery && (
@@ -484,16 +523,19 @@ export default function LibraryPage() {
                                     className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
                                     title="Clear search"
                                 >
-                                    <X size={15} strokeWidth={2} />
+                                    <X size={15} />
                                 </button>
                             )}
                             <div className="w-px h-4 bg-white/5 mx-0.5" />
                             <button 
                                 onClick={() => setSearchQuery(prev => prev.includes("type:") ? "" : "type:")}
-                                className={`p-1.5 rounded-lg transition-all cursor-pointer ${searchQuery.includes("type:") ? "text-black bg-white" : "text-white/40 hover:text-white"}`}
+                                className={cn(
+                                    "p-1.5 rounded-lg transition-all cursor-pointer",
+                                    searchQuery.includes("type:") ? "text-zinc-950 bg-white" : "text-white/40 hover:text-white"
+                                )}
                                 title="Filter by type"
                             >
-                                <Tag size={15} strokeWidth={2} />
+                                <Tag size={15} />
                             </button>
                         </div>
 
@@ -504,64 +546,66 @@ export default function LibraryPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10 }}
-                                    className="absolute left-0 right-0 top-full mt-2 p-6 rounded-2xl bg-zinc-950/90 backdrop-blur-2xl border border-white/10 shadow-2xl z-50 text-left space-y-4"
+                                    className="absolute left-0 right-0 top-full mt-2 z-50 text-left"
                                 >
-                                    <div>
-                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
-                                            <Clock size={11} /> Recent Study Packs
-                                        </h4>
-                                        <div className="flex flex-col gap-1.5">
-                                            {activeItems.slice(0, 2).map((item) => (
-                                                <button
-                                                    key={item.id}
-                                                    onClick={() => handleOpen(item)}
-                                                    className="text-left text-xs font-bold text-white hover:text-white/80 transition-colors truncate cursor-pointer"
-                                                >
-                                                    {item.title || "Untitled Study Pack"}
-                                                </button>
-                                            ))}
-                                            {activeItems.length === 0 && (
-                                                <span className="text-xs text-white/40 italic">No packs generated yet.</span>
-                                            )}
+                                    <GlassmorphicCard intensity="heavy" radius="20px" className="p-6 space-y-4">
+                                        <div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2 flex items-center gap-1.5">
+                                                <Clock size={11} /> Recent Study Packs
+                                            </h4>
+                                            <div className="flex flex-col gap-1.5">
+                                                {activeItems.slice(0, 2).map((item) => (
+                                                    <button
+                                                        key={item.id}
+                                                        onClick={() => handleOpen(item)}
+                                                        className="text-left text-xs font-bold text-zinc-300 hover:text-white transition-colors truncate cursor-pointer"
+                                                    >
+                                                        {item.title || "Untitled Study Pack"}
+                                                    </button>
+                                                ))}
+                                                {activeItems.length === 0 && (
+                                                    <span className="text-xs text-zinc-600 italic">No packs generated yet.</span>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="border-t border-white/5 pt-3">
-                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
-                                            <Sparkles size={11} className="text-white" /> Highly Reviewed Core Concepts
-                                        </h4>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {["Action Potentials", "Cardiac Cycle", "Renal Clearance"].map((concept) => (
-                                                <button
-                                                    key={concept}
-                                                    onClick={() => setSearchQuery(concept)}
-                                                    className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-white/80 hover:text-white hover:border-white/20 transition-all cursor-pointer"
-                                                >
-                                                    {concept}
-                                                </button>
-                                            ))}
+                                        <div className="border-t border-white/5 pt-3">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E5A93C] mb-2 flex items-center gap-1.5">
+                                                <Sparkles size={11} /> Highly Reviewed Core Concepts
+                                            </h4>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {["Action Potentials", "Cardiac Cycle", "Renal Clearance"].map((concept) => (
+                                                    <button
+                                                        key={concept}
+                                                        onClick={() => { playResultsSound("click"); setSearchQuery(concept); }}
+                                                        className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-zinc-300 hover:text-white hover:border-white/20 transition-all cursor-pointer"
+                                                    >
+                                                        {concept}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="border-t border-white/5 pt-3">
-                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
-                                            <BellRing size={11} className="text-[#F59E0B]" /> Flagged Exam Questions
-                                        </h4>
-                                        <div className="flex flex-col gap-1.5 text-xs text-white/70 font-medium">
-                                            <button onClick={() => setSearchQuery("murmur")} className="text-left hover:text-white transition-colors truncate cursor-pointer">
-                                                Q: "What is the classic murmur triad?"
-                                            </button>
-                                            <button onClick={() => setSearchQuery("action potential")} className="text-left hover:text-white transition-colors truncate cursor-pointer">
-                                                Q: "Explain phase 0 depolarization dynamics."
-                                            </button>
+                                        <div className="border-t border-white/5 pt-3">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#9673F5] mb-2 flex items-center gap-1.5">
+                                                <BellRing size={11} /> Flagged Exam Questions
+                                            </h4>
+                                            <div className="flex flex-col gap-1.5 text-xs text-zinc-400 font-medium">
+                                                <button onClick={() => { playResultsSound("click"); setSearchQuery("murmur"); }} className="text-left hover:text-white transition-colors truncate cursor-pointer">
+                                                    Q: "What is the classic murmur triad?"
+                                                </button>
+                                                <button onClick={() => { playResultsSound("click"); setSearchQuery("action potential"); }} className="text-left hover:text-white transition-colors truncate cursor-pointer">
+                                                    Q: "Explain phase 0 depolarization dynamics."
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </GlassmorphicCard>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    {/* Content */}
+                    {/* Content List */}
                     {loading && !isOfflineView ? (
                         <div className="space-y-3">
                             {[0, 1, 2, 3].map(i => (
@@ -588,68 +632,79 @@ export default function LibraryPage() {
 
                                 return (
                                     <div key={item.id} className="relative flex items-center group">
-                                        <button 
-                                            onContextMenu={(e) => {
-                                                e.preventDefault();
-                                                toggleSelection(item.id);
-                                            }}
-                                            onClick={() => handleOpen(item)}
-                                            className="flex-1 flex items-center gap-4 py-4 px-6 rounded-2xl bg-zinc-950/40 border border-white/5 hover:border-white/20 hover:scale-[1.005] transition-all shadow-sm text-left outline-none cursor-pointer">
-
-                                            {/* Selection Indicator */}
-                                            <AnimatePresence>
-                                                {isSelectionMode && (
-                                                    <motion.div 
-                                                        initial={{ scale: 0, opacity: 0 }}
-                                                        animate={{ scale: 1, opacity: 1 }}
-                                                        exit={{ scale: 0, opacity: 0 }}
-                                                        className="w-5 h-5 rounded-lg border flex items-center justify-center mr-1 shadow-xs flex-shrink-0"
-                                                        style={{ 
-                                                            borderColor: isSelected ? "white" : "rgba(255,255,255,0.1)",
-                                                            background: isSelected ? "white" : "transparent"
-                                                        }}
-                                                    >
-                                                        {isSelected && <Check size={13} strokeWidth={3} className="text-black" />}
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-sm group-hover-scale-sm transition-all"
-                                                style={{ color: cfg.color, backgroundColor: `${cfg.color}10`, borderColor: `${cfg.color}25` }}>
-                                                <cfg.icon size={18} strokeWidth={2} />
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-xs sm:text-sm font-black text-white truncate group-hover:text-white/80 transition-colors uppercase italic tracking-tight">
-                                                        {item.title || "Untitled Scholarly Work"}
-                                                    </span>
-                                                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md flex-shrink-0 border transition-all"
-                                                        style={{ borderColor: `${cfg.color}40`, backgroundColor: `${cfg.color}15`, color: cfg.color }}>
-                                                        {cfg.label}
-                                                    </span>
-                                                    {dueIds.has(item.id) && !isOfflineView && (
-                                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#F59E0B] text-[#06060B] shadow-xs animate-pulse">
-                                                            DUE
-                                                        </span>
+                                        <GlassmorphicCard
+                                            intensity="light"
+                                            radius="20px"
+                                            hoverLift={true}
+                                            className="flex-1 overflow-hidden"
+                                        >
+                                            <button 
+                                                onContextMenu={(e) => {
+                                                    e.preventDefault();
+                                                    toggleSelection(item.id);
+                                                }}
+                                                onClick={() => handleOpen(item)}
+                                                className="w-full flex items-center gap-4 py-4 px-6 text-left outline-none cursor-pointer bg-transparent"
+                                            >
+                                                {/* Selection Indicator */}
+                                                <AnimatePresence>
+                                                    {isSelectionMode && (
+                                                        <motion.div 
+                                                            initial={{ scale: 0, opacity: 0 }}
+                                                            animate={{ scale: 1, opacity: 1 }}
+                                                            exit={{ scale: 0, opacity: 0 }}
+                                                            className="w-5 h-5 rounded-lg border flex items-center justify-center mr-1 shadow-xs flex-shrink-0"
+                                                            style={{ 
+                                                                borderColor: isSelected ? "white" : "rgba(255,255,255,0.1)",
+                                                                background: isSelected ? "white" : "transparent"
+                                                            }}
+                                                        >
+                                                            {isSelected && <Check size={13} strokeWidth={3} className="text-zinc-950" />}
+                                                        </motion.div>
                                                     )}
-                                                    {item.isOffline && (
-                                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-xs flex items-center gap-1">
-                                                            <WifiOff size={8} /> OFFLINE
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2.5 text-[11px] font-bold text-white/40 truncate">
-                                                    {count && <span className="flex items-center gap-1 shrink-0"><BookOpen size={12} /> {count}</span>}
-                                                    {count && <span className="text-white/10 shrink-0">•</span>}
-                                                    <span className="flex items-center gap-1 truncate"><Clock size={12} className="shrink-0" /> {itemDate}</span>
-                                                </div>
-                                            </div>
+                                                </AnimatePresence>
 
-                                            <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors shrink-0">
-                                                Open <ExternalLink size={14} />
-                                            </div>
-                                        </button>
+                                                <div 
+                                                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-sm transition-all"
+                                                    style={{ color: cfg.color, backgroundColor: `${cfg.color}10`, borderColor: `${cfg.color}25` }}
+                                                >
+                                                    <cfg.icon size={18} />
+                                                </div>
+
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-xs sm:text-sm font-black text-white truncate group-hover:text-white/80 transition-colors uppercase italic tracking-tight font-sans">
+                                                            {item.title || "Untitled Scholarly Work"}
+                                                        </span>
+                                                        <span 
+                                                            className="text-[9px] font-black uppercase tracking-[0.15em] px-2.5 py-0.5 rounded-md flex-shrink-0 border transition-all"
+                                                            style={{ borderColor: `${cfg.color}40`, backgroundColor: `${cfg.color}15`, color: cfg.color }}
+                                                        >
+                                                            {cfg.label}
+                                                        </span>
+                                                        {dueIds.has(item.id) && !isOfflineView && (
+                                                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-[#E5A93C] text-[#09090b] shadow-xs animate-pulse">
+                                                                DUE
+                                                            </span>
+                                                        )}
+                                                        {item.isOffline && (
+                                                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-[#2BB288]/20 text-[#2BB288] border border-[#2BB288]/30 shadow-xs flex items-center gap-1">
+                                                                <WifiOff size={8} /> OFFLINE
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2.5 text-[11px] font-bold text-zinc-500 truncate">
+                                                        {count && <span className="flex items-center gap-1 shrink-0"><BookOpen size={12} /> {count}</span>}
+                                                        {count && <span className="text-zinc-800 shrink-0">•</span>}
+                                                        <span className="flex items-center gap-1 truncate"><Clock size={12} className="shrink-0" /> {itemDate}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-white transition-colors shrink-0">
+                                                    Open <ExternalLink size={13} />
+                                                </div>
+                                            </button>
+                                        </GlassmorphicCard>
                                     </div>
                                 );
                             })}
@@ -658,7 +713,7 @@ export default function LibraryPage() {
                 </div>
             </StandardContainer>
 
-            {/* Batch Action Bar — Floating Flat 2.0 */}
+            {/* Batch Action Bar */}
             <AnimatePresence>
                 {selectedIds.length > 0 && (
                     <motion.div 
@@ -667,14 +722,14 @@ export default function LibraryPage() {
                         exit={{ y: 100, x: "-50%", opacity: 0 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-40px)] max-w-xl"
                     >
-                        <div className="bg-zinc-950/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-5 flex items-center justify-between shadow-[0_24px_80px_rgba(0,0,0,0.9)] overflow-hidden relative">
+                        <GlassmorphicCard intensity="heavy" radius="32px" className="p-5 flex items-center justify-between shadow-[0_24px_80px_rgba(0,0,0,0.9)] overflow-hidden relative">
                             <div className="flex items-center gap-4 pl-3">
-                                <div className="w-10 h-10 rounded-2xl bg-white text-black flex items-center justify-center font-black text-sm shadow-lg">
+                                <div className="w-10 h-10 rounded-2xl bg-white text-zinc-950 flex items-center justify-center font-black text-sm shadow-lg">
                                     {selectedIds.length}
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-xs font-black text-white leading-none uppercase tracking-wider">Items Selected</span>
-                                    <span className="text-[9px] text-white/40 font-black uppercase tracking-widest mt-1.5">Batch Management Active</span>
+                                    <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mt-1.5">Batch Management Active</span>
                                 </div>
                             </div>
 
@@ -682,21 +737,21 @@ export default function LibraryPage() {
                                 {!isOfflineView && (
                                     <button onClick={handleBatchExport}
                                         className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white transition-all shadow-md cursor-pointer">
-                                        <FileDown size={20} strokeWidth={2} />
+                                        <FileDown size={20} />
                                     </button>
                                 )}
                                 <button onClick={handleBatchDelete} disabled={isProcessing}
                                     className="p-3 px-5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all shadow-md disabled:opacity-50 flex items-center gap-2 font-black text-[10px] uppercase tracking-wider cursor-pointer">
-                                    {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} strokeWidth={2} />}
+                                    {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                                     Delete
                                 </button>
                                 <div className="w-px h-8 bg-white/10 mx-1" />
                                 <button onClick={exitSelectionMode}
-                                    className="px-5 py-3 rounded-2xl bg-white text-black hover:bg-white/95 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer">
+                                    className="px-5 py-3 rounded-2xl bg-white text-zinc-950 hover:bg-white/95 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer">
                                     Cancel
                                 </button>
                             </div>
-                        </div>
+                        </GlassmorphicCard>
                     </motion.div>
                 )}
             </AnimatePresence>

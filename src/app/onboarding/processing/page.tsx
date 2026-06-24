@@ -13,6 +13,7 @@ import {
   Sparkles,
   Loader2
 } from "lucide-react";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 import StandardContainer from "@/components/ui/StandardContainer";
 import { cn } from "@/lib/utils";
 
@@ -74,15 +75,19 @@ export default function ProcessingPage() {
       
       {/* Ambient Orbs */}
       <motion.div 
-        className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-10 pointer-events-none"
-        style={{ background: "radial-gradient(circle, var(--blue-dim), transparent 70%)", filter: "blur(100px)", top: "-10%", left: "-10%" }}
+        className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-20 pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(229,169,60,0.15) 0%, rgba(150,115,245,0.08) 50%, transparent 70%)", filter: "blur(100px)", top: "-10%", left: "-10%" }}
         animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -20, 0] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
 
       <StandardContainer narrow className="my-auto">
 
-        <div className="relative z-10 w-full max-w-xl mx-auto flex flex-col items-center p-8 sm:p-12 bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl backdrop-blur-xl">
+        <GlassmorphicCard 
+          intensity="heavy" 
+          radius="32px" 
+          className="relative z-10 w-full max-w-xl mx-auto flex flex-col items-center p-8 sm:p-12 shadow-2xl"
+        >
           
           {/* Logo & Status */}
           <motion.div 
@@ -90,15 +95,15 @@ export default function ProcessingPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="mb-8 text-center"
           >
-            <div className="w-16 h-16 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--border)] flex items-center justify-center mb-6 mx-auto relative overflow-hidden group">
-               <div className="absolute inset-0 bg-[var(--foreground)] opacity-[0.03] animate-pulse" />
-               <Sparkles size={24} className="text-[var(--foreground)]" />
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 mx-auto relative overflow-hidden group">
+               <div className="absolute inset-0 bg-white opacity-[0.03] animate-pulse" />
+               <Sparkles size={24} className="text-amber-500" />
             </div>
-            <h1 className="text-2xl font-black text-[var(--foreground)] tracking-tight mb-2">
+            <h1 className="text-2xl font-black text-white tracking-tight mb-2 uppercase italic">
               The Professor is analyzing
             </h1>
-            <p className="text-sm text-[var(--foreground-muted)] font-medium">
-              Reading <span className="text-[var(--foreground)] font-bold">"{fileName}"</span>...
+            <p className="text-sm text-white/50 font-medium">
+              Reading <span className="text-white font-bold">"{fileName}"</span>...
             </p>
           </motion.div>
 
@@ -110,21 +115,25 @@ export default function ProcessingPage() {
                 className={cn(
                   "flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500",
                   currentStep > i 
-                    ? "bg-[var(--foreground)]/[0.02] border-[var(--foreground)]/10 opacity-100" 
+                    ? "bg-emerald-500/[0.03] border-emerald-500/20 opacity-100" 
                     : i === currentStep 
-                      ? "bg-[var(--foreground)]/[0.04] border-[var(--foreground)]/20 opacity-100 scale-[1.01]" 
+                      ? "bg-amber-500/[0.05] border-amber-500/30 opacity-100 scale-[1.01]" 
                       : "bg-transparent border-transparent opacity-25"
                 )}
               >
                 <div className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center transition-colors duration-500",
-                  currentStep > i ? "bg-[var(--foreground)] text-[var(--background)]" : "bg-[var(--foreground)]/5 text-[var(--foreground-muted)]"
+                  "w-9 h-9 rounded-xl flex items-center justify-center transition-colors duration-500 border",
+                  currentStep > i 
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+                    : i === currentStep 
+                      ? "bg-amber-500/10 border-amber-500/20 text-amber-400" 
+                      : "bg-white/5 border-white/5 text-white/30"
                 )}>
                   {currentStep > i ? <CheckCircle2 size={16} /> : i === currentStep ? <Loader2 size={16} className="animate-spin" /> : <step.icon size={16} />}
                 </div>
                 <span className={cn(
                   "font-bold text-xs tracking-tight transition-colors duration-500",
-                  currentStep > i ? "text-[var(--foreground)]" : i === currentStep ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)]"
+                  currentStep > i ? "text-emerald-400" : i === currentStep ? "text-amber-400" : "text-white/40"
                 )}>
                   {step.label}
                 </span>
@@ -133,9 +142,9 @@ export default function ProcessingPage() {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-[var(--foreground)]/5 rounded-full overflow-hidden mb-6">
+          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mb-6">
             <motion.div 
-              className="h-full bg-[var(--foreground)]"
+              className="h-full bg-gradient-to-r from-amber-500 to-orange-500"
               initial={{ width: "33%" }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
@@ -151,7 +160,7 @@ export default function ProcessingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.5 }}
-                className="flex items-center gap-2.5 text-[var(--foreground-muted)] text-xs font-semibold italic"
+                className="flex items-center gap-2.5 text-white/50 text-xs font-semibold italic"
               >
                 <Lightbulb size={14} className="text-amber-500 shrink-0" />
                 <span>{STUDY_TIPS[tipIndex]}</span>
@@ -159,7 +168,7 @@ export default function ProcessingPage() {
             </AnimatePresence>
           </div>
 
-        </div>
+        </GlassmorphicCard>
       </StandardContainer>
     </main>
   );

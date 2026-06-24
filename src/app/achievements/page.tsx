@@ -1,14 +1,102 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
     Trophy, Flame, Zap, Brain, Clock, Shield, Star, Sparkles, CheckCircle2, Lock, ArrowLeft, Award, Gift, Target, BookOpen
 } from "lucide-react";
 import StandardContainer from "@/components/ui/StandardContainer";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
+import TiltCard from "@/components/ui/TiltCard";
 import { useUser } from "@/context/UserContext";
 import { calculateLevel, getLevelTitle, getAcademicEchelon, getSemesterStanding, getCurrentSemesterInfo } from "@/lib/profiles-client";
+
+// ─── Web Audio Synthesis ──────────────────────────────────────────────────────
+
+function useAchievementsAudio() {
+    const ctxRef = useRef<AudioContext | null>(null);
+
+    const getCtx = useCallback(() => {
+        if (typeof window === "undefined") return null;
+        if (!ctxRef.current || ctxRef.current.state === "closed") {
+            ctxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        if (ctxRef.current.state === "suspended") {
+            ctxRef.current.resume();
+        }
+        return ctxRef.current;
+    }, []);
+
+    /** Claim reward: Glorious ascending pentatonic arpeggio sweep */
+    const playClaimChime = useCallback(() => {
+        const ctx = getCtx();
+        if (!ctx) return;
+        
+        const notes = [261.63, 329.63, 392.00, 440.00, 523.25, 659.25]; // C4, E4, G4, A4, C5, E5
+        notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.07);
+            
+            const t = ctx.currentTime + i * 0.07;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.08, t + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+            
+            osc.start(t);
+            osc.stop(t + 0.5);
+        });
+    }, [getCtx]);
+
+    /** Soft hover ping for badges */
+    const playHoverPing = useCallback(() => {
+        const ctx = getCtx();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.02, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.09);
+    }, [getCtx]);
+
+    /** Warm load shimmer chord */
+    const playPageLoadChime = useCallback(() => {
+        const ctx = getCtx();
+        if (!ctx) return;
+        
+        const chords = [329.63, 440.00, 659.25]; // E4, A4, E5
+        chords.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            const t = ctx.currentTime;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.03, t + 0.25);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+            
+            osc.start(t);
+            osc.stop(t + 1.6);
+        });
+    }, [getCtx]);
+
+    return { playClaimChime, playHoverPing, playPageLoadChime };
+}
 
 interface Achievement {
     id: string;
@@ -74,8 +162,8 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         description: "Upload and distill your first study document. Goodbye fluff, hello pure knowledge.",
         category: "synthesis",
         icon: Zap,
-        color: "var(--blue)",
-        glow: "var(--blue-glow)",
+        color: "var(--violet)",
+        glow: "rgba(150, 115, 245, 0.15)",
         progress: 0,
         maxProgress: 1,
         xpReward: 100,
@@ -87,8 +175,8 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         description: "Synthesize 10 study packs. You're building an external brain faster than AI can keep up.",
         category: "synthesis",
         icon: Brain,
-        color: "var(--blue)",
-        glow: "var(--blue-glow)",
+        color: "var(--violet)",
+        glow: "rgba(150, 115, 245, 0.15)",
         progress: 0,
         maxProgress: 10,
         xpReward: 300,
@@ -100,8 +188,8 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         description: "Generate 50 high-fidelity study packs. You are the ultimate curator of wisdom.",
         category: "synthesis",
         icon: Sparkles,
-        color: "var(--blue)",
-        glow: "var(--blue-glow)",
+        color: "var(--violet)",
+        glow: "rgba(150, 115, 245, 0.15)",
         progress: 0,
         maxProgress: 50,
         xpReward: 1500,
@@ -126,8 +214,8 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
         description: "Distilled 20 complex topics or study packs into clear, digestible insights.",
         category: "synthesis",
         icon: Brain,
-        color: "var(--blue)",
-        glow: "var(--blue-glow)",
+        color: "var(--violet)",
+        glow: "rgba(150, 115, 245, 0.15)",
         progress: 0,
         maxProgress: 20,
         xpReward: 500,
@@ -250,6 +338,16 @@ export default function AchievementsPage() {
     const [claimingId, setClaimingId] = useState<string | null>(null);
     const [celebrationText, setCelebrationText] = useState<{ title: string; reward: number } | null>(null);
 
+    const { playClaimChime, playHoverPing, playPageLoadChime } = useAchievementsAudio();
+
+    // Play load chime on mount
+    useEffect(() => {
+        const t = setTimeout(() => {
+            playPageLoadChime();
+        }, 300);
+        return () => clearTimeout(t);
+    }, [playPageLoadChime]);
+
     useEffect(() => {
         let active = true;
 
@@ -280,7 +378,6 @@ export default function AchievementsPage() {
                 else if (ach.id === "synth-10") currentProg = Math.min(ach.maxProgress, libraryCount);
                 else if (ach.id === "synth-50") currentProg = Math.min(ach.maxProgress, libraryCount);
                 else if (ach.id === "synth-deconstruct") currentProg = Math.min(ach.maxProgress, libraryCount);
-                // focus and elite quizzes are currently set to 0 as they require complex back-end event tracking
 
                 return {
                     ...ach,
@@ -315,11 +412,8 @@ export default function AchievementsPage() {
 
     const handleClaim = (id: string, reward: number, title: string) => {
         setClaimingId(id);
-        setCelebr(id, reward, title);
-    };
-
-    const setCelebr = (id: string, reward: number, title: string) => {
-        setClaimingId(id);
+        playClaimChime();
+        
         setCelebrationText({ title, reward });
         
         if (typeof window !== "undefined") {
@@ -340,21 +434,26 @@ export default function AchievementsPage() {
 
         setTimeout(() => {
             setCelebrationText(null);
-        }, 6000);
+        }, 5000);
     };
 
     return (
-        <div className="w-full min-h-screen bg-[var(--bg)] selection:bg-[var(--blue-dim)] text-[var(--text)] pt-24 pb-20 overflow-hidden font-sans">
+        <div className="w-full min-h-screen bg-[#09090b] text-[#E0E0E0] pt-24 pb-20 overflow-hidden font-sans selection:bg-amber-500/20">
             <StandardContainer className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+                
                 {/* Back Navigation & Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <Link href="/dashboard" className="flex items-center gap-2 text-xs font-bold text-[var(--text-3)] hover:text-[var(--text)] transition-colors uppercase tracking-widest group">
-                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                <div className="flex items-center justify-between mb-8">
+                    <Link 
+                        href="/dashboard" 
+                        onClick={playHoverPing}
+                        className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.25em] text-white/40 hover:text-white transition-colors group"
+                    >
+                        <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Back to Dashboard</span>
                     </Link>
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--text)]/5 border border-[var(--border)] shadow-sm">
-                        <Sparkles size={12} className="text-[var(--amber)] animate-spin" style={{ animationDuration: '6s' }} />
-                        <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-2)] font-bold">Dopamine Vault</span>
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 shadow-inner">
+                        <Sparkles size={12} className="text-[#E5A93C] animate-spin" style={{ animationDuration: '8s' }} />
+                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/50 font-bold">Dopamine Vault</span>
                     </div>
                 </div>
 
@@ -365,169 +464,304 @@ export default function AchievementsPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[100000] pointer-events-none flex items-center justify-center overflow-hidden bg-black/60 backdrop-blur-sm"
+                            className="fixed inset-0 z-[10000] pointer-events-none flex items-center justify-center overflow-hidden bg-black/75 backdrop-blur-md"
                         >
                             {/* Floating Confetti / Sparkles */}
-                            {[...Array(24)].map((_, i) => {
-                                const randomX = (Math.random() - 0.5) * window.innerWidth * 0.8;
-                                const randomY = (Math.random() - 0.5) * window.innerHeight * 0.8;
-                                const randomScale = Math.random() * 1.5 + 0.5;
-                                const colors = ['#F59E0B', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899'];
+                            {[...Array(30)].map((_, i) => {
+                                const angle = (i / 30) * Math.PI * 2;
+                                const distance = Math.random() * 150 + 100;
+                                const destX = Math.cos(angle) * distance;
+                                const destY = Math.sin(angle) * distance - 50;
+                                const colors = ['#E5A93C', '#9673F5', '#2BB288', '#F2BE65', '#81E0C1'];
                                 const color = colors[i % colors.length];
 
                                 return (
                                     <motion.div
                                         key={i}
-                                        initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                                        initial={{ x: 0, y: 50, scale: 0, opacity: 1 }}
                                         animate={{
-                                            x: randomX,
-                                            y: randomY,
-                                            scale: randomScale,
+                                            x: destX,
+                                            y: destY,
+                                            scale: Math.random() * 1.2 + 0.6,
                                             opacity: [1, 1, 0],
                                             rotate: Math.random() * 360
                                         }}
-                                        transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className="absolute w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
+                                        transition={{ duration: 1.6, ease: "easeOut" }}
+                                        className="absolute w-3.5 h-3.5 rounded-sm shadow-md"
                                         style={{ backgroundColor: color }}
-                                    >
-                                        <Sparkles size={10} className="text-white" />
-                                    </motion.div>
+                                    />
                                 );
                             })}
 
                             {/* Big Center Popup */}
                             <motion.div
-                                initial={{ scale: 0.5, y: 50, opacity: 0 }}
-                                animate={{ scale: [1.2, 1], y: 0, opacity: 1 }}
-                                exit={{ scale: 0.8, y: -50, opacity: 0 }}
-                                transition={{ type: "spring", damping: 12, stiffness: 200 }}
-                                className="bg-[#0A0A0F]/95 backdrop-blur-3xl border border-[var(--amber)]/40 p-8 sm:p-10 rounded-[32px] shadow-[0_30px_80px_rgba(0,0,0,0.8),_inset_0_1px_1px_rgba(255,255,255,0.15),_0_0_60px_rgba(245,158,11,0.2)] flex flex-col items-center text-center max-w-md mx-4 pointer-events-auto transition-all"
+                                initial={{ scale: 0.8, y: 30, opacity: 0 }}
+                                animate={{ scale: 1.0, y: 0, opacity: 1 }}
+                                exit={{ scale: 0.8, y: -30, opacity: 0 }}
+                                transition={{ type: "spring", damping: 15, stiffness: 180 }}
+                                className="bg-[#0c0c0e]/95 backdrop-blur-3xl border border-[#E5A93C]/20 p-8 sm:p-10 rounded-[28px] shadow-[0_25px_60px_rgba(0,0,0,0.8),_inset_0_1px_1px_rgba(255,255,255,0.08),_0_0_50px_rgba(229,169,60,0.15)] flex flex-col items-center text-center max-w-sm mx-4 pointer-events-auto"
                             >
-                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/25 to-yellow-500/10 border border-amber-500/40 flex items-center justify-center text-[var(--amber)] mb-6 shadow-[0_8px_30px_rgba(245,158,11,0.25),_inset_0_1px_1px_rgba(255,255,255,0.1)] animate-bounce">
-                                    <Trophy size={40} />
+                                <div className="w-16 h-16 rounded-2xl bg-[#E5A93C]/10 border border-[#E5A93C]/20 flex items-center justify-center text-[#E5A93C] mb-6 animate-bounce">
+                                    <Trophy size={32} />
                                 </div>
-                                <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[var(--amber)] mb-2">Achievement Unlocked</span>
-                                <h3 className="text-2xl sm:text-3xl font-black text-white mb-4 tracking-tight">{celebrationText.title}</h3>
-                                <div className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black text-xl tracking-wider shadow-[0_8px_25px_rgba(245,158,11,0.3)] mb-4">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E5A93C] mb-2 font-mono">Trophy Unlocked</span>
+                                <h3 className="text-xl sm:text-2xl font-black text-white mb-4 tracking-tight font-heading italic">{celebrationText.title}</h3>
+                                <div className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#E5A93C] to-[#F2BE65] text-black font-black text-lg tracking-wider shadow-lg shadow-amber-500/20 mb-4">
                                     +{celebrationText.reward} XP
                                 </div>
-                                <p className="text-xs text-[var(--text-2)] font-mono">Your neural network expands. Diligence rewarded.</p>
+                                <p className="text-[11px] text-white/50 font-mono tracking-wide">Your neural network expands. Keep it up.</p>
                             </motion.div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                {/* Hero Banner (Subtle & Compact) */}
+                {/* Hero Banner Card */}
                 <motion.div 
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="scholar-card relative p-6 sm:p-8 mb-8 overflow-hidden bg-[var(--background-secondary)] border border-[var(--border)] shadow-xl" 
-                    style={{ borderRadius: "24px" }}
+                    className="relative mb-8" 
                 >
-                    <div className="absolute top-0 right-0 w-72 h-72 bg-[var(--amber)]/5 rounded-full blur-[80px] pointer-events-none -translate-y-1/3 translate-x-1/3" />
-                    <div className="absolute bottom-0 left-0 w-72 h-72 bg-[var(--blue)]/5 rounded-full blur-[80px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
+                    <GlassmorphicCard intensity="medium" className="p-6 sm:p-8 overflow-hidden relative" radius="24px">
+                        <div className="absolute top-0 right-0 w-72 h-72 bg-[#E5A93C]/[0.02] rounded-full blur-[90px] pointer-events-none -translate-y-1/3 translate-x-1/3" />
+                        <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#9673F5]/[0.02] rounded-full blur-[90px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
 
-                    <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                        <div className="max-w-xl">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/30 flex items-center justify-center text-[var(--amber)] shadow-[0_0_15px_var(--amber-glow)]">
-                                    <Trophy size={20} />
-                                </div>
-                                <div>
-                                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text)]">Trophy Room</h1>
-                                    <p className="text-[10px] text-[var(--text-3)] font-mono uppercase tracking-widest mt-0.5">Where diligence meets dopamine</p>
-                                </div>
-                            </div>
-                            <p className="text-xs text-[var(--text-2)] leading-relaxed">
-                                Celebrate every intellectual victory. Whether maintaining a flawless streak or pulling a midnight study sprint, every milestone fuels your neural expansion.
-                            </p>
-                        </div>
-
-                        {/* COD/LOL Inspired Dual-Layer Stats Widget */}
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-[var(--bg)]/60 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[var(--border)] shadow-sm w-full md:w-auto shrink-0">
-                            {/* Layer 1: Lifetime Academic Echelon */}
-                            <div className="space-y-1 sm:border-r border-[var(--border)] sm:pr-5 pb-3 sm:pb-0 border-b sm:border-b-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xl">{echelon.crest}</span>
+                        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                            <div className="max-w-xl">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#E5A93C]/10 border border-[#E5A93C]/20 flex items-center justify-center text-[#E5A93C] shadow-inner">
+                                        <Trophy size={18} />
+                                    </div>
                                     <div>
-                                        <p className="text-[9px] uppercase font-bold tracking-wider text-[var(--text-3)]">Lifetime Prestige</p>
-                                        <p className="text-sm sm:text-base font-bold" style={{ color: echelon.color }}>{echelon.name}</p>
+                                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-heading">Trophy Room</h1>
+                                        <p className="text-[9px] text-white/45 font-mono uppercase tracking-[0.2em] mt-0.5">Where diligence meets dopamine</p>
                                     </div>
                                 </div>
-                                <p className="text-[10px] font-mono text-[var(--text-2)]">{title} • Level {level}</p>
+                                <p className="text-xs text-[#E0E0E0]/60 leading-relaxed font-sans">
+                                    Celebrate every intellectual victory. Whether maintaining a flawless streak or pulling a midnight study sprint, every milestone fuels your neural expansion.
+                                </p>
                             </div>
 
-                            {/* Layer 2: Seasonal Semester Standing */}
-                            <div className="space-y-1 sm:border-r border-[var(--border)] sm:pr-5 pb-3 sm:pb-0 border-b sm:border-b-0">
-                                <div className="flex items-center gap-2">
-                                    <Target size={18} className="text-[var(--emerald)]" />
-                                    <div>
-                                        <p className="text-[9px] uppercase font-bold tracking-wider text-[var(--text-3)]">Active Semester</p>
-                                        <p className="text-sm sm:text-base font-bold text-[var(--emerald)]">{semesterStanding.rankName}</p>
+                            {/* Dual-Layer Stats Widget */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-black/40 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/5 w-full lg:w-auto shrink-0">
+                                {/* Prestige crest */}
+                                <div className="space-y-1 sm:border-r border-white/5 sm:pr-5 pb-3 sm:pb-0 border-b sm:border-b-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">{echelon.crest}</span>
+                                        <div>
+                                            <p className="text-[9px] uppercase font-bold tracking-wider text-white/45">Prestige Rank</p>
+                                            <p className="text-xs sm:text-sm font-black uppercase tracking-wider" style={{ color: echelon.color }}>{echelon.name}</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] font-mono text-white/50">{title} • Lvl {level}</p>
+                                </div>
+
+                                {/* Active standing */}
+                                <div className="space-y-1 sm:border-r border-white/5 sm:pr-5 pb-3 sm:pb-0 border-b sm:border-b-0">
+                                    <div className="flex items-center gap-2">
+                                        <Target size={16} className="text-[#2BB288]" />
+                                        <div>
+                                            <p className="text-[9px] uppercase font-bold tracking-wider text-white/45">Semester Standing</p>
+                                            <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-[#2BB288]">{semesterStanding.rankName}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3 text-[9px] font-mono text-white/50">
+                                        <span>{semesterStanding.division}</span>
+                                        <span className="text-white/35">{semesterInfo.daysRemaining}d left</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between gap-3 text-[10px] font-mono text-[var(--text-2)]">
-                                    <span>{semesterStanding.division}</span>
-                                    <span className="text-[var(--text-3)]">{semesterInfo.daysRemaining}d left</span>
-                                </div>
-                            </div>
 
-                            {/* Trophies Unlocked */}
-                            <div className="space-y-0.5 pl-1">
-                                <p className="text-[9px] uppercase font-bold tracking-wider text-[var(--text-3)]">Trophies Unlocked</p>
-                                <div className="flex items-baseline gap-1.5">
-                                    <p className="text-xl font-bold font-mono text-[var(--amber)] tabular-nums">{unlockedCount}</p>
-                                    <p className="text-xs font-semibold text-[var(--text-3)] font-mono">/ {totalCount}</p>
-                                </div>
-                                <div className="w-28 h-1 bg-[var(--text-4)] rounded-full overflow-hidden mt-1.5">
-                                    <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(unlockedCount / totalCount) * 100}%` }} 
-                                        transition={{ duration: 1 }}
-                                        className="h-full bg-[var(--amber)] shadow-[0_0_8px_var(--amber)]"
-                                    />
+                                {/* Trophies progress */}
+                                <div className="space-y-1 pl-1">
+                                    <p className="text-[9px] uppercase font-bold tracking-wider text-white/45">Trophies</p>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <p className="text-base font-black font-mono text-[#E5A93C] tabular-nums">{unlockedCount}</p>
+                                        <p className="text-[10px] font-semibold text-white/35 font-mono">/ {totalCount}</p>
+                                    </div>
+                                    <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden mt-1.5">
+                                        <motion.div 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${(unlockedCount / totalCount) * 100}%` }} 
+                                            transition={{ duration: 1 }}
+                                            className="h-full bg-[#E5A93C] shadow-[0_0_8px_rgba(229,169,60,0.5)]"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </GlassmorphicCard>
                 </motion.div>
 
-                {/* Category Filter Tabs (Wrapping cleanly with flex-wrap, zero horizontal scroll) */}
+                {/* Category Filter Tabs */}
                 <div className="flex flex-wrap items-center gap-2 mb-8">
                     {[
-                        { id: "all", label: "All Trophies", icon: Trophy, count: totalCount },
-                        { id: "streak", label: "Streak & Momentum", icon: Flame, count: achievements.filter(a=>a.category==="streak").length },
-                        { id: "synthesis", label: "Neural Synthesis", icon: Zap, count: achievements.filter(a=>a.category==="synthesis").length },
-                        { id: "focus", label: "Focus Sprints", icon: Clock, count: achievements.filter(a=>a.category==="focus").length },
-                        { id: "elite", label: "Elite Scholar", icon: Award, count: achievements.filter(a=>a.category==="elite").length },
+                        { id: "all", label: "All Trophies", icon: Trophy, count: totalCount, color: "#E5A93C" },
+                        { id: "streak", label: "Streaks", icon: Flame, count: achievements.filter(a=>a.category==="streak").length, color: "#E5A93C" },
+                        { id: "synthesis", label: "Synthesis", icon: Zap, count: achievements.filter(a=>a.category==="synthesis").length, color: "#9673F5" },
+                        { id: "focus", label: "Focus", icon: Clock, count: achievements.filter(a=>a.category==="focus").length, color: "#2BB288" },
+                        { id: "elite", label: "Elite", icon: Award, count: achievements.filter(a=>a.category==="elite").length, color: "#9673F5" },
                     ].map((tab) => {
                         const isActive = activeTab === tab.id;
                         return (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all shrink-0 border ${
-                                    isActive 
-                                    ? "bg-[var(--blue)] text-black border-[var(--blue)] shadow-[0_0_15px_var(--blue-glow)]" 
-                                    : "bg-[var(--background-secondary)] text-[var(--text-2)] border-[var(--border)] hover:border-[var(--text-3)] hover:text-[var(--text)]"
-                                }`}
+                                onClick={() => {
+                                    playHoverPing();
+                                    setActiveTab(tab.id);
+                                }}
+                                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-[10px] font-black tracking-wider uppercase transition-all border cursor-pointer shrink-0"
+                                style={{
+                                    backgroundColor: isActive ? `${tab.color}15` : "rgba(255, 255, 255, 0.02)",
+                                    borderColor: isActive ? tab.color : "rgba(255, 255, 255, 0.05)",
+                                    color: isActive ? tab.color : "rgba(255, 255, 255, 0.4)",
+                                    boxShadow: isActive ? `0 0 12px ${tab.color}10` : "none"
+                                }}
                             >
-                                <tab.icon size={14} />
+                                <tab.icon size={12} />
                                 <span>{tab.label}</span>
-                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold ${isActive ? "bg-black/20 text-black" : "bg-[var(--text-4)] text-[var(--text-3)]"}`}>{tab.count}</span>
+                                <span 
+                                    className="px-1.5 py-0.5 rounded-md text-[8px] font-mono font-bold"
+                                    style={{
+                                        backgroundColor: isActive ? `${tab.color}30` : "rgba(255, 255, 255, 0.05)",
+                                        color: isActive ? tab.color : "rgba(255, 255, 255, 0.3)"
+                                    }}
+                                >
+                                    {tab.count}
+                                </span>
                             </button>
                         );
                     })}
                 </div>
 
-                {/* Achievements Grid (Refined, Subtle Cards) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {/* Achievements Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <AnimatePresence mode="popLayout">
                         {filteredAchievements.map((ach) => {
                             const isUnlocked = ach.progress >= ach.maxProgress;
                             const isClaimable = isUnlocked && !ach.claimed;
                             const IconComponent = ach.icon;
+
+                            const cardContent = (
+                                <GlassmorphicCard
+                                    intensity={isClaimable ? "medium" : "light"}
+                                    className="h-full p-5 flex flex-col justify-between overflow-hidden relative border transition-all duration-300"
+                                    radius="20px"
+                                    style={{
+                                        borderColor: isClaimable ? `${ach.color}40` : isUnlocked ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.03)",
+                                        background: isClaimable ? `linear-gradient(135deg, rgba(25, 25, 30, 0.5) 0%, ${ach.color}08 100%)` : undefined,
+                                        boxShadow: isClaimable ? `0 0 20px ${ach.color}0c` : "none"
+                                    }}
+                                >
+                                    {/* Subtle Ambient Color Glow for Unlocked/Claimable */}
+                                    {isUnlocked && (
+                                        <div 
+                                            className="absolute -right-8 -top-8 w-24 h-24 rounded-full blur-2xl pointer-events-none opacity-[0.04] transition-all"
+                                            style={{ backgroundColor: ach.color }}
+                                        />
+                                    )}
+
+                                    <div className="flex flex-col">
+                                        {/* Header Row: Icon & Status Pill */}
+                                        <div className="flex items-start justify-between gap-3 mb-4">
+                                            <div 
+                                                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-transform duration-500 ${
+                                                    isClaimable ? "scale-105 animate-pulse" : ""
+                                                }`} 
+                                                style={{ 
+                                                    backgroundColor: isUnlocked ? `${ach.color}12` : "rgba(255, 255, 255, 0.02)",
+                                                    borderColor: isUnlocked ? `${ach.color}25` : "rgba(255, 255, 255, 0.05)",
+                                                    color: isUnlocked ? ach.color : "rgba(255, 255, 255, 0.25)",
+                                                    boxShadow: isUnlocked ? `0 0 10px ${ach.color}15` : 'none'
+                                                }}
+                                            >
+                                                <IconComponent size={16} />
+                                            </div>
+
+                                            {/* Status Badge */}
+                                            {isClaimable ? (
+                                                <span 
+                                                    className="px-2.5 py-1 rounded-full text-black font-mono text-[8px] font-black uppercase tracking-widest animate-bounce flex items-center gap-1"
+                                                    style={{
+                                                        backgroundColor: ach.color,
+                                                        boxShadow: `0 0 10px ${ach.color}50`
+                                                    }}
+                                                >
+                                                    <Gift size={9} /> Claim Reward
+                                                </span>
+                                            ) : isUnlocked ? (
+                                                <span className="px-2.5 py-1 rounded-full bg-[#2BB288]/10 border border-[#2BB288]/15 text-[#2BB288] font-mono text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                                                    <CheckCircle2 size={9} /> Unlocked
+                                                </span>
+                                            ) : (
+                                                <span className="px-2.5 py-1 rounded-full bg-white/[0.02] border border-white/5 text-white/30 font-mono text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                                                    <Lock size={9} /> Locked
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Title & Description */}
+                                        <h3 className="text-sm font-bold text-white tracking-tight mb-1 flex items-center gap-2">
+                                            {ach.title}
+                                        </h3>
+                                        <p className="text-[11px] text-[#E0E0E0]/50 leading-relaxed font-sans mb-4">
+                                            {ach.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Footer Row: Progress & Claim Button */}
+                                    <div className="pt-4 border-t border-white/5 mt-auto">
+                                        {isClaimable ? (
+                                            <button
+                                                onClick={() => handleClaim(ach.id, ach.xpReward, ach.title)}
+                                                disabled={claimingId === ach.id}
+                                                className="w-full py-2.5 rounded-xl text-black font-black text-[10px] uppercase tracking-wider active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                                style={{
+                                                    backgroundColor: ach.color,
+                                                    boxShadow: `0 0 12px ${ach.color}35`
+                                                }}
+                                            >
+                                                {claimingId === ach.id ? (
+                                                    <>
+                                                        <Sparkles size={12} className="animate-spin" />
+                                                        <span>Claiming XP...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Gift size={12} />
+                                                        <span>Claim +{ach.xpReward} XP</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <div>
+                                                <div className="flex items-center justify-between text-[9px] font-mono font-bold mb-1.5">
+                                                    <span className="text-white/30 uppercase tracking-widest">Progress</span>
+                                                    <span className={isUnlocked ? "text-[#2BB288] font-bold" : "text-white/60"}>
+                                                        {ach.progress} / {ach.maxProgress} ({Math.round((ach.progress / ach.maxProgress) * 100)}%)
+                                                    </span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden shadow-inner">
+                                                    <motion.div 
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${(ach.progress / ach.maxProgress) * 100}%` }}
+                                                        transition={{ duration: 1, ease: "easeOut" }}
+                                                        className="h-full rounded-full"
+                                                        style={{ 
+                                                            backgroundColor: isUnlocked ? '#2BB288' : ach.color,
+                                                            boxShadow: isUnlocked ? '0 0 8px rgba(43, 178, 136, 0.4)' : `0 0 8px ${ach.color}20`
+                                                        }}
+                                                    />
+                                                </div>
+                                                {ach.unlockedAt && (
+                                                    <p className="text-[9px] font-mono text-white/30 mt-1.5 text-right">
+                                                        Achieved {ach.unlockedAt}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </GlassmorphicCard>
+                            );
 
                             return (
                                 <motion.div
@@ -537,107 +771,22 @@ export default function AchievementsPage() {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ duration: 0.25 }}
                                     key={ach.id}
-                                    className={`scholar-card relative p-5 flex flex-col justify-between overflow-hidden border transition-all duration-300 ${
-                                        isClaimable 
-                                        ? "bg-gradient-to-br from-[var(--background-secondary)] via-[var(--bg-2)] to-[var(--amber-dim)] border-[var(--amber-border)] shadow-[0_0_20px_var(--amber-glow)] scale-[1.01]" 
-                                        : isUnlocked 
-                                        ? "bg-[var(--background-secondary)] border-[var(--border)] hover:border-[var(--blue-border)]" 
-                                        : "bg-[var(--background-secondary)]/40 border-[var(--border)]/50 opacity-70"
-                                    }`}
-                                    style={{ borderRadius: "20px" }}
+                                    className={isUnlocked ? "cursor-pointer" : "opacity-60"}
+                                    onMouseEnter={isUnlocked ? playHoverPing : undefined}
                                 >
-                                    {/* Ambient Glow for Unlocked/Claimable (Subtle) */}
-                                    {isUnlocked && (
-                                        <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full blur-2xl pointer-events-none opacity-10" style={{ backgroundColor: ach.color }} />
+                                    {isUnlocked ? (
+                                        <TiltCard
+                                            maxTilt={6}
+                                            scale={1.015}
+                                            glowColor={ach.color}
+                                            glowOpacity={0.12}
+                                            borderRadius="20px"
+                                        >
+                                            {cardContent}
+                                        </TiltCard>
+                                    ) : (
+                                        cardContent
                                     )}
-
-                                    <div>
-                                        {/* Header Row: Icon & Status Pill */}
-                                        <div className="flex items-start justify-between gap-3 mb-4">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform duration-500 ${
-                                                isClaimable ? "scale-105 animate-pulse" : ""
-                                            }`} style={{ 
-                                                backgroundColor: isUnlocked ? `color-mix(in srgb, ${ach.color}, transparent 88%)` : 'var(--text-4)',
-                                                borderColor: isUnlocked ? `color-mix(in srgb, ${ach.color}, transparent 70%)` : 'var(--border)',
-                                                color: isUnlocked ? ach.color : 'var(--text-3)',
-                                                boxShadow: isUnlocked ? `0 0 12px ${ach.glow}` : 'none'
-                                            }}>
-                                                <IconComponent size={20} className={isClaimable ? "animate-spin" : ""} style={{ animationDuration: '10s' }} />
-                                            </div>
-
-                                            {/* Status Badge */}
-                                            {isClaimable ? (
-                                                <span className="px-2.5 py-1 rounded-full bg-[var(--amber)] text-black font-mono text-[9px] font-bold uppercase tracking-widest shadow-[0_0_10px_var(--amber)] animate-bounce flex items-center gap-1">
-                                                    <Gift size={10} /> Claim Reward
-                                                </span>
-                                            ) : isUnlocked ? (
-                                                <span className="px-2.5 py-1 rounded-full bg-[var(--emerald-dim)] border border-[var(--emerald-border)] text-[var(--emerald)] font-mono text-[9px] font-bold uppercase tracking-widest flex items-center gap-1">
-                                                    <CheckCircle2 size={10} /> Unlocked
-                                                </span>
-                                            ) : (
-                                                <span className="px-2.5 py-1 rounded-full bg-[var(--text-4)] text-[var(--text-3)] font-mono text-[9px] font-bold uppercase tracking-widest flex items-center gap-1">
-                                                    <Lock size={10} /> Locked
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Title & Description */}
-                                        <h3 className="text-base font-bold text-[var(--text)] tracking-tight mb-1.5 flex items-center gap-2">
-                                            {ach.title}
-                                        </h3>
-                                        <p className="text-xs text-[var(--text-2)] leading-relaxed mb-5">
-                                            {ach.description}
-                                        </p>
-                                    </div>
-
-                                    {/* Footer Row: Progress & Claim Button */}
-                                    <div className="pt-3.5 border-t border-[var(--border)] mt-auto">
-                                        {isClaimable ? (
-                                            <button
-                                                onClick={() => handleClaim(ach.id, ach.xpReward, ach.title)}
-                                                disabled={claimingId === ach.id}
-                                                className="w-full py-2.5 rounded-xl bg-[var(--amber)] text-black font-bold text-xs uppercase tracking-wider hover:bg-[var(--amber-light)] active:scale-95 transition-all shadow-[0_0_15px_var(--amber-glow)] flex items-center justify-center gap-1.5"
-                                            >
-                                                {claimingId === ach.id ? (
-                                                    <>
-                                                        <Sparkles size={14} className="animate-spin" />
-                                                        <span>Claiming XP...</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Gift size={14} />
-                                                        <span>Claim +{ach.xpReward} XP</span>
-                                                    </>
-                                                )}
-                                            </button>
-                                        ) : (
-                                            <div>
-                                                <div className="flex items-center justify-between text-[10px] font-mono font-semibold mb-1.5">
-                                                    <span className="text-[var(--text-3)] uppercase tracking-wider">Progress</span>
-                                                    <span className={isUnlocked ? "text-[var(--emerald)] font-bold" : "text-[var(--text-2)]"}>
-                                                        {ach.progress} / {ach.maxProgress} ({Math.round((ach.progress / ach.maxProgress) * 100)}%)
-                                                    </span>
-                                                </div>
-                                                <div className="h-1.5 w-full bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
-                                                    <motion.div 
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${(ach.progress / ach.maxProgress) * 100}%` }}
-                                                        transition={{ duration: 1, ease: "easeOut" }}
-                                                        className="h-full rounded-full"
-                                                        style={{ 
-                                                            backgroundColor: isUnlocked ? 'var(--emerald)' : ach.color,
-                                                            boxShadow: isUnlocked ? '0 0 8px var(--emerald-glow)' : `0 0 8px ${ach.glow}`
-                                                        }}
-                                                    />
-                                                </div>
-                                                {ach.unlockedAt && (
-                                                    <p className="text-[9px] font-mono text-[var(--text-3)] mt-1.5 text-right">
-                                                        Achieved {ach.unlockedAt}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
                                 </motion.div>
                             );
                         })}
@@ -647,4 +796,3 @@ export default function AchievementsPage() {
         </div>
     );
 }
-

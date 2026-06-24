@@ -1,11 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Brain, Lightbulb, Share2, CheckCircle2, Download } from "lucide-react";
+import { 
+    Volume2, 
+    Lightbulb, 
+    Share2, 
+    CheckCircle2, 
+    Download, 
+    Baby, 
+    Check, 
+    X, 
+    HelpCircle, 
+    Sparkles, 
+    RefreshCw, 
+    Shuffle, 
+    Type, 
+    MessageSquare,
+    Eye
+} from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { downloadFlashcardsOffline } from "@/lib/offline-download";
+import { createClient } from "@/lib/supabase/client";
+import { useUser } from "@/context/UserContext";
+import { sm2, type SM2Card, formatInterval } from "@/lib/spaced-repetition";
+import ProgressNodeTrack from "@/components/ui/ProgressNodeTrack";
+
+interface Flashcard {
+    front: string;
+    back: string;
+    topic?: string;
+    id?: string;
+}
+
+const cardVariants = {
+    enter: {
+        y: 40,
+        scale: 0.95,
+        opacity: 0,
+    },
+    center: {
+        y: 0,
+        scale: 1,
+        opacity: 1,
+    },
+    exit: (direction: 'left' | 'right' | null) => ({
+        x: direction === 'left' ? -350 : direction === 'right' ? 350 : 0,
+        y: direction === null ? -40 : 0,
+        rotate: direction === 'left' ? -12 : direction === 'right' ? 12 : 0,
+        opacity: 0,
+        scale: 0.9,
+    }),
+};
 
 export const InteractiveFlashcards = ({
   cards = [
@@ -16,48 +63,403 @@ export const InteractiveFlashcards = ({
     }
   ],
   title = "Flashcards",
+  generationId,
   onFinish,
   onRetry
 }: {
-  cards?: Array<{
-    front: string;
-    back: string;
-    topic?: string;
-  }>;
+  cards?: Flashcard[];
   title?: string;
+  generationId?: string;
   onFinish?: (stats: { totalCards: number }) => void;
   onRetry?: () => void;
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [direction, setDirection] = useState(0);
+  const { user } = useUser();
   const { addToast } = useToasts();
 
-  const handleNext = () => {
-    if (currentIndex === cards.length - 1) {
-      if (onFinish) onFinish({ totalCards: cards.length });
-      addToast("Activity Complete! You've mastered all cards.", "success");
+  const dragX = useMotionValue(0);
+  const rotate = useTransform(dragX, [-200, 200], [-15, 15]);
+
+  // Core queue states
+  const [cardQueue, setCardQueue] = useState<number[]>([]);
+  const [queuePointer, setQueuePointer] = useState(0);
+  const [cardState, setCardState] = useState<'IDLE' | 'FLIPPED' | 'EVALUATED'>('IDLE');
+  const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
+  const [masteredSet, setMasteredSet] = useState<Set<number>>(new Set());
+
+  // Learning features
+  const [srsMap, setSrsMap] = useState<Record<string, any>>({});
+  const [userGuess, setUserGuess] = useState("");
+  const [isVerifyTextMode, setIsVerifyTextMode] = useState(false);
+  const [isReverseMode, setIsReverseMode] = useState(false);
+  const [isDyslexiaMode, setIsDyslexiaMode] = useState(false);
+  const [isPlayingTTS, setIsPlayingTTS] = useState(false);
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
+  const [eli5Text, setEli5Text] = useState<Record<string, string>>({});
+  const [isGeneratingEli5, setIsGeneratingEli5] = useState(false);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Map stable identifiers and original index
+  const originalCards = cards.map((card, index) => ({
+      ...card,
+      originalIndex: index,
+      stableId: card.id || `${generationId || 'temp'}_${index}`
+  }));
+
+  // Initialize active queue
+  useEffect(() => {
+    if (cards.length > 0) {
+      setCardQueue(Array.from({ length: cards.length }, (_, i) => i));
+      setQueuePointer(0);
+      setCardState('IDLE');
+      setMasteredSet(new Set());
+    }
+  }, [cards]);
+
+  // Time ticker
+  useEffect(() => {
+    if (cardState !== 'EVALUATED' && cardQueue.length > 0) {
+      setSecondsElapsed(0);
+      const interval = setInterval(() => {
+        setSecondsElapsed(prev => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [queuePointer, cardState, cardQueue]);
+
+  // Load SRS states
+  useEffect(() => {
+    const loadSRS = async () => {
+      if (!generationId) return;
+      if (user) {
+        try {
+          const supabase = createClient();
+          const { data } = await supabase
+            .from('srs_queue')
+            .select('*')
+            .eq('pack_id', generationId)
+            .eq('item_type', 'card');
+          if (data) {
+            const map: Record<string, any> = {};
+            data.forEach((item: any) => {
+              map[item.item_id] = item;
+            });
+            setSrsMap(map);
+          }
+        } catch (e) {
+          console.warn("Failed to load SRS in study pack", e);
+        }
+      } else {
+        try {
+          const localData = localStorage.getItem(`srs_local_${generationId}`);
+          if (localData) {
+            setSrsMap(JSON.parse(localData));
+          }
+        } catch (e) {
+          console.warn("Failed to load local SRS in study pack", e);
+        }
+      }
+    };
+    loadSRS();
+  }, [generationId, user]);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isGeneratingEli5 || cardQueue.length === 0) return;
+      
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea') {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (cardState === 'IDLE') setCardState('FLIPPED');
+        }
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+        case 'enter':
+          e.preventDefault();
+          handleFlip();
+          break;
+        case '1':
+        case 'j':
+          e.preventDefault();
+          if (cardState === 'FLIPPED') handleRate(1);
+          break;
+        case '2':
+          e.preventDefault();
+          if (cardState === 'FLIPPED') handleRate(2);
+          break;
+        case '3':
+        case 'k':
+          e.preventDefault();
+          if (cardState === 'FLIPPED') handleRate(4);
+          break;
+        case '4':
+          e.preventDefault();
+          if (cardState === 'FLIPPED') handleRate(5);
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cardState, queuePointer, cardQueue, isGeneratingEli5, userGuess]);
+
+  const handleFlip = () => {
+    if (cardState === 'IDLE') setCardState('FLIPPED');
+    else if (cardState === 'FLIPPED') setCardState('IDLE');
+  };
+
+  const submitSRSReview = async (stableId: string, quality: number) => {
+    const current = srsMap[stableId] || {
+      item_id: stableId,
+      ease_factor: 2.5,
+      interval_days: 0,
+      repetitions: 0,
+      status: 'new'
+    };
+
+    const cardStateObj: SM2Card = {
+      id: current.item_id,
+      easeFactor: Number(current.ease_factor || current.easeFactor || 2.5),
+      interval: Number(current.interval_days || current.interval || 0),
+      repetitions: Number(current.repetitions || 0),
+      nextReview: current.next_review_at || current.nextReview || new Date().toISOString(),
+      lastReview: current.last_review_at || current.lastReview || new Date().toISOString(),
+      status: (current.status || 'new') as SM2Card['status']
+    };
+
+    const result = sm2(cardStateObj, quality);
+
+    const updatedItem = {
+      item_id: stableId,
+      item_type: 'card',
+      pack_id: generationId || null,
+      ease_factor: result.easeFactor,
+      interval_days: result.interval,
+      repetitions: result.repetitions,
+      next_review_at: result.nextReview,
+      last_review_at: new Date().toISOString(),
+      status: result.status
+    };
+
+    setSrsMap(prev => ({
+      ...prev,
+      [stableId]: updatedItem
+    }));
+
+    if (user && generationId) {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('srs_queue')
+          .upsert({
+            user_id: user.id,
+            ...updatedItem
+          }, { onConflict: 'user_id,item_id,item_type' });
+      } catch (e) {
+        console.warn("Failed to update db srs queue", e);
+      }
+    } else if (generationId) {
+      try {
+        const localData = localStorage.getItem(`srs_local_${generationId}`);
+        const localMap = localData ? JSON.parse(localData) : {};
+        localMap[stableId] = updatedItem;
+        localStorage.setItem(`srs_local_${generationId}`, JSON.stringify(localMap));
+      } catch (e) {
+        console.warn("Failed to update local srs queue", e);
+      }
+    }
+  };
+
+  const getCardIntervalPreviews = (stableId: string) => {
+    const current = srsMap[stableId] || {
+      item_id: stableId,
+      ease_factor: 2.5,
+      interval_days: 0,
+      repetitions: 0,
+      status: 'new'
+    };
+
+    const cardStateObj: SM2Card = {
+      id: current.item_id,
+      easeFactor: Number(current.ease_factor || 2.5),
+      interval: Number(current.interval_days || 0),
+      repetitions: Number(current.repetitions || 0),
+      nextReview: current.next_review_at || new Date().toISOString(),
+      lastReview: current.last_review_at || new Date().toISOString(),
+      status: (current.status || 'new') as SM2Card['status']
+    };
+
+    return {
+      again: formatInterval(sm2(cardStateObj, 1).interval),
+      hard: formatInterval(sm2(cardStateObj, 2).interval),
+      good: formatInterval(sm2(cardStateObj, 4).interval),
+      easy: formatInterval(sm2(cardStateObj, 5).interval)
+    };
+  };
+
+  const handleRate = async (quality: number) => {
+    if (cardState === 'EVALUATED') return;
+    const currentCardIndex = cardQueue[queuePointer];
+    const activeCard = originalCards[currentCardIndex];
+    
+    const isCorrect = quality >= 3;
+    setExitDirection(isCorrect ? 'right' : 'left');
+    setCardState('EVALUATED');
+
+    if (isPlayingTTS) {
+      if (audioRef.current) audioRef.current.pause();
+      window.speechSynthesis.cancel();
+      setIsPlayingTTS(false);
+    }
+
+    await submitSRSReview(activeCard.stableId, quality);
+
+    if (isCorrect) {
+      setMasteredSet(prev => {
+        const next = new Set(prev);
+        next.add(currentCardIndex);
+        return next;
+      });
+      const previews = getCardIntervalPreviews(activeCard.stableId);
+      const label = quality === 5 ? previews.easy : previews.good;
+      addToast(`Got it! Scheduled review in ${label} 🎯`, "success", undefined, undefined, true);
+    } else {
+      setCardQueue(prev => [...prev, currentCardIndex]);
+      addToast("Re-queued for active recall. 🔄", "info", undefined, undefined, true);
+    }
+
+    setUserGuess("");
+
+    setTimeout(() => {
+      if (queuePointer >= cardQueue.length - 1) {
+        if (onFinish) onFinish({ totalCards: cards.length });
+        addToast("Study pack session complete! 🎉", "success");
+      } else {
+        setQueuePointer(prev => prev + 1);
+        setCardState('IDLE');
+        setExitDirection(null);
+      }
+    }, 220);
+  };
+
+  const handlePlayTTS = async (text: string) => {
+    if (isPlayingTTS) {
+      if (audioRef.current) audioRef.current.pause();
+      window.speechSynthesis.cancel();
+      setIsPlayingTTS(false);
       return;
     }
-    setDirection(1);
-    setIsFlipped(false);
-    setCurrentIndex((prev) => (prev + 1) % cards.length);
+
+    setIsPlayingTTS(true);
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      if (!res.ok) throw new Error("AWS TTS proxy failed");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      
+      if (audioRef.current) {
+        audioRef.current.src = url;
+      } else {
+        audioRef.current = new Audio(url);
+      }
+      
+      audioRef.current.onended = () => {
+        setIsPlayingTTS(false);
+      };
+      audioRef.current.play();
+    } catch (err) {
+      console.warn("TTS API failed, falling back to window.speechSynthesis", err);
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = () => setIsPlayingTTS(false);
+        utterance.onerror = () => setIsPlayingTTS(false);
+        window.speechSynthesis.speak(utterance);
+      } catch (speechErr) {
+        setIsPlayingTTS(false);
+        addToast("Audio speech is not supported in this browser.", "error");
+      }
+    }
   };
 
-  const handlePrev = () => {
-    setDirection(-1);
-    setIsFlipped(false);
-    setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
-  };
-
-  const handleShareSection = (e: React.MouseEvent) => {
+  const handleEli5 = async (e: React.MouseEvent, text: string, idx: number) => {
     e.stopPropagation();
-    const url = typeof window !== 'undefined' ? window.location.href : '';
-    navigator.clipboard.writeText(url);
-    addToast("Flashcards link copied to clipboard!", "success");
+    if (!user) {
+      addToast("Please sign up or log in to generate 'Ask the Professor' AI explanations! 💡", "info");
+      return;
+    }
+    if (isGeneratingEli5 || eli5Text[idx]) return;
+    setIsGeneratingEli5(true);
+    try {
+      const res = await fetch("/api/generate/eli5", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      const reader = res.body?.getReader();
+      if (!reader) return;
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        setEli5Text(prev => ({ ...prev, [idx]: buffer }));
+      }
+    } catch (err) {
+      addToast("Failed to simplify this card.", "error");
+    } finally {
+      setIsGeneratingEli5(false);
+    }
   };
 
-  if (!cards || !cards.length || !cards[currentIndex]) {
+  const shuffleDeck = () => {
+    setCardQueue(prev => {
+      const list = [...prev];
+      for (let i = list.length - 1; i > queuePointer; i--) {
+        const j = queuePointer + Math.floor(Math.random() * (i - queuePointer + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      addToast("Deck shuffled! 🔀", "info");
+      return list;
+    });
+  };
+
+  // 3D Tilt mouse state
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left - width / 2;
+    const mouseY = e.clientY - rect.top - height / 2;
+    
+    const calcY = (mouseX / (width / 2)) * 10;
+    const calcX = -(mouseY / (height / 2)) * 10;
+
+    setRotateX(calcX);
+    setRotateY(calcY);
+  };
+
+  const handleMouseLeave = () => {
+    setRotateX(0);
+    setRotateY(0);
+  };
+
+  if (cards.length === 0 || cardQueue.length === 0) {
     return (
       <div className="w-full min-h-[400px] flex flex-col items-center justify-center p-6 text-center cursor-default gap-6">
         <div>
@@ -67,9 +469,8 @@ export const InteractiveFlashcards = ({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="px-6 py-3 rounded-2xl bg-[var(--blue)] text-white font-black text-[11px] uppercase tracking-widest shadow-lg hover-scale-lg active:scale-95 transition-all flex items-center gap-2"
+            className="px-6 py-3 rounded-2xl bg-[var(--blue)] text-white font-black text-[11px] uppercase tracking-widest shadow-lg hover:scale-lg active:scale-95 transition-all flex items-center gap-2"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
             Regenerate Flashcards
           </button>
         )}
@@ -77,151 +478,394 @@ export const InteractiveFlashcards = ({
     );
   }
 
-  const currentCard = cards[currentIndex];
-  const backText = currentCard.back || "No definition available. 💡 Tip: Try generating this card again.";
-  const backParts = backText.split("💡");
-  const answer = backParts[0].trim();
-  const hook = backParts[1] ? backParts[1].replace(/Professor's Protocol:|Protocol:/i, "").trim() : "Focus on the core relationship here.";
+  const currentCardIndex = cardQueue[queuePointer];
+  const currentCard = originalCards[currentCardIndex];
+
+  // Reverse Study values
+  const cardFrontText = isReverseMode ? currentCard.back : currentCard.front;
+  const cardBackText = isReverseMode ? currentCard.front : currentCard.back;
+
+  const activeSRS = srsMap[currentCard.stableId];
+  const srsStatus = activeSRS?.status || "new";
+  const reviewIntervals = getCardIntervalPreviews(currentCard.stableId);
+
+  const cardInnerStyle: React.CSSProperties = {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+    transition: cardState === 'EVALUATED' ? "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)" : "transform 0.1s ease-out",
+    transformStyle: "preserve-3d",
+    transform: `${cardState === 'IDLE' ? `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` : `rotateX(${rotateX}deg) rotateY(${180 + rotateY}deg)`}`,
+  };
+
+  const cardFaceStyle: React.CSSProperties = {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    backfaceVisibility: "hidden",
+    WebkitBackfaceVisibility: "hidden",
+    borderRadius: "28px",
+    border: "1.5px solid rgba(255, 255, 255, 0.08)",
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const cardFrontStyle: React.CSSProperties = {
+    ...cardFaceStyle,
+    background: "rgba(18, 18, 24, 0.8)",
+    backdropFilter: "blur(20px)",
+  };
+
+  const cardBackStyle: React.CSSProperties = {
+    ...cardFaceStyle,
+    background: "rgba(12, 12, 16, 0.9)",
+    backdropFilter: "blur(25px)",
+    transform: "rotateY(180deg)",
+  };
 
   return (
-    <div className="relative w-full min-h-[440px] md:min-h-[520px] flex flex-col items-center justify-center p-2 sm:p-4 cursor-default overflow-visible">
-      <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[420px] md:h-[500px] perspective-1000">
-        <AnimatePresence mode="wait" custom={direction}>
+    <div className="relative w-full min-h-[500px] flex flex-col items-center justify-center p-2 sm:p-4 cursor-default overflow-visible gap-6">
+      
+      {/* Visual top track */}
+      <div className="w-full max-w-[400px] md:max-w-[620px] space-y-3">
+        <ProgressNodeTrack
+          total={cards.length}
+          current={currentCard.originalIndex}
+          completed={Array.from(masteredSet).map(idx => originalCards[idx]?.originalIndex || 0)}
+          className="w-full"
+        />
+
+        <div className="flex items-center justify-between text-[9px] text-[var(--foreground-muted)]/50 font-mono px-1">
+          <span>Card {queuePointer + 1} of {cardQueue.length} in pack round</span>
+          <span className="flex items-center gap-1.5">
+            {secondsElapsed}s elapsed
+            {srsStatus !== 'new' && (
+              <span className="px-1 py-0.5 rounded bg-[var(--violet)]/10 text-[var(--violet)] text-[7px] font-bold uppercase tracking-wider border border-[var(--violet)]/20">
+                {srsStatus}
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* Interactive Toolbelt */}
+      <div className="w-full max-w-[400px] md:max-w-[620px] flex items-center justify-end gap-2 shrink-0">
+        <button 
+          onClick={shuffleDeck}
+          className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-[var(--foreground-muted)] hover:text-white transition-all" 
+          title="Shuffle Deck"
+        >
+          <Shuffle size={14} />
+        </button>
+        <button 
+          onClick={() => setIsReverseMode(!isReverseMode)}
+          className={`p-1.5 rounded-lg border transition-all flex items-center gap-1 text-[10px] font-bold ${
+            isReverseMode 
+              ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+              : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+          }`}
+          title="Swap Term & Definition"
+        >
+          <RefreshCw size={14} />
+          <span className="hidden sm:inline uppercase tracking-wider text-[9px]">Reverse</span>
+        </button>
+        <button 
+          onClick={() => setIsVerifyTextMode(!isVerifyTextMode)}
+          className={`p-1.5 rounded-lg border transition-all flex items-center gap-1 text-[10px] font-bold ${
+            isVerifyTextMode 
+              ? 'bg-[var(--violet)]/10 border-[var(--violet)]/30 text-[var(--violet)]' 
+              : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+          }`}
+          title="Type Guess Mode"
+        >
+          <MessageSquare size={14} />
+          <span className="hidden sm:inline uppercase tracking-wider text-[9px]">Verify Input</span>
+        </button>
+        <button 
+          onClick={() => setIsDyslexiaMode(!isDyslexiaMode)}
+          className={`p-1.5 rounded-lg border transition-all flex items-center gap-1 text-[10px] font-bold ${
+            isDyslexiaMode 
+              ? 'bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]' 
+              : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+          }`}
+          title="Dyslexia Font"
+        >
+          <Type size={14} />
+          <span className="hidden sm:inline uppercase tracking-wider text-[9px]">Dyslexia font</span>
+        </button>
+      </div>
+
+      {/* 3D Stack Card Area */}
+      <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[320px] md:h-[380px] perspective-1000">
+        
+        {/* Background stack card 2 */}
+        {cardQueue.length - queuePointer > 2 && (
+          <div 
+            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-950/40 pointer-events-none transition-all duration-300"
+            style={{
+              transform: "translateY(16px) scale(0.94)",
+              zIndex: -2,
+              opacity: 0.2,
+            }}
+          />
+        )}
+
+        {/* Background stack card 1 */}
+        {cardQueue.length - queuePointer > 1 && (
+          <div 
+            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-900/50 pointer-events-none transition-all duration-300"
+            style={{
+              transform: "translateY(8px) scale(0.97)",
+              zIndex: -1,
+              opacity: 0.45,
+            }}
+          />
+        )}
+        <AnimatePresence mode="wait" custom={exitDirection} initial={false}>
           <motion.div
-            key={currentIndex}
-            custom={direction}
-            initial={{ x: direction * 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -direction * 50, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full h-full relative"
-            style={{ transformStyle: "preserve-3d" }}
-            onClick={() => setIsFlipped(!isFlipped)}
+            key={queuePointer}
+            custom={exitDirection}
+            variants={cardVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 350, damping: 26 },
+              y: { type: "spring", stiffness: 350, damping: 26 },
+              opacity: { duration: 0.18 },
+            }}
+            className="w-full h-full relative cursor-pointer"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.8}
+            style={{ transformStyle: "preserve-3d", x: dragX, rotate }}
+            onDragEnd={(event, info) => {
+              const threshold = 120;
+              if (info.offset.x > threshold) {
+                handleRate(4);
+              } else if (info.offset.x < -threshold) {
+                handleRate(1);
+              }
+            }}
+            onTap={handleFlip}
           >
-            {/* Front Side */}
-            <motion.div
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
-              style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
-              className={cn(
-                "absolute inset-0 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center",
-                "bg-[var(--card)] border border-[var(--foreground)]/10 shadow-xl overflow-hidden",
-                "before:absolute before:inset-0 before:rounded-[2.5rem] before:bg-gradient-to-b before:from-[var(--foreground)]/5 before:to-transparent before:pointer-events-none"
-              )}
-            >
-              {/* Refraction Streak */}
-              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--foreground)]/10 to-transparent pointer-events-none shimmer-streak" />
+            <div style={cardInnerStyle}>
+              {/* Front Side */}
+              <div style={cardFrontStyle}>
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
 
-              <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 mb-6 shadow-inner relative z-10">
-                <Brain size={32} strokeWidth={1.5} className="text-[var(--accent)]" />
-              </div>
-              <div className="mb-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)] bg-[var(--accent)]/10 px-2 py-0.5 rounded-md">
-                  {currentCard.topic || "Active Recall"}
-                </span>
-              </div>
-              <h4 className="text-xl md:text-3xl font-black text-[var(--foreground)] leading-tight tracking-tight mb-4 relative z-10">
-                {currentCard.front}
-              </h4>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background)]/80 border border-[var(--border-2)] relative z-10 shadow-lg">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] sm:hidden">Tap to flip</span>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground)] hidden sm:block">Click to flip</span>
-              </div>
-            </motion.div>
-
-            {/* Back Side */}
-            <motion.div
-              initial={{ rotateY: -180 }}
-              animate={{ rotateY: isFlipped ? 0 : -180 }}
-              transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
-              style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
-              className={cn(
-                "absolute inset-0 rounded-[2.5rem] py-6 px-6 md:py-8 md:px-7 flex flex-col items-center justify-center text-center overflow-hidden",
-                "bg-[var(--background-secondary)] border border-[var(--accent)]/30 shadow-2xl"
-              )}
-            >
-              {/* Refraction Streak (Back) */}
-              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent pointer-events-none shimmer-streak" />
-
-              <div className="flex flex-col h-full relative z-10 w-full pt-4">
-                <div className="mb-4 overflow-y-auto max-h-[160px] md:max-h-[200px] pr-2 scrollbar-none">
-                  <p className="text-[13px] md:text-[18px] font-medium leading-relaxed text-[var(--foreground)]">
-                    {answer}
-                  </p>
+                {/* Left Top SVG countdown indicator */}
+                <div className="absolute top-5 left-5 flex items-center justify-center">
+                  <svg className="w-7 h-7 transform -rotate-90">
+                    <circle cx="14" cy="14" r="11" stroke="rgba(255,255,255,0.05)" strokeWidth="2" fill="transparent" />
+                    <circle 
+                      cx="14" 
+                      cy="14" 
+                      r="11" 
+                      stroke="var(--amber)" 
+                      strokeWidth="2" 
+                      fill="transparent" 
+                      strokeDasharray={2 * Math.PI * 11}
+                      strokeDashoffset={(2 * Math.PI * 11) * (1 - Math.min(secondsElapsed, 30) / 30)}
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                  <span className="absolute text-[8px] font-mono text-[var(--foreground-muted)]">{secondsElapsed}</span>
                 </div>
 
-                <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent mb-4" />
+                {/* TTS Reader button */}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlayTTS(cardFrontText);
+                  }}
+                  className={`absolute top-5 right-5 p-1.5 rounded-lg border transition-all ${
+                    isPlayingTTS 
+                      ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                      : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                  }`}
+                >
+                  <Volume2 size={13} />
+                </button>
 
-                <div className="flex-1 min-h-0 text-left bg-[var(--foreground)]/5 p-4 md:p-5 rounded-2xl border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col">
-                  <div className="flex items-center gap-2 mb-2 shrink-0">
-                    <div className="w-5 h-5 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20">
-                      <Lightbulb size={14} strokeWidth={1.5} className="text-[var(--accent)]" />
-                    </div>
-                    <span className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.1em] text-[var(--accent)]">Professor&apos;s Tip</span>
+                <p className={`text-lg md:text-xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-6 ${
+                  isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-xl' : 'font-serif'
+                }`}>
+                  {cardFrontText}
+                </p>
+
+                {/* Text guess verification input */}
+                {isVerifyTextMode && (
+                  <div className="w-full max-w-xs mt-4 px-2 relative z-20" onClick={e => e.stopPropagation()}>
+                    <input 
+                      type="text"
+                      value={userGuess}
+                      onChange={e => setUserGuess(e.target.value)}
+                      placeholder="Type your guess..."
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-950/60 border border-white/10 text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/45 transition-colors"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleFlip();
+                        }
+                      }}
+                    />
                   </div>
-                  <div className="overflow-y-auto pr-1 scrollbar-none">
-                    <p className="text-[11px] md:text-[15px] italic leading-relaxed text-[var(--foreground-secondary)]">
-                      &quot;{hook}&quot;
+                )}
+
+                <div className="absolute bottom-5 flex flex-col items-center gap-1">
+                  <span className="text-[8px] font-bold uppercase tracking-[0.25em] opacity-40">
+                    Tap to flip card
+                  </span>
+                </div>
+              </div>
+
+              {/* Back Side */}
+              <div style={cardBackStyle}>
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
+
+                <div className="flex flex-col items-center justify-between w-full h-full py-3 relative z-10">
+                  {/* Header row */}
+                  <div className="w-full flex items-center justify-between px-1 shrink-0">
+                    <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/75">
+                      Concept Definition
+                    </span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePlayTTS(eli5Text[currentCardIndex] || cardBackText);
+                      }}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        isPlayingTTS 
+                          ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                          : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                      }`}
+                    >
+                      <Volume2 size={13} />
+                    </button>
+                  </div>
+
+                  {/* Definition Body */}
+                  <div className="flex-1 flex flex-col items-center justify-center px-2 my-2 w-full overflow-y-auto scrollbar-none">
+                    
+                    {isVerifyTextMode && userGuess && (
+                      <div className="w-full p-2 rounded-lg bg-white/5 border border-white/5 text-left mb-2 shrink-0">
+                        <span className="text-[7px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/50 block mb-0.5">Your Guess</span>
+                        <span className="text-[11px] font-mono text-zinc-300 line-clamp-2">{userGuess}</span>
+                      </div>
+                    )}
+
+                    <p className={`text-sm md:text-base font-medium text-center text-zinc-100 leading-relaxed ${
+                      isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-base' : 'font-serif'
+                    }`}>
+                      {eli5Text[currentCardIndex] || cardBackText}
                     </p>
                   </div>
+
+                  {/* Metaphor trigger */}
+                  <div className="flex flex-col items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {!eli5Text[currentCardIndex] && (
+                      <button 
+                        onClick={(e) => handleEli5(e, cardBackText, currentCardIndex)} 
+                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 text-[8px] font-black uppercase tracking-wider hover:bg-[var(--amber)]/25 transition-all cursor-pointer"
+                      >
+                        <Baby size={11} />
+                        {isGeneratingEli5 ? "Simplifying..." : "ELI5 Metaphor"}
+                      </button>
+                    )}
+                    <span className="text-[7px] font-black uppercase tracking-[0.25em] opacity-35">
+                      Press [Space] to flip back
+                    </span>
+                  </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center gap-4 mt-8">
-        <button onClick={handlePrev} className="btn-skeuo px-5 py-4 flex items-center gap-3 group active:scale-95 shadow-[0_12px_40px_rgba(0,0,0,0.15)] border-[var(--border-3)]">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] group-hover:-translate-x-1 transition-transform">
-            <path d="m15 18-6-6 6-6" />
-            <path d="M17 12H9" className="opacity-40" />
-          </svg>
-          <span className="text-[11px] font-black uppercase tracking-widest text-[var(--foreground)]">Prev</span>
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="px-6 py-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border-2)] shadow-lg flex flex-col items-center min-w-[150px]">
-            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-0.5 opacity-80">Memory Cards</span>
-            <span className="text-[12px] font-black uppercase tracking-widest text-[var(--accent)]">Card {currentIndex + 1} / {cards.length}</span>
+      {/* 4-tier grading buttons */}
+      <div className="w-full max-w-[400px] md:max-w-[620px] flex flex-col gap-4">
+        {cardState === 'FLIPPED' ? (
+          <div className="grid grid-cols-4 gap-2" onClick={e => e.stopPropagation()}>
+            
+            {/* Again */}
+            <button 
+              onClick={() => handleRate(1)}
+              className="flex flex-col h-14 rounded-xl border border-red-500/20 bg-red-950/20 text-red-400 hover:bg-red-950/30 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+            >
+              <X size={12} className="mb-0.5" />
+              <span className="text-[8px] font-black uppercase tracking-wider">Again</span>
+              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.again}</span>
+            </button>
+
+            {/* Hard */}
+            <button 
+              onClick={() => handleRate(2)}
+              className="flex flex-col h-14 rounded-xl border border-[var(--amber-border)] bg-[var(--amber-dim)]/15 text-[var(--amber)] hover:bg-[var(--amber-dim)]/25 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+            >
+              <HelpCircle size={12} className="mb-0.5" />
+              <span className="text-[8px] font-black uppercase tracking-wider">Hard</span>
+              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.hard}</span>
+            </button>
+
+            {/* Good */}
+            <button 
+              onClick={() => handleRate(4)}
+              className="flex flex-col h-14 rounded-xl border border-[var(--violet-border)] bg-[var(--violet-dim)]/15 text-[var(--violet)] hover:bg-[var(--violet-dim)]/25 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+            >
+              <Check size={12} className="mb-0.5" />
+              <span className="text-[8px] font-black uppercase tracking-wider">Good</span>
+              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.good}</span>
+            </button>
+
+            {/* Easy */}
+            <button 
+              onClick={() => handleRate(5)}
+              className="flex flex-col h-14 rounded-xl border border-[var(--emerald-border)] bg-[var(--emerald-dim)]/15 text-[var(--emerald)] hover:bg-[var(--emerald-dim)]/25 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+            >
+              <Sparkles size={12} className="mb-0.5" />
+              <span className="text-[8px] font-black uppercase tracking-wider">Easy</span>
+              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.easy}</span>
+            </button>
+
           </div>
-          <button
-            onClick={handleShareSection}
-            className="w-14 h-14 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border-2)] flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-all active:scale-95 shadow-lg"
-            title="Share Flashcards"
+        ) : (
+          <button 
+            onClick={handleFlip} 
+            className="w-full h-12 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-1.5 hover:opacity-90 transition-all cursor-pointer shadow-lg"
           >
-            <Share2 size={20} strokeWidth={2} />
+            <Eye size={14} />
+            <span>Reveal Answer</span>
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              downloadFlashcardsOffline(title, cards);
-            }}
-            className="w-14 h-14 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border-2)] flex items-center justify-center text-[var(--foreground-muted)] hover:text-[var(--accent)] transition-all active:scale-95 shadow-lg"
-            title="Download Offline HTML"
-          >
-            <Download size={20} strokeWidth={2} />
-          </button>
-        </div>
-        <button onClick={handleNext} className={cn(
-          "btn-skeuo px-5 py-4 flex items-center gap-3 group active:scale-95 shadow-[0_12px_40px_rgba(0,0,0,0.15)] border-[var(--border-3)] transition-all",
-          currentIndex === cards.length - 1 && "bg-[var(--blue)] border-[var(--blue-light)]/30 text-white shadow-[0_12px_40px_rgba(37,99,235,0.2)]"
-        )}>
-          <span className={cn(
-            "text-[11px] font-black uppercase tracking-widest",
-            currentIndex === cards.length - 1 ? "text-white" : "text-[var(--foreground)]"
-          )}>
-            {currentIndex === cards.length - 1 ? "Finish Session" : "Next"}
+        )}
+
+        {/* Global Footer Actions */}
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadFlashcardsOffline(title, cards);
+              }}
+              className="p-2 rounded-lg bg-white/5 border border-white/5 text-[var(--foreground-muted)] hover:text-white transition-all"
+              title="Download offline HTML"
+            >
+              <Download size={14} />
+            </button>
+          </div>
+
+          <span className="text-[8px] text-[var(--foreground-muted)]/40 font-mono">
+            Space: flip | 1-4: grade
           </span>
-          {currentIndex === cards.length - 1 ? (
-            <CheckCircle2 size={18} className="text-white" />
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] group-hover:translate-x-1 transition-transform">
-              <path d="m9 18 6-6-6-6" />
-              <path d="M7 12h8" className="opacity-40" />
-            </svg>
-          )}
-        </button>
+        </div>
       </div>
+
     </div>
   );
 };

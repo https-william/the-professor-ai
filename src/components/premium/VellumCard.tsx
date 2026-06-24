@@ -34,8 +34,8 @@ export function VellumCard({
                     "hover:shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_8px_32px_rgba(0,0,0,0.5)]",
                     "hover-lift-sm",
                 ],
-                // Gold glow accent
-                glow && "ring-1 ring-[#C4A35A]/20",
+                // Amber glow accent
+                glow && "ring-1 ring-[#E5A93C]/20",
                 className
             )}
             {...props}

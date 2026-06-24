@@ -5,7 +5,6 @@
    Galaxie Copernicus: Standard for marketing headers.
    Tiempos Text: Standard for Professor's strategy materials.
 */
-/*
 @font-face {
   font-family: 'Galaxie Copernicus';
   src: url('/fonts/GalaxieCopernicus-Medium.woff2') format('woff2');
@@ -37,7 +36,6 @@
   font-style: normal;
   font-display: swap;
 }
-*/
 
 /* ─── MATERIAL SYMBOLS LIGATURE FIX ─── 
    Ensures that if the font fails or is slow to load, the raw icon names 
@@ -137,7 +135,7 @@
   /* Typography */
   --font-sans: var(--font-outfit), "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Urbanist", var(--font-outfit), "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  --font-serif: "Tiempos Text", var(--font-source-serif), "Source Serif 4", Georgia, serif;
   --font-mono: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
 
   /* Color Mapping */
@@ -230,7 +228,7 @@
   --blue-text:      #A5C0FF;
 
   /* ─── AMBER (XP, streaks, warnings ONLY) ─── */
-  --amber:          #E5A93C; /* Desaturated gold/amber */
+  --amber:          #E5A93C; /* Desaturated brand amber */
   --amber-light:    #F2BE65;
   --amber-dark:     #B8821F;
   --amber-dim:      rgba(229, 169, 60, 0.08);

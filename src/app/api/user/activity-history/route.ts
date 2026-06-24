@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
             weekGenerationsResult,
             weekPacksResult,
             weekActivitiesResult,
+            weekSessionsResult,
             recentGenActivityResult,
             recentPackActivityResult,
             totalFlashcardsResult,
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
             supabase.from("generations").select("created_at, type, title").eq("user_id", user.id).gte("created_at", monday.toISOString()).order("created_at", { ascending: false }),
             supabase.from("study_packs").select("created_at, title").eq("user_id", user.id).gte("created_at", monday.toISOString()).order("created_at", { ascending: false }),
             supabase.from("user_activity").select("created_at").eq("user_id", user.id).gte("created_at", monday.toISOString()),
+            supabase.from("study_sessions").select("time_spent_seconds, questions_answered, correct_count, cards_flipped").eq("user_id", user.id).gte("started_at", monday.toISOString()),
             supabase.from("generations").select("id, title, type, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
             supabase.from("study_packs").select("id, title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
             supabase.from("generations").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("type", "flashcards"),
@@ -57,12 +59,25 @@ export async function GET(req: NextRequest) {
         const weekGenerations = weekGenerationsResult.data;
         const weekPacks = weekPacksResult.data;
         const weekActivities = weekActivitiesResult.data;
+        const weekSessions = weekSessionsResult.data || [];
         const recentGenActivity = recentGenActivityResult.data;
         const recentPackActivity = recentPackActivityResult.data;
         const totalFlashcards = totalFlashcardsResult.count;
         const totalQuizzes = totalQuizzesResult.count;
         const totalSummaries = totalSummariesResult.count;
         const totalStudyPacks = totalStudyPacksResult.count;
+
+        // Aggregate study sessions data
+        let totalTimeSpent = 0;
+        let totalQuestions = 0;
+        let totalCorrect = 0;
+        let totalCards = 0;
+        weekSessions.forEach(session => {
+            totalTimeSpent += (session.time_spent_seconds || 0);
+            totalQuestions += (session.questions_answered || 0);
+            totalCorrect += (session.correct_count || 0);
+            totalCards += (session.cards_flipped || 0);
+        });
 
         // Ensure current date is considered active if streak is active
         if (profile && profile.current_streak > 0) {
@@ -119,6 +134,10 @@ export async function GET(req: NextRequest) {
                 quizzes: totalQuizzes || 0,
                 summaries: totalSummaries || 0,
                 examSprints: totalStudyPacks || 0,
+                timeSpentSeconds: totalTimeSpent,
+                questionsAnswered: totalQuestions,
+                correctCount: totalCorrect,
+                cardsFlipped: totalCards
             }
         });
 

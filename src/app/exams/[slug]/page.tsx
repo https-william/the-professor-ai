@@ -1,9 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import StandardContainer from "@/components/ui/StandardContainer";
-import { Zap, Target, Book, Brain, Shield, ArrowRight, Trophy, Clock, CheckCircle2 } from "lucide-react";
-import Link from "next/link";
-import NavPill from "@/components/landing/NavPill";
+import ExamBlueprintClient from "./ExamBlueprintClient";
 
 type ExamData = {
   name: string;
@@ -96,85 +93,5 @@ export default async function ExamLandingPage({ params }: { params: Promise<{ sl
   const data = examRegistry[slug.toLowerCase()];
   if (!data) notFound();
 
-  return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pb-28">
-      <NavPill />
-      
-      <div className="pt-32 sm:pt-40">
-        <StandardContainer narrow>
-          {/* Hero */}
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-bg)] border border-[var(--accent-glow)] text-[var(--accent)] text-[10px] font-black uppercase tracking-[0.3em] mb-8">
-               <Trophy className="w-3 h-3" /> 2026 Exam Pillar
-            </div>
-            <h1 className="text-5xl sm:text-7xl font-black mb-8 leading-[0.9] tracking-tighter uppercase">
-               The {data.name} <br/> <span className="text-[var(--accent)]">Weapon.</span>
-            </h1>
-            <p className="text-xl text-[var(--foreground-muted)] max-w-2xl mx-auto font-medium leading-relaxed">
-               {data.fullName} {data.year}. {data.description}
-            </p>
-          </div>
-
-          {/* Stats/Difficulty */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-20">
-             <div className="p-8 rounded-[32px] bg-[var(--background-secondary)] border border-[var(--border)] text-center">
-                <Shield className="w-8 h-8 mx-auto mb-4 text-[var(--accent)]" />
-                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Difficulty</div>
-                <div className="text-2xl font-black uppercase">{data.difficulty}</div>
-             </div>
-             <div className="p-8 rounded-[32px] bg-[var(--background-secondary)] border border-[var(--border)] text-center">
-                <Clock className="w-8 h-8 mx-auto mb-4 text-[var(--accent)]" />
-                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Time Remaining</div>
-                <div className="text-2xl font-black uppercase">Season Active</div>
-             </div>
-             <div className="p-8 rounded-[32px] bg-[var(--background-secondary)] border border-[var(--border)] text-center">
-                <Brain className="w-8 h-8 mx-auto mb-4 text-[var(--accent)]" />
-                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Success Rate</div>
-                <div className="text-2xl font-black uppercase">98.4%</div>
-             </div>
-          </div>
-
-          {/* Content Silos */}
-          <div className="space-y-12 mb-20">
-             {data.silos.map((silo, i) => (
-               <div key={i} className="group p-8 sm:p-12 rounded-[40px] border border-[var(--border)] bg-[var(--background-secondary)] hover:border-[var(--accent-glow)] transition-all">
-                  <h2 className="text-3xl font-black mb-8 uppercase tracking-tight flex items-center gap-4">
-                     <span className="w-10 h-10 rounded-xl bg-[var(--accent-bg)] flex items-center justify-center text-[var(--accent)] text-lg">0{i+1}</span>
-                     {silo.title}
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-4">
-                        {silo.points.map((point, pi) => (
-                          <div key={pi} className="flex items-start gap-3">
-                             <CheckCircle2 className="w-5 h-5 text-[var(--accent)] flex-shrink-0 mt-0.5" />
-                             <span className="text-lg font-medium opacity-80">{point}</span>
-                          </div>
-                        ))}
-                     </div>
-                     <div className="hidden md:block p-8 rounded-3xl bg-[var(--background)] border border-[var(--border)] shadow-inner">
-                        <p className="text-sm italic text-[var(--foreground-muted)] leading-relaxed">
-                           "The Professor's {silo.title.toLowerCase()} engine uses high-fidelity retrieval practice to ensure that {data.name} patterns become muscle memory."
-                        </p>
-                     </div>
-                  </div>
-               </div>
-             ))}
-          </div>
-
-          {/* Sticky CTA Footer */}
-          <div className="p-12 rounded-[48px] bg-[var(--foreground)] text-[var(--background)] text-center shadow-[0_40px_80px_rgba(0,0,0,0.4)]">
-             <h2 className="text-4xl font-black mb-6 uppercase tracking-tighter leading-none">
-                Don't just take {data.name}. <br/> <span className="opacity-40">Dismantle it.</span>
-             </h2>
-             <p className="text-lg opacity-60 mb-10 max-w-md mx-auto font-bold uppercase tracking-widest">
-                Access the full {data.name} 2026 study suite now.
-             </p>
-             <Link href="/signup" className="inline-flex items-center gap-4 px-12 py-6 rounded-2xl bg-[var(--accent)] text-black font-black uppercase tracking-[0.2em] hover-scale-lg active:scale-95 transition-all shadow-xl">
-                {data.cta} <ArrowRight className="w-5 h-5" />
-             </Link>
-          </div>
-        </StandardContainer>
-      </div>
-    </div>
-  );
+  return <ExamBlueprintClient slug={slug} data={data} />;
 }

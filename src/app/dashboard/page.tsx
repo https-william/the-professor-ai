@@ -12,6 +12,7 @@ import PlatformShell from "@/components/platforms/PlatformShell";
 import { createClient } from "@/lib/supabase/client";
 import { performOCR } from "@/lib/ocr-bridge";
 import GuestSignupModal from "@/components/ui/GuestSignupModal";
+import { computeFileHash, computeStringHash } from "@/lib/hash";
 
 import dynamic from "next/dynamic";
 import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
@@ -41,7 +42,7 @@ import ShareCard from "@/components/ShareCard";
 import StreakMilestone from "@/components/features/StreakMilestone";
 import { LateNightGuard } from "@/components/features/LateNightGuard";
 
-const MAX_CHARS = 50000;
+const MAX_CHARS = 2000000;
 
 const loadingPhrases = [
     "Skimming the abstract...",
@@ -268,6 +269,14 @@ export default function DashboardPage() {
     // Document parsing
     useEffect(() => {
         const processNext = async () => {
+            // Sequential execution guard:
+            // Check if any item in the queue is currently actively parsing (reading or learning)
+            const isAnyParsing = queue.some(item => 
+                (item.status === 'reading' || item.status === 'learning') && 
+                processedIds.current.has(item.id)
+            );
+            if (isAnyParsing) return;
+
             const nextItem = queue.find(item => item.status === 'reading' && !processedIds.current.has(item.id));
             if (!nextItem || (!nextItem.file && !nextItem.path)) return;
 
@@ -282,7 +291,8 @@ export default function DashboardPage() {
                     updateFileStatus(nextItem.id, 'success', 100);
                     if (extractedText) {
                         setInputText(prev => {
-                            const nextVal = prev ? `${prev}\n\n${extractedText}` : extractedText;
+                            const fileHeader = `\n\n--- DOCUMENT: ${nextItem.name} ---\n`;
+                            const nextVal = prev ? `${prev}${fileHeader}${extractedText}` : `${fileHeader}${extractedText}`;
                             return nextVal.substring(0, MAX_CHARS);
                         });
                     }
@@ -335,7 +345,8 @@ export default function DashboardPage() {
                 updateFileStatus(nextItem.id, 'success', 100);
                 if (finalWeightText) {
                     setInputText(prev => {
-                        const nextVal = prev ? `${prev}\n\n${finalWeightText}` : finalWeightText;
+                        const fileHeader = `\n\n--- DOCUMENT: ${nextItem.name} ---\n`;
+                        const nextVal = prev ? `${prev}${fileHeader}${finalWeightText}` : `${fileHeader}${finalWeightText}`;
                         return nextVal.substring(0, MAX_CHARS);
                     });
                 }
@@ -392,20 +403,26 @@ export default function DashboardPage() {
     const isQueueProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
     const showConfigAndActions = inputText.trim().length > 0 || queue.length > 0;
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) addFiles(Array.from(e.target.files));
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            const explicitIds = await Promise.all(files.map(f => computeFileHash(f)));
+            addFiles(files, explicitIds);
+        }
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(false);
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const files = Array.from(e.dataTransfer.files);
             const localPaths = files.filter(f => (f as any).path).map(f => ({ name: f.name, path: (f as any).path }));
             if (isDesktop && localPaths.length > 0) {
-                addLocalPaths(localPaths);
+                const explicitIds = await Promise.all(localPaths.map(p => computeStringHash(p.path + p.name)));
+                addLocalPaths(localPaths, explicitIds);
             } else {
-                addFiles(files);
+                const explicitIds = await Promise.all(files.map(f => computeFileHash(f)));
+                addFiles(files, explicitIds);
             }
         }
     };
@@ -431,7 +448,8 @@ export default function DashboardPage() {
                         const name = p.split(/[/\\]/).pop() || p;
                         return { name, path: p };
                     });
-                    addLocalPaths(localFiles);
+                    const explicitIds = await Promise.all(localFiles.map(f => computeStringHash(f.path + f.name)));
+                    addLocalPaths(localFiles, explicitIds);
                 }
             } catch (err) {
                 console.error("Tauri dialog open error:", err);
@@ -441,7 +459,7 @@ export default function DashboardPage() {
         }
     };
 
-    const handleGenerate = async () => {
+    const handleGenerate = async (cardCount: number = 10, quizCount: number = 15) => {
         if (!inputText.trim()) return;
         const customTitle = missionTitle || "";
 
@@ -465,7 +483,9 @@ export default function DashboardPage() {
                 const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
                 offlinePacks[packId] = {
                     id: packId, title: cleanTitle, source_text: inputText,
-                    phases_data: {}, user_id: "guest", savedAt: Date.now()
+                    phases_data: {
+                        _config: { cardCount, quizCount }
+                    }, user_id: "guest", savedAt: Date.now()
                 };
                 localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
                 router.push(`/library/pack/${packId}?sprint=true`);
@@ -475,7 +495,9 @@ export default function DashboardPage() {
             const { error: dbError } = await supabase.from("study_packs").insert({
                 id: packId, user_id: authUser.id, title: cleanTitle,
                 description: "Comprehensive study sprint generated from your notes.",
-                source_text: inputText, phases_data: {},
+                source_text: inputText, phases_data: {
+                    _config: { cardCount, quizCount }
+                },
             });
 
             if (dbError) throw dbError;
@@ -485,7 +507,9 @@ export default function DashboardPage() {
             const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
             offlinePacks[packId] = {
                 id: packId, title: cleanTitle, source_text: inputText,
-                phases_data: {}, user_id: "guest", savedAt: Date.now()
+                phases_data: {
+                    _config: { cardCount, quizCount }
+                }, user_id: "guest", savedAt: Date.now()
             };
             localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
             router.push(`/library/pack/${packId}?sprint=true`);

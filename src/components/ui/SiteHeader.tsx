@@ -58,7 +58,8 @@ const HIDDEN_PATHS = [
     "/exams",
     "/glossary",
     "/best-ai-for",
-    "/tools"
+    "/tools",
+    "/match"
 ];
 
 
@@ -457,7 +458,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                         ];
 
                                         if (isAdmin(user.email, user.role)) {
-                                            menuItems.push({ label: "Admin Atrium", icon: Users, href: "/admin" });
+                                            menuItems.push({ label: "The Observatory", icon: Users, href: "/admin" });
                                         }
 
                                         return menuItems.map((item) => (

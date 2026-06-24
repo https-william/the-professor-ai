@@ -26,6 +26,8 @@ import StandardContainer from "@/components/ui/StandardContainer";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import SEOHead, { getWebApplicationSchema } from "@/components/SEOHead";
+import TiltCard from "@/components/ui/TiltCard";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 
 interface OfflinePack {
     id: string;
@@ -288,40 +290,48 @@ export default function OfflineVaultPage() {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ duration: 0.2, delay: index * 0.05 }}
                                     onClick={() => router.push(`/library/pack/${pack.id}`)}
-                                    className="group relative p-8 rounded-[2.5rem] bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--emerald)]/40 transition-all cursor-pointer shadow-xl hover:shadow-2xl flex flex-col justify-between overflow-hidden"
+                                    className="cursor-pointer"
                                 >
-                                    {/* Top Metadata */}
-                                    <div>
-                                        <div className="flex items-center justify-between gap-4 mb-6">
-                                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--background)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] shadow-inner">
-                                                <Clock size={11} /> Saved {savedDate}
+                                    <TiltCard glowColor="rgba(43, 178, 136, 0.15)" borderRadius="28px" className="h-full">
+                                        <GlassmorphicCard
+                                            intensity="medium"
+                                            radius="28px"
+                                            className="group relative p-8 border border-white/5 hover:border-[var(--emerald)]/40 transition-all flex flex-col justify-between h-full overflow-hidden"
+                                        >
+                                            {/* Top Metadata */}
+                                            <div>
+                                                <div className="flex items-center justify-between gap-4 mb-6">
+                                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 border border-white/5 text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] shadow-inner">
+                                                        <Clock size={11} /> Saved {savedDate}
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => handleDelete(pack.id, e)}
+                                                        className="p-2 rounded-xl bg-black/40 border border-white/5 text-[var(--foreground-muted)] hover:text-red-500 hover:border-red-500/30 transition-all opacity-0 group-hover:opacity-100 shadow-md"
+                                                        title="Remove from Offline Vault"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+
+                                                <h3 className="text-xl font-black tracking-tight mb-3 line-clamp-2 group-hover:text-[var(--emerald)] transition-colors uppercase italic">
+                                                    {pack.title || "Untitled Study Pack"}
+                                                </h3>
+                                                <p className="text-xs text-[var(--foreground-muted)] line-clamp-3 mb-6 leading-relaxed font-medium font-serif">
+                                                    {pack.source_text || "No preview available"}
+                                                </p>
                                             </div>
-                                            <button
-                                                onClick={(e) => handleDelete(pack.id, e)}
-                                                className="p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-red-500 hover:border-red-500/30 transition-all opacity-0 group-hover:opacity-100 shadow-md"
-                                                title="Remove from Offline Vault"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
 
-                                        <h3 className="text-xl font-black tracking-tight mb-3 line-clamp-2 group-hover:text-[var(--emerald)] transition-colors uppercase italic">
-                                            {pack.title || "Untitled Study Pack"}
-                                        </h3>
-                                        <p className="text-xs text-[var(--foreground-muted)] line-clamp-3 mb-6 leading-relaxed font-medium">
-                                            {pack.source_text || "No preview available"}
-                                        </p>
-                                    </div>
-
-                                    {/* Bottom Progress & Action */}
-                                    <div className="pt-6 border-t border-[var(--border)] flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
-                                            <BookOpen size={13} className="text-[var(--emerald)]" /> {completedCount} / 4 Phases Ready
-                                        </div>
-                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[var(--emerald)] group-hover-translate-x-sm transition-transform">
-                                            Open Pack <ExternalLink size={12} />
-                                        </div>
-                                    </div>
+                                            {/* Bottom Progress & Action */}
+                                            <div className="pt-6 border-t border-white/5 flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
+                                                    <BookOpen size={13} className="text-[var(--emerald)]" /> {completedCount} / 4 Phases Ready
+                                                </div>
+                                                <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[var(--emerald)] group-hover-translate-x-sm transition-transform">
+                                                    Open Pack <ExternalLink size={12} />
+                                                </div>
+                                            </div>
+                                        </GlassmorphicCard>
+                                    </TiltCard>
                                 </motion.div>
                             );
                         })}

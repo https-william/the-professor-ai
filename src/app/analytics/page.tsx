@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { 
-    BarChart3, 
-    TrendingUp, 
-    Clock, 
-    Zap, 
-    Flame, 
-    Target, 
+import {
+    BarChart3,
+    TrendingUp,
+    Clock,
+    Zap,
+    Flame,
+    Target,
     Award,
     ArrowLeft,
     Sparkles,
@@ -17,7 +17,8 @@ import {
     Download,
     X,
     Share2,
-    Brain
+    Brain,
+    CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import StandardContainer from "@/components/ui/StandardContainer";
@@ -25,31 +26,179 @@ import PlatformShell from "@/components/platforms/PlatformShell";
 import { useUser } from "@/context/UserContext";
 import { useQuery } from "@tanstack/react-query";
 import { calculateLevel, getLevelTitle } from "@/lib/profiles-client";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
+// ─── Web Audio ────────────────────────────────────────────────────────────────
+
+function useMountChime() {
+    const played = useRef(false);
+    useEffect(() => {
+        if (played.current || typeof window === "undefined") return;
+        played.current = true;
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const freqs = [480, 600, 720];
+        freqs.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = "sine";
+            osc.frequency.value = freq;
+            const t = ctx.currentTime + i * 0.09;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.055, t + 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            osc.start(t);
+            osc.stop(t + 0.42);
+        });
+    }, []);
+}
+
+// ─── Activity Heatmap ─────────────────────────────────────────────────────────
+
+function ActivityHeatmap({ activityData }: { activityData: any }) {
+    const weeks = 12;
+    const today = new Date();
+
+    const activityMap = useMemo(() => {
+        const map: Record<string, number> = {};
+        if (!activityData?.activities) return map;
+        for (const entry of activityData.activities) {
+            const day = entry.date?.substring(0, 10);
+            if (day) map[day] = (map[day] || 0) + 1;
+        }
+        return map;
+    }, [activityData]);
+
+    // Build a grid: 7 rows (days) × weeks cols
+    const cells: { date: Date; count: number; key: string }[][] = [];
+    // Start from the most-recent Sunday minus (weeks * 7) days
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - today.getDay() - (weeks - 1) * 7);
+
+    for (let w = 0; w < weeks; w++) {
+        const col: { date: Date; count: number; key: string }[] = [];
+        for (let d = 0; d < 7; d++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + w * 7 + d);
+            const key = date.toISOString().substring(0, 10);
+            col.push({ date, count: activityMap[key] || 0, key });
+        }
+        cells.push(col);
+    }
+
+    const getColor = (count: number) => {
+        if (count === 0) return "rgba(255,255,255,0.04)";
+        if (count === 1) return "rgba(229,169,60,0.2)";
+        if (count === 2) return "rgba(229,169,60,0.4)";
+        if (count === 3) return "rgba(229,169,60,0.65)";
+        return "#E5A93C";
+    };
+
+    const getBorder = (count: number) => {
+        if (count === 0) return "1px solid rgba(255,255,255,0.04)";
+        return `1px solid rgba(229,169,60,${Math.min(0.4, count * 0.1)})`;
+    };
+
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const days = ["S", "M", "T", "W", "T", "F", "S"];
+
+    // Compute month labels (show label when week starts a new month)
+    const monthLabels: (string | null)[] = cells.map((col, i) => {
+        const firstDay = col[0].date;
+        if (i === 0 || firstDay.getDate() <= 7) return months[firstDay.getMonth()];
+        return null;
+    });
+
+    return (
+        <div className="overflow-x-auto pb-2">
+            {/* Month labels */}
+            <div className="flex gap-[3px] mb-1 pl-6">
+                {monthLabels.map((label, i) => (
+                    <div
+                        key={i}
+                        className="flex-shrink-0 w-[14px] text-[8px] font-mono font-bold text-white/20 uppercase"
+                    >
+                        {label || ""}
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex gap-[3px]">
+                {/* Day labels */}
+                <div className="flex flex-col gap-[3px] mr-1 shrink-0">
+                    {days.map((d, i) => (
+                        <div key={i} className="w-4 h-[14px] text-[8px] font-mono font-bold text-white/20 flex items-center">
+                            {i % 2 === 1 ? d : ""}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Grid */}
+                {cells.map((col, w) => (
+                    <div key={w} className="flex flex-col gap-[3px]">
+                        {col.map((cell) => (
+                            <div
+                                key={cell.key}
+                                className="w-[14px] h-[14px] rounded-[3px] transition-all cursor-default group relative"
+                                style={{
+                                    background: getColor(cell.count),
+                                    border: getBorder(cell.count),
+                                    boxShadow: cell.count >= 3 ? "0 0 6px rgba(229,169,60,0.25)" : "none",
+                                }}
+                                title={`${cell.key}: ${cell.count} session${cell.count !== 1 ? "s" : ""}`}
+                            />
+                        ))}
+                    </div>
+                ))}
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center gap-2 mt-3 pl-6">
+                <span className="text-[8px] font-mono font-bold text-white/20 uppercase">Less</span>
+                {[0, 1, 2, 3, 4].map((n) => (
+                    <div
+                        key={n}
+                        className="w-[12px] h-[12px] rounded-[2px]"
+                        style={{ background: getColor(n), border: getBorder(n) }}
+                    />
+                ))}
+                <span className="text-[8px] font-mono font-bold text-white/20 uppercase">More</span>
+            </div>
+        </div>
+    );
+}
+
+// ─── Achievements Data ────────────────────────────────────────────────────────
+
 const ACHIEVEMENTS = [
-    { id: "first_quiz", icon: Brain, label: "First Steps", desc: "Complete your first quiz", color: "var(--emerald)" },
-    { id: "flash_10", icon: Layers, label: "Card Collector", desc: "Generate 10 flashcard sets", color: "var(--blue)" },
-    { id: "streak_3", icon: Flame, label: "On Fire", desc: "3-day study streak", color: "var(--amber)" },
-    { id: "streak_7", icon: Zap, label: "Unstoppable", desc: "7-day study streak", color: "var(--amber)" },
-    { id: "level_5", icon: Award, label: "Scholar", desc: "Reach Level 5", color: "var(--violet)" },
+    { id: "first_quiz", icon: Brain, label: "First Steps", desc: "Complete your first quiz", color: "#2BB288", glow: "rgba(43,178,136,0.15)" },
+    { id: "flash_10", icon: Layers, label: "Card Collector", desc: "Generate 10 flashcard sets", color: "#3B82F6", glow: "rgba(59,130,246,0.15)" },
+    { id: "streak_3", icon: Flame, label: "On Fire", desc: "3-day study streak", color: "#E5A93C", glow: "rgba(229,169,60,0.15)" },
+    { id: "streak_7", icon: Zap, label: "Unstoppable", desc: "7-day study streak", color: "#E5A93C", glow: "rgba(229,169,60,0.2)" },
+    { id: "level_5", icon: Award, label: "Scholar", desc: "Reach Level 5", color: "#9673F5", glow: "rgba(150,115,245,0.15)" },
 ];
+
+// ─── Animation Variants ────────────────────────────────────────────────────────
 
 const stagger: any = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.1 } }
+    show: { transition: { staggerChildren: 0.08 } },
 };
 
 const fadeUp: any = {
-    hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.45 } },
 };
+
+// ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
     const { user } = useUser();
     const userLoading = user.isLoading;
-    const shareCardRef = useRef<HTMLDivElement>(null);
+    useMountChime();
+
     const [isSharing, setIsSharing] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [shareImage, setShareImage] = useState<string | null>(null);
@@ -62,12 +211,12 @@ export default function AnalyticsPage() {
 
         setIsSharing(true);
         setShowShareModal(true);
-        setShareImage(null); // Reset previous image
+        setShareImage(null);
 
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = 1080;
         canvas.height = 1350;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (!ctx) {
             setIsSharing(false);
             return;
@@ -101,12 +250,11 @@ export default function AnalyticsPage() {
                     ctx.fill();
                 };
 
-                // Draw Actual BrandLogo
                 const drawBrandLogo = (x: number, y: number, scale: number) => {
                     ctx.save();
                     ctx.translate(x, y);
                     ctx.scale(scale, scale);
-                    
+
                     ctx.fillStyle = "#07092b";
                     const p1 = new Path2D("M201 0h417q21 0 41 4l2 1a178 178 0 0 1 53 21l2 1 2 1v2l3 1 12 7 4 3v2l2 1 8 5 3 3 4 6 4 2q13 13 24 29l1 1c3 5 3 5 3 8h2q16 28 24 59v2a168 168 0 0 1 4 47v412q0 18-3 34l-1 3-1 8-1 2a232 232 0 0 1-22 53h-2l-1 3-7 12-3 4h-2l-1 2c-7 13-21 26-33 34h-2v2l-8 6-2 1-2 2-2 1-5 1v2l-46 20-11 2-1 2c-20 7-45 5-66 4H198q-21 0-41-4l-3-1-7-2-4-1q-19-6-39-17l-6-3v-2h-2q-6-2-10-6l-2-1-5-4v-2l-2-1q-9-6-17-14v-2h-2v-2l-2-1q-4-2-6-6l-2-1-5-7v-2h-2l-5-7-1-2-5-10h-2q-16-28-24-59v-2a168 168 0 0 1-4-47V198q0-20 4-41l1-2a190 190 0 0 1 23-57h2v-2q2-6 6-10l1-2 4-5h2l1-2 5-8 3-3 6-4 2-4h2l1-2 7-8 2-1 7-4v-2l7-5 2-1 10-5v-2l15-8q21-10 44-16h3q20-5 41-4");
                     ctx.fill(p1);
@@ -136,14 +284,14 @@ export default function AnalyticsPage() {
                 ctx.fillText("YOUR SMART STUDY COMPANION", 320, 175);
 
                 const currentLevel = calculateLevel(user.xp);
-                ctx.fillStyle = "#2563EB";
+                ctx.fillStyle = "#E5A93C";
                 ctx.font = "900 36px sans-serif";
                 ctx.fillText("CURRENT RANK", 80, 420);
 
                 ctx.fillStyle = "#FFFFFF";
                 ctx.font = "900 140px sans-serif";
                 ctx.fillText(`Level ${currentLevel}`, 80, 560);
-                
+
                 ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
                 ctx.font = "900 72px sans-serif";
                 ctx.fillText(getLevelTitle(currentLevel), 80, 650);
@@ -171,7 +319,7 @@ export default function AnalyticsPage() {
                 };
 
                 drawBento(80, 780, user.streak || 0, "STUDY STREAK", "DAYS", "#FFFFFF");
-                drawBento(560, 780, (user.xp || 0).toLocaleString(), "KNOWLEDGE GAINED", "XP", "#F59E0B");
+                drawBento(560, 780, (user.xp || 0).toLocaleString(), "KNOWLEDGE GAINED", "XP", "#E5A93C");
 
                 ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
                 ctx.fillRect(80, 1140, 920, 1.5);
@@ -179,13 +327,13 @@ export default function AnalyticsPage() {
                 ctx.fillStyle = "#FFFFFF";
                 ctx.font = "900 56px sans-serif";
                 ctx.fillText(user.name || "Scholar", 80, 1220);
-                
+
                 ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
                 ctx.font = "700 28px sans-serif";
                 ctx.fillText("Acing this thing, the smart way. 🧪", 80, 1265);
 
                 ctx.textAlign = "right";
-                ctx.fillStyle = "#2563EB";
+                ctx.fillStyle = "#E5A93C";
                 ctx.font = "900 42px sans-serif";
                 ctx.fillText("theprofessor.xyz", 1000, 1240);
 
@@ -209,8 +357,8 @@ export default function AnalyticsPage() {
             ctx.fillStyle = "#040406";
             ctx.fillRect(0, 0, 1080, 1350);
             const grad = ctx.createRadialGradient(540, 675, 0, 540, 675, 800);
-            grad.addColorStop(0, "rgba(37, 99, 235, 0.1)");
-            grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+            grad.addColorStop(0, "rgba(229,169,60,0.08)");
+            grad.addColorStop(1, "rgba(0,0,0,0)");
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 1080, 1350);
             finishDrawing();
@@ -220,7 +368,7 @@ export default function AnalyticsPage() {
     const downloadShareImage = () => {
         if (!shareImage) return;
         const link = document.createElement("a");
-        link.download = `professor-report-${user?.name?.toLowerCase().replace(/\s+/g, '-') || 'scholar'}.png`;
+        link.download = `professor-report-${user?.name?.toLowerCase().replace(/\s+/g, "-") || "scholar"}.png`;
         link.href = shareImage;
         link.click();
         toast.success("Downloaded! Your report is ready. 🚀");
@@ -236,7 +384,7 @@ export default function AnalyticsPage() {
             `Actually understand your material. theprofessor.xyz 🧪`,
             `Get your time back. theprofessor.xyz 📚`,
             `Smart study. More free time. theprofessor.xyz 💤`,
-            `Exam prep, without the stress. theprofessor.xyz`
+            `Exam prep, without the stress. theprofessor.xyz`,
         ];
 
         const randomText = templates[Math.floor(Math.random() * templates.length)];
@@ -244,12 +392,12 @@ export default function AnalyticsPage() {
         try {
             const res = await fetch(shareImage);
             const blob = await res.blob();
-            const file = new File([blob], 'professor-report.png', { type: 'image/png' });
+            const file = new File([blob], "professor-report.png", { type: "image/png" });
             if (navigator.share) {
                 await navigator.share({
-                    title: 'The Professor AI - My Report Card',
+                    title: "The Professor AI - My Report Card",
                     text: randomText,
-                    files: [file]
+                    files: [file],
                 });
             } else {
                 downloadShareImage();
@@ -259,18 +407,18 @@ export default function AnalyticsPage() {
             downloadShareImage();
         }
     };
-    
+
     const { data: activityData, isLoading: activityLoading } = useQuery({
-        queryKey: ['activity-history', user?.id],
+        queryKey: ["activity-history", user?.id],
         enabled: !!user?.id,
         queryFn: async () => {
             const res = await fetch("/api/user/activity-history");
             return res.json();
-        }
+        },
     });
 
     const { data: libraryData, isLoading: libraryLoading } = useQuery({
-        queryKey: ['library-stats', user?.id],
+        queryKey: ["library-stats", user?.id],
         enabled: !!user?.id,
         queryFn: async () => {
             const res = await fetch("/api/library");
@@ -278,14 +426,14 @@ export default function AnalyticsPage() {
             if (data.success && Array.isArray(data.generations)) {
                 const stats = { flashcards: 0, quiz: 0, summary: 0 };
                 data.generations.forEach((g: any) => {
-                    if (g.type === 'flashcards') stats.flashcards++;
-                    if (g.type === 'quiz') stats.quiz++;
-                    if (g.type === 'summary') stats.summary++;
+                    if (g.type === "flashcards") stats.flashcards++;
+                    if (g.type === "quiz") stats.quiz++;
+                    if (g.type === "summary") stats.summary++;
                 });
                 return stats;
             }
             return { flashcards: 0, quiz: 0, summary: 0 };
-        }
+        },
     });
 
     if (userLoading || activityLoading || libraryLoading || !user) {
@@ -293,8 +441,17 @@ export default function AnalyticsPage() {
             <PlatformShell>
                 <div className="w-full min-h-screen flex items-center justify-center bg-[var(--bg)]">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-8 h-8 border-3 border-[var(--blue)] border-t-transparent rounded-full animate-spin" />
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-3)] animate-pulse">Calculating your genius...</p>
+                        <div
+                            className="w-10 h-10 rounded-2xl animate-spin"
+                            style={{
+                                border: "2px solid transparent",
+                                borderTopColor: "#E5A93C",
+                                borderRightColor: "rgba(229,169,60,0.2)",
+                            }}
+                        />
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/20 animate-pulse">
+                            Calculating your genius...
+                        </p>
                     </div>
                 </div>
             </PlatformShell>
@@ -302,10 +459,10 @@ export default function AnalyticsPage() {
     }
 
     const level = calculateLevel(user.xp);
-    
+
     const timeSavedMins = (libraryData?.summary || 0) * 30 + (libraryData?.flashcards || 0) * 2 + (libraryData?.quiz || 0) * 5;
     const timeSavedHours = (timeSavedMins / 60).toFixed(1);
-    
+
     const deepWorkMins = (libraryData?.flashcards || 0) * 3 + (libraryData?.quiz || 0) * 10;
     const deepWorkHours = (deepWorkMins / 60).toFixed(1);
 
@@ -320,46 +477,84 @@ export default function AnalyticsPage() {
 
     const getProfessorTip = () => {
         if ((libraryData?.quiz || 0) < (libraryData?.flashcards || 0) / 3) return "You've got a lot of flashcards, but not enough quizzes. Time to stress-test that brain.";
-        if (parseFloat(timeSavedHours) > 20) return "You've saved over 20 hours! Go outside and touch some grass—or just take a long nap.";
+        if (parseFloat(timeSavedHours) > 20) return "You've saved over 20 hours! Go outside and touch some grass — or just take a long nap.";
         if (user.streak < 3) return "Let's build that momentum back up. One session today is all it takes.";
         return "Try the Feynman technique: if you can't explain your notes to a 5-year-old, you don't know it yet.";
     };
 
+    const xpProgressPercent = Math.min(100, (user.xp % 1000) / 10);
+    const flashPercent = totalGenerations > 0 ? ((libraryData?.flashcards || 0) / totalGenerations) * 100 : 0;
+    const quizPercent = totalGenerations > 0 ? ((libraryData?.quiz || 0) / totalGenerations) * 100 : 0;
+    const summaryPercent = totalGenerations > 0 ? ((libraryData?.summary || 0) / totalGenerations) * 100 : 0;
+
     return (
         <PlatformShell>
-            <div className="w-full min-h-screen bg-[var(--bg)] selection:bg-[var(--blue-dim)] pt-20 pb-24 font-sans">
+            <div className="w-full min-h-screen bg-[var(--bg)] selection:bg-[rgba(229,169,60,0.15)] pt-20 pb-24 font-sans">
                 <StandardContainer className="relative z-10">
-                    {/* Header Section */}
+
+                    {/* ── Header ──────────────────────────────────────────────── */}
                     <div className="mb-10">
-                        <Link href="/dashboard" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--text-3)] hover:text-[var(--blue)] transition-all mb-6 group">
+                        <Link
+                            href="/dashboard"
+                            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/30 hover:text-[#E5A93C] transition-all mb-6 group"
+                        >
                             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
                             <span>Back to Command Center</span>
                         </Link>
-                        
+
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                             <div>
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)] mb-3">
-                                    <BarChart3 size={14} className="text-[var(--blue)]" />
-                                    <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--blue-text)] font-bold">Performance Report</span>
+                                <div
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3"
+                                    style={{
+                                        background: "rgba(229,169,60,0.08)",
+                                        border: "1px solid rgba(229,169,60,0.2)",
+                                    }}
+                                >
+                                    <BarChart3 size={13} style={{ color: "#E5A93C" }} />
+                                    <span
+                                        className="font-mono text-[10px] uppercase tracking-wider font-bold"
+                                        style={{ color: "#E5A93C" }}
+                                    >
+                                        Performance Report
+                                    </span>
                                 </div>
-                                <h1 className="text-3xl md:text-4xl font-bold text-[var(--text)] tracking-tight">
-                                    Your Progress. <br />
-                                    <span className="text-[var(--blue)] font-black">Just the good parts.</span>
+                                <h1 className="text-3xl md:text-4xl font-bold text-white/90 tracking-tight">
+                                    Your Progress.{" "}
+                                    <br />
+                                    <span className="font-black" style={{ color: "#E5A93C" }}>
+                                        Just the good parts.
+                                    </span>
                                 </h1>
                             </div>
-                            
+
                             <div className="flex flex-col sm:flex-row md:flex-col gap-3">
-                                <button 
+                                <button
                                     onClick={handleShare}
                                     disabled={isSharing}
-                                    className="py-3 px-6 rounded-xl bg-[var(--text)] text-[var(--bg)] font-bold text-xs uppercase tracking-wider hover:bg-[var(--text-2)] active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2"
+                                    className="py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                                    style={{
+                                        background: "linear-gradient(135deg, #E5A93C, #D97706)",
+                                        color: "#06060B",
+                                        boxShadow: "0 6px 20px rgba(229,169,60,0.25)",
+                                    }}
                                 >
                                     <Sparkles size={14} className={isSharing ? "animate-spin" : ""} />
                                     <span>{isSharing ? "Generating Card..." : "Share My Progress"}</span>
                                 </button>
-                                <div className="scholar-card p-4 border border-[var(--blue-border)] bg-[var(--blue-dim)]/20 backdrop-blur-md" style={{ borderRadius: "16px" }}>
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] mb-1">Professor's Take</p>
-                                    <p className="text-xs font-medium text-[var(--text-2)] italic max-w-[240px]">
+                                <div
+                                    className="p-4"
+                                    style={{
+                                        borderRadius: "16px",
+                                        background: "rgba(229,169,60,0.05)",
+                                        border: "1px solid rgba(229,169,60,0.15)",
+                                        backdropFilter: "blur(12px)",
+                                    }}
+                                >
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-1">
+                                        Professor&apos;s Take
+                                    </p>
+                                    <p className="text-xs font-medium text-white/55 italic max-w-[240px] leading-relaxed">
                                         &ldquo;{getProfessorTake()}&rdquo;
                                     </p>
                                 </div>
@@ -367,230 +562,433 @@ export default function AnalyticsPage() {
                         </div>
                     </div>
 
-                    {/* Share Preview Modal */}
+                    {/* ── Share Modal ─────────────────────────────────────────── */}
                     {showShareModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 onClick={() => setShowShareModal(false)}
-                                className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+                                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                             />
-                            
-                            <motion.div 
+                            <motion.div
                                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                                className="relative w-full max-w-md scholar-card overflow-hidden flex flex-col gap-5 p-6 bg-[var(--background-secondary)] border border-[var(--border)] shadow-2xl"
-                                style={{ borderRadius: "24px" }}
+                                className="relative w-full max-w-md overflow-hidden flex flex-col gap-5 p-6"
+                                style={{
+                                    borderRadius: "24px",
+                                    background: "rgba(12,12,18,0.95)",
+                                    border: "1px solid rgba(255,255,255,0.07)",
+                                    backdropFilter: "blur(20px)",
+                                    boxShadow: "0 32px 64px rgba(0,0,0,0.6)",
+                                }}
                             >
                                 <div className="flex items-center justify-between mb-1">
-                                    <h3 className="text-lg font-bold text-[var(--text)] tracking-tight">Your Professor's Report</h3>
-                                    <button 
+                                    <h3 className="text-lg font-bold text-white/90 tracking-tight">
+                                        Your Professor&apos;s Report
+                                    </h3>
+                                    <button
                                         onClick={() => setShowShareModal(false)}
-                                        className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-white/5 transition-colors"
+                                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-[rgba(229,169,60,0.1)]"
+                                        style={{ border: "1px solid rgba(255,255,255,0.08)" }}
                                     >
-                                        <X size={16} />
+                                        <X size={16} className="text-white/50" />
                                     </button>
                                 </div>
 
-                                {/* Preview Area */}
-                                <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-black/40 border border-[var(--border)] shadow-inner flex items-center justify-center">
+                                <div
+                                    className="relative aspect-square w-full rounded-2xl overflow-hidden flex items-center justify-center"
+                                    style={{
+                                        background: "rgba(0,0,0,0.4)",
+                                        border: "1px solid rgba(255,255,255,0.06)",
+                                    }}
+                                >
                                     {shareImage ? (
-                                        <motion.img 
+                                        <motion.img
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            src={shareImage} 
-                                            alt="Share Preview" 
+                                            src={shareImage}
+                                            alt="Share Preview"
                                             className="w-full h-full object-contain"
                                         />
                                     ) : (
                                         <div className="flex flex-col items-center gap-3">
-                                            <div className="w-8 h-8 border-3 border-[var(--blue)] border-t-transparent rounded-full animate-spin" />
-                                            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-3)] animate-pulse">Synthesizing Card...</p>
+                                            <div
+                                                className="w-8 h-8 animate-spin rounded-full"
+                                                style={{
+                                                    border: "2px solid transparent",
+                                                    borderTopColor: "#E5A93C",
+                                                }}
+                                            />
+                                            <p className="font-mono text-[10px] uppercase tracking-widest text-white/25 animate-pulse">
+                                                Synthesizing Card...
+                                            </p>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="flex flex-col gap-3">
                                     <div className="flex gap-3">
-                                        <button 
+                                        <button
                                             onClick={downloadShareImage}
                                             disabled={!shareImage}
-                                            className="flex-1 py-3 rounded-xl bg-[var(--text)] text-[var(--bg)] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                                            className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
+                                            style={{
+                                                background: "linear-gradient(135deg, #E5A93C, #D97706)",
+                                                color: "#06060B",
+                                            }}
                                         >
                                             <Download size={16} />
                                             <span>Download</span>
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={handleWebShare}
                                             disabled={!shareImage}
-                                            className="flex-1 py-3 rounded-xl bg-[var(--blue-dim)] border border-[var(--blue-border)] text-[var(--blue)] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                                            className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
+                                            style={{
+                                                background: "rgba(150,115,245,0.1)",
+                                                border: "1px solid rgba(150,115,245,0.25)",
+                                                color: "#9673F5",
+                                            }}
                                         >
                                             <Share2 size={16} />
                                             <span>Share</span>
                                         </button>
                                     </div>
-                                    <p className="text-[10px] text-center text-[var(--text-3)] font-medium">
-                                        Tip: Post this on X or IG and tag <span className="text-[var(--blue)]">@theprofessorai</span> to show off.
+                                    <p className="text-[10px] text-center text-white/25 font-medium">
+                                        Post on X or IG and tag{" "}
+                                        <span style={{ color: "#E5A93C" }}>@theprofessorai</span> to show off.
                                     </p>
                                 </div>
                             </motion.div>
                         </div>
                     )}
 
-                    {/* Stats Grid */}
-                    <motion.div 
+                    {/* ── Stats Grid ──────────────────────────────────────────── */}
+                    <motion.div
                         variants={stagger}
                         initial="hidden"
                         animate="show"
                         className="grid grid-cols-1 md:grid-cols-12 gap-6"
                     >
-                        {/* Level & XP */}
-                        <motion.div variants={fadeUp} className="md:col-span-8 scholar-card p-8 relative overflow-hidden border border-[var(--border)] bg-[var(--background-secondary)]/50" style={{ borderRadius: "24px" }}>
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.02] text-[var(--blue)] pointer-events-none"><Award size={120} /></div>
+                        {/* Level & XP — 8 col */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-8 relative overflow-hidden p-8"
+                            style={{
+                                borderRadius: "24px",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(16px)",
+                                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.04)",
+                            }}
+                        >
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.025] pointer-events-none" style={{ color: "#9673F5" }}>
+                                <Award size={120} />
+                            </div>
                             <div className="relative z-10">
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center text-2xl font-black text-[var(--blue)] shadow-sm shrink-0">
+                                    <div
+                                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black shrink-0"
+                                        style={{
+                                            background: "rgba(150,115,245,0.1)",
+                                            border: "1px solid rgba(150,115,245,0.2)",
+                                            color: "#9673F5",
+                                            boxShadow: "0 0 20px rgba(150,115,245,0.1)",
+                                        }}
+                                    >
                                         {level}
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-[var(--text)] tracking-tight">{getLevelTitle(level)}</h3>
-                                        <p className="text-xs text-[var(--text-3)] uppercase tracking-wider font-bold mt-0.5">{user.xp?.toLocaleString()} Total XP Earned</p>
+                                        <h3 className="text-xl font-bold text-white/90 tracking-tight">{getLevelTitle(level)}</h3>
+                                        <p
+                                            className="text-xs uppercase tracking-wider font-bold mt-0.5"
+                                            style={{ color: "rgba(229,169,60,0.6)" }}
+                                        >
+                                            {user.xp?.toLocaleString()} Total XP Earned
+                                        </p>
                                     </div>
                                 </div>
-                                
+
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-mono font-bold text-[var(--text-3)] uppercase tracking-wider">
+                                    <div className="flex justify-between text-[10px] font-mono font-bold text-white/25 uppercase tracking-wider">
                                         <span>Momentum Level</span>
-                                        <span>{Math.min(100, Math.round((user.xp % 1000) / 10))}%</span>
+                                        <span>{Math.round(xpProgressPercent)}%</span>
                                     </div>
-                                    <div className="h-2 w-full bg-[var(--text-4)] rounded-full overflow-hidden shadow-inner">
-                                        <motion.div 
+                                    <div
+                                        className="h-2 w-full rounded-full overflow-hidden"
+                                        style={{ background: "rgba(255,255,255,0.05)" }}
+                                    >
+                                        <motion.div
                                             initial={{ width: 0 }}
-                                            animate={{ width: `${Math.min(100, (user.xp % 1000) / 10)}%` }}
-                                            transition={{ duration: 1 }}
-                                            className="h-full bg-[var(--blue)] shadow-[0_0_10px_var(--blue-glow)]"
+                                            animate={{ width: `${xpProgressPercent}%` }}
+                                            transition={{ duration: 1, ease: "easeOut" }}
+                                            className="h-full rounded-full"
+                                            style={{
+                                                background: "linear-gradient(90deg, #E5A93C, #D97706)",
+                                                boxShadow: "0 0 10px rgba(229,169,60,0.4)",
+                                            }}
                                         />
                                     </div>
                                 </div>
                             </div>
                         </motion.div>
 
-                        {/* Momentum (Streak) */}
-                        <motion.div variants={fadeUp} className="md:col-span-4 scholar-card p-8 flex flex-col justify-between relative overflow-hidden border border-[var(--border)] bg-[var(--background-secondary)]/50" style={{ borderRadius: "24px" }}>
-                            <div className="absolute -top-4 -right-4 w-28 h-28 bg-[var(--amber)]/5 blur-2xl rounded-full pointer-events-none" />
+                        {/* Momentum / Streak — 4 col */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-4 flex flex-col justify-between relative overflow-hidden p-8"
+                            style={{
+                                borderRadius: "24px",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(16px)",
+                            }}
+                        >
+                            <div
+                                className="absolute -top-4 -right-4 w-28 h-28 rounded-full blur-2xl pointer-events-none"
+                                style={{ background: "rgba(229,169,60,0.06)" }}
+                            />
                             <div className="relative z-10">
                                 <div className="flex items-center gap-2 mb-4">
-                                    <Flame size={16} className="text-[var(--amber)]" />
-                                    <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-3)] font-bold">Momentum</span>
+                                    <Flame size={16} style={{ color: "#E5A93C" }} />
+                                    <span className="font-mono text-[10px] uppercase tracking-wider text-white/30 font-bold">Momentum</span>
                                 </div>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-black text-[var(--text)] tracking-tight font-mono">{user.streak}</span>
-                                    <span className="text-xs font-bold text-[var(--text-3)] uppercase tracking-wider font-mono">Days</span>
+                                    <span className="text-4xl font-black text-white/90 tracking-tight font-mono">{user.streak}</span>
+                                    <span className="text-xs font-bold text-white/30 uppercase tracking-wider font-mono">Days</span>
                                 </div>
-                                <p className="text-xs text-[var(--text-2)] mt-3 font-normal leading-relaxed">
+                                <p className="text-xs text-white/40 mt-3 font-normal leading-relaxed">
                                     {user.streak > 7 ? "You're in the elite tier of consistency." : "Building the chain, one day at a time."}
                                 </p>
                             </div>
                         </motion.div>
 
-                        {/* Efficiency Stats */}
-                        <motion.div variants={fadeUp} className="md:col-span-4 scholar-card p-6 flex flex-col gap-5 border border-[var(--border)] bg-[var(--background-secondary)]/50" style={{ borderRadius: "20px" }}>
+                        {/* Efficiency — 4 col */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-4 flex flex-col gap-5 p-6"
+                            style={{
+                                borderRadius: "20px",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(16px)",
+                            }}
+                        >
                             <div className="flex items-center gap-2">
-                                <Clock size={16} className="text-[var(--blue)]" />
-                                <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-3)] font-bold">Efficiency</span>
+                                <Clock size={16} style={{ color: "#9673F5" }} />
+                                <span className="font-mono text-[10px] uppercase tracking-wider text-white/30 font-bold">Efficiency</span>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <div>
-                                    <p className="text-2xl font-bold text-[var(--text)] tracking-tight font-mono">{timeSavedHours}h</p>
-                                    <p className="text-[10px] text-[var(--text-3)] uppercase tracking-wider font-bold mt-0.5">Estimated Time Saved</p>
+                                    <p className="text-2xl font-bold tracking-tight font-mono" style={{ color: "#E5A93C" }}>
+                                        {timeSavedHours}h
+                                    </p>
+                                    <p className="text-[10px] text-white/30 uppercase tracking-wider font-bold mt-0.5">
+                                        Estimated Time Saved
+                                    </p>
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-[var(--text)] tracking-tight font-mono">{deepWorkHours}h</p>
-                                    <p className="text-[10px] text-[var(--text-3)] uppercase tracking-wider font-bold mt-0.5">Deep Work Logged</p>
+                                    <p className="text-2xl font-bold tracking-tight font-mono" style={{ color: "#E5A93C" }}>
+                                        {deepWorkHours}h
+                                    </p>
+                                    <p className="text-[10px] text-white/30 uppercase tracking-wider font-bold mt-0.5">
+                                        Deep Work Logged
+                                    </p>
                                 </div>
                             </div>
                         </motion.div>
 
-                        {/* Learning Mix */}
-                        <motion.div variants={fadeUp} className="md:col-span-8 scholar-card p-6 relative overflow-hidden border border-[var(--border)] bg-[var(--background-secondary)]/50" style={{ borderRadius: "20px" }}>
+                        {/* Knowledge Mix — 8 col */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-8 relative overflow-hidden p-6"
+                            style={{
+                                borderRadius: "20px",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(16px)",
+                            }}
+                        >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2">
-                                    <Target size={16} className="text-[var(--emerald)]" />
-                                    <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-3)] font-bold">Knowledge Mix</span>
+                                    <Target size={16} style={{ color: "#2BB288" }} />
+                                    <span className="font-mono text-[10px] uppercase tracking-wider text-white/30 font-bold">Knowledge Mix</span>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-[var(--blue)]" />
-                                        <span className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider font-mono">Cards</span>
+                                        <div className="w-2 h-2 rounded-full" style={{ background: "#E5A93C" }} />
+                                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider font-mono">Cards</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-[var(--cyan)]" />
-                                        <span className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-wider font-mono">Quizzes</span>
+                                        <div className="w-2 h-2 rounded-full" style={{ background: "#9673F5" }} />
+                                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider font-mono">Quizzes</span>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
                                 <div className="sm:col-span-2 space-y-3">
                                     <div className="flex justify-between items-baseline">
-                                        <p className="text-3xl font-bold text-[var(--text)] font-mono">{totalGenerations > 0 ? "88%" : "0%"}</p>
-                                        <p className="text-[10px] font-bold text-[var(--emerald)] uppercase tracking-wider font-mono">Retention Rate</p>
+                                        <p className="text-3xl font-bold font-mono" style={{ color: "#2BB288" }}>
+                                            {totalGenerations > 0 ? "88%" : "0%"}
+                                        </p>
+                                        <p
+                                            className="text-[10px] font-bold uppercase tracking-wider font-mono"
+                                            style={{ color: "rgba(43,178,136,0.7)" }}
+                                        >
+                                            Retention Rate
+                                        </p>
                                     </div>
-                                    <div className="h-2 w-full bg-[var(--text-4)] rounded-full flex overflow-hidden shadow-inner">
-                                        <div className="h-full bg-[var(--blue)]" style={{ width: `${totalGenerations > 0 ? ((libraryData?.flashcards || 0) / totalGenerations) * 100 : 0}%` }} />
-                                        <div className="h-full bg-[var(--cyan)]" style={{ width: `${totalGenerations > 0 ? ((libraryData?.quiz || 0) / totalGenerations) * 100 : 0}%` }} />
-                                        <div className="h-full bg-[var(--text-3)]/20" style={{ width: `${totalGenerations > 0 ? ((libraryData?.summary || 0) / totalGenerations) * 100 : 0}%` }} />
+                                    <div
+                                        className="h-2 w-full rounded-full flex overflow-hidden"
+                                        style={{ background: "rgba(255,255,255,0.04)" }}
+                                    >
+                                        <div className="h-full" style={{ width: `${flashPercent}%`, background: "#E5A93C" }} />
+                                        <div className="h-full" style={{ width: `${quizPercent}%`, background: "#9673F5" }} />
+                                        <div className="h-full" style={{ width: `${summaryPercent}%`, background: "rgba(255,255,255,0.12)" }} />
                                     </div>
                                 </div>
-                                
-                                <div className="flex flex-col justify-center gap-2 sm:border-l border-[var(--border)] sm:pl-6 pt-4 sm:pt-0 border-t sm:border-t-0">
-                                    <p className="text-xs text-[var(--text-2)] font-normal">
-                                        <span className="text-[var(--text)] font-bold font-mono">{libraryData?.flashcards || 0}</span> Cards Completed
+
+                                <div
+                                    className="flex flex-col justify-center gap-2 sm:border-l sm:pl-6 pt-4 sm:pt-0 border-t sm:border-t-0"
+                                    style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                                >
+                                    <p className="text-xs text-white/40 font-normal">
+                                        <span className="text-white/80 font-bold font-mono">{libraryData?.flashcards || 0}</span> Cards Completed
                                     </p>
-                                    <p className="text-xs text-[var(--text-2)] font-normal">
-                                        <span className="text-[var(--text)] font-bold font-mono">{libraryData?.quiz || 0}</span> Quizzes Aced
+                                    <p className="text-xs text-white/40 font-normal">
+                                        <span className="text-white/80 font-bold font-mono">{libraryData?.quiz || 0}</span> Quizzes Aced
                                     </p>
                                 </div>
                             </div>
                         </motion.div>
 
-                        {/* Witty Bottom Cards */}
-                        <motion.div variants={fadeUp} className="md:col-span-6 scholar-card p-6 border border-[var(--blue-border)] bg-[var(--blue-dim)]/10" style={{ borderRadius: "20px" }}>
+                        {/* Activity Heatmap — full width */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-12 p-6 relative overflow-hidden"
+                            style={{
+                                borderRadius: "20px",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(16px)",
+                            }}
+                        >
+                            <div className="flex items-center gap-2 mb-5">
+                                <CalendarDays size={16} style={{ color: "#E5A93C" }} />
+                                <span className="font-mono text-[10px] uppercase tracking-wider text-white/30 font-bold">
+                                    12-Week Activity
+                                </span>
+                                <div className="flex-1" />
+                                <span className="text-[10px] font-mono text-white/20">
+                                    {Object.values(activityData?.activities?.reduce((acc: Record<string, number>, a: any) => {
+                                        const d = a.date?.substring(0, 10);
+                                        if (d) acc[d] = 1;
+                                        return acc;
+                                    }, {}) || {}).length || 0} active days
+                                </span>
+                            </div>
+                            <ActivityHeatmap activityData={activityData} />
+                        </motion.div>
+
+                        {/* Professor's Tip — 6 col */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-6 p-6"
+                            style={{
+                                borderRadius: "20px",
+                                background: "rgba(229,169,60,0.04)",
+                                border: "1px solid rgba(229,169,60,0.15)",
+                                backdropFilter: "blur(16px)",
+                            }}
+                        >
                             <div className="flex items-center gap-2 mb-3">
-                                <Coffee size={16} className="text-[var(--blue)]" />
-                                <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-3)] font-bold">Professor's Tip</span>
+                                <Coffee size={16} style={{ color: "#E5A93C" }} />
+                                <span
+                                    className="font-mono text-[10px] uppercase tracking-wider font-bold"
+                                    style={{ color: "rgba(229,169,60,0.6)" }}
+                                >
+                                    Professor&apos;s Tip
+                                </span>
                             </div>
-                            <p className="text-base font-bold text-[var(--text)] leading-snug mb-3">
-                                {getProfessorTip()}
-                            </p>
-                            <p className="text-xs text-[var(--text-2)] leading-relaxed">
-                                Your focus sessions are becoming elite. At this rate, you'll be able to ace your finals and still have plenty of free time to enjoy your evenings.
+                            <p className="text-base font-bold text-white/85 leading-snug mb-3">{getProfessorTip()}</p>
+                            <p className="text-xs text-white/35 leading-relaxed">
+                                Your focus sessions are becoming elite. At this rate, you&apos;ll be able to ace your finals and still have plenty of free time.
                             </p>
                         </motion.div>
 
-                        <motion.div variants={fadeUp} className="md:col-span-6 scholar-card p-6 flex items-center justify-between group border border-[var(--border)] bg-[var(--background-secondary)]/50 cursor-pointer hover:border-[var(--blue-border)] transition-all" style={{ borderRadius: "20px" }}>
+                        {/* Need a boost? — 6 col */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-6 p-6 flex items-center justify-between group cursor-pointer transition-all"
+                            style={{
+                                borderRadius: "20px",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(16px)",
+                            }}
+                        >
                             <div>
-                                <h3 className="text-lg font-bold text-[var(--text)] tracking-tight mb-1 group-hover:text-[var(--blue)] transition-colors">Need a boost?</h3>
-                                <p className="text-xs text-[var(--text-2)]">Your "Long-Term Memory" score could use a little love.</p>
+                                <h3 className="text-lg font-bold text-white/85 tracking-tight mb-1 group-hover:text-[#9673F5] transition-colors">
+                                    Need a boost?
+                                </h3>
+                                <p className="text-xs text-white/35">
+                                    Your &ldquo;Long-Term Memory&rdquo; score could use a little love.
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-xl border border-[var(--border)] flex items-center justify-center group-hover:bg-[var(--blue)] group-hover:border-[var(--blue)] group-hover:text-black transition-all shadow-sm">
-                                <Zap size={18} className="group-hover:fill-current" />
+                            <div
+                                className="w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:shadow-[0_0_20px_rgba(150,115,245,0.3)]"
+                                style={{
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    background: "rgba(255,255,255,0.03)",
+                                    color: "rgba(255,255,255,0.4)",
+                                }}
+                                onMouseEnter={(e) => {
+                                    (e.currentTarget as HTMLElement).style.background = "rgba(150,115,245,0.15)";
+                                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(150,115,245,0.3)";
+                                    (e.currentTarget as HTMLElement).style.color = "#9673F5";
+                                }}
+                                onMouseLeave={(e) => {
+                                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)";
+                                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.08)";
+                                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)";
+                                }}
+                            >
+                                <Zap size={18} />
                             </div>
                         </motion.div>
 
-                        {/* Hall of Fame / Achievements Section */}
-                        <motion.div variants={fadeUp} className="md:col-span-12 scholar-card p-8 relative overflow-hidden border border-[var(--border)] bg-[var(--background-secondary)]/50" style={{ borderRadius: "24px" }}>
+                        {/* Hall of Fame / Achievements — full width */}
+                        <motion.div
+                            variants={fadeUp}
+                            className="md:col-span-12 relative overflow-hidden p-8"
+                            style={{
+                                borderRadius: "24px",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(16px)",
+                            }}
+                        >
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Award size={16} className="text-[var(--amber)]" />
-                                        <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-3)] font-bold">Hall of Fame</span>
+                                        <Award size={16} style={{ color: "#E5A93C" }} />
+                                        <span
+                                            className="font-mono text-[10px] uppercase tracking-wider font-bold"
+                                            style={{ color: "rgba(229,169,60,0.6)" }}
+                                        >
+                                            Hall of Fame
+                                        </span>
                                     </div>
-                                    <h2 className="text-2xl font-bold text-[var(--text)] tracking-tight">Your Achievements</h2>
+                                    <h2 className="text-2xl font-bold text-white/90 tracking-tight">Your Achievements</h2>
                                 </div>
-                                <Link href="/achievements" className="text-xs font-bold text-[var(--blue)] hover:underline flex items-center gap-1">
+                                <Link
+                                    href="/achievements"
+                                    className="text-xs font-bold hover:underline flex items-center gap-1 transition-colors"
+                                    style={{ color: "#E5A93C" }}
+                                >
                                     <span>Go to Trophy Room</span>
                                     <ArrowLeft size={14} className="rotate-180" />
                                 </Link>
@@ -608,20 +1006,43 @@ export default function AnalyticsPage() {
                                     const AchIcon = achievement.icon;
 
                                     return (
-                                        <div 
+                                        <div
                                             key={achievement.id}
-                                            className={`p-5 rounded-2xl border transition-all flex flex-col items-center text-center gap-2.5 ${
-                                                unlocked 
-                                                ? "bg-[var(--blue-dim)] border-[var(--blue-border)] shadow-sm" 
-                                                : "bg-[var(--bg)] border-[var(--border)] opacity-40 grayscale"
-                                            }`}
+                                            className="p-5 rounded-2xl flex flex-col items-center text-center gap-2.5 transition-all"
+                                            style={{
+                                                background: unlocked ? `${achievement.color}10` : "rgba(255,255,255,0.02)",
+                                                border: unlocked
+                                                    ? `1px solid ${achievement.color}30`
+                                                    : "1px solid rgba(255,255,255,0.04)",
+                                                boxShadow: unlocked ? `0 0 20px ${achievement.glow}` : "none",
+                                                opacity: unlocked ? 1 : 0.3,
+                                                filter: unlocked ? "none" : "grayscale(1)",
+                                            }}
                                         >
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner shrink-0">
-                                                <AchIcon size={18} className={unlocked ? "text-[var(--blue)]" : "text-[var(--text-3)]"} />
+                                            <div
+                                                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                                                style={{
+                                                    background: unlocked ? `${achievement.color}15` : "rgba(255,255,255,0.04)",
+                                                    border: unlocked
+                                                        ? `1px solid ${achievement.color}25`
+                                                        : "1px solid rgba(255,255,255,0.06)",
+                                                }}
+                                            >
+                                                <AchIcon
+                                                    size={18}
+                                                    style={{ color: unlocked ? achievement.color : "rgba(255,255,255,0.2)" }}
+                                                />
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold tracking-tight text-[var(--text)] leading-tight">{achievement.label}</p>
-                                                <p className="text-[10px] text-[var(--text-3)] font-mono mt-0.5">{unlocked ? "Unlocked" : "Locked"}</p>
+                                                <p className="text-xs font-bold tracking-tight text-white/80 leading-tight">
+                                                    {achievement.label}
+                                                </p>
+                                                <p
+                                                    className="text-[10px] font-mono mt-0.5"
+                                                    style={{ color: unlocked ? achievement.color : "rgba(255,255,255,0.2)" }}
+                                                >
+                                                    {unlocked ? "Unlocked" : "Locked"}
+                                                </p>
                                             </div>
                                         </div>
                                     );

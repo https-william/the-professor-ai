@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
     X, Zap, Upload, AlertTriangle, CheckCircle2, Loader2, AlertCircle,
     FileText, Layers, Sword, Map as MapIcon, Sparkles, Type, ArrowRight,
-    Lock, Sparkle, Flame, Library, BookOpen, Swords, ChevronRight,
-    BrainCircuit, TrendingUp, Coins
+    Flame, BookOpen, Swords, ChevronRight, BrainCircuit, TrendingUp, Coins, Sparkle
 } from "lucide-react";
 import { calculateLevel, getLevelTitle, getLevelProgress } from "@/lib/profiles-client";
 import { cn } from "@/lib/utils";
@@ -16,6 +15,7 @@ import StandardContainer from "@/components/ui/StandardContainer";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import WeeklyWrappedCard from "@/components/features/dashboard/WeeklyWrappedCard";
 import ProfessorCeremony from "@/components/ui/ProfessorCeremony";
+import WeeklyWrappedModal from "@/components/modals/WeeklyWrappedModal";
 import { getDailyTip } from "@/lib/education-tips";
 
 const MAX_CHARS = 50000;
@@ -56,7 +56,7 @@ interface DashboardWebProps {
     showConfigAndActions: boolean;
     setupError: string | null;
     setSetupError: (error: string | null) => void;
-    handleGenerate: () => void;
+    handleGenerate: (cardCount?: number, quizCount?: number) => void;
     handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleDrop: (e: React.DragEvent) => void;
     handleUploadClick: (e: React.MouseEvent) => void;
@@ -72,11 +72,11 @@ interface DashboardWebProps {
 
 const stagger = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
+    show: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
 };
 const fadeUp = {
-    hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
+    hidden: { opacity: 0, y: 6 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" as const } },
 };
 
 export default function DashboardWeb({
@@ -90,6 +90,28 @@ export default function DashboardWeb({
     isGeneratingPack, setIsGeneratingPack,
     trickleProgress, filePhraseIndex, customStatusMsg, fileInputRef,
 }: DashboardWebProps) {
+
+    // ─── Secret Admin Shortcut (Ctrl+Shift+A) ───
+    useEffect(() => {
+        const handleKeyDown = async (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+                e.preventDefault();
+                try {
+                    const res = await fetch('/api/admin/grant-me-admin', { method: 'POST' });
+                    if (res.ok) {
+                        alert("Admin database role granted! Redirecting...");
+                        window.location.href = "/admin";
+                    } else {
+                        alert("Failed to grant admin role (maybe not in dev mode?).");
+                    }
+                } catch (err) {
+                    console.error("Admin grant error:", err);
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // ─── Fetch recent study packs ───
     const [recentPacks, setRecentPacks] = useState<any[]>([]);
@@ -132,47 +154,49 @@ export default function DashboardWeb({
     const degradesIn = dueCardsCount > 0 ? Math.max(2, Math.round(24 - (dueCardsCount * 0.5))) : 24;
     const sprintMin = dueData?.estimatedMinutes || 4;
 
-    // ─── Social proof ───
+    // ─── Social proof / Dynamic Insight ───
     const socialProof = useMemo(() => {
-        const names = ["Tunde", "Amaka", "Ifeanyi", "Bolu"];
-        let hash = 0;
-        if (user?.id) {
-            for (let i = 0; i < user.id.length; i++) {
-                hash = ((hash << 5) - hash) + user.id.charCodeAt(i);
-            }
+        if (!user?.id) {
+            return `💡 Join thousands of students saving hours every week.`;
         }
-        const nameIdx = Math.abs(hash) % names.length;
-        const percent = 12 + (Math.abs(hash) % 8);
-        return `💡 ${names[nameIdx]} increased their score by ${percent}% with this sprint last week.`;
-    }, [user?.id]);
+        const timeSpent = activityData?.stats?.timeSpentSeconds || 0;
+        const accuracy = activityData?.stats?.questionsAnswered > 0 ? Math.round((activityData.stats.correctCount / activityData.stats.questionsAnswered) * 100) : 0;
+        
+        if (timeSpent > 3600 && accuracy > 70) {
+            return `💡 You've maintained ${accuracy}% accuracy over ${(timeSpent / 3600).toFixed(1)} hours of study this week. Keep details sharp!`;
+        } else if (activityData?.stats?.cardsFlipped > 50) {
+            return `💡 Flawless active recall. You've flipped ${activityData.stats.cardsFlipped} flashcards this week!`;
+        } else if (timeSpent > 0) {
+            return `💡 Locked in ${Math.round(timeSpent / 60)} minutes of pure focus this week. Maintain the momentum.`;
+        } else {
+            return `💡 Ready to build your brain? Start a study session to generate your personalized insights.`;
+        }
+    }, [user?.id, activityData]);
 
     const level = calculateLevel(userXp);
     const progress = getLevelProgress(userXp);
     const title = getLevelTitle(level);
 
     const today = new Date();
-    const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    const dateStr = today.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
     const dailyLine = getDailyTip(user?.id || "");
 
     const readinessColor = useMemo(() => {
-        if (readinessScore >= 80) return { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.6)", text: "text-emerald-400" };
-        if (readinessScore >= 50) return { stroke: "var(--amber)", glow: "rgba(229,169,60,0.6)", text: "text-amber-400" };
-        return { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.6)", text: "text-rose-400" };
+        if (readinessScore >= 80) return { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.5)", text: "text-emerald-400" };
+        if (readinessScore >= 50) return { stroke: "var(--amber)", glow: "rgba(229,169,60,0.5)", text: "text-amber-400" };
+        return { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.5)", text: "text-rose-400" };
     }, [readinessScore]);
 
     const [showStreakDetails, setShowStreakDetails] = useState(false);
     const [showWrappedDetails, setShowWrappedDetails] = useState(false);
+    const [isWeeklyWrappedOpen, setIsWeeklyWrappedOpen] = useState(false);
+    const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
     const [dragActive, setDragActive] = useState(false);
 
-    // ─── Time-based category hint ───
-    const timeHint = useMemo(() => {
-        const hour = new Date().getHours();
-        if (hour < 5) return "MIDNIGHT CRAM";
-        if (hour < 12) return "MORNING FOCUS";
-        if (hour < 17) return "AFTERNOON PUSH";
-        if (hour < 22) return "EVENING RECAP";
-        return "MIDNIGHT PREP";
-    }, []);
+    // Custom configuration parameters
+    const [cardCount, setCardCount] = useState(10);
+    const [quizCount, setQuizCount] = useState(15);
+    const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
     // ─── Streak calendar days ───
     const weekDays = useMemo(() => {
@@ -198,13 +222,27 @@ export default function DashboardWeb({
         });
     }, [activityData, userStreak]);
 
+    // Handle ingestion modal trigger
+    const openIngestModal = () => {
+        setIsIngestModalOpen(true);
+    };
+
+    const closeIngestModal = () => {
+        setIsIngestModalOpen(false);
+    };
+
+    const handleFormSubmit = () => {
+        if (!hasSuccess || isQueueProcessing) return;
+        closeIngestModal();
+        handleGenerate(cardCount, quizCount);
+    };
+
     // ─── ProfessorCeremony loading state ───
     if (isGeneratingPack) {
         return (
             <div className="min-h-[calc(100vh-5rem)] bg-transparent pt-20 flex flex-col items-center relative overflow-y-auto">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-40 z-0" />
                 <StandardContainer className="relative z-10 my-auto">
-
                     <div className="mb-8 text-center">
                         <button
                             onClick={() => setIsGeneratingPack(false)}
@@ -222,620 +260,695 @@ export default function DashboardWeb({
     return (
         <div className="w-full min-h-screen relative bg-transparent selection:bg-white/10">
             <StandardContainer className="pt-24 pb-20 relative z-10">
-                <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6">
+                <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
 
                     {/* ═══════════════════════════════════════════════════════════
-                        WELCOME BAR — compact single row
+                        WELCOME BAR — Elegant, borderless, text-based header
                     ═══════════════════════════════════════════════════════════ */}
-                    <motion.div variants={fadeUp}>
-                        <div
-                            className="scholar-card relative p-5 sm:p-6 overflow-hidden bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300"
-                            style={{ borderRadius: "24px" }}
-                        >
-                            <div className="absolute top-0 right-0 p-6 opacity-[0.03] text-white pointer-events-none">
-                                <Sparkles size={120} />
+                    <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-2 border-b border-white/5">
+                        <div className="space-y-1.5 max-w-xl">
+                            <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                                Hey {firstName},
+                            </h2>
+                            <p className="text-xs text-white/50 font-bold italic leading-relaxed">
+                                &ldquo;{dailyLine}&rdquo;
+                            </p>
+                        </div>
+
+                        {/* Status Badges Row */}
+                        <div className="flex flex-wrap items-center gap-2 bg-zinc-950/20 p-2.5 rounded-[1.5rem] border border-white/5 backdrop-blur-xl shrink-0 w-fit">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-sm">
+                                <Flame size={11} className={cn("text-amber-400", userStreak > 0 && "animate-pulse")} />
+                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-amber-400 font-black">{userStreak}d</span>
                             </div>
-                            <div className="relative z-10">
-                                <div className="flex flex-wrap items-center gap-2.5 mb-3">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 shadow-sm">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/70 font-bold">{timeHint}</span>
-                                    </div>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 shadow-sm">
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/65 font-bold">{dateStr}</span>
-                                    </div>
 
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-sm">
-                                        <Flame size={11} className={cn("text-amber-400", userStreak > 0 && "animate-pulse")} />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-400 font-black">{userStreak}d</span>
-                                    </div>
-
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-sm">
-                                        <Zap size={11} className="text-blue-400" />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-blue-400 font-black">{userXp.toLocaleString()} XP</span>
-                                    </div>
-
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm">
-                                        <Coins size={11} className="text-emerald-400" />
-                                        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-emerald-400 font-black">{userCredits}</span>
-                                    </div>
-
-                                    <FocusTimer widget={true} />
-                                </div>
-
-                                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-1">
-                                    Hey {firstName},
-                                </h2>
-                                <p className="text-xs text-white/40 font-bold italic leading-relaxed max-w-2xl">
-                                    &ldquo;{dailyLine}&rdquo;
-                                </p>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 shadow-sm">
+                                <Zap size={11} className="text-blue-400" />
+                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-blue-400 font-black">{userXp.toLocaleString()} XP</span>
                             </div>
+
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-sm">
+                                <Coins size={11} className="text-emerald-400" />
+                                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-emerald-400 font-black">{userCredits}</span>
+                            </div>
+
+                            <div className="h-4 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+                            <FocusTimer widget={true} />
                         </div>
                     </motion.div>
 
                     {/* ═══════════════════════════════════════════════════════════
-                        TWO-COLUMN LAYOUT: Create Zone + Sidebar
+                        SYMMETRIC GRID: Left Column (65%) + Right Sidebar (35%)
                     ═══════════════════════════════════════════════════════════ */}
-                    <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-                        {/* ─── LEFT: CREATE ZONE (60%) ─── */}
-                        <div className="md:col-span-3 space-y-5">
+                        {/* ─── LEFT COLUMN (65% width) ─── */}
+                        <div className="lg:col-span-2 space-y-6">
 
-                            {/* Pipeline Pills */}
-                            <div className="p-1 border border-white/5 rounded-3xl bg-zinc-950/40 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-                                <div className="flex flex-wrap items-center gap-1.5 p-2">
-                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mr-2 flex items-center gap-1.5 shrink-0 ml-2">
-                                        <Sparkles size={11} className="text-[#F59E0B]" /> Pipeline:
-                                    </span>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/25 transition-all shrink-0">
-                                        <FileText size={10} className="text-emerald-400" />
-                                        <span className="text-[8px] font-black uppercase tracking-wider text-emerald-400">Summary</span>
+                            {/* Section 1: Active Study Packs */}
+                            <motion.div variants={fadeUp} className="space-y-4">
+                                <div className="flex items-center justify-between px-1">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.25em] text-white/50 flex items-center gap-2">
+                                        <BookOpen size={13} className="text-[var(--violet)]" />
+                                        <span>Active Study Packs</span>
+                                    </h3>
+                                    
+                                    <button
+                                        onClick={openIngestModal}
+                                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white font-black text-[9px] uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                                    >
+                                        <Zap size={10} className="fill-current text-white" />
+                                        <span>+ New Sprint</span>
+                                    </button>
+                                </div>
+
+                                {packsLoading ? (
+                                    <div className="scholar-card p-10 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl flex items-center justify-center rounded-[24px]">
+                                        <Loader2 size={24} className="animate-spin text-[var(--violet)]" />
                                     </div>
-                                    <span className="text-[var(--foreground-muted)]/30 text-[9px] shrink-0 font-bold">➔</span>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-indigo-500/25 transition-all shrink-0">
-                                        <Layers size={10} className="text-indigo-400" />
-                                        <span className="text-[8px] font-black uppercase tracking-wider text-indigo-400">Cards</span>
+                                ) : recentPacks.length === 0 ? (
+                                    <div className="scholar-card p-8 bg-gradient-to-b from-zinc-950/60 to-zinc-950/20 shadow-2xl shadow-black/80 ring-1 ring-white/5 backdrop-blur-3xl text-center rounded-[24px] space-y-4">
+                                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.03] text-white/60 mb-2 shadow-inner">
+                                            <BookOpen size={18} />
+                                        </div>
+                                        <h4 className="text-xs font-black text-white uppercase tracking-wider italic">No active sprints yet</h4>
+                                        <p className="text-xs text-white/40 max-w-sm mx-auto leading-relaxed font-bold">
+                                            Let's turn your lecture notes or textbooks into instant memory sprints. Construct your first pack to begin.
+                                        </p>
+                                        <button 
+                                            onClick={openIngestModal}
+                                            className="px-5 py-3 bg-white hover:bg-zinc-200 active:scale-[0.98] rounded-xl font-black text-black text-[10px] uppercase tracking-[0.2em] transition-all cursor-pointer border-0 inline-flex items-center gap-2 mt-2 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                                        >
+                                            <Zap size={11} className="fill-current text-black animate-pulse" />
+                                            <span>Begin Sprint</span>
+                                        </button>
                                     </div>
-                                    <span className="text-[var(--foreground-muted)]/30 text-[9px] shrink-0 font-bold">➔</span>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-red-500/25 transition-all shrink-0">
-                                        <Sword size={10} className="text-red-400" />
-                                        <span className="text-[8px] font-black uppercase tracking-wider text-red-400">Quiz</span>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {recentPacks.map((pack) => {
+                                            const completedPhases = Object.keys(pack.phases_data || {}).filter(k => k !== '_config' && k !== '_mastered');
+                                            return (
+                                                <div
+                                                    key={pack.id}
+                                                    className="scholar-card p-4 sm:p-5 bg-gradient-to-b from-zinc-950/80 to-zinc-950/40 shadow-xl shadow-black/50 ring-1 ring-white/5 hover:ring-[var(--blue)]/30 hover:shadow-[0_8px_30px_var(--blue-glow)] backdrop-blur-3xl rounded-[24px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300 group"
+                                                >
+                                                    <div className="space-y-1 min-w-0 flex-1">
+                                                        <h4 className="text-sm font-black text-white group-hover:text-[var(--blue-text)] transition-colors uppercase tracking-wide truncate max-w-[280px]">
+                                                            {pack.title || "Untitled Pack"}
+                                                        </h4>
+                                                        <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">
+                                                            Created {new Date(pack.created_at || pack.createdAt).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Phase tracker icons */}
+                                                    <div className="flex items-center gap-1.5 bg-white/[0.02] p-1.5 rounded-2xl border border-white/5">
+                                                        {[
+                                                            { id: 'distill', icon: FileText, label: 'Summary' },
+                                                            { id: 'retain', icon: Layers, label: 'Cards' },
+                                                            { id: 'test', icon: Sword, label: 'Quiz' },
+                                                            { id: 'predict', icon: MapIcon, label: 'Roadmap' }
+                                                        ].map((ph) => {
+                                                            const isDone = completedPhases.includes(ph.id);
+                                                            const Icon = ph.icon;
+                                                            return (
+                                                                <div
+                                                                    key={ph.id}
+                                                                    className={cn(
+                                                                        "w-8 h-8 rounded-xl flex items-center justify-center border transition-all relative group/phase",
+                                                                        isDone
+                                                                            ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400 shadow-[0_0_8px_rgba(43,178,136,0.15)]"
+                                                                            : "bg-white/[0.02] border-white/5 text-white/20"
+                                                                    )}
+                                                                >
+                                                                    <Icon size={12} />
+                                                                    <span className="absolute bottom-full mb-2 hidden group-hover/phase:block bg-zinc-950 border border-white/10 text-[8px] font-black uppercase tracking-wider text-white px-2 py-0.5 rounded shadow-xl whitespace-nowrap z-50">
+                                                                        {ph.label}: {isDone ? "Ready" : "Pending"}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <Link href={`/library/pack/${pack.id}`} className="shrink-0 w-full sm:w-auto">
+                                                        <div className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white hover:text-black font-black text-[9px] uppercase tracking-widest transition-all cursor-pointer text-center">
+                                                            <span>Resume Sprint</span>
+                                                            <ArrowRight size={10} />
+                                                        </div>
+                                                    </Link>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    <span className="text-[var(--foreground-muted)]/30 text-[9px] shrink-0 font-bold">➔</span>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-amber-500/25 transition-all shrink-0">
-                                        <MapIcon size={10} className="text-amber-400" />
-                                        <span className="text-[8px] font-black uppercase tracking-wider text-amber-400">Roadmap</span>
+                                )}
+                            </motion.div>
+
+                        </div>
+
+                        {/* ─── RIGHT SIDEBAR (35% width) ─── */}
+                        <div className="space-y-6">
+
+                            <motion.div variants={fadeUp}>
+                                <div
+                                    className="scholar-card p-5 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl rounded-[24px] space-y-5"
+                                >
+                                    {/* Sidebar Section Header */}
+                                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <BrainCircuit size={13} className="text-amber-400" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 italic">Progress & Retention</span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setShowStreakDetails(!showStreakDetails);
+                                                setShowWrappedDetails(false);
+                                            }}
+                                            className="text-[9px] font-black text-white/40 hover:text-white uppercase tracking-wider transition-colors cursor-pointer border-0 bg-transparent"
+                                        >
+                                            {showStreakDetails ? "Hide Stats" : "Stats"}
+                                        </button>
+                                    </div>
+
+                                    {/* Side-by-Side: ERS Donut (Left) + Streak dots (Right) */}
+                                    <div className="flex items-center justify-between gap-4 p-2 bg-white/[0.01] rounded-2xl border border-white/5">
+                                        
+                                        {/* ERS Donut */}
+                                        <div className="flex flex-col items-center justify-center flex-1 py-1 relative">
+                                            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 mb-2">Readiness</span>
+                                            
+                                            {userState === 'NEW_USER' ? (
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <div className="w-14 h-14 rounded-full border border-white/5 flex items-center justify-center bg-white/[0.01]">
+                                                        <Sparkles size={14} className="text-white/20" />
+                                                    </div>
+                                                    <span className="text-[7px] font-black uppercase tracking-wider text-white/30 mt-1">Awaiting</span>
+                                                </div>
+                                            ) : (
+                                                <div className="relative w-16 h-16 flex items-center justify-center">
+                                                    <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
+                                                        <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="10" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
+                                                        <motion.circle cx="50" cy="50" r="40" stroke={readinessColor.stroke} strokeWidth="10" fill="transparent"
+                                                            style={{ filter: `drop-shadow(0 0 5px ${readinessColor.glow})` }}
+                                                            strokeDasharray="188.4 62.8"
+                                                            initial={{ strokeDashoffset: 188.4 }}
+                                                            animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
+                                                            transition={{ duration: 1.2, ease: "easeOut" }}
+                                                            strokeLinecap="round" />
+                                                    </svg>
+                                                    <div className="absolute flex flex-col items-center justify-center">
+                                                        <span className={cn("font-mono text-sm font-black leading-none tabular-nums", readinessColor.text)}>{readinessScore}%</span>
+                                                        <span className="text-[5px] font-black uppercase tracking-wider text-white/40 leading-none mt-0.5">ERS</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Vertical divider */}
+                                        <div className="w-[1px] h-12 bg-white/5 shrink-0" />
+
+                                        {/* Streak Dots Calendar */}
+                                        <div className="flex flex-col items-center justify-center flex-1 py-1">
+                                            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 mb-2">Weekly Streak</span>
+                                            
+                                            <div className="flex items-center gap-1">
+                                                {weekDays.map((day, i) => (
+                                                    <div key={i} className="flex flex-col items-center gap-1">
+                                                        <span className="text-[6px] font-black text-white/30 uppercase">{day.label}</span>
+                                                        <div
+                                                            className={cn(
+                                                                "w-5 h-5 rounded-lg flex items-center justify-center border transition-all",
+                                                                day.active
+                                                                    ? "bg-amber-500/10 border-amber-500/35 shadow-[0_0_8px_rgba(229,169,60,0.15)]"
+                                                                    : day.isToday
+                                                                        ? "bg-white/5 border-white/20"
+                                                                        : day.isFuture
+                                                                            ? "bg-transparent border-white/5"
+                                                                            : "bg-white/[0.01] border-white/5"
+                                                            )}
+                                                        >
+                                                            {day.active ? (
+                                                                <Flame size={7} className="text-amber-400" />
+                                                            ) : day.isToday ? (
+                                                                <div className="w-1 h-1 rounded-full bg-white/60" />
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    {/* ERS narratives / stats description */}
+                                    <div className="space-y-3 pt-1">
+                                        {userState === 'NEW_USER' ? (
+                                            <p className="text-[11px] font-bold text-white/50 leading-relaxed text-center">
+                                                Drop your notes in Creator Studio. Your memory retention rate will automatically compute here after your first study sprint.
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <p className="text-[11px] font-bold text-white/60 leading-relaxed text-center">
+                                                    {dueCardsCount > 0 ? (
+                                                        <>
+                                                            Memory retention for <span className="text-white font-black">{dueDeckTitle}</span> degrades in {degradesIn}h. Run a {sprintMin}-min review to preserve your streak.
+                                                        </>
+                                                    ) : (
+                                                        <>All caught up! Your memory retention is in perfect shape.</>
+                                                    )}
+                                                </p>
+                                                <p className="text-[10px] text-white/40 font-bold text-center">{socialProof}</p>
+                                            </div>
+                                        )}
+
+                                        {dueCardsCount > 0 && userState !== 'NEW_USER' && (
+                                            <Link href="/review" className="block w-full">
+                                                <div className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white text-black font-black text-[9px] uppercase tracking-[0.2em] shadow-md hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer border-0">
+                                                    <Swords size={11} className="text-black" />
+                                                    <span>Resume Active Review</span>
+                                                </div>
+                                            </Link>
+                                        )}
+                                    </div>
+
+                                    {/* Streak details expand */}
+                                    <AnimatePresence>
+                                        {showStreakDetails && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="pt-3 border-t border-white/5 space-y-2.5">
+                                                    <div className="flex justify-between items-center text-[10px]">
+                                                        <span className="font-bold text-white/50 uppercase">Active Streak</span>
+                                                        <span className="font-mono font-black text-[var(--amber)]">{userStreak} Days 🔥</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-[10px]">
+                                                        <span className="font-bold text-white/50 uppercase">Academic Level</span>
+                                                        <span className="font-mono font-black text-white/80">Lvl {level} · {title}</span>
+                                                    </div>
+                                                    <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden border border-white/5 mt-1">
+                                                        <motion.div
+                                                            className="h-full bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${progress}%` }}
+                                                            transition={{ duration: 0.8, ease: "easeOut" }}
+                                                        />
+                                                    </div>
+                                                    <p className="text-[8px] text-white/30 font-bold">{Math.round(progress)}% to next rank</p>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    {/* Weekly Wrapped Quick Launcher */}
+                                    <div className="pt-3 border-t border-white/5">
+                                        <button
+                                            onClick={() => {
+                                                setShowWrappedDetails(!showWrappedDetails);
+                                                setShowStreakDetails(false);
+                                            }}
+                                            className="flex items-center justify-between w-full cursor-pointer text-white/50 hover:text-white transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider">
+                                                <TrendingUp size={11} className="text-violet-400" />
+                                                <span>Weekly Wrapped Stories</span>
+                                            </div>
+                                            <ChevronRight size={11} className={cn("text-white/30 transition-transform duration-200", showWrappedDetails && "rotate-90")} />
+                                        </button>
+
+                                        <AnimatePresence>
+                                            {showWrappedDetails && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="pt-3">
+                                                        <WeeklyWrappedCard 
+                                                            activityData={activityData} 
+                                                            isGuest={userState === 'NEW_USER' || !user?.id} 
+                                                            onLaunchWrapped={() => setIsWeeklyWrappedOpen(true)}
+                                                        />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 </div>
+                            </motion.div>
+
+                        </div>
+
+                    </div>
+
+                </motion.div>
+            </StandardContainer>
+
+            {/* ═══════════════════════════════════════════════════════════
+                CREATOR STUDIO INGESTION MODAL
+            ═══════════════════════════════════════════════════════════ */}
+            <AnimatePresence>
+                {isIngestModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={closeIngestModal}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                        />
+
+                        {/* Modal content */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="scholar-card relative w-full max-w-2xl bg-zinc-950/90 ring-1 ring-white/5 backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-[2rem] overflow-hidden z-10 max-h-[90vh] flex flex-col"
+                        >
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between p-6 border-b border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <Sparkles size={14} className="text-[var(--violet)]" />
+                                    <span className="text-xs font-black uppercase tracking-[0.25em] text-white">Creator Studio</span>
+                                </div>
+                                <button
+                                    onClick={closeIngestModal}
+                                    className="p-1 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors cursor-pointer border-0"
+                                >
+                                    <X size={16} />
+                                </button>
                             </div>
 
-                            {/* Main Ingestion Card */}
-                            <div
-                                className="rounded-[2rem] bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_24px_80px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.05)] overflow-hidden"
-                            >
-                                {/* Tab Headers */}
-                                <div className="flex bg-white/[0.02] border-b border-white/5 p-2 gap-2">
+                            {/* Modal Body (Scrollable) */}
+                            <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
+                                {/* Ingestion type tabs */}
+                                <div className="flex bg-white/[0.02] border border-white/5 p-1 rounded-2xl gap-1">
                                     <button
                                         onClick={() => setActiveTab('upload')}
                                         className={cn(
-                                            "flex-1 flex items-center justify-center gap-2.5 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-2xl",
+                                            "flex-1 flex items-center justify-center gap-2.5 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-xl border-0",
                                             activeTab === 'upload'
-                                                ? 'bg-white/10 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/5'
-                                                : 'text-[var(--foreground-muted)] hover:text-white hover:bg-white/[0.02]'
+                                                ? 'bg-white/10 text-white shadow-md'
+                                                : 'text-[var(--foreground-muted)] hover:text-white hover:bg-white/[0.01]'
                                         )}
                                     >
-                                        <Upload size={13} strokeWidth={2.5} />
+                                        <Upload size={12} strokeWidth={2.5} />
                                         Upload File
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('text')}
                                         className={cn(
-                                            "flex-1 flex items-center justify-center gap-2.5 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-2xl",
+                                            "flex-1 flex items-center justify-center gap-2.5 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer rounded-xl border-0",
                                             activeTab === 'text'
-                                                ? 'bg-white/10 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/5'
-                                                : 'text-[var(--foreground-muted)] hover:text-white hover:bg-white/[0.02]'
+                                                ? 'bg-white/10 text-white shadow-md'
+                                                : 'text-[var(--foreground-muted)] hover:text-white hover:bg-white/[0.01]'
                                         )}
                                     >
-                                        <Type size={13} strokeWidth={2.5} />
+                                        <Type size={12} strokeWidth={2.5} />
                                         Paste Text
                                     </button>
                                 </div>
 
-                                {/* Workspace body */}
-                                <div className="p-6 sm:p-8 space-y-6 relative">
-
-                                    {/* Hidden file input */}
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        multiple
-                                        className="hidden"
-                                        onChange={handleFileSelect}
-                                        accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx,.jpg,.jpeg,.png,.webp"
-                                    />
-
-                                    {/* Upload Tab */}
-                                    {activeTab === 'upload' ? (
-                                        <div className="space-y-5">
-                                            <div
-                                                onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
-                                                onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
-                                                onDragOver={(e) => { e.preventDefault(); }}
-                                                onDrop={(e) => { setDragActive(false); handleDrop(e); }}
-                                                onClick={handleUploadClick}
-                                                className={cn(
-                                                    "py-14 px-6 flex flex-col items-center justify-center text-center transition-all duration-350 rounded-3xl border border-dashed cursor-pointer relative overflow-hidden group select-none",
-                                                    dragActive
-                                                        ? "bg-white/[0.04] border-white/30 scale-[0.99] shadow-inner"
-                                                        : "bg-white/[0.01] border-white/10 hover:bg-white/[0.03] hover:border-white/20"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 bg-white/5 border border-white/5 shadow-lg group-hover:scale-110 group-hover:bg-white/10 group-hover:border-white/10",
-                                                    dragActive ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.2)]" : "text-white"
-                                                )}>
-                                                    <Upload className="w-5 h-5" strokeWidth={2} />
-                                                </div>
-                                                <h4 className="text-sm font-black text-white tracking-wide">Drag & drop your notes here, or click to browse</h4>
-                                                <p className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-[0.15em] font-bold mt-2">PDF, PPTX, DOCX, TXT, or Images</p>
-                                                <div className="absolute inset-0 border border-white/0 group-hover:border-white/5 rounded-3xl pointer-events-none transition-all duration-300" />
+                                {/* Tab Body */}
+                                {activeTab === 'upload' ? (
+                                    <div className="space-y-4">
+                                        <div
+                                            onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
+                                            onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
+                                            onDragOver={(e) => { e.preventDefault(); }}
+                                            onDrop={(e) => { setDragActive(false); handleDrop(e); }}
+                                            onClick={handleUploadClick}
+                                            className={cn(
+                                                "py-10 px-4 flex flex-col items-center justify-center text-center transition-all rounded-2xl border border-dashed cursor-pointer relative overflow-hidden group select-none",
+                                                dragActive
+                                                    ? "bg-white/[0.04] border-white/30 scale-[0.99]"
+                                                    : "bg-white/[0.01] border-white/10 hover:bg-white/[0.02] hover:border-white/20"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-all duration-300 bg-white/5 border border-white/5 shadow-md group-hover:scale-105",
+                                                dragActive ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.15)]" : "text-white"
+                                            )}>
+                                                <Upload className="w-4.5 h-4.5" strokeWidth={2} />
                                             </div>
+                                            <h4 className="text-xs font-black text-white tracking-wide">Drag & drop your notes here, or click to browse</h4>
+                                            <p className="text-[8px] text-[var(--foreground-muted)] uppercase tracking-[0.15em] font-bold mt-1">PDF, PPTX, DOCX, TXT, or Images</p>
+                                        </div>
 
-                                            <div className="flex flex-wrap items-center justify-center gap-3">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)] opacity-60">No materials? Try a demo:</span>
-                                                <button
-                                                    onClick={() => loadDemo('mitosis')}
-                                                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer shadow-md active:scale-95"
-                                                >
-                                                    Biology (Mitosis)
-                                                </button>
-                                                <button
-                                                    onClick={() => loadDemo('contract')}
-                                                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer shadow-md active:scale-95"
-                                                >
-                                                    Contract Law
-                                                </button>
+                                        <div className="flex flex-wrap items-center justify-center gap-2">
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground-muted)] opacity-55">Or load a demo pack:</span>
+                                            <button
+                                                onClick={() => loadDemo('mitosis')}
+                                                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-white transition-all cursor-pointer shadow active:scale-95"
+                                            >
+                                                Mitosis
+                                            </button>
+                                            <button
+                                                onClick={() => loadDemo('contract')}
+                                                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black uppercase tracking-wider text-white transition-all cursor-pointer shadow active:scale-95"
+                                            >
+                                                Contract Law
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Paste Lecture Notes</label>
+                                            <span className={`text-[9px] font-mono font-black ${inputText.length > MAX_CHARS * 0.8 ? 'text-red-400' : 'text-[var(--foreground-muted)]/40'}`}>
+                                                {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
+                                            </span>
+                                        </div>
+                                        <div className="relative group rounded-2xl overflow-hidden border border-white/5 focus-within:border-white/15 transition-all bg-white/[0.01]">
+                                            <textarea
+                                                value={inputText}
+                                                onChange={(e) => {
+                                                    if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
+                                                }}
+                                                placeholder="Paste your syllabus, textbook chapters, or transcript content here..."
+                                                className="w-full h-36 p-4 bg-transparent text-[11px] leading-relaxed outline-none font-bold text-white placeholder:text-[var(--foreground-muted)]/30 resize-none custom-scrollbar transition-all"
+                                                disabled={isQueueProcessing}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Config parameters */}
+                                {showConfigAndActions && (
+                                    <div className="space-y-5 pt-4 border-t border-white/5">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="flex flex-col space-y-1.5">
+                                                <label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Sprint Name</label>
+                                                <div className="relative rounded-xl border border-white/5 focus-within:border-white/15 transition-all bg-white/[0.01] overflow-hidden">
+                                                    <input
+                                                        type="text"
+                                                        value={missionTitle}
+                                                        onChange={(e) => {
+                                                            setMissionTitle(e.target.value);
+                                                            setUserEditedTitle(true);
+                                                        }}
+                                                        placeholder="e.g. 'Bio-Chem Prep' or 'Contract Law'"
+                                                        className="w-full bg-transparent px-3.5 py-2.5 text-[11px] font-bold text-white placeholder:text-[var(--foreground-muted)]/30 outline-none transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="p-3.5 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col justify-center relative">
+                                                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Cost</span>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <Zap size={11} className="text-emerald-400 fill-current" />
+                                                    <span className="text-sm font-black italic tracking-tight uppercase text-white leading-none">10 Credits</span>
+                                                </div>
+                                                <p className="text-[8px] text-[var(--foreground-muted)] mt-1 font-bold">You have {userCredits} credits remaining.</p>
                                             </div>
                                         </div>
-                                    ) : (
-                                        <div className="space-y-3 animate-in fade-in duration-300">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Paste Lecture Notes</label>
-                                                <span className={`text-[10px] font-mono font-black tracking-tighter ${inputText.length > MAX_CHARS * 0.8 ? 'text-red-400' : 'text-[var(--foreground-muted)]/40'}`}>
-                                                    {inputText.length > 0 ? `${inputText.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}` : ''}
-                                                </span>
-                                            </div>
-                                            <div className="relative group rounded-3xl overflow-hidden border border-white/5 focus-within:border-white/20 transition-all bg-white/[0.01]">
-                                                <textarea
-                                                    value={inputText}
-                                                    onChange={(e) => {
-                                                        if (e.target.value.length <= MAX_CHARS) setInputText(e.target.value);
-                                                    }}
-                                                    placeholder="Paste your syllabus, textbook pages, raw lecture text, or class transcripts here..."
-                                                    className="w-full h-44 p-5 bg-transparent text-xs leading-relaxed outline-none font-bold text-white placeholder:text-[var(--foreground-muted)]/35 resize-none custom-scrollbar transition-all"
-                                                    disabled={isQueueProcessing}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
 
-                                    {/* Config & Actions (AnimatePresence) */}
-                                    <AnimatePresence>
-                                        {showConfigAndActions && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: "auto" }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="space-y-6 overflow-hidden"
+                                        {/* CUSTOM CONFIGURATION SETTINGS (Cards & Quiz counts) */}
+                                        <div className="flex items-center justify-between">
+                                            <button
+                                                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                                                className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] text-white/40 hover:text-white transition-colors cursor-pointer border-0 bg-transparent"
                                             >
-                                                {/* Title & Cost */}
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                                                    <div className="flex flex-col space-y-2">
-                                                        <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Sprint Name</label>
-                                                        <div className="relative rounded-2xl border border-white/5 focus-within:border-white/20 transition-all bg-white/[0.01] overflow-hidden">
-                                                            <input
-                                                                type="text"
-                                                                value={missionTitle}
-                                                                onChange={(e) => {
-                                                                    setMissionTitle(e.target.value);
-                                                                    setUserEditedTitle(true);
-                                                                }}
-                                                                placeholder="e.g., 'Bio-Chem Prep' or 'Law 101 Exam'"
-                                                                className="w-full bg-transparent px-4 py-3.5 text-xs font-bold text-white placeholder:text-[var(--foreground-muted)]/30 outline-none transition-all"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 flex flex-col justify-center shadow-lg relative">
-                                                        <div className="absolute top-0 right-0 p-3 opacity-10">
-                                                            <Zap size={20} className="text-[#F59E0B]" />
-                                                        </div>
-                                                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Cost</span>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <Zap size={13} className="text-emerald-400 fill-current" />
-                                                            <span className="text-base font-black italic tracking-tight leading-none uppercase text-white">10 Credits</span>
-                                                        </div>
-                                                        <p className="text-[10px] text-[var(--foreground-muted)] mt-1.5 font-bold">You have {userCredits} credits.</p>
-                                                    </div>
-                                                </div>
+                                                <Sparkle size={12} className={showAdvancedSettings ? "text-amber-400" : ""} />
+                                                <span>{showAdvancedSettings ? "Hide Advanced Settings" : "Advanced Config"}</span>
+                                            </button>
+                                        </div>
 
-                                                {/* Ingestion Progress Queue */}
-                                                {queue.length > 0 && (
-                                                    <div className="space-y-3 pt-4 border-t border-white/5 w-full">
-                                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-2">Ingestion Queue</h3>
-                                                        <div className="grid gap-3 w-full">
-                                                            {queue.map((item) => (
-                                                                <div
-                                                                    key={item.id}
-                                                                    className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 flex flex-col gap-3 relative overflow-hidden animate-in fade-in duration-300 w-full"
+                                        <AnimatePresence>
+                                            {showAdvancedSettings && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                                                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/60 block">Custom Sprint Configuration</span>
+                                                        
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                            <div className="space-y-1.5">
+                                                                <div className="flex justify-between items-center">
+                                                                    <label className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Flashcards Count</label>
+                                                                    <span className="text-[10px] font-mono font-black text-amber-400">{cardCount} Cards</span>
+                                                                </div>
+                                                                <select
+                                                                    value={cardCount}
+                                                                    onChange={(e) => setCardCount(Number(e.target.value))}
+                                                                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-[11px] font-bold text-white outline-none cursor-pointer hover:border-white/20 transition-all border-0"
                                                                 >
-                                                                    <div className="flex items-center justify-between gap-3 w-full">
-                                                                        <div className="flex items-center gap-3 min-w-0">
-                                                                            <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white shrink-0">
-                                                                                <FileText size={16} />
-                                                                            </div>
-                                                                            <div className="min-w-0">
-                                                                                <h4 className="text-xs font-black text-white truncate">{item.name}</h4>
-                                                                                {item.file && (
-                                                                                    <p className="text-[9px] text-[var(--foreground-muted)] font-mono font-bold uppercase">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="shrink-0">
-                                                                            {item.status === 'success' && (
-                                                                                <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase text-emerald-400">Ready</span>
-                                                                            )}
-                                                                            {item.status === 'error' && (
-                                                                                <span className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-[9px] font-black uppercase text-red-400">Error</span>
-                                                                            )}
-                                                                            {(item.status === 'reading' || item.status === 'learning') && (
-                                                                                <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase text-white flex items-center gap-1.5">
-                                                                                    <Loader2 size={10} className="animate-spin text-white" />
-                                                                                    <span>Ingesting</span>
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
+                                                                    <option value={5}>5 Cards (Quick recap)</option>
+                                                                    <option value={10}>10 Cards (Standard)</option>
+                                                                    <option value={15}>15 Cards (Thorough)</option>
+                                                                    <option value={20}>20 Cards (Deep study)</option>
+                                                                    <option value={25}>25 Cards (Intense)</option>
+                                                                    <option value={30}>30 Cards (Exam cram)</option>
+                                                                </select>
+                                                            </div>
 
-                                                                    {item.status === 'error' ? (
-                                                                        <p className="text-[10px] font-bold text-red-400 uppercase tracking-wide flex items-center gap-1.5">
-                                                                            <AlertCircle size={12} />
-                                                                            <span>{item.errorMessage || "Failed to process document."}</span>
-                                                                        </p>
-                                                                    ) : (
-                                                                        <div className="space-y-1.5">
-                                                                            <div className="flex items-center justify-between gap-4">
-                                                                                <p className="text-[10px] font-bold text-[var(--foreground-muted)]">
-                                                                                    {customStatusMsg[item.id] || (item.status === 'success' ? "All notes successfully absorbed" : loadingPhrases[filePhraseIndex[item.id] || 0])}
-                                                                                </p>
-                                                                                <span className="text-[10px] font-mono font-black text-white">
-                                                                                    {item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden border border-white/5">
-                                                                                <motion.div
-                                                                                    initial={{ width: 0 }}
-                                                                                    animate={{ width: `${item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%` }}
-                                                                                    className="h-full bg-white rounded-full shadow-[0_0_10px_white]"
-                                                                                    transition={{ ease: "easeOut" }}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
+                                                            <div className="space-y-1.5">
+                                                                <div className="flex justify-between items-center">
+                                                                    <label className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Quiz Questions</label>
+                                                                    <span className="text-[10px] font-mono font-black text-amber-400">{quizCount} Questions</span>
+                                                                </div>
+                                                                <select
+                                                                    value={quizCount}
+                                                                    onChange={(e) => setQuizCount(Number(e.target.value))}
+                                                                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-[11px] font-bold text-white outline-none cursor-pointer hover:border-white/20 transition-all border-0"
+                                                                >
+                                                                    <option value={5}>5 Questions (Short quiz)</option>
+                                                                    <option value={10}>10 Questions (Regular)</option>
+                                                                    <option value={15}>15 Questions (Standard exam)</option>
+                                                                    <option value={20}>20 Questions (Heavy practice)</option>
+                                                                    <option value={25}>25 Questions (Simulated exam)</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
+                                        {/* Ingestion Queue */}
+                                        {queue.length > 0 && (
+                                            <div className="space-y-2.5 pt-2 border-t border-white/5 w-full">
+                                                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Ingestion Progress</h3>
+                                                <div className="grid gap-2 w-full">
+                                                    {queue.map((item) => (
+                                                        <div
+                                                            key={item.id}
+                                                            className="p-3.5 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col gap-2 relative overflow-hidden w-full"
+                                                        >
+                                                            <div className="flex items-center justify-between gap-3 w-full">
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <FileText size={14} className="text-white/60 shrink-0" />
+                                                                    <h4 className="text-[11px] font-black text-white truncate max-w-[280px]">{item.name}</h4>
+                                                                </div>
+                                                                <div className="shrink-0">
+                                                                    {item.status === 'success' && (
+                                                                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black uppercase text-emerald-400">Absorbed</span>
+                                                                    )}
+                                                                    {item.status === 'error' && (
+                                                                        <span className="px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-[8px] font-black uppercase text-red-400">Failed</span>
+                                                                    )}
+                                                                    {(item.status === 'reading' || item.status === 'learning') && (
+                                                                        <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black uppercase text-white flex items-center gap-1">
+                                                                            <Loader2 size={8} className="animate-spin text-white" />
+                                                                            <span>Reading</span>
+                                                                        </span>
                                                                     )}
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                            </div>
 
-                                                {/* Errors */}
-                                                {setupError && (
-                                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-red-500/10 border border-red-500/20 animate-in shake duration-500">
-                                                        <div className="flex items-center gap-2.5 text-[11px] font-black text-red-400 uppercase tracking-wider">
-                                                            <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
-                                                            <span className="leading-snug">{setupError}</span>
+                                                            {item.status === 'error' ? (
+                                                                <p className="text-[9px] font-bold text-red-400 uppercase tracking-wide flex items-center gap-1">
+                                                                    <AlertCircle size={10} />
+                                                                    <span>{item.errorMessage || "Failed to process document."}</span>
+                                                                </p>
+                                                            ) : (
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center justify-between text-[9px] font-bold text-[var(--foreground-muted)]">
+                                                                        <span>{customStatusMsg[item.id] || (item.status === 'success' ? "Ready for sprint" : loadingPhrases[filePhraseIndex[item.id] || 0])}</span>
+                                                                        <span className="text-white font-mono">{item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%</span>
+                                                                    </div>
+                                                                    <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden border border-white/5">
+                                                                        <motion.div
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: `${item.status === 'success' ? 100 : (trickleProgress[item.id] || item.progress || 20)}%` }}
+                                                                            className="h-full bg-white rounded-full"
+                                                                            transition={{ ease: "easeOut" }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <button
-                                                            onClick={() => { setSetupError(null); }}
-                                                            className="px-3 py-1.5 bg-red-500/20 text-red-400 text-[9px] uppercase tracking-[0.2em] font-black rounded-lg hover:bg-red-500/30 transition-colors cursor-pointer shrink-0 ml-2"
-                                                        >
-                                                            Dismiss
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                {/* Action Buttons */}
-                                                <div className="flex gap-3 pt-2">
-                                                    {inputText.trim().length > 0 && (
-                                                        <button
-                                                            onClick={resetSelection}
-                                                            className="px-6 py-4 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-white hover:bg-white/5 transition-all cursor-pointer"
-                                                        >
-                                                            Clear All
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        onClick={handleGenerate}
-                                                        disabled={!hasSuccess || isQueueProcessing}
-                                                        className={cn(
-                                                            "flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl cursor-pointer",
-                                                            !hasSuccess || isQueueProcessing
-                                                                ? 'opacity-40 cursor-not-allowed bg-white/5 border border-white/5 text-white/20 shadow-none'
-                                                                : 'bg-white text-black hover:bg-white/95 active:scale-[0.98]'
-                                                        )}
-                                                    >
-                                                        <Zap size={15} strokeWidth={2.5} className={hasSuccess && !isQueueProcessing ? "animate-pulse" : ""} />
-                                                        <span>Start Exam Sprint</span>
-                                                        <ArrowRight size={13} strokeWidth={2.5} />
-                                                    </button>
+                                                    ))}
                                                 </div>
-                                            </motion.div>
+                                            </div>
                                         )}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* ─── RIGHT: CONTEXTUAL SIDEBAR (40%) ─── */}
-                        <div className="md:col-span-2 space-y-5">
-
-                            {/* ERS Donut Card */}
-                            {userState === 'NEW_USER' ? (
-                                <div
-                                    className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300"
-                                    style={{ borderRadius: "24px" }}
-                                >
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Sparkles size={14} className="text-amber-400" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Getting Started</span>
-                                    </div>
-                                    <p className="text-sm font-bold text-white mb-2">Welcome to The Professor!</p>
-                                    <p className="text-xs text-white/50 font-bold leading-relaxed mb-4">
-                                        Drop your first lecture notes in the Create Zone to build your first Study Pack. Your Exam Readiness Score will appear here after your first session.
-                                    </p>
-                                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/5 border border-white/10 w-fit">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Awaiting first sprint</span>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div
-                                    className="scholar-card p-6 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300"
-                                    style={{ borderRadius: "24px" }}
-                                >
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Exam Readiness</span>
-                                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[8px] font-black uppercase text-white/80">ERS™</span>
-                                    </div>
-
-                                    <div className="flex items-center gap-5">
-                                        {/* Compact ERS Donut */}
-                                        <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
-                                            <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
-                                                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
-                                                <motion.circle cx="50" cy="50" r="40" stroke={readinessColor.stroke} strokeWidth="8" fill="transparent"
-                                                    style={{ filter: `drop-shadow(0 0 6px ${readinessColor.glow})` }}
-                                                    strokeDasharray="188.4 62.8"
-                                                    initial={{ strokeDashoffset: 188.4 }}
-                                                    animate={{ strokeDashoffset: 188.4 * (1 - readinessScore / 100) }}
-                                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                                    strokeLinecap="round" />
-                                            </svg>
-                                            <div className="absolute flex flex-col items-center justify-center">
-                                                <span className={cn("font-mono text-xl font-black tabular-nums", readinessColor.text)}>{readinessScore}%</span>
-                                                <span className="text-[7px] font-black uppercase tracking-wider text-white/40">Ready</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex-1 space-y-2">
-                                            <p className="text-xs font-bold text-white/70 leading-relaxed">
-                                                {dueCardsCount > 0 ? (
-                                                    <>
-                                                        Retention for <span className="text-white font-black">{dueDeckTitle}</span> degrades in {degradesIn}h. Run a {sprintMin}-min sprint to preserve your streak.
-                                                    </>
-                                                ) : (
-                                                    <>All caught up! Your memory retention is in perfect shape.</>
-                                                )}
-                                            </p>
-                                            <p className="text-[10px] text-white/40 font-medium">{socialProof}</p>
-                                        </div>
-                                    </div>
-
-                                    {dueCardsCount > 0 && (
-                                        <Link href="/review" className="inline-block mt-4">
-                                            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white text-black font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer">
-                                                <Zap size={12} className="fill-current animate-pulse text-black" />
-                                                <span>Resume Active Sprint</span>
-                                            </div>
-                                        </Link>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Recent Packs */}
-                            <div
-                                className="scholar-card p-5 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300"
-                                style={{ borderRadius: "24px" }}
-                            >
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <FileText size={13} className="text-emerald-400" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 italic">Recent Packs</span>
-                                    </div>
-                                    <Link href="/library" className="text-[9px] font-black text-white/40 hover:text-white uppercase tracking-wider transition-colors">
-                                        View All
-                                    </Link>
-                                </div>
-                                {packsLoading ? (
-                                    <div className="flex items-center justify-center py-6">
-                                        <Loader2 size={18} className="animate-spin text-white/40" />
-                                    </div>
-                                ) : recentPacks.length === 0 ? (
-                                    <p className="text-xs text-white/40 font-bold text-center py-4">No packs yet — create your first one!</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {recentPacks.map((pack) => (
-                                            <Link key={pack.id} href={`/library/pack/${pack.id}`}>
-                                                <div className="flex justify-between items-center p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all cursor-pointer">
-                                                    <span className="font-bold text-white/80 truncate max-w-[180px]">{pack.title || "Untitled Pack"}</span>
-                                                    <ArrowRight size={10} className="text-white/40 shrink-0" />
+                                        {/* Setup Errors */}
+                                        {setupError && (
+                                            <div className="flex items-center justify-between p-3.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                                                <div className="flex items-center gap-2 text-[10px] font-black text-red-400 uppercase tracking-wider">
+                                                    <AlertTriangle size={14} className="shrink-0" />
+                                                    <span>{setupError}</span>
                                                 </div>
-                                            </Link>
-                                        ))}
+                                                <button
+                                                    onClick={() => setSetupError(null)}
+                                                    className="px-2.5 py-1 bg-red-500/20 text-red-400 text-[8px] uppercase tracking-wider font-black rounded hover:bg-red-500/30 transition-colors cursor-pointer shrink-0 border-0"
+                                                >
+                                                    Dismiss
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Quick Action Pills */}
-                            <div
-                                className="scholar-card p-5 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300"
-                                style={{ borderRadius: "24px" }}
-                            >
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 italic mb-3 block">Quick Actions</span>
-                                <div className="flex flex-wrap gap-2">
-                                    <Link href="/library" className="group">
-                                        <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-900/50 border border-white/5 hover:border-blue-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                            <Library size={11} className="text-blue-400 group-hover:scale-110 transition-transform" />
-                                            <span>Library</span>
-                                        </div>
-                                    </Link>
-                                    <Link href="/review" className="group">
-                                        <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-900/50 border border-white/5 hover:border-amber-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                            <Swords size={11} className="text-amber-400 group-hover:scale-110 transition-transform" />
-                                            <span>Review</span>
-                                        </div>
-                                    </Link>
-                                    <Link href="/blog" className="group">
-                                        <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-900/50 border border-white/5 hover:border-indigo-500/20 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-sm cursor-pointer">
-                                            <BookOpen size={11} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-                                            <span>Blog</span>
-                                        </div>
-                                    </Link>
-                                </div>
-                            </div>
-
-                            {/* Streak Calendar */}
-                            <div
-                                className="scholar-card p-5 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300"
-                                style={{ borderRadius: "24px" }}
-                            >
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <Flame size={13} className={cn("text-amber-400", userStreak > 0 && "animate-pulse")} />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 italic">Streak · {userStreak}d</span>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            setShowStreakDetails(!showStreakDetails);
-                                            setShowWrappedDetails(false);
-                                        }}
-                                        className="text-[9px] font-black text-white/40 hover:text-white uppercase tracking-wider transition-colors cursor-pointer"
-                                    >
-                                        {showStreakDetails ? "Hide" : "Details"}
-                                    </button>
-                                </div>
-
-                                {/* Week dots */}
-                                <div className="flex items-center justify-between gap-1.5">
-                                    {weekDays.map((day, i) => (
-                                        <div key={i} className="flex flex-col items-center gap-1.5">
-                                            <span className="text-[9px] font-black text-white/30 uppercase">{day.label}</span>
-                                            <div
-                                                className={cn(
-                                                    "w-7 h-7 rounded-lg flex items-center justify-center transition-all border",
-                                                    day.active
-                                                        ? "bg-amber-500/20 border-amber-500/30 shadow-[0_0_8px_rgba(229,169,60,0.2)]"
-                                                        : day.isToday
-                                                            ? "bg-white/5 border-white/20"
-                                                            : day.isFuture
-                                                                ? "bg-transparent border-white/5"
-                                                                : "bg-white/[0.02] border-white/5"
-                                                )}
-                                            >
-                                                {day.active ? (
-                                                    <Flame size={11} className="text-amber-400" />
-                                                ) : day.isToday ? (
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-white/60" />
-                                                ) : null}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Streak details expand */}
-                                <AnimatePresence>
-                                    {showStreakDetails && (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: "auto" }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-[11px] font-bold text-white/60 uppercase">Active Streak</span>
-                                                    <span className="font-mono text-xs font-black text-[var(--amber)] tabular-nums">{userStreak}d 🔥</span>
-                                                </div>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-[11px] font-bold text-white/60 uppercase">Level</span>
-                                                    <span className="font-mono text-xs font-black text-white/80 tabular-nums">Lvl {level} · {title}</span>
-                                                </div>
-                                                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5 mt-1">
-                                                    <motion.div
-                                                        className="h-full bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${progress}%` }}
-                                                        transition={{ duration: 1, ease: "easeOut" }}
-                                                    />
-                                                </div>
-                                                <p className="text-[9px] text-white/30 font-bold">{Math.round(progress)}% to next level</p>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                            {/* Weekly Wrapped Toggle */}
-                            <div
-                                className="scholar-card p-5 bg-zinc-950/45 border border-white/5 backdrop-blur-2xl shadow-2xl hover:border-white/10 transition-all duration-300"
-                                style={{ borderRadius: "24px" }}
-                            >
+                            {/* Modal Footer */}
+                            <div className="p-6 border-t border-white/5 bg-zinc-950/40 flex justify-end gap-3 shrink-0">
                                 <button
                                     onClick={() => {
-                                        setShowWrappedDetails(!showWrappedDetails);
-                                        setShowStreakDetails(false);
+                                        resetSelection();
+                                        closeIngestModal();
                                     }}
-                                    className="flex items-center justify-between w-full cursor-pointer"
+                                    className="px-5 py-3 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-white hover:bg-white/5 transition-all cursor-pointer border-0 bg-transparent"
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <TrendingUp size={13} className="text-violet-400" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 italic">Weekly Wrapped</span>
-                                    </div>
-                                    <ChevronRight size={14} className={cn("text-white/30 transition-transform duration-200", showWrappedDetails && "rotate-90")} />
+                                    Cancel
                                 </button>
-
-                                <AnimatePresence>
-                                    {showWrappedDetails && (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: "auto" }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="pt-4">
-                                                <WeeklyWrappedCard />
-                                            </div>
-                                        </motion.div>
+                                <button
+                                    onClick={handleFormSubmit}
+                                    disabled={!hasSuccess || isQueueProcessing}
+                                    className={cn(
+                                        "px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 cursor-pointer border-0",
+                                        !hasSuccess || isQueueProcessing
+                                            ? 'opacity-40 cursor-not-allowed bg-white/5 text-white/20 border border-white/5'
+                                            : 'bg-white text-black hover:bg-zinc-150 active:scale-[0.98]'
                                     )}
-                                </AnimatePresence>
+                                >
+                                    <Zap size={12} className={hasSuccess && !isQueueProcessing ? "animate-pulse" : ""} />
+                                    <span>Start Exam Sprint</span>
+                                    <ArrowRight size={10} />
+                                </button>
                             </div>
-                        </div>
-                    </motion.div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
-                </motion.div>
-            </StandardContainer>
+            <WeeklyWrappedModal
+                isOpen={isWeeklyWrappedOpen}
+                onClose={() => setIsWeeklyWrappedOpen(false)}
+                activityData={activityData}
+                firstName={firstName}
+                isGuest={userState === 'NEW_USER' || !user?.id}
+            />
         </div>
     );
 }

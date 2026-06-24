@@ -32,7 +32,7 @@ export default function AmbientOrbs() {
           contain: "strict",
         }}
       />
-      {/* Orb 2: Warm Amber/Gold */}
+      {/* Orb 2: Warm Amber */}
       <div 
         className="absolute bottom-[-20%] right-[-15%] w-[80vw] h-[80vw] rounded-full mix-blend-normal animate-ambient-drift-2"
         style={{

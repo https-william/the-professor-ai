@@ -138,7 +138,7 @@ export default function Markdown({
 
     return (
         <div className={cn(
-            "selection:bg-[var(--foreground)]/10 selection:text-[var(--foreground)]", 
+            "selection:bg-[var(--foreground)]/10 selection:text-[var(--foreground)] font-serif", 
             isStreaming && "typing-cursor",
             className
         )}>

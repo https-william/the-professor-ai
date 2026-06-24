@@ -8,6 +8,7 @@ export default function AdminDashboardClient() {
   const [generations, setGenerations] = useState<any[]>([]);
   const [broadcasts, setBroadcasts] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalUsers: 0,
     premiumUsers: 0,
@@ -16,7 +17,7 @@ export default function AdminDashboardClient() {
     totalPqls: 0
   });
   const [blogs, setBlogs] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"live" | "broadcasts" | "users" | "blog">("live");
+  const [activeTab, setActiveTab] = useState<"live" | "broadcasts" | "users" | "blog" | "logs">("live");
   
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,24 +70,32 @@ export default function AdminDashboardClient() {
          if (payload.eventType === 'DELETE') setBlogs(prev => prev.filter(b => b.id !== payload.old.id));
       }).subscribe();
 
+    const subLogs = supabase.channel('admin_logs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_logs' }, (payload: any) => {
+         setLogs(prev => [payload.new, ...prev]);
+      }).subscribe();
+
     return () => {
       supabase.removeChannel(subGen);
       supabase.removeChannel(subBroadcast);
       supabase.removeChannel(subProfile);
       supabase.removeChannel(subBlog);
+      supabase.removeChannel(subLogs);
     };
   }, []);
 
   const fetchInitialData = async () => {
       try {
-          const [genRes, bRes, overviewRes, blogRes] = await Promise.all([
+          const [genRes, bRes, overviewRes, blogRes, logsRes] = await Promise.all([
               supabase.from("generations").select("*, profiles(first_name, last_name, email)").order('created_at', { ascending: false }).limit(50),
               supabase.from("broadcasts").select("*").order('created_at', { ascending: false }),
               fetch("/api/admin/overview?t=" + Date.now()).then(res => res.json()),
-              supabase.from("blog_posts").select("*").order('created_at', { ascending: false })
+              supabase.from("blog_posts").select("*").order('created_at', { ascending: false }),
+              supabase.from("system_logs").select("*").order('created_at', { ascending: false }).limit(50)
           ]);
           if (genRes.data) setGenerations(genRes.data);
           if (bRes.data) setBroadcasts(bRes.data);
+          if (logsRes.data) setLogs(logsRes.data);
           if (overviewRes && !overviewRes.error) {
               setUsers(overviewRes.users || []);
               setStats(overviewRes.stats || {
@@ -213,7 +222,8 @@ export default function AdminDashboardClient() {
               { id: "live", title: "Live Activity", icon: "monitoring", val: generations.length + " logged" },
               { id: "broadcasts", title: "Broadcast Engine", icon: "campaign", val: broadcasts.length + " sent" },
               { id: "users", title: "User Directory", icon: "group", val: users.length + " profiles" },
-              { id: "blog", title: "Blog CMS", icon: "edit_document", val: blogs.length + " posts" }
+              { id: "blog", title: "Blog CMS", icon: "edit_document", val: blogs.length + " posts" },
+              { id: "logs", title: "System Logs", icon: "terminal", val: logs.length + " errors" }
           ].map((tab) => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                  className={`p-5 rounded-[24px] text-left transition-all border ${

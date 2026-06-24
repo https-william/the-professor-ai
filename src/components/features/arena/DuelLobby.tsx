@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useDuelRealtime } from "@/hooks/useRealtime";
 import { cn } from "@/lib/utils";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 
 interface DuelLobbyProps {
     duelId: string;
@@ -220,35 +221,37 @@ export default function DuelLobby({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/85 backdrop-blur-xl">
+        <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#06060B]/90 backdrop-blur-2xl">
             <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 md:p-8 relative">
                 {/* Background Effects */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--error)]/10 rounded-full blur-[120px]" />
-                    <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-[var(--secondary)]/10 rounded-full blur-[80px]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#9673F5]/10 rounded-full blur-[120px]" />
+                    <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-[#E5A93C]/10 rounded-full blur-[80px]" />
                 </div>
 
                 <AnimatePresence>
                     {countdown !== null && (
                         <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 1.5, opacity: 0 }}
-                            className="absolute inset-0 flex items-center justify-center bg-black/90 z-50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 flex items-center justify-center bg-zinc-950/95 z-50 pointer-events-none"
                         >
                             <div className="text-center">
                                 <motion.div
                                     key={countdown}
-                                    initial={{ scale: 0.5, y: 20 }}
-                                    animate={{ scale: 1, y: 0 }}
-                                    className="text-[150px] font-black text-[var(--error)] animate-pulse"
+                                    initial={{ scale: 0.3, rotate: -15 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    exit={{ scale: 1.6, opacity: 0 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                    className="text-[120px] sm:text-[180px] font-black text-[var(--accent)] tracking-tighter"
                                     style={{
-                                        textShadow: "0 0 60px var(--error-glow)"
+                                        textShadow: "0 0 50px rgba(229,169,60,0.3)"
                                     }}
                                 >
                                     {countdown === 0 ? "GO!" : countdown}
                                 </motion.div>
-                                <p className="text-[var(--foreground-muted)] text-xl mt-4">Prepare yourself!</p>
+                                <p className="text-zinc-400 text-base tracking-widest uppercase font-mono animate-pulse">Prepare yourself!</p>
                             </div>
                         </motion.div>
                     )}
@@ -257,54 +260,53 @@ export default function DuelLobby({
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="relative w-full max-w-lg mx-4 z-10"
+                    className="relative w-full max-w-md mx-4 z-10"
                 >
-                    <div className="bg-[var(--background)] rounded-[32px] border border-[var(--border)] overflow-hidden shadow-2xl shadow-black/50">
+                    <GlassmorphicCard intensity="heavy" radius="32px" className="border border-white/10 shadow-2xl overflow-hidden">
                         {/* Header */}
-                        <div className="relative p-8 text-center border-b border-[var(--border)]">
-                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--error)] via-[var(--secondary)] to-[var(--error)]" />
+                        <div className="relative p-6 text-center border-b border-white/5 flex flex-col items-center">
+                            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#9673F5] via-[#E5A93C] to-[#2BB288]" />
                             
-                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--foreground)]/5 border-2 border-[var(--border)] flex items-center justify-center">
-                                <Swords size={40} className="text-[var(--foreground)]" />
+                            <div className="w-14 h-14 mb-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[var(--accent)]">
+                                <Swords size={28} className="animate-pulse" />
                             </div>
                             
-                            <h2 className="text-2xl font-black text-[var(--foreground)] italic tracking-tight">THE PIT</h2>
-                            <p className="text-[var(--error)] text-[10px] font-mono uppercase tracking-[0.3em] mt-2">
+                            <h2 className="text-xl font-black text-white italic tracking-tight uppercase">THE PIT</h2>
+                            <p className="text-[9px] font-black tracking-[0.25em] uppercase text-zinc-500 mt-1">
                                 {status === 'WAITING' ? 'Awaiting Challenger' : status === 'READY' ? 'Ready to Start!' : 'In Progress'}
                             </p>
                         </div>
 
                         {/* Code Display */}
-                        <div className="p-6 border-b border-[var(--border)]">
-                            <p className="text-[10px] text-[var(--foreground-muted)] font-bold uppercase tracking-widest text-center mb-3">Share This Code</p>
+                        <div className="p-5 border-b border-white/5 text-center">
+                            <p className="text-[8px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-2.5">LOBBY ACCESS CODE</p>
                             <button
                                 onClick={handleCopyCode}
-                                className="w-full group"
+                                className="w-full group focus:outline-none"
                             >
-                                <div className="px-8 py-5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--error)]/20 hover:border-[var(--error)]/40 transition-all">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-4xl font-mono font-black text-[var(--foreground)] tracking-[0.3em]">
-                                            {code.split('').map((char, i) => (
-                                                <span key={i} className="inline-block animate-pulse" style={{ animationDelay: `${i * 0.1}s` }}>
-                                                    {char}
-                                                </span>
-                                            ))}
-                                        </p>
-                                        <div className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500/20 text-emerald-500' : 'bg-[var(--foreground)]/5 text-[var(--foreground-muted)] group-hover:text-[var(--foreground)]'}`}>
-                                            {copied ? <Check size={20} /> : <Copy size={20} />}
-                                        </div>
+                                <div className="px-6 py-4 rounded-2xl bg-zinc-950/40 border border-white/5 group-hover:border-white/10 transition-all flex items-center justify-between">
+                                    <p className="text-3xl font-mono font-black text-white tracking-[0.3em] flex-1 text-center pl-4">
+                                        {code}
+                                    </p>
+                                    <div className={cn(
+                                        "p-2.5 rounded-xl transition-all shrink-0",
+                                        copied 
+                                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                                            : "bg-white/5 text-zinc-400 group-hover:text-white group-hover:bg-white/10 border border-white/5"
+                                    )}>
+                                        {copied ? <Check size={16} /> : <Copy size={16} />}
                                     </div>
                                 </div>
                             </button>
                         </div>
 
                         {/* Participants */}
-                        <div className="p-6 space-y-4">
-                            <p className="text-[10px] text-[var(--foreground-muted)] font-bold uppercase tracking-widest text-center mb-4">Gladiators</p>
+                        <div className="p-5 space-y-3">
+                            <p className="text-[8px] text-zinc-500 font-black uppercase tracking-[0.2em] text-center mb-1">GLADIATORS</p>
                             
                             {/* Host */}
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--foreground)]/[0.03] border border-[var(--border)]">
-                                <div className="w-12 h-12 rounded-xl bg-[var(--secondary)]/20 flex items-center justify-center text-lg font-black text-[var(--secondary)]">
+                            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                                <div className="w-10 h-10 rounded-xl bg-[#9673F5]/10 border border-[#9673F5]/20 flex items-center justify-center text-sm font-black text-[#9673F5]">
                                     {hostState.avatar ? (
                                         <img src={hostState.avatar} alt={hostState.name} className="w-full h-full rounded-xl object-cover" />
                                     ) : (
@@ -312,16 +314,19 @@ export default function DuelLobby({
                                     )}
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-bold text-[var(--foreground)]">{hostState.name} {isHost && <span className="text-[var(--accent)]">👑</span>}</p>
-                                    <p className="text-[10px] text-[var(--foreground-muted)]">Level {hostState.streak || 1} Scholar</p>
+                                    <div className="flex items-center gap-1">
+                                        <span className="font-bold text-white text-xs">{hostState.name}</span>
+                                        {isHost && <span className="text-[var(--accent)] text-xs">👑</span>}
+                                    </div>
+                                    <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Level {hostState.streak || 1} Scholar</p>
                                 </div>
-                                <div className="text-right flex items-center gap-3">
-                                    <p className="text-sm font-bold text-[var(--foreground)]">{hostState.xp || 0} XP</p>
+                                <div className="text-right flex items-center gap-2.5">
+                                    <p className="text-xs font-bold text-white">{hostState.xp || 0} XP</p>
                                     <span className={cn(
-                                        "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                                        "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
                                         hostState.session?.isReady 
                                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                                            : "bg-zinc-800/50 text-zinc-500 border-zinc-700/50"
+                                            : "bg-zinc-900 text-zinc-500 border-white/5"
                                     )}>
                                         {hostState.session?.isReady ? "Locked In" : "Deciding"}
                                     </span>
@@ -329,10 +334,10 @@ export default function DuelLobby({
                             </div>
 
                             {/* Challenger */}
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--foreground)]/[0.03] border border-[var(--border)]">
+                            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
                                 {challenger ? (
                                     <>
-                                        <div className="w-12 h-12 rounded-xl bg-[var(--success)]/20 flex items-center justify-center text-lg font-black text-[var(--success)]">
+                                        <div className="w-10 h-10 rounded-xl bg-[#2BB288]/10 border border-[#2BB288]/20 flex items-center justify-center text-sm font-black text-[#2BB288]">
                                             {challenger.avatar ? (
                                                 <img src={challenger.avatar} alt={challenger.name} className="w-full h-full rounded-xl object-cover" />
                                             ) : (
@@ -340,16 +345,16 @@ export default function DuelLobby({
                                             )}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-bold text-[var(--foreground)]">{challenger.name}</p>
-                                            <p className="text-[10px] text-[var(--foreground-muted)]">Level {challenger.streak || 1} Scholar</p>
+                                            <p className="font-bold text-white text-xs">{challenger.name}</p>
+                                            <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Level {challenger.streak || 1} Scholar</p>
                                         </div>
-                                        <div className="text-right flex items-center gap-3">
-                                            <p className="text-sm font-bold text-[var(--foreground)]">{challenger.xp || 0} XP</p>
+                                        <div className="text-right flex items-center gap-2.5">
+                                            <p className="text-xs font-bold text-white">{challenger.xp || 0} XP</p>
                                             <span className={cn(
-                                                "text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
+                                                "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
                                                 challenger.session?.isReady 
                                                     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 animate-pulse" 
-                                                    : "bg-zinc-800/50 text-zinc-500 border-zinc-700/50"
+                                                    : "bg-zinc-900 text-zinc-500 border-white/5"
                                             )}>
                                                 {challenger.session?.isReady ? "Locked In" : "Deciding"}
                                             </span>
@@ -357,13 +362,13 @@ export default function DuelLobby({
                                     </>
                                 ) : (
                                     <>
-                                        <div className="w-12 h-12 rounded-xl bg-[var(--foreground)]/5 flex items-center justify-center">
-                                            <Hourglass size={20} className="text-[var(--foreground-muted)] animate-pulse" />
+                                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
+                                            <Hourglass size={16} className="text-zinc-500 animate-pulse" />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-[var(--foreground-muted)] italic font-medium tracking-tight">Awaiting Challenger...</p>
+                                            <p className="text-zinc-500 italic text-[11px] font-medium tracking-tight animate-pulse">Waiting for classmate...</p>
                                         </div>
-                                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border bg-zinc-800/50 text-zinc-500 border-zinc-700/50">
+                                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border bg-zinc-900/50 text-zinc-500 border-white/5">
                                             Waiting
                                         </span>
                                     </>
@@ -372,40 +377,38 @@ export default function DuelLobby({
                         </div>
 
                         {/* Quiz Info */}
-                        <div className="px-6 pb-4">
-                            <div className="p-4 rounded-xl bg-[var(--foreground)]/[0.03] border border-[var(--border)]">
-                                <div className="flex items-center gap-3">
-                                    <QuizIcon size={20} className="text-[var(--foreground-muted)]" />
-                                    <div>
-                                        <p className="text-sm font-black text-[var(--foreground)] tracking-tight">{generation.title}</p>
-                                        <p className="text-[10px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest">{generation.questionCount} Questions • {Math.floor(timeLimit / 60)} min limit</p>
-                                    </div>
+                        <div className="px-5 pb-3">
+                            <div className="p-3.5 rounded-2xl bg-zinc-950/20 border border-white/5 flex items-center gap-3">
+                                <QuizIcon size={16} className="text-zinc-500" />
+                                <div>
+                                    <p className="text-xs font-black text-white tracking-tight leading-tight">{generation.title}</p>
+                                    <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">{generation.questionCount} Questions • {Math.floor(timeLimit / 60)} min limit</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="p-6 border-t border-[var(--border)]">
+                        <div className="p-5 border-t border-white/5 bg-zinc-950/20">
                             {isHost ? (
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex gap-3">
+                                <div className="flex flex-col gap-2.5">
+                                    <div className="flex gap-2">
                                         <button
                                             onClick={handleCancel}
-                                            className="flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 transition-all border border-[var(--border)]"
+                                            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-all border border-white/5 cursor-pointer"
                                         >
-                                            Abandon Room
+                                            Abandon
                                         </button>
                                         <button
                                             onClick={handleReady}
                                             disabled={!challenger}
                                             className={cn(
-                                                "flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all active:scale-[0.98] border",
+                                                "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer",
                                                 isReady 
-                                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                                                    : "bg-[var(--foreground)] text-[var(--background)] border-[var(--foreground)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 animate-pulse" 
+                                                    : "bg-white text-zinc-950 border-white hover:bg-white/90 disabled:opacity-30 disabled:cursor-not-allowed"
                                             )}
                                         >
-                                            {isReady ? "Locked In ✓" : "Lock In 🔒"}
+                                            {isReady ? "Ready ✓" : "Lock In 🔒"}
                                         </button>
                                     </div>
                                     {challenger && (
@@ -413,10 +416,10 @@ export default function DuelLobby({
                                             onClick={handleStart}
                                             disabled={!challenger?.session?.isReady}
                                             className={cn(
-                                                "w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+                                                "w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-md",
                                                 challenger?.session?.isReady
-                                                    ? "bg-white text-black hover:bg-white/90 shadow-[0_4px_20px_rgba(255,255,255,0.15)]"
-                                                    : "bg-zinc-900 text-zinc-500 border border-zinc-800"
+                                                    ? "bg-[var(--accent)] text-zinc-950 hover:opacity-95"
+                                                    : "bg-zinc-900 text-zinc-500 border border-white/5 cursor-not-allowed"
                                             )}
                                         >
                                             {challenger?.session?.isReady ? "Start Quiz ⚔️" : "Waiting for Gladiator to Lock In..."}
@@ -424,29 +427,29 @@ export default function DuelLobby({
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex gap-3">
+                                <div className="flex gap-2">
                                     <button
                                         onClick={handleCancel}
-                                        className="flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 transition-all border border-[var(--border)]"
+                                        className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-all border border-white/5 cursor-pointer"
                                     >
-                                        Leave Room
+                                        Leave
                                     </button>
                                     <button
                                         onClick={handleReady}
                                         disabled={!challenger}
                                         className={cn(
-                                            "flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+                                            "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer",
                                             isReady 
-                                                ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" 
-                                                : "bg-[var(--foreground)] text-[var(--background)] hover:opacity-90"
+                                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+                                                : "bg-white text-zinc-950 border-white hover:bg-white/90 disabled:opacity-30 disabled:cursor-not-allowed"
                                         )}
                                     >
-                                        {isReady ? "Locked In ✓" : "Lock In 🔒"}
+                                        {isReady ? "Ready ✓" : "Lock In 🔒"}
                                     </button>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </GlassmorphicCard>
                 </motion.div>
             </div>
         </div>

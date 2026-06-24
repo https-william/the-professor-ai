@@ -39,7 +39,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
     };
 
     return (
-        <div className="p-6 md:p-8 rounded-[2.5rem] bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-8 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-6 md:my-8 animate-in slide-in-from-bottom-4 duration-500">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Zap size={40} className="text-[var(--accent)]" />
             </div>
@@ -50,7 +50,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">Professor's Spot Check</span>
                 </div>
                 
-                <h5 className="text-[13px] font-bold text-[var(--foreground)] mb-6 leading-relaxed">
+                <h5 className="text-[13px] font-bold text-[var(--foreground)] mb-4 leading-relaxed">
                     {data.question}
                 </h5>
 
@@ -66,7 +66,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                                 onClick={() => handleSelect(i)}
                                 disabled={isPassed || isSelected}
                                 className={cn(
-                                    "w-full p-5 text-left text-[11px] font-bold rounded-2xl transition-all border flex items-center gap-4 group/opt relative overflow-hidden",
+                                    "w-full p-4 md:p-5 text-left text-[10px] md:text-[11px] font-bold rounded-xl md:rounded-2xl transition-all border flex items-center gap-4 group/opt relative overflow-hidden",
                                     showFeedback 
                                         ? isCorrect 
                                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_8px_32px_rgba(16,185,129,0.1)]" 
@@ -189,32 +189,20 @@ export const InteractiveSummary = ({
         return blocks;
     }, [refinedText]);
 
-    // Determine blocks to display based on progressive unlocking
+    // Determine blocks to display (all blocks immediately accessible)
     const visibleBlocks = useMemo(() => {
-        if (isStreaming) return parsedBlocks; // Show all blocks during streaming
-
-        const visible: ContentBlock[] = [];
-        for (const block of parsedBlocks) {
-            visible.push(block);
-            if (block.type === "checkpoint" && !completedCheckpoints.includes(block.id)) {
-                break; // Lock further rendering until this checkpoint is cleared
-            }
-        }
-        return visible;
-    }, [parsedBlocks, completedCheckpoints, isStreaming]);
+        return parsedBlocks;
+    }, [parsedBlocks]);
 
     const allCheckpoints = useMemo(() => {
         return parsedBlocks.filter(b => b.type === "checkpoint");
     }, [parsedBlocks]);
 
-    const isLocked = useMemo(() => {
-        if (isStreaming) return false;
-        return allCheckpoints.some(c => !completedCheckpoints.includes(c.id));
-    }, [allCheckpoints, completedCheckpoints, isStreaming]);
+    const isLocked = false;
 
     return (
-        <div className="relative w-full min-h-full p-4 sm:p-6 flex flex-col">
-            <div className="relative z-10 space-y-6">
+        <div className="relative w-full min-h-full p-3 sm:p-6 flex flex-col">
+            <div className="relative z-10 space-y-4 md:space-y-6">
                 <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
@@ -296,7 +284,7 @@ export const InteractiveSummary = ({
                                       ))}
                                    </div>
                                )}
-                                <div className="space-y-4">
+                                <div className="space-y-3 md:space-y-4">
                                     {visibleBlocks.map((block) => {
                                         if (block.type === "markdown") {
                                             return (
@@ -340,7 +328,7 @@ export const InteractiveSummary = ({
                     </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 pt-6 border-t border-[var(--border)] mt-8 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 pt-4 border-t border-[var(--border)] mt-6 pb-2">
                     {onFinish && (
                         <button
                             onClick={() => {

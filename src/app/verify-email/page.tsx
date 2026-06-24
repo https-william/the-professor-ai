@@ -3,87 +3,62 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 import { Suspense } from "react";
+import { motion } from "framer-motion";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "your inbox";
 
   return (
-    <div style={{
-      minHeight: "100dvh",
-      background: "var(--bg)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "24px",
-      position: "relative",
-    }}>
-      {/* Decorative glow */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[var(--blue)]/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden bg-zinc-950 font-sans">
+      {/* Cinematic Background Blur */}
+      <div className="absolute inset-0 bg-[#06060B]/90 backdrop-blur-[100px] pointer-events-none z-0" />
       
-      <div style={{ 
-        width: "100%", 
-        maxWidth: "460px",
-        background: "rgba(255, 255, 255, 0.03)",
-        border: "1px solid var(--border)",
-        borderRadius: "2rem",
-        padding: "40px 32px",
-        textAlign: "center",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        position: "relative",
-        zIndex: 1,
-      }}>
+      {/* Ambient background glows */}
+      <motion.div 
+        className="absolute w-[500px] h-[500px] rounded-full mix-blend-screen opacity-20 pointer-events-none z-0"
+        style={{ background: "radial-gradient(circle, rgba(229,169,60,0.15) 0%, rgba(150,115,245,0.08) 50%, transparent 70%)", filter: "blur(120px)", top: "15%", left: "10%" }}
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      <GlassmorphicCard 
+        intensity="heavy"
+        radius="2rem"
+        className="relative z-10 w-full max-w-[460px] p-8 sm:p-10 shadow-2xl text-center flex flex-col items-center"
+      >
         {/* Logo */}
-        <div style={{ display: "inline-flex", marginBottom: "24px" }}>
+        <div className="inline-flex items-center justify-center mb-6">
           <BrandLogo size="md" />
         </div>
 
-        <h1 style={{
-          fontFamily: "var(--font-heading)",
-          fontSize: "26px",
-          fontWeight: 900,
-          color: "var(--text)",
-          letterSpacing: "-0.02em",
-          marginBottom: "16px",
-        }}>
+        <h1 className="text-2xl font-black text-white tracking-tight uppercase italic mb-4">
           Check your inbox! ✉️
         </h1>
 
-        <p style={{
-          fontFamily: "var(--font-serif)",
-          fontSize: "15px",
-          lineHeight: "1.6",
-          color: "var(--text-2)",
-          marginBottom: "28px",
-        }}>
-          We just sent a magic confirmation link to <strong style={{ color: "var(--text)" }}>{email}</strong>. 
+        <p className="text-white/60 font-medium text-sm leading-relaxed mb-8">
+          We just sent a magic confirmation link to <strong className="text-white">{email}</strong>. 
           Click the link in that email so we can verify it's really you, and we'll get you started on the good stuff.
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <Link href="/login" className="btn-jelly-primary" style={{ width: "100%", textDecoration: "none" }}>
+        <div className="w-full flex flex-col gap-4">
+          <Link 
+            href="/login" 
+            className="w-full h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-neutral-900 border border-amber-500/30 hover:shadow-[0_8px_30px_rgba(229,169,60,0.3)] shadow-[0_4px_15px_rgba(229,169,60,0.15)] rounded-2xl font-black text-xs tracking-[0.2em] uppercase flex items-center justify-center transition-all active:scale-98 hover:scale-[1.01] duration-300"
+          >
             Got it, go to login
           </Link>
           
-          <Link href="/signup" style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: "13px",
-            color: "var(--text-3)",
-            textDecoration: "none",
-            fontWeight: 600,
-            padding: "8px",
-            transition: "color 150ms ease",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = "var(--text)"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-3)"; }}
+          <Link 
+            href="/signup" 
+            className="text-xs font-black uppercase tracking-wider text-white/40 hover:text-white transition-colors py-2"
           >
             Entered the wrong email? Sign up again
           </Link>
         </div>
-      </div>
+      </GlassmorphicCard>
     </div>
   );
 }
@@ -91,8 +66,8 @@ function VerifyEmailContent() {
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#08080E", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: "32px", height: "32px", border: "3px solid rgba(37,99,235,0.3)", borderTopColor: "#2563EB", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
       </div>
     }>
       <VerifyEmailContent />

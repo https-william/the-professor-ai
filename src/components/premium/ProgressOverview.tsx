@@ -12,8 +12,8 @@ interface StatItemProps {
 function StatItem({ icon: Icon, label, value }: StatItemProps) {
     return (
         <div className="flex flex-col items-center text-center gap-3 py-2">
-            <div className="w-10 h-10 rounded-xl bg-[#C4A35A]/10 border border-[#C4A35A]/20 flex items-center justify-center">
-                <Icon className="w-5 h-5 text-[#C4A35A]" />
+            <div className="w-10 h-10 rounded-xl bg-[#E5A93C]/10 border border-[#E5A93C]/20 flex items-center justify-center">
+                <Icon className="w-5 h-5 text-[#E5A93C]" />
             </div>
             <div>
                 <div className="text-2xl font-serif font-medium text-[#F5F0E8] tracking-tight">{value}</div>

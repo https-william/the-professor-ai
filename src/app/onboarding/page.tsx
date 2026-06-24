@@ -27,12 +27,13 @@ import {
     Sparkles, 
     ChevronLeft, 
     ChevronRight, 
-    LogIn,
     Trophy,
 } from "lucide-react";
+import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
 
 /* ═══ Glassmorphism Helpers ═══ */
 const clay = {
+
     card: {
         background: "linear-gradient(160deg, rgba(20, 20, 28, 0.85) 0%, rgba(10, 10, 14, 0.98) 100%)",
         backdropFilter: "blur(40px)",
@@ -111,7 +112,6 @@ export default function OnboardingPage() {
         }
     }, []);
 
-    // Auto-onboard/bypass to remove friction
     useEffect(() => {
         if (mounted && user.isAuthenticated && !user.hasOnboarded && !isBypassing) {
             setIsBypassing(true);
@@ -168,7 +168,7 @@ export default function OnboardingPage() {
             <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 font-sans bg-[var(--background)] relative">
                 <div className="absolute inset-0 bg-[#06060B]/90 backdrop-blur-[100px]" />
                 <div className="relative z-10 flex flex-col items-center gap-6 p-10 rounded-[32px] bg-[var(--card)] border border-white/10 shadow-2xl text-center max-w-sm">
-                    <div className="w-16 h-16 rounded-3xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center text-[var(--blue)] animate-spin shadow-[0_0_30px_var(--blue-glow)]">
+                    <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 animate-spin shadow-[0_0_30px_rgba(229,169,60,0.15)]">
                         <RotateCw className="w-8 h-8" />
                     </div>
                     <div>
@@ -249,7 +249,7 @@ export default function OnboardingPage() {
             if (nextUrl) {
                 router.push(nextUrl);
             } else {
-                router.push("/create");
+                router.push("/dashboard");
             }
         } else {
             setSaveError("Could not complete onboarding. Let's try that one more time.");
@@ -279,7 +279,7 @@ export default function OnboardingPage() {
         });
         setIsSaving(false);
         if (success) {
-            router.push("/create");
+            router.push("/dashboard");
         } else {
             setSaveError("Could not bypass onboarding. Please try again.");
         }
@@ -306,13 +306,13 @@ export default function OnboardingPage() {
             {/* Ambient Orbs */}
             <motion.div 
                 className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-30 pointer-events-none"
-                style={{ background: "radial-gradient(circle, rgba(37,99,235,0.18) 0%, rgba(139,92,246,0.08) 50%, transparent 70%)", filter: "blur(120px)" }}
+                style={{ background: "radial-gradient(circle, rgba(229,169,60,0.15) 0%, rgba(150,115,245,0.08) 50%, transparent 70%)", filter: "blur(120px)" }}
                 animate={{ scale: [1, 1.15, 1], x: [0, 20, 0], y: [0, -20, 0] }}
                 transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             />
 
             {/* Modal Container */}
-            <div className="relative z-10 w-full max-w-[480px] overflow-hidden bg-[var(--card)] shadow-2xl" style={clay.card}>
+            <GlassmorphicCard intensity="heavy" radius="32px" className="relative z-10 w-full max-w-[480px] overflow-hidden shadow-2xl">
                 
                 {/* Embedded Top Progress Bar */}
                 {step > 1 && step < 4 && (
@@ -341,14 +341,14 @@ export default function OnboardingPage() {
                                             value={firstName} 
                                             onChange={e => setFirstName(e.target.value)} 
                                             placeholder="First Name" 
-                                            className="w-1/2 px-5 py-4 font-bold text-white outline-none placeholder:text-white/30 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-blue-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(37,99,235,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
+                                            className="w-1/2 px-5 py-4 font-bold text-white outline-none placeholder:text-white/30 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
                                         />
                                         <input 
                                             type="text" 
                                             value={lastName} 
                                             onChange={e => setLastName(e.target.value)} 
                                             placeholder="Last Name" 
-                                            className="w-1/2 px-5 py-4 font-bold text-white outline-none placeholder:text-white/30 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-blue-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(37,99,235,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
+                                            className="w-1/2 px-5 py-4 font-bold text-white outline-none placeholder:text-white/30 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
                                         />
                                     </div>
                                     <div className="relative">
@@ -357,7 +357,7 @@ export default function OnboardingPage() {
                                             value={username} 
                                             onChange={e => setUsername(e.target.value.toLowerCase())} 
                                             placeholder="Choose a Handle (@)" 
-                                            className="w-full px-5 py-4 font-bold text-white outline-none placeholder:text-white/30 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-blue-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(37,99,235,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)] pr-12" 
+                                            className="w-full px-5 py-4 font-bold text-white outline-none placeholder:text-white/30 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)] pr-12" 
                                         />
                                         <div className="absolute right-5 top-1/2 -translate-y-1/2">
                                             {usernameStatus === "checking" && <RotateCw size={20} className="animate-spin text-white/30" />}
@@ -375,7 +375,7 @@ export default function OnboardingPage() {
                                         <button
                                             type="button"
                                             onClick={handleSkipOnboarding}
-                                            className="text-xs font-black uppercase tracking-wider text-[var(--blue-text)] hover:text-white transition-colors hover:underline cursor-pointer"
+                                            className="text-xs font-black uppercase tracking-wider text-amber-500/80 hover:text-white transition-colors hover:underline cursor-pointer"
                                         >
                                             Skip straight to Study Studio (Save 3 minutes)
                                         </button>
@@ -400,7 +400,7 @@ export default function OnboardingPage() {
                                             value={age} 
                                             onChange={e => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))} 
                                             placeholder="e.g. 21" 
-                                            className="w-full px-4 py-3.5 font-black text-white text-center text-2xl outline-none placeholder:text-white/20 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-blue-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(37,99,235,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
+                                            className="w-full px-4 py-3.5 font-black text-white text-center text-2xl outline-none placeholder:text-white/20 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.06] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]" 
                                         />
                                     </div>
                                     <div className="flex-1 flex flex-col gap-1.5">
@@ -412,7 +412,7 @@ export default function OnboardingPage() {
                                                     onClick={() => setEduLevel(l.id)} 
                                                     className={`py-3.5 rounded-2xl border transition-all duration-300 active:scale-[0.97] hover:scale-[1.01] text-center ${
                                                         eduLevel === l.id 
-                                                            ? 'bg-gradient-to-br from-blue-600/25 via-indigo-600/15 to-transparent border-blue-500/50 text-white font-bold shadow-[0_4px_15px_rgba(37,99,235,0.2)]' 
+                                                            ? 'bg-gradient-to-br from-amber-500/20 via-violet-500/10 to-transparent border-amber-500/30 text-white font-bold shadow-[0_4px_15px_rgba(229,169,60,0.15)]' 
                                                             : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04] text-white/40 hover:text-white'
                                                     }`}
                                                 >
@@ -437,7 +437,7 @@ export default function OnboardingPage() {
                                                     onClick={() => togglePainPoint(p.id)} 
                                                     className={`w-full flex items-center p-3.5 rounded-xl border transition-all duration-300 active:scale-[0.98] hover:scale-[1.01] ${
                                                         isSelected 
-                                                            ? 'bg-gradient-to-br from-blue-600/20 to-indigo-600/10 border-blue-500/40 text-white font-bold shadow-[0_4px_12px_rgba(37,99,235,0.15)]' 
+                                                            ? 'bg-gradient-to-br from-amber-500/20 via-violet-500/10 to-transparent border-amber-500/30 text-white font-bold shadow-[0_4px_12px_rgba(229,169,60,0.15)]' 
                                                             : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04] text-white/40 hover:text-white'
                                                     }`}
                                                 >
@@ -469,11 +469,11 @@ export default function OnboardingPage() {
                                                 onClick={() => setCommitment(c.id)} 
                                                 className={`w-full flex items-center p-4 rounded-2xl border transition-all duration-300 active:scale-[0.98] hover:scale-[1.01] ${
                                                     isSelected 
-                                                        ? 'bg-gradient-to-br from-blue-600/25 via-indigo-600/15 to-transparent border-blue-500/50 text-white font-bold shadow-[0_4px_15px_rgba(37,99,235,0.2)]' 
+                                                        ? 'bg-gradient-to-br from-amber-500/20 via-violet-500/10 to-transparent border-amber-500/30 text-white font-bold shadow-[0_4px_15px_rgba(229,169,60,0.15)]' 
                                                         : 'bg-white/[0.02] border-white/5 hover:border-white/15 hover:bg-white/[0.04] text-white/40 hover:text-white'
                                                 }`}
                                             >
-                                                <div className={`p-2.5 rounded-xl mr-4 ${isSelected ? 'bg-blue-500/20 text-white' : 'bg-white/[0.03] text-white/30'}`}>
+                                                <div className={`p-2.5 rounded-xl mr-4 ${isSelected ? 'bg-amber-500/20 text-white' : 'bg-white/[0.03] text-white/30'}`}>
                                                     <c.icon size={20} />
                                                 </div>
                                                 <div className="text-left">
@@ -585,7 +585,7 @@ export default function OnboardingPage() {
                                 className={`flex-1 h-14 rounded-2xl font-black text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-[0.97] duration-300 border ${
                                     (isSaving || (step === 1 && (!firstName || !lastName || !username || usernameStatus !== "available")) || (step === 2 && (!age || parseInt(age) < 10 || !eduLevel || selectedPainPoints.length === 0)) || (step === 3 && !commitment))
                                         ? "bg-white/[0.02] text-white/20 border-white/5 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-blue-500/30 hover:shadow-[0_8px_30px_rgba(37,99,235,0.35)] shadow-[0_4px_15px_rgba(37,99,235,0.2)] hover:scale-[1.01]"
+                                        : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-neutral-900 border-amber-500/30 hover:shadow-[0_8px_30px_rgba(229,169,60,0.3)] shadow-[0_4px_15px_rgba(229,169,60,0.15)] hover:scale-[1.01]"
                                 }`}
                             >
                                 {isSaving || usernameStatus === "checking" ? (
@@ -601,7 +601,7 @@ export default function OnboardingPage() {
                             <button
                                 onClick={handleFinish}
                                 disabled={isSaving}
-                                className="flex-1 h-16 rounded-2xl font-black text-[13px] tracking-[0.15em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.97] px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:scale-[1.01] border border-amber-400/20"
+                                className="flex-1 h-16 rounded-2xl font-black text-[13px] tracking-[0.15em] uppercase flex items-center justify-center gap-3 transition-all active:scale-[0.97] px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-neutral-900 shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:scale-[1.01] border border-amber-400/20"
                             >
                                 {isSaving ? <RotateCw size={24} className="animate-spin" /> : "Launch Study Studio"}
                                 {!isSaving && <Zap size={20} />}
@@ -609,7 +609,7 @@ export default function OnboardingPage() {
                         )}
                     </div>
                 </div>
-            </div>
+            </GlassmorphicCard>
         </div>
     );
 }
