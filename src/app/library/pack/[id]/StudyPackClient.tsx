@@ -1395,7 +1395,16 @@ export default function StudyPackPage() {
     return (
         <div className="min-h-screen bg-transparent pb-16 pt-12 transition-all duration-700">
             <StandardContainer className="print-hidden">
-                {isGuest && (
+                <AnimatePresence mode="wait">
+                    {viewingPhaseIndex === null && (
+                        <motion.div
+                            key="overview"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="flex flex-col"
+                        >
+                            {isGuest && (
                   <div className="mb-6 p-4 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-between gap-4">
                     <p className="text-xs text-[var(--foreground)] font-medium leading-relaxed">
                       <span className="font-black text-[var(--blue)]">Guest view.</span> Sign up to save your progress and build your own study packs.
@@ -1645,6 +1654,9 @@ export default function StudyPackPage() {
                             >
                                 Get the Verdict <ArrowRight size={16} className="group-hover-translate-x-sm transition-transform" />
                             </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                         </motion.div>
                     )}
                 </AnimatePresence>
