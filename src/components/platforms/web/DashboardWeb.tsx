@@ -148,11 +148,18 @@ export default function DashboardWeb({
     // ─── Scholar Aura calculation ───
     const auraScore = Math.min(100, Math.max(0, (userStreak * 5) + Math.min(50, userXp / 100)));
     const auraData = useMemo(() => {
-        if (auraScore >= 90) return { label: "Limitless", color: { stroke: "var(--blue)", glow: "rgba(37,99,235,0.8)", text: "text-blue-400" }, icon: Sparkles };
-        if (auraScore >= 70) return { label: "Locked In", color: { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.6)", text: "text-emerald-400" }, icon: Target };
-        if (auraScore >= 40) return { label: "Cooking", color: { stroke: "var(--amber)", glow: "rgba(229,169,60,0.6)", text: "text-amber-400" }, icon: Flame };
-        return { label: "Needs Coffee", color: { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.4)", text: "text-rose-400" }, icon: Clock };
+        if (auraScore >= 90) return { label: "Limitless", color: { stroke: "var(--blue)", glow: "rgba(37,99,235,0.4)", text: "text-blue-400" }, icon: Sparkles };
+        if (auraScore >= 70) return { label: "Locked In", color: { stroke: "var(--emerald)", glow: "rgba(43,178,136,0.3)", text: "text-emerald-400" }, icon: Target };
+        if (auraScore >= 40) return { label: "Cooking", color: { stroke: "var(--amber)", glow: "rgba(229,169,60,0.3)", text: "text-amber-400" }, icon: Flame };
+        return { label: "Low Aura", color: { stroke: "var(--crimson)", glow: "rgba(232,93,117,0.2)", text: "text-rose-400" }, icon: Clock };
     }, [auraScore]);
+
+    const auraMessage = useMemo(() => {
+        if (auraScore >= 90) return `You're literally untouchable right now. With a ${userStreak}-day streak and ${userXp.toLocaleString()} XP, exams are a joke.`;
+        if (auraScore >= 70) return `Solid momentum. You've stacked ${userXp.toLocaleString()} XP. Don't let the ${userStreak}-day streak die.`;
+        if (auraScore >= 40) return `You're getting there with ${userXp.toLocaleString()} XP, but we need more reps. Start a sprint.`;
+        return `Aura is dangerously low. Your bed misses you, but so do your grades. Wake up.`;
+    }, [auraScore, userStreak, userXp]);
 
     // ─── Social proof / Dynamic Insight ───
     const socialProof = useMemo(() => {
@@ -440,16 +447,16 @@ export default function DashboardWeb({
                                                     <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
                                                         <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.02)" strokeWidth="10" fill="transparent" strokeDasharray="188.4 62.8" strokeLinecap="round" />
                                                         <motion.circle cx="50" cy="50" r="40" stroke={auraData.color.stroke} strokeWidth="10" fill="transparent"
-                                                            style={{ filter: `drop-shadow(0 0 8px ${auraData.color.glow})` }}
+                                                            style={{ filter: `drop-shadow(0 0 4px ${auraData.color.glow})` }}
                                                             strokeDasharray="188.4 62.8"
                                                             initial={{ strokeDashoffset: 188.4 }}
                                                             animate={{ strokeDashoffset: 188.4 * (1 - auraScore / 100) }}
                                                             transition={{ duration: 1.2, ease: "easeOut" }}
                                                             strokeLinecap="round" />
                                                     </svg>
-                                                    <div className="absolute flex flex-col items-center justify-center">
-                                                        <auraData.icon size={12} className={cn("mb-0.5", auraData.color.text)} />
-                                                        <span className={cn("text-[6px] font-black uppercase tracking-widest leading-none mt-0.5", auraData.color.text)}>{auraData.label}</span>
+                                                    <div className="absolute flex flex-col items-center justify-center pt-0.5">
+                                                        <auraData.icon size={10} className={cn("mb-1", auraData.color.text)} />
+                                                        <span className={cn("text-[5px] font-black uppercase tracking-[0.2em] leading-none text-center px-2", auraData.color.text)}>{auraData.label}</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -497,10 +504,7 @@ export default function DashboardWeb({
                                         ) : (
                                             <div className="space-y-2">
                                                 <p className="text-[11px] font-bold text-white/60 leading-relaxed text-center">
-                                                    {auraScore >= 90 ? "You're literally untouchable right now. Keep this up and exams are a joke." : 
-                                                     auraScore >= 70 ? "Solid momentum. Don't let the streak die, stay locked in." : 
-                                                     auraScore >= 40 ? "You're getting there, but we need more reps. Start a sprint." : 
-                                                     "Aura is dangerously low. Your bed misses you, but so do your grades. Wake up."}
+                                                    {auraMessage}
                                                 </p>
                                                 <p className="text-[10px] text-white/40 font-bold text-center">{socialProof}</p>
                                             </div>

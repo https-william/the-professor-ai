@@ -205,7 +205,7 @@ export default function WeeklyWrappedModal({
                       <span className="text-[var(--violet)]">In Review.</span>
                     </h2>
                     <p className="text-lg text-[var(--foreground-secondary)] font-medium font-serif italic max-w-sm mx-auto leading-relaxed pt-2">
-                      "Ayo, {firstName}! You didn't come to play this week. Let's see how much sleep you traded for these study sprints."
+                      "Look, {firstName}! You didn't come to play this week. Let's see how much sleep you traded for these study sprints."
                     </p>
                   </div>
                 )}
