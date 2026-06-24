@@ -21,8 +21,8 @@ export default function SubjectRenderer({ subjectType, phasesData, sourceText }:
             <div className="space-y-8">
                 <CalculationGrid data={phasesData.distill || sourceText} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                    <InteractiveFlashcards data={phasesData.retain} />
-                    <InteractiveQuiz data={phasesData.test} />
+                    <InteractiveFlashcards cards={phasesData.retain} />
+                    <InteractiveQuiz questions={phasesData.test} />
                 </div>
             </div>
         );
@@ -33,8 +33,8 @@ export default function SubjectRenderer({ subjectType, phasesData, sourceText }:
             <div className="space-y-8">
                 <ConceptTimeline data={phasesData.distill || sourceText} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                    <InteractiveFlashcards data={phasesData.retain} />
-                    <InteractiveQuiz data={phasesData.test} />
+                    <InteractiveFlashcards cards={phasesData.retain} />
+                    <InteractiveQuiz questions={phasesData.test} />
                 </div>
             </div>
         );
@@ -45,8 +45,8 @@ export default function SubjectRenderer({ subjectType, phasesData, sourceText }:
             <div className="space-y-8">
                 <CodePlayground data={phasesData.distill || sourceText} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                    <InteractiveFlashcards data={phasesData.retain} />
-                    <InteractiveQuiz data={phasesData.test} />
+                    <InteractiveFlashcards cards={phasesData.retain} />
+                    <InteractiveQuiz questions={phasesData.test} />
                 </div>
             </div>
         );
@@ -57,8 +57,8 @@ export default function SubjectRenderer({ subjectType, phasesData, sourceText }:
             <div className="space-y-8">
                 <VisualAnatomy data={phasesData.distill || sourceText} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                    <InteractiveFlashcards data={phasesData.retain} />
-                    <InteractiveQuiz data={phasesData.test} />
+                    <InteractiveFlashcards cards={phasesData.retain} />
+                    <InteractiveQuiz questions={phasesData.test} />
                 </div>
             </div>
         );
@@ -68,11 +68,11 @@ export default function SubjectRenderer({ subjectType, phasesData, sourceText }:
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-                <InteractiveSummary content={phasesData.distill} />
-                <InteractiveQuiz data={phasesData.test} />
+                <InteractiveSummary refinedText={phasesData.distill} />
+                <InteractiveQuiz questions={phasesData.test} />
             </div>
             <div className="space-y-8">
-                <InteractiveFlashcards data={phasesData.retain} />
+                <InteractiveFlashcards cards={phasesData.retain} />
             </div>
         </div>
     );
