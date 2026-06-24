@@ -1506,9 +1506,9 @@ export default function StudyPackPage() {
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider mb-2">
                                     <Sparkles size={8} /> SPRINT UNLOCK
                                 </span>
-                                <h3 className="text-sm font-black uppercase tracking-tight text-white mb-1">
+                                <h2 className="text-sm font-black uppercase tracking-tight text-white mb-1">
                                     Unlock Weekly Sprint Pass (₦399)
-                                </h3>
+                                </h2>
                                 <p className="text-xs text-[var(--foreground-muted)] font-medium leading-relaxed max-w-xl">
                                     Get the Feynman vocabulary highlights, active memory deck expansions, and clean PDF exports for offline revision. Cancel in one click anytime.
                                 </p>
@@ -1563,9 +1563,9 @@ export default function StudyPackPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <h3 className="text-base sm:text-lg font-black tracking-tight text-[var(--foreground)] uppercase italic leading-none truncate mb-1">
+                                        <h2 className="text-base sm:text-lg font-black tracking-tight text-[var(--foreground)] uppercase italic leading-none truncate mb-1">
                                             {phase.title}
-                                        </h3>
+                                        </h2>
                                         <div className="text-xs text-[var(--foreground-muted)] font-medium leading-snug line-clamp-2 prose prose-invert prose-p:leading-snug prose-p:m-0">
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {isLocked ? "Complete previous steps to unlock." : phase.desc}
@@ -1622,9 +1622,9 @@ export default function StudyPackPage() {
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue-text)] text-[10px] font-black uppercase tracking-widest mb-4 border border-[var(--blue)]/20 shadow-sm">
                                 <CheckCircle2 size={12} /> All Phases Complete
                             </div>
-                            <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tight text-[var(--foreground)] mb-2">
+                            <h2 className="text-xl sm:text-2xl font-black italic uppercase tracking-tight text-[var(--foreground)] mb-2">
                                 Bedtime Verdict
-                            </h3>
+                            </h2>
                             <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-md">
                                 You've completed all study phases. Let's see what the Professor has to say about your progress tonight.
                             </p>
@@ -1837,7 +1837,7 @@ export default function StudyPackPage() {
                                                 </div>
                                             )}
                                             {currentPhase.id !== 'predict' && (
-                                                <h3 className="text-base sm:text-lg font-black text-[var(--foreground)] italic tracking-tight uppercase">Checking Understanding</h3>
+                                                <h2 className="text-base sm:text-lg font-black text-[var(--foreground)] italic tracking-tight uppercase">Checking Understanding</h2>
                                             )}
                                         </div>
 

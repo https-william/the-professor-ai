@@ -50,9 +50,9 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)]">Professor's Spot Check</span>
                 </div>
                 
-                <h5 className="text-[13px] font-bold text-[var(--foreground)] mb-4 leading-relaxed">
+                <h4 className="text-[13px] font-bold text-[var(--foreground)] mb-4 leading-relaxed">
                     {data.question}
-                </h5>
+                </h4>
 
                 <div className="grid grid-cols-1 gap-3">
                     {data.options.map((opt: string, i: number) => {
