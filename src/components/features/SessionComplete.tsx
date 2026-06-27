@@ -20,6 +20,8 @@ import {
     Milestone,
     Eye,
     Shield,
+    ChevronLeft,
+    ChevronRight,
     BookOpen
 } from "lucide-react";
 import ShareCard from "@/components/ShareCard";
@@ -165,36 +167,11 @@ export default function SessionComplete({
         suggestHref: "/library",
     } : baseConfig;
 
-    // Auto-advance progress timer
+    // Auto-advance progress timer removed to minimize cognitive load and allow users to read at their own pace.
     useEffect(() => {
-        if (!isVisible || isPaused || isShareOpen) return;
-
-        const intervalTime = 50; // Update progress every 50ms
-        const increment = (100 / (SLIDE_DURATION / intervalTime));
-
-        const tick = () => {
-            setSlideProgress(prev => {
-                const next = prev + increment;
-                if (next >= 100) {
-                    if (currentSlide < totalSlides - 1) {
-                        setCurrentSlide(c => c + 1);
-                        return 0;
-                    }
-                    return 100;
-                }
-                return next;
-            });
-        };
-
-        const intervalId = setInterval(tick, intervalTime);
-        progressIntervalRef.current = intervalId as any;
-
-        return () => {
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current);
-            }
-        };
-    }, [currentSlide, isPaused, isVisible, isShareOpen]);
+        if (!isVisible) return;
+        setSlideProgress(100);
+    }, [currentSlide, isVisible]);
 
     const handleNextSlide = () => {
         if (currentSlide < totalSlides - 1) {
@@ -499,10 +476,9 @@ export default function SessionComplete({
                                 return (
                                     <div key={idx} className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
                                         <div 
-                                            className="h-full bg-white transition-all duration-75"
+                                            className="h-full bg-white transition-all duration-300"
                                             style={{
-                                                width: isPast ? "100%" : isActive ? `${slideProgress}%` : "0%",
-                                                transition: isPaused ? "none" : "width 0.05s linear"
+                                                width: isPast || isActive ? "100%" : "0%"
                                             }}
                                         />
                                     </div>
@@ -518,33 +494,33 @@ export default function SessionComplete({
                                 {currentSlide === 0 && (
                                     <motion.div
                                         key="slide0"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="w-full flex flex-col items-center text-center gap-6"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="w-full flex flex-col items-center text-center gap-6 py-4"
                                     >
-                                        <div className="w-14 h-14 rounded-2xl bg-[#E5A93C]/10 border border-[#E5A93C]/20 flex items-center justify-center text-[#E5A93C] shadow-lg animate-bounce">
+                                        <div className="w-14 h-14 rounded-2xl bg-[#E5A93C]/10 border border-[#E5A93C]/20 flex items-center justify-center text-[#E5A93C] shadow-lg animate-pulse mb-2">
                                             {(() => {
                                                 const IconComp = ICON_MAP[config.icon] || Layers;
                                                 return <IconComp size={28} strokeWidth={1.5} />;
                                             })()}
                                         </div>
 
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-1">
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-500">
                                                 Session Complete
                                             </p>
-                                            <h3 className="text-base font-bold text-white max-w-[240px] truncate">{title || config.label}</h3>
+                                            <h3 className="text-sm font-bold text-white max-w-[240px] truncate mx-auto">{title || config.label}</h3>
                                         </div>
 
-                                        <div className="flex items-baseline justify-center gap-1 mt-2">
-                                            <span className="text-5xl font-black tracking-tighter text-[#E5A93C]">
+                                        <div className="flex items-baseline justify-center gap-1 my-3">
+                                            <span className="text-6xl font-black tracking-tighter text-[#E5A93C]">
                                                 <OdometerCounter value={xpEarned} />
                                             </span>
-                                            <span className="text-sm font-black text-[#E5A93C]/50 ml-1">XP</span>
+                                            <span className="text-xs font-black text-[#E5A93C]/50 ml-1">XP</span>
                                         </div>
 
-                                        <div className="w-full max-w-[260px] p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 mt-4">
+                                        <div className="w-full max-w-[260px] p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
                                                 <Flame size={18} strokeWidth={2} />
                                             </div>
@@ -554,7 +530,7 @@ export default function SessionComplete({
                                                     <span className="text-[9px] font-bold uppercase text-zinc-400 tracking-wider">Day Streak</span>
                                                 </div>
                                                 {streakIncremented ? (
-                                                    <span className="text-[8px] font-bold uppercase text-[var(--emerald)] tracking-wider flex items-center gap-1">
+                                                    <span className="text-[8px] font-bold uppercase text-[var(--emerald)] tracking-wider flex items-center gap-1 mt-0.5">
                                                         <Shield size={10} /> Streak Secured! 🛡️
                                                     </span>
                                                 ) : (
@@ -777,10 +753,26 @@ export default function SessionComplete({
                             </AnimatePresence>
                         </div>
 
+                        {/* Floating Chevrons for visual navigation guidance */}
+                        <div className="absolute left-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+                            {currentSlide > 0 && (
+                                <div className="p-1 rounded-full bg-white/5 border border-white/10 text-zinc-400">
+                                    <ChevronLeft size={16} />
+                                </div>
+                            )}
+                        </div>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+                            {currentSlide < totalSlides - 1 && (
+                                <div className="p-1 rounded-full bg-white/5 border border-white/10 text-zinc-400">
+                                    <ChevronRight size={16} />
+                                </div>
+                            )}
+                        </div>
+
                         {/* Slide footer instructions */}
                         <div className="w-full flex items-center justify-between text-[8px] text-[var(--foreground-muted)]/40 font-mono z-20 shrink-0 mt-4" onClick={e => e.stopPropagation()}>
-                            <span>Tap sides to skip</span>
-                            <span>Slide {currentSlide + 1} of {totalSlides}</span>
+                            <span>Tap sides or use arrows to navigate</span>
+                            <span>{currentSlide + 1} / {totalSlides}</span>
                         </div>
 
                     </motion.div>
