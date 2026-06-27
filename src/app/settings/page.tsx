@@ -276,12 +276,9 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                                 <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between">
-                                    <button 
-                                        onClick={() => router.push('/settings/billing')}
-                                        className="text-[9px] text-[var(--accent)] hover:text-white transition-colors uppercase tracking-[0.2em] font-black flex items-center gap-1 font-mono bg-transparent border-none cursor-pointer"
-                                    >
-                                        Manage Subscription <ChevronRight size={10} />
-                                    </button>
+                                    <span className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] font-black font-mono">
+                                        Standard Scholar Access
+                                    </span>
                                 </div>
                             </GlassmorphicCard>
                         </div>

@@ -113,13 +113,6 @@ export default function OnboardingPage() {
     }, []);
 
     useEffect(() => {
-        if (mounted && user.isAuthenticated && !user.hasOnboarded && !isBypassing) {
-            setIsBypassing(true);
-            handleSkipOnboarding();
-        }
-    }, [mounted, user.isAuthenticated, user.hasOnboarded, isBypassing]);
-
-    useEffect(() => {
         if (step !== 1) return;
         if (!username || username.length < 3) {
             setUsernameStatus("idle");

@@ -36,6 +36,7 @@ export interface UserState {
     themePreference: string;
     planStatus: 'free' | 'plus' | 'unlimited' | 'sprint_pass';
     subscriptionEndDate: string | null;
+    paystackSubscriptionCode: string | null;
     role?: string;
 }
 
@@ -78,6 +79,7 @@ export const defaultUser: UserState = {
     themePreference: "dark",
     planStatus: "free",
     subscriptionEndDate: null,
+    paystackSubscriptionCode: null,
     role: "user",
 };
 
@@ -185,6 +187,7 @@ export const useUserStore = create<UserStore>()(
                         themePreference: profile?.theme_preference ?? get().themePreference ?? "dark",
                         planStatus: profile?.plan_status ?? get().planStatus ?? "free",
                         subscriptionEndDate: profile?.subscription_end_date ?? get().subscriptionEndDate ?? null,
+                        paystackSubscriptionCode: profile?.paystack_subscription_code ?? get().paystackSubscriptionCode ?? null,
                         role: profile?.role ?? get().role ?? "user",
                     });
 
@@ -228,6 +231,7 @@ export const useUserStore = create<UserStore>()(
                 themePreference: state.themePreference,
                 planStatus: state.planStatus,
                 subscriptionEndDate: state.subscriptionEndDate,
+                paystackSubscriptionCode: state.paystackSubscriptionCode,
                 role: state.role
             }),
         }

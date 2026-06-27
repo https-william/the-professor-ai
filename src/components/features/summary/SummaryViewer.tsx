@@ -546,7 +546,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
   };
 
   const handleCopyLink = () => {
-    const url = generationId ? `${window.location.origin}/summary/${generationId}` : window.location.href;
+    const url = generationId ? `${window.location.origin}/share?id=${generationId}` : window.location.href;
     navigator.clipboard.writeText(url);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { 
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+import { CitationAwareRenderer } from "@/components/features/CitationAwareRenderer";
 
 interface KnowledgeCheckProps {
     data: any;
@@ -116,8 +117,9 @@ export const InteractiveSummary = ({
     autoReveal = false,
     isStreaming = false,
     onFinish,
-    onDownloadPDF
-}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; isStreaming?: boolean; onFinish?: () => void; onDownloadPDF?: () => void }) => {
+    onDownloadPDF,
+    onCitationClick
+}: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; isStreaming?: boolean; onFinish?: () => void; onDownloadPDF?: () => void; onCitationClick?: (paragraphIndex: number) => void }) => {
     const [isRefining, setIsRefining] = useState(autoReveal || isStreaming);
     const [progress, setProgress] = useState((autoReveal || isStreaming) ? 100 : 0);
     const [completedCheckpoints, setCompletedCheckpoints] = useState<string[]>([]);
@@ -287,6 +289,55 @@ export const InteractiveSummary = ({
                                 <div className="space-y-3 md:space-y-4">
                                     {visibleBlocks.map((block) => {
                                         if (block.type === "markdown") {
+                                            // Pre-process [§N] citation markers before handing to MarkdownRenderer.
+                                            // We strip them out and inject CitationAwareRenderer spans so the
+                                            // markdown renderer sees clean text while badges remain clickable.
+                                            const hasCitations = /\[§\d+\]/.test(block.content);
+                                            if (hasCitations && onCitationClick) {
+                                                // Split the block on [§N] markers, interleave citation badges
+                                                const parts = block.content.split(/(\[§\d+\])/g);
+                                                return (
+                                                    <div key={block.id} className="space-y-1">
+                                                        {parts.map((part, pi) => {
+                                                            const match = part.match(/^\[§(\d+)\]$/);
+                                                            if (match) {
+                                                                const paraIdx = parseInt(match[1], 10) - 1;
+                                                                const displayNum = paraIdx + 1;
+                                                                return (
+                                                                    <sup
+                                                                        key={pi}
+                                                                        className="citation-badge"
+                                                                        title={`View source paragraph ${displayNum}`}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            onCitationClick(paraIdx);
+                                                                        }}
+                                                                        role="button"
+                                                                        tabIndex={0}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === "Enter" || e.key === " ") {
+                                                                                e.preventDefault();
+                                                                                onCitationClick(paraIdx);
+                                                                            }
+                                                                        }}
+                                                                        aria-label={`Jump to source paragraph ${displayNum}`}
+                                                                    >
+                                                                        §{displayNum}
+                                                                    </sup>
+                                                                );
+                                                            }
+                                                            // Plain text part — pass through MarkdownRenderer
+                                                            return part.trim() ? (
+                                                                <MarkdownRenderer
+                                                                    key={pi}
+                                                                    content={part}
+                                                                    isStreaming={isStreaming}
+                                                                />
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+                                                );
+                                            }
                                             return (
                                                 <MarkdownRenderer 
                                                     key={block.id}

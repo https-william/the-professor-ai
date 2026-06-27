@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useTransition, useRef } from "react";
+import React, { useEffect, useState, useTransition, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import remarkGfm from "remark-gfm";
@@ -50,6 +50,7 @@ import { InteractiveFlashcards } from "@/components/features/InteractiveFlashcar
 import { InteractiveQuiz } from "@/components/features/InteractiveQuiz";
 import { StudyRoadmap } from "@/components/features/StudyRoadmap";
 import BreakdownViewer from "@/components/features/breakdown/BreakdownViewer";
+import { AnnotatedSourceViewer } from "@/components/features/AnnotatedSourceViewer";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import WorkspaceLayout from "@/components/generative/WorkspaceLayout";
@@ -106,8 +107,6 @@ export default function StudyPackPage() {
     const [isGuest, setIsGuest] = useState(false);
     const [isSharedView, setIsSharedView] = useState(false);
     const [showGuestModal, setShowGuestModal] = useState(false);
-    const [showWrapModal, setShowWrapModal] = useState(false);
-    const [wrapSlide, setWrapSlide] = useState(0);
 
     const [isSprint, setIsSprint] = useState(false);
     const [isGenerativeMode, setIsGenerativeMode] = useState(false);
@@ -135,21 +134,33 @@ export default function StudyPackPage() {
         finishTime: null as number | null
     });
 
+    const [leftTab, setLeftTab] = useState<'summary' | 'raw'>('summary');
+    const [rightTab, setRightTab] = useState<'flashcards' | 'quiz' | 'roadmap'>('flashcards');
+    const [mobileActivePane, setMobileActivePane] = useState<'left' | 'right'>('left');
+    const [highlightedParagraph, setHighlightedParagraph] = useState<number | null>(null);
+
     const packId = params.id as string;
 
     const phaseContainerRef = useRef<HTMLDivElement>(null);
+    // Lazy-mount refs: right-pane tabs only render their component trees on first visit
+    const hasVisitedQuiz = useRef(false);
+    const hasVisitedRoadmap = useRef(false);
 
-    useEffect(() => {
-        if (showWrapModal) {
-            document.body.style.overflow = 'hidden';
-            const container = document.getElementById('main-scroll-container');
-            if (container) container.style.overflow = 'hidden';
-            return () => {
-                document.body.style.overflow = '';
-                if (container) container.style.overflow = 'auto';
-            };
-        }
-    }, [showWrapModal]);
+    /** Switch to a raw-notes paragraph from a citation badge click in the summary. */
+    const handleCitationClick = useCallback((paragraphIndex: number) => {
+        setLeftTab('raw');
+        // Small delay so the tab switch re-renders before we try to scroll
+        setTimeout(() => setHighlightedParagraph(paragraphIndex), 80);
+    }, []);
+
+    /** Switch right tab and mark it as visited for lazy mounting. */
+    const handleRightTabChange = useCallback((tab: 'flashcards' | 'quiz' | 'roadmap') => {
+        if (tab === 'quiz') hasVisitedQuiz.current = true;
+        if (tab === 'roadmap') hasVisitedRoadmap.current = true;
+        setRightTab(tab);
+    }, []);
+
+
 
     // Auto-scroll to phase when it opens
     useEffect(() => {
@@ -664,19 +675,14 @@ export default function StudyPackPage() {
         }
     };
 
-    const handleBeginTask = async () => {
-        const phase = currentPhase;
+    const handleBeginTask = async (phaseId: string) => {
+        const phase = phases.find(p => p.id === phaseId);
         if (!phase) return;
 
         if (isGuest) { setShowGuestModal(true); return; }
         if (isSharedView) { addToast("Only the pack owner can generate phases.", "error"); return; }
 
         if (phasesData[phase.id]) {
-            setIsPerforming(true);
-            const nextIdx = viewingPhaseIndex! + 1;
-            if (phases[nextIdx] && !phasesData[phases[nextIdx].id]) {
-                prefetchPhase(phases[nextIdx].id, sourceText, packId);
-            }
             return;
         }
 
@@ -686,13 +692,12 @@ export default function StudyPackPage() {
         }
 
         if (!navigator.onLine) {
-            addToast("You are currently offline. Please check your internet connection or access your Offline Vault.", "error");
+            addToast("You are currently offline. Please check your internet connection.", "error");
             return;
         }
 
         setIsLoadingPhase(true);
         setGeneratingPhases(prev => ({ ...prev, [phase.id]: 'loading' }));
-        setIsPerforming(true); // Transition immediately to task view so bubbly loader can display
         try {
             const res = await smartFetch("/api/generate/pack-phase", {
                 method: "POST",
@@ -713,7 +718,6 @@ export default function StudyPackPage() {
                 setIsLoadingPhase(false);
                 setIsStreamingPhase(true);
                 setGeneratingPhases(prev => ({ ...prev, [phase.id]: 'streaming' }));
-                // isPerforming is already set to true
 
                 const reader = res.body?.getReader();
                 if (!reader) throw new Error("Stream not readable");
@@ -779,17 +783,21 @@ export default function StudyPackPage() {
                     throw new Error("No study materials were generated. Please try again.");
                 }
 
-                const nextIdx = viewingPhaseIndex! + 1;
-                if (phases[nextIdx] && !phasesData[phases[nextIdx].id]) {
-                    prefetchPhase(phases[nextIdx].id, sourceText, packId);
+                // Prefetch next uncompleted phase
+                const allPhases = ["distill", "retain", "test", "predict"];
+                const nextIdx = allPhases.indexOf(phase.id) + 1;
+                const nextUncompletedId = allPhases[nextIdx];
+                if (nextUncompletedId && !phasesData[nextUncompletedId]) {
+                    prefetchPhase(nextUncompletedId, sourceText, packId);
                 }
+                handleMasterPhase(phase.id);
                 return;
             }
 
             const result = await res.json();
             if (result.success) {
                 setPhasesData(prev => ({ ...prev, [phase.id]: result.data }));
-                setIsPerforming(true);
+                handleMasterPhase(phase.id);
             } else {
                 const errorMsg = typeof result.error === "string" ? result.error : "Generation failed";
                 throw new Error(errorMsg);
@@ -798,12 +806,11 @@ export default function StudyPackPage() {
             console.error("Phase Generation Error:", err);
             const errMsg = err?.message || String(err);
             if (!navigator.onLine || errMsg.includes("Failed to fetch") || errMsg.includes("NetworkError") || errMsg.includes("fetch")) {
-                addToast("You are currently offline. Please check your internet connection or access your Offline Vault.", "error");
+                addToast("You are currently offline. Please check your internet connection.", "error");
             } else {
                 addToast("The Professor is taking a quick break. Please try again in a moment.", "error");
             }
             setIsStreamingPhase(false);
-            setIsPerforming(false);
         } finally {
             setIsLoadingPhase(false);
             setIsStreamingPhase(false);
@@ -811,22 +818,23 @@ export default function StudyPackPage() {
         }
     };
 
-    const handleMasterPhase = async (stats?: any) => {
-        if (!currentPhase) return;
+    const handleMasterPhase = async (phaseId: string, stats?: any) => {
+        const phase = phases.find(p => p.id === phaseId);
+        if (!phase) return;
         if (isGuest) { setShowGuestModal(true); return; }
         if (isSharedView) { addToast("Only the pack owner can modify this pack.", "error"); return; }
 
         // Record stats if provided
-        if (currentPhase.id === 'test' && stats) {
+        if (phaseId === 'test' && stats) {
             setSessionStats(prev => ({ ...prev, quiz: stats }));
         }
-        if (currentPhase.id === 'retain' && stats) {
+        if (phaseId === 'retain' && stats) {
             setSessionStats(prev => ({ ...prev, flashcards: stats }));
         }
 
-        const nextCompleted = completedPhases.includes(currentPhase.id)
+        const nextCompleted = completedPhases.includes(phaseId)
             ? completedPhases
-            : [...completedPhases, currentPhase.id];
+            : [...completedPhases, phaseId];
 
         setCompletedPhases(nextCompleted);
 
@@ -847,13 +855,11 @@ export default function StudyPackPage() {
             console.error("Phase Persistence Error:", err);
         }
 
-        const isLastPhase = viewingPhaseIndex === phases.length - 1;
+        const isLastPhase = phaseId === 'predict';
 
         if (nextCompleted.length === phases.length || isLastPhase) {
             setSessionStats(prev => ({ ...prev, finishTime: Date.now() }));
             setIsAllCompleted(true);
-            setViewingPhaseIndex(null);
-            setIsPerforming(false);
             addToast("All steps complete! Your Study Report is now ready.", "success");
 
             // Award 100 XP for full sprint completion
@@ -867,9 +873,6 @@ export default function StudyPackPage() {
                     body: JSON.stringify({ type: "exam_sprint", customXp: 100 })
                 }).then(() => refreshUser()).catch((err: any) => console.error("XP error:", err));
             }).catch((err: any) => console.error("Session fetch error for activity:", err));
-
-            // Trigger Bedtime Verdict Modal
-            setShowWrapModal(true);
         } else {
             // Award 50 XP for phase completion
             supabase.auth.getSession().then(({ data: { session } }: any) => {
@@ -883,26 +886,24 @@ export default function StudyPackPage() {
                 }).then(() => refreshUser()).catch((err: any) => console.error("XP error:", err));
             }).catch((err: any) => console.error("Session fetch error for activity:", err));
 
-            // Auto-advance to next phase intro
-            const nextIdx = viewingPhaseIndex! + 1;
-            if (phases[nextIdx]) {
-                setViewingPhaseIndex(nextIdx);
-                setIsPerforming(false);
-                setHasTaskCompleted(false);
-                addToast(`Phase Mastered! Unlocked: ${phases[nextIdx].title}`, "success");
-            } else {
-                // Fallback for safety
-                setIsAllCompleted(true);
-                setViewingPhaseIndex(null);
-                setIsPerforming(false);
+            // Auto-advance tabs
+            if (phaseId === 'distill') {
+                setRightTab('flashcards');
+            } else if (phaseId === 'retain') {
+                setRightTab('quiz');
+            } else if (phaseId === 'test') {
+                setRightTab('roadmap');
             }
+            addToast(`Phase Mastered!`, "success");
         }
     };
 
     const handleShare = () => {
-        const url = typeof window !== 'undefined' ? window.location.href : '';
-        navigator.clipboard.writeText(url);
-        addToast("Study pack link copied! Share it with anyone.", "success");
+        const shareUrl = typeof window !== 'undefined' 
+            ? `${window.location.origin}/share?id=${packId}` 
+            : '';
+        navigator.clipboard.writeText(shareUrl);
+        addToast("Public share link copied! Anyone with the link can view this pack.", "success");
     };
 
     const [showDownloadMenu, setShowDownloadMenu] = useState(false);
@@ -1323,48 +1324,110 @@ export default function StudyPackPage() {
 
     const studyArchetype = getStudyArchetype();
 
-    const renderPhaseInteractive = (phase: Phase) => {
-        const data = phasesData[phase.id];
-        const isPhaseLoading = isLoadingPhase || generatingPhases[phase.id] === 'loading';
-        const isPhaseStreaming = isStreamingPhase || generatingPhases[phase.id] === 'streaming';
+    const renderPhaseContent = (phaseId: string, active: boolean) => {
+        const data = phasesData[phaseId];
+        const isPhaseLoading = isLoadingPhase || generatingPhases[phaseId] === 'loading';
+        const isPhaseStreaming = isStreamingPhase || generatingPhases[phaseId] === 'streaming';
         const isCurrentlyGenerating = isPhaseLoading || isPhaseStreaming;
         
-        if (!data && phase.id !== "retain" && !isCurrentlyGenerating) return null;
+        if (!data && !isCurrentlyGenerating) {
+            return (
+                <div className={cn("p-8 rounded-3xl bg-[var(--background-secondary)]/40 border border-[var(--border)] text-center flex flex-col items-center justify-center min-h-[350px] w-full max-w-xl mx-auto my-auto", !active && "hidden")}>
+                    <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner mb-4 text-[var(--blue)]">
+                        {phaseId === 'distill' && <FileText size={24} />}
+                        {phaseId === 'retain' && <Layers size={24} className="text-[var(--amber)]" />}
+                        {phaseId === 'test' && <Sword size={24} className="text-[var(--crimson)]" />}
+                        {phaseId === 'predict' && <MapIcon size={24} className="text-[var(--emerald)]" />}
+                    </div>
+                    <h3 className="text-base font-black uppercase tracking-tight text-[var(--foreground)] mb-2">
+                        {phaseId === 'distill' && "Deep Summary"}
+                        {phaseId === 'retain' && "Memory Cards"}
+                        {phaseId === 'test' && "Practice Quiz"}
+                        {phaseId === 'predict' && "Study Roadmap"}
+                    </h3>
+                    <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-xs leading-relaxed">
+                        {phaseId === 'distill' && "Get a clean, high-yield summary of your notes with key takeaways."}
+                        {phaseId === 'retain' && "Study flashcards with easy memory hooks to lock in core terms."}
+                        {phaseId === 'test' && "Test your knowledge with practice questions customized to your notes."}
+                        {phaseId === 'predict' && "Generate a custom step-by-step roadmap to guide your learning path."}
+                    </p>
+                    <button
+                        onClick={() => handleBeginTask(phaseId)}
+                        className="px-6 py-2.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[9px] uppercase tracking-widest hover-scale-md active:scale-95 transition-all flex items-center gap-2 shadow-lg"
+                    >
+                        Generate Now <ArrowRight size={10} />
+                    </button>
+                </div>
+            );
+        }
 
-        // If actively generating but no items are generated yet, render bubbly loader
         if (isCurrentlyGenerating && (!data || (Array.isArray(data) && data.length === 0) || (typeof data === 'string' && data.length === 0))) {
             return (
-                <div className="p-12 rounded-[2.5rem] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl flex items-center justify-center min-h-[300px] w-full max-w-2xl mx-auto">
+                <div className={cn("p-12 rounded-[2.5rem] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl flex items-center justify-center min-h-[350px] w-full max-w-xl mx-auto my-auto", !active && "hidden")}>
                     <BubblyThinkingLoader />
                 </div>
             );
         }
 
-        switch (phase.id) {
-            case "distill":
+        switch (phaseId) {
+            case "distill": {
                 const summaryText = typeof data === 'string' ? data : (data?.summary ? (typeof data.summary === 'string' ? data.summary : JSON.stringify(data.summary)) : (isCurrentlyGenerating ? "" : "No summary available."));
                 return (
-                    <InteractiveSummary
-                        rawText={String(sourceText).substring(0, 1000) + "..."}
-                        refinedText={summaryText}
-                        autoReveal={true}
-                        isStreaming={isPhaseStreaming && phase.id === "distill"}
-                        onFinish={() => handleMasterPhase()}
-                    />
+                    <div className={cn("w-full", !active && "hidden")}>
+                        <InteractiveSummary
+                            rawText={String(sourceText).substring(0, 1000) + "..."}
+                            refinedText={summaryText}
+                            autoReveal={true}
+                            isStreaming={isPhaseStreaming && phaseId === "distill"}
+                            onFinish={() => handleMasterPhase('distill')}
+                            onCitationClick={handleCitationClick}
+                        />
+                    </div>
                 );
-            case "retain":
+            }
+            case "retain": {
                 const rawCards = data ? (Array.isArray(data) ? data : (data.flashcards || data.cards || [])) : [];
-                const cards = rawCards.map((c: any, idx: number) => ({
+                const cards = rawCards.map((c: any) => ({
                     front: c?.front || c?.question || (typeof c === 'string' ? c : "Term"),
                     back: c?.back || c?.answer || (typeof c === 'string' ? c : "Definition"),
                     topic: c?.topic || "Active Recall"
                 }));
-                return <InteractiveFlashcards cards={cards} title={packTitle + " - Flashcards"} generationId={packId} onFinish={(stats) => handleMasterPhase(stats)} onRetry={() => handleRetryPhase("retain")} />;
-            case "test":
+                return (
+                    <div className={cn("w-full", !active && "hidden")}>
+                        <InteractiveFlashcards 
+                            cards={cards} 
+                            title={packTitle + " - Flashcards"} 
+                            generationId={packId} 
+                            onFinish={(stats) => handleMasterPhase('retain', stats)} 
+                            onRetry={() => handleRetryPhase("retain")} 
+                        />
+                    </div>
+                );
+            }
+            case "test": {
                 const quizQuestions = Array.isArray(data) ? data : (data.questions || [data]);
-                return <InteractiveQuiz questions={quizQuestions} title={packTitle + " - Quiz"} onFinish={(stats) => handleMasterPhase(stats)} />;
-            case "predict":
-                return <StudyRoadmap data={data} isStreaming={isStreamingPhase && phase.id === "predict"} generationId={packId} title={packTitle + " - Roadmap"} />;
+                return (
+                    <div className={cn("w-full", !active && "hidden")}>
+                        <InteractiveQuiz 
+                            questions={quizQuestions} 
+                            title={packTitle + " - Quiz"} 
+                            onFinish={(stats) => handleMasterPhase('test', stats)} 
+                        />
+                    </div>
+                );
+            }
+            case "predict": {
+                return (
+                    <div className={cn("w-full", !active && "hidden")}>
+                        <StudyRoadmap 
+                            data={data} 
+                            isStreaming={isStreamingPhase && phaseId === "predict"} 
+                            generationId={packId} 
+                            title={packTitle + " - Roadmap"} 
+                        />
+                    </div>
+                );
+            }
             default:
                 return null;
         }
@@ -1390,87 +1453,72 @@ export default function StudyPackPage() {
     //             onExit={() => setIsGenerativeMode(false)} 
     //         />
     //     );
-    // }
-
-    return (
-        <div className="min-h-screen bg-transparent pb-16 pt-12 transition-all duration-700">
+      return (
+        <div className="min-h-screen bg-transparent pb-24 pt-6 transition-all duration-700">
             <StandardContainer className="print-hidden">
-                <AnimatePresence mode="wait">
-                    {viewingPhaseIndex === null && (
-                        <motion.div
-                            key="overview"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="flex flex-col"
+                {/* Guest Banner */}
+                {isGuest && (
+                    <div className="mb-6 p-4 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-300">
+                        <p className="text-xs text-[var(--foreground)] font-medium leading-relaxed">
+                            <span className="font-black text-[var(--blue)]">Guest view.</span> Sign up to save your progress and build your own study packs.
+                        </p>
+                        <button
+                            onClick={() => setShowGuestModal(true)}
+                            className="shrink-0 px-4 py-2 rounded-xl bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest hover:bg-[var(--blue)]/80 transition-all active:scale-95 shadow-lg shadow-[var(--blue-glow)]"
                         >
-                            {isGuest && (
-                  <div className="mb-6 p-4 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-between gap-4">
-                    <p className="text-xs text-[var(--foreground)] font-medium leading-relaxed">
-                      <span className="font-black text-[var(--blue)]">Guest view.</span> Sign up to save your progress and build your own study packs.
-                    </p>
-                    <button
-                      onClick={() => setShowGuestModal(true)}
-                      className="shrink-0 px-4 py-2 rounded-xl bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest hover:bg-[var(--blue)]/80 transition-all active:scale-95"
-                    >
-                      Sign Up Free
-                    </button>
-                  </div>
+                            Sign Up Free
+                        </button>
+                    </div>
                 )}
 
-                {/* Back Link */}
-                <div className="mb-8">
-                    <button
-                        onClick={() => isGuest ? setShowGuestModal(true) : router.push('/library')}
-                        className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                    >
-                        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> {isGuest ? "Exit" : "Back to Library"}
-                    </button>
-                </div>
-
-                {/* Hero Header */}
-                <motion.div 
-                    layoutId={`pack-card-${packId}`}
-                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8 bg-[var(--background-secondary)]/40 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-[var(--border)] shadow-lg"
-                >
-                    <div className="max-w-2xl">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                            <div className="px-3 py-1 rounded-full bg-[var(--blue)] text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-md shadow-[var(--blue-glow)]">
-                                <Zap size={10} className="fill-current" /> Study Pack
+                {/* Workspace Header */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 bg-[var(--background-secondary)]/40 backdrop-blur-md p-4 rounded-2xl border border-[var(--border)] shadow-lg animate-in fade-in slide-in-from-top-3 duration-300">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => isGuest ? setShowGuestModal(true) : router.push('/library')}
+                            className="p-2.5 rounded-xl hover:bg-[var(--background-secondary)] transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)] shrink-0 border border-[var(--border)]"
+                            title={isGuest ? "Exit" : "Back to Library"}
+                        >
+                            <ChevronLeft size={18} />
+                        </button>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider border border-[var(--blue)]/20 shadow-sm shadow-[var(--blue-glow)]">
+                                    STUDY LAB
+                                </span>
+                                <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest flex items-center gap-1">
+                                    <Clock size={10} /> {completedPhases.length} / 4 completed
+                                </span>
                             </div>
-                            <div className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest flex items-center gap-1.5">
-                                <Clock size={10} /> {completedPhases.length} / {phases.length} Steps Completed
-                            </div>
+                            <h1 className="text-base sm:text-lg font-black tracking-tight leading-tight italic truncate text-white">
+                                {packTitle}
+                            </h1>
                         </div>
-                        <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-none italic mb-2">
-                            Your <span className="text-[var(--blue)]">Study Guide</span> Is Ready.
-                        </h1>
-                        <p className="text-xs sm:text-sm text-[var(--foreground-muted)] font-medium leading-relaxed opacity-90">
-                            A simple 4-step path. Finish each one to get your final <span className="text-[var(--foreground)] font-black">Study Report</span>.
-                        </p>
                     </div>
 
+                    {/* Top Action Bar */}
                     <div className="flex flex-wrap items-center gap-2">
                         <ThemeToggle />
                         <FocusTimer widget={true} />
+                        
                         <button
                             onClick={handleSaveOffline}
                             className={cn(
-                                "flex-1 sm:flex-none px-4 py-2.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-md",
+                                "px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-sm",
                                 isSavedOffline ? "bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]" : "bg-[var(--background)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--border)]"
                             )}
                         >
                             <Download size={12} /> {isSavedOffline ? "Saved Offline" : "Save Offline"}
                         </button>
 
-                        <div className="relative flex-1 sm:flex-none">
+                        <div className="relative">
                             <button
                                 onClick={() => setShowFullExportMenu(prev => !prev)}
                                 disabled={isExportingFullPDF}
-                                className="w-full px-4 py-2.5 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/30 text-[9px] font-black uppercase tracking-widest text-[var(--amber)] hover:bg-[var(--amber)]/20 transition-all flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50"
+                                className="px-3 py-2 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/30 text-[9px] font-black uppercase tracking-widest text-[var(--amber)] hover:bg-[var(--amber)]/20 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
                             >
                                 {isExportingFullPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                                <span>Export Full Pack</span>
+                                <span>Export Pack</span>
                             </button>
                             <AnimatePresence>
                                 {showFullExportMenu && (
@@ -1511,31 +1559,34 @@ export default function StudyPackPage() {
 
                         <button
                             onClick={handleShare}
-                            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center justify-center gap-1.5 shadow-md"
+                            className="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm"
                         >
-                            <Share2 size={12} /> Share Guide
+                            <Share2 size={12} /> Share
                         </button>
-                    </div>
-                </motion.div>
 
-                {!packLoading && user.planStatus === 'free' && (
-                    <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-[var(--blue-dim)]/40 to-transparent border border-[var(--blue-border)]/50 shadow-lg relative overflow-hidden backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-300">
+
+                    </div>
+                </div>
+
+                {/* Subscription Banner */}
+                {false && !packLoading && user.planStatus === 'free' && (
+                    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[var(--blue-dim)]/40 to-transparent border border-[var(--blue-border)]/50 shadow-lg relative overflow-hidden backdrop-blur-md">
                         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[var(--blue)]/5 rounded-full blur-[80px] pointer-events-none" />
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                             <div>
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider mb-2">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider mb-1.5">
                                     <Sparkles size={8} /> SPRINT UNLOCK
                                 </span>
-                                <h2 className="text-sm font-black uppercase tracking-tight text-white mb-1">
+                                <h2 className="text-xs font-black uppercase tracking-tight text-white mb-0.5">
                                     Unlock Weekly Sprint Pass (₦399)
                                 </h2>
-                                <p className="text-xs text-[var(--foreground-muted)] font-medium leading-relaxed max-w-xl">
+                                <p className="text-[10px] text-[var(--foreground-muted)] font-medium leading-relaxed max-w-xl">
                                     Get the Feynman vocabulary highlights, active memory deck expansions, and clean PDF exports for offline revision. Cancel in one click anytime.
                                 </p>
                             </div>
                             <button
                                 onClick={() => router.push('/settings/billing')}
-                                className="px-5 py-2.5 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-md shrink-0 self-start sm:self-center"
+                                className="px-4 py-2 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-md shrink-0 self-start sm:self-center"
                             >
                                 Unlock Now
                             </button>
@@ -1543,614 +1594,221 @@ export default function StudyPackPage() {
                     </div>
                 )}
 
-                {/* Phase Rows */}
-                <div className="space-y-3 mb-12">
-                    {phases.map((phase, i) => {
-                        const isCompleted = completedPhases.includes(phase.id);
-                        const isLocked = i > completedPhases.length;
-
-                        return (
-                            <motion.div
-                                key={phase.id}
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.05 }}
-                                className={cn(
-                                    "group p-4 sm:p-5 rounded-2xl border transition-all relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md",
-                                    isLocked ? "bg-[var(--background)] border-[var(--border)] opacity-50 grayscale" :
-                                        isCompleted ? "bg-[var(--background-secondary)]/80 border-[var(--emerald)]/30 backdrop-blur-md" :
-                                            "bg-[var(--background-secondary)]/80 border-[var(--border)] hover:border-[var(--blue)]/40 backdrop-blur-md shadow-xl hover-scale-sm"
-                                )}
-                            >
-                                <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <div className={cn(
-                                        "w-12 h-12 rounded-xl flex items-center justify-center border transition-all shadow-inner shrink-0",
-                                        isLocked ? "bg-[var(--background)] border-[var(--border)] text-[var(--foreground-muted)]" : ""
-                                    )}
-                                        style={!isLocked ? {
-                                            background: `color-mix(in srgb, ${phase.color}, transparent 92%)`,
-                                            borderColor: `color-mix(in srgb, ${phase.color}, transparent 80%)`,
-                                            color: phase.color
-                                        } : {}}>
-                                        {isLocked ? <Lock size={20} strokeWidth={1.5} /> : <phase.icon size={24} strokeWidth={1.5} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Phase 0{i + 1}</span>
-                                            {isCompleted && (
-                                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-[var(--emerald)]/10 text-[var(--emerald)] text-[8px] font-black uppercase">
-                                                    <CheckCircle2 size={8} /> Mastered
-                                                </span>
-                                            )}
-                                        </div>
-                                        <h2 className="text-base sm:text-lg font-black tracking-tight text-[var(--foreground)] uppercase italic leading-none truncate mb-1">
-                                            {phase.title}
-                                        </h2>
-                                        <div className="text-xs text-[var(--foreground-muted)] font-medium leading-snug line-clamp-2 prose prose-invert prose-p:leading-snug prose-p:m-0">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                {isLocked ? "Complete previous steps to unlock." : phase.desc}
-                                            </ReactMarkdown>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border)]">
-                                    <button
-                                        onClick={() => handleEnterPhase(i)}
-                                        disabled={isLocked && !isSharedView}
-                                        className={cn(
-                                            "flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-md",
-                                            isSharedView && isCompleted ? "bg-[var(--emerald)]/10 text-[var(--emerald)] border border-[var(--emerald)]/20 hover:bg-[var(--emerald)]/20" :
-                                            isSharedView && !isCompleted ? "bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20 hover:bg-[var(--blue)]/20" :
-                                            isCompleted ? "bg-[var(--emerald)]/10 text-[var(--emerald)] border border-[var(--emerald)]/20 hover:bg-[var(--emerald)]/20" :
-                                                isLocked ? "bg-[var(--background)] text-[var(--foreground-muted)] border border-[var(--border)] cursor-not-allowed" :
-                                                    "bg-[var(--foreground)] text-[var(--background)] hover-scale-md shadow-[0_8px_20px_rgba(255,255,255,0.1)] active:scale-[0.98]"
-                                        )}
-                                    >
-                                        {isSharedView && isCompleted ? "VIEW" : isSharedView && !isCompleted ? "LOCKED" : isCompleted ? "REVISIT" : isLocked ? "LOCKED" : "ENTER"}
-                                        {!isCompleted && !isLocked && !isSharedView && <ArrowRight size={12} />}
-                                    </button>
-                                    {!isLocked && !isSharedView && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const url = typeof window !== 'undefined' ? window.location.href : '';
-                                                navigator.clipboard.writeText(url);
-                                                addToast(`${phase.title} link copied!`, "success");
-                                            }}
-                                            className="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all active:scale-95 shadow-md"
-                                            title={`Share ${phase.title}`}
-                                        >
-                                            <Share2 size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                </div>
-
-                {/* Performance Summary Section: THE STUDY WRAP BUTTON */}
-                <AnimatePresence>
-                    {isAllCompleted && (
-                        <motion.div 
-                            key="done-button-container"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mt-12 flex flex-col items-center justify-center text-center p-8 rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-xl"
-                        >
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue-text)] text-[10px] font-black uppercase tracking-widest mb-4 border border-[var(--blue)]/20 shadow-sm">
-                                <CheckCircle2 size={12} /> All Phases Complete
-                            </div>
-                            <h2 className="text-xl sm:text-2xl font-black italic uppercase tracking-tight text-[var(--foreground)] mb-2">
-                                Bedtime Verdict
-                            </h2>
-                            <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-md">
-                                You've completed all study phases. Let's see what the Professor has to say about your progress tonight.
-                            </p>
-                            <button
-                                onClick={() => setShowWrapModal(true)}
-                                className="px-10 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover-scale-lg active:scale-95 transition-all flex items-center gap-3 group cursor-pointer"
-                            >
-                                Get the Verdict <ArrowRight size={16} className="group-hover-translate-x-sm transition-transform" />
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </StandardContainer>
-
-            {/* IMMERSIVE PHASE OVERLAY */}
-            <AnimatePresence>
-                {currentPhase && (
-                    <motion.div
-                        ref={phaseContainerRef}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="mt-8 w-full flex flex-col print-overlay bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-3xl overflow-hidden shadow-2xl"
-                    >
-                        {/* Immersive Header */}
-                        <div className="px-4 sm:px-6 h-14 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0">
-                            <div className="flex items-center gap-3 sm:gap-6">
+                {/* Main Split Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    
+                    {/* LEFT COLUMN: Summary / Raw Viewer */}
+                    <div className={cn(
+                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-3xl overflow-hidden shadow-xl min-h-[500px] lg:min-h-[600px] relative transition-all duration-300",
+                        mobileActivePane === 'right' ? "hidden lg:flex" : "flex"
+                    )}>
+                        {/* Header Tabs */}
+                        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0">
+                            <div className="flex gap-2">
                                 <button
-                                    onClick={() => setViewingPhaseIndex(null)}
-                                    className="p-1.5 sm:p-2 rounded-xl hover:bg-[var(--background-secondary)] transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                                    onClick={() => setLeftTab('summary')}
+                                    className={cn(
+                                        "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        leftTab === 'summary' 
+                                            ? "bg-[var(--blue)]/20 border border-[var(--blue)]/40 text-white shadow-inner shadow-[var(--blue-glow)]" 
+                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
+                                    )}
                                 >
-                                    <ChevronLeft size={20} />
+                                    Deep Summary
                                 </button>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-[var(--blue)] truncate">Step 0{viewingPhaseIndex! + 1}</span>
-                                    <h2 className="text-base sm:text-lg font-black text-[var(--foreground)] italic uppercase tracking-tight truncate">{currentPhase.title}</h2>
-                                </div>
+                                <button
+                                    onClick={() => setLeftTab('raw')}
+                                    className={cn(
+                                        "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        leftTab === 'raw' 
+                                            ? "bg-[var(--blue)]/20 border border-[var(--blue)]/40 text-white shadow-inner shadow-[var(--blue-glow)]" 
+                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
+                                    )}
+                                >
+                                    Raw Notes
+                                </button>
                             </div>
 
-                            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-                                {currentPhase.id === 'distill' && (
-                                    <div className="relative">
-                                        <button
-                                            onClick={() => setShowDownloadMenu(prev => !prev)}
-                                            disabled={isExportingPDF}
-                                            className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md disabled:opacity-50 min-w-[34px] sm:min-w-[140px]"
-                                            title="Download Summary Options"
-                                        >
-                                            {isExportingPDF && (
-                                                <div 
-                                                    className="absolute inset-0 bg-emerald-500 transition-all duration-200 z-0 opacity-80"
-                                                    style={{ width: `${pdfDownloadProgress}%` }}
-                                                />
-                                            )}
-                                            <div className="relative z-10 flex items-center justify-center gap-1.5">
-                                                {isExportingPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                                                <span className="hidden sm:inline">
-                                                    {isExportingPDF 
-                                                        ? (pdfDownloadSpeed ? `${pdfDownloadProgress}% (${pdfDownloadSpeed})` : "Downloading...") 
-                                                        : "Download"}
-                                                </span>
-                                            </div>
-                                        </button>
-                                        
-                                        <AnimatePresence>
-                                            {showDownloadMenu && (
-                                                <>
-                                                    <div className="fixed inset-0 z-[100]" onClick={() => setShowDownloadMenu(false)} />
-                                                    <motion.div 
-                                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                        transition={{ duration: 0.15 }}
-                                                        className="absolute right-0 mt-2 min-w-[160px] bg-zinc-950 border border-white/10 rounded-xl p-2 shadow-2xl flex flex-col gap-1 z-[110]"
+                            {/* Download summary actions */}
+                            {leftTab === 'summary' && phasesData.distill && (
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowDownloadMenu(prev => !prev)}
+                                        disabled={isExportingPDF}
+                                        className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-md disabled:opacity-50"
+                                    >
+                                        {isExportingPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                                        <span>Download</span>
+                                    </button>
+                                    <AnimatePresence>
+                                        {showDownloadMenu && (
+                                            <>
+                                                <div className="fixed inset-0 z-[100]" onClick={() => setShowDownloadMenu(false)} />
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    transition={{ duration: 0.15 }}
+                                                    className="absolute right-0 mt-2 min-w-[160px] bg-zinc-950 border border-white/10 rounded-xl p-2 shadow-2xl flex flex-col gap-1 z-[110]"
+                                                >
+                                                    <button
+                                                        onClick={async () => {
+                                                            setShowDownloadMenu(false);
+                                                            await handleExportPDF();
+                                                        }}
+                                                        className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
                                                     >
-                                                        <button
-                                                            onClick={async () => {
-                                                                setShowDownloadMenu(false);
-                                                                await handleExportPDF();
-                                                            }}
-                                                            className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
-                                                        >
-                                                            <FileText size={12} />
-                                                            <span>Download Zip (HTML)</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowDownloadMenu(false);
-                                                                handleExportHTML();
-                                                            }}
-                                                            className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
-                                                        >
-                                                            <Download size={12} />
-                                                            <span>Download HTML</span>
-                                                        </button>
-                                                    </motion.div>
-                                                </>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                )}
-
-                                {currentPhase.id === 'retain' && phasesData.retain && (
-                                    <button
-                                        onClick={() => {
-                                            const rawCards = phasesData.retain ? (Array.isArray(phasesData.retain) ? phasesData.retain : (phasesData.retain.flashcards || phasesData.retain.cards || [])) : [];
-                                            const cards = rawCards.map((c: any) => ({
-                                                front: c?.front || c?.question || (typeof c === 'string' ? c : "Term"),
-                                                back: c?.back || c?.answer || (typeof c === 'string' ? c : "Definition"),
-                                                topic: c?.topic || "Active Recall"
-                                            }));
-                                            downloadFlashcardsOffline(packTitle + " - Flashcards", cards);
-                                        }}
-                                        className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md overflow-hidden min-w-[34px] sm:min-w-[140px]"
-                                        title="Download Offline HTML Flashcards"
-                                    >
-                                        <div className="relative z-10 flex items-center justify-center gap-1.5">
-                                            <Download size={12} />
-                                            <span className="hidden sm:inline">Download HTML</span>
-                                        </div>
-                                    </button>
-                                )}
-
-                                {currentPhase.id === 'test' && phasesData.test && (
-                                    <button
-                                        onClick={() => {
-                                            const quizQuestions = Array.isArray(phasesData.test) ? phasesData.test : (phasesData.test.questions || [phasesData.test]);
-                                            downloadQuizOffline(packTitle + " - Quiz", quizQuestions);
-                                        }}
-                                        className="relative flex-shrink-0 flex px-2.5 py-1.5 sm:px-4 rounded-xl bg-[var(--blue)] border border-[var(--blue-light)]/30 text-[9px] font-black uppercase tracking-widest text-white hover:bg-[var(--blue)]/80 transition-all items-center justify-center gap-1.5 shadow-md overflow-hidden min-w-[34px] sm:min-w-[140px]"
-                                        title="Download Offline HTML Quiz"
-                                    >
-                                        <div className="relative z-10 flex items-center justify-center gap-1.5">
-                                            <Download size={12} />
-                                            <span className="hidden sm:inline">Download HTML</span>
-                                        </div>
-                                    </button>
-                                )}
-                                <FocusTimer widget={true} />
-                            </div>
-                        </div>
-
-                        {/* Immersive Content Area */}
-                        <div className="w-full relative flex flex-col items-center pb-12">
-                            <AnimatePresence mode="wait">
-                                {!isPerforming ? (
-                                    <motion.div
-                                        key="intro"
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 1.05 }}
-                                        className="w-full flex flex-col items-center justify-start px-4 sm:px-8 text-center max-w-4xl mx-auto pt-8 sm:pt-16 pb-12 overflow-visible"
-                                    >
-                                        <div className="p-5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner mb-6 shrink-0">
-                                            <currentPhase.icon size={28} strokeWidth={1.5} />
-                                        </div>
-
-                                        <div className="text-center mb-6 w-full">
-                                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-1 block">Preparation</span>
-                                            <h1 className="text-2xl sm:text-4xl font-black text-[var(--foreground)] tracking-tight leading-none italic uppercase mb-3">
-                                                {currentPhase.title}
-                                            </h1>
-                                            <div className="prose prose-invert max-w-xl mx-auto text-xs sm:text-sm text-[var(--foreground-muted)] font-medium leading-relaxed">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                    {currentPhase.content}
-                                                </ReactMarkdown>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mb-6 md:mb-8">
-                                            <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-left shadow-sm">
-                                                <Terminal size={16} className="text-[var(--blue)] mb-2" />
-                                                <h4 className="text-[10px] font-black text-[var(--foreground)] uppercase mb-1">How it works</h4>
-                                                <p className="text-[9px] text-[var(--foreground-muted)] font-medium leading-relaxed">
-                                                    Go through the material to help it stick. Finish everything for the best result.
-                                                </p>
-                                            </div>
-                                            <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-left shadow-sm">
-                                                <Target size={16} className="text-[var(--emerald)] mb-2" />
-                                                <h4 className="text-[10px] font-black text-[var(--foreground)] uppercase mb-1">Goal</h4>
-                                                <p className="text-[9px] text-[var(--foreground-muted)] font-medium leading-relaxed">
-                                                    Aim to master the concepts or finish all items in this activity.
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={handleBeginTask}
-                                            disabled={isLoadingPhase}
-                                            className="px-8 py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] uppercase tracking-widest hover-scale-md active:scale-98 transition-all shadow-lg flex items-center gap-3 group disabled:opacity-50 shrink-0"
-                                        >
-                                            {isLoadingPhase ? (
-                                                <>Thinking... <Loader2 size={14} className="animate-spin" /></>
-                                            ) : (
-                                                <>Get Started <ArrowRight size={14} className="group-hover-translate-x-sm transition-transform" /></>
-                                            )}
-                                        </button>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="task"
-                                        initial={{ opacity: 0, scale: 0.98 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        className="w-full flex-grow overflow-visible flex flex-col items-center px-2 sm:px-4 py-4 sm:py-6 max-w-5xl mx-auto"
-                                    >
-                                        <div className="text-center mb-4 shrink-0">
-                                            {currentPhase.id !== 'predict' && (
-                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--background-secondary)] border border-[var(--border)] text-[8px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-2 shadow-sm">
-                                                    <div className="w-1 h-1 rounded-full bg-[var(--emerald)] animate-pulse" />
-                                                    Active Session
-                                                </div>
-                                            )}
-                                            {currentPhase.id !== 'predict' && (
-                                                <h2 className="text-base sm:text-lg font-black text-[var(--foreground)] italic tracking-tight uppercase">Checking Understanding</h2>
-                                            )}
-                                        </div>
-
-                                        <div className="w-full relative transition-all duration-500 bg-transparent border-none p-0 h-auto overflow-visible mb-6">
-                                            {renderPhaseInteractive(currentPhase)}
-                                        </div>
-
-                                        {/* Final Phase Action */}
-                                        {!isSharedView && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="w-full max-w-md mx-auto shrink-0 pb-6 mt-4"
-                                            >
-                                                <button
-                                                    onClick={() => handleMasterPhase()}
-                                                    className={cn(
-                                                        "w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2",
-                                                        ['distill', 'breakdown', 'retain', 'test'].includes(currentPhase.id)
-                                                            ? "bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:border-[var(--blue)]/30 hover:bg-[var(--blue)]/5 opacity-60 hover:opacity-100 shadow-sm"
-                                                            : "bg-[var(--blue)] text-white shadow-xl hover-scale-sm active:scale-[0.98]"
-                                                    )}
-                                                >
-                                                    {['distill', 'breakdown', 'retain', 'test'].includes(currentPhase.id) ? (
-                                                        <>Fast Forward Phase <ArrowRight size={14} /></>
-                                                    ) : (
-                                                        <><CheckCircle2 size={16} /> Finish & Continue</>
-                                                    )}
-                                                </button>
-                                                {['distill', 'breakdown', 'retain', 'test'].includes(currentPhase.id) ? (
-                                                    <p className="text-center text-[8px] text-[var(--foreground-muted)] font-black mt-3 uppercase tracking-widest opacity-40">
-                                                        Skip this activity
-                                                    </p>
-                                                ) : (
-                                                    <p className="text-center text-[9px] text-[var(--foreground-muted)] font-bold mt-3 uppercase tracking-widest opacity-60">
-                                                        Saving progress to study library
-                                                    </p>
-                                                )}
-                                            </motion.div>
+                                                        <FileText size={12} />
+                                                        <span>Download Zip (HTML)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowDownloadMenu(false);
+                                                            handleExportHTML();
+                                                        }}
+                                                        className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                                    >
+                                                        <Download size={12} />
+                                                        <span>Download HTML</span>
+                                                    </button>
+                                                </motion.div>
+                                            </>
                                         )}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* THE PROFESSOR'S BEDTIME VERDICT MODAL */}
-            <AnimatePresence>
-                {showWrapModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[500] flex flex-col justify-between p-6 sm:p-10 bg-[#060608] text-white selection:bg-[var(--blue-dim)] overflow-y-auto custom-scrollbar"
-                    >
-                        {/* Story Progress Indicators */}
-                        <div className="w-full max-w-xl mx-auto z-20 pt-4 flex flex-col gap-4">
-                            <div className="flex gap-1.5 w-full">
-                                {Array.from({ length: 5 }).map((_, idx) => (
-                                    <button 
-                                        key={idx} 
-                                        onClick={() => setWrapSlide(idx)}
-                                        className={cn(
-                                            "h-1 flex-1 rounded-full transition-all duration-300",
-                                            wrapSlide >= idx ? "bg-[var(--blue)] shadow-[0_0_8px_var(--blue-glow)]" : "bg-white/10"
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/40">
-                                    Sprint Wrap • Slide {wrapSlide + 1} of 5
-                                </span>
-                                <button
-                                    onClick={() => { setShowWrapModal(false); setWrapSlide(0); }}
-                                    className="p-1 rounded-lg hover:bg-white/5 text-white/60 hover:text-white transition-colors"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Story Card Canvas */}
-                        <div className="flex-1 w-full max-w-xl mx-auto flex items-center justify-center my-8 z-10 relative">
-                            <AnimatePresence mode="wait">
-                                {wrapSlide === 0 && (
-                                    <motion.div
-                                        key="slide0"
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 1.05 }}
-                                        className="text-center space-y-6 flex flex-col items-center justify-center"
-                                    >
-                                        <div className="w-20 h-20 rounded-3xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center text-[var(--blue)] animate-bounce mb-4 shadow-[0_0_40px_var(--blue-glow)]">
-                                            <Sparkles size={40} />
-                                        </div>
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-[var(--blue-text)] text-[9px] font-black uppercase tracking-widest border border-white/10">
-                                            <Star size={10} className="fill-current" /> SPRINT COMPLETE
-                                        </div>
-                                        <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase leading-none italic">
-                                            Your <span className="text-[var(--blue)]">Daily Wrapped</span> is Ready
-                                        </h2>
-                                        <p className="text-sm text-white/60 font-bold max-w-sm mx-auto">
-                                            You just finished studying {packTitle}. Let's look at how your brain performed today.
-                                        </p>
-                                    </motion.div>
-                                )}
-
-                                {wrapSlide === 1 && (
-                                    <motion.div
-                                        key="slide1"
-                                        initial={{ opacity: 0, x: 100 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -100 }}
-                                        className="w-full text-center space-y-8 flex flex-col items-center justify-center"
-                                    >
-                                        <h3 className="text-2xl font-black tracking-tight uppercase italic text-[var(--blue-text)]">
-                                            Academic Output
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-4 w-full">
-                                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center shadow-lg relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 p-4 opacity-5 text-[var(--blue)]"><Zap size={60} /></div>
-                                                <span className="text-[9px] font-black uppercase tracking-wider text-white/40 mb-1">QUIZ SCORE</span>
-                                                <span className="text-5xl font-black text-[var(--blue)] tracking-tighter">{effectiveQuizScore}%</span>
-                                            </div>
-                                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center shadow-lg relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 p-4 opacity-5 text-[var(--emerald)]"><CheckCircle2 size={60} /></div>
-                                                <span className="text-[9px] font-black uppercase tracking-wider text-white/40 mb-1">CARDS DRILL</span>
-                                                <span className="text-5xl font-black text-[var(--emerald)] tracking-tighter">{effectiveFlashcardsCount}</span>
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-white/50 max-w-sm font-medium">
-                                            {userFirstName} increased their exam preparedness score significantly with a card run like this.
-                                        </p>
-                                    </motion.div>
-                                )}
-
-                                {wrapSlide === 2 && (
-                                    <motion.div
-                                        key="slide2"
-                                        initial={{ opacity: 0, scale: 1.1 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.9 }}
-                                        className="text-center space-y-6 flex flex-col items-center justify-center"
-                                    >
-                                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--amber)]">STUDY VELOCITY</span>
-                                        <div className="text-7xl font-black text-[var(--amber)] tracking-tighter italic">
-                                            {(() => {
-                                                const durationMs = sessionStats.finishTime ? (sessionStats.finishTime - sessionStats.startTime) : 0;
-                                                const minutes = Math.floor(durationMs / 60000);
-                                                const seconds = Math.floor((durationMs % 60000) / 1000);
-                                                return durationMs > 0 ? `${minutes}m ${seconds}s` : "3m 15s";
-                                            })()}
-                                        </div>
-                                        <h3 className="text-lg font-black uppercase max-w-sm leading-tight">
-                                            Fast and focused study pace.
-                                        </h3>
-                                        <p className="text-xs text-white/60 max-w-sm mx-auto font-medium">
-                                            {userFirstName} keeps their memory loops sharp by completing sprints in record time.
-                                        </p>
-                                    </motion.div>
-                                )}
-
-                                {wrapSlide === 3 && (
-                                    <motion.div
-                                        key="slide3"
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 1.05 }}
-                                        className="text-center space-y-6 flex flex-col items-center justify-center"
-                                    >
-                                        <div className="w-16 h-16 rounded-2xl bg-[var(--blue-dim)] border border-[var(--blue-border)] flex items-center justify-center text-[var(--blue)] mb-2 shadow-[0_0_20px_var(--blue-glow)]">
-                                            <BrainCircuit size={28} />
-                                        </div>
-                                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--blue-text)]">YOUR STUDY ARCHETYPE</span>
-                                        <h3 className="text-3xl font-black uppercase tracking-tight italic">
-                                            {studyArchetype.title}
-                                        </h3>
-                                        <p className="text-sm text-white/70 max-w-sm mx-auto leading-relaxed">
-                                            {studyArchetype.description}
-                                        </p>
-                                    </motion.div>
-                                )}
-
-                                {wrapSlide === 4 && (
-                                    <motion.div
-                                        key="slide4"
-                                        initial={{ opacity: 0, y: 50 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -50 }}
-                                        className="w-full text-center space-y-6"
-                                    >
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-[var(--blue-text)] text-[9px] font-black uppercase tracking-widest border border-white/10">
-                                            <Zap size={10} className="text-[var(--blue)]" /> THE PROFESSOR'S VERDICT
-                                        </div>
-                                        <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 min-h-[140px] flex items-center justify-center text-center shadow-inner">
-                                            {isGuest ? (
-                                                <div className="relative py-2">
-                                                    <p className="blur-[4px] select-none text-sm text-white font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                                        {userFirstName}, the Professor knows exactly how ready you are, but you need to sign up to unlock this final verdict and save your streak.
-                                                    </p>
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-                                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--blue)] mb-2">Locked Assessment</span>
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowWrapModal(false);
-                                                                setShowGuestModal(true);
-                                                            }}
-                                                            className="px-4 py-2 rounded-xl bg-white text-black text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all cursor-pointer shadow-md"
-                                                        >
-                                                            Sign Up to Unlock
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm sm:text-base text-white font-black leading-relaxed italic uppercase max-w-2xl mx-auto tracking-tight">
-                                                    {(() => {
-                                                        if (effectiveQuizScore >= 95) return `Absolute genius. ${userFirstName}, your brain is full and the slides have been parsed. Flawless. You've fully absorbed this material. Close the tab and go live your life.`;
-                                                        if (effectiveQuizScore >= 80) return `Solid run. You've locked in the high-yield parts. ${userFirstName}, grab some water and catch up on sleep. The hard work is done.`;
-                                                        if (effectiveQuizScore >= 60) return `You passed, but it was close. ${userFirstName}, go get some rest now, but review these card decks one more time tomorrow morning.`;
-                                                        return "Concept explorer. Some gaps remain, but cramming tired won't help. Rest your brain, sleep on it, and let the concepts settle.";
-                                                    })()}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex flex-col gap-2.5 max-w-md mx-auto pt-4">
-                                            <button 
-                                                onClick={() => {
-                                                    if (isGuest) {
-                                                        setShowWrapModal(false);
-                                                        setShowGuestModal(true);
-                                                    } else {
-                                                        const text = `I just wrapped up my study session on "${packTitle}" with The Professor! 🎓\n\n🎯 Quiz Score: ${effectiveQuizScore}%\n⚡ Cards Reviewed: ${effectiveFlashcardsCount}\n\nYour notes. Just the good parts. Get your time back:\n${window.location.origin}`;
-                                                        navigator.clipboard.writeText(text);
-                                                        addToast("Summary copied to clipboard!", "success");
-                                                    }
-                                                }}
-                                                className="w-full py-3.5 rounded-xl bg-white text-black font-black text-[10px] uppercase tracking-widest shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                                            >
-                                                <Share2 size={14} /> 
-                                                {isGuest ? "SIGN UP TO SAVE PROGRESS" : "COPY SPRINT SUMMARY"}
-                                            </button>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <button 
-                                                    onClick={() => { setShowWrapModal(false); setWrapSlide(0); router.push('/create'); }}
-                                                    className="py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all cursor-pointer"
-                                                >
-                                                    NEW SPRINT
-                                                </button>
-                                                <button 
-                                                    onClick={() => { setShowWrapModal(false); setWrapSlide(0); router.push('/dashboard'); }}
-                                                    className="py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all cursor-pointer"
-                                                >
-                                                    CLOSE LAB
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* Footer Controls */}
-                        <div className="w-full max-w-xl mx-auto flex items-center justify-between z-20 pb-4">
-                            <button
-                                onClick={() => setWrapSlide(prev => Math.max(0, prev - 1))}
-                                disabled={wrapSlide === 0}
-                                className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 disabled:opacity-0 transition-opacity"
-                            >
-                                BACK
-                            </button>
-                            {wrapSlide < 4 ? (
-                                <button
-                                    onClick={() => setWrapSlide(prev => Math.min(4, prev + 1))}
-                                    className="px-6 py-2.5 rounded-xl bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all"
-                                >
-                                    NEXT
-                                </button>
-                            ) : (
-                                <div className="w-12" />
+                                    </AnimatePresence>
+                                </div>
                             )}
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+
+                        {/* Left Pane Tab Body */}
+                        <div className="flex-grow p-4 overflow-y-auto max-h-[calc(100vh-220px)] min-h-[450px] custom-scrollbar flex flex-col">
+                            <div className={cn("w-full h-full flex-grow flex flex-col", leftTab !== 'raw' && "hidden")}>
+                                <AnnotatedSourceViewer
+                                    sourceText={sourceText}
+                                    highlightedParagraph={highlightedParagraph}
+                                    onHighlightClear={() => setHighlightedParagraph(null)}
+                                    className="flex-grow"
+                                />
+                            </div>
+                            
+                            {renderPhaseContent('distill', leftTab === 'summary')}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Interactive Study Decks */}
+                    <div className={cn(
+                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-3xl overflow-hidden shadow-xl min-h-[500px] lg:min-h-[600px] relative transition-all duration-300",
+                        mobileActivePane === 'left' ? "hidden lg:flex" : "flex"
+                    )}>
+                        {/* Header Tabs */}
+                        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0">
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setRightTab('flashcards')}
+                                    className={cn(
+                                        "px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
+                                        rightTab === 'flashcards' 
+                                            ? "bg-[var(--amber)]/20 border border-[var(--amber)]/40 text-[var(--amber)] shadow-inner" 
+                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
+                                    )}
+                                >
+                                    <Layers size={12} />
+                                    <span>Cards</span>
+                                </button>
+                                <button
+                                    onClick={() => handleRightTabChange('quiz')}
+                                    className={cn(
+                                        "px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
+                                        rightTab === 'quiz' 
+                                            ? "bg-[var(--crimson)]/20 border border-[var(--crimson)]/40 text-[var(--crimson)] shadow-inner" 
+                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
+                                    )}
+                                >
+                                    <Sword size={12} />
+                                    <span>Quiz</span>
+                                </button>
+                                <button
+                                    onClick={() => handleRightTabChange('roadmap')}
+                                    className={cn(
+                                        "px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
+                                        rightTab === 'roadmap' 
+                                            ? "bg-[var(--emerald)]/20 border border-[var(--emerald)]/45 text-[var(--emerald)] shadow-inner" 
+                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
+                                    )}
+                                >
+                                    <MapIcon size={12} />
+                                    <span>Roadmap</span>
+                                </button>
+                            </div>
+
+                            {/* Right Tab Actions */}
+                            {rightTab === 'flashcards' && phasesData.retain && (
+                                <button
+                                    onClick={() => {
+                                        const rawCards = phasesData.retain ? (Array.isArray(phasesData.retain) ? phasesData.retain : (phasesData.retain.flashcards || phasesData.retain.cards || [])) : [];
+                                        const cards = rawCards.map((c: any) => ({
+                                            front: c?.front || c?.question || (typeof c === 'string' ? c : "Term"),
+                                            back: c?.back || c?.answer || (typeof c === 'string' ? c : "Definition"),
+                                            topic: c?.topic || "Active Recall"
+                                        }));
+                                        downloadFlashcardsOffline(packTitle + " - Flashcards", cards);
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-md"
+                                >
+                                    <Download size={12} />
+                                    <span>Download</span>
+                                </button>
+                            )}
+
+                            {rightTab === 'quiz' && phasesData.test && (
+                                <button
+                                    onClick={() => {
+                                        const quizQuestions = Array.isArray(phasesData.test) ? phasesData.test : (phasesData.test.questions || [phasesData.test]);
+                                        downloadQuizOffline(packTitle + " - Quiz", quizQuestions);
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-md"
+                                >
+                                    <Download size={12} />
+                                    <span>Download</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Right Tab Content — Quiz and Roadmap lazy-mount on first visit */}
+                        <div className="flex-grow p-4 overflow-y-auto max-h-[calc(100vh-220px)] min-h-[450px] custom-scrollbar flex flex-col">
+                            {renderPhaseContent('retain', rightTab === 'flashcards')}
+                            {(hasVisitedQuiz.current || rightTab === 'quiz') && renderPhaseContent('test', rightTab === 'quiz')}
+                            {(hasVisitedRoadmap.current || rightTab === 'roadmap') && renderPhaseContent('predict', rightTab === 'roadmap')}
+                        </div>
+                    </div>
+
+                </div>
+            </StandardContainer>
+
+            {/* Mobile View Sticky Navigation */}
+            <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--border)] bg-[#070709]/95 backdrop-blur-md py-3 px-6 flex justify-around items-center z-[150] lg:hidden print-hidden shadow-2xl">
+                <button
+                    onClick={() => setMobileActivePane('left')}
+                    className={cn(
+                        "flex flex-col items-center gap-1 transition-all",
+                        mobileActivePane === 'left' ? "text-[var(--blue)] scale-105" : "text-[var(--foreground-muted)] opacity-70"
+                    )}
+                >
+                    <FileText size={18} />
+                    <span className="text-[8px] font-black uppercase tracking-wider">Notes & Summary</span>
+                </button>
+                <button
+                    onClick={() => setMobileActivePane('right')}
+                    className={cn(
+                        "flex flex-col items-center gap-1 transition-all",
+                        mobileActivePane === 'right' ? "text-[var(--blue)] scale-105" : "text-[var(--foreground-muted)] opacity-70"
+                    )}
+                >
+                    <Layers size={18} />
+                    <span className="text-[8px] font-black uppercase tracking-wider">Study Deck</span>
+                </button>
+            </div>
+
+
 
             {phasesData.distill && (
                 <div className="fixed left-[-9999px] top-0 pointer-events-none">

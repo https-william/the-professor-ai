@@ -321,7 +321,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         difficultyPreference: store.difficultyPreference,
         themePreference: store.themePreference,
         planStatus: store.planStatus,
-        subscriptionEndDate: store.subscriptionEndDate
+        subscriptionEndDate: store.subscriptionEndDate,
+        paystackSubscriptionCode: store.paystackSubscriptionCode
     };
 
     return (

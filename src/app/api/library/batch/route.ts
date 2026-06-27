@@ -19,14 +19,22 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: "Missing or invalid IDs" }, { status: 400 });
         }
 
-        // Apply RLS by ensuring user_id match
-        const { error } = await supabase
+        // Delete from generations
+        const { error: genError } = await supabase
             .from("generations")
             .delete()
             .in("id", ids)
             .eq("user_id", user.id);
 
-        if (error) throw error;
+        // Delete from study_packs
+        const { error: packError } = await supabase
+            .from("study_packs")
+            .delete()
+            .in("id", ids)
+            .eq("user_id", user.id);
+
+        if (genError) throw genError;
+        if (packError) throw packError;
 
         return NextResponse.json({ success: true, count: ids.length });
     } catch (error: any) {

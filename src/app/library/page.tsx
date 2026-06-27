@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@/context/UserContext";
+import { useToasts } from "@/components/ui/GlobalToasts";
 import { createClient } from "@/lib/supabase/client";
 import { generateLibraryExportHTML } from "@/lib/export-utils";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,8 @@ import {
     ExternalLink,
     Clock,
     Zap,
-    Sparkles
+    Sparkles,
+    Edit2
 } from "lucide-react";
 
 // Branded Midnight Scholar Type Configuration
@@ -122,6 +124,15 @@ export default function LibraryPage() {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showGuestModal, setShowGuestModal] = useState(false);
+
+    // Library Management & Sorting states
+    const { addToast } = useToasts();
+    const [sortOption, setSortOption] = useState<'date' | 'title' | 'type'>('date');
+    const [renameItem, setRenameItem] = useState<LibraryItem | null>(null);
+    const [renameTitle, setRenameTitle] = useState("");
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [deleteItem, setDeleteItem] = useState<LibraryItem | null>(null);
+    const [showBatchDeleteModal, setShowBatchDeleteModal] = useState(false);
 
     // Offline view redirection lock
     useEffect(() => {
@@ -253,27 +264,39 @@ export default function LibraryPage() {
             ? activeItems.filter(g => dueIds.has(g.id))
             : activeItems.filter(g => g.type === filter);
 
-    // Apply search filter
-    const searchFiltered = searchQuery.trim()
-        ? filtered.filter(item => {
-            const query = searchQuery.toLowerCase();
-            const title = (item.title || "").toLowerCase();
-            const type = item.type.toLowerCase();
-            const source = (item.source_text || "").toLowerCase();
-            
-            if (query.includes("type:")) {
-                const parts = query.split(" ");
-                const typeQuery = parts.find(p => p.startsWith("type:"))?.replace("type:", "");
-                const textQuery = parts.filter(p => !p.startsWith("type:")).join(" ");
+    // Apply search filter and sorting
+    const sortedAndFiltered = (() => {
+        const filteredList = searchQuery.trim()
+            ? filtered.filter(item => {
+                const query = searchQuery.toLowerCase();
+                const title = (item.title || "").toLowerCase();
+                const type = item.type.toLowerCase();
+                const source = (item.source_text || "").toLowerCase();
                 
-                const typeMatch = typeQuery ? type.includes(typeQuery) : true;
-                const textMatch = textQuery ? title.includes(textQuery) || source.includes(textQuery) : true;
-                return typeMatch && textMatch;
-            }
+                if (query.includes("type:")) {
+                    const parts = query.split(" ");
+                    const typeQuery = parts.find(p => p.startsWith("type:"))?.replace("type:", "");
+                    const textQuery = parts.filter(p => !p.startsWith("type:")).join(" ");
+                    
+                    const typeMatch = typeQuery ? type.includes(typeQuery) : true;
+                    const textMatch = textQuery ? title.includes(textQuery) || source.includes(textQuery) : true;
+                    return typeMatch && textMatch;
+                }
 
-            return title.includes(query) || type.includes(query) || source.includes(query);
-        })
-        : filtered;
+                return title.includes(query) || type.includes(query) || source.includes(query);
+            })
+            : filtered;
+
+        const list = [...filteredList];
+        if (sortOption === "title") {
+            return list.sort((a, b) => (a.title || "").toLowerCase().localeCompare((b.title || "").toLowerCase()));
+        } else if (sortOption === "type") {
+            return list.sort((a, b) => a.type.localeCompare(b.type));
+        } else {
+            // date desc
+            return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }
+    })();
 
     const handleOpen = (item: LibraryItem) => {
         playResultsSound("click");
@@ -313,9 +336,10 @@ export default function LibraryPage() {
     const handleBatchDelete = async () => {
         playResultsSound("click");
         if (selectedIds.length === 0) return;
-        const confirmed = window.confirm(`Are you sure you want to delete ${selectedIds.length} items? This cannot be undone.`);
-        if (!confirmed) return;
+        setShowBatchDeleteModal(true);
+    };
 
+    const confirmBatchDelete = async () => {
         setIsProcessing(true);
         try {
             if (isOfflineView) {
@@ -325,6 +349,7 @@ export default function LibraryPage() {
                 setOfflineItems(prev => prev.filter(g => !selectedIds.includes(g.id)));
                 setSelectedIds([]);
                 setIsSelectionMode(false);
+                addToast("Items deleted successfully!", "success");
             } else {
                 const res = await fetch("/api/library/batch", {
                     method: "DELETE",
@@ -335,10 +360,84 @@ export default function LibraryPage() {
                     setItems(prev => prev.filter(g => !selectedIds.includes(g.id)));
                     setSelectedIds([]);
                     setIsSelectionMode(false);
+                    addToast("Items deleted successfully!", "success");
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.error || "Failed to delete items");
                 }
             }
-        } catch (error) {
+            setShowBatchDeleteModal(false);
+        } catch (error: any) {
             console.error("Batch delete failed", error);
+            addToast(`Delete failed: ${error.message}`, "error");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleRenameSubmit = async () => {
+        if (!renameItem || !renameTitle.trim()) return;
+        setIsRenaming(true);
+        try {
+            if (isOfflineView) {
+                const packsObj = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                if (packsObj[renameItem.id]) {
+                    packsObj[renameItem.id].title = renameTitle.trim();
+                    localStorage.setItem("offline_study_packs", JSON.stringify(packsObj));
+                    setOfflineItems(prev => prev.map(item => item.id === renameItem.id ? { ...item, title: renameTitle.trim() } : item));
+                    addToast("Item renamed successfully!", "success");
+                }
+            } else {
+                const res = await fetch("/api/library/rename", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: renameItem.id, newTitle: renameTitle }),
+                });
+                if (res.ok) {
+                    setItems(prev => prev.map(item => item.id === renameItem.id ? { ...item, title: renameTitle.trim() } : item));
+                    addToast("Item renamed successfully!", "success");
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.error || "Failed to rename");
+                }
+            }
+            setRenameItem(null);
+        } catch (error: any) {
+            console.error("Rename failed:", error);
+            addToast(`Rename failed: ${error.message}`, "error");
+        } finally {
+            setIsRenaming(false);
+        }
+    };
+
+    const handleSingleDeleteSubmit = async () => {
+        if (!deleteItem) return;
+        setIsProcessing(true);
+        try {
+            if (isOfflineView) {
+                const packsObj = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
+                delete packsObj[deleteItem.id];
+                localStorage.setItem("offline_study_packs", JSON.stringify(packsObj));
+                setOfflineItems(prev => prev.filter(g => g.id !== deleteItem.id));
+                addToast("Item deleted successfully!", "success");
+            } else {
+                const res = await fetch("/api/library/batch", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ids: [deleteItem.id] }),
+                });
+                if (res.ok) {
+                    setItems(prev => prev.filter(g => g.id !== deleteItem.id));
+                    addToast("Item deleted successfully!", "success");
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.error || "Failed to delete");
+                }
+            }
+            setDeleteItem(null);
+        } catch (error: any) {
+            console.error("Delete failed:", error);
+            addToast(`Delete failed: ${error.message}`, "error");
         } finally {
             setIsProcessing(false);
         }
@@ -475,31 +574,51 @@ export default function LibraryPage() {
                         </div>
                     )}
 
-                    {/* Filter Pills */}
-                    <div className="flex flex-wrap gap-2">
-                        {filters.map(f => {
-                            const isActive = filter === f.id;
-                            return (
-                                <button 
-                                    key={f.id} 
-                                    onClick={() => {
-                                        playResultsSound("click");
-                                        setFilter(f.id);
-                                    }}
-                                    className={cn(
-                                        "flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all cursor-pointer border",
-                                        isActive
-                                            ? isOfflineView 
-                                                ? "bg-[#2BB288]/10 text-[#2BB288] border-[#2BB288]/30 shadow-[0_0_15px_rgba(43,178,136,0.15)]"
-                                                : "bg-white/10 text-white border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-                                            : "bg-white/5 text-zinc-400 hover:text-white border-white/5 hover:border-white/10"
-                                    )}
-                                >
-                                    <f.icon size={13} />
-                                    {f.label}
-                                </button>
-                            );
-                        })}
+                    {/* Filter & Sort Bar */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        {/* Filter Pills */}
+                        <div className="flex flex-wrap gap-2">
+                            {filters.map(f => {
+                                const isActive = filter === f.id;
+                                return (
+                                    <button 
+                                        key={f.id} 
+                                        onClick={() => {
+                                            playResultsSound("click");
+                                            setFilter(f.id);
+                                        }}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all cursor-pointer border",
+                                            isActive
+                                                ? isOfflineView 
+                                                    ? "bg-[#2BB288]/10 text-[#2BB288] border-[#2BB288]/30 shadow-[0_0_15px_rgba(43,178,136,0.15)]"
+                                                    : "bg-white/10 text-white border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                                                : "bg-white/5 text-zinc-400 hover:text-white border-white/5 hover:border-white/10"
+                                        )}
+                                    >
+                                        <f.icon size={13} />
+                                        {f.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Sort Dropdown */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-500">Sort by</span>
+                            <select
+                                value={sortOption}
+                                onChange={(e) => {
+                                    playResultsSound("click");
+                                    setSortOption(e.target.value as any);
+                                }}
+                                className="px-3.5 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] bg-white/5 text-zinc-400 hover:text-white border border-white/5 hover:border-white/10 outline-none cursor-pointer transition-all"
+                            >
+                                <option value="date" className="bg-[#09090b] text-white">Date Created</option>
+                                <option value="title" className="bg-[#09090b] text-white">Title</option>
+                                <option value="type" className="bg-[#09090b] text-white">Type</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Search Bar */}
@@ -612,7 +731,7 @@ export default function LibraryPage() {
                                 <div key={i} className="h-18 rounded-2xl animate-pulse bg-white/5 border border-white/5 shadow-sm" />
                             ))}
                         </div>
-                    ) : searchFiltered.length === 0 ? (
+                    ) : sortedAndFiltered.length === 0 ? (
                         <ProfessorEmptyState 
                             type={searchQuery ? "search" : filter !== "all" ? filter as any : isOfflineView ? "library" : "library"}
                             actionLabel={isOfflineView ? "Browse Cloud Library" : "Start Creating"}
@@ -620,7 +739,7 @@ export default function LibraryPage() {
                         />
                     ) : (
                         <div className="space-y-2.5">
-                            {searchFiltered.map((item) => {
+                            {sortedAndFiltered.map((item) => {
                                 const cfg = typeConfig[item.type] ?? typeConfig.summary;
                                 const count = getItemCount(item);
                                 const isSelected = selectedIds.includes(item.id);
@@ -631,79 +750,110 @@ export default function LibraryPage() {
                                 });
 
                                 return (
-                                    <div key={item.id} className="relative flex items-center group">
+                                    <div key={item.id} className="relative flex items-center group w-full">
                                         <GlassmorphicCard
                                             intensity="light"
                                             radius="20px"
                                             hoverLift={true}
                                             className="flex-1 overflow-hidden"
                                         >
-                                            <button 
-                                                onContextMenu={(e) => {
-                                                    e.preventDefault();
-                                                    toggleSelection(item.id);
-                                                }}
-                                                onClick={() => handleOpen(item)}
-                                                className="w-full flex items-center gap-4 py-4 px-6 text-left outline-none cursor-pointer bg-transparent"
-                                            >
-                                                {/* Selection Indicator */}
-                                                <AnimatePresence>
-                                                    {isSelectionMode && (
-                                                        <motion.div 
-                                                            initial={{ scale: 0, opacity: 0 }}
-                                                            animate={{ scale: 1, opacity: 1 }}
-                                                            exit={{ scale: 0, opacity: 0 }}
-                                                            className="w-5 h-5 rounded-lg border flex items-center justify-center mr-1 shadow-xs flex-shrink-0"
-                                                            style={{ 
-                                                                borderColor: isSelected ? "white" : "rgba(255,255,255,0.1)",
-                                                                background: isSelected ? "white" : "transparent"
-                                                            }}
-                                                        >
-                                                            {isSelected && <Check size={13} strokeWidth={3} className="text-zinc-950" />}
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-
-                                                <div 
-                                                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-sm transition-all"
-                                                    style={{ color: cfg.color, backgroundColor: `${cfg.color}10`, borderColor: `${cfg.color}25` }}
+                                            <div className="flex items-center w-full relative">
+                                                <button 
+                                                    onContextMenu={(e) => {
+                                                        e.preventDefault();
+                                                        toggleSelection(item.id);
+                                                    }}
+                                                    onClick={() => handleOpen(item)}
+                                                    className="w-full flex items-center gap-4 py-4 pl-6 pr-28 text-left outline-none cursor-pointer bg-transparent"
                                                 >
-                                                    <cfg.icon size={18} />
-                                                </div>
+                                                    {/* Selection Indicator */}
+                                                    <AnimatePresence>
+                                                        {isSelectionMode && (
+                                                            <motion.div 
+                                                                initial={{ scale: 0, opacity: 0 }}
+                                                                animate={{ scale: 1, opacity: 1 }}
+                                                                exit={{ scale: 0, opacity: 0 }}
+                                                                className="w-5 h-5 rounded-lg border flex items-center justify-center mr-1 shadow-xs flex-shrink-0"
+                                                                style={{ 
+                                                                    borderColor: isSelected ? "white" : "rgba(255,255,255,0.1)",
+                                                                    background: isSelected ? "white" : "transparent"
+                                                                }}
+                                                            >
+                                                                {isSelected && <Check size={13} strokeWidth={3} className="text-zinc-950" />}
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
 
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-xs sm:text-sm font-black text-white truncate group-hover:text-white/80 transition-colors uppercase italic tracking-tight font-sans">
-                                                            {item.title || "Untitled Scholarly Work"}
-                                                        </span>
-                                                        <span 
-                                                            className="text-[9px] font-black uppercase tracking-[0.15em] px-2.5 py-0.5 rounded-md flex-shrink-0 border transition-all"
-                                                            style={{ borderColor: `${cfg.color}40`, backgroundColor: `${cfg.color}15`, color: cfg.color }}
+                                                    <div 
+                                                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-sm transition-all"
+                                                        style={{ color: cfg.color, backgroundColor: `${cfg.color}10`, borderColor: `${cfg.color}25` }}
+                                                    >
+                                                        <cfg.icon size={18} />
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-xs sm:text-sm font-black text-white truncate group-hover:text-white/80 transition-colors uppercase italic tracking-tight font-sans">
+                                                                {item.title || "Untitled Scholarly Work"}
+                                                            </span>
+                                                            <span 
+                                                                className="text-[9px] font-black uppercase tracking-[0.15em] px-2.5 py-0.5 rounded-md flex-shrink-0 border transition-all"
+                                                                style={{ borderColor: `${cfg.color}40`, backgroundColor: `${cfg.color}15`, color: cfg.color }}
+                                                            >
+                                                                {cfg.label}
+                                                            </span>
+                                                            {dueIds.has(item.id) && !isOfflineView && (
+                                                                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-[#E5A93C] text-[#09090b] shadow-xs animate-pulse">
+                                                                    DUE
+                                                                </span>
+                                                            )}
+                                                            {item.isOffline && (
+                                                                <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-[#2BB288]/20 text-[#2BB288] border border-[#2BB288]/30 shadow-xs flex items-center gap-1">
+                                                                    <WifiOff size={8} /> OFFLINE
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-2.5 text-[11px] font-bold text-zinc-500 truncate">
+                                                            {count && <span className="flex items-center gap-1 shrink-0"><BookOpen size={12} /> {count}</span>}
+                                                            {count && <span className="text-zinc-800 shrink-0">•</span>}
+                                                            <span className="flex items-center gap-1 truncate"><Clock size={12} className="shrink-0" /> {itemDate}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-white transition-colors shrink-0 group-hover:opacity-0 opacity-100 duration-200">
+                                                        Open <ExternalLink size={13} />
+                                                    </div>
+                                                </button>
+
+                                                {/* Inline hover management buttons */}
+                                                {!isSelectionMode && (
+                                                    <div className="absolute right-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 z-20">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                playResultsSound("click");
+                                                                setRenameItem(item);
+                                                                setRenameTitle(item.title || "");
+                                                            }}
+                                                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--amber)]/45 hover:bg-[var(--amber)]/10 text-zinc-400 hover:text-[var(--amber)] transition-all shadow-md cursor-pointer"
+                                                            title="Rename"
                                                         >
-                                                            {cfg.label}
-                                                        </span>
-                                                        {dueIds.has(item.id) && !isOfflineView && (
-                                                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-[#E5A93C] text-[#09090b] shadow-xs animate-pulse">
-                                                                DUE
-                                                            </span>
-                                                        )}
-                                                        {item.isOffline && (
-                                                            <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md bg-[#2BB288]/20 text-[#2BB288] border border-[#2BB288]/30 shadow-xs flex items-center gap-1">
-                                                                <WifiOff size={8} /> OFFLINE
-                                                            </span>
-                                                        )}
+                                                            <Edit2 size={13} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                playResultsSound("click");
+                                                                setDeleteItem(item);
+                                                            }}
+                                                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-all shadow-md cursor-pointer"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 size={13} />
+                                                        </button>
                                                     </div>
-                                                    <div className="flex items-center gap-2.5 text-[11px] font-bold text-zinc-500 truncate">
-                                                        {count && <span className="flex items-center gap-1 shrink-0"><BookOpen size={12} /> {count}</span>}
-                                                        {count && <span className="text-zinc-800 shrink-0">•</span>}
-                                                        <span className="flex items-center gap-1 truncate"><Clock size={12} className="shrink-0" /> {itemDate}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-white transition-colors shrink-0">
-                                                    Open <ExternalLink size={13} />
-                                                </div>
-                                            </button>
+                                                )}
+                                            </div>
                                         </GlassmorphicCard>
                                     </div>
                                 );
@@ -760,6 +910,224 @@ export default function LibraryPage() {
                 isOpen={showGuestModal}
                 onClose={() => setShowGuestModal(false)}
             />
+
+            {/* Rename Modal */}
+            <AnimatePresence>
+                {renameItem && (
+                    <div className="fixed inset-0 z-[100005] flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setRenameItem(null)}
+                            className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xl"
+                        />
+
+                        {/* Modal Content */}
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl overflow-hidden z-10 p-8"
+                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.3)" }}
+                        >
+                            <button 
+                                onClick={() => setRenameItem(null)}
+                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                            >
+                                <X size={14} />
+                            </button>
+
+                            <div className="mb-6">
+                                <h3 className="text-lg font-black uppercase tracking-tight italic text-white flex items-center gap-2">
+                                    <Edit2 size={16} className="text-[var(--amber)]" />
+                                    Rename Item
+                                </h3>
+                                <p className="text-[11px] text-zinc-400 font-medium mt-1">Update the name of your study materials</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="relative rounded-2xl border border-white/5 focus-within:border-[var(--amber)]/30 transition-all bg-zinc-950/40 overflow-hidden px-4 py-3">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block mb-1">New Title</label>
+                                    <input
+                                        type="text"
+                                        value={renameTitle}
+                                        onChange={(e) => setRenameTitle(e.target.value)}
+                                        placeholder="Enter new title..."
+                                        className="w-full bg-transparent text-xs font-bold text-white outline-none border-none p-0"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") handleRenameSubmit();
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        onClick={() => setRenameItem(null)}
+                                        className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleRenameSubmit}
+                                        disabled={isRenaming || !renameTitle.trim()}
+                                        className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-[var(--amber)] to-indigo-600 hover:from-[var(--amber-light)] text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-[var(--amber)]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        {isRenaming ? (
+                                            <>
+                                                <Loader2 size={12} className="animate-spin" />
+                                                <span>Saving...</span>
+                                            </>
+                                        ) : (
+                                            <span>Save Changes</span>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Single Delete Modal */}
+            <AnimatePresence>
+                {deleteItem && (
+                    <div className="fixed inset-0 z-[100005] flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setDeleteItem(null)}
+                            className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xl"
+                        />
+
+                        {/* Modal Content */}
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl overflow-hidden z-10 p-8"
+                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.3)" }}
+                        >
+                            <button 
+                                onClick={() => setDeleteItem(null)}
+                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                            >
+                                <X size={14} />
+                            </button>
+
+                            <div className="mb-6 flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                                    <Trash2 size={22} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black uppercase tracking-tight italic text-white">
+                                        Delete Study Set?
+                                    </h3>
+                                    <p className="text-[11px] text-zinc-400 font-medium mt-1 leading-relaxed">
+                                        Are you sure you want to delete <span className="text-white font-bold">"{deleteItem.title}"</span>? This action is permanent and cannot be undone.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setDeleteItem(null)}
+                                    className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                >
+                                    Keep Item
+                                </button>
+                                <button
+                                    onClick={handleSingleDeleteSubmit}
+                                    disabled={isProcessing}
+                                    className="flex-1 py-3.5 rounded-xl bg-red-500 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/15 hover:bg-red-400 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <Loader2 size={12} className="animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        <span>Delete Permanently</span>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Batch Delete Modal */}
+            <AnimatePresence>
+                {showBatchDeleteModal && (
+                    <div className="fixed inset-0 z-[100005] flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowBatchDeleteModal(false)}
+                            className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xl"
+                        />
+
+                        {/* Modal Content */}
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl overflow-hidden z-10 p-8"
+                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.3)" }}
+                        >
+                            <button 
+                                onClick={() => setShowBatchDeleteModal(false)}
+                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                            >
+                                <X size={14} />
+                            </button>
+
+                            <div className="mb-6 flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                                    <Trash2 size={22} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black uppercase tracking-tight italic text-white">
+                                        Delete {selectedIds.length} Items?
+                                    </h3>
+                                    <p className="text-[11px] text-zinc-400 font-medium mt-1 leading-relaxed">
+                                        Are you sure you want to permanently delete these <span className="text-white font-bold">{selectedIds.length} selected items</span>? This action cannot be undone.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowBatchDeleteModal(false)}
+                                    className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                >
+                                    Keep Items
+                                </button>
+                                <button
+                                    onClick={confirmBatchDelete}
+                                    disabled={isProcessing}
+                                    className="flex-1 py-3.5 rounded-xl bg-red-500 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/15 hover:bg-red-400 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <Loader2 size={12} className="animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        <span>Delete {selectedIds.length} Items</span>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -97,48 +97,22 @@ export default function EndowmentModal({ isOpen, onClose, requiredCredits = 1, c
                             </div>
                         </div>
 
-                        {/* Quick Selection */}
-                        <div className="space-y-4 mb-10">
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--foreground-muted)] mb-4">Request Top-Up</p>
-                            <div className="grid grid-cols-1 gap-3">
-                                {plans.map((plan) => (
-                                    <button
-                                        key={plan.id}
-                                        onClick={() => router.push('/settings/billing')}
-                                        className="group relative flex items-center justify-between p-4 rounded-2xl bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--border-hover)] transition-all hover:-translate-y-0.5"
-                                        style={{
-                                            boxShadow: "0 4px 12px rgba(0,0,0,0.1), inset 0 1px 1px var(--accent-glow)"
-                                        }}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${plan.color}15` }}>
-                                                <Database className="w-5 h-5" style={{ color: plan.color }} />
-                                            </div>
-                                            <div className="text-left">
-                                                <h4 className="text-sm font-bold text-[var(--foreground)]">{plan.name}</h4>
-                                                <p className="text-[11px] text-[var(--foreground-muted)]">{plan.credits} Units • {plan.price}</p>
-                                            </div>
-                                        </div>
-                                        <ArrowRight className="w-4 h-4 text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] group-hover:translate-x-1 transition-all" />
-                                    </button>
-                                ))}
-                            </div>
+                        {/* Maintenance Notice */}
+                        <div className="p-6 rounded-3xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 mb-8 text-center relative overflow-hidden">
+                            <Zap className="w-8 h-8 text-[var(--accent)] mx-auto mb-3 animate-pulse" />
+                            <h3 className="text-sm font-black uppercase tracking-wider text-white mb-2">Vault Under Maintenance</h3>
+                            <p className="text-[11px] text-[var(--foreground-muted)] leading-relaxed max-w-sm mx-auto">
+                                The funding registry is offline for maintenance. If you require additional study credits for your exams, send a quick message to <strong className="text-white">study@the-professor.ai</strong> and we'll credit your account.
+                            </p>
                         </div>
 
                         {/* Actions */}
                         <div className="flex flex-col gap-3">
                             <button
-                                onClick={() => router.push('/settings/billing')}
-                                className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-extrabold text-[13px] uppercase tracking-widest shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover-scale-md active:scale-[0.98] transition-all"
-                            >
-                                Secure Funding
-                            </button>
-                            <button
                                 onClick={onClose}
-                                className="w-full py-3 text-[11px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] flex items-center justify-center gap-2 transition-colors"
+                                className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-extrabold text-[13px] uppercase tracking-widest shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover-scale-md active:scale-[0.98] transition-all cursor-pointer"
                             >
-                                <History className="w-4 h-4" />
-                                Review Records
+                                Close Modal
                             </button>
                         </div>
                     </div>

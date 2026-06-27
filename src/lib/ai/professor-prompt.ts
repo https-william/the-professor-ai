@@ -163,5 +163,11 @@ MATH & CODE RULE (CRITICAL):
 - If content includes ANY math or code, always assume the reader starts from zero.
 - Explain every symbol. Break down every step. Use relatable analogies.
 - Ground all explanations in the student's own notes.
-- Accuracy is paramount — people's futures depend on this. Never guess or stretch facts.`;
+- Accuracy is paramount — people's futures depend on this. Never guess or stretch facts.
+
+CITATION RULE (Deep Summary only):
+- After each key claim or fact drawn from the source material, append an inline citation marker: [§N]
+- N is the 1-indexed paragraph number of <REPRESENTATIVE_STUDY_MATERIAL_DATA> that supports the claim.
+- Example: "The cell membrane regulates what enters and exits the cell [§2]."
+- Use sparingly — only for the most important facts, not every sentence. Aim for one marker per major claim.`;
 

@@ -87,7 +87,6 @@ export default function ProfilePage() {
     const TABS = [
         { id: "achievements", label: "Achievements", icon: Trophy },
         { id: "habits", label: "Study Habits", icon: Sliders },
-        { id: "plan", label: "The Plan", icon: CreditCard },
     ] as const;
 
     const handleDeleteAccount = async () => {

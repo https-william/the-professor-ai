@@ -176,20 +176,23 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                                 <p className="text-[10px] text-white/40 mt-1 font-mono">Estimated wait: ~{queuePosition * 3} seconds</p>
                             </div>
 
-                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="text-left">
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-white/80 uppercase tracking-wider">
-                                        <Sparkles size={11} /> Skip the Line
+                            {/* Skip the Line Banner (Hidden during payment freeze) */}
+                            {false && (
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="text-left">
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black text-white/80 uppercase tracking-wider">
+                                            <Sparkles size={11} /> Skip the Line
+                                        </div>
+                                        <p className="text-[10px] text-[var(--foreground-muted)] mt-0.5">Plus & Unlimited scholars bypass queues instantly.</p>
                                     </div>
-                                    <p className="text-[10px] text-[var(--foreground-muted)] mt-0.5">Plus & Unlimited scholars bypass queues instantly.</p>
+                                    <button 
+                                        onClick={() => window.location.href = "/settings/billing"}
+                                        className="px-4 py-2 bg-white text-black hover:bg-white/80 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-md"
+                                    >
+                                        Upgrade ➔
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={() => window.location.href = "/settings/billing"}
-                                    className="px-4 py-2 bg-white text-black hover:bg-white/80 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-md"
-                                >
-                                    Upgrade ➔
-                                </button>
-                            </div>
+                            )}
                         </motion.div>
                     ) : (
                         /* Operations Checklist (Processing State) */
