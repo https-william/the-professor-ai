@@ -680,6 +680,7 @@ export const InteractiveFlashcards = ({
 
                 {/* TTS Reader button */}
                 <button 
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlayTTS(cardFrontText);
@@ -687,7 +688,7 @@ export const InteractiveFlashcards = ({
                   className={`absolute top-5 right-5 p-1.5 rounded-lg border transition-all ${
                     isPlayingTTS 
                       ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                      : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                      : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                   }`}
                 >
                   <Volume2 size={13} />
@@ -736,6 +737,7 @@ export const InteractiveFlashcards = ({
                       Concept Definition
                     </span>
                     <button 
+                      onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePlayTTS(eli5Text[currentCardIndex] || cardBackText);
@@ -743,7 +745,7 @@ export const InteractiveFlashcards = ({
                       className={`p-1.5 rounded-lg border transition-all ${
                         isPlayingTTS 
                           ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                          : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                          : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                       }`}
                     >
                       <Volume2 size={13} />

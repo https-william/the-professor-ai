@@ -4,13 +4,12 @@ import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { 
-    Zap, 
-    CheckCircle2, 
     Share2, 
     ArrowRight, 
     Download, 
     Lock, 
-    HelpCircle 
+    Volume2,
+    VolumeX
 } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
@@ -42,7 +41,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
     return (
         <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-6 md:my-8 animate-in slide-in-from-bottom-4 duration-500">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Zap size={40} className="text-[var(--blue)]" />
+                <Volume2 size={40} className="text-[var(--blue)]" />
             </div>
             
             <div className="relative z-10">
@@ -120,22 +119,9 @@ export const InteractiveSummary = ({
     onDownloadPDF,
     onCitationClick
 }: { rawText?: string; refinedText?: string; tags?: string[]; autoReveal?: boolean; isStreaming?: boolean; onFinish?: () => void; onDownloadPDF?: () => void; onCitationClick?: (paragraphIndex: number) => void }) => {
-    const [isRefining, setIsRefining] = useState(autoReveal || isStreaming);
-    const [progress, setProgress] = useState((autoReveal || isStreaming) ? 100 : 0);
     const [completedCheckpoints, setCompletedCheckpoints] = useState<string[]>([]);
+    const [isSpeaking, setIsSpeaking] = useState(false);
     const { addToast } = useToasts();
-
-    const handleRefine = () => {
-        setIsRefining(true);
-        let p = 0;
-        const interval = setInterval(() => {
-            p += 2;
-            setProgress(p);
-            if (p >= 100) {
-                clearInterval(interval);
-            }
-        }, 30);
-    };
 
     const handleShareSection = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -228,57 +214,47 @@ export const InteractiveSummary = ({
                         >
                             <Share2 size={14} />
                         </button>
-                        <button 
-                            onClick={handleRefine}
-                            disabled={isRefining}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (typeof window !== 'undefined' && window.speechSynthesis) {
+                                    if (window.speechSynthesis.speaking) {
+                                        window.speechSynthesis.cancel();
+                                        setIsSpeaking(false);
+                                        return;
+                                    }
+                                    // Strip markdown syntax for clean TTS
+                                    const plainText = rawText
+                                        .replace(/#+\s*/g, '')
+                                        .replace(/[*_`>]/g, '')
+                                        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                                        .replace(/\n{2,}/g, '. ')
+                                        .replace(/\n/g, ' ')
+                                        .trim();
+                                    const utter = new SpeechSynthesisUtterance(plainText);
+                                    utter.rate = 0.92;
+                                    utter.pitch = 1.0;
+                                    utter.onend = () => setIsSpeaking(false);
+                                    utter.onerror = () => setIsSpeaking(false);
+                                    setIsSpeaking(true);
+                                    window.speechSynthesis.speak(utter);
+                                }
+                            }}
                             className={cn(
-                                "btn-skeuo-primary px-6 py-3 active:scale-95 group relative overflow-hidden",
-                                isRefining && "opacity-70 cursor-not-allowed"
+                                "p-2 rounded-xl border transition-all",
+                                isSpeaking
+                                    ? "bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]"
+                                    : "bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
                             )}
+                            title={isSpeaking ? "Stop reading" : "Read summary aloud"}
                         >
-                            {!isRefining && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--foreground)]/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                            )}
-
-                            <span className="relative z-10 flex items-center gap-2 text-[10px]">
-                                 {isRefining && progress < 100 ? (
-                                      <>
-                                        <div className="w-3 h-3 rounded-full border-2 border-[var(--background)] border-t-transparent animate-spin" />
-                                        Processing...
-                                      </>
-                                ) : isRefining && progress >= 100 ? (
-                                    <>
-                                        <CheckCircle2 size={14} />
-                                        Refined
-                                    </>
-                                ) : (
-                                    <>
-                                        <Zap size={14} strokeWidth={1.5} fill="currentColor" />
-                                        Refine Concept
-                                    </>
-                                )}
-                            </span>
+                            {isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
                         </button>
                     </div>
                 </div>
 
                 <div className="relative min-h-[200px]">
-                    <AnimatePresence mode="wait">
-                        {!isRefining || progress < 50 ? (
-                           <motion.div 
-                             key="raw"
-                             exit={{ opacity: 0, filter: "blur(4px)" }}
-                             className="text-sm leading-relaxed text-[var(--foreground-secondary)] italic font-serif"
-                           >
-                                {rawText}
-                           </motion.div>
-                        ) : (
-                           <motion.div 
-                             key="refined"
-                             initial={{ opacity: 0, y: 10 }}
-                             animate={{ opacity: 1, y: 0 }}
-                             className="space-y-6"
-                           >
+                    <div className="space-y-6">
                                {tags && tags.length > 0 && (
                                    <div className="flex flex-wrap gap-2">
                                       {tags.map(tag => (
@@ -358,18 +334,7 @@ export const InteractiveSummary = ({
                                         }
                                     })}
                                 </div>
-                           </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {isRefining && progress < 100 && (
-                        <motion.div 
-                            initial={{ top: "0%" }}
-                            animate={{ top: "100%" }}
-                            transition={{ duration: 1.5, ease: "linear" }}
-                            className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--blue)] to-transparent blur-[2px] z-20"
-                        />
-                    )}
+                    </div>
                 </div>
 
                 {isLocked && (

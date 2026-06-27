@@ -1454,7 +1454,7 @@ export default function StudyPackPage() {
     //         />
     //     );
       return (
-        <div className="min-h-screen bg-transparent pb-24 pt-6 transition-all duration-700">
+        <div className="min-h-screen bg-transparent pb-6 pt-4 transition-all duration-700 overflow-x-hidden">
             <StandardContainer className="print-hidden">
                 {/* Guest Banner */}
                 {isGuest && (
@@ -1471,84 +1471,90 @@ export default function StudyPackPage() {
                     </div>
                 )}
 
-                {/* Workspace Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 bg-[var(--background-secondary)]/40 backdrop-blur-md p-4 rounded-2xl border border-[var(--border)] shadow-lg animate-in fade-in slide-in-from-top-3 duration-300">
-                    <div className="flex items-center gap-4">
+                {/* Workspace Header — responsive 2-zone layout */}
+                <div className="flex flex-col gap-2 mb-5 animate-in fade-in slide-in-from-top-3 duration-300">
+                    {/* Zone 1: Back + Title + Breadcrumb */}
+                    <div className="flex items-center gap-3 min-w-0">
                         <button
                             onClick={() => isGuest ? setShowGuestModal(true) : router.push('/library')}
-                            className="p-2.5 rounded-xl hover:bg-[var(--background-secondary)] transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)] shrink-0 border border-[var(--border)]"
+                            className="p-2 rounded-xl hover:bg-[var(--background-secondary)] transition-colors text-[var(--foreground-muted)] hover:text-[var(--foreground)] shrink-0 border border-[var(--border)]"
                             title={isGuest ? "Exit" : "Back to Library"}
                         >
-                            <ChevronLeft size={18} />
+                            <ChevronLeft size={17} />
                         </button>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                                <span className="px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider border border-[var(--blue)]/20 shadow-sm shadow-[var(--blue-glow)]">
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <span className="px-2 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider border border-[var(--blue)]/20 shrink-0">
                                     STUDY LAB
                                 </span>
-                                <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest flex items-center gap-1">
-                                    <Clock size={10} /> {completedPhases.length} / 4 completed
+                                <span className="text-[9px] font-bold text-[var(--foreground-muted)] flex items-center gap-1 shrink-0">
+                                    <Clock size={9} />{completedPhases.length} / 4
                                 </span>
                             </div>
-                            <h1 className="text-base sm:text-lg font-black tracking-tight leading-tight italic truncate text-white">
+                            <h1 className="text-sm sm:text-base font-black tracking-tight leading-tight italic truncate text-[var(--foreground)] max-w-full">
                                 {packTitle}
                             </h1>
                         </div>
                     </div>
 
-                    {/* Top Action Bar */}
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* Zone 2: Action Strip — scrollable on mobile, row on desktop */}
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5 pl-9">
                         <ThemeToggle />
                         <FocusTimer widget={true} />
-                        
+
                         <button
                             onClick={handleSaveOffline}
                             className={cn(
-                                "px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-sm",
-                                isSavedOffline ? "bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]" : "bg-[var(--background)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--border)]"
+                                "px-2.5 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-sm shrink-0",
+                                isSavedOffline
+                                    ? "bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]"
+                                    : "bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)]"
                             )}
                         >
-                            <Download size={12} /> {isSavedOffline ? "Saved Offline" : "Save Offline"}
+                            <Download size={11} />
+                            <span className="hidden sm:inline">{isSavedOffline ? "Saved" : "Save Offline"}</span>
+                            <span className="sm:hidden">{isSavedOffline ? "Saved" : "Offline"}</span>
                         </button>
 
-                        <div className="relative">
+                        {/* Export Pack dropdown */}
+                        <div className="relative shrink-0">
                             <button
                                 onClick={() => setShowFullExportMenu(prev => !prev)}
                                 disabled={isExportingFullPDF}
-                                className="px-3 py-2 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/30 text-[9px] font-black uppercase tracking-widest text-[var(--amber)] hover:bg-[var(--amber)]/20 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                                className="px-2.5 py-1.5 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/30 text-[9px] font-black uppercase tracking-widest text-[var(--amber)] hover:bg-[var(--amber)]/20 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 shrink-0"
                             >
-                                {isExportingFullPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                                <span>Export Pack</span>
+                                {isExportingFullPDF ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+                                <span>Export</span>
                             </button>
                             <AnimatePresence>
                                 {showFullExportMenu && (
                                     <>
                                         <div className="fixed inset-0 z-[100]" onClick={() => setShowFullExportMenu(false)} />
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            transition={{ duration: 0.15 }}
-                                            className="absolute right-0 mt-2 min-w-[180px] bg-zinc-950 border border-white/10 rounded-xl p-2 shadow-2xl flex flex-col gap-1 z-[110]"
+                                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                                            transition={{ duration: 0.13 }}
+                                            className="absolute left-0 mt-2 min-w-[190px] bg-[var(--background-secondary)] border border-[var(--border-2)] rounded-xl p-1.5 shadow-2xl flex flex-col gap-0.5 z-[110]"
                                         >
                                             <button
                                                 onClick={async () => {
                                                     setShowFullExportMenu(false);
                                                     await handleExportFullPackPDF();
                                                 }}
-                                                className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                                className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
                                             >
-                                                <FileText size={12} className="text-[var(--amber)]" />
-                                                <span>Export Full PDF</span>
+                                                <FileText size={12} className="text-[var(--amber)] shrink-0" />
+                                                <span>Export Full Pack (ZIP)</span>
                                             </button>
                                             <button
                                                 onClick={() => {
                                                     setShowFullExportMenu(false);
                                                     handleExportFullPackMarkdown();
                                                 }}
-                                                className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                                className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
                                             >
-                                                <Terminal size={12} className="text-[var(--amber)]" />
+                                                <Terminal size={12} className="text-[var(--amber)] shrink-0" />
                                                 <span>Export Markdown (.md)</span>
                                             </button>
                                         </motion.div>
@@ -1559,12 +1565,10 @@ export default function StudyPackPage() {
 
                         <button
                             onClick={handleShare}
-                            className="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm"
+                            className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm shrink-0"
                         >
-                            <Share2 size={12} /> Share
+                            <Share2 size={11} /> Share
                         </button>
-
-
                     </div>
                 </div>
 
@@ -1595,22 +1599,22 @@ export default function StudyPackPage() {
                 )}
 
                 {/* Main Split Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                     
                     {/* LEFT COLUMN: Summary / Raw Viewer */}
                     <div className={cn(
-                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-3xl overflow-hidden shadow-xl min-h-[500px] lg:min-h-[600px] relative transition-all duration-300",
+                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-2xl shadow-lg relative transition-all duration-300",
                         mobileActivePane === 'right' ? "hidden lg:flex" : "flex"
                     )}>
                         {/* Header Tabs */}
-                        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0">
-                            <div className="flex gap-2">
+                        <div className="px-4 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0 gap-2">
+                            <div className="flex gap-1.5">
                                 <button
                                     onClick={() => setLeftTab('summary')}
                                     className={cn(
-                                        "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
                                         leftTab === 'summary' 
-                                            ? "bg-[var(--blue)]/20 border border-[var(--blue)]/40 text-white shadow-inner shadow-[var(--blue-glow)]" 
+                                            ? "bg-[var(--blue)]/15 border border-[var(--blue)]/30 text-[var(--blue)]" 
                                             : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
                                     )}
                                 >
@@ -1619,9 +1623,9 @@ export default function StudyPackPage() {
                                 <button
                                     onClick={() => setLeftTab('raw')}
                                     className={cn(
-                                        "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
                                         leftTab === 'raw' 
-                                            ? "bg-[var(--blue)]/20 border border-[var(--blue)]/40 text-white shadow-inner shadow-[var(--blue-glow)]" 
+                                            ? "bg-[var(--blue)]/15 border border-[var(--blue)]/30 text-[var(--blue)]" 
                                             : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
                                     )}
                                 >
@@ -1629,46 +1633,46 @@ export default function StudyPackPage() {
                                 </button>
                             </div>
 
-                            {/* Download summary actions */}
+                            {/* Download summary actions — themed dropdown */}
                             {leftTab === 'summary' && phasesData.distill && (
-                                <div className="relative">
+                                <div className="relative shrink-0">
                                     <button
                                         onClick={() => setShowDownloadMenu(prev => !prev)}
                                         disabled={isExportingPDF}
-                                        className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-md disabled:opacity-50"
+                                        className="px-2.5 py-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 disabled:opacity-50"
                                     >
-                                        {isExportingPDF ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                                        {isExportingPDF ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
                                         <span>Download</span>
                                     </button>
                                     <AnimatePresence>
                                         {showDownloadMenu && (
                                             <>
                                                 <div className="fixed inset-0 z-[100]" onClick={() => setShowDownloadMenu(false)} />
-                                                <motion.div 
-                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
                                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                    transition={{ duration: 0.15 }}
-                                                    className="absolute right-0 mt-2 min-w-[160px] bg-zinc-950 border border-white/10 rounded-xl p-2 shadow-2xl flex flex-col gap-1 z-[110]"
+                                                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                                                    transition={{ duration: 0.13 }}
+                                                    className="absolute right-0 mt-2 min-w-[170px] bg-[var(--background-secondary)] border border-[var(--border-2)] rounded-xl p-1.5 shadow-2xl flex flex-col gap-0.5 z-[110]"
                                                 >
                                                     <button
                                                         onClick={async () => {
                                                             setShowDownloadMenu(false);
                                                             await handleExportPDF();
                                                         }}
-                                                        className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                                        className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
                                                     >
-                                                        <FileText size={12} />
-                                                        <span>Download Zip (HTML)</span>
+                                                        <FileText size={12} className="shrink-0" />
+                                                        <span>Download ZIP (HTML)</span>
                                                     </button>
                                                     <button
                                                         onClick={() => {
                                                             setShowDownloadMenu(false);
                                                             handleExportHTML();
                                                         }}
-                                                        className="w-full px-4 py-2.5 rounded-lg text-left text-[10px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                                                        className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
                                                     >
-                                                        <Download size={12} />
+                                                        <Download size={12} className="shrink-0" />
                                                         <span>Download HTML</span>
                                                     </button>
                                                 </motion.div>
@@ -1680,7 +1684,7 @@ export default function StudyPackPage() {
                         </div>
 
                         {/* Left Pane Tab Body */}
-                        <div className="flex-grow p-4 overflow-y-auto max-h-[calc(100vh-220px)] min-h-[450px] custom-scrollbar flex flex-col">
+                        <div className="flex-grow p-4 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-200px)] min-h-[400px] custom-scrollbar flex flex-col">
                             <div className={cn("w-full h-full flex-grow flex flex-col", leftTab !== 'raw' && "hidden")}>
                                 <AnnotatedSourceViewer
                                     sourceText={sourceText}
@@ -1696,46 +1700,46 @@ export default function StudyPackPage() {
 
                     {/* RIGHT COLUMN: Interactive Study Decks */}
                     <div className={cn(
-                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-3xl overflow-hidden shadow-xl min-h-[500px] lg:min-h-[600px] relative transition-all duration-300",
+                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-2xl shadow-lg relative transition-all duration-300",
                         mobileActivePane === 'left' ? "hidden lg:flex" : "flex"
                     )}>
                         {/* Header Tabs */}
-                        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0">
-                            <div className="flex gap-2">
+                        <div className="px-4 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0 gap-2">
+                            <div className="flex gap-1.5">
                                 <button
                                     onClick={() => setRightTab('flashcards')}
                                     className={cn(
-                                        "px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
+                                        "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
                                         rightTab === 'flashcards' 
-                                            ? "bg-[var(--amber)]/20 border border-[var(--amber)]/40 text-[var(--amber)] shadow-inner" 
+                                            ? "bg-[var(--amber)]/15 border border-[var(--amber)]/30 text-[var(--amber)]" 
                                             : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
                                     )}
                                 >
-                                    <Layers size={12} />
+                                    <Layers size={11} />
                                     <span>Cards</span>
                                 </button>
                                 <button
                                     onClick={() => handleRightTabChange('quiz')}
                                     className={cn(
-                                        "px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
+                                        "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
                                         rightTab === 'quiz' 
-                                            ? "bg-[var(--crimson)]/20 border border-[var(--crimson)]/40 text-[var(--crimson)] shadow-inner" 
+                                            ? "bg-[var(--crimson)]/15 border border-[var(--crimson)]/30 text-[var(--crimson)]" 
                                             : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
                                     )}
                                 >
-                                    <Sword size={12} />
+                                    <Sword size={11} />
                                     <span>Quiz</span>
                                 </button>
                                 <button
                                     onClick={() => handleRightTabChange('roadmap')}
                                     className={cn(
-                                        "px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
+                                        "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
                                         rightTab === 'roadmap' 
-                                            ? "bg-[var(--emerald)]/20 border border-[var(--emerald)]/45 text-[var(--emerald)] shadow-inner" 
+                                            ? "bg-[var(--emerald)]/15 border border-[var(--emerald)]/30 text-[var(--emerald)]" 
                                             : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
                                     )}
                                 >
-                                    <MapIcon size={12} />
+                                    <MapIcon size={11} />
                                     <span>Roadmap</span>
                                 </button>
                             </div>
@@ -1773,8 +1777,8 @@ export default function StudyPackPage() {
                             )}
                         </div>
 
-                        {/* Right Tab Content — Quiz and Roadmap lazy-mount on first visit */}
-                        <div className="flex-grow p-4 overflow-y-auto max-h-[calc(100vh-220px)] min-h-[450px] custom-scrollbar flex flex-col">
+                        {/* Right Tab Content */}
+                        <div className="flex-grow p-4 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-200px)] min-h-[400px] custom-scrollbar flex flex-col">
                             {renderPhaseContent('retain', rightTab === 'flashcards')}
                             {(hasVisitedQuiz.current || rightTab === 'quiz') && renderPhaseContent('test', rightTab === 'quiz')}
                             {(hasVisitedRoadmap.current || rightTab === 'roadmap') && renderPhaseContent('predict', rightTab === 'roadmap')}
