@@ -108,6 +108,13 @@ export async function GET(req: NextRequest) {
             }
         }
 
+        // If streak is active, today is always a study day — ensures the calendar
+        // flame count matches the streak number shown in the header.
+        if (profile?.current_streak && profile.current_streak > 0) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            activeDates.add(todayStr);
+        }
+
         // Combine and sort recent activity
         const combinedRecent = [
             ...(recentGenActivity || []),

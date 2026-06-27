@@ -51,6 +51,15 @@ export const useToasts = create<ToastStore>((set, get) => ({
     isOpen: false,
     
     fetchNotifications: async () => {
+        // One-time cache bust: evict stale success/error notifications stored before type filtering was added
+        if (typeof window !== 'undefined') {
+            const cacheVersion = localStorage.getItem('notif_cache_v');
+            if (cacheVersion !== '2') {
+                localStorage.removeItem('local_notifications');
+                localStorage.setItem('notif_cache_v', '2');
+            }
+        }
+
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -66,8 +75,10 @@ export const useToasts = create<ToastStore>((set, get) => ({
             .from('notifications')
             .select('*')
             .eq('user_id', session.user.id)
+            // Only show meaningful notifications — skip routine operation success/error spam
+            .in('type', ['xp', 'achievement', 'challenge', 'broadcast', 'warn', 'info'])
             .order('created_at', { ascending: false })
-            .limit(50);
+            .limit(20);
 
         if (data && !error) {
             const fetchedToasts: Toast[] = data.map((n: any) => ({
@@ -84,10 +95,14 @@ export const useToasts = create<ToastStore>((set, get) => ({
             if (typeof window !== 'undefined') {
                 const local = JSON.parse(localStorage.getItem('local_notifications') || '[]');
                 const parsedLocal = local.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
-                localOnly = parsedLocal.filter((n: Toast) => !fetchedToasts.some(ft => ft.id === n.id));
+                // Only keep local notifications of meaningful types too
+                const meaningfulTypes = new Set(['xp', 'achievement', 'challenge', 'broadcast', 'warn', 'info']);
+                localOnly = parsedLocal.filter((n: Toast) =>
+                    meaningfulTypes.has(n.type) && !fetchedToasts.some(ft => ft.id === n.id)
+                );
             }
 
-            const merged = [...localOnly, ...fetchedToasts].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 50);
+            const merged = [...localOnly, ...fetchedToasts].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 20);
 
             set({ toasts: merged });
             if (typeof window !== 'undefined') {
@@ -95,7 +110,10 @@ export const useToasts = create<ToastStore>((set, get) => ({
             }
         } else if (typeof window !== 'undefined') {
             const local = JSON.parse(localStorage.getItem('local_notifications') || '[]');
-            const parsed = local.map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }));
+            const meaningfulTypes = new Set(['xp', 'achievement', 'challenge', 'broadcast', 'warn', 'info']);
+            const parsed = local
+                .map((n: any) => ({ ...n, timestamp: new Date(n.timestamp) }))
+                .filter((n: Toast) => meaningfulTypes.has(n.type));
             set({ toasts: parsed });
         }
     },

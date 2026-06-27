@@ -186,23 +186,21 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 maxWidth: isApp ? "1200px" : "840px",
                 padding: isApp ? "8px 16px" : (isMobile ? "10px 16px" : "12px 24px"),
                 borderRadius: isApp ? "24px" : "9999px",
-                backgroundColor: scrolled 
-                    ? (resolvedTheme === "dark" ? "rgba(9, 9, 11, 0.70)" : "rgba(255, 255, 255, 0.75)")
-                    : (resolvedTheme === "dark" ? "rgba(9, 9, 11, 0.40)" : "rgba(255, 255, 255, 0.45)"),
-                backdropFilter: "blur(20px) saturate(160%)",
-                border: resolvedTheme === "dark"
-                    ? "1px solid rgba(255, 255, 255, 0.08)"
-                    : "1px solid rgba(15, 23, 42, 0.08)",
-                boxShadow: scrolled 
-                    ? (resolvedTheme === "dark" 
-                        ? "0 20px 60px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.08)" 
-                        : "0 10px 40px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.5)") 
-                    : (resolvedTheme === "dark"
-                        ? "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.05)"
-                        : "0 8px 32px rgba(15, 23, 42, 0.03), inset 0 1px 1px rgba(255,255,255,0.4)"),
+                // Use CSS variables so the header responds to theme changes correctly.
+                // Previously used hardcoded rgba which ignored theme class updates.
+                backgroundColor: scrolled
+                    ? "color-mix(in srgb, var(--background) 80%, transparent)"
+                    : "color-mix(in srgb, var(--background) 50%, transparent)",
+                backdropFilter: "blur(16px) saturate(140%)",
+                border: "1px solid var(--border)",
+                boxShadow: scrolled
+                    ? "0 20px 60px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.06)"
+                    : "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.04)",
+                // Pre-promote layer to GPU to eliminate scroll-triggered repaints
+                willChange: "transform",
             }}
             className={cn(
-                "fixed z-[10000] items-center pointer-events-none [&>div]:pointer-events-auto transition-all duration-300 ease-in-out",
+                "fixed z-[10000] items-center pointer-events-none [&>div]:pointer-events-auto transition-[background-color,box-shadow,border-color] duration-300 ease-in-out",
                 isApp ? "flex items-center justify-between gap-4 w-full" : "grid grid-cols-[auto_1fr_auto] gap-1.5 md:gap-4"
             )}
         >
