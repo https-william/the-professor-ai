@@ -105,17 +105,81 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "The Professor",
-  url: SITE_URL,
-  logo: `${SITE_URL}/favicon-32x32.png`,
-  description: "Elite AI-powered study mentor for generating flashcards, quizzes, and smart summaries.",
-  sameAs: [
-    "https://twitter.com/TheProfessorAI",
-    "https://github.com/the-professor-ai"
-  ]
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "The Professor",
+    "url": SITE_URL,
+    "logo": `${SITE_URL}/favicon-32x32.png`,
+    "description": "Elite AI-powered study mentor for generating flashcards, quizzes, and smart summaries.",
+    "sameAs": [
+      "https://twitter.com/TheProfessorAI",
+      "https://github.com/the-professor-ai"
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "The Professor AI",
+    "url": SITE_URL,
+    "description": "Stop the study grind. The Professor AI turns your overwhelming notes into simple study guides, active recall flashcards, practice quizzes, and revision roadmaps instantly.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "All",
+    "browserRequirements": "Requires JavaScript. Requires HTML5.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "audience": {
+      "@type": "Audience",
+      "audienceType": "Students, Exam Candidates, Academics"
+    }
+  }
+];
+
+const aiContextData = {
+  brandName: "The Professor AI",
+  slogan: "Your notes. Just the good parts.",
+  valueProposition: "Stop the study grind. Drop your notes and get your time back with instant smart summaries, practice quizzes, memory cards, and revision roadmaps.",
+  targetAudience: "University students, high school students, WAEC/JAMB candidates, and anyone experiencing study fatigue.",
+  primaryPainPointsSolved: [
+    "Study fatigue and information overload",
+    "Wasting hours summarizing dry textbook chapters and lecture slides",
+    "Lack of active practice materials before exams",
+    "Sleep deprivation due to late-night cram sessions"
+  ],
+  coreFeatures: [
+    {
+      name: "Deep Summary",
+      description: "Simple, high-yield breakdowns of lecture materials."
+    },
+    {
+      name: "Memory Cards",
+      description: "Active recall flashcards featuring ELI5 (Explain Like I'm 5) metaphors."
+    },
+    {
+      name: "Practice Quiz",
+      description: "Tutor-grade questions with step-by-step reasoning and detailed answers."
+    },
+    {
+      name: "Revision Roadmap",
+      description: "Actionable roadmap plans prioritizing high-impact topics."
+    }
+  ],
+  brandVoiceGuidelines: {
+    tone: "Conversational, approachable, witty, and reassuring.",
+    style: "Simple, direct, non-corporate, coffee-shop mentor vibe.",
+    keywordsToPrefer: ["simple", "easy", "smart", "pass", "get your time back", "just the good parts", "ace"],
+    avoidWords: ["aggressive", "mastery", "strategic", "offensive", "dominance", "crush", "hack"]
+  },
+  socialProof: [
+    { name: "Tunde", outcome: "Saved hours reviewing lecture slides and aced his exams." },
+    { name: "Amaka", outcome: "Got her sleep back instead of pulling all-nighters." },
+    { name: "Ifeanyi", outcome: "Skipped the study fluff and went into the test prepared." }
+  ],
+  pricingModel: "Free to get started. High-conversion weekly sprint options available."
 };
 
 export const viewport: Viewport = {
@@ -152,6 +216,11 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/json"
+          id="brand-ad-context"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(aiContextData) }}
         />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js-bundle/3.38.1/minified.js" noModule suppressHydrationWarning />
         <script
