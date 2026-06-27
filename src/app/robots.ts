@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: ['/', '/blog', '/blog/*', '/library', '/arena', '/roadmap', '/s/*', '/share/*'],
       disallow: ['/dashboard', '/settings', '/profile', '/chat', '/api/', '/login', '/signup', '/admin/', '/debug/'],
     },
-    sitemap: 'https://theprofessor.xyz/sitemap.xml',
+    sitemap: 'https://www.theprofessor.xyz/sitemap.xml',
   };
 }

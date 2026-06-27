@@ -40,7 +40,7 @@ const outfit = { variable: "--font-outfit" };
 const sourceSerif = { variable: "--font-source-serif" };
 const jetbrainsMono = { variable: "--font-mono" };
 
-const SITE_URL = "https://theprofessor.xyz";
+const SITE_URL = "https://www.theprofessor.xyz";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
