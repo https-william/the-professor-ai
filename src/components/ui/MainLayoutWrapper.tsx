@@ -29,10 +29,10 @@ export default function MainLayoutWrapper({ children }: MainLayoutWrapperProps) 
   return (
     <main
       className={cn(
-        "platform-main-container relative min-h-screen w-full flex flex-col flex-1 transition-all duration-500",
+        "platform-main-container relative min-h-screen w-full flex flex-col flex-1 transition-colors duration-300",
         isMarketingOrAuth
-          ? "bg-transparent backdrop-blur-none border-none shadow-none"
-          : "bg-zinc-950/40 backdrop-blur-sm border-none"
+          ? "bg-transparent"
+          : "bg-[var(--background)]/60"
       )}
     >
       <div className="noise-overlay" />

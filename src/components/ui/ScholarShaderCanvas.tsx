@@ -222,9 +222,9 @@ export default function ScholarShaderCanvas({ opacity = 0.60 }: ScholarShaderCan
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
 
-    // Resize handler
+    // Resize handler — cap DPR at 1.0 to reduce GPU memory and fill cost
     const resizeCanvas = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.0);
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -235,18 +235,25 @@ export default function ScholarShaderCanvas({ opacity = 0.60 }: ScholarShaderCan
 
     let lastFrameTime = performance.now();
     let fpsWarningCount = 0;
+    // Throttle: skip every other rAF to target ~30fps so shader
+    // doesn't compete with scroll compositing on the main thread.
+    let frameToggle = false;
 
     // Render loop
     const render = () => {
+      animationFrameId = requestAnimationFrame(render);
+      frameToggle = !frameToggle;
+      if (frameToggle) return; // skip every other frame (~30fps cap)
+
       const nowTime = performance.now();
       const delta = nowTime - lastFrameTime;
       lastFrameTime = nowTime;
 
-      // Performance Fallback: Only check performance after 6 seconds of mount time to allow initialization and hydration to settle.
+      // Performance Fallback: Only check after 6s of mount time.
       if (nowTime - mountTime > 6000) {
-        if (delta > 60) {
+        if (delta > 100) {
           fpsWarningCount++;
-          if (fpsWarningCount > 40) { // Require 40 consecutive slow frames (~2.5s of lag at 15 FPS)
+          if (fpsWarningCount > 20) {
             console.warn("Consistent low rendering performance detected. Disabling WebGL background.");
             if (typeof document !== "undefined") {
               document.documentElement.classList.add("low-perf");
@@ -256,7 +263,7 @@ export default function ScholarShaderCanvas({ opacity = 0.60 }: ScholarShaderCan
             return;
           }
         } else {
-          fpsWarningCount = 0; // Reset on fast frames
+          fpsWarningCount = 0;
         }
       }
 
@@ -282,8 +289,6 @@ export default function ScholarShaderCanvas({ opacity = 0.60 }: ScholarShaderCan
 
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-      animationFrameId = requestAnimationFrame(render);
     };
 
     render();
@@ -307,7 +312,7 @@ export default function ScholarShaderCanvas({ opacity = 0.60 }: ScholarShaderCan
       ref={canvasRef}
       id="scholar-shader-canvas"
       className="fixed inset-0 w-full h-full -z-10 bg-transparent pointer-events-none transition-opacity duration-1000"
-      style={{ opacity }}
+      style={{ opacity, contain: "paint" as any }}
     />
   );
 }

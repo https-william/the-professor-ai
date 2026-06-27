@@ -373,46 +373,47 @@
    ============================================ */
 
 html.light {
-  --bg:    #F8F9FA;
+  --bg:    #F5F5F7;
   --bg-2:  #FFFFFF;
-  --bg-3:  #F1F3F5;
-  --bg-4:  #E9ECEF;
-  --bg-5:  #DEE2E6;
-  --text:           #020617; /* Slate-950 - Absolute clarity */
-  --text-2:         #0f172a; /* Slate-900 */
-  --text-3:         #1e293b; /* Slate-800 */
-  --text-4:         #64748b; /* Slate-500 */
-  --orb-opacity:    0.4;
-  --border:         rgba(15, 23, 42, 0.12);
-  --border-2:       rgba(15, 23, 42, 0.18);
-  --border-3:       rgba(15, 23, 42, 0.25);
-  --blue-dim:       rgba(37, 99, 235, 0.08);
-  --blue-glow:      rgba(37, 99, 235, 0.12);
-  --bg-glow:        rgba(37, 99, 235, 0.04);
+  --bg-3:  #EBEBED;
+  --bg-4:  #E2E2E5;
+  --bg-5:  #D5D5D9;
+  --text:           #0a0a0f;
+  --text-2:         #111118;
+  --text-3:         #1c1c28;
+  --text-4:         #4b5563; /* Readable muted on white */
+  /* Reduce orb opacity so the glowing blobs don't wash out text on white bg */
+  --orb-opacity:    0.15;
+  --border:         rgba(0, 0, 0, 0.08);
+  --border-2:       rgba(0, 0, 0, 0.12);
+  --border-3:       rgba(0, 0, 0, 0.18);
+  --blue-dim:       rgba(37, 99, 235, 0.06);
+  --blue-glow:      rgba(37, 99, 235, 0.10);
+  --bg-glow:        rgba(37, 99, 235, 0.03);
 
   --background:     var(--bg);
   --background-secondary: var(--bg-3);
-  --background-secondary-rgb: 241, 243, 245; /* RGB of --bg-3 in light mode */
+  --background-secondary-rgb: 235, 235, 237;
   --foreground:     var(--text);
   --foreground-secondary: var(--text-2);
-  --foreground-muted: var(--text-3);
-  --accent:         var(--blue);
+  --foreground-muted: var(--text-4);
+  /* Keep the Midnight Scholar amber accent in light mode too */
+  --accent:         var(--amber);
   --card:           var(--bg-2);
   --card-border:    var(--border);
+  --border-hover:   rgba(0, 0, 0, 0.22);
 
-  /* Shadow Calibration for Light Mode — Soft & Minimal */
-  --shadow-color:   15, 23, 42; /* Slate-900 RGB */
+  /* Shadow Calibration for Light Mode */
+  --shadow-color:   15, 23, 42;
   --shadow-sm:      0 1px 3px rgba(var(--shadow-color), 0.08), 0 1px 2px rgba(var(--shadow-color), 0.04);
-  --shadow-md:      0 8px 20px -4px rgba(var(--shadow-color), 0.12), 0 4px 8px -2px rgba(var(--shadow-color), 0.06);
-  --shadow-lg:      0 20px 40px -8px rgba(var(--shadow-color), 0.15), 0 10px 20px -5px rgba(var(--shadow-color), 0.08);
-  --shadow-xl:      0 35px 70px -12px rgba(var(--shadow-color), 0.20);
-  --shadow-lift:    0 10px 30px -10px rgba(var(--shadow-color), 0.15);
-  --shadow-inner:   inset 0 2px 4px 0 rgba(var(--shadow-color), 0.05);
+  --shadow-md:      0 8px 20px -4px rgba(var(--shadow-color), 0.10), 0 4px 8px -2px rgba(var(--shadow-color), 0.05);
+  --shadow-lg:      0 20px 40px -8px rgba(var(--shadow-color), 0.12), 0 10px 20px -5px rgba(var(--shadow-color), 0.06);
+  --shadow-xl:      0 35px 70px -12px rgba(var(--shadow-color), 0.15);
+  --shadow-lift:    0 10px 30px -10px rgba(var(--shadow-color), 0.12);
+  --shadow-inner:   inset 0 2px 4px 0 rgba(var(--shadow-color), 0.04);
 }
 
-html.light {
-  --background-secondary-rgb: 255, 255, 255;
-}
+
 
 /* ============================================
    BASE STYLES
