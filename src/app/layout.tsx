@@ -222,6 +222,7 @@ export default function RootLayout({
           id="brand-ad-context"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(aiContextData) }}
         />
+        <script src="https://telegram.org/js/telegram-web-app.js?56" defer />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js-bundle/3.38.1/minified.js" noModule suppressHydrationWarning />
         <script
           dangerouslySetInnerHTML={{
@@ -397,8 +398,17 @@ export default function RootLayout({
                   } catch (e) {}
                 };
 
+                var initTelegram = function() {
+                  try {
+                    if (window.location.search.includes('tgWebApp') || window.location.hash.includes('tgWebApp') || (window.Telegram && window.Telegram.WebApp)) {
+                      document.documentElement.classList.add('telegram-app');
+                    }
+                  } catch (e) {}
+                };
+
                 updatePlatformAttribute();
                 initTheme();
+                initTelegram();
               })();
             `,
           }}

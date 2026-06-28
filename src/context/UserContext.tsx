@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUserStore, UserState } from "@/store/useUserStore";
+import { useTelegram } from "@/hooks";
 
 interface UserContextType {
     user: UserState;
@@ -34,6 +35,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const store = useUserStore();
+    useTelegram();
     const refreshUser = useUserStore((state) => state.refreshUser);
     const updateUser = useUserStore((state) => state.updateUser);
     const supabase = React.useMemo(() => createClient(), []);
