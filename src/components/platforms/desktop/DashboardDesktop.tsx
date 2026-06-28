@@ -197,17 +197,17 @@ export default function DashboardDesktop({
     // Streak calendar days
     const weekDays = useMemo(() => {
         const now = new Date();
-        const dayOfWeek = now.getDay();
+        const dayOfWeek = now.getUTCDay();
         const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
         const monday = new Date(now);
-        monday.setDate(now.getDate() + mondayOffset);
-        monday.setHours(0, 0, 0, 0);
+        monday.setUTCDate(now.getUTCDate() + mondayOffset);
+        monday.setUTCHours(0, 0, 0, 0);
         const todayStr = now.toISOString().split("T")[0];
         const activeSet = new Set(activityData?.activeDatesThisWeek || []);
 
         return Array.from({ length: 7 }, (_, i) => {
             const d = new Date(monday);
-            d.setDate(monday.getDate() + i);
+            d.setUTCDate(monday.getUTCDate() + i);
             const ds = d.toISOString().split("T")[0];
             return {
                 label: ["M", "T", "W", "T", "F", "S", "S"][i],

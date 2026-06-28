@@ -132,7 +132,9 @@ export const useToasts = create<ToastStore>((set, get) => ({
 
         set((state) => {
             const updatedActive = [id, ...state.activeToastIds].slice(0, 3);
-            if (transient) {
+            const isPersistentType = ['xp', 'achievement', 'challenge', 'broadcast'].includes(type);
+
+            if (transient || !isPersistentType) {
                 return {
                     activeToastIds: updatedActive
                 };
