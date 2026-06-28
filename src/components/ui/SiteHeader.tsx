@@ -93,6 +93,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const { toasts, setIsOpen: setToastsOpen } = useToasts();
     const { isDesktop, isMobile } = useAppPlatform();
     const [mounted, setMounted] = useState(false);
+    const [isTelegramApp, setIsTelegramApp] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showResourcesMenu, setShowResourcesMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -102,6 +103,9 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
     useEffect(() => {
         setMounted(true);
+        if (typeof window !== "undefined" && (document.documentElement.classList.contains("telegram-app") || (window as any).Telegram?.WebApp?.initData)) {
+            setIsTelegramApp(true);
+        }
         const handleClickOutside = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
                 setShowUserMenu(false);
@@ -153,7 +157,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
         return "DASHBOARD";
     })();
 
-    if (isHidden) return null;
+    if (isHidden || isTelegramApp) return null;
 
     const handleModeChange = (mode: AppMode, href: string) => {
         if (onModeChange) { onModeChange(mode); return; }
