@@ -24,6 +24,7 @@ import { useToasts } from "@/components/ui/GlobalToasts";
 import { downloadFlashcardsOffline } from "@/lib/offline-download";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/context/UserContext";
+import { useTelegram } from "@/hooks";
 import { sm2, type SM2Card, formatInterval } from "@/lib/spaced-repetition";
 import ProgressNodeTrack from "@/components/ui/ProgressNodeTrack";
 
@@ -75,6 +76,7 @@ export const InteractiveFlashcards = ({
 }) => {
   const { user } = useUser();
   const { addToast } = useToasts();
+  const { triggerHaptic } = useTelegram();
 
   const dragX = useMotionValue(0);
   const rotate = useTransform(dragX, [-200, 200], [-15, 15]);
@@ -208,6 +210,7 @@ export const InteractiveFlashcards = ({
   }, [cardState, queuePointer, cardQueue, isGeneratingEli5, userGuess]);
 
   const handleFlip = () => {
+    triggerHaptic('light');
     if (cardState === 'IDLE') setCardState('FLIPPED');
     else if (cardState === 'FLIPPED') setCardState('IDLE');
   };

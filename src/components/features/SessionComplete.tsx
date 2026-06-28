@@ -28,6 +28,7 @@ import ShareCard from "@/components/ShareCard";
 import { useUser } from "@/context/UserContext";
 import OdometerCounter from "@/components/ui/OdometerCounter";
 import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
+import { useTelegram } from "@/hooks";
 
 const ICON_MAP: Record<string, any> = {
   style: Layers,
@@ -137,6 +138,7 @@ export default function SessionComplete({
     items = [],
 }: SessionCompleteProps) {
     const { user } = useUser();
+    const { triggerHaptic } = useTelegram();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [isShareOpen, setIsShareOpen] = useState(false);
     
@@ -222,6 +224,7 @@ export default function SessionComplete({
     // Setup celebration particles & audio on visible
     useEffect(() => {
         if (!isVisible) return;
+        triggerHaptic('success');
 
         // Play arpeggio chord synthesis
         const playArpeggio = () => {

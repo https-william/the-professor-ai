@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useUserStore } from "@/store/useUserStore";
 
@@ -19,8 +20,28 @@ export function useTelegram() {
   const [initData, setInitData] = useState<string>("");
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   
+  const pathname = usePathname();
+  const router = useRouter();
+  
   const refreshUser = useUserStore((state) => state.refreshUser);
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+
+  // Expose physical haptic feedback trigger
+  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error') => {
+    if (typeof window === "undefined") return;
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.HapticFeedback) return;
+
+    try {
+      if (['light', 'medium', 'heavy'].includes(type)) {
+        tg.HapticFeedback.impactOccurred(type);
+      } else if (['success', 'warning', 'error'].includes(type)) {
+        tg.HapticFeedback.notificationOccurred(type);
+      }
+    } catch (e) {
+      console.warn("Telegram Haptic feedback failed or unsupported:", e);
+    }
+  }, []);
 
   // Sync Telegram theme values with Tailwind/CSS vars
   const syncTelegramTheme = useCallback((tg: any) => {
@@ -89,12 +110,12 @@ export function useTelegram() {
     }
   }, [isAuthenticated, isAuthLoading, refreshUser]);
 
+  // Main WebApp initialization
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const tg = (window as any).Telegram?.WebApp;
     
-    // Check if running in a valid Telegram context (it defines platform and has initData)
     if (tg && tg.initData) {
       setIsTelegram(true);
       setInitData(tg.initData);
@@ -126,10 +147,41 @@ export function useTelegram() {
     }
   }, [syncTelegramTheme, performTelegramAuthBypass]);
 
+  // BackButton Navigation Syncing
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg || !tg.BackButton) return;
+
+    const handleBackClick = () => {
+      try {
+        router.back();
+      } catch (e) {
+        console.error("Telegram BackButton router.back() navigation failed:", e);
+      }
+    };
+
+    // Only show BackButton on non-home dashboard paths
+    const isHomePath = pathname === "/" || pathname === "/dashboard" || pathname === "/login" || pathname === "/signup";
+    
+    if (!isHomePath && isTelegram) {
+      tg.BackButton.show();
+      tg.BackButton.onClick(handleBackClick);
+    } else {
+      tg.BackButton.hide();
+    }
+
+    return () => {
+      tg.BackButton.offClick(handleBackClick);
+      tg.BackButton.hide();
+    };
+  }, [pathname, router, isTelegram]);
+
   return {
     isTelegram,
     tgUser,
     initData,
     isAuthLoading,
+    triggerHaptic,
   };
 }
