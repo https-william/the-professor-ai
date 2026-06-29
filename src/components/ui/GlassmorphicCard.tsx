@@ -18,19 +18,19 @@ export interface GlassmorphicCardProps extends React.HTMLAttributes<HTMLDivEleme
 
 const GLASS_PRESETS = {
   light: {
-    background: 'rgba(255, 255, 255, 0.03)',
+    background: 'var(--glass-bg-light)',
     backdropFilter: 'blur(16px) saturate(120%)',
-    border: '1px solid rgba(255, 255, 255, 0.06)',
+    border: '1px solid var(--glass-border-light)',
   },
   medium: {
-    background: 'rgba(255, 255, 255, 0.05)',
+    background: 'var(--glass-bg-medium)',
     backdropFilter: 'blur(24px) saturate(140%)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
+    border: '1px solid var(--glass-border-medium)',
   },
   heavy: {
-    background: 'rgba(9, 9, 11, 0.70)',
+    background: 'var(--glass-bg-heavy)',
     backdropFilter: 'blur(32px) saturate(160%)',
-    border: '1px solid rgba(255, 255, 255, 0.10)',
+    border: '1px solid var(--glass-border-heavy)',
   },
 };
 

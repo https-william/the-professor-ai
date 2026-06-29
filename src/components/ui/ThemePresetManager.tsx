@@ -1,20 +1,44 @@
 "use client";
-
+ 
 import { useEffect } from "react";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useTheme } from "@/context/ThemeContext";
 import { THEME_PRESETS, ThemePreset } from "@/lib/design-tokens";
-
+ 
 export default function ThemePresetManager() {
     const { preferences } = useUserPreferences();
+    const { resolvedTheme } = useTheme();
     const preset: ThemePreset = preferences?.theme_preset || "midnight-scholar";
 
     useEffect(() => {
         if (typeof window === "undefined") return;
 
-        const colors = THEME_PRESETS[preset] || THEME_PRESETS["midnight-scholar"];
         const root = document.documentElement;
 
-        // Set CSS Variables dynamically on root element
+        if (resolvedTheme === "light") {
+            // Remove inline style overrides so html.light stylesheet classes take absolute priority
+            root.style.removeProperty("--bg");
+            root.style.removeProperty("--bg-2");
+            root.style.removeProperty("--bg-3");
+            root.style.removeProperty("--text");
+            root.style.removeProperty("--text-2");
+            
+            root.style.removeProperty("--foreground");
+            root.style.removeProperty("--foreground-muted");
+            root.style.removeProperty("--foreground-secondary");
+
+            root.style.removeProperty("--accent");
+            root.style.removeProperty("--accent-bg");
+            root.style.removeProperty("--accent-glow");
+            root.style.removeProperty("--accent-border");
+            root.style.removeProperty("--accent-light");
+            root.style.removeProperty("--accent-dark");
+            return;
+        }
+
+        const colors = THEME_PRESETS[preset] || THEME_PRESETS["midnight-scholar"];
+
+        // Set CSS Variables dynamically on root element for dark mode presets
         root.style.setProperty("--bg", colors.bg);
         root.style.setProperty("--bg-2", colors.bg2);
         root.style.setProperty("--bg-3", colors.bg3);
@@ -47,7 +71,7 @@ export default function ThemePresetManager() {
 
         root.style.setProperty("--accent-light", accentLight);
         root.style.setProperty("--accent-dark", accentDark);
-    }, [preset]);
+    }, [preset, resolvedTheme]);
 
     return null;
 }

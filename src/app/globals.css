@@ -176,6 +176,11 @@
   --color-text-3: var(--text-3);
   --color-text-4: var(--text-4);
 
+  --color-border: var(--border);
+  --color-border-2: var(--border-2);
+  --color-border-3: var(--border-3);
+  --color-border-hover: var(--border-hover);
+
   /* Radius */
   --radius-sm: var(--r-sm);
   --radius-md: var(--r-md);
@@ -305,6 +310,13 @@
   --r-2xl:  32px;
   --r-pill: 9999px;
 
+  --glass-bg-light:      rgba(255, 255, 255, 0.03);
+  --glass-bg-medium:     rgba(255, 255, 255, 0.05);
+  --glass-bg-heavy:      rgba(9, 9, 11, 0.70);
+  --glass-border-light:  rgba(255, 255, 255, 0.06);
+  --glass-border-medium: rgba(255, 255, 255, 0.08);
+  --glass-border-heavy:  rgba(255, 255, 255, 0.10);
+
   /* ─── COMPATIBILITY ALIASES ─── */
   --background:     var(--bg);
   --foreground:     var(--text);
@@ -368,30 +380,37 @@
    ============================================ */
 
 html.light {
-  --bg:    #F5F5F7;
+  --bg:    #F9FAFB;
   --bg-2:  #FFFFFF;
-  --bg-3:  #EBEBED;
-  --bg-4:  #E2E2E5;
-  --bg-5:  #D5D5D9;
-  --text:           #0a0a0f;
-  --text-2:         #111118;
-  --text-3:         #1c1c28;
-  --text-4:         #4b5563; /* Readable muted on white */
+  --bg-3:  #F3F4F6;
+  --bg-4:  #E5E7EB;
+  --bg-5:  #D1D5DB;
+  --text:           #0f172a;
+  --text-2:         #1e293b;
+  --text-3:         #334155;
+  --text-4:         #475569;
   /* Reduce orb opacity so the glowing blobs don't wash out text on white bg */
-  --orb-opacity:    0.15;
-  --border:         rgba(0, 0, 0, 0.08);
-  --border-2:       rgba(0, 0, 0, 0.12);
-  --border-3:       rgba(0, 0, 0, 0.18);
-  --blue-dim:       rgba(37, 99, 235, 0.06);
-  --blue-glow:      rgba(37, 99, 235, 0.10);
-  --bg-glow:        rgba(37, 99, 235, 0.03);
+  --orb-opacity:    0.12;
+  --border:         rgba(15, 23, 42, 0.08);
+  --border-2:       rgba(15, 23, 42, 0.12);
+  --border-3:       rgba(15, 23, 42, 0.18);
+  --blue-dim:       rgba(37, 99, 235, 0.04);
+  --blue-glow:      rgba(37, 99, 235, 0.08);
+  --bg-glow:        rgba(37, 99, 235, 0.02);
   --violet-dim:     transparent;
   --emerald-dim:    transparent;
   --amber-dim:      transparent;
 
+  --glass-bg-light:      rgba(0, 0, 0, 0.01);
+  --glass-bg-medium:     rgba(0, 0, 0, 0.02);
+  --glass-bg-heavy:      rgba(255, 255, 255, 0.85);
+  --glass-border-light:  rgba(15, 23, 42, 0.04);
+  --glass-border-medium: rgba(15, 23, 42, 0.07);
+  --glass-border-heavy:  rgba(15, 23, 42, 0.10);
+
   --background:     var(--bg);
   --background-secondary: var(--bg-3);
-  --background-secondary-rgb: 235, 235, 237;
+  --background-secondary-rgb: 243, 244, 246;
   --foreground:     var(--text);
   --foreground-secondary: var(--text-2);
   --foreground-muted: var(--text-4);
@@ -399,7 +418,7 @@ html.light {
   --accent:         var(--blue);
   --card:           var(--bg-2);
   --card-border:    var(--border);
-  --border-hover:   rgba(0, 0, 0, 0.22);
+  --border-hover:   rgba(15, 23, 42, 0.20);
 
   /* Shadow Calibration for Light Mode */
   --shadow-color:   15, 23, 42;
@@ -619,6 +638,19 @@ a[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not(.btn-
 html.light .glass-card {
   background: rgba(255, 255, 255, 0.7);
   border-color: rgba(0, 0, 0, 0.08);
+}
+
+html.light .card {
+  background: linear-gradient(180deg, var(--card) 0%, rgba(243, 244, 246, 0.5) 100%);
+  border: 1px solid var(--border-2);
+  box-shadow: var(--shadow-sm);
+}
+
+html.light .scholar-card {
+  background: linear-gradient(180deg, var(--card) 0%, rgba(243, 244, 246, 0.4) 100%);
+  border: 1px solid var(--border-2);
+  border-bottom: 2.5px solid rgba(15, 23, 42, 0.12);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ============================================

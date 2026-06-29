@@ -213,11 +213,11 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     href={user.isAuthenticated ? "/dashboard" : "/"}
                     className={cn(
                     "group relative flex items-center gap-2.5 p-1.5 md:pr-4 rounded-full transition-all active:scale-95",
-                    isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "hover:bg-white/[0.08]"
+                    isApp ? "bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)]" : "hover:bg-[var(--border)]/10"
                 )}
             >
                 <div
-                    className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all bg-zinc-900 border border-white/5 shadow-sm group-hover:border-white/20"
+                    className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all bg-[var(--bg-2)] border border-[var(--border)] shadow-sm group-hover:border-[var(--border-hover)]"
                 >
                     <BrandLogo size="sm" />
                 </div>
@@ -300,7 +300,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             </div>
                         </div>
                     ) : isApp ? (
-                        <div className="hidden md:flex items-center gap-1 p-1 bg-zinc-950/45 backdrop-blur-2xl border border-white/5 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.3)]">
+                        <div className="hidden md:flex items-center gap-1 p-1 bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.15)]">
                             {[
                                 { name: "Home", href: "/dashboard", icon: LayoutDashboard },
                                 { name: "Create", href: "/create", icon: PlusCircle },
@@ -352,21 +352,20 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 )} */}
                 {user.isAuthenticated && (
                     <>
-                        {/* XP Reserves */}
-                        <div className={cn(
+                                             <div className={cn(
                             "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
-                            isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "bg-zinc-950/45 border border-white/5"
+                            isApp ? "bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)]" : "bg-[var(--bg-3)]/40 border border-[var(--border)]"
                         )} title="Study XP Reserves">
                             <Trophy size={14} className="text-[#F59E0B] w-3.5 h-3.5 md:w-4 md:h-4" />
                             <span className="font-mono text-[11px] md:text-xs font-bold text-[var(--foreground)] tabular-nums">
                                 {user.xp?.toLocaleString() ?? "0"} XP
                             </span>
                         </div>
-
+ 
                         {/* AI Credits */}
                         <div className={cn(
                             "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm transition-all",
-                            isApp ? "bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "bg-zinc-950/45 border border-white/5"
+                            isApp ? "bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)]" : "bg-[var(--bg-3)]/40 border border-[var(--border)]"
                         )} title="Available AI Credits">
                             <Zap size={14} className="text-[var(--amber)] animate-pulse w-3.5 h-3.5 md:w-4 md:h-4" />
                             <span className="font-mono text-[11px] md:text-xs font-bold text-[var(--foreground)] tabular-nums">
@@ -382,7 +381,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setToastsOpen(true)}
-                        className="relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full transition-all bg-zinc-950/45 backdrop-blur-2xl border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20 active:scale-95"
+                        className="relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full transition-all bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)] active:scale-95"
                     >
                         <Bell size={15} strokeWidth={2.5} className="text-[var(--foreground)] w-3.5 h-3.5 md:w-4 md:h-4" />
                         {unreadCount > 0 && (
@@ -411,8 +410,8 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setShowUserMenu(!showUserMenu)}
                             className={cn(
-                                "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all border border-white/5 shadow-sm overflow-hidden active:scale-95",
-                                isApp ? "bg-zinc-950/45 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:border-white/20" : "hover:border-white/20"
+                                "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all border border-[var(--border)] shadow-sm overflow-hidden active:scale-95",
+                                isApp ? "bg-[var(--bg-3)]/40 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)]" : "hover:border-[var(--border-hover)]"
                             )}
                         >
                             {user.avatar && user.avatar.length > 2 ? (
@@ -445,7 +444,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute right-0 mt-4 w-60 rounded-[32px] p-3 bg-zinc-950/90 border border-white/5 backdrop-blur-2xl shadow-2xl z-[10001]"
+                                    className="absolute right-0 mt-4 w-60 rounded-[32px] p-3 bg-[var(--bg-2)]/95 border border-[var(--border)] backdrop-blur-2xl shadow-2xl z-[10001]"
                                 >
                                     <div className="px-4 py-4 mb-2 border-b border-[var(--border)]">
                                         <p className="text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-widest mb-1">Scholar</p>
