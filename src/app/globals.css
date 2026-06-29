@@ -610,7 +610,7 @@ a[class*="bg-"]:not([class*="bg-transparent"]):not([class*="bg-none"]):not(.btn-
   pointer-events: none;
   background: radial-gradient(
     600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(245, 158, 11, 0.04),
+    rgba(74, 124, 245, 0.04),
     transparent 40%
   );
   z-index: 10;
@@ -672,7 +672,7 @@ html.light .glass-card {
   pointer-events: none;
   background: radial-gradient(
     800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(245, 158, 11, 0.06),
+    rgba(74, 124, 245, 0.06),
     transparent 40%
   );
   z-index: 10;
@@ -743,12 +743,12 @@ html.light .frosted-dock-mobile {
 
 .dock-item-active {
   color: var(--accent);
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(74, 124, 245, 0.1);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dock-item-active:hover {
-    background: rgba(245, 158, 11, 0.15);
+    background: rgba(74, 124, 245, 0.15);
   }
 }
 
@@ -879,7 +879,7 @@ html.light .btn-skeuo-primary {
   .btn-primary:hover {
     background: linear-gradient(135deg, var(--accent-light), var(--accent));
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 6px 24px rgba(74, 124, 245, 0.4);
   }
 }
 
@@ -889,11 +889,11 @@ html.light .btn-skeuo-primary {
 }
 
 .btn-glass {
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(74, 124, 245, 0.15);
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-top: 1px solid rgba(245, 158, 11, 0.6);
+  border: 1px solid rgba(74, 124, 245, 0.4);
+  border-top: 1px solid rgba(74, 124, 245, 0.6);
   color: var(--accent);
   border-radius: var(--radius-xl);
   padding: 0.75rem 1.75rem;
@@ -903,7 +903,7 @@ html.light .btn-skeuo-primary {
   box-shadow: 
     var(--shadow-md),
     inset 0 2px 2px rgba(255, 255, 255, 0.2),
-    inset 0 -2px 5px rgba(245, 158, 11, 0.1);
+    inset 0 -2px 5px rgba(74, 124, 245, 0.1);
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   display: inline-flex;
   align-items: center;
@@ -911,8 +911,8 @@ html.light .btn-skeuo-primary {
 }
 
 html.light .btn-glass {
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.2);
+  background: rgba(74, 124, 245, 0.08);
+  border-color: rgba(74, 124, 245, 0.2);
   border-top-color: rgba(255, 255, 255, 0.8);
   box-shadow: 
     var(--shadow-sm),
@@ -921,14 +921,14 @@ html.light .btn-glass {
 
 @media (hover: hover) and (pointer: fine) {
   .btn-glass:hover {
-    background: rgba(245, 158, 11, 0.25);
-    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(74, 124, 245, 0.25);
+    border-color: rgba(74, 124, 245, 0.6);
     transform: translateY(-2px);
     box-shadow: 
       0 15px 40px rgba(0, 0, 0, 0.6),
-      0 0 20px rgba(245, 158, 11, 0.3),
+      0 0 20px rgba(74, 124, 245, 0.3),
       inset 0 2px 4px rgba(255, 255, 255, 0.3),
-      inset 0 -2px 5px rgba(245, 158, 11, 0.2);
+      inset 0 -2px 5px rgba(74, 124, 245, 0.2);
   }
 }
 
@@ -952,7 +952,7 @@ html.light .btn-glass {
 @media (hover: hover) and (pointer: fine) {
   .btn-secondary:hover {
     border-color: var(--border-hover);
-    background: rgba(245, 158, 11, 0.05);
+    background: rgba(74, 124, 245, 0.05);
     color: var(--accent);
   }
 }
@@ -1356,26 +1356,26 @@ html.light .nm-clickable {
 
 /* 3D Premium Selection — The "WOW" factor for Quiz/Hub */
 .nm-inset-bezel {
-  background: rgba(245, 158, 11, 0.04);
+  background: rgba(74, 124, 245, 0.04);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 
     inset 6px 6px 12px rgba(0, 0, 0, 0.6),
     inset -2px -2px 8px rgba(255, 255, 255, 0.05),
-    0 0 25px rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  border-top-color: rgba(245, 158, 11, 0.35);
+    0 0 25px rgba(74, 124, 245, 0.12);
+  border: 1px solid rgba(74, 124, 245, 0.25);
+  border-top-color: rgba(74, 124, 245, 0.35);
   transform: scale(0.98) translateY(1px);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 html.light .nm-inset-bezel {
-  background: rgba(217, 119, 6, 0.03);
+  background: rgba(74, 124, 245, 0.03);
   box-shadow: 
     inset 4px 4px 8px rgba(0, 0, 0, 0.08),
     inset -2px -2px 6px rgba(255, 255, 255, 0.9),
-    0 0 15px rgba(217, 119, 6, 0.08);
-  border-color: rgba(217, 119, 6, 0.15);
+    0 0 15px rgba(74, 124, 245, 0.08);
+  border-color: rgba(74, 124, 245, 0.15);
 }
 
 html.light .nm-inset-glass {
@@ -1386,16 +1386,16 @@ html.light .nm-inset-glass {
   border-color: rgba(0, 0, 0, 0.05);
 }
 
-/* Gold glow breathing */
+/* Blue glow breathing */
 @keyframes glow-pulse {
 
   0%,
   100% {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+    box-shadow: 0 0 20px rgba(74, 124, 245, 0.15);
   }
 
   50% {
-    box-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 40px rgba(74, 124, 245, 0.3);
   }
 }
 
@@ -1695,10 +1695,10 @@ html.light .nm-inset-glass {
 
 @media (hover: hover) and (pointer: fine) {
   .glass-panel:hover {
-    border-color: rgba(245, 158, 11, 0.15);
+    border-color: rgba(74, 124, 245, 0.15);
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.4),
-      0 0 20px rgba(245, 158, 11, 0.05),
+      0 0 20px rgba(74, 124, 245, 0.05),
       inset 0 1px 2px rgba(255, 255, 255, 0.06);
   }
 }
@@ -1836,7 +1836,7 @@ html.light .neu-inset {
    ============================================ */
 
 .border-accent {
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(74, 124, 245, 0.3);
 }
 
 .border-dim {

@@ -86,15 +86,15 @@ export default function ScholarShaderCanvas({ opacity = 0.60 }: ScholarShaderCan
         float val3 = smoothstep(0.65, 0.0, d3);
 
         // Colors
-        vec3 dark_bg = vec3(0.008, 0.008, 0.012);       // Deepest near-black (#020203)
-        vec3 dark_blue = vec3(0.015, 0.05, 0.18);       // Subdued prestigious blue
-        vec3 dark_violet = vec3(0.05, 0.02, 0.15);      // Subdued prestigious violet
-        vec3 dark_amber = vec3(0.08, 0.04, 0.005);     // Subdued prestigious amber
+        vec3 dark_bg = vec3(0.035, 0.035, 0.043);       // Clean dark zinc background (#09090b)
+        vec3 dark_blue = vec3(0.015, 0.04, 0.12);       // Subdued cool slate-blue
+        vec3 dark_violet = vec3(0.02, 0.03, 0.08);      // Desaturated cool dark gray-blue
+        vec3 dark_amber = vec3(0.01, 0.02, 0.06);       // Desaturated cool dark gray-blue
 
-        vec3 light_bg = vec3(0.965, 0.965, 0.975);      // Soft cool white (#f6f6f9)
-        vec3 light_blue = vec3(0.38, 0.60, 0.96);        // Vivid sky blue (#6199f4)
-        vec3 light_violet = vec3(0.62, 0.48, 0.92);      // Rich lavender (#9e7aeb)
-        vec3 light_amber = vec3(0.97, 0.71, 0.30);       // Warm amber (#f8b54d)
+        vec3 light_bg = vec3(0.96, 0.96, 0.97);         // Clean light background (#F5F5F7)
+        vec3 light_blue = vec3(0.85, 0.90, 0.98);        // Soft pastel blue
+        vec3 light_violet = vec3(0.88, 0.91, 0.96);      // Soft pastel slate-blue
+        vec3 light_amber = vec3(0.92, 0.94, 0.97);       // Soft pastel slate-blue
 
         // Interpolate colors based on active theme
         vec3 c_bg = mix(light_bg, dark_bg, u_is_dark);
