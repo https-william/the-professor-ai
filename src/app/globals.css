@@ -385,6 +385,9 @@ html.light {
   --blue-dim:       rgba(37, 99, 235, 0.06);
   --blue-glow:      rgba(37, 99, 235, 0.10);
   --bg-glow:        rgba(37, 99, 235, 0.03);
+  --violet-dim:     transparent;
+  --emerald-dim:    transparent;
+  --amber-dim:      transparent;
 
   --background:     var(--bg);
   --background-secondary: var(--bg-3);

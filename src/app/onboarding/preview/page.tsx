@@ -39,10 +39,10 @@ export default function PreviewPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] py-12 px-6 relative">
       {/* Ambient background glows */}
-      <div className="absolute inset-0 bg-[#06060B]/80 backdrop-blur-[100px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[var(--background)]/80 backdrop-blur-[100px] pointer-events-none" />
       <motion.div 
         className="absolute w-[500px] h-[500px] rounded-full mix-blend-screen opacity-20 pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(229,169,60,0.12) 0%, rgba(150,115,245,0.06) 50%, transparent 70%)", filter: "blur(100px)", top: "10%", right: "10%" }}
+        style={{ background: "radial-gradient(circle, var(--blue-dim) 0%, var(--blue-glow) 50%, transparent 70%)", filter: "blur(100px)", top: "10%", right: "10%" }}
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
       />

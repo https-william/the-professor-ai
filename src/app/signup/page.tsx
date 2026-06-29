@@ -131,14 +131,14 @@ function SignupForm() {
   const strengthColor = ["", "#E85D75", "#E5A93C", "#2BB288"][strength];
 
   return (
-    <div className="min-h-screen w-full flex bg-zinc-950 relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full flex bg-[var(--background)] relative overflow-hidden font-sans">
       {/* Cinematic Background Blur */}
-      <div className="absolute inset-0 bg-[#06060B]/95 backdrop-blur-[100px] pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-[var(--background)]/95 backdrop-blur-[100px] pointer-events-none z-0" />
       
       {/* Ambient background glows */}
       <motion.div 
         className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-15 pointer-events-none z-0"
-        style={{ background: "radial-gradient(circle, rgba(229,169,60,0.15) 0%, rgba(150,115,245,0.08) 50%, transparent 70%)", filter: "blur(120px)", top: "10%", left: "30%" }}
+        style={{ background: "radial-gradient(circle, var(--blue-dim) 0%, var(--blue-glow) 50%, transparent 70%)", filter: "blur(120px)", top: "10%", left: "30%" }}
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
       />

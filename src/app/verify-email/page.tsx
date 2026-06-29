@@ -12,14 +12,14 @@ function VerifyEmailContent() {
   const email = searchParams.get("email") || "your inbox";
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden bg-zinc-950 font-sans">
+    <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden bg-[var(--background)] font-sans">
       {/* Cinematic Background Blur */}
-      <div className="absolute inset-0 bg-[#06060B]/90 backdrop-blur-[100px] pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-[var(--background)]/90 backdrop-blur-[100px] pointer-events-none z-0" />
       
       {/* Ambient background glows */}
       <motion.div 
         className="absolute w-[500px] h-[500px] rounded-full mix-blend-screen opacity-20 pointer-events-none z-0"
-        style={{ background: "radial-gradient(circle, rgba(229,169,60,0.15) 0%, rgba(150,115,245,0.08) 50%, transparent 70%)", filter: "blur(120px)", top: "15%", left: "10%" }}
+        style={{ background: "radial-gradient(circle, var(--blue-dim) 0%, var(--blue-glow) 50%, transparent 70%)", filter: "blur(120px)", top: "15%", left: "10%" }}
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
