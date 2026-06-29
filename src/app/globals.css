@@ -292,12 +292,7 @@
   --shadow-md:      0 4px 12px rgba(var(--shadow-color), 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.08);
   --shadow-lg:      0 12px 32px rgba(var(--shadow-color), 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.10);
   --shadow-xl:      0 32px 64px rgba(var(--shadow-color), 0.6), inset 0 1px 3px rgba(255, 255, 255, 0.12);
-  
-  /* Atmospheric elevation for Dark Mode (adds a subtle "lift" glow) */
   --shadow-lift:    inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  --shadow-md:      var(--shadow-md), 0 0 20px var(--blue-glow);
-  --shadow-lg:      var(--shadow-lg), 0 0 30px var(--blue-glow);
-  --shadow-xl:      var(--shadow-xl), 0 0 40px var(--blue-glow);
 
   --shadow-inner:   inset 0 2px 4px 0 rgba(0,0,0,0.3);
   --shadow-outline: 0 0 0 3px var(--blue-border);
@@ -398,7 +393,7 @@ html.light {
   --foreground-secondary: var(--text-2);
   --foreground-muted: var(--text-4);
   /* Keep the Midnight Scholar amber accent in light mode too */
-  --accent:         var(--amber);
+  --accent:         var(--blue);
   --card:           var(--bg-2);
   --card-border:    var(--border);
   --border-hover:   rgba(0, 0, 0, 0.22);

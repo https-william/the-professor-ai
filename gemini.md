@@ -103,3 +103,16 @@ DISTILLED_AESTHETICS_PROMPT = """
   - `src/components/landing/InteractiveDemo.tsx` (restored amber/gold active indicators and tab highlights, removing blue elements)
   - `src/components/ui/AmbientOrbs.tsx` (boosted orb glows)
 
+## 2026-06-29 (Update 12: Classic Light & Dark Mode Alignment)
+- **What Changed:**
+  - Deprecated the custom "Midnight Scholar" color brand guidelines (warm gold and violet highlights) in favor of a global, industry-standard Classic Light and Dark Mode.
+  - Aligned primary accents (`--accent`) to use clean blue/indigo (`var(--blue)`) consistently across both light and dark modes.
+  - Neutralized heavy colored dropshadow glows on boxes and background ambient orbs to cool, low-opacity slate/blue tones to minimize visual fatigue.
+  - Refactored the landing `NavPill.tsx` component to use dynamic design token variables, ensuring text and background colors are perfectly readable when toggling themes.
+- **Files Modified:**
+  - `gemini.md` (Update 12 context handoff)
+  - `src/app/globals.css` (aligned light mode `--accent` and desaturated glowing shadows)
+  - `src/components/ui/AmbientOrbs.tsx` (neutralized colored background orbs to cool desaturated low-opacity tones)
+  - `src/components/landing/NavPill.tsx` (made navigation items responsive to light/dark themes)
+
+
