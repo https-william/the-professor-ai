@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw, Clock, BookOpen, Coffee, Edit3, Brain, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { useTimerStore } from "@/store/useTimerStore";
 import { getRandomQuote } from "@/lib/quotes";
 import { useToasts } from "@/components/ui/GlobalToasts";
@@ -116,52 +117,53 @@ export default function FocusTimer({ widget = false }: { widget?: boolean }) {
 
     if (widget) {
         return (
-            <div 
-                onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 640) handleToggle(); }}
-                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm shrink-0 max-w-full overflow-hidden cursor-pointer sm:cursor-default"
-                title="Timer (Tap to toggle on mobile)"
-            >
-                <Clock size={14} className={isActive ? "text-[var(--blue)] animate-pulse shrink-0" : "text-[var(--foreground-muted)] shrink-0"} />
-                <span className="font-mono text-xs font-black tabular-nums text-[var(--foreground)] shrink-0">
-                    {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
-                </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+                <button 
+                    onClick={handleToggle}
+                    onDoubleClick={(e) => { e.stopPropagation(); handleReset(); }}
+                    className="relative w-9 h-9 flex items-center justify-center rounded-full bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--blue)]/40 hover:bg-[var(--background)] transition-all cursor-pointer shadow-sm group select-none shrink-0"
+                    title={`${mode === 'focus' ? 'Study' : 'Break'} Session: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} (Click: Play/Pause | Double Click: Reset)`}
+                >
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="15" fill="transparent" stroke="var(--border)" strokeWidth="1.5" />
+                        <motion.circle 
+                            cx="18" cy="18" r="15" fill="transparent" 
+                            stroke={mode === "focus" ? "var(--blue)" : "var(--amber)"} 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round"
+                            strokeDasharray="94.2"
+                            initial={{ strokeDashoffset: 94.2 }}
+                            animate={{ strokeDashoffset: 94.2 - (94.2 * progress) }}
+                            transition={{ ease: "linear", duration: 1 }}
+                        />
+                    </svg>
+                    <span className="relative font-mono text-[9px] font-black tracking-tight tabular-nums text-[var(--foreground)] flex items-center justify-center">
+                        {isActive ? (
+                            <span className="text-[10px]">{mins}</span>
+                        ) : (
+                            <Play size={10} className="fill-current text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] ml-0.5" />
+                        )}
+                    </span>
+                    {isActive && (
+                        <span className={cn(
+                            "absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--background-secondary)]",
+                            mode === 'focus' ? 'bg-[var(--blue)]' : 'bg-[var(--amber)]'
+                        )} />
+                    )}
+                </button>
                 
-                {/* Mode Selectors — Persistent & Clear Toggle — Hidden on Mobile */}
-                <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 bg-[var(--background)] p-0.5 rounded-xl border border-[var(--border)] mx-0.5 sm:mx-1 shrink-0">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setMode("focus"); setQuote({ text: "", author: "" }); }}
-                        className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode === "focus" ? "bg-[var(--blue)] text-white shadow-md shadow-blue-500/20 scale-[1.02]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}
-                        title="Study Session (25m)"
-                    >
-                        <Brain size={12} className="shrink-0" />
-                        <span className="hidden sm:inline">Study</span>
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setMode(mode === "shortBreak" ? "longBreak" : "shortBreak"); setQuote({ text: "", author: "" }); }}
-                        className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${mode !== "focus" ? "bg-amber-500 text-black shadow-md shadow-amber-500/20 scale-[1.02]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}
-                        title={mode === "longBreak" ? "Long Break (15m)" : "Short Break (5m)"}
-                    >
-                        <Coffee size={12} className="shrink-0" />
-                        <span className="hidden sm:inline">{mode === "longBreak" ? "Break (15)" : "Break (5)"}</span>
-                    </button>
-                </div>
-
-                <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 border-l border-[var(--border)] pl-1 sm:pl-2 shrink-0">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); handleToggle(); }}
-                        className="w-6 sm:w-7 h-6 sm:h-7 rounded-xl flex items-center justify-center bg-[var(--background)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors shadow-sm"
-                        title={isActive ? "Pause" : "Start"}
-                    >
-                        {isActive ? <Pause size={12} className="fill-current" /> : <Play size={12} className="fill-current ml-0.5" />}
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); handleReset(); }}
-                        className="w-6 sm:w-7 h-6 sm:h-7 rounded-xl flex items-center justify-center bg-[var(--background)] hover:bg-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
-                        title="Reset"
-                    >
-                        <RotateCcw size={12} />
-                    </button>
-                </div>
+                {/* Secondary toggle to change mode */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setMode(mode === 'focus' ? 'shortBreak' : 'focus');
+                        setQuote({ text: '', author: '' });
+                    }}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background-secondary)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)] transition-all cursor-pointer shrink-0"
+                    title={`Switch to ${mode === 'focus' ? 'Break' : 'Study'} Mode`}
+                >
+                    {mode === 'focus' ? <Coffee size={13} /> : <Brain size={13} />}
+                </button>
             </div>
         );
     }

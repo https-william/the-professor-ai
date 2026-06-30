@@ -34,12 +34,12 @@ function VerifyEmailContent() {
           <BrandLogo size="md" />
         </div>
 
-        <h1 className="text-2xl font-black text-white tracking-tight uppercase italic mb-4">
+        <h1 className="text-2xl font-black text-[var(--foreground)] tracking-tight uppercase italic mb-4">
           Check your inbox! ✉️
         </h1>
 
-        <p className="text-white/60 font-medium text-sm leading-relaxed mb-8">
-          We just sent a magic confirmation link to <strong className="text-white">{email}</strong>. 
+        <p className="text-[var(--foreground-muted)]/80 font-medium text-sm leading-relaxed mb-8">
+          We just sent a magic confirmation link to <strong className="text-[var(--foreground)]">{email}</strong>. 
           Click the link in that email so we can verify it's really you, and we'll get you started on the good stuff.
         </p>
 
@@ -53,7 +53,7 @@ function VerifyEmailContent() {
           
           <Link 
             href="/signup" 
-            className="text-xs font-black uppercase tracking-wider text-white/40 hover:text-white transition-colors py-2"
+            className="text-xs font-black uppercase tracking-wider text-[var(--foreground-muted)]/40 hover:text-[var(--foreground)] transition-colors py-2"
           >
             Entered the wrong email? Sign up again
           </Link>

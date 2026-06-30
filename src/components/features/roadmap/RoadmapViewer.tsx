@@ -84,15 +84,15 @@ export default function RoadmapViewer({ phases, title, generationId }: RoadmapVi
             {/* Header */}
             <header className="w-full max-w-5xl p-6 flex items-center justify-between z-20">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => router.push('/library')} className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer">
+                    <button onClick={() => router.push('/library')} className="p-2.5 rounded-full bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--foreground)] transition-colors cursor-pointer">
                         <ChevronLeft size={20} />
                     </button>
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--amber)] mb-0.5">Syllabus Path</p>
-                        <h1 className="text-sm font-bold truncate max-w-[200px] sm:max-w-xs">{title}</h1>
+                        <h1 className="text-sm font-bold truncate max-w-[200px] sm:max-w-xs text-[var(--foreground)]">{title}</h1>
                     </div>
                 </div>
-                <button onClick={handleCopyLink} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all cursor-pointer flex items-center gap-2">
+                <button onClick={handleCopyLink} className="p-2.5 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--foreground-secondary)] transition-all cursor-pointer flex items-center gap-2">
                     <Share2 size={16} />
                     <span className="text-[11px] font-bold hidden sm:inline">Share</span>
                 </button>
@@ -138,13 +138,13 @@ export default function RoadmapViewer({ phases, title, generationId }: RoadmapVi
                                                 className={`absolute left-2 sm:left-6 top-2 w-5 h-5 rounded-full border z-10 transition-all duration-300 flex items-center justify-center shadow-md cursor-pointer ${
                                                     isChecked 
                                                         ? "bg-[var(--emerald)] border-[var(--emerald)] text-zinc-950 scale-110" 
-                                                        : "bg-zinc-900 border-white/10 text-white hover:border-[var(--amber)]"
+                                                        : "bg-[var(--background-secondary)] border border-[var(--border-2)] text-[var(--foreground)] hover:border-[var(--amber)]"
                                                 }`}
                                             >
                                                 {isChecked ? (
                                                     <Check size={12} strokeWidth={3.5} />
                                                 ) : (
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-white" />
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--foreground-muted)]/40 group-hover:bg-[var(--foreground)]" />
                                                 )}
                                             </button>
 
@@ -164,7 +164,7 @@ export default function RoadmapViewer({ phases, title, generationId }: RoadmapVi
                                                         Phase {idx + 1}
                                                     </span>
                                                     <h3 className={`text-lg font-bold tracking-tight ${
-                                                        isChecked ? "text-zinc-400 line-through" : "text-zinc-100"
+                                                        isChecked ? "text-[var(--foreground-muted)] line-through" : "text-[var(--foreground)]"
                                                     }`}>
                                                         {phase.phase}
                                                     </h3>
@@ -176,9 +176,9 @@ export default function RoadmapViewer({ phases, title, generationId }: RoadmapVi
                                                 {phase.milestones && phase.milestones.length > 0 && (
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                         {phase.milestones.map((m, i) => (
-                                                            <div key={i} className="flex items-center gap-2.5 p-3.5 rounded-xl bg-zinc-950/40 border border-white/5">
+                                                            <div key={i} className="flex items-center gap-2.5 p-3.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
                                                                 <CheckCircle2 size={14} className="text-[var(--emerald)] shrink-0" />
-                                                                <span className="text-[11px] text-zinc-300 font-semibold leading-tight">{m}</span>
+                                                                <span className="text-[11px] text-[var(--foreground-secondary)] font-semibold leading-tight">{m}</span>
                                                             </div>
                                                         ))}
                                                     </div>

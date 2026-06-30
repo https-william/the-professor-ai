@@ -226,7 +226,7 @@ function LoginForm() {
             {/* Back link */}
             <Link
                 href="/"
-                className="absolute top-6 left-6 text-white/50 hover:text-white font-bold text-xs tracking-wider uppercase transition-colors duration-150 flex items-center gap-2 z-10"
+                className="absolute top-6 left-6 text-[var(--foreground-muted)] hover:text-[var(--foreground)] font-bold text-xs tracking-wider uppercase transition-colors duration-150 flex items-center gap-2 z-10"
             >
                 <ArrowLeft size={16} />
                 <span>Back</span>
@@ -242,10 +242,10 @@ function LoginForm() {
                     <div className="inline-flex items-center justify-center mb-4">
                         <BrandLogo size="md" />
                     </div>
-                    <h1 className="text-2xl font-black text-white tracking-tight uppercase italic">
+                    <h1 className="text-2xl font-black text-[var(--foreground)] tracking-tight uppercase italic">
                         Welcome back.
                     </h1>
-                    <p className="text-white/40 text-xs font-semibold tracking-wider uppercase mt-1">
+                    <p className="text-[var(--foreground-muted)]/80 text-xs font-semibold tracking-wider uppercase mt-1">
                         Continue where you left off
                     </p>
                 </div>
@@ -254,7 +254,7 @@ function LoginForm() {
                 <button
                     onClick={handleGoogleLogin}
                     disabled={loading}
-                    className={`w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl py-3.5 flex items-center justify-center gap-3 transition-all duration-150 active:scale-98 font-bold text-sm text-white ${
+                    className={`w-full bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl py-3.5 flex items-center justify-center gap-3 transition-all duration-150 active:scale-98 font-bold text-sm text-[var(--foreground)] ${
                         googleHighlight ? "animate-shake border-amber-500/50 shadow-[0_0_15px_rgba(229,169,60,0.1)]" : ""
                     }`}
                 >
@@ -269,9 +269,9 @@ function LoginForm() {
 
                 {/* Divider */}
                 <div className="flex items-center gap-4 my-6">
-                    <div className="flex-1 h-[1px] bg-white/5" />
-                    <span className="font-bold text-[10px] tracking-widest text-white/20 uppercase">or</span>
-                    <div className="flex-1 h-[1px] bg-white/5" />
+                    <div className="flex-1 h-[1px] bg-[var(--border)]" />
+                    <span className="font-bold text-[10px] tracking-widest text-[var(--foreground-muted)]/40 uppercase">or</span>
+                    <div className="flex-1 h-[1px] bg-[var(--border)]" />
                 </div>
 
                 {/* Error Box */}
@@ -280,9 +280,9 @@ function LoginForm() {
                 {/* Form */}
                 <form onSubmit={handleLogin} className="flex flex-col gap-4 text-left">
                     <div className="flex flex-col gap-1.5">
-                        <label htmlFor="login-email" className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-1">Email</label>
+                        <label htmlFor="login-email" className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]/80 pl-1">Email</label>
                         <div className="relative">
-                            <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                            <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]/60" />
                             <input
                                 id="login-email"
                                 type="email"
@@ -294,14 +294,14 @@ function LoginForm() {
                                 }}
                                 required
                                 autoComplete="email"
-                                className="w-full pl-11 pr-5 py-3.5 font-bold text-white outline-none placeholder:text-white/20 bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.05] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]"
+                                className="w-full pl-11 pr-5 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
                             />
                         </div>
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center px-1">
-                            <label htmlFor="login-pass" className="text-[10px] font-black uppercase tracking-widest text-white/40">Password</label>
+                            <label htmlFor="login-pass" className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]/80">Password</label>
                             <Link 
                                 href="/forgot-password" 
                                 className="text-[10px] font-black uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors"
@@ -310,7 +310,7 @@ function LoginForm() {
                             </Link>
                         </div>
                         <div className="relative">
-                            <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                            <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]/60" />
                             <input
                                 id="login-pass"
                                 type={showPassword ? "text" : "password"}
@@ -322,12 +322,12 @@ function LoginForm() {
                                 }}
                                 required
                                 autoComplete="current-password"
-                                className="w-full pl-11 pr-12 py-3.5 font-bold text-white outline-none placeholder:text-white/20 bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.05] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]"
+                                className="w-full pl-11 pr-12 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]/60 hover:text-[var(--foreground)] transition-colors"
                             >
                                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
@@ -348,7 +348,7 @@ function LoginForm() {
                     </button>
                 </form>
 
-                <p className="text-xs text-white/50 font-medium mt-8">
+                <p className="text-xs text-[var(--foreground-muted)] font-medium mt-8">
                     New to The Professor?{" "}
                     <Link 
                         href={`/signup${nextUrl && nextUrl !== "/dashboard" ? `?next=${encodeURIComponent(nextUrl)}` : ""}`} 
@@ -358,10 +358,10 @@ function LoginForm() {
                     </Link>
                 </p>
 
-                <div className="flex justify-center gap-4 mt-6 text-[10px] font-black uppercase tracking-wider text-white/20">
-                    <Link href="/legal/privacy" className="hover:text-white/40 transition-colors">Privacy Policy</Link>
+                <div className="flex justify-center gap-4 mt-6 text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]/40">
+                    <Link href="/legal/privacy" className="hover:text-[var(--foreground-muted)]/60 transition-colors">Privacy Policy</Link>
                     <span>•</span>
-                    <Link href="/legal/terms" className="hover:text-white/40 transition-colors">Terms of Use</Link>
+                    <Link href="/legal/terms" className="hover:text-[var(--foreground-muted)]/60 transition-colors">Terms of Use</Link>
                 </div>
             </GlassmorphicCard>
         </div>

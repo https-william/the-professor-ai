@@ -522,21 +522,21 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
     const isReview = status === 'review';
 
     return (
-        <div className="min-h-screen w-full flex flex-col bg-[#09090b] relative overflow-hidden">
+        <div className="min-h-screen w-full flex flex-col bg-[var(--background)] relative overflow-hidden">
             {/* Ambient lighting glows */}
             <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-[#9673F5]/5 rounded-full blur-[140px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-[#E5A93C]/3 rounded-full blur-[120px] pointer-events-none" />
 
-            <header className="w-full h-20 border-b border-white/5 flex items-center justify-between px-6 z-20 backdrop-blur-md bg-[#09090b]/80 sticky top-0">
+            <header className="w-full h-20 border-b border-[var(--border)] flex items-center justify-between px-6 z-20 backdrop-blur-md bg-[var(--background)]/85 sticky top-0">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => router.push('/library')} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 transition-colors">
+                    <button onClick={() => router.push('/library')} className="p-2.5 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--foreground)] transition-colors">
                         <X size={18} />
                     </button>
                     <div className="flex flex-col">
                         <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#9673F5]">
                             {isReview ? "Review Mode" : "Interactive Quiz"}
                         </span>
-                        <h2 className="text-sm font-bold text-white truncate max-w-[180px] md:max-w-[300px]">{title}</h2>
+                        <h2 className="text-sm font-bold text-[var(--foreground)] truncate max-w-[180px] md:max-w-[300px]">{title}</h2>
                     </div>
                 </div>
 
@@ -554,10 +554,10 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button onClick={() => setIsDrawerOpen(prev => !prev)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 transition-colors" title="Toggle Question Sheet">
+                    <button onClick={() => setIsDrawerOpen(prev => !prev)} className="p-2.5 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--foreground-secondary)] transition-colors" title="Toggle Question Sheet">
                         <Menu size={18} />
                     </button>
-                    <button onClick={() => downloadQuizOffline(title, questions, initialTimer)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 transition-colors" title="Download Offline Version">
+                    <button onClick={() => downloadQuizOffline(title, questions, initialTimer)} className="p-2.5 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--foreground-secondary)] transition-colors" title="Download Offline Version">
                         <Download size={18} />
                     </button>
                     
@@ -669,7 +669,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                 <div className="flex gap-4">
                                     <button 
                                         onClick={toggleFlag} 
-                                        className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${flags.has(currentIndex) ? 'text-[#9673F5]' : 'text-white/40 hover:text-white/70'}`}
+                                        className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${flags.has(currentIndex) ? 'text-[#9673F5]' : 'text-[var(--foreground-muted)]/70 hover:text-[var(--foreground)]'}`}
                                     >
                                         <Flag size={13} className={flags.has(currentIndex) ? "fill-[#9673F5]" : ""} />
                                         {flags.has(currentIndex) ? 'Bookmarked' : 'Bookmark'}
@@ -678,7 +678,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                             </div>
 
                             <div className="space-y-4">
-                                <h3 className="text-xl md:text-2xl font-semibold leading-relaxed text-white">
+                                <h3 className="text-zinc-900 font-semibold text-lg dark:text-zinc-100 leading-relaxed">
                                     {currentQuestion?.question}
                                 </h3>
                             </div>
@@ -711,7 +711,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                     // 2.5D Button styling constants
                                     let btnBase = "w-full p-5 rounded-2xl text-left transition-all duration-200 flex items-center justify-between group relative overflow-hidden ";
                                     let textStyle = "text-sm font-medium leading-relaxed ";
-                                    let circleColor = "bg-white/10 border-white/10 text-white/50 group-hover:bg-white/20 ";
+                                    let circleColor = "bg-zinc-200 dark:bg-white/10 border-zinc-300 dark:border-white/10 text-zinc-600 dark:text-white/50 group-hover:bg-zinc-300 dark:group-hover:bg-white/20 ";
 
                                     if (isReview) {
                                         if (isCorrect) {
@@ -723,16 +723,16 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                             textStyle += "text-[#E85D75] font-semibold";
                                             circleColor = "bg-[#E85D75]/20 border-[#E85D75]/20 text-[#E85D75]";
                                         } else {
-                                            btnBase += "bg-transparent border border-white/5 opacity-30 cursor-not-allowed ";
-                                            textStyle += "text-white/40";
+                                            btnBase += "bg-transparent border border-[var(--border)] opacity-30 cursor-not-allowed ";
+                                            textStyle += "text-[var(--foreground-muted)]/40";
                                         }
                                     } else {
                                         if (isSelected) {
-                                            btnBase += "border border-[#E5A93C]/40 bg-[#E5A93C]/10 text-white shadow-[0_4px_0_rgba(229,169,60,0.2)] translate-y-[1px] ";
-                                            textStyle += "text-white font-semibold";
+                                            btnBase += "border border-[#E5A93C]/40 bg-[#E5A93C]/10 text-zinc-900 dark:text-zinc-100 shadow-[0_4px_0_rgba(229,169,60,0.2)] translate-y-[1px] ";
+                                            textStyle += "text-zinc-900 dark:text-zinc-100 font-semibold";
                                             circleColor = "bg-[#E5A93C] border-[#E5A93C] text-black font-black";
                                         } else {
-                                            btnBase += "bg-zinc-950/40 border border-white/5 text-white/70 hover:text-white hover:bg-white/[0.04] shadow-[0_4px_0_rgba(255,255,255,0.02)] active:translate-y-[3px] active:shadow-none hover:translate-y-[1px] hover:shadow-[0_3px_0_rgba(255,255,255,0.02)] ";
+                                            btnBase += "bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-white/5 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700/50 shadow-[0_4px_0_rgba(0,0,0,0.02)] active:translate-y-[3px] active:shadow-none hover:translate-y-[1px] hover:shadow-[0_3px_0_rgba(0,0,0,0.02)] ";
                                         }
                                     }
 
@@ -826,7 +826,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                                     <Sparkles size={12} />
                                                     Professor's Analogy
                                                 </h5>
-                                                <p className="text-sm text-white/90 leading-relaxed font-serif italic">
+                                                <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed font-serif italic">
                                                     &ldquo;{tutorAnalogy[currentIndex]}&rdquo;
                                                 </p>
                                             </motion.div>

@@ -570,24 +570,24 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
         borderRadius: "28px",
-        border: "1.5px solid rgba(255, 255, 255, 0.08)",
+        border: "1.5px solid var(--border-2)",
         padding: "24px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: cardState === 'EVALUATED' ? "none" : "0 25px 60px -15px rgba(0, 0, 0, 0.7)",
+        boxShadow: cardState === 'EVALUATED' ? "none" : "0 25px 60px -15px rgba(0, 0, 0, 0.1)",
     };
 
     const cardFrontStyle: React.CSSProperties = {
         ...cardFaceStyle,
-        background: "rgba(18, 18, 24, 0.8)",
+        background: "linear-gradient(180deg, var(--bg-2) 0%, var(--bg-3) 100%)",
         backdropFilter: "blur(20px)",
     };
 
     const cardBackStyle: React.CSSProperties = {
         ...cardFaceStyle,
-        background: "rgba(12, 12, 16, 0.9)",
+        background: "linear-gradient(180deg, var(--bg-2) 0%, var(--bg-3) 100%)",
         backdropFilter: "blur(25px)",
         transform: "rotateY(180deg)",
     };
@@ -785,7 +785,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                         className={`absolute top-6 right-6 p-2 rounded-xl transition-all border ${
                                             isPlayingTTS 
                                                 ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                                                : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                                                : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                                         }`}
                                     >
                                         <Volume2 size={14} />
@@ -805,7 +805,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                                 value={userGuess}
                                                 onChange={e => setUserGuess(e.target.value)}
                                                 placeholder="Type your recall guess..."
-                                                className="w-full px-4 py-2.5 rounded-xl bg-zinc-950/60 border border-white/10 text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/40 transition-colors"
+                                                className="w-full px-4 py-2.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/40 transition-colors"
                                                 onKeyDown={e => {
                                                     if (e.key === 'Enter') {
                                                         e.preventDefault();
@@ -843,7 +843,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                                 className={`p-2 rounded-xl transition-all border ${
                                                     isPlayingTTS 
                                                         ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                                                        : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+                                                        : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                                                 }`}
                                             >
                                                 <Volume2 size={14} />
@@ -855,13 +855,13 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                             
                                             {/* Show side-by-side guess text */}
                                             {isVerifyTextMode && userGuess && (
-                                                <div className="w-full p-2.5 rounded-xl bg-white/5 border border-white/5 text-left mb-3 shrink-0">
+                                                <div className="w-full p-2.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] text-left mb-3 shrink-0">
                                                     <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/50 block mb-0.5">Your Guess</span>
-                                                    <span className="text-xs font-mono text-zinc-300 line-clamp-2">{userGuess}</span>
+                                                    <span className="text-xs font-mono text-[var(--foreground-secondary)] line-clamp-2">{userGuess}</span>
                                                 </div>
                                             )}
 
-                                            <p className={`text-base md:text-lg font-medium text-center text-zinc-100 leading-relaxed ${
+                                            <p className={`text-base md:text-lg font-medium text-center text-[var(--foreground)] leading-relaxed ${
                                                 isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-lg' : 'font-serif'
                                             }`}>
                                                 {eli5Text[currentCardIndex] || cardBackText}

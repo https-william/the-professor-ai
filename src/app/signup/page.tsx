@@ -144,18 +144,18 @@ function SignupForm() {
       />
 
       {/* Left Panel — Desktop only */}
-      <div className="hidden md:flex md:w-[45%] flex-col justify-between p-12 lg:p-16 border-r border-white/5 bg-white/[0.01] backdrop-blur-xl relative z-10 min-h-screen">
+      <div className="hidden md:flex md:w-[45%] flex-col justify-between p-12 lg:p-16 border-r border-[var(--border)] bg-[var(--border)]/10 backdrop-blur-xl relative z-10 min-h-screen">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 text-decoration-none group">
           <BrandLogo size="xs" />
-          <span className="font-sans text-xs font-black uppercase tracking-[0.25em] text-white/50 group-hover:text-white transition-colors">
+          <span className="font-sans text-xs font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]/80 group-hover:text-[var(--foreground)] transition-colors">
             The Professor
           </span>
         </Link>
 
         {/* Branding text & Testimonial Carousel */}
         <div className="flex flex-col gap-8 my-auto max-w-[400px]">
-          <h2 className="text-3xl font-black text-white leading-tight uppercase italic tracking-tight">
+          <h2 className="text-3xl font-black text-[var(--foreground)] leading-tight uppercase italic tracking-tight">
             The last study tool you'll ever need before an exam.
           </h2>
 
@@ -175,10 +175,10 @@ function SignupForm() {
                   transition={{ duration: 0.3 }}
                   className="flex flex-col justify-between h-full"
                 >
-                  <p className="text-white/80 font-medium text-sm leading-relaxed italic">
+                  <p className="text-[var(--foreground-secondary)] font-medium text-sm leading-relaxed italic">
                     &ldquo;{TESTIMONIALS[testiIndex].quote}&rdquo;
                   </p>
-                  <p className="text-white/40 font-bold text-[10px] uppercase tracking-wider mt-3">
+                  <p className="text-[var(--foreground-muted)]/60 font-bold text-[10px] uppercase tracking-wider mt-3">
                     {TESTIMONIALS[testiIndex].author}
                   </p>
                 </motion.div>
@@ -190,7 +190,7 @@ function SignupForm() {
         {/* Feature pills */}
         <div className="flex gap-2">
           {["Study Guides", "Quizzes", "Match Games"].map(f => (
-            <span key={f} className="text-[10px] font-black uppercase tracking-wider text-white/40 px-3.5 py-1.5 rounded-full border border-white/5 bg-white/[0.02]">
+            <span key={f} className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]/60 px-3.5 py-1.5 rounded-full border border-[var(--border)] bg-[var(--border)]/15">
               {f}
             </span>
           ))}
@@ -204,10 +204,10 @@ function SignupForm() {
           radius="2rem"
           className="w-full max-w-[420px] p-8 sm:p-10 shadow-2xl"
         >
-          <h1 className="text-2xl font-black text-white tracking-tight uppercase italic">
+          <h1 className="text-2xl font-black text-[var(--foreground)] tracking-tight uppercase italic">
             {pendingUpload ? "Save study pack" : "Create Account"}
           </h1>
-          <p className="text-white/40 text-xs font-semibold tracking-wider uppercase mt-1 mb-6">
+          <p className="text-[var(--foreground-muted)]/80 text-xs font-semibold tracking-wider uppercase mt-1 mb-6">
             {pendingUpload ? "Create an account to keep your progress" : "Takes 30 seconds · No credit card required"}
           </p>
 
@@ -218,7 +218,7 @@ function SignupForm() {
                 <Sparkles size={12} />
                 Progress Saved
               </p>
-              <p className="text-white/85 text-xs font-bold leading-relaxed">
+              <p className="text-[var(--foreground-secondary)] text-xs font-bold leading-relaxed">
                 Analysis of &ldquo;{pendingUpload}&rdquo; is ready.
               </p>
             </div>
@@ -228,7 +228,7 @@ function SignupForm() {
           <button
             onClick={handleGoogleSignup}
             disabled={loading}
-            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl py-3.5 flex items-center justify-center gap-3 transition-all duration-150 active:scale-98 font-bold text-sm text-white"
+            className="w-full bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl py-3.5 flex items-center justify-center gap-3 transition-all duration-150 active:scale-98 font-bold text-sm text-[var(--foreground)]"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" className="shrink-0">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -241,9 +241,9 @@ function SignupForm() {
 
           {/* Divider */}
           <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-[1px] bg-white/5" />
-            <span className="font-bold text-[10px] tracking-widest text-white/20 uppercase">or</span>
-            <div className="flex-1 h-[1px] bg-white/5" />
+            <div className="flex-1 h-[1px] bg-[var(--border)]" />
+            <span className="font-bold text-[10px] tracking-widest text-[var(--foreground-muted)]/40 uppercase">or</span>
+            <div className="flex-1 h-[1px] bg-[var(--border)]" />
           </div>
 
           {/* Error */}
@@ -256,9 +256,9 @@ function SignupForm() {
           {/* Form */}
           <form onSubmit={handleSignup} className="flex flex-col gap-4 text-left">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="s-email" className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-1">Email</label>
+              <label htmlFor="s-email" className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]/80 pl-1">Email</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]/60" />
                 <input 
                   id="s-email" 
                   type="email" 
@@ -267,15 +267,15 @@ function SignupForm() {
                   onChange={(e) => setEmail(e.target.value)} 
                   required 
                   autoComplete="email"
-                  className="w-full pl-11 pr-5 py-3.5 font-bold text-white outline-none placeholder:text-white/20 bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.05] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]"
+                  className="w-full pl-11 pr-5 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
                 />
               </div>
             </div>
             
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="s-pass" className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-1">Password</label>
+              <label htmlFor="s-pass" className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]/80 pl-1">Password</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]/60" />
                 <input 
                   id="s-pass" 
                   type={showPassword ? "text" : "password"} 
@@ -284,12 +284,12 @@ function SignupForm() {
                   onChange={(e) => setPassword(e.target.value)} 
                   required 
                   autoComplete="new-password"
-                  className="w-full pl-11 pr-12 py-3.5 font-bold text-white outline-none placeholder:text-white/20 bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.05] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]"
+                  className="w-full pl-11 pr-12 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
                 />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(!showPassword)} 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]/60 hover:text-[var(--foreground)] transition-colors"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -306,7 +306,7 @@ function SignupForm() {
                           key={i} 
                           className={cn(
                             "h-1 rounded-full flex-1 transition-all duration-300", 
-                            active ? colorClass : "bg-white/10"
+                            active ? colorClass : "bg-[var(--border)]"
                           )} 
                         />
                       );
@@ -337,7 +337,7 @@ function SignupForm() {
           </form>
 
           {/* Legal text */}
-          <p className="text-[10px] text-white/30 text-center mt-6 leading-relaxed font-semibold">
+          <p className="text-[10px] text-[var(--foreground-muted)]/60 text-center mt-6 leading-relaxed font-semibold">
             By signing up, you agree to our{" "}
             <Link href="/legal/terms" className="text-amber-500/80 hover:text-amber-400 underline">Terms of Use</Link>{" "}
             and{" "}
@@ -345,7 +345,7 @@ function SignupForm() {
           </p>
 
           {/* Sign in link */}
-          <p className="text-xs text-white/50 font-medium text-center mt-6">
+          <p className="text-xs text-[var(--foreground-muted)] font-medium text-center mt-6">
             Already have an account?{" "}
             <Link 
               href={`/login${nextUrl && nextUrl !== "/dashboard" ? `?next=${encodeURIComponent(nextUrl)}` : ""}`} 

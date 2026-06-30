@@ -61,10 +61,10 @@ export default function ForgotPasswordPage() {
           <div className="inline-flex items-center justify-center mb-4">
             <BrandLogo size="md" />
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight uppercase italic">
+          <h1 className="text-2xl font-black text-[var(--foreground)] tracking-tight uppercase italic">
             Forgot password?
           </h1>
-          <p className="text-white/40 text-xs font-semibold tracking-wider uppercase mt-1">
+          <p className="text-[var(--foreground-muted)]/80 text-xs font-semibold tracking-wider uppercase mt-1">
             No worries, we'll help you get back in
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
             </div>
             <Link 
               href="/login" 
-              className="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl flex items-center justify-center font-bold text-sm text-white transition-all active:scale-98"
+              className="w-full h-12 bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-xl flex items-center justify-center font-bold text-sm text-[var(--foreground)] transition-all active:scale-98"
             >
               Back to login
             </Link>
@@ -90,9 +90,9 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleReset} className="flex flex-col gap-4 text-left">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="reset-email" className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-1">Email Address</label>
+              <label htmlFor="reset-email" className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]/80 pl-1">Email Address</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]/60" />
                 <input
                   id="reset-email"
                   type="email"
@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-11 pr-5 py-3.5 font-bold text-white outline-none placeholder:text-white/20 bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 hover:border-white/20 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all duration-300 focus:border-amber-500/50 focus:bg-white/[0.05] focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15),_inset_0_2px_4px_rgba(0,0,0,0.4)]"
+                  className="w-full pl-11 pr-5 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
                 />
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
               ) : "Send reset link"}
             </button>
 
-            <p className="text-xs text-white/50 font-medium text-center mt-6">
+            <p className="text-xs text-[var(--foreground-muted)] font-medium text-center mt-6">
               Remembered your password?{" "}
               <Link href="/login" className="text-amber-500 font-bold hover:underline transition-all">
                 Sign in

@@ -31,9 +31,10 @@ import {
     Download,
     Terminal,
     Target,
+    Settings,
     Loader2
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, cleanDocumentTitle } from "@/lib/utils";
 import StandardContainer from "@/components/ui/StandardContainer";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { createClient } from "@/lib/supabase/client";
@@ -125,6 +126,7 @@ export default function StudyPackPage() {
     const [viewingPhaseIndex, setViewingPhaseIndex] = useState<number | null>(null);
     const [isPendingTransition, startTransition] = useTransition();
     const [isSavedOffline, setIsSavedOffline] = useState(false);
+    const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
     const [isPerforming, setIsPerforming] = useState(false);
     const [hasTaskCompleted, setHasTaskCompleted] = useState(false);
     const [sessionStats, setSessionStats] = useState({
@@ -1492,7 +1494,7 @@ export default function StudyPackPage() {
                                 </span>
                             </div>
                             <h1 className="text-sm sm:text-base font-black tracking-tight leading-tight italic truncate text-[var(--foreground)] max-w-full">
-                                {packTitle}
+                                {cleanDocumentTitle(packTitle)}
                             </h1>
                         </div>
                     </div>
@@ -1502,44 +1504,40 @@ export default function StudyPackPage() {
                         <ThemeToggle />
                         <FocusTimer widget={true} />
 
-                        <button
-                            onClick={handleSaveOffline}
-                            className={cn(
-                                "px-2.5 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-sm shrink-0",
-                                isSavedOffline
-                                    ? "bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]"
-                                    : "bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)]"
-                            )}
-                        >
-                            <Download size={11} />
-                            <span className="hidden sm:inline">{isSavedOffline ? "Saved" : "Save Offline"}</span>
-                            <span className="sm:hidden">{isSavedOffline ? "Saved" : "Offline"}</span>
-                        </button>
-
-                        {/* Export Pack dropdown */}
+                        {/* Options Dropdown */}
                         <div className="relative shrink-0">
                             <button
-                                onClick={() => setShowFullExportMenu(prev => !prev)}
-                                disabled={isExportingFullPDF}
-                                className="px-2.5 py-1.5 rounded-xl bg-[var(--amber)]/10 border border-[var(--amber)]/30 text-[9px] font-black uppercase tracking-widest text-[var(--amber)] hover:bg-[var(--amber)]/20 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 shrink-0"
+                                onClick={() => setShowOptionsDropdown(prev => !prev)}
+                                className="px-3 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all flex items-center gap-1.5 shadow-sm"
                             >
-                                {isExportingFullPDF ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
-                                <span>Export</span>
+                                <Settings size={12} />
+                                <span>Options</span>
                             </button>
                             <AnimatePresence>
-                                {showFullExportMenu && (
+                                {showOptionsDropdown && (
                                     <>
-                                        <div className="fixed inset-0 z-[100]" onClick={() => setShowFullExportMenu(false)} />
+                                        <div className="fixed inset-0 z-[100]" onClick={() => setShowOptionsDropdown(false)} />
                                         <motion.div
                                             initial={{ opacity: 0, y: 8, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0, y: 8, scale: 0.95 }}
                                             transition={{ duration: 0.13 }}
-                                            className="absolute left-0 mt-2 min-w-[190px] bg-[var(--background-secondary)] border border-[var(--border-2)] rounded-xl p-1.5 shadow-2xl flex flex-col gap-0.5 z-[110]"
+                                            className="absolute left-0 mt-2 min-w-[210px] bg-[var(--background-secondary)] border border-[var(--border-2)] rounded-xl p-1.5 shadow-2xl flex flex-col gap-0.5 z-[110]"
                                         >
                                             <button
+                                                onClick={() => {
+                                                    setShowOptionsDropdown(false);
+                                                    handleSaveOffline();
+                                                }}
+                                                className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
+                                            >
+                                                <Download size={12} className={cn("shrink-0", isSavedOffline ? "text-[var(--emerald)]" : "")} />
+                                                <span>{isSavedOffline ? "Saved Offline" : "Save Offline"}</span>
+                                            </button>
+                                            <div className="h-[1px] bg-[var(--border)] my-1" />
+                                            <button
                                                 onClick={async () => {
-                                                    setShowFullExportMenu(false);
+                                                    setShowOptionsDropdown(false);
                                                     await handleExportFullPackPDF();
                                                 }}
                                                 className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
@@ -1549,7 +1547,7 @@ export default function StudyPackPage() {
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    setShowFullExportMenu(false);
+                                                    setShowOptionsDropdown(false);
                                                     handleExportFullPackMarkdown();
                                                 }}
                                                 className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
@@ -1557,18 +1555,22 @@ export default function StudyPackPage() {
                                                 <Terminal size={12} className="text-[var(--amber)] shrink-0" />
                                                 <span>Export Markdown (.md)</span>
                                             </button>
+                                            <div className="h-[1px] bg-[var(--border)] my-1" />
+                                            <button
+                                                onClick={() => {
+                                                    setShowOptionsDropdown(false);
+                                                    handleShare();
+                                                }}
+                                                className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
+                                            >
+                                                <Share2 size={12} className="text-[var(--blue)] shrink-0" />
+                                                <span>Share Study Lab</span>
+                                            </button>
                                         </motion.div>
                                     </>
                                 )}
                             </AnimatePresence>
                         </div>
-
-                        <button
-                            onClick={handleShare}
-                            className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm shrink-0"
-                        >
-                            <Share2 size={11} /> Share
-                        </button>
                     </div>
                 </div>
 
@@ -1603,7 +1605,7 @@ export default function StudyPackPage() {
                     
                     {/* LEFT COLUMN: Summary / Raw Viewer */}
                     <div className={cn(
-                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-2xl shadow-lg relative transition-all duration-300",
+                        "flex flex-col bg-zinc-50 dark:bg-[#020203] border border-zinc-200 dark:border-zinc-900/80 rounded-2xl shadow-lg relative transition-all duration-300",
                         mobileActivePane === 'right' ? "hidden lg:flex" : "flex"
                     )}>
                         {/* Header Tabs */}
@@ -1700,7 +1702,7 @@ export default function StudyPackPage() {
 
                     {/* RIGHT COLUMN: Interactive Study Decks */}
                     <div className={cn(
-                        "flex flex-col bg-[var(--background-secondary)]/30 border border-[var(--border)] rounded-2xl shadow-lg relative transition-all duration-300",
+                        "flex flex-col bg-white dark:bg-[#0b0b0d] border border-[var(--blue)]/30 dark:border-[var(--blue)]/20 rounded-2xl shadow-xl shadow-[var(--blue-glow)]/5 relative transition-all duration-300",
                         mobileActivePane === 'left' ? "hidden lg:flex" : "flex"
                     )}>
                         {/* Header Tabs */}
