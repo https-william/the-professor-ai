@@ -311,6 +311,7 @@ function DashboardContent() {
                 } catch (err: any) {
                     console.error("Tauri Local Ingestion Error:", err);
                     updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to extract text locally");
+                    addToast(`Failed to process local file: ${err.message || "Unknown error"}`, "error");
                 }
                 return;
             }
@@ -365,6 +366,7 @@ function DashboardContent() {
             } catch (err: any) {
                 console.error("Ingestion Error:", err);
                 updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to parse file");
+                addToast(`Failed to process file: ${err.message || "Unknown error"}`, "error");
             }
         };
 
@@ -372,6 +374,21 @@ function DashboardContent() {
             processNext();
         }
     }, [queue, isProcessing, updateFileStatus]);
+
+    // Auto-generate study pack when file ingestion completes
+    const autoGenTriggered = useRef(false);
+    useEffect(() => {
+        if (isProcessing) {
+            autoGenTriggered.current = false;
+        } else if (queue.length > 0 && !isProcessing && !isGeneratingPack && !autoGenTriggered.current) {
+            const hasSuccess = queue.some(i => i.status === 'success');
+            if (hasSuccess && inputText.trim().length > 0) {
+                autoGenTriggered.current = true;
+                addToast("Notes extracted successfully! Generating your study sprint...", "success");
+                handleGenerate(15, 15);
+            }
+        }
+    }, [queue, isProcessing, isGeneratingPack, inputText]);
 
     // Load initial title from session
     useEffect(() => {
@@ -674,6 +691,15 @@ function DashboardContent() {
 
     const firstName = user.firstName || (user.name !== "Scholar" ? user.name?.split(" ")[0] : null) || user.username || user.email?.split("@")[0] || "Scholar";
 
+    const activeQueueItem = queue.find(i => i.status === "reading" || i.status === "learning");
+    const processingText = isGeneratingPack 
+        ? "Generating comprehensive study sprint from your notes..."
+        : activeQueueItem && customStatusMsg[activeQueueItem.id]
+            ? customStatusMsg[activeQueueItem.id]
+            : activeQueueItem
+                ? `${loadingPhrases[filePhraseIndex[activeQueueItem.id] || 0]} (${activeQueueItem.name})`
+                : "Getting your study notes ready...";
+
     // Common props passed to each platform orchestrator
     const dashboardProps = {
         user,
@@ -715,6 +741,7 @@ function DashboardContent() {
         filePhraseIndex,
         customStatusMsg,
         fileInputRef,
+        processingText,
     };
 
     return (
