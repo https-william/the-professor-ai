@@ -58,6 +58,7 @@ export const InteractiveQuiz = ({
     const [isLoadingTutor, setIsLoadingTutor] = useState<Record<number, boolean>>({});
     const [savedQuestions, setSavedQuestions] = useState<Set<number>>(new Set());
     const [isSubmittingFlashcard, setIsSubmittingFlashcard] = useState<Record<number, boolean>>({});
+    const [comboStreak, setComboStreak] = useState(0);
 
     const isGuest = !user?.id || !user?.isAuthenticated;
 
@@ -144,6 +145,18 @@ export const InteractiveQuiz = ({
     const currentQuestion = (questions && questions.length > 0) ? (questions[currentIdx] || questions[0]) : null;
 
     const handleSelect = (idx: number) => {
+        const isCorrect = idx === currentQuestion?.correctIndex;
+        if (isCorrect) {
+            setComboStreak(prev => {
+                const next = prev + 1;
+                if (next >= 2) {
+                    addToast(`${next}x Combo Streak! 🔥 +${10 * (next - 1)} XP`, "success", undefined, undefined, false, undefined, true);
+                }
+                return next;
+            });
+        } else {
+            setComboStreak(0);
+        }
         setAnswers(prev => ({
             ...prev,
             [currentIdx]: idx
@@ -545,12 +558,12 @@ export const InteractiveQuiz = ({
     if (!originalQuestions || originalQuestions.length === 0) {
         return (
             <div className="w-full flex flex-col items-center justify-center py-12 px-6 text-center select-none">
-                <div className="max-w-md w-full bg-white/[0.02] border border-white/5 rounded-[32px] p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-in fade-in">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6">
-                        <AlertCircle size={32} className="text-white/40 animate-pulse" />
+                <div className="max-w-md w-full bg-[var(--card)] border border-[var(--border)] rounded-[32px] p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-in fade-in">
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle size={32} className="text-[var(--foreground-muted)] animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-bold mb-3 text-white">No Questions Found</h3>
-                    <p className="text-sm text-white/50 leading-relaxed mb-8">
+                    <h3 className="text-xl font-bold mb-3 text-[var(--foreground)]">No Questions Found</h3>
+                    <p className="text-sm text-[var(--foreground-muted)] leading-relaxed mb-8">
                         The Professor's desk is clean. It looks like this pack doesn't have any quiz questions ready yet.
                     </p>
                 </div>
@@ -567,7 +580,7 @@ export const InteractiveQuiz = ({
                         <div className="flex items-center gap-3">
                             <button 
                                 onClick={() => setIsDrawerOpen(prev => !prev)}
-                                className="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-white/80 transition-colors"
+                                className="p-2.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors"
                                 title="Question Sheet"
                             >
                                 <Menu size={16} />
@@ -575,6 +588,17 @@ export const InteractiveQuiz = ({
                             <span className="text-[10px] font-black uppercase tracking-widest text-[#9673F5]">
                                 Interactive Quiz
                             </span>
+                            {comboStreak >= 2 && (
+                                <motion.span
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    key={comboStreak}
+                                    className="px-2.5 py-1 rounded-full bg-[var(--amber)]/15 border border-[var(--amber)]/30 text-[var(--amber)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-[0_0_12px_rgba(229,169,60,0.3)]"
+                                >
+                                    <span>🔥 {comboStreak}x Combo Streak!</span>
+                                    <span className="text-[8px] bg-[var(--amber)] text-black px-1.5 py-0.2 rounded-full font-bold">+{10 * (comboStreak - 1)} XP</span>
+                                </motion.span>
+                            )}
                         </div>
 
                         {/* Top progress track */}
@@ -647,10 +671,10 @@ export const InteractiveQuiz = ({
                                         const isActive = currentIdx === idx;
 
                                         let cardStyles = "aspect-square rounded-xl border flex flex-col items-center justify-center text-xs font-black transition-all ";
-                                        if (isActive) cardStyles += "border-[#E5A93C] bg-[#E5A93C]/10 text-[#E5A93C]";
+                                        if (isActive) cardStyles += "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]";
                                         else if (isFlagged) cardStyles += "border-[#9673F5]/40 bg-[#9673F5]/10 text-[#9673F5]";
-                                        else if (isAnswered) cardStyles += "border-white/20 bg-white/5 text-white/90";
-                                        else cardStyles += "border-white/5 bg-transparent text-white/30 hover:bg-white/5";
+                                        else if (isAnswered) cardStyles += "border-[var(--border)] bg-[var(--card)] text-[var(--foreground)]";
+                                        else cardStyles += "border-[var(--border)] bg-transparent text-[var(--foreground-muted)] hover:bg-[var(--surface)]";
 
                                         return (
                                             <button 
@@ -671,7 +695,7 @@ export const InteractiveQuiz = ({
                     <div className="w-full flex-1 flex flex-col md:grid md:grid-cols-12 gap-6 items-stretch overflow-visible">
                         
                         {/* Question Content (Left) */}
-                        <div className="md:col-span-6 flex flex-col justify-between p-6 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md">
+                        <div className="md:col-span-6 flex flex-col justify-between p-6 rounded-3xl bg-[var(--card)] border border-[var(--border)] backdrop-blur-md">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="px-2.5 py-0.5 rounded-full bg-[#9673F5]/10 text-[#9673F5] text-[8px] font-black uppercase tracking-widest border border-[#9673F5]/20">
@@ -679,23 +703,23 @@ export const InteractiveQuiz = ({
                                     </span>
                                     <button 
                                         onClick={toggleFlag}
-                                        className={`flex items-center gap-1 text-[8px] font-black uppercase tracking-widest ${flags.has(currentIdx) ? 'text-[#9673F5]' : 'text-white/40 hover:text-white/70'}`}
+                                        className={`flex items-center gap-1 text-[8px] font-black uppercase tracking-widest ${flags.has(currentIdx) ? 'text-[#9673F5]' : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'}`}
                                     >
                                         <Flag size={12} className={flags.has(currentIdx) ? "fill-[#9673F5]" : ""} />
                                         {flags.has(currentIdx) ? 'Flagged' : 'Flag'}
                                     </button>
                                 </div>
-                                <h4 className="text-base md:text-lg font-semibold leading-relaxed text-white">
+                                <h4 className="text-base md:text-lg font-semibold leading-relaxed text-[var(--foreground)]">
                                     {currentQuestion?.question}
                                 </h4>
                             </div>
 
                             {/* Keyboard tips */}
-                            <div className="hidden md:flex flex-wrap gap-1.5 items-center text-[9px] text-white/30 font-bold uppercase tracking-wider mt-6 pt-4 border-t border-white/5">
+                            <div className="hidden md:flex flex-wrap gap-1.5 items-center text-[9px] text-[var(--foreground-muted)] font-bold uppercase tracking-wider mt-6 pt-4 border-t border-[var(--border)]">
                                 <span>Press:</span>
-                                <span className="bg-white/5 px-1 py-0.5 rounded text-white/60">A-D</span>
+                                <span className="bg-[var(--surface)] px-1 py-0.5 rounded text-[var(--foreground-muted)]">A-D</span>
                                 <span>or</span>
-                                <span className="bg-white/5 px-1 py-0.5 rounded text-white/60">1-4</span>
+                                <span className="bg-[var(--surface)] px-1 py-0.5 rounded text-[var(--foreground-muted)]">1-4</span>
                                 <span>to answer.</span>
                             </div>
                         </div>
@@ -703,17 +727,30 @@ export const InteractiveQuiz = ({
                         {/* Options Choices (Right) */}
                         <div className="md:col-span-6 flex flex-col gap-3 justify-center">
                             {currentQuestion?.options?.map((opt, i) => {
+                                const hasAnswered = answers[currentIdx] !== undefined;
+                                const isCorrectOpt = i === currentQuestion?.correctIndex;
                                 const isSelected = answers[currentIdx] === i;
                                 
-                                let btnStyle = "w-full p-4.5 text-left text-sm font-medium transition-all rounded-2xl relative overflow-hidden flex items-center justify-between border ";
+                                let btnStyle = "w-full p-4.5 text-left text-sm font-medium transition-all duration-150 rounded-2xl relative overflow-hidden flex items-center justify-between border ";
                                 let circleStyle = "w-6 h-6 rounded-lg flex items-center justify-center border text-[10px] font-bold transition-colors shrink-0 ";
 
-                                if (isSelected) {
-                                    btnStyle += "bg-[#E5A93C]/10 border-[#E5A93C]/40 text-white shadow-[0_4px_0_rgba(229,169,60,0.15)] translate-y-[1px]";
-                                    circleStyle += "bg-[#E5A93C] text-black border-[#E5A93C] font-black";
+                                if (hasAnswered) {
+                                    if (isCorrectOpt) {
+                                        btnStyle += "bg-[#2BB288]/15 border-[#2BB288] text-[var(--foreground)] shadow-[0_0_20px_rgba(43,178,136,0.25)] translate-y-[1px]";
+                                        circleStyle += "bg-[#2BB288] text-black border-[#2BB288] font-black";
+                                    } else if (isSelected && !isCorrectOpt) {
+                                        btnStyle += "bg-[#E85D75]/15 border-[#E85D75] text-[var(--foreground)] shadow-[0_0_15px_rgba(232,93,117,0.2)] translate-y-[1px]";
+                                        circleStyle += "bg-[#E85D75] text-white border-[#E85D75] font-black";
+                                    } else {
+                                        btnStyle += "bg-[var(--card)] border-[var(--border)] text-[var(--foreground-muted)] opacity-60";
+                                        circleStyle += "bg-[var(--surface)] border-[var(--border)] text-[var(--foreground-muted)]";
+                                    }
+                                } else if (isSelected) {
+                                    btnStyle += "bg-[var(--accent)]/15 border-[var(--accent)] text-[var(--foreground)] shadow-[0_4px_0_rgba(74,124,245,0.15)] translate-y-[1px]";
+                                    circleStyle += "bg-[var(--accent)] text-white border-[var(--accent)] font-black";
                                 } else {
-                                    btnStyle += "bg-zinc-950/40 border-white/5 text-white/70 hover:text-white hover:bg-white/[0.03] shadow-[0_4px_0_rgba(255,255,255,0.01)] hover:translate-y-[1px] active:translate-y-[3px] active:shadow-none";
-                                    circleStyle += "bg-white/5 border-white/10 text-white/50";
+                                    btnStyle += "bg-[var(--card)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--background-secondary)] shadow-sm hover:translate-y-[1px] active:translate-y-[3px] active:shadow-none";
+                                    circleStyle += "bg-[var(--surface)] border-[var(--border)] text-[var(--foreground-muted)]";
                                 }
 
                                 return (
@@ -731,6 +768,76 @@ export const InteractiveQuiz = ({
                                     </button>
                                 );
                             })}
+
+                            {/* Inline Metacognitive Explanation & Analogy */}
+                            {answers[currentIdx] !== undefined && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className={cn(
+                                        "mt-2 p-4 rounded-2xl border backdrop-blur-md flex flex-col gap-3",
+                                        answers[currentIdx] === currentQuestion?.correctIndex
+                                            ? "bg-[#2BB288]/10 border-[#2BB288]/30 text-[var(--foreground)]"
+                                            : "bg-[#E85D75]/10 border-[#E85D75]/30 text-[var(--foreground)]"
+                                    )}
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            {answers[currentIdx] === currentQuestion?.correctIndex ? (
+                                                <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#2BB288]">
+                                                    <CheckCircle2 size={15} /> Spot on!
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#E85D75]">
+                                                    <XCircle size={15} /> Not quite — Correct answer is {String.fromCharCode(65 + (currentQuestion?.correctIndex || 0))}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {!tutorAnalogy[currentIdx] && (
+                                            <button
+                                                onClick={() => askProfessorTutor(currentIdx)}
+                                                disabled={isLoadingTutor[currentIdx]}
+                                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#9673F5]/20 border border-[#9673F5]/40 text-[#9673F5] text-[10px] font-bold hover:bg-[#9673F5] hover:text-white transition-all cursor-pointer shrink-0"
+                                            >
+                                                {isLoadingTutor[currentIdx] ? (
+                                                    <Loader2 size={11} className="animate-spin" />
+                                                ) : (
+                                                    <Sparkles size={11} />
+                                                )}
+                                                <span>Ask Professor Why</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {currentQuestion?.explanation && (
+                                        <p className="text-xs text-white/80 leading-relaxed font-sans">
+                                            {currentQuestion.explanation}
+                                        </p>
+                                    )}
+
+                                    {currentQuestion?.analogy && (
+                                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-start gap-2">
+                                            <Lightbulb size={14} className="text-[#E5A93C] shrink-0 mt-0.5" />
+                                            <p className="text-xs font-serif italic text-white/90 leading-relaxed">
+                                                &ldquo;{currentQuestion.analogy}&rdquo;
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {tutorAnalogy[currentIdx] && (
+                                        <div className="p-3 rounded-xl bg-[#9673F5]/15 border border-[#9673F5]/30 flex flex-col gap-1.5">
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#9673F5] flex items-center gap-1">
+                                                <GraduationCap size={12} /> The Professor&apos;s Breakdown
+                                            </span>
+                                            <p className="text-xs text-white leading-relaxed font-sans">
+                                                {tutorAnalogy[currentIdx]}
+                                            </p>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
                         </div>
                     </div>
 

@@ -8,7 +8,7 @@ const CARDS = [
   {
     icon: <BookOpen className="text-blue-400" size={24} />,
     title: "You have notes. You don't have time.",
-    body: "Your lecture notes from a full semester stack up to hundreds of pages. Reading all of it the night before an exam is not a strategy — it's a coin flip disguised as studying.",
+    body: "Your lecture notes from a full semester stack up to hundreds of pages. Reading all of it the night before an exam is not a strategy. It's a coin flip disguised as studying.",
     bg: "bg-blue-500/10",
     border: "border-blue-500/20",
     hoverBorder: "hover:border-blue-500/20",
@@ -16,7 +16,7 @@ const CARDS = [
   {
     icon: <AlertCircle className="text-indigo-400" size={24} />,
     title: "Re-reading feels like studying. It isn't.",
-    body: "Every time you re-read your notes, your brain says 'I know this.' It is lying to you. Recognition and recall are not the same — and only one of them works when the invigilator says 'you may begin.' The fluency illusion destroys well-prepared students.",
+    body: "Every time you re-read your notes, your brain says 'I know this.' It is lying to you. Recognition and recall are not the same, and only one of them works when the invigilator says 'you may begin.' The fluency illusion destroys well-prepared students.",
     bg: "bg-indigo-500/10",
     border: "border-indigo-500/20",
     hoverBorder: "hover:border-indigo-500/20",
@@ -24,7 +24,7 @@ const CARDS = [
   {
     icon: <Sparkles className="text-purple-400" size={24} />,
     title: "ChatGPT doesn't know your lecturer.",
-    body: "Generic AI tools give generic answers. They don't know what Prof. Adeyemi emphasized in week 7, or what questions always appear on the BIO 202 paper at your institution. Your notes do. The Professor uses them — and only them.",
+    body: "Generic AI tools give generic answers. They don't know what Prof. Adeyemi emphasized in week 7, or what questions always appear on the BIO 202 paper at your institution. Your notes do. The Professor uses them, and only them.",
     bg: "bg-purple-500/10",
     border: "border-purple-500/20",
     hoverBorder: "hover:border-purple-500/20",
@@ -52,7 +52,7 @@ export default function PainSection() {
             borderRadius="28px"
             glowColor="rgba(255, 255, 255, 0.12)"
             glowOpacity={0.2}
-            className={`p-8 bg-[var(--bg-2)] border border-[var(--border)] hover:border-white/10 transition-all duration-300 flex flex-col gap-5`}
+            className={`p-8 bg-[var(--bg-2)] border border-[var(--border)] hover:border-white/10 transition-all duration-300 flex flex-col gap-5 scholar-card`}
           >
             {/* Icon Wrapper */}
             <div className={`w-12 h-12 rounded-2xl ${card.bg} border ${card.border} flex items-center justify-center shrink-0`}>

@@ -153,7 +153,7 @@ const aiContextData = {
   coreFeatures: [
     {
       name: "Deep Summary",
-      description: "Simple, high-yield breakdowns of lecture materials."
+      description: "Simple, straightforward breakdowns of your lecture notes."
     },
     {
       name: "Memory Cards",
@@ -413,6 +413,18 @@ export default function RootLayout({
             `,
           }}
         />
+        <style dangerouslySetInnerHTML={{ __html: `
+          ::highlight(search-hit) {
+            background-color: rgba(229, 169, 60, 0.35);
+            color: #FFFFFF;
+            text-shadow: 0 0 8px rgba(229, 169, 60, 0.5);
+          }
+          ::highlight(citation-ref) {
+            background-color: rgba(74, 124, 245, 0.25);
+            color: #FFFFFF;
+            border-bottom: 2px solid var(--blue);
+          }
+        ` }} />
       </head>
       <body className="font-sans antialiased w-full min-h-screen m-0 p-0 flex flex-col" suppressHydrationWarning>
         <ThemeProvider>

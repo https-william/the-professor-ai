@@ -5,17 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
     LayoutDashboard, 
-    Search,
-    Plus,
+    BookOpen,
+    Flame,
+    Swords,
     User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-    { id: "dashboard", label: "Home", href: "/dashboard", icon: LayoutDashboard },
-    { id: "library", label: "Search", href: "/library", icon: Search },
-    { id: "create", label: "Create", href: "/create", icon: Plus, isFloating: true },
-    { id: "profile", label: "You", href: "/profile", icon: User },
+    { id: "dashboard", label: "Lounge", href: "/dashboard", icon: LayoutDashboard },
+    { id: "library", label: "Library", href: "/library", icon: BookOpen },
+    { id: "recall", label: "Recall", href: "/review", icon: Flame, isFloating: true },
+    { id: "arena", label: "Lobbies", href: "/arena", icon: Swords },
 ];
 
 export default function BottomTabs() {

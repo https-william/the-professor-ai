@@ -47,19 +47,6 @@ interface DuelResultsProps {
     }[];
 }
 
-interface Particle {
-    x: number;
-    y: number;
-    size: number;
-    color: string;
-    velocityX: number;
-    velocityY: number;
-    opacity: number;
-    decay: number;
-    rotation: number;
-    rotationSpeed: number;
-}
-
 // Programmatic Web Audio Synthesizer
 const playResultsSound = (type: "victory" | "draw" | "defeat" | "click" | "page-turn") => {
     try {
@@ -198,9 +185,8 @@ export default function DuelResults({
                     filter: `duel_id=eq.${duelId}`
                 },
                 (payload: any) => {
-                    const session = payload.new;
-                    if (session.user_id === opponentId && session.answers?.rematch_duel_id) {
-                        setOpponentRematchId(session.answers.rematch_duel_id);
+                    if (payload.new?.answers?.rematch_duel_id && payload.new?.user_id === opponentId) {
+                        setOpponentRematchId(payload.new.answers.rematch_duel_id);
                     }
                 }
             )
@@ -211,89 +197,14 @@ export default function DuelResults({
         };
     }, [duelId, opponentId]);
 
-    // Canvas particle effects & audio trigger on load
     useEffect(() => {
-        if (isDraw) {
-            playResultsSound("draw");
-        } else if (isWinner) {
+        if (isWinner) {
             playResultsSound("victory");
+        } else if (isDraw) {
+            playResultsSound("draw");
         } else {
             playResultsSound("defeat");
         }
-
-        if (!isWinner && !isDraw) return;
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        let animationFrameId: number;
-        const particles: Particle[] = [];
-        const colors = ["#E5A93C", "#9673F5", "#2BB288", "#4A7CF5", "#FCA3B0"];
-
-        const resizeCanvas = () => {
-            if (canvas) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-        };
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
-
-        const spawnCount = isWinner ? 120 : 50;
-        for (let i = 0; i < spawnCount; i++) {
-            particles.push({
-                x: canvas.width / 2 + (Math.random() - 0.5) * 80,
-                y: canvas.height * 0.35 + (Math.random() - 0.5) * 40,
-                size: Math.random() * 8 + 4,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                velocityX: (Math.random() - 0.5) * 16,
-                velocityY: (Math.random() - 0.7) * 22 - 6,
-                opacity: 1,
-                decay: Math.random() * 0.012 + 0.006,
-                rotation: Math.random() * Math.PI * 2,
-                rotationSpeed: (Math.random() - 0.5) * 0.25
-            });
-        }
-
-        const animate = () => {
-            if (!canvas || !ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let allDead = true;
-
-            particles.forEach((p) => {
-                if (p.opacity > 0) {
-                    allDead = false;
-                    p.x += p.velocityX;
-                    p.y += p.velocityY;
-                    p.velocityY += 0.38; // gravity
-                    p.velocityX *= 0.97; // resistance
-                    p.opacity -= p.decay;
-                    p.rotation += p.rotationSpeed;
-
-                    ctx.save();
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate(p.rotation);
-                    ctx.globalAlpha = Math.max(0, p.opacity);
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size / 2);
-                    ctx.restore();
-                }
-            });
-
-            if (!allDead) {
-                animationFrameId = requestAnimationFrame(animate);
-            }
-        };
-
-        animate();
-
-        return () => {
-            window.removeEventListener("resize", resizeCanvas);
-            cancelAnimationFrame(animationFrameId);
-        };
     }, [isWinner, isDraw]);
 
     const handleInitiateRematch = async () => {
@@ -318,13 +229,13 @@ export default function DuelResults({
     };
 
     const getGrade = (percentage: number) => {
-        if (percentage === 100) return { label: "S", color: "#E5A93C", glow: "rgba(229,169,60,0.3)" };
-        if (percentage >= 90) return { label: "A+", color: "#2BB288", glow: "rgba(43,178,136,0.3)" };
-        if (percentage >= 80) return { label: "A", color: "#2BB288", glow: "rgba(43,178,136,0.2)" };
-        if (percentage >= 70) return { label: "B+", color: "#9673F5", glow: "rgba(150,115,245,0.3)" };
-        if (percentage >= 60) return { label: "B", color: "#9673F5", glow: "rgba(150,115,245,0.2)" };
-        if (percentage >= 50) return { label: "C", color: "#E5A93C", glow: "rgba(229,169,60,0.2)" };
-        return { label: "F", color: "#E85D75", glow: "rgba(232,93,117,0.3)" };
+        if (percentage === 100) return { label: "S", color: "var(--amber)" };
+        if (percentage >= 90) return { label: "A+", color: "emerald-500" };
+        if (percentage >= 80) return { label: "A", color: "emerald-500" };
+        if (percentage >= 70) return { label: "B+", color: "var(--purple)" };
+        if (percentage >= 60) return { label: "B", color: "var(--purple)" };
+        if (percentage >= 50) return { label: "C", color: "var(--amber)" };
+        return { label: "F", color: "red-500" };
     };
 
     const userGrade = getGrade(userPercentage);
@@ -332,7 +243,7 @@ export default function DuelResults({
     const reviewQuestion = (questions && questions.length > 0) ? questions[currentReviewIndex] : null;
 
     return (
-        <div className="min-h-screen bg-[#09090b] text-zinc-100 relative overflow-x-hidden flex flex-col">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] relative overflow-x-hidden flex flex-col">
             {/* Confetti Canvas */}
             {(isWinner || isDraw) && (
                 <canvas
@@ -343,18 +254,18 @@ export default function DuelResults({
             )}
 
             {/* Header */}
-            <header className="h-16 border-b border-white/5 bg-[#09090b]/80 backdrop-blur-xl px-4 flex items-center justify-between relative z-20">
+            <header className="h-16 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl px-4 flex items-center justify-between relative z-20">
                 <button 
                     onClick={() => {
                         playResultsSound("click");
                         router.push("/arena");
                     }} 
-                    className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+                    className="p-2 rounded-xl text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-all cursor-pointer"
                 >
                     <X size={20} strokeWidth={1.5} />
                 </button>
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-500">Duel Complete</span>
+                    <span className="text-[10px] font-black tracking-[0.3em] uppercase text-[var(--foreground-muted)]">Duel Complete</span>
                 </div>
                 <div className="w-8" />
             </header>
@@ -371,36 +282,36 @@ export default function DuelResults({
                         >
                             {isDraw ? (
                                 <div className="space-y-4">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[#9673F5]/10 border border-[#9673F5]/25 flex items-center justify-center shadow-[0_0_40px_rgba(150,115,245,0.2)]">
-                                        <Handshake size={44} className="text-[#9673F5]" />
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--purple)]/10 border border-[var(--purple)]/25 flex items-center justify-center shadow-lg">
+                                        <Handshake size={44} className="text-[var(--purple)]" />
                                     </div>
                                     <div>
-                                        <h1 className="text-2xl font-black uppercase tracking-wider text-[#9673F5]">IT&apos;S A DRAW! 🤝</h1>
-                                        <p className="text-zinc-400 text-sm mt-2 max-w-md mx-auto">
+                                        <h1 className="text-2xl font-black uppercase tracking-wider text-[var(--purple)]">IT&apos;S A DRAW! 🤝</h1>
+                                        <p className="text-[var(--foreground-muted)] text-sm mt-2 max-w-md mx-auto font-medium">
                                             A worthy match of equal minds. You both read the same notes, clearly.
                                         </p>
                                     </div>
                                 </div>
                             ) : isWinner ? (
                                 <div className="space-y-4">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[#E5A93C]/10 border border-[#E5A93C]/25 flex items-center justify-center animate-pulse shadow-[0_0_40px_rgba(229,169,60,0.25)]">
-                                        <Trophy size={44} className="text-[#E5A93C]" />
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--amber)]/10 border border-[var(--amber)]/25 flex items-center justify-center animate-pulse shadow-lg">
+                                        <Trophy size={44} className="text-[var(--amber)]" />
                                     </div>
                                     <div>
-                                        <h1 className="text-2xl font-black uppercase tracking-wider text-[#E5A93C]">YOU ACED IT! 🏆</h1>
-                                        <p className="text-zinc-400 text-sm mt-2 max-w-md mx-auto">
+                                        <h1 className="text-2xl font-black uppercase tracking-wider text-[var(--amber)]">YOU ACED IT! 🏆</h1>
+                                        <p className="text-[var(--foreground-muted)] text-sm mt-2 max-w-md mx-auto font-medium">
                                             The Professor is impressed. Your study stash just grew richer.
                                         </p>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-zinc-900/60 border border-zinc-800 flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.4)]">
-                                        <Coffee size={44} className="text-zinc-500" />
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[var(--background-secondary)] border border-[var(--border)] flex items-center justify-center shadow-md">
+                                        <Coffee size={44} className="text-[var(--foreground-muted)]" />
                                     </div>
                                     <div>
-                                        <h1 className="text-2xl font-black uppercase tracking-wider text-zinc-300">NICE HUSTLE! ☕</h1>
-                                        <p className="text-zinc-400 text-sm mt-2 max-w-md mx-auto">
+                                        <h1 className="text-2xl font-black uppercase tracking-wider text-[var(--foreground)]">NICE HUSTLE! ☕</h1>
+                                        <p className="text-[var(--foreground-muted)] text-sm mt-2 max-w-md mx-auto font-medium">
                                             Close battle! A few concepts slipped away this time. Round two?
                                         </p>
                                     </div>
@@ -418,8 +329,7 @@ export default function DuelResults({
                             <GlassmorphicCard 
                                 intensity="medium" 
                                 radius="28px" 
-                                glowColor={isWinner ? "rgba(229, 169, 60, 0.05)" : isDraw ? "rgba(150, 115, 245, 0.05)" : undefined}
-                                className="w-full overflow-hidden"
+                                className="w-full overflow-hidden border border-[var(--border-2)] shadow-xl bg-[var(--surface)]"
                             >
                                 <div className="grid grid-cols-3 gap-2 p-6 text-center items-center">
                                     {/* Host profile column */}
@@ -427,8 +337,8 @@ export default function DuelResults({
                                         <div className={cn(
                                             "w-14 h-14 mb-3 rounded-2xl flex items-center justify-center text-xl font-black transition-all",
                                             isHost 
-                                                ? 'bg-[#E5A93C]/15 text-[#E5A93C] border border-[#E5A93C]/25 shadow-[0_0_15px_rgba(229,169,60,0.15)]' 
-                                                : 'bg-white/5 border border-white/5 text-zinc-400'
+                                                ? 'bg-[var(--amber)]/15 text-[var(--amber)] border border-[var(--amber)]/25 shadow-sm' 
+                                                : 'bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)]'
                                         )}>
                                             {host.avatar ? (
                                                 <img src={host.avatar} alt={host.name} className="w-full h-full rounded-2xl object-cover" />
@@ -436,18 +346,18 @@ export default function DuelResults({
                                                 host.name[0]?.toUpperCase()
                                             )}
                                         </div>
-                                        <p className={cn("font-bold text-xs truncate max-w-[90px]", isHost ? 'text-white' : 'text-zinc-400')}>{host.name}</p>
-                                        {isHost && <p className="text-[9px] font-black text-[#E5A93C] uppercase tracking-widest mt-0.5">You</p>}
-                                        <p className="text-2xl font-black mt-2" style={{ color: userGrade.color }}>{host.score}/{questions ? questions.length : 0}</p>
-                                        <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: userGrade.color }}>{userGrade.label}</p>
+                                        <p className={cn("font-bold text-xs truncate max-w-[90px]", isHost ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]')}>{host.name}</p>
+                                        {isHost && <p className="text-[9px] font-black text-[var(--amber)] uppercase tracking-widest mt-0.5">You</p>}
+                                        <p className="text-2xl font-black mt-2 text-[var(--foreground)]">{host.score}/{questions ? questions.length : 0}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">{userGrade.label}</p>
                                     </div>
 
                                     {/* VS separator column */}
                                     <div className="order-2 flex flex-col items-center justify-center">
-                                        <div className="w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center mb-1">
-                                            <span className="text-xs font-black text-zinc-500">VS</span>
+                                        <div className="w-10 h-10 rounded-full bg-[var(--background-secondary)] border border-[var(--border)] flex items-center justify-center mb-1">
+                                            <span className="text-xs font-black text-[var(--foreground-muted)]">VS</span>
                                         </div>
-                                        <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Final</div>
+                                        <div className="text-[9px] text-[var(--foreground-muted)] uppercase tracking-widest font-black">Final</div>
                                     </div>
 
                                     {/* Challenger profile column */}
@@ -457,8 +367,8 @@ export default function DuelResults({
                                                 <div className={cn(
                                                     "w-14 h-14 mb-3 rounded-2xl flex items-center justify-center text-xl font-black transition-all",
                                                     !isHost 
-                                                        ? 'bg-[#E5A93C]/15 text-[#E5A93C] border border-[#E5A93C]/25 shadow-[0_0_15px_rgba(229,169,60,0.15)]' 
-                                                        : 'bg-white/5 border border-white/5 text-zinc-400'
+                                                        ? 'bg-[var(--amber)]/15 text-[var(--amber)] border border-[var(--amber)]/25 shadow-sm' 
+                                                        : 'bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)]'
                                                 )}>
                                                     {challenger.avatar ? (
                                                         <img src={challenger.avatar} alt={challenger.name} className="w-full h-full rounded-2xl object-cover" />
@@ -466,29 +376,29 @@ export default function DuelResults({
                                                         challenger.name[0]?.toUpperCase()
                                                     )}
                                                 </div>
-                                                <p className={cn("font-bold text-xs truncate max-w-[90px]", !isHost ? 'text-white' : 'text-zinc-400')}>{challenger.name}</p>
-                                                {!isHost && <p className="text-[9px] font-black text-[#E5A93C] uppercase tracking-widest mt-0.5">You</p>}
-                                                <p className="text-2xl font-black mt-2" style={{ color: opponentGrade.color }}>{challenger.score}/{questions ? questions.length : 0}</p>
-                                                <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: opponentGrade.color }}>{opponentGrade.label}</p>
+                                                <p className={cn("font-bold text-xs truncate max-w-[90px]", !isHost ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]')}>{challenger.name}</p>
+                                                {!isHost && <p className="text-[9px] font-black text-[var(--amber)] uppercase tracking-widest mt-0.5">You</p>}
+                                                <p className="text-2xl font-black mt-2 text-[var(--foreground)]">{challenger.score}/{questions ? questions.length : 0}</p>
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">{opponentGrade.label}</p>
                                             </>
                                         ) : (
                                             <>
-                                                <div className="w-14 h-14 mb-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-zinc-500 font-bold">
+                                                <div className="w-14 h-14 mb-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] flex items-center justify-center text-[var(--foreground-muted)] font-bold">
                                                     ?
                                                 </div>
-                                                <p className="text-zinc-500 text-xs font-bold">Opponent</p>
+                                                <p className="text-[var(--foreground-muted)] text-xs font-bold">Opponent</p>
                                             </>
                                         )}
                                     </div>
                                 </div>
 
                                 {/* Reward Securing Banner */}
-                                <div className="p-4 border-t border-white/5 bg-[#E5A93C]/5 flex flex-col items-center">
+                                <div className="p-4 border-t border-[var(--border)] bg-[var(--amber)]/5 flex flex-col items-center">
                                     <div className="flex items-center gap-1.5 mb-1">
-                                        <Star size={13} className="text-[#E5A93C] fill-[#E5A93C]/20" />
-                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#E5A93C] opacity-80">Reward Secured</p>
+                                        <Star size={13} className="text-[var(--amber)] fill-[var(--amber)]/20" />
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--amber)] opacity-80">Reward Secured</p>
                                     </div>
-                                    <span className="text-xs font-black uppercase tracking-wider text-[#E5A93C]">
+                                    <span className="text-xs font-black uppercase tracking-wider text-[var(--amber)]">
                                         {isWinner ? "+25" : isDraw ? "+15" : "+10"} Duel XP Earned
                                     </span>
                                 </div>
@@ -508,14 +418,14 @@ export default function DuelResults({
                                         playResultsSound("click");
                                         setShowAnswers(true);
                                     }}
-                                    className="w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-[#E5A93C] text-zinc-950 hover:bg-[#E5A93C]/90 shadow-[0_4px_24px_rgba(229,169,60,0.15)]"
+                                    className="btn-skeuo-blue w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all cursor-pointer shadow-lg"
                                 >
                                     Review Answers
                                 </button>
                             )}
 
                             {opponentRematchId && (
-                                <p className="text-xs text-[#E5A93C] font-black text-center animate-bounce mb-1">
+                                <p className="text-xs text-[var(--amber)] font-black text-center animate-bounce mb-1">
                                     {isHost ? challenger?.name || "Opponent" : host.name} wants a rematch! 🤝
                                 </p>
                             )}
@@ -526,7 +436,7 @@ export default function DuelResults({
                                         playResultsSound("click");
                                         router.push(`/arena?id=${opponentRematchId}`);
                                     }}
-                                    className="w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] bg-white text-zinc-950 hover:bg-white/95 shadow-[0_4px_24px_rgba(255,255,255,0.15)]"
+                                    className="btn-skeuo-primary text-black w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all cursor-pointer shadow-lg"
                                 >
                                     Accept Rematch 🤝
                                 </button>
@@ -537,7 +447,7 @@ export default function DuelResults({
                                         handleInitiateRematch();
                                     }}
                                     disabled={isInitiatingRematch || !opponentId}
-                                    className="w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] border border-white/10 bg-white/5 hover:bg-white/10 text-white disabled:opacity-50"
+                                    className="w-full py-4 rounded-[20px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all border border-[var(--border)] bg-[var(--background-secondary)] hover:bg-[var(--surface)] hover:border-[var(--border-2)] text-[var(--foreground)] disabled:opacity-50 cursor-pointer shadow-sm"
                                 >
                                     {isInitiatingRematch ? "Drafting Rematch..." : "Run It Back 🔄"}
                                 </button>
@@ -548,14 +458,14 @@ export default function DuelResults({
                                     playResultsSound("click");
                                     router.push("/arena");
                                 }}
-                                className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors"
+                                className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
                             >
                                 Back to Arena
                             </button>
                         </motion.div>
 
                         {/* Recent Competition Context (Leaderboards) */}
-                        <div className="w-full mt-12 pt-8 border-t border-white/5 overflow-hidden">
+                        <div className="w-full mt-12 pt-8 border-t border-[var(--border)] overflow-hidden">
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -576,19 +486,19 @@ export default function DuelResults({
                                     playResultsSound("click"); 
                                     setShowAnswers(false); 
                                 }} 
-                                className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+                                className="p-2 rounded-xl text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-all cursor-pointer"
                             >
                                 <ChevronLeft size={20} strokeWidth={1.5} />
                             </button>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">
                                 Question {currentReviewIndex + 1} of {questions ? questions.length : 0}
                             </span>
                             <div className="w-8" />
                         </div>
 
-                        <GlassmorphicCard intensity="heavy" radius="28px" className="mb-6 overflow-hidden">
+                        <GlassmorphicCard intensity="heavy" radius="28px" className="mb-6 overflow-hidden border border-[var(--border-2)] bg-[var(--surface)] shadow-xl">
                             <div className="px-6 py-6">
-                                <p className="text-lg font-serif text-zinc-100 mb-6 leading-relaxed">
+                                <p className="text-lg font-serif text-[var(--foreground)] mb-6 leading-relaxed">
                                     {reviewQuestion?.question}
                                 </p>
 
@@ -602,25 +512,25 @@ export default function DuelResults({
                                                 className={cn(
                                                     "px-5 py-4 rounded-xl flex items-center gap-4 transition-all border",
                                                     isCorrect
-                                                        ? 'bg-[#2BB288]/10 border-[#2BB288]/30 text-white'
-                                                        : 'bg-white/5 border-transparent text-zinc-400 opacity-60'
+                                                        ? "bg-emerald-500/10 border-emerald-500/30 text-[var(--foreground)] shadow-sm"
+                                                        : "bg-[var(--background-secondary)] border-transparent text-[var(--foreground-muted)] opacity-70"
                                                 )}
                                             >
                                                 <span className={cn(
-                                                    "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all",
-                                                    isCorrect ? 'bg-[#2BB288]/20 text-[#2BB288]' : 'bg-white/5 text-zinc-500'
+                                                    "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all border",
+                                                    isCorrect ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "bg-[var(--background)] text-[var(--foreground-muted)] border-[var(--border)]"
                                                 )}>
                                                     {String.fromCharCode(65 + idx)}
                                                 </span>
                                                 <span className={cn(
                                                     "font-serif text-[14px]",
-                                                    isCorrect ? 'text-white' : 'text-zinc-400'
+                                                    isCorrect ? "text-[var(--foreground)] font-medium" : "text-[var(--foreground-muted)]"
                                                 )}>
                                                     {option}
                                                 </span>
                                                 {isCorrect && (
                                                     <span className="ml-auto">
-                                                        <CheckCircle2 size={16} className="text-[#2BB288]" />
+                                                        <CheckCircle2 size={16} className="text-emerald-500" />
                                                     </span>
                                                 )}
                                             </div>
@@ -628,12 +538,12 @@ export default function DuelResults({
                                     })}
                                 </div>
 
-                                 <div className="mt-6 p-4 rounded-xl bg-[#9673F5]/5 border-l-2 border-[#9673F5]">
-                                    <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#9673F5] mb-1.5 flex items-center gap-1.5">
+                                 <div className="mt-6 p-4 rounded-xl bg-[var(--purple)]/5 border-l-2 border-[var(--purple)]">
+                                    <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--purple)] mb-1.5 flex items-center gap-1.5">
                                         <Lightbulb size={13} />
                                         Explanation
                                     </h4>
-                                    <p className="text-[13px] font-serif text-zinc-300 leading-relaxed">
+                                    <p className="text-[13px] font-serif text-[var(--foreground-secondary)] leading-relaxed">
                                         {reviewQuestion?.explanation}
                                     </p>
                                 </div>
@@ -647,7 +557,7 @@ export default function DuelResults({
                                     setCurrentReviewIndex(prev => Math.max(0, prev - 1));
                                 }}
                                 disabled={currentReviewIndex === 0}
-                                className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white disabled:opacity-30 transition-all bg-white/5 flex items-center gap-2"
+                                className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 transition-all bg-[var(--background-secondary)] border border-[var(--border)] flex items-center gap-2 cursor-pointer"
                             >
                                 <ArrowLeft size={14} />
                                 Prev
@@ -659,7 +569,7 @@ export default function DuelResults({
                                         playResultsSound("click");
                                         setShowAnswers(false);
                                     }}
-                                    className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] bg-[#2BB288] text-zinc-950 hover:bg-[#2BB288]/90"
+                                    className="btn-skeuo-blue px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] cursor-pointer shadow-md"
                                 >
                                     Done
                                 </button>
@@ -669,7 +579,7 @@ export default function DuelResults({
                                         playResultsSound("page-turn");
                                         setCurrentReviewIndex(prev => Math.min(questions ? questions.length - 1 : 0, prev + 1));
                                     }}
-                                    className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-zinc-950 hover:bg-white/95 flex items-center gap-2"
+                                    className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--border-2)] flex items-center gap-2 cursor-pointer shadow-sm"
                                 >
                                     Next
                                     <ArrowRight size={14} />

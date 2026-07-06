@@ -262,11 +262,11 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
     return (
         <div className="min-h-screen bg-[var(--background)] flex flex-col justify-between overflow-x-hidden pt-[8px]">
             {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-white/5 bg-[#06060B]/90 backdrop-blur-xl shrink-0">
+            <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/90 backdrop-blur-xl shrink-0">
                 {/* Opponent Progress Bar */}
-                <div className="h-[3px] bg-white/5">
+                <div className="h-[3px] bg-[var(--border)]">
                     <motion.div
-                        className="h-full bg-gradient-to-r from-[#9673F5] to-[#2BB288]"
+                        className="h-full bg-gradient-to-r from-[var(--purple)] to-[var(--blue)]"
                         initial={{ width: 0 }}
                         animate={{ width: `${opponentProgressPercent}%` }}
                         transition={{ type: "spring", damping: 20 }}
@@ -275,13 +275,13 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
 
                 <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 shadow-[0_0_12px_rgba(244,63,94,0.1)]">
-                            <Swords size={12} className="text-red-400 animate-pulse" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-red-400">Live Duel</span>
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--blue)]/10 border border-[var(--blue)]/20 shadow-sm">
+                            <Swords size={12} className="text-[var(--blue)] animate-pulse" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--blue)]">Live Duel</span>
                         </div>
                         <button
                             onClick={() => setShowAbandonModal(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 text-zinc-400 transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-500 text-[var(--foreground-muted)] transition-all text-[9px] font-black uppercase tracking-wider cursor-pointer"
                         >
                             Forfeit Match
                         </button>
@@ -289,22 +289,25 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
 
                     <div className="flex items-center gap-3">
                         {/* Opponent Status */}
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.02] border border-white/5">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--background-secondary)] border border-[var(--border)]">
                             <span className={cn(
                                 "w-1.5 h-1.5 rounded-full transition-all duration-300",
                                 opponentFinished 
-                                    ? "bg-[#2BB288]" 
+                                    ? "bg-[var(--blue)]" 
                                     : opponentActive 
-                                        ? "bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.5)]" 
-                                        : "bg-red-400 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+                                        ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" 
+                                        : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                             )} />
-                            <span className="text-[9px] text-zinc-400 uppercase tracking-wider font-black">
+                            <span className="text-[9px] text-[var(--foreground-muted)] uppercase tracking-wider font-black">
                                 {opponent.name}: {opponentActive ? (opponentFinished ? "Finished" : "Dueling") : "Gone"}
                             </span>
                         </div>
 
                         {/* Timer */}
-                        <div className={`px-3 py-1.5 rounded-xl font-mono text-xs font-black tracking-wider ${timeLeft < 60 ? 'text-red-400 bg-red-500/10 border border-red-500/20' : 'text-zinc-300 bg-white/5 border border-white/5'}`}>
+                        <div className={cn(
+                            "px-3 py-1.5 rounded-xl font-mono text-xs font-black tracking-wider border",
+                            timeLeft < 60 ? "text-red-500 bg-red-500/10 border-red-500/20 animate-pulse" : "text-[var(--foreground)] bg-[var(--background-secondary)] border-[var(--border)]"
+                        )}>
                             {formatTime(timeLeft)}
                         </div>
                     </div>
@@ -323,11 +326,11 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                                     key={idx}
                                     onClick={() => setCurrentIndex(idx)}
                                     className={cn(
-                                        "w-7.5 h-7.5 rounded-lg text-[10px] font-black flex-shrink-0 transition-all flex items-center justify-center cursor-pointer",
-                                        isActive ? "bg-white text-zinc-950 scale-105 border border-white" :
-                                        isAnswered ? "bg-[var(--emerald)]/20 text-[var(--emerald)] border border-[var(--emerald)]/30" :
-                                        isOpponentAnswered ? "bg-[#9673F5]/20 text-[#9673F5] border border-[#9673F5]/30" :
-                                        "bg-white/5 text-zinc-400 border border-white/5 hover:bg-white/10"
+                                        "w-7 h-7 rounded-lg text-[10px] font-black flex-shrink-0 transition-all flex items-center justify-center cursor-pointer border",
+                                        isActive ? "bg-[var(--foreground)] text-[var(--background)] scale-105 border-[var(--foreground)]" :
+                                        isAnswered ? "bg-[var(--blue)]/20 text-[var(--blue)] border-[var(--blue)]/30" :
+                                        isOpponentAnswered ? "bg-[var(--purple)]/20 text-[var(--purple)] border-[var(--purple)]/30" :
+                                        "bg-[var(--background-secondary)] text-[var(--foreground-muted)] border-[var(--border)] hover:border-[var(--border-2)]"
                                     )}
                                 >
                                     {idx + 1}
@@ -350,14 +353,14 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                         className="space-y-6"
                     >
                         {/* Question Card */}
-                        <GlassmorphicCard intensity="light" radius="28px" className="p-6 border border-white/5 shadow-xl">
+                        <GlassmorphicCard intensity="light" radius="28px" className="p-6 border border-[var(--border-2)] shadow-xl bg-[var(--surface)]">
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20">
+                                <span className="px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20">
                                     Question {currentIndex + 1}
                                 </span>
-                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">{(questions ? questions.length : 0) - currentIndex - 1} remaining</span>
+                                <span className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">{(questions ? questions.length : 0) - currentIndex - 1} remaining</span>
                             </div>
-                            <p className="text-base sm:text-lg font-semibold text-white leading-relaxed font-serif">
+                            <p className="text-base sm:text-lg font-semibold text-[var(--foreground)] leading-relaxed font-serif">
                                 {currentQuestion?.question}
                             </p>
                         </GlassmorphicCard>
@@ -380,26 +383,26 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                                             className={cn(
                                                 "px-5 py-4 border transition-all duration-300 flex items-center gap-4 cursor-pointer select-none",
                                                 isSelected 
-                                                    ? "border-[var(--accent)] bg-[var(--accent)]/10 shadow-lg scale-[1.01]" 
-                                                    : "border-white/5 bg-zinc-950/20 hover:bg-zinc-950/40 hover:border-white/10 active:scale-[0.99]"
+                                                    ? "border-[var(--blue)] bg-[var(--blue)]/10 shadow-lg scale-[1.01]" 
+                                                    : "border-[var(--border)] bg-[var(--background-secondary)] hover:bg-[var(--surface)] hover:border-[var(--border-2)] active:scale-[0.99]"
                                             )}
                                         >
                                             <span className={cn(
                                                 "w-7.5 h-7.5 rounded-lg flex items-center justify-center text-xs font-black border transition-all",
                                                 isSelected 
-                                                    ? "bg-[var(--accent)] text-zinc-950 border-[var(--accent)]" 
-                                                    : "bg-white/5 text-zinc-400 border-white/5 group-hover:text-white"
+                                                    ? "bg-[var(--blue)] text-white border-[var(--blue)]" 
+                                                    : "bg-[var(--background)] text-[var(--foreground-muted)] border-[var(--border)] group-hover:text-[var(--foreground)]"
                                             )}>
                                                 {String.fromCharCode(65 + idx)}
                                             </span>
                                             <span className={cn(
                                                 "flex-1 text-sm font-serif",
-                                                isSelected ? "text-white font-medium" : "text-zinc-300"
+                                                isSelected ? "text-[var(--foreground)] font-medium" : "text-[var(--foreground-secondary)]"
                                             )}>
                                                 {option}
                                             </span>
                                             {isSelected && (
-                                                <CheckCircle size={16} className="text-[var(--accent)] shrink-0 animate-bounce" />
+                                                <CheckCircle size={16} className="text-[var(--blue)] shrink-0 animate-bounce" />
                                             )}
                                         </GlassmorphicCard>
                                     </motion.button>
@@ -411,12 +414,12 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
             </main>
 
             {/* Footer */}
-            <footer className="sticky bottom-0 border-t border-white/5 bg-[#06060B]/90 backdrop-blur-xl p-4 shrink-0">
+            <footer className="sticky bottom-0 border-t border-[var(--border)] bg-[var(--background)]/90 backdrop-blur-xl p-4 shrink-0">
                 <div className="max-w-2xl mx-auto flex items-center justify-between">
                     <button
                         onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                         disabled={currentIndex === 0}
-                        className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white disabled:opacity-30 transition-all flex items-center gap-2 cursor-pointer"
+                        className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-30 transition-all flex items-center gap-2 cursor-pointer"
                     >
                         <ArrowLeft size={14} />
                         Prev
@@ -424,10 +427,10 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
 
                     <div className="flex items-center gap-2">
                         {syncError && (
-                            <span className="text-[9px] font-bold text-red-400 animate-pulse uppercase tracking-wider">Sync issue...</span>
+                            <span className="text-[10px] font-bold text-red-500 animate-pulse uppercase tracking-wider">Sync issue...</span>
                         )}
                         {opponentFinished && (
-                            <span className="text-[9px] font-bold text-emerald-400 animate-bounce uppercase tracking-wider">Opponent finished!</span>
+                            <span className="text-[10px] font-bold text-emerald-500 animate-bounce uppercase tracking-wider">Opponent finished!</span>
                         )}
                     </div>
 
@@ -435,14 +438,14 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                         <button
                             onClick={() => setShowSubmitModal(true)}
                             disabled={isSubmitting}
-                            className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white text-zinc-950 hover:bg-white/95 active:scale-97 cursor-pointer shadow-lg"
+                            className="btn-skeuo-blue px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer shadow-lg"
                         >
                             {isSubmitting ? 'Submitting...' : 'Submit'}
                         </button>
                     ) : (
                         <button
                             onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                            className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-900 border border-white/5 text-white hover:bg-zinc-800 transition-all flex items-center gap-2 cursor-pointer"
+                            className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--border-2)] transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                         >
                             Next
                             <ArrowRight size={14} />
@@ -463,26 +466,26 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                         <GlassmorphicCard
                             intensity="heavy"
                             radius="32px"
-                            className="w-full max-w-sm border border-white/10 p-6 text-center shadow-2xl"
+                            className="w-full max-w-sm border border-[var(--border-2)] p-6 text-center shadow-2xl bg-[var(--surface)]"
                         >
-                            <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 shadow-xl text-[var(--accent)]">
+                            <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[var(--blue)]/10 flex items-center justify-center border border-[var(--blue)]/20 shadow-xl text-[var(--blue)]">
                                 <Flag size={28} className="animate-pulse" />
                             </div>
-                            <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1.5">Submit Duel?</h3>
-                            <p className="text-xs text-zinc-400 mb-5 leading-relaxed font-serif">
+                            <h3 className="text-lg font-black text-[var(--foreground)] uppercase tracking-tight mb-1.5">Submit Duel?</h3>
+                            <p className="text-xs text-[var(--foreground-muted)] mb-5 leading-relaxed font-serif">
                                 You&apos;ve answered {Object.keys(answers).length}/{questions.length} questions.
                                 {opponentFinished ? " Your opponent has finished." : " Your opponent is still working."}
                             </p>
                             <div className="flex gap-2.5">
                                 <button
                                     onClick={() => setShowSubmitModal(false)}
-                                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-all border border-white/5 cursor-pointer"
+                                    className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)] transition-all border border-[var(--border)] cursor-pointer"
                                 >
                                     Review
                                 </button>
                                 <button
                                     onClick={handleSubmit}
-                                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider bg-[var(--accent)] text-zinc-950 hover:opacity-95 transition-all active:scale-[0.98] cursor-pointer"
+                                    className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider btn-skeuo-blue cursor-pointer"
                                 >
                                     Submit
                                 </button>
@@ -504,25 +507,25 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                         <GlassmorphicCard
                             intensity="heavy"
                             radius="32px"
-                            className="w-full max-w-sm border border-white/10 p-6 text-center shadow-2xl"
+                            className="w-full max-w-sm border border-[var(--border-2)] p-6 text-center shadow-2xl bg-[var(--surface)]"
                         >
-                            <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-xl text-red-400">
+                            <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-xl text-red-500">
                                 <Flag size={28} />
                             </div>
-                            <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1.5">Forfeit Duel?</h3>
-                            <p className="text-xs text-zinc-400 mb-5 leading-relaxed font-serif">
-                                Are you sure you want to run? Leaving the pit counts as an automatic defeat and your wager will be lost.
+                            <h3 className="text-lg font-black text-[var(--foreground)] uppercase tracking-tight mb-1.5">Forfeit Duel?</h3>
+                            <p className="text-xs text-[var(--foreground-muted)] mb-5 leading-relaxed font-serif">
+                                Are you sure you want to leave? Leaving early forfeits your match and your XP wager will be lost.
                             </p>
                             <div className="flex gap-2.5">
                                 <button
                                     onClick={() => setShowAbandonModal(false)}
-                                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-all border border-white/5 cursor-pointer"
+                                    className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)] transition-all border border-[var(--border)] cursor-pointer"
                                 >
-                                    Stay & Fight
+                                    Stay & Finish
                                 </button>
                                 <button
                                     onClick={handleAbandon}
-                                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider bg-red-500 text-white hover:opacity-95 transition-all active:scale-[0.98] cursor-pointer"
+                                    className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-red-500 text-white hover:opacity-95 transition-all active:scale-[0.98] cursor-pointer"
                                 >
                                     Forfeit
                                 </button>
@@ -543,18 +546,18 @@ export default function DuelPlay({ duelId, isHost, questions, timeLimit, opponen
                         <GlassmorphicCard
                             intensity="heavy"
                             radius="32px"
-                            className="w-full max-w-sm border border-white/10 p-6 text-center shadow-2xl"
+                            className="w-full max-w-sm border border-[var(--border-2)] p-6 text-center shadow-2xl bg-[var(--surface)]"
                         >
-                            <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[#2BB288]/10 flex items-center justify-center border border-[#2BB288]/20 shadow-xl text-[#2BB288]">
+                            <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[var(--blue)]/10 flex items-center justify-center border border-[var(--blue)]/20 shadow-xl text-[var(--blue)]">
                                 <Swords size={28} className="animate-bounce" />
                             </div>
-                            <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1.5">Opponent Forfeited!</h3>
-                            <p className="text-xs text-zinc-300 mb-5 leading-relaxed font-serif">
-                                Your opponent has left the pit. You win the speed battle by default and secure the wager payout!
+                            <h3 className="text-lg font-black text-[var(--foreground)] uppercase tracking-tight mb-1.5">Opponent Forfeited!</h3>
+                            <p className="text-xs text-[var(--foreground-muted)] mb-5 leading-relaxed font-serif">
+                                Your classmate has left the room. You win by default and secure the XP pot!
                             </p>
                             <button
                                 onClick={() => router.push(`/arena/results?id=${duelId}`)}
-                                className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-wider bg-[#2BB288] text-white hover:opacity-95 transition-all cursor-pointer"
+                                className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider btn-skeuo-blue cursor-pointer"
                             >
                                 View Results
                             </button>

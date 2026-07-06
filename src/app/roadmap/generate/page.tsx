@@ -19,7 +19,7 @@ export default function RoadmapGenerate() {
             if (hasStarted.current) return;
             const paramsStr = sessionStorage.getItem("generateParams");
             if (!paramsStr) {
-                router.push("/create");
+                router.push("/dashboard");
                 return;
             }
             hasStarted.current = true;
@@ -55,7 +55,7 @@ export default function RoadmapGenerate() {
 
             } catch (err: any) {
                 addToast(err.message, "error");
-                router.push("/create");
+                router.push("/dashboard");
             }
         };
 
@@ -71,7 +71,7 @@ export default function RoadmapGenerate() {
 
             <EndowmentModal 
                 isOpen={isEndowmentOpen} 
-                onClose={() => router.push("/create")}
+                onClose={() => router.push("/dashboard")}
                 currentCredits={user?.credits || 0}
                 requiredCredits={1}
             />

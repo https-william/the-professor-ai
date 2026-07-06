@@ -159,7 +159,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
     {
         id: "synth-1",
         title: "First Ingestion",
-        description: "Upload and distill your first study document. Goodbye fluff, hello pure knowledge.",
+        description: "Upload and simplify your first study document. Goodbye fluff, hello clean notes.",
         category: "synthesis",
         icon: Zap,
         color: "var(--violet)",
@@ -172,7 +172,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
     {
         id: "synth-10",
         title: "Neural Architect",
-        description: "Synthesize 10 study packs. You're building an external brain faster than AI can keep up.",
+        description: "Create 10 study packs. You're building a massive brain faster than AI can keep up.",
         category: "synthesis",
         icon: Brain,
         color: "var(--violet)",
@@ -185,7 +185,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
     {
         id: "synth-50",
         title: "Synaptic Overload",
-        description: "Generate 50 high-fidelity study packs. You are the ultimate curator of wisdom.",
+        description: "Create 50 study packs. You are the ultimate curator of wisdom.",
         category: "synthesis",
         icon: Sparkles,
         color: "var(--violet)",
@@ -211,7 +211,7 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
     {
         id: "synth-deconstruct",
         title: "Syllabus Deconstructor",
-        description: "Distilled 20 complex topics or study packs into clear, digestible insights.",
+        description: "Simplified 20 complex topics or study packs into clear, easy-to-read notes.",
         category: "synthesis",
         icon: Brain,
         color: "var(--violet)",
@@ -597,7 +597,7 @@ export default function AchievementsPage() {
                     {[
                         { id: "all", label: "All Trophies", icon: Trophy, count: totalCount, color: "#E5A93C" },
                         { id: "streak", label: "Streaks", icon: Flame, count: achievements.filter(a=>a.category==="streak").length, color: "#E5A93C" },
-                        { id: "synthesis", label: "Synthesis", icon: Zap, count: achievements.filter(a=>a.category==="synthesis").length, color: "#9673F5" },
+                        { id: "synthesis", label: "Study Packs", icon: Zap, count: achievements.filter(a=>a.category==="synthesis").length, color: "#9673F5" },
                         { id: "focus", label: "Focus", icon: Clock, count: achievements.filter(a=>a.category==="focus").length, color: "#2BB288" },
                         { id: "elite", label: "Elite", icon: Award, count: achievements.filter(a=>a.category==="elite").length, color: "#9673F5" },
                     ].map((tab) => {

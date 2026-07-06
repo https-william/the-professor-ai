@@ -94,14 +94,14 @@ function SignupForm() {
             Looks like you're already in our books! Try{" "}
             <Link 
               href={`/login?next=${encodeURIComponent(nextUrl)}`}
-              className="underline text-amber-500 hover:text-amber-400 font-bold"
+              className="underline text-[var(--amber)] hover:text-[var(--amber)]/80 font-bold"
             >
               signing in
             </Link>{" "}
             or resetting your password via{" "}
             <Link 
               href="/forgot-password"
-              className="underline text-amber-500 hover:text-amber-400 font-bold"
+              className="underline text-[var(--amber)] hover:text-[var(--amber)]/80 font-bold"
             >
               Forgot Password
             </Link>?
@@ -115,7 +115,7 @@ function SignupForm() {
       setLoading(false);
     }
     else {
-      router.push(`/verify-email?email=${encodeURIComponent(email)}${nextUrl && nextUrl !== "/dashboard" ? `&next=${encodeURIComponent(nextUrl)}` : ""}`);
+      router.push(nextUrl || "/dashboard");
       router.refresh();
     }
   };
@@ -128,7 +128,7 @@ function SignupForm() {
   };
   const strength = getStrength();
   const strengthLabel = ["", "Weak", "Fair", "Strong"][strength];
-  const strengthColor = ["", "#E85D75", "#E5A93C", "#2BB288"][strength];
+  const strengthColor = ["", "var(--crimson)", "var(--amber)", "var(--emerald)"][strength];
 
   return (
     <div className="min-h-screen w-full flex bg-[var(--background)] relative overflow-hidden font-sans">
@@ -160,7 +160,7 @@ function SignupForm() {
           </h2>
 
           <GlassmorphicCard intensity="medium" radius="20px" className="p-6 relative overflow-hidden">
-            <div className="flex gap-1 mb-4 text-amber-500">
+            <div className="flex gap-1 mb-4 text-[var(--amber)]">
               {[...Array(5)].map((_, j) => (
                 <Star key={j} size={12} fill="currentColor" />
               ))}
@@ -213,8 +213,8 @@ function SignupForm() {
 
           {/* Pending upload banner */}
           {pendingUpload && (
-            <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 mb-6 text-left">
-              <p className="text-[10px] font-black uppercase tracking-wider text-amber-500 mb-1 flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-[var(--amber-dim)] border border-[var(--amber-border)] mb-6 text-left">
+              <p className="text-[10px] font-black uppercase tracking-wider text-[var(--amber)] mb-1 flex items-center gap-1.5">
                 <Sparkles size={12} />
                 Progress Saved
               </p>
@@ -248,7 +248,7 @@ function SignupForm() {
 
           {/* Error */}
           {error && (
-            <div className="p-4 rounded-2xl mb-5 bg-rose-500/5 border border-rose-500/20 text-rose-300 text-xs text-left font-bold shadow-[0_4px_12px_rgba(232,93,117,0.03)] leading-relaxed">
+            <div role="alert" aria-live="assertive" className="p-4 rounded-2xl mb-5 bg-[var(--crimson-dim)] border border-[var(--crimson-border)] text-[var(--crimson-text)] text-xs text-left font-bold shadow-[0_4px_12px_rgba(232,93,117,0.03)] leading-relaxed">
               ⚠️ {error}
             </div>
           )}
@@ -267,7 +267,7 @@ function SignupForm() {
                   onChange={(e) => setEmail(e.target.value)} 
                   required 
                   autoComplete="email"
-                  className="w-full pl-11 pr-5 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
+                  className="w-full pl-11 pr-5 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-[var(--amber)] focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[var(--amber-glow)]"
                 />
               </div>
             </div>
@@ -284,7 +284,7 @@ function SignupForm() {
                   onChange={(e) => setPassword(e.target.value)} 
                   required 
                   autoComplete="new-password"
-                  className="w-full pl-11 pr-12 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
+                  className="w-full pl-11 pr-12 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-[var(--amber)] focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[var(--amber-glow)]"
                 />
                 <button 
                   type="button" 
@@ -300,7 +300,7 @@ function SignupForm() {
                   <div className="flex gap-1 flex-1">
                     {[1, 2, 3, 4].map(i => {
                       const active = i <= strength;
-                      const colorClass = strength === 1 ? "bg-rose-500" : strength === 2 ? "bg-amber-500" : "bg-emerald-500";
+                      const colorClass = strength === 1 ? "bg-[var(--crimson)]" : strength === 2 ? "bg-[var(--amber)]" : "bg-[var(--emerald)]";
                       return (
                         <div 
                           key={i} 
@@ -325,7 +325,7 @@ function SignupForm() {
             <button 
               type="submit" 
               disabled={loading} 
-              className="w-full h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-neutral-900 border border-amber-500/30 hover:shadow-[0_8px_30px_rgba(229,169,60,0.3)] shadow-[0_4px_15px_rgba(229,169,60,0.15)] rounded-2xl font-black text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-98 hover:scale-[1.01] duration-300 mt-4"
+              className="btn-skeuo-primary w-full h-14 rounded-2xl font-black text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-98 hover:scale-[1.01] duration-300 mt-4"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -339,9 +339,9 @@ function SignupForm() {
           {/* Legal text */}
           <p className="text-[10px] text-[var(--foreground-muted)]/60 text-center mt-6 leading-relaxed font-semibold">
             By signing up, you agree to our{" "}
-            <Link href="/legal/terms" className="text-amber-500/80 hover:text-amber-400 underline">Terms of Use</Link>{" "}
+            <Link href="/legal/terms" className="text-[var(--amber)]/80 hover:text-[var(--amber)] underline">Terms of Use</Link>{" "}
             and{" "}
-            <Link href="/legal/privacy" className="text-amber-500/80 hover:text-amber-400 underline">Privacy Policy</Link>.
+            <Link href="/legal/privacy" className="text-[var(--amber)]/80 hover:text-[var(--amber)] underline">Privacy Policy</Link>.
           </p>
 
           {/* Sign in link */}
@@ -349,7 +349,7 @@ function SignupForm() {
             Already have an account?{" "}
             <Link 
               href={`/login${nextUrl && nextUrl !== "/dashboard" ? `?next=${encodeURIComponent(nextUrl)}` : ""}`} 
-              className="text-amber-500 font-bold hover:underline transition-all"
+              className="text-[var(--amber)] font-bold hover:underline transition-all"
             >
               Sign in
             </Link>
@@ -363,8 +363,8 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[var(--amber-border)] border-t-[var(--amber)] rounded-full animate-spin" />
       </div>
     }>
       <SignupForm />

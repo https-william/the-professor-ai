@@ -85,7 +85,7 @@ export default function Eli5Viewer() {
     useEffect(() => {
         const stored = sessionStorage.getItem("lastEli5");
         if (!stored) {
-            router.push("/create");
+            router.push("/dashboard");
             return;
         }
         setContent(JSON.parse(stored));
@@ -101,7 +101,7 @@ export default function Eli5Viewer() {
 
     const handleReturn = () => {
         playResultsSound("click");
-        router.push("/create");
+        router.push("/dashboard");
     };
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {

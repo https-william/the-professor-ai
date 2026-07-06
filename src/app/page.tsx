@@ -11,6 +11,7 @@ import PainSection from "@/components/landing/PainSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import FAQSection from "@/components/landing/FAQ";
+import ClosingCTABanner from "@/components/landing/ClosingCTABanner";
 
 export default function LandingPage() {
   const { user } = useUser();
@@ -57,6 +58,7 @@ export default function LandingPage() {
       <InteractiveDemo />
       <TestimonialsSection />
       <FAQSection />
+      <ClosingCTABanner />
     </>
   );
 }

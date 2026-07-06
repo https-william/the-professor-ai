@@ -193,8 +193,8 @@ export default function RoadmapViewer({ phases, title, generationId }: RoadmapVi
                         {/* Footer Integrity Indicator */}
                         <div className="mt-24 py-12 border-t border-white/5 flex flex-col items-center text-center opacity-15">
                             <Network size={32} className="mb-3 text-[var(--amber)]" />
-                            <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[var(--foreground)]">Strategic Syllabus Engine</p>
-                            <p className="text-[7px] mt-2 tracking-[0.25em] font-mono text-[var(--foreground-muted)]">ALGORITHM VERIFIED ARCHITECTURE v4.3</p>
+                            <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[var(--foreground)]">Syllabus Study Planner</p>
+                            <p className="text-[7px] mt-2 tracking-[0.25em] font-mono text-[var(--foreground-muted)]">VERIFIED SYLLABUS PLAN v4.3</p>
                         </div>
                     </div>
                 ) : (

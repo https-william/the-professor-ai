@@ -26,7 +26,7 @@ export function getFlashcardsHtmlString(title: string, flashcards: any[]): strin
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${safeTitle} - Offline Flashcards</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --background: #050508;
@@ -57,7 +57,7 @@ export function getFlashcardsHtmlString(title: string, flashcards: any[]): strin
         body {
             background-color: var(--background);
             color: var(--text);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-col: column;
@@ -748,7 +748,7 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${safeTitle} - Offline Assessment</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --background: #050508;
@@ -779,7 +779,7 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
         body {
             background-color: var(--background);
             color: var(--text);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -1571,8 +1571,8 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${safeTitle} — The Professor AI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+    <title>${safeTitle} - The Professor AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #050508;
@@ -1604,7 +1604,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
         body {
             background-color: var(--bg);
             color: var(--text);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
             padding-bottom: 100px;
@@ -1672,7 +1672,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
 
         /* ── Typography ── */
         h1 {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 32px;
             font-weight: 900;
             color: var(--text);
@@ -1687,7 +1687,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
         }
 
         h2 {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 22px;
             font-weight: 900;
             color: var(--text);
@@ -1699,7 +1699,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
         }
 
         h3 {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 18px;
             font-weight: 800;
             color: rgba(255,255,255,0.9);
@@ -1710,7 +1710,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
         }
 
         h4 {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 14px;
             font-weight: 700;
             color: rgba(255,255,255,0.7);
@@ -1729,7 +1729,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
             background: rgba(37, 99, 235, 0.08);
             padding: 1px 5px;
             border-radius: 4px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
         }
 
         em { font-style: italic; color: rgba(255,255,255,0.7); }
@@ -1769,7 +1769,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
         table {
             width: 100%;
             border-collapse: collapse;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 14px;
         }
 
@@ -1837,7 +1837,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
             border-radius: 16px;
             padding: 16px 20px;
             margin: 28px 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 14px;
             line-height: 1.6;
         }
@@ -1894,7 +1894,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
             background: transparent;
             border: none;
             color: rgba(255,255,255,0.7);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
@@ -1931,7 +1931,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
         }
 
         .footer-disclaimer {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 11px;
             color: var(--text-muted);
             opacity: 0.45;
@@ -1940,7 +1940,7 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
         }
 
         .footer-link {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 12px;
             font-weight: 700;
             color: var(--blue-light);

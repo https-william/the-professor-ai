@@ -6,7 +6,7 @@ const STEPS = [
   {
     num: "01",
     title: "Upload anything.",
-    body: "Drag in your PDF, photograph your handwritten notes, paste a WhatsApp-forwarded document. We handle the mess — that's the point.",
+    body: "Drag in your PDF, photograph your handwritten notes, paste a WhatsApp-forwarded document. We handle the mess. That's the point.",
     side: "right" as const,
     extra: (
       <div className="flex flex-wrap gap-1.5 mt-4">
@@ -63,7 +63,7 @@ const STEPS = [
     side: "left" as const,
     extra: (
       <div className="text-xs font-bold text-violet-400 mt-4 flex items-center gap-1.5">
-        🔥 Keep your streak — The Professor will remind you
+        🔥 Keep your streak: The Professor will remind you
       </div>
     ),
   },
@@ -109,7 +109,7 @@ export default function HowItWorksSection() {
                 </div>
 
                 {/* Step Card Content */}
-                <div className={`w-[calc(100%-72px)] md:w-[44%] p-6 md:p-8 rounded-[28px] bg-[var(--bg-2)] border border-[var(--border)] hover-lift-sm transition-all duration-300 ${hoverBorder}`}>
+                <div className={`w-[calc(100%-72px)] md:w-[44%] p-6 md:p-8 rounded-[28px] bg-[var(--bg-2)] border border-[var(--border)] hover-lift-sm transition-all duration-300 scholar-card ${hoverBorder}`}>
                   <h3 className="font-heading text-lg md:text-xl font-black text-[var(--foreground)] tracking-tight mb-3">
                     {step.title}
                   </h3>

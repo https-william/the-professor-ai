@@ -43,9 +43,10 @@ export default async function PillarPage({ params }: { params: Promise<{ slug: s
         </nav>
 
         <header className="mb-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-bg)]/20 border border-[var(--accent-glow)] text-[var(--accent)] text-[10px] font-black uppercase tracking-widest mb-8">
-             <Sparkles className="w-3 h-3" /> 2026 Study Guide
-          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--accent)] mb-4 flex items-center gap-2">
+             <Sparkles className="w-3 h-3" />
+             <span>2026 Study Guide</span>
+          </p>
           <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[0.95] tracking-tight">
              {data.content.hero.title}
           </h1>

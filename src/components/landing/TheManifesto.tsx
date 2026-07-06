@@ -43,7 +43,7 @@ export default function TheManifesto() {
             be <span className="text-[#4A7CF5] drop-shadow-[0_0_20px_rgba(74,124,245,0.25)]">this hard.</span>
           </h2>
           <p className="font-sans text-sm md:text-base leading-relaxed text-[var(--foreground-secondary)] opacity-85 font-medium max-w-lg mt-2">
-            Let's be real — uni is a lot of work. We built The Professor to cut through the noise and give you <span className="text-blue-400 font-extrabold">just the good parts</span> of your notes, so you can spend less time studying and more time living.
+            Let's be real: uni is a lot of work. We built The Professor to cut through the noise and give you <span className="text-blue-400 font-extrabold">just the good parts</span> of your notes, so you can spend less time studying and more time living.
           </p>
         </div>
 

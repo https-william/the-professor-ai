@@ -148,21 +148,15 @@ export default function ProfilePage() {
             {/* Grid Line Background */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60 z-0" />
             
-            {/* Ambient Radial Halos */}
-            <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-[#10B981]/5 via-[#6366F1]/5 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
-            <div className="absolute bottom-[-150px] right-[-100px] w-[500px] h-[500px] bg-[#3B82F6]/5 rounded-full blur-[130px] pointer-events-none z-0" />
-
             <StandardContainer narrow className="relative z-10">
                 <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-600 space-y-10">
                     
                     {/* Header Banner */}
                     <div className="text-center space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 backdrop-blur-md">
-                            <Trophy size={12} className="text-[#F59E0B] animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">
-                                Scholar Profile
-                            </span>
-                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)] mb-3 flex items-center justify-center gap-2">
+                            <Trophy size={13} className="text-[#F59E0B]" />
+                            <span>Scholar Profile</span>
+                        </p>
                         <h1 className="text-4xl sm:text-6xl font-black tracking-[-0.03em] leading-[0.9] uppercase italic">
                             Academic <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">Identity</span>
                         </h1>
@@ -325,7 +319,7 @@ export default function ProfilePage() {
                                 <div className="border border-white/5 bg-zinc-950/45 backdrop-blur-2xl rounded-[2.5rem] overflow-hidden shadow-2xl">
                                     <div className="p-6 sm:p-8 border-b border-white/5">
                                         <h3 className="text-base font-black text-white tracking-tight">The Study Lab</h3>
-                                        <p className="text-xs text-[var(--foreground-muted)] mt-1 font-medium">Configure your preferred default parameters for new syntheses.</p>
+                                        <p className="text-xs text-[var(--foreground-muted)] mt-1 font-medium">Set up your default preferences for creating new study packs.</p>
                                     </div>
                                     <div className="p-6 sm:p-8 space-y-8">
                                         

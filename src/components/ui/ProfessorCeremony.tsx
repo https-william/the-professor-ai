@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { useUser } from "@/context/UserContext";
+import DopamineWaitingRoom from "@/components/ui/DopamineWaitingRoom";
 
 const STEPS = [
     { label: "Opening study vault", key: "vault" },
@@ -83,46 +84,8 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
     return (
         <div className={`flex flex-col items-center justify-center p-4 sm:p-6 w-full max-w-xl mx-auto text-center ${className}`}>
             
-            {/* Visualizer: Radar Ring + Glowing Brand Logo */}
-            <div className="relative w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center mb-6 sm:mb-8">
-                {/* Radar Dial */}
-                <div className="absolute inset-0 rounded-full border border-white/5 bg-[var(--background-secondary)]/50 backdrop-blur-md shadow-inner" />
-                
-                {/* Rotating Compass Ticks */}
-                <motion.div 
-                    className="absolute inset-2 rounded-full border border-dashed border-white/10"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                />
-
-                {/* Sweeping Laser Line */}
-                <motion.div 
-                    className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/5 to-transparent"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    style={{ originX: 0.5, originY: 0.5 }}
-                />
-
-                {/* Logo Wrapper */}
-                <motion.div 
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden z-10"
-                    animate={{ 
-                        boxShadow: [
-                            "0 8px 32px rgba(0,0,0,0.4)",
-                            "0 8px 40px rgba(255, 255, 255, 0.05)",
-                            "0 8px 32px rgba(0,0,0,0.4)"
-                        ] 
-                    }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                >
-                    <BrandLogo size="sm" />
-                    <motion.div 
-                        className="absolute inset-x-0 bottom-0 h-1 bg-white"
-                        animate={{ y: ["100%", "-200%"] }}
-                        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                </motion.div>
-            </div>
+            {/* Dopamine Ramp: Live extraction pills and study fact previews */}
+            <DopamineWaitingRoom mode="summary" title="Synthesizing study vault..." />
 
             {/* 15-Second Anticipation Countdown Bar */}
             {queuePosition === 0 && (
@@ -148,7 +111,7 @@ export default function ProfessorCeremony({ className }: ProfessorCeremonyProps)
                         <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
                         <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
                     </div>
-                    <span className="font-mono text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Professor Synthesis Engine v2.0</span>
+                    <span className="font-mono text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">The Professor AI Study Prep v2.0</span>
                 </div>
 
                 <AnimatePresence mode="wait">

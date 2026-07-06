@@ -32,8 +32,8 @@ export default function VernacularVerdict({
         bgGlow: "rgba(229, 169, 60, 0.08)",
         borderGlow: "rgba(229, 169, 60, 0.25)",
         Icon: Flame,
-        tag: "OUTSTANDING",
-        desc: "Your memory matches the digital records. High-yield recall achieved.",
+        tag: "PERFECT",
+        desc: "You got it all right. Amazing job!",
       }
     : scorePercent >= 75
     ? {
@@ -42,7 +42,7 @@ export default function VernacularVerdict({
         borderGlow: "rgba(150, 115, 245, 0.25)",
         Icon: Sparkles,
         tag: "STRONG RUN",
-        desc: "Almost flawless. Minor gaps identified and forwarded to the SRS scheduling engine.",
+        desc: "Almost flawless. We've marked the tricky spots to review again later.",
       }
     : scorePercent >= 50
     ? {

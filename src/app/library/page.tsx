@@ -621,6 +621,45 @@ export default function LibraryPage() {
                         </div>
                     </div>
 
+                    {/* Subject Tags Bar */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mt-4">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 shrink-0 mr-1 flex items-center gap-1">
+                            <Tag size={11} className="text-[#E5A93C]" /> Subjects:
+                        </span>
+                        {[
+                            { label: "All Subjects", val: "" },
+                            { label: "🧬 Biology & Med", val: "bio" },
+                            { label: "⚖️ Law & Ethics", val: "law" },
+                            { label: "🧪 Chem & Physics", val: "chem" },
+                            { label: "💻 Computer Science", val: "cs" },
+                            { label: "🧠 Psychology", val: "psych" },
+                        ].map((sub) => {
+                            const isSelected = searchQuery.toLowerCase().includes(sub.val) && sub.val !== "";
+                            const isAll = sub.val === "" && !searchQuery;
+                            return (
+                                <button
+                                    key={sub.label}
+                                    onClick={() => {
+                                        playResultsSound("click");
+                                        if (sub.val === "") {
+                                            setSearchQuery("");
+                                        } else {
+                                            setSearchQuery(sub.val);
+                                        }
+                                    }}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer shrink-0 border",
+                                        isSelected || isAll
+                                            ? "bg-[#E5A93C]/15 text-[#E5A93C] border-[#E5A93C]/40 shadow-xs"
+                                            : "bg-white/5 text-zinc-400 hover:text-white border-white/5 hover:border-white/10"
+                                    )}
+                                >
+                                    {sub.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
                     {/* Search Bar */}
                     <div className="relative mb-6 rounded-2xl border border-white/5 focus-within:border-[#E5A93C]/30 focus-within:shadow-[0_0_15px_rgba(229,169,60,0.08)] transition-all bg-zinc-950/40 overflow-hidden">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-white/40">
@@ -735,7 +774,7 @@ export default function LibraryPage() {
                         <ProfessorEmptyState 
                             type={searchQuery ? "search" : filter !== "all" ? filter as any : isOfflineView ? "library" : "library"}
                             actionLabel={isOfflineView ? "Browse Cloud Library" : "Start Creating"}
-                            actionHref={isOfflineView ? "/library" : "/create"}
+                            actionHref={isOfflineView ? "/library" : "/dashboard"}
                         />
                     ) : (
                         <div className="space-y-2.5">
@@ -828,6 +867,30 @@ export default function LibraryPage() {
                                                 {/* Inline hover management buttons */}
                                                 {!isSelectionMode && (
                                                     <div className="absolute right-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 z-20">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpen(item);
+                                                            }}
+                                                            className="p-2 rounded-xl bg-[var(--blue)]/15 border border-[var(--blue)]/30 hover:bg-[var(--blue)] text-[var(--blue)] hover:text-white transition-all shadow-md cursor-pointer flex items-center gap-1.5 px-3 text-[10px] font-black uppercase tracking-wider"
+                                                            title="Study Now"
+                                                        >
+                                                            <Zap size={13} className="fill-current" />
+                                                            <span>Study Now</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                playResultsSound("click");
+                                                                const url = `${window.location.origin}/share/${item.id}`;
+                                                                navigator.clipboard.writeText(url);
+                                                                addToast("Share link copied to clipboard!", "success");
+                                                            }}
+                                                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--emerald)]/45 hover:bg-[var(--emerald)]/10 text-zinc-400 hover:text-[var(--emerald)] transition-all shadow-md cursor-pointer"
+                                                            title="Copy Share Link"
+                                                        >
+                                                            <ExternalLink size={13} />
+                                                        </button>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

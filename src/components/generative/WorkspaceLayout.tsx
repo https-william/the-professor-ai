@@ -57,17 +57,17 @@ export default function WorkspaceLayout({ title, sourceText, phasesData, onExit 
     return (
         <div className="w-full min-h-[calc(100vh-6rem)] relative bg-transparent flex flex-col items-center">
             {/* Header */}
-            <div className="w-full max-w-7xl px-4 py-6 border-b border-white/5 flex justify-between items-center bg-zinc-950/40 backdrop-blur-2xl sticky top-0 z-50">
+            <div className="w-full max-w-7xl px-4 py-6 border-b border-[var(--border)] flex justify-between items-center bg-[var(--background)]/80 backdrop-blur-2xl sticky top-0 z-50">
                 <div className="flex flex-col">
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/50 mb-1">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)] mb-1">
                         <BrainCircuit size={12} className="text-[var(--violet)]" />
                         <span>Study Environment</span>
                     </div>
-                    <h1 className="text-xl font-black text-white uppercase tracking-wider">{title}</h1>
+                    <h1 className="text-xl font-black text-[var(--foreground)] uppercase tracking-wider">{title}</h1>
                 </div>
                 <button 
                     onClick={onExit}
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer border-0"
+                    className="px-4 py-2 bg-[var(--surface)] hover:bg-[var(--border)] text-[var(--foreground)] rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer border border-[var(--border)]"
                 >
                     Save & Exit
                 </button>

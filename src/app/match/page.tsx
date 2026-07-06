@@ -213,7 +213,7 @@ function MatchGameContent() {
             if (mode === "generate") {
                 if (hasStartedGeneration.current) return;
                 const paramsStr = sessionStorage.getItem("generateParams");
-                if (!paramsStr) { router.push("/create"); return; }
+                if (!paramsStr) { router.push("/dashboard"); return; }
                 hasStartedGeneration.current = true;
                 const params = JSON.parse(paramsStr);
                 sessionStorage.removeItem("generateParams");
@@ -247,17 +247,17 @@ function MatchGameContent() {
             } else {
                 try {
                     const stored = sessionStorage.getItem("matchGameCards");
-                    if (!stored) { router.push("/create"); return; }
+                    if (!stored) { router.push("/dashboard"); return; }
                     const data = JSON.parse(stored);
                     const cards = data.cards || [];
-                    if (cards.length < 3) { router.push("/create"); return; }
+                    if (cards.length < 3) { router.push("/dashboard"); return; }
                     const matchPairs = shuffleArray(cards).slice(0, Math.min(8, cards.length)).map((card: any, i: number) => ({
                         id: `pair_${i}`,
                         term: card.front || card.term,
                         definition: card.back || card.definition,
                     }));
                     initGame(matchPairs, data.title || "Match Game");
-                } catch { router.push("/create"); }
+                } catch { router.push("/dashboard"); }
             }
         };
         init();
@@ -343,7 +343,7 @@ function MatchGameContent() {
     if (isGenerating) {
         return (
             <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
-                <DataDustLoader label="Building Match Board" phrases={["Synthesizing concept pairs...", "Calibrating difficulty...", "Generating connections...", "Almost ready..."]} />
+                <DataDustLoader label="Building Match Board" phrases={["Setting up concept pairs...", "Finding tricky matches...", "Generating connections...", "Almost ready..."]} />
             </div>
         );
     }
@@ -360,7 +360,7 @@ function MatchGameContent() {
                         </div>
                         <p className="font-bold text-[var(--foreground)]">Generation Failed</p>
                         <p className="text-[12px] text-[var(--foreground-muted)] leading-relaxed">{generationError}</p>
-                        <button onClick={() => router.push("/create")} className="btn-skeuo w-full py-3 text-[11px] font-black uppercase tracking-widest">
+                        <button onClick={() => router.push("/dashboard")} className="btn-skeuo w-full py-3 text-[11px] font-black uppercase tracking-widest">
                             Back to Create
                         </button>
                     </div>

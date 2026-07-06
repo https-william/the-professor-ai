@@ -102,7 +102,7 @@ const typeConfig = {
         color: "#E5A93C", // Amber
         suggestion: "Try a quiz on this topic to reinforce your memory.",
         suggestIcon: "quiz",
-        suggestHref: "/create",
+        suggestHref: "/dashboard",
         suggestLabel: "Create Quiz",
     },
     quiz: {
@@ -111,7 +111,7 @@ const typeConfig = {
         color: "#2BB288", // Emerald
         suggestion: "Review your flashcards to strengthen weak areas.",
         suggestIcon: "style",
-        suggestHref: "/create",
+        suggestHref: "/dashboard",
         suggestLabel: "Study Flashcards",
     },
     summary: {
@@ -120,7 +120,7 @@ const typeConfig = {
         color: "#9673F5", // Violet
         suggestion: "Generate flashcards from this summary to test yourself.",
         suggestIcon: "style",
-        suggestHref: "/create",
+        suggestHref: "/dashboard",
         suggestLabel: "Create Flashcards",
     },
 };

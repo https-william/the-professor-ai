@@ -100,7 +100,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
     }
     else {
       onClose();
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      router.push("/dashboard");
       router.refresh();
     }
   };
@@ -168,7 +168,7 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
               <button
                 onClick={handleGoogleSignup}
                 disabled={loading}
-                className="w-full py-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] font-bold text-xs flex items-center justify-center gap-3 hover:bg-[var(--border)] transition-all active:scale-[0.98] mb-3"
+                className="w-full py-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--foreground)] font-bold text-xs flex items-center justify-center gap-3 hover:bg-[var(--border)] transition-all active:scale-[0.98] mb-3"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -188,35 +188,43 @@ export default function GuestSignupModal({ isOpen, onClose, packTitle }: GuestSi
 
               {/* Error */}
               {error && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs font-semibold mb-3 leading-normal">
+                <div role="alert" aria-live="assertive" className="p-3 rounded-xl bg-[var(--crimson-dim)] border border-[var(--crimson-border)] text-[var(--crimson-text)] text-xs font-semibold mb-3 leading-normal">
                   {error}
                 </div>
               )}
 
               {/* Email form */}
               <form onSubmit={handleEmailSignup} className="space-y-2.5">
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  className="w-full px-4 py-2.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 outline-none focus:border-[var(--blue)]/40 transition-all font-medium"
-                />
-                <input
-                  type="password"
-                  placeholder="Password (min 6 characters)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                  className="w-full px-4 py-2.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 outline-none focus:border-[var(--blue)]/40 transition-all font-medium"
-                />
+                <div>
+                  <label htmlFor="guest-email" className="sr-only">Email address</label>
+                  <input
+                    id="guest-email"
+                    type="email"
+                    placeholder="Email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 outline-none focus:border-[var(--blue)]/40 transition-all font-medium"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="guest-pass" className="sr-only">Password</label>
+                  <input
+                    id="guest-pass"
+                    type="password"
+                    placeholder="Password (min 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/40 outline-none focus:border-[var(--blue)]/40 transition-all font-medium"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest hover-scale-md active:scale-[0.98] transition-all shadow-lg disabled:opacity-50"
+                  className="btn-skeuo-primary w-full py-3 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   {loading ? "Creating account..." : "Create free account"}
                 </button>

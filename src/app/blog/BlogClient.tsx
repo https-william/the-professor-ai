@@ -270,10 +270,10 @@ export default function BlogClient() {
       <StandardContainer narrow className="relative z-10 pt-28 sm:pt-36">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-[var(--accent-bg)] border border-[var(--accent-glow)]">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--accent)] mb-3 flex items-center justify-center gap-2">
             <Sparkles className="w-3 h-3 text-[var(--accent)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">Exclusive Insights</span>
-          </div>
+            <span>Exclusive Insights</span>
+          </p>
           <h1 className="font-galaxie text-4xl sm:text-[64px] font-bold text-[var(--foreground)] tracking-tight mb-6 leading-[0.95]">
             Ace Your Hall.
           </h1>
@@ -341,22 +341,21 @@ export default function BlogClient() {
 
         {/* Author EEAT Panel */}
         <section className="mt-24 p-8 sm:p-12 rounded-[32px] bg-zinc-950/45 border border-[var(--border)] shadow-xl relative overflow-hidden group">
-          <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-gradient-to-tr from-[var(--blue-glow)] to-[var(--cyan-glow)] rounded-full blur-[100px] pointer-events-none" />
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
             <div className="w-20 h-20 rounded-[24px] bg-gradient-to-tr from-[var(--blue)] to-[var(--cyan)] flex items-center justify-center text-white font-black text-4xl shadow-lg shrink-0 select-none" style={{ animation: 'bounce 4s infinite' }}>
               🎓
             </div>
             <div className="space-y-4 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--blue-dim)] border border-[var(--blue-border)]">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--blue-text)] mb-2 flex items-center justify-center md:justify-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--blue-text)]">Academic Director</span>
-              </div>
+                <span>Academic Director</span>
+              </p>
               <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-[var(--foreground)] font-heading leading-none">Meet the Professor</h2>
               <p className="text-sm sm:text-base text-[var(--foreground-muted)] leading-relaxed font-medium max-w-2xl">
-                The Professor is a Socratic study mentor built on advanced learning science, cognitive psychology, and generative AI instruction models. Dedicated to dismantling busywork and helping university students build high-fidelity recall and logic intuition.
+                The Professor is a friendly study mentor built to help you learn faster and smarter. We focus on cutting out the busywork and helping you remember what matters most, without the stress.
               </p>
               <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                {["Active Recall Protocol", "Spaced Repetition Interleaving", "CBT Desensitization", "Feynman Logic Synthesis"].map((topic) => (
+                {["Active Recall", "Spaced Repetition", "Habit Building", "Feynman Technique"].map((topic) => (
                   <span key={topic} className="text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-xl bg-white/[0.03] border border-white/5 text-[var(--foreground-muted)]">
                     {topic}
                   </span>

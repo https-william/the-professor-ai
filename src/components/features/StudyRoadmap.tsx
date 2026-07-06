@@ -90,7 +90,6 @@ export const StudyRoadmap = ({
     const [completedPhases, setCompletedPhases] = useState<string[]>([]);
     
     // Customization / Adjustment states
-    const [examDate, setExamDate] = useState("");
     const [isDyslexiaMode, setIsDyslexiaMode] = useState(false);
     const [activeAnalogy, setActiveAnalogy] = useState<string | null>(null);
     const [playingPhaseTTS, setPlayingPhaseTTS] = useState<string | null>(null);
@@ -286,36 +285,6 @@ export const StudyRoadmap = ({
         }
     };
 
-    // Recalculate study velocity based on chosen exam date
-    const getCalendarStatus = () => {
-        if (!examDate) return null;
-        const examTime = new Date(examDate).getTime();
-        const nowTime = new Date().getTime();
-        const diffDays = Math.max(0, Math.ceil((examTime - nowTime) / (1000 * 60 * 60 * 24)));
-        const totalSteps = Object.keys(roadmap.studySchedule || {}).length;
-
-        let statusText = "Steady tempo recommended! ☕";
-        let colorClass = "text-[var(--emerald)] bg-[var(--emerald-dim)]/10 border-[var(--emerald-border)]";
-        if (diffDays === 0) {
-            statusText = "Exam is today! Speed run now! 🚨";
-            colorClass = "text-red-400 bg-red-950/20 border-red-950/40";
-        } else if (diffDays < totalSteps) {
-            statusText = "Fast pace required! Sprint mode active! 🏃";
-            colorClass = "text-[var(--amber)] bg-[var(--amber-dim)]/10 border-[var(--amber-border)] animate-pulse";
-        } else if (diffDays >= totalSteps * 3) {
-            statusText = "Relaxed pace. Deep learning focus! 📚";
-            colorClass = "text-[var(--blue)] bg-[var(--blue-dim)]/10 border-[var(--blue-border)]";
-        }
-
-        return {
-            daysRemaining: diffDays,
-            statusText,
-            colorClass
-        };
-    };
-
-    const calendarInfo = getCalendarStatus();
-
     // Export to ICS calendar sync utility
     const handleExportICS = () => {
         try {
@@ -459,11 +428,10 @@ export const StudyRoadmap = ({
             
             {/* Symmetrical Header */}
             <div className="text-center mb-10 relative">
-                <div className="absolute inset-0 -top-10 bg-gradient-to-b from-[var(--blue)]/5 via-transparent to-transparent blur-3xl pointer-events-none -z-10" />
-                
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] border border-[var(--blue)]/20 text-[10px] font-black uppercase tracking-[0.2em] mb-4 shadow-sm">
-                    <Compass size={14} className="animate-spin-slow" /> Study Plan Blueprint
-                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)] mb-3 flex items-center justify-center gap-2">
+                    <Compass size={14} className="text-[var(--blue)] animate-spin-slow" />
+                    <span>Study Plan Blueprint</span>
+                </p>
                 <h2 className="text-4xl sm:text-5xl font-black tracking-tighter italic uppercase leading-none mb-4 text-[var(--foreground)]">
                     Your <span className="text-[var(--blue)]">Study</span> Path
                 </h2>
@@ -476,113 +444,107 @@ export const StudyRoadmap = ({
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-5xl mx-auto w-full">
                 
                 {/* Progress Gauge: Apple-style Concentric Rings */}
-                <GlassmorphicCard intensity="medium" className="md:col-span-5 p-5 flex items-center justify-between gap-6">
-                    <div className="flex flex-col gap-2.5">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Syllabus Completion</span>
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 text-xs font-bold text-[var(--foreground-secondary)]">
-                                <div className="w-2.5 h-2.5 rounded-full bg-[var(--blue)] shrink-0" />
-                                <span>Summary: {completedPhases.length > 0 ? 100 : 0}%</span>
+                <GlassmorphicCard intensity="medium" className="md:col-span-8 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="flex flex-col gap-3 flex-1 w-full">
+                        <div className="flex items-center justify-between sm:justify-start gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Learning Surfaces Mastery</span>
+                            <span className="px-2 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] text-[9px] font-mono font-bold">Concentric Tracker</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 my-1">
+                            <div className="flex flex-col p-3 rounded-xl bg-[var(--background-secondary)]/80 border border-[var(--border)]">
+                                <div className="flex items-center gap-1.5 text-xs font-black text-[var(--blue)] mb-1">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--blue)] shrink-0 shadow-[0_0_8px_var(--blue)]" />
+                                    <span>Summary</span>
+                                </div>
+                                <span className="text-xs font-mono font-bold text-[var(--foreground)]">{completedPhases.length > 0 ? "100%" : "0%"}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-bold text-[var(--foreground-secondary)]">
-                                <div className="w-2.5 h-2.5 rounded-full bg-[var(--amber)] shrink-0" />
-                                <span>Cards: {completedPhases.length > 1 ? 100 : 0}%</span>
+                            <div className="flex flex-col p-3 rounded-xl bg-[var(--background-secondary)]/80 border border-[var(--border)]">
+                                <div className="flex items-center gap-1.5 text-xs font-black text-[var(--amber)] mb-1">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--amber)] shrink-0 shadow-[0_0_8px_var(--amber)]" />
+                                    <span>Cards</span>
+                                </div>
+                                <span className="text-xs font-mono font-bold text-[var(--foreground)]">{completedPhases.length > 1 ? "100%" : "0%"}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-bold text-[var(--foreground-secondary)]">
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#E85D75] shrink-0" />
-                                <span>Quiz: {completedPhases.length > 2 ? 100 : 0}%</span>
+                            <div className="flex flex-col p-3 rounded-xl bg-[var(--background-secondary)]/80 border border-[var(--border)]">
+                                <div className="flex items-center gap-1.5 text-xs font-black text-[#E85D75] mb-1">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-[#E85D75] shrink-0 shadow-[0_0_8px_#E85D75]" />
+                                    <span>Quiz</span>
+                                </div>
+                                <span className="text-xs font-mono font-bold text-[var(--foreground)]">{completedPhases.length > 2 ? "100%" : "0%"}</span>
                             </div>
                         </div>
-                        <div className="mt-1">
-                            <span className="text-[10px] font-bold text-[var(--foreground-muted)]/80 uppercase">Total Progress:</span>
-                            <div className="text-xl font-black text-[var(--blue)]">
+                        <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
+                            <span className="text-xs font-bold text-[var(--foreground-muted)] uppercase tracking-wider">Overall Syllabus Velocity:</span>
+                            <div className="text-2xl font-black text-[var(--blue)] font-mono">
                                 <OdometerCounter value={progressPercent} suffix="%" />
                             </div>
                         </div>
                     </div>
-                    {/* SVG Concentric Rings */}
-                    <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                            {/* Ring 1 (Summary): Outer. Radius 38 */}
-                            <circle cx="50" cy="50" r="38" fill="transparent" stroke="var(--border)" strokeWidth="6" className="opacity-10 dark:opacity-30" />
+                    {/* 3 Concentric SVG Progress Arcs */}
+                    <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                            {/* Ring 1 (Summary): Outer. Radius 48 */}
+                            <circle cx="60" cy="60" r="48" fill="transparent" stroke="var(--border)" strokeWidth="8" className="opacity-15 dark:opacity-30" />
                             <motion.circle 
-                                cx="50" cy="50" r="38" fill="transparent" 
-                                stroke="var(--blue)" strokeWidth="6" strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 38}
-                                initial={{ strokeDashoffset: 2 * Math.PI * 38 }}
-                                animate={{ strokeDashoffset: (2 * Math.PI * 38) * (1 - (completedPhases.length > 0 ? 100 : 0) / 100) }}
+                                cx="60" cy="60" r="48" fill="transparent" 
+                                stroke="var(--blue)" strokeWidth="8" strokeLinecap="round"
+                                strokeDasharray={2 * Math.PI * 48}
+                                initial={{ strokeDashoffset: 2 * Math.PI * 48 }}
+                                animate={{ strokeDashoffset: (2 * Math.PI * 48) * (1 - (completedPhases.length > 0 ? 100 : 0) / 100) }}
                                 transition={{ type: "spring", stiffness: 60, damping: 15 }}
                             />
 
-                            {/* Ring 2 (Cards): Middle. Radius 29 */}
-                            <circle cx="50" cy="50" r="29" fill="transparent" stroke="var(--border)" strokeWidth="6" className="opacity-10 dark:opacity-30" />
+                            {/* Ring 2 (Cards): Middle. Radius 36 */}
+                            <circle cx="60" cy="60" r="36" fill="transparent" stroke="var(--border)" strokeWidth="8" className="opacity-15 dark:opacity-30" />
                             <motion.circle 
-                                cx="50" cy="50" r="29" fill="transparent" 
-                                stroke="var(--amber)" strokeWidth="6" strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 29}
-                                initial={{ strokeDashoffset: 2 * Math.PI * 29 }}
-                                animate={{ strokeDashoffset: (2 * Math.PI * 29) * (1 - (completedPhases.length > 1 ? 100 : 0) / 100) }}
+                                cx="60" cy="60" r="36" fill="transparent" 
+                                stroke="var(--amber)" strokeWidth="8" strokeLinecap="round"
+                                strokeDasharray={2 * Math.PI * 36}
+                                initial={{ strokeDashoffset: 2 * Math.PI * 36 }}
+                                animate={{ strokeDashoffset: (2 * Math.PI * 36) * (1 - (completedPhases.length > 1 ? 100 : 0) / 100) }}
                                 transition={{ type: "spring", stiffness: 60, damping: 15 }}
                             />
 
-                            {/* Ring 3 (Quiz): Inner. Radius 20 */}
-                            <circle cx="50" cy="50" r="20" fill="transparent" stroke="var(--border)" strokeWidth="6" className="opacity-10 dark:opacity-30" />
+                            {/* Ring 3 (Quiz): Inner. Radius 24 */}
+                            <circle cx="60" cy="60" r="24" fill="transparent" stroke="var(--border)" strokeWidth="8" className="opacity-15 dark:opacity-30" />
                             <motion.circle 
-                                cx="50" cy="50" r="20" fill="transparent" 
-                                stroke="#E85D75" strokeWidth="6" strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 20}
-                                initial={{ strokeDashoffset: 2 * Math.PI * 20 }}
-                                animate={{ strokeDashoffset: (2 * Math.PI * 20) * (1 - (completedPhases.length > 2 ? 100 : 0) / 100) }}
+                                cx="60" cy="60" r="24" fill="transparent" 
+                                stroke="#E85D75" strokeWidth="8" strokeLinecap="round"
+                                strokeDasharray={2 * Math.PI * 24}
+                                initial={{ strokeDashoffset: 2 * Math.PI * 24 }}
+                                animate={{ strokeDashoffset: (2 * Math.PI * 24) * (1 - (completedPhases.length > 2 ? 100 : 0) / 100) }}
                                 transition={{ type: "spring", stiffness: 60, damping: 15 }}
                             />
                         </svg>
                     </div>
                 </GlassmorphicCard>
 
-                {/* Exam Date Recalculator */}
-                <GlassmorphicCard intensity="medium" className="md:col-span-4 p-5 flex flex-col justify-between gap-4">
-                    <div className="flex flex-col gap-2 w-full">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Target Exam Date</span>
-                        <div className="flex items-center gap-2">
-                            <Calendar className="text-[var(--blue)] shrink-0" size={18} />
-                            <input 
-                                type="date"
-                                value={examDate}
-                                onChange={(e) => setExamDate(e.target.value)}
-                                className="px-4 py-2.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] text-sm font-bold text-[var(--foreground)] focus:outline-none focus:border-[var(--blue)]/40 outline-none transition-all shadow-sm w-full"
-                            />
-                        </div>
-                    </div>
-                    {calendarInfo && (
-                        <div className={cn("p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 transition-all", calendarInfo.colorClass)}>
-                            <span>{calendarInfo.statusText}</span>
-                            <span className="font-mono">{calendarInfo.daysRemaining} days left</span>
-                        </div>
-                    )}
-                </GlassmorphicCard>
-
                 {/* Toolbar Widgets */}
-                <GlassmorphicCard intensity="medium" className="md:col-span-3 p-5 flex flex-col justify-between gap-4">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Study Toolkit</span>
-                    <div className="flex flex-col sm:flex-row items-stretch md:flex-col lg:flex-row gap-3 w-full">
+                <GlassmorphicCard intensity="medium" className="md:col-span-4 p-6 flex flex-col justify-between gap-4">
+                    <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Study Toolkit</span>
+                        <p className="text-xs text-[var(--foreground-muted)]/80 mt-1 leading-relaxed">Export your customized schedule or adjust typography for accessibility.</p>
+                    </div>
+                    <div className="flex flex-col gap-3 w-full mt-auto">
                         <button 
                             onClick={handleExportICS}
-                            className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border-2)] text-xs font-black uppercase tracking-wider text-[var(--foreground)] hover:text-white transition-all flex items-center justify-center gap-2 shadow"
+                            className="w-full px-4 py-3 rounded-xl bg-[var(--blue)]/10 hover:bg-[var(--blue)]/20 border border-[var(--blue)]/30 text-xs font-black uppercase tracking-wider text-[var(--blue)] transition-all flex items-center justify-center gap-2 shadow-sm"
                             title="Export timeline events to Calendar"
                         >
-                            <Download size={14} />
-                            <span>Export (.ics)</span>
+                            <Download size={15} />
+                            <span>Export Calendar (.ics)</span>
                         </button>
                         <button 
                             onClick={() => setIsDyslexiaMode(!isDyslexiaMode)}
-                            className={cn("p-2.5 rounded-xl border transition-all flex items-center justify-center shrink-0", 
+                            className={cn("w-full px-4 py-3 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold", 
                                 isDyslexiaMode 
-                                    ? 'bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]' 
-                                    : 'bg-[var(--background-secondary)] border border-[var(--border-2)] text-[var(--foreground-muted)] hover:text-white'
+                                    ? 'bg-[var(--emerald)]/15 border-[var(--emerald)]/40 text-[var(--emerald)]' 
+                                    : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                             )}
                             title="Dyslexia typography adjustments"
                         >
                             <Type size={16} />
+                            <span>{isDyslexiaMode ? "Dyslexia Font Active" : "Toggle Dyslexia Font"}</span>
                         </button>
                     </div>
                 </GlassmorphicCard>
@@ -627,7 +589,7 @@ export const StudyRoadmap = ({
                     </GlassmorphicCard>
 
                     {/* Avoidance Map Card */}
-                    <GlassmorphicCard intensity="medium" className="p-6 border-l-4 border-l-[var(--amber)] overflow-hidden relative group hover:border-[var(--amber)]/40 transition-all duration-500">
+                    <GlassmorphicCard intensity="medium" className="p-6 overflow-hidden relative group hover:border-[var(--amber)]/40 transition-all duration-500">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--amber)]/10 via-transparent to-transparent rounded-full blur-2xl pointer-events-none -z-10" />
                         <div className="absolute top-6 right-6 opacity-5">
                             <ShieldAlert size={40} className="text-[var(--amber)]" />

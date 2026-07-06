@@ -19,7 +19,7 @@ export default function MatchGenerate() {
             if (hasStarted.current) return;
             const paramsStr = sessionStorage.getItem("generateParams");
             if (!paramsStr) {
-                router.push("/create");
+                router.push("/dashboard");
                 return;
             }
             hasStarted.current = true;
@@ -41,7 +41,7 @@ export default function MatchGenerate() {
 
             <EndowmentModal 
                 isOpen={isEndowmentOpen} 
-                onClose={() => router.push("/create")}
+                onClose={() => router.push("/dashboard")}
                 currentCredits={user?.credits || 0}
                 requiredCredits={1}
             />

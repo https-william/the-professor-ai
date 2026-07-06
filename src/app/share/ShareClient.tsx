@@ -255,17 +255,17 @@ function ShareContent() {
     };
 
     if (loading) return (
-        <div className="flex h-screen items-center justify-center bg-[#09090B] text-white">
+        <div className="flex h-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
             <div className="flex flex-col items-center gap-4">
                 <Loader2 className="w-8 h-8 text-[var(--amber)] animate-spin" />
-                <p className="text-zinc-500 text-sm font-black uppercase tracking-widest animate-pulse">Consulting the Professor...</p>
+                <p className="text-[var(--foreground-muted)] text-sm font-black uppercase tracking-widest animate-pulse">Consulting the Professor...</p>
             </div>
         </div>
     );
 
     if (error || !content) return (
         <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-6 shadow-lg shadow-red-500/5">
+            <div className="w-16 h-16 rounded-3xl bg-[var(--crimson-dim)] border border-[var(--crimson-border)] flex items-center justify-center text-[var(--crimson)] mb-6 shadow-lg shadow-[var(--crimson-glow)]">
                 <span className="material-symbols-outlined text-3xl">error</span>
             </div>
             <h2 className="text-xl font-black uppercase tracking-tight italic mb-2">Access Denied</h2>
@@ -274,7 +274,7 @@ function ShareContent() {
             </p>
             <Link
                 href="/dashboard"
-                className="px-6 py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-xs font-black uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all shadow-md"
+                className="btn-skeuo px-6 py-3.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-xs font-black uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all shadow-md"
             >
                 Back to Dashboard
             </Link>
@@ -318,12 +318,10 @@ function ShareContent() {
             {/* Main Content */}
             <main className="relative pt-28 px-4 max-w-3xl mx-auto z-10">
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-5 shadow-sm">
-                        <div className="w-5 h-5 rounded-full bg-[var(--amber)]/10 border border-[var(--amber)]/20 flex items-center justify-center text-[10px] font-black text-[var(--amber)] shadow-sm">
-                            {content.avatar}
-                        </div>
-                        Prepared by {content.author}
-                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)] mb-3 flex items-center justify-center gap-2">
+                        <span className="text-[var(--amber)] font-bold">[{content.avatar}]</span>
+                        <span>Prepared by {content.author}</span>
+                    </p>
                     <h1 className="text-3xl sm:text-4xl font-black tracking-tight uppercase italic mb-3 bg-gradient-to-br from-[var(--foreground)] to-[var(--foreground-muted)] bg-clip-text text-transparent leading-none">
                         {content.title}
                     </h1>
@@ -444,7 +442,7 @@ function ShareContent() {
                                     <button
                                         onClick={clonePack}
                                         disabled={isCloning}
-                                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[var(--amber)] to-indigo-600 hover:from-[var(--amber-light)] text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[var(--amber)]/5 hover:opacity-95 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                        className="btn-skeuo-primary w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                                     >
                                         {isCloning ? (
                                             <>
@@ -458,7 +456,7 @@ function ShareContent() {
                                 ) : (
                                     <Link
                                         href={`/signup?next=${encodeURIComponent(`/share?id=${content.id}`)}`}
-                                        className="block w-full py-3.5 rounded-xl bg-gradient-to-r from-[var(--amber)] to-indigo-600 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[var(--amber)]/5 hover:opacity-95 active:scale-95 transition-all text-center"
+                                        className="btn-skeuo-primary block w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all text-center"
                                     >
                                         Save to my Profile
                                     </Link>
@@ -467,7 +465,7 @@ function ShareContent() {
                                 <p className="mt-4 text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-wider">
                                     {!user.isAuthenticated && (
                                         <>
-                                            Already a Scholar? <Link href={`/login?next=${encodeURIComponent(`/share?id=${content.id}`)}`} className="text-white hover:underline">Log in</Link>
+                                            Already a Scholar? <Link href={`/login?next=${encodeURIComponent(`/share?id=${content.id}`)}`} className="text-[var(--foreground)] hover:underline">Log in</Link>
                                         </>
                                     )}
                                 </p>
@@ -488,10 +486,10 @@ function ShareContent() {
 export default function ShareClient() {
     return (
         <Suspense fallback={
-            <div className="flex h-screen items-center justify-center bg-[#09090B] text-white">
+            <div className="flex h-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-8 h-8 text-[var(--amber)] animate-spin" />
-                    <p className="text-zinc-500 text-sm font-black uppercase tracking-widest">Consulting the Professor...</p>
+                    <p className="text-[var(--foreground-muted)] text-sm font-black uppercase tracking-widest">Consulting the Professor...</p>
                 </div>
             </div>
         }>

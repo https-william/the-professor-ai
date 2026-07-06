@@ -271,7 +271,7 @@ export default function DownloadPage() {
                         <div className="absolute left-[27px] top-4 bottom-4 w-px bg-gradient-to-b from-[var(--blue)] via-white/5 to-transparent" />
                         
                         {[
-                            { title: "One Codebase, Every Device", desc: "A single high-performance engine powering iOS, Android, and desktop — perfectly synchronized." },
+                            { title: "One Codebase, Every Device", desc: "A single high-performance app powering iOS, Android, and desktop — perfectly synchronized." },
                             { title: "Direct-to-Metal Speed", desc: "Hardware-level access for instant neural processing and 120Hz UI that feels alive." },
                             { title: "Deep System Integration", desc: "Native widgets, file system hooks, and background study sync that works when you're not looking." },
                             { title: "Early Access", desc: "Beta builds will be available to active scholars first. Keep your streak alive — it matters." }

@@ -37,13 +37,13 @@ const TOUR_STEPS: TourStep[] = [
     waitForElement: "#platform-root",
   },
   {
-    targetSelector: "button:nth-child(2)",
-    title: "Create Guides",
-    body: "Paste your chaotic notes here. We'll distill them into pure academic gold.",
+    targetSelector: "#hero-dropzone",
+    title: "Study Lounge Dropzone",
+    body: "Drop your lecture notes or syllabus right here. We'll pull out the good parts in seconds.",
     icon: Zap,
     placement: "bottom",
     action: "navigate",
-    actionTarget: "/create",
+    actionTarget: "/dashboard",
   },
   {
     targetSelector: "textarea",

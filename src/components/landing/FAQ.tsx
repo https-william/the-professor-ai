@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 const FAQS = [
   {
     q: "What file types can I upload?",
-    a: "PDF documents, PowerPoint slides (.pptx), Word files (.docx), and images (JPG, PNG, WEBP) — including photos of handwritten notes. If your notes exist in any readable format, The Professor can work with them. Yes, this includes WhatsApp-forwarded lecture slides.",
+    a: "PDF documents, PowerPoint slides (.pptx), Word files (.docx), and images (JPG, PNG, WEBP), including photos of handwritten notes. If your notes exist in any readable format, The Professor can work with them. Yes, this includes WhatsApp-forwarded lecture slides.",
   },
   {
     q: "Do I need to create an account before I start?",
@@ -14,11 +14,11 @@ const FAQS = [
   },
   {
     q: "How accurate are the study guides and quizzes?",
-    a: "The Professor extracts content directly from your uploaded material — it does not hallucinate or add external information. The study guide and quiz reflect exactly what is in your notes. If your notes contain an error, the output will too. We recommend using it alongside, not instead of, your own judgment.",
+    a: "The Professor extracts content directly from your uploaded material: it does not hallucinate or add external information. The study guide and quiz reflect exactly what is in your notes. If your notes contain an error, the output will too. We recommend using it alongside, not instead of, your own judgment.",
   },
   {
     q: "Is this considered academic dishonesty?",
-    a: "No. The Professor is a study aid — equivalent to highlighting your notes, making flashcards, or studying with a tutor. It helps you understand and recall your own material. It does not write essays, generate assignments, or produce work for submission. How you use what you learn is always your responsibility.",
+    a: "No. The Professor is a study aid, equivalent to highlighting your notes, making flashcards, or studying with a tutor. It helps you understand and recall your own material. It does not write essays, generate assignments, or produce work for submission. How you use what you learn is always your responsibility.",
   },
   {
     q: "How much does it cost?",
@@ -26,7 +26,7 @@ const FAQS = [
   },
   {
     q: "Does it work for science, engineering, and medical courses?",
-    a: "Yes. The Professor works for any text-based lecture content — including medical anatomy, engineering theory, law, economics, and the sciences. It does not solve mathematical equations or generate chemical formulae, but it handles concept-heavy, definition-heavy, and theory-heavy content extremely well.",
+    a: "Yes. The Professor works for any text-based lecture content, including medical anatomy, engineering theory, law, economics, and the sciences. It does not solve mathematical equations or generate chemical formulae, but it handles concept-heavy, definition-heavy, and theory-heavy content extremely well.",
   },
   {
     q: "What happens to my uploaded notes?",
@@ -94,7 +94,7 @@ export default function FAQSection() {
                   isOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                <p className="font-sans text-xs md:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium px-6 pb-5 pt-1 opacity-85">
+                <p className="font-sans text-xs md:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium px-6 pb-5 pt-1 opacity-85 max-w-[70ch]">
                   {faq.a}
                 </p>
               </div>

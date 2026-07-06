@@ -61,7 +61,7 @@ const EDU_LEVELS = [
 const PAIN_POINTS = [
     { id: "concepts", icon: Puzzle, label: "Explain complex concepts safely." },
     { id: "recall", icon: Brain, label: "Active Recall (Flashcards/Quizzes)." },
-    { id: "synthesis", icon: Layers, label: "Synthesize long papers/textbooks." },
+    { id: "synthesis", icon: Layers, label: "Summarize long papers/textbooks." },
     { id: "procrastination", icon: Timer, label: "I need consistency and habits." },
 ];
 
@@ -146,7 +146,7 @@ export default function OnboardingPage() {
     
     // Redirect if already onboarded
     useEffect(() => {
-        if (mounted && user.hasOnboarded) {
+        if (mounted && (user.hasOnboarded || (typeof window !== "undefined" && localStorage.getItem("has_onboarded_offline") === "true"))) {
             const searchParams = new URLSearchParams(window.location.search);
             const nextUrl = searchParams.get("next") || "/dashboard";
             router.push(nextUrl);
@@ -207,11 +207,13 @@ export default function OnboardingPage() {
             }
 
             if (!success) {
-                setSaveError("The Professor couldn't save your progress. Please check your connection and try again.");
+                localStorage.setItem("onboarding_step_backup", JSON.stringify({ step: step + 1, firstName, lastName, username, age, eduLevel, selectedPainPoints, commitment }));
+                setStep(step + 1);
             }
         } catch (error) {
             console.error("Onboarding progression failed:", error);
-            setSaveError("A network error occurred. Please try again.");
+            localStorage.setItem("onboarding_step_backup", JSON.stringify({ step: step + 1, firstName, lastName, username, age, eduLevel, selectedPainPoints, commitment }));
+            setStep(step + 1);
         } finally {
             setIsSaving(false);
         }
@@ -245,7 +247,9 @@ export default function OnboardingPage() {
                 router.push("/dashboard");
             }
         } else {
-            setSaveError("Could not complete onboarding. Let's try that one more time.");
+            localStorage.setItem("onboarding_completed_backup", combinedGoal);
+            localStorage.setItem("has_onboarded_offline", "true");
+            router.push("/dashboard");
         }
     };
 
@@ -274,7 +278,23 @@ export default function OnboardingPage() {
         if (success) {
             router.push("/dashboard");
         } else {
-            setSaveError("Could not bypass onboarding. Please try again.");
+            localStorage.setItem("onboarding_skipped_backup", "true");
+            localStorage.setItem("has_onboarded_offline", "true");
+            router.push("/dashboard");
+        }
+    };
+
+    const handleRadioKeyDown = (e: React.KeyboardEvent, items: { id: string }[], currentId: string, onSelect: (id: string) => void) => {
+        if (["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(e.key)) {
+            e.preventDefault();
+            const idx = items.findIndex(i => i.id === currentId);
+            let nextIdx = idx;
+            if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                nextIdx = (idx + 1) % items.length;
+            } else {
+                nextIdx = (idx - 1 + items.length) % items.length;
+            }
+            onSelect(items[nextIdx].id);
         }
     };
 
@@ -398,11 +418,15 @@ export default function OnboardingPage() {
                                     </div>
                                     <div className="flex-1 flex flex-col gap-1.5">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-1">Education Level</label>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Education Level">
                                             {EDU_LEVELS.map(l => (
                                                 <button 
                                                     key={l.id} 
+                                                    type="button"
+                                                    role="radio"
+                                                    aria-checked={eduLevel === l.id}
                                                     onClick={() => setEduLevel(l.id)} 
+                                                    onKeyDown={(e) => handleRadioKeyDown(e, EDU_LEVELS, l.id, setEduLevel)}
                                                     className={`py-3.5 rounded-2xl border transition-all duration-300 active:scale-[0.97] hover:scale-[1.01] text-center ${
                                                         eduLevel === l.id 
                                                             ? 'bg-gradient-to-br from-amber-500/20 via-violet-500/10 to-transparent border-amber-500/30 text-white font-bold shadow-[0_4px_15px_rgba(229,169,60,0.15)]' 
@@ -421,13 +445,16 @@ export default function OnboardingPage() {
                                         <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Primary Struggle Areas</p>
                                         <span className="text-[9px] font-bold text-white/40 lowercase italic">(select all that apply)</span>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-2">
+                                    <div className="grid grid-cols-1 gap-2" role="group" aria-label="Primary Struggle Areas">
                                         {PAIN_POINTS.map(p => {
                                             const isSelected = selectedPainPoints.includes(p.id);
                                             return (
                                                 <button 
                                                     key={p.id} 
+                                                    type="button"
+                                                    aria-pressed={isSelected}
                                                     onClick={() => togglePainPoint(p.id)} 
+                                                    onKeyDown={(e) => handleRadioKeyDown(e, PAIN_POINTS, p.id, togglePainPoint)}
                                                     className={`w-full flex items-center p-3.5 rounded-xl border transition-all duration-300 active:scale-[0.98] hover:scale-[1.01] ${
                                                         isSelected 
                                                             ? 'bg-gradient-to-br from-amber-500/20 via-violet-500/10 to-transparent border-amber-500/30 text-white font-bold shadow-[0_4px_12px_rgba(229,169,60,0.15)]' 
@@ -453,13 +480,17 @@ export default function OnboardingPage() {
                                     <p className="text-[14px] text-white/50 font-medium">How long are you willing to study every day?</p>
                                 </div>
 
-                                <div className="space-y-3 pt-2">
+                                <div className="space-y-3 pt-2" role="radiogroup" aria-label="Study Commitment">
                                     {COMMITMENT_LEVELS.map(c => {
                                         const isSelected = commitment === c.id;
                                         return (
                                             <button 
                                                 key={c.id} 
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={isSelected}
                                                 onClick={() => setCommitment(c.id)} 
+                                                onKeyDown={(e) => handleRadioKeyDown(e, COMMITMENT_LEVELS, c.id, setCommitment)}
                                                 className={`w-full flex items-center p-4 rounded-2xl border transition-all duration-300 active:scale-[0.98] hover:scale-[1.01] ${
                                                     isSelected 
                                                         ? 'bg-gradient-to-br from-amber-500/20 via-violet-500/10 to-transparent border-amber-500/30 text-white font-bold shadow-[0_4px_15px_rgba(229,169,60,0.15)]' 

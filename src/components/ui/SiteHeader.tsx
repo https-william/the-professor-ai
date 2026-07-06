@@ -36,7 +36,8 @@ import {
     Trophy,
     PlusCircle,
     Sword,
-    Swords
+    Swords,
+    Search
 } from "lucide-react";
 import { useTimerStore } from "@/store/useTimerStore";
 import { useAppPlatform } from "@/hooks/useAppPlatform";
@@ -70,10 +71,10 @@ const MINIMAL_PATHS = [
 const LANDING_PATHS: string[] = []; // No longer using SiteHeader for landing
 
 const MODES = [
-    { id: "DASHBOARD", label: "Dashboard", href: "/dashboard", color: "var(--emerald)", glow: "var(--emerald-glow)", icon: LayoutDashboard },
-    { id: "CREATE",    label: "Create",    href: "/create",    color: "var(--blue)",    glow: "var(--blue-glow)",    icon: Lightbulb },
+    { id: "DASHBOARD", label: "Lounge", href: "/dashboard", color: "var(--emerald)", glow: "var(--emerald-glow)", icon: LayoutDashboard },
+    { id: "RECALL",    label: "Recall",    href: "/review",    color: "var(--blue)",    glow: "var(--blue-glow)",    icon: Flame },
     { id: "LIBRARY",  label: "Library",   href: "/library",   color: "var(--violet)",  glow: "var(--violet-glow)",  icon: Library },
-    { id: "ARENA",    label: "Arena",     href: "/arena",     color: "var(--cyan)",    glow: "var(--cyan-glow)",    icon: Swords },
+    { id: "ARENA",    label: "Lobbies",     href: "/arena",     color: "var(--cyan)",    glow: "var(--cyan-glow)",    icon: Swords },
 ] as const;
 
 export type AppMode = (typeof MODES)[number]["id"] | string;
@@ -153,7 +154,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
     const currentMode: string = activeMode ?? (() => {
         if (pathname.startsWith("/arena"))    return "ARENA";
         if (pathname.startsWith("/library"))  return "LIBRARY";
-        if (pathname.startsWith("/create") || pathname.startsWith("/summary") || pathname.startsWith("/quiz") || pathname.startsWith("/flashcards")) return "CREATE";
+        if (pathname.startsWith("/review") || pathname.startsWith("/summary") || pathname.startsWith("/quiz") || pathname.startsWith("/flashcards")) return "RECALL";
         return "DASHBOARD";
     })();
 
@@ -302,10 +303,10 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     ) : isApp ? (
                         <div className="hidden md:flex items-center gap-1 p-1 bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.15)]">
                             {[
-                                { name: "Home", href: "/dashboard", icon: LayoutDashboard },
-                                { name: "Create", href: "/create", icon: PlusCircle },
+                                { name: "Lounge", href: "/dashboard", icon: LayoutDashboard },
+                                { name: "Recall", href: "/review", icon: Flame },
                                 { name: "Library", href: "/library", icon: Library },
-                                { name: "Arena", href: "/arena", icon: Swords },
+                                { name: "Lobbies", href: "/arena", icon: Swords },
                                 { name: "Profile", href: "/profile", icon: User },
                             ].map((item) => {
                                 const isActive = item.href === "/dashboard"
@@ -342,6 +343,18 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
 
             {/* ── RIGHT: Actions ── */}
             <div className="flex items-center justify-end gap-1.5 md:gap-2.5">
+                {/* Command Palette Trigger */}
+                <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[var(--bg-3)]/40 hover:bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--border-hover)] transition-all text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] shadow-sm"
+                    title="Open Command Palette (Cmd+K)"
+                >
+                    <Search size={13} className="text-[var(--foreground-muted)]" />
+                    <span className="hidden lg:inline font-medium text-[11px]">Search...</span>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)]">
+                        ⌘K
+                    </kbd>
+                </button>
                 {/* {user.isAuthenticated && user.planStatus === 'free' && (
                     <Link 
                         href="/settings/billing"

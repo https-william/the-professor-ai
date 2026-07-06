@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import ScholarShaderCanvas from "@/components/ui/ScholarShaderCanvas";
+import AmbientOrbs from "@/components/ui/AmbientOrbs";
 import { cn } from "@/lib/utils";
 
 interface MainLayoutWrapperProps {
@@ -36,6 +37,10 @@ export default function MainLayoutWrapper({ children }: MainLayoutWrapperProps) 
       )}
     >
       <div className="noise-overlay" />
+
+      {/* Global Background Grid & Atmospheric Depth Layer */}
+      <div className="fixed inset-0 bg-[linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-40 z-[0]" />
+      <AmbientOrbs />
 
       {/* WebGL Shader on all routes — dimmer on app routes for subtlety */}
       <ScholarShaderCanvas opacity={isMarketingOrAuth ? 0.60 : 0.35} />

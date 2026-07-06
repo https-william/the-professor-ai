@@ -19,7 +19,7 @@ export default function QuizGenerate() {
             if (hasStarted.current) return;
             const paramsStr = sessionStorage.getItem("generateParams");
             if (!paramsStr) {
-                router.push("/create");
+                router.push("/dashboard");
                 return;
             }
             hasStarted.current = true;
@@ -71,7 +71,7 @@ export default function QuizGenerate() {
 
             } catch (err: any) {
                 addToast(err.message, "error");
-                router.push("/create");
+                router.push("/dashboard");
             }
         };
 
@@ -87,7 +87,7 @@ export default function QuizGenerate() {
 
             <EndowmentModal 
                 isOpen={isEndowmentOpen} 
-                onClose={() => router.push("/create")}
+                onClose={() => router.push("/dashboard")}
                 currentCredits={user?.credits || 0}
                 requiredCredits={1}
             />

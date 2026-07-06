@@ -17,9 +17,10 @@ import {
 import BrandLogo from "./BrandLogo";
 
 const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Create", href: "/create", icon: MessageSquare }, // Reusing icon for creation tool
-    { label: "Library", href: "/library", icon: BookOpen },
+    { label: "Study Lounge", href: "/dashboard", icon: LayoutDashboard },
+    { label: "My Library", href: "/library", icon: BookOpen },
+    { label: "Daily Recall", href: "/review", icon: BookOpen },
+    { label: "Focus Lobbies", href: "/arena", icon: Trophy },
 ];
 
 const bottomItems = [

@@ -82,8 +82,8 @@ function SummaryCheckpoint({ block, onCorrect }: { block: any; onCorrect: () => 
       className="mt-6 p-6 md:p-8 border border-white/5 shadow-2xl animate-in slide-in-from-bottom-4 duration-500"
     >
       <div className="flex items-center gap-2 mb-4">
-        <HelpCircle size={14} className="text-[#E5A93C]" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E5A93C]/60">
+        <HelpCircle size={14} className="text-[var(--amber)]" />
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--amber)]/60">
           Professor's Spot Check
         </span>
       </div>
@@ -103,20 +103,20 @@ function SummaryCheckpoint({ block, onCorrect }: { block: any; onCorrect: () => 
                 "w-full p-4 md:p-5 rounded-xl md:rounded-2xl text-left text-sm font-medium transition-all border flex items-center justify-between",
                 showFeedback
                   ? isCorrect
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-[#81E0C1] font-bold shadow-[0_8px_32px_rgba(43,178,136,0.15)]"
-                    : "bg-red-500/10 border-red-500/20 text-[#E85D75]/80"
+                    ? "bg-[var(--emerald-dim)] border-[var(--emerald-border)] text-[var(--emerald-text)] font-bold shadow-[0_8px_32px_rgba(43,178,136,0.15)]"
+                    : "bg-[var(--crimson-dim)] border-[var(--crimson-border)] text-[var(--crimson-text)]/80"
                   : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10 text-white/70"
               )}
             >
               <span>{opt}</span>
-              {showFeedback && isCorrect && <CheckCircle2 size={16} className="text-[#2BB288] shrink-0 ml-2" />}
-              {showFeedback && !isCorrect && <span className="text-[#E85D75] font-black text-xs shrink-0 ml-2">✗</span>}
+              {showFeedback && isCorrect && <CheckCircle2 size={16} className="text-[var(--emerald)] shrink-0 ml-2" />}
+              {showFeedback && !isCorrect && <span className="text-[var(--crimson)] font-black text-xs shrink-0 ml-2">✗</span>}
             </button>
           );
         })}
       </div>
       {selectedIndices.length > 0 && !isPassed && (
-        <p className="mt-4 text-xs text-[#E85D75] italic animate-pulse">
+        <p className="mt-4 text-xs text-[var(--crimson)] italic animate-pulse">
           Ah, not quite! Try another option to find the key concept.
         </p>
       )}
@@ -328,11 +328,11 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
             const matchText = text.substring(idx, idx + hl.highlighted_text.length);
             const span = document.createElement("span");
             span.className = `professor-highlight rounded px-1 transition-all ${
-              hl.color === "amber" ? "bg-amber-500/20 border-b border-amber-500/40 text-[#F7D293]" :
-              hl.color === "violet" ? "bg-purple-500/20 border-b border-purple-500/40 text-[#CDBDFD]" :
-              hl.color === "emerald" ? "bg-emerald-500/20 border-b border-emerald-500/40 text-[#81E0C1]" :
-              hl.color === "blue" ? "bg-blue-500/20 border-b border-blue-500/40 text-[#A5C0FF]" :
-              "bg-rose-500/20 border-b border-rose-500/40 text-[#FCA3B0]"
+              hl.color === "amber" ? "bg-[var(--amber-dim)] border-b border-[var(--amber-border)] text-[var(--amber-text)]" :
+              hl.color === "violet" ? "bg-[var(--violet-dim)] border-b border-[var(--violet-border)] text-[var(--violet-text)]" :
+              hl.color === "emerald" ? "bg-[var(--emerald-dim)] border-b border-[var(--emerald-border)] text-[var(--emerald-text)]" :
+              hl.color === "blue" ? "bg-[var(--blue-dim)] border-b border-[var(--blue-border)] text-[var(--blue-text)]" :
+              "bg-[var(--crimson-dim)] border-b border-[var(--crimson-border)] text-[var(--crimson-text)]"
             }`;
             span.textContent = matchText;
             
@@ -563,7 +563,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     : currentChapter.text;
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-[#09090b] text-[#E0E0E0] relative">
+    <div className="min-h-screen w-full flex flex-col bg-[var(--background)] text-[var(--foreground)] relative">
       {/* Background Orbs */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute w-[500px] h-[500px] rounded-full"
@@ -582,7 +582,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
             <ChevronLeft size={20} />
           </button>
           <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#E5A93C] italic">
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--amber)] italic">
               Study Ingestion
             </span>
             <h1 className="text-xs font-bold text-white max-w-[200px] sm:max-w-[400px] truncate">
@@ -596,7 +596,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
           <button 
             onClick={() => setShowConfig(!showConfig)}
             className={`p-2 rounded-xl border transition-colors ${
-              showConfig ? "bg-[#E5A93C]/10 border-[#E5A93C]/20 text-[#E5A93C]" : "bg-white/5 border-white/5 text-white/60 hover:text-white"
+              showConfig ? "bg-[var(--amber)]/10 border-[var(--amber)]/20 text-[var(--amber)]" : "bg-white/5 border-white/5 text-white/60 hover:text-white"
             }`}
             title="Aesthetics Settings"
           >
@@ -607,7 +607,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
           <button 
             onClick={() => setIsGlossaryOpen(!isGlossaryOpen)}
             className={`p-2 rounded-xl border transition-colors ${
-              isGlossaryOpen ? "bg-[#9673F5]/10 border-[#9673F5]/20 text-[#9673F5]" : "bg-white/5 border-white/5 text-white/60 hover:text-white"
+              isGlossaryOpen ? "bg-[var(--violet)]/10 border-[var(--violet)]/20 text-[var(--violet)]" : "bg-white/5 border-white/5 text-white/60 hover:text-white"
             }`}
             title="Toggle Metaphors"
           >
@@ -618,7 +618,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
           <button 
             onClick={() => updatePreference("zen_focus_mode", !preferences?.zen_focus_mode)}
             className={`p-2 rounded-xl border transition-colors ${
-              preferences?.zen_focus_mode ? "bg-[#2BB288]/10 border-[#2BB288]/20 text-[#2BB288]" : "bg-white/5 border-white/5 text-white/60 hover:text-white"
+              preferences?.zen_focus_mode ? "bg-[var(--emerald)]/10 border-[var(--emerald)]/20 text-[var(--emerald)]" : "bg-white/5 border-white/5 text-white/60 hover:text-white"
             }`}
             title="Zen Focus Mode"
           >
@@ -639,7 +639,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
               className="absolute top-[68px] right-6 z-50 w-72"
             >
               <GlassmorphicCard intensity="heavy" radius="24px" className="p-4 border border-white/10 shadow-2xl flex flex-col gap-4">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E5A93C]">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--amber)]">
                   Aesthetics controls
                 </span>
                 
@@ -659,7 +659,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                   <button
                     onClick={() => updatePreference("bionic_reading", !preferences?.bionic_reading)}
                     className={`w-10 h-6 rounded-full p-1 transition-all ${
-                      preferences?.bionic_reading ? "bg-[#E5A93C]" : "bg-white/10"
+                      preferences?.bionic_reading ? "bg-[var(--amber)]" : "bg-white/10"
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full bg-black transition-all ${
@@ -706,7 +706,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
         {/* Left Column: Chapter content reader */}
         <div className={`flex-1 flex flex-col gap-6 ${preferences?.zen_focus_mode ? "w-full md:max-w-3xl mx-auto" : "md:w-3/5"}`}>
           <div className="flex items-center justify-between">
-            <span className="px-3 py-1 rounded-full bg-[#E5A93C]/10 text-[#E5A93C] border border-[#E5A93C]/15 text-[10px] font-black uppercase tracking-widest">
+            <span className="px-3 py-1 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/15 text-[10px] font-black uppercase tracking-widest">
               Chapter {currentSlide + 1} / {processedChapters.length}
             </span>
           </div>
@@ -753,9 +753,9 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
           )}
 
           {checkpointPassed && (
-            <div className="mb-6 p-5 border border-[#2BB288]/20 bg-[#2BB288]/5 rounded-2xl flex flex-col items-center animate-in fade-in zoom-in duration-500">
-               <CheckCircle2 size={32} className="mb-2 text-[#2BB288]" />
-               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2BB288]">
+            <div className="mb-6 p-5 border border-[var(--emerald)]/20 bg-[var(--emerald)]/5 rounded-2xl flex flex-col items-center animate-in fade-in zoom-in duration-500">
+               <CheckCircle2 size={32} className="mb-2 text-[var(--emerald)]" />
+               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--emerald)]">
                  Cognitive Alignment Secured
                </p>
             </div>
@@ -773,7 +773,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                 className={cn(
                   "p-2 rounded-xl border transition-all",
                   hasVotedFeedback === 'yes'
-                    ? "bg-[#2BB288]/20 border-[#2BB288]/30 text-[#2BB288]"
+                    ? "bg-[var(--emerald)]/20 border-[var(--emerald)]/30 text-[var(--emerald)]"
                     : "bg-white/5 border-white/5 text-white/50 hover:text-white/80"
                 )}
               >
@@ -785,7 +785,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                 className={cn(
                   "p-2 rounded-xl border transition-all",
                   hasVotedFeedback === 'no'
-                    ? "bg-[#E85D75]/20 border-[#E85D75]/30 text-[#E85D75]"
+                    ? "bg-[var(--crimson)]/20 border-[var(--crimson)]/30 text-[var(--crimson)]"
                     : "bg-white/5 border-white/5 text-white/50 hover:text-white/80"
                 )}
               >
@@ -815,8 +815,8 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                 isChapterLocked 
                   ? "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed shadow-none" 
                   : currentSlide < processedChapters.length - 1
-                  ? "bg-[#E5A93C] text-black hover:scale-[1.02] active:scale-[0.98]"
-                  : "bg-[#2BB288] text-black hover:scale-[1.02] active:scale-[0.98]"
+                  ? "bg-[var(--amber)] text-[var(--background)] hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-[var(--emerald)] text-[var(--background)] hover:scale-[1.02] active:scale-[0.98]"
               )}
             >
               <span>{isChapterLocked ? "Locked" : currentSlide < processedChapters.length - 1 ? "Proceed" : "Finish Summary"}</span>
@@ -854,7 +854,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
       <div className="fixed bottom-6 left-6 z-[100] flex items-center gap-2 p-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
         <button 
           onClick={handleCopyLink}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#E5A93C] text-black font-bold text-[10px] uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--amber)] text-[var(--background)] font-bold text-[10px] uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
         >
           <Share2 size={13} />
           <span>{copySuccess ? "Copied!" : "Share Link"}</span>
@@ -868,7 +868,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
             title="Download formats"
           >
             {isExporting ? (
-              <Loader2 size={14} className="animate-spin text-[#E5A93C]" />
+              <Loader2 size={14} className="animate-spin text-[var(--amber)]" />
             ) : (
               <Download size={14} />
             )}
@@ -950,7 +950,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
 
       {/* Hidden layout elements for PDF engine export */}
       <div className="fixed left-[-9999px] top-0 pointer-events-none">
-        <div id="summary-export-container" className="w-[800px] bg-[#09090b] text-[#E0E0E0] p-16 font-sans">
+        <div id="summary-export-container" className="w-[800px] bg-[var(--background)] text-[var(--foreground)] p-16 font-sans">
           <style dangerouslySetInnerHTML={{ __html: `
             #summary-export-container table {
               width: 100% !important;
@@ -978,7 +978,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
             }
           `}} />
           <div className="mb-12 pb-6 border-b border-white/10">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E5A93C] mb-3">Official Synthesis Report</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--amber)] mb-3">Official Synthesis Report</p>
             <h1 className="text-4xl font-black tracking-tight leading-tight">{title}</h1>
           </div>
           <div className="prose prose-invert max-w-none">

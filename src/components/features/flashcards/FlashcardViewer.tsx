@@ -126,6 +126,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
     const [isGeneratingEli5, setIsGeneratingEli5] = useState(false);
     const [sessionComplete, setSessionComplete] = useState(false);
     const [sessionStats, setSessionStats] = useState({ xp: 0, streak: 0, incremented: false });
+    const [xpPopup, setXpPopup] = useState<{ id: number; text: string } | null>(null);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -375,6 +376,8 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 next.add(currentCardIndex);
                 return next;
             });
+            setXpPopup({ id: Date.now(), text: "+10 XP" });
+            setTimeout(() => setXpPopup(null), 1500);
             playVictoryChime();
             const previews = getCardIntervalPreviews(activeCard.stableId);
             const label = quality === 5 ? previews.easy : previews.good;
@@ -695,11 +698,27 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
 
                 {/* Card Stack Depth Frame */}
                 <div className="relative w-full aspect-[16/11] max-h-[360px] md:max-h-[420px]" style={{ perspective: "1000px" }}>
+                    {/* Floating +10 XP Animation */}
+                    <AnimatePresence>
+                        {xpPopup && (
+                            <motion.div
+                                key={xpPopup.id}
+                                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                                animate={{ opacity: 1, y: -45, scale: 1.1 }}
+                                exit={{ opacity: 0, y: -70, scale: 0.8 }}
+                                transition={{ duration: 1.2, ease: "easeOut" }}
+                                className="absolute z-50 pointer-events-none left-1/2 -translate-x-1/2 top-6 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--amber)] text-[var(--background)] font-black font-mono text-xs shadow-[0_0_25px_rgba(245,158,11,0.6)] border border-[var(--amber)]"
+                            >
+                                <Sparkles size={14} className="fill-current animate-spin" />
+                                <span>{xpPopup.text}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     
                     {/* Background Stack Card 2 */}
                     {cardQueue.length - queuePointer > 2 && (
                         <div 
-                            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-950/40 pointer-events-none transition-all duration-300"
+                            className="absolute inset-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/40 pointer-events-none transition-all duration-300"
                             style={{
                                 transform: "translateY(20px) scale(0.93)",
                                 zIndex: -2,
@@ -711,7 +730,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                     {/* Background Stack Card 1 */}
                     {cardQueue.length - queuePointer > 1 && (
                         <div 
-                            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-900/50 pointer-events-none transition-all duration-300"
+                            className="absolute inset-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/60 pointer-events-none transition-all duration-300"
                             style={{
                                 transform: "translateY(10px) scale(0.97)",
                                 zIndex: -1,
@@ -757,41 +776,46 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                     {/* Shimmer reflection streak */}
                                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
                                     
-                                    {/* Circular SVG time ticker indicator */}
-                                    <div className="absolute top-6 left-6 flex items-center justify-center">
-                                        <svg className="w-8 h-8 transform -rotate-90">
-                                            <circle cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.05)" strokeWidth="2" fill="transparent" />
-                                            <circle 
-                                                cx="16" 
-                                                cy="16" 
-                                                r="13" 
-                                                stroke="var(--amber)" 
-                                                strokeWidth="2" 
-                                                fill="transparent" 
-                                                strokeDasharray={2 * Math.PI * 13}
-                                                strokeDashoffset={(2 * Math.PI * 13) * (1 - Math.min(secondsElapsed, 30) / 30)}
-                                                className="transition-all duration-1000"
-                                            />
-                                        </svg>
-                                        <span className="absolute text-[9px] font-mono text-[var(--foreground-muted)]">{secondsElapsed}</span>
+                                    {/* Structured Flexbox Header Bar */}
+                                    <div className="w-full flex items-center justify-between px-6 pt-6 pb-2 relative z-10 shrink-0">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="relative flex items-center justify-center">
+                                                <svg className="w-8 h-8 transform -rotate-90">
+                                                    <circle cx="16" cy="16" r="13" stroke="var(--border)" strokeWidth="2" fill="transparent" />
+                                                    <circle 
+                                                        cx="16" 
+                                                        cy="16" 
+                                                        r="13" 
+                                                        stroke="var(--amber)" 
+                                                        strokeWidth="2" 
+                                                        fill="transparent" 
+                                                        strokeDasharray={2 * Math.PI * 13}
+                                                        strokeDashoffset={(2 * Math.PI * 13) * (1 - Math.min(secondsElapsed, 30) / 30)}
+                                                        className="transition-all duration-1000"
+                                                    />
+                                                </svg>
+                                                <span className="absolute text-[9px] font-mono font-bold text-[var(--foreground-muted)]">{secondsElapsed}</span>
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Active Recall</span>
+                                        </div>
+
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePlayTTS(cardFrontText);
+                                            }}
+                                            className={`p-2 rounded-xl transition-all border ${
+                                                isPlayingTTS 
+                                                    ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                                                    : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                            }`}
+                                            title="Read Aloud"
+                                        >
+                                            <Volume2 size={14} />
+                                        </button>
                                     </div>
 
-                                    {/* TTS button front */}
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handlePlayTTS(cardFrontText);
-                                        }}
-                                        className={`absolute top-6 right-6 p-2 rounded-xl transition-all border ${
-                                            isPlayingTTS 
-                                                ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                                                : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-                                        }`}
-                                    >
-                                        <Volume2 size={14} />
-                                    </button>
-
-                                    <p className={`text-xl md:text-2xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-8 ${
+                                    <p className={`text-xl md:text-2xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-6 ${
                                         isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-2xl' : 'font-serif'
                                     }`}>
                                         {cardFrontText}
@@ -900,7 +924,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             {/* Again Button */}
                             <button 
                                 onClick={() => handleRate(1)}
-                                className="flex flex-col h-16 rounded-xl border border-red-500/20 bg-red-950/20 text-red-400 hover:bg-red-950/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+                                className="flex flex-col h-16 rounded-xl border-2 border-[var(--crimson)]/40 bg-[var(--crimson)]/10 text-[var(--crimson)] hover:bg-[var(--crimson)]/20 hover:border-[var(--crimson)] hover:shadow-[0_0_20px_rgba(239,68,68,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
                             >
                                 <X size={14} className="mb-0.5" />
                                 <span className="text-[9px] font-black uppercase tracking-wider">Again (1)</span>
@@ -910,7 +934,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             {/* Hard Button */}
                             <button 
                                 onClick={() => handleRate(2)}
-                                className="flex flex-col h-16 rounded-xl border border-[var(--amber-border)] bg-[var(--amber-dim)]/20 text-[var(--amber)] hover:bg-[var(--amber-dim)]/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+                                className="flex flex-col h-16 rounded-xl border-2 border-[var(--amber)]/40 bg-[var(--amber)]/10 text-[var(--amber)] hover:bg-[var(--amber)]/20 hover:border-[var(--amber)] hover:shadow-[0_0_20px_rgba(245,158,11,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
                             >
                                 <HelpCircle size={14} className="mb-0.5" />
                                 <span className="text-[9px] font-black uppercase tracking-wider">Hard (2)</span>
@@ -920,7 +944,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             {/* Good Button */}
                             <button 
                                 onClick={() => handleRate(4)}
-                                className="flex flex-col h-16 rounded-xl border border-[var(--violet-border)] bg-[var(--violet-dim)]/20 text-[var(--violet)] hover:bg-[var(--violet-dim)]/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+                                className="flex flex-col h-16 rounded-xl border-2 border-[var(--blue)]/40 bg-[var(--blue)]/10 text-[var(--blue)] hover:bg-[var(--blue)]/20 hover:border-[var(--blue)] hover:shadow-[0_0_20px_rgba(74,124,245,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
                             >
                                 <Check size={14} className="mb-0.5" />
                                 <span className="text-[9px] font-black uppercase tracking-wider">Good (3)</span>
@@ -930,7 +954,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             {/* Easy Button */}
                             <button 
                                 onClick={() => handleRate(5)}
-                                className="flex flex-col h-16 rounded-xl border border-[var(--emerald-border)] bg-[var(--emerald-dim)]/20 text-[var(--emerald)] hover:bg-[var(--emerald-dim)]/40 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+                                className="flex flex-col h-16 rounded-xl border-2 border-[var(--emerald)]/40 bg-[var(--emerald)]/10 text-[var(--emerald)] hover:bg-[var(--emerald)]/20 hover:border-[var(--emerald)] hover:shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
                             >
                                 <Sparkles size={14} className="mb-0.5" />
                                 <span className="text-[9px] font-black uppercase tracking-wider">Easy (4)</span>

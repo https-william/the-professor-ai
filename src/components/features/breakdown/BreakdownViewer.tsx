@@ -148,7 +148,7 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                             <ChevronLeft size={20} />
                         </button>
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2BB288] mb-0.5">The Breakdown</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--emerald)] mb-0.5">The Breakdown</p>
                             <h1 className="text-sm font-bold truncate max-w-[200px] text-white">{title}</h1>
                         </div>
                     </div>
@@ -177,8 +177,8 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                                 total={processedChapters.length}
                                 current={currentSlide}
                                 completed={Array.from({ length: currentSlide }, (_, i) => i)}
-                                activeColor="#2BB288"
-                                completedColor="#2BB288"
+                                activeColor="var(--emerald)"
+                                completedColor="var(--emerald)"
                             />
                         </div>
                         <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight mb-2 text-white">
@@ -215,7 +215,7 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                                     playResultsSound("page-turn");
                                     setCurrentSlide(prev => prev + 1);
                                 }}
-                                className="group flex items-center gap-4 bg-[#E5A93C] text-zinc-950 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-amber-500/10 cursor-pointer"
+                                className="group flex items-center gap-4 bg-[var(--amber)] text-[var(--background)] px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-[var(--amber-glow)] cursor-pointer"
                             >
                                 <span>Proceed</span>
                                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -227,7 +227,7 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                                     handleFinish();
                                 }}
                                 disabled={isStreaming}
-                                className="group flex items-center gap-4 bg-[#2BB288] text-zinc-950 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="group flex items-center gap-4 bg-[var(--emerald)] text-[var(--background)] px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover-scale-lg active:scale-95 shadow-xl shadow-[var(--emerald-glow)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <span>{isStreaming ? "Generating..." : "Finish Breakdown"}</span>
                                 {isStreaming ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
@@ -242,7 +242,7 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                 <GlassmorphicCard intensity="heavy" radius="9999px" className="flex items-center gap-2 p-1.5 border border-white/10 shadow-2xl">
                     <button 
                         onClick={handleCopyLink}
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#2BB288] text-zinc-950 font-black text-[10px] uppercase tracking-wider transition-all hover-scale-lg active:scale-95 cursor-pointer"
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[var(--emerald)] text-[var(--background)] font-black text-[10px] uppercase tracking-wider transition-all hover-scale-lg active:scale-95 cursor-pointer"
                     >
                         <Share2 size={14} />
                         <span>{copySuccess ? "Copied!" : "Share Link"}</span>
@@ -255,7 +255,7 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
                         title="Download PDF"
                     >
                         {isExporting ? (
-                            <Loader2 size={16} className="animate-spin text-[#E5A93C]" />
+                            <Loader2 size={16} className="animate-spin text-[var(--amber)]" />
                         ) : (
                             <Download size={16} className="opacity-40 hover:opacity-100 transition-opacity" />
                         )}
@@ -265,9 +265,9 @@ export default function BreakdownViewer({ data, title, generationId, onFinish, i
 
             {/* Hidden Export Container */}
             <div className="fixed left-[-9999px] top-0 pointer-events-none">
-                <div id="breakdown-export-container" className="w-[800px] bg-[#09090b] text-zinc-100 p-20 font-sans">
+                <div id="breakdown-export-container" className="w-[800px] bg-[var(--background)] text-zinc-100 p-20 font-sans">
                     <div className="mb-20 pb-10 border-b border-white/10">
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E5A93C] mb-4">The Professor Breakdown Report</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--amber)] mb-4">The Professor Breakdown Report</p>
                         <h1 className="text-5xl font-black tracking-tight leading-tight">{title}</h1>
                     </div>
                     <div className="prose prose-invert max-w-none font-serif text-[16px] leading-relaxed">

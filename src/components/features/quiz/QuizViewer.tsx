@@ -358,21 +358,21 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
 
     if (!originalQuestions || originalQuestions.length === 0) {
         return (
-            <div className="min-h-screen bg-[#09090b] text-[var(--foreground)] flex flex-col items-center justify-center p-6 text-center select-none w-full">
-                <div className="max-w-md w-full bg-white/[0.02] border border-white/5 rounded-[32px] p-8 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-in fade-in">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-[0.02] text-7xl font-black border-4 border-white p-6 text-white rounded-2xl select-none pointer-events-none">
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center justify-center p-6 text-center select-none w-full">
+                <div className="max-w-md w-full bg-[var(--card)] border border-[var(--border)] rounded-[32px] p-8 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-in fade-in">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-[0.02] text-7xl font-black border-4 border-[var(--foreground)] p-6 text-[var(--foreground)] rounded-2xl select-none pointer-events-none">
                         EMPTY
                     </div>
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6">
-                        <AlertCircle size={32} className="text-white/40 animate-pulse" />
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle size={32} className="text-[var(--foreground-muted)] animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-bold mb-3 text-white">No Questions Found</h3>
-                    <p className="text-sm text-white/50 leading-relaxed mb-8">
+                    <h3 className="text-xl font-bold mb-3 text-[var(--foreground)]">No Questions Found</h3>
+                    <p className="text-sm text-[var(--foreground-muted)] leading-relaxed mb-8">
                         The exam paper is completely blank. Let's head back to the library and review your study materials.
                     </p>
                     <button
                         onClick={() => router.push('/library')}
-                        className="w-full py-4 rounded-2xl bg-white text-zinc-950 font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_15px_30px_rgba(255,255,255,0.05)]"
+                        className="w-full py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 active:scale-[0.98] transition-all shadow-lg"
                     >
                         Back to Library
                     </button>
@@ -389,31 +389,31 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
         const percentage = Math.round((score / questions.length) * 100);
 
         return (
-            <div className="min-h-screen w-full flex flex-col items-center bg-[#09090b] relative overflow-hidden">
+            <div className="min-h-screen w-full flex flex-col items-center bg-[var(--background)] relative overflow-hidden">
                 {/* Background lighting glows */}
                 <div className="absolute top-[-20%] left-[20%] w-[60%] h-[50%] bg-[#9673F5]/10 rounded-full blur-[160px] pointer-events-none" />
                 <div className="absolute bottom-[-10%] right-[10%] w-[50%] h-[40%] bg-[#E5A93C]/5 rounded-full blur-[140px] pointer-events-none" />
 
                 <header className="w-full max-w-4xl p-6 flex items-center justify-between z-20">
                     <div className="flex gap-2">
-                        <button onClick={() => downloadQuizOffline(title, questions, initialTimer)} className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-white/80" title="Download Offline Version">
+                        <button onClick={() => downloadQuizOffline(title, questions, initialTimer)} className="p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--border)] transition-all text-[var(--foreground)]" title="Download Offline Version">
                             <Download size={18} />
                         </button>
-                        <button onClick={() => setIsShareOpen(true)} className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-white/80">
+                        <button onClick={() => setIsShareOpen(true)} className="p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--border)] transition-all text-[var(--foreground)]">
                             <Share2 size={18} />
                         </button>
                     </div>
                     <div className="text-center">
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E5A93C] mb-1">Results</p>
-                        <h1 className="text-sm font-bold text-white max-w-[200px] truncate">{title}</h1>
+                        <h1 className="text-sm font-bold text-[var(--foreground)] max-w-[200px] truncate">{title}</h1>
                     </div>
-                    <button onClick={handleResetAll} className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-white/80" title="Retry Quiz">
+                    <button onClick={handleResetAll} className="p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--border)] transition-all text-[var(--foreground)]" title="Retry Quiz">
                         <RotateCcw size={18} />
                     </button>
                 </header>
 
                 <main className="max-w-2xl w-full px-6 py-6 flex flex-col items-center gap-8 z-10">
-                    <div className="w-full rounded-[40px] bg-white/[0.02] border border-white/5 p-10 md:p-12 flex flex-col items-center text-center shadow-2xl relative overflow-hidden backdrop-blur-2xl">
+                    <div className="w-full rounded-[40px] bg-[var(--card)] border border-[var(--border)] p-10 md:p-12 flex flex-col items-center text-center shadow-2xl relative overflow-hidden backdrop-blur-2xl">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-[0.02] select-none text-8xl font-black border-[6px] border-[#9673F5] p-6 text-[#9673F5] rounded-3xl pointer-events-none">
                             VERIFIED
                         </div>
@@ -423,49 +423,49 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                         </div>
                         
                         <div className="flex flex-col items-center mb-6">
-                            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/40 mb-2">Quiz Accuracy</p>
+                            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)] mb-2">Quiz Accuracy</p>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/70">{percentage}</span>
+                                <span className="text-8xl font-black tracking-tighter text-[var(--foreground)]">{percentage}</span>
                                 <span className="text-2xl font-bold text-[#E5A93C]">%</span>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4 w-full border-y border-white/5 py-6 mb-6">
+                        <div className="grid grid-cols-3 gap-4 w-full border-y border-[var(--border)] py-6 mb-6">
                             <div>
                                 <p className="text-2xl font-black text-[#2BB288]">{score}</p>
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-white/40">Correct</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">Correct</p>
                             </div>
                             <div>
                                 <p className="text-2xl font-black text-[#E85D75]">{questions.length - score}</p>
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-white/40">Incorrect</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">Incorrect</p>
                             </div>
                             <div>
                                 <p className="text-2xl font-black text-[#9673F5]">{questions.length}</p>
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-white/40">Total Qs</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">Total Qs</p>
                             </div>
                         </div>
 
-                        <p className="text-sm italic font-serif leading-relaxed text-white/70 px-4">
+                        <p className="text-sm italic font-serif leading-relaxed text-[var(--foreground)] px-4">
                             &ldquo;{professorRemark || getVerdict(user?.firstName || "Scholar", percentage)}&rdquo;
                         </p>
                     </div>
 
                     {/* Guest Sign-up CTA Banner */}
                     {isGuest && (
-                        <div className="w-full p-6 rounded-3xl bg-gradient-to-r from-[#E5A93C]/10 to-[#9673F5]/10 border border-white/5 relative overflow-hidden backdrop-blur-md">
+                        <div className="w-full p-6 rounded-3xl bg-gradient-to-r from-[#E5A93C]/10 to-[#9673F5]/10 border border-[var(--border)] relative overflow-hidden backdrop-blur-md">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div className="space-y-1">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-[#E5A93C] flex items-center gap-1.5">
                                         <Sparkles size={14} className="animate-pulse" />
                                         Save Your Academic Streak
                                     </h4>
-                                    <p className="text-xs text-white/60 leading-relaxed">
+                                    <p className="text-xs text-[var(--foreground)] leading-relaxed">
                                         Create a free account to track this score in your study history, build streak rewards, and deconstruct your own notes.
                                     </p>
                                 </div>
                                 <button 
                                     onClick={() => router.push('/signup')}
-                                    className="w-full md:w-auto px-5 py-3 rounded-2xl bg-white text-zinc-950 font-black uppercase text-[10px] tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                                    className="w-full md:w-auto px-5 py-3 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase text-[10px] tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2"
                                 >
                                     Sign Up Free <ArrowRight size={14} />
                                 </button>
@@ -476,21 +476,21 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                     <div className="w-full flex flex-col sm:flex-row gap-3">
                         <button 
                             onClick={() => { setStatus('review'); setCurrentIndex(0); }} 
-                            className="flex-1 py-4 rounded-2xl bg-white text-zinc-950 font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 active:scale-[0.98] transition-all"
+                            className="flex-1 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[11px] hover:opacity-90 active:scale-[0.98] transition-all"
                         >
                             Review Answers
                         </button>
                         {score < questions.length && (
                             <button 
                                 onClick={handleRetryMissedOnly} 
-                                className="flex-1 py-4 rounded-2xl bg-zinc-900 border border-white/10 font-black uppercase tracking-[0.2em] text-[11px] hover:bg-zinc-800 active:scale-[0.98] transition-all text-[#E5A93C]"
+                                className="flex-1 py-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] font-black uppercase tracking-[0.2em] text-[11px] hover:bg-[var(--border)] active:scale-[0.98] transition-all text-[#E5A93C]"
                             >
                                 Retry Incorrect
                             </button>
                         )}
                         <button 
                             onClick={() => router.push('/library')} 
-                            className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/5 font-black uppercase tracking-[0.2em] text-[11px] hover:bg-white/10 active:scale-[0.98] transition-all text-white"
+                            className="flex-1 py-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] font-black uppercase tracking-[0.2em] text-[11px] hover:bg-[var(--border)] active:scale-[0.98] transition-all text-[var(--foreground)]"
                         >
                             Back to Library
                         </button>
@@ -569,7 +569,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                     cx="20" 
                                     cy="20" 
                                     r="16" 
-                                    className="stroke-white/5 fill-transparent" 
+                                    className="stroke-[var(--border)] fill-transparent" 
                                     strokeWidth="3"
                                 />
                                 <circle 
@@ -582,7 +582,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                     strokeDashoffset={100 - timePercentage}
                                 />
                             </svg>
-                            <span className={`absolute font-mono text-[9px] font-black ${isTimeUrgent ? 'text-red-500 animate-pulse' : 'text-white/60'}`}>
+                            <span className={`absolute font-mono text-[9px] font-black ${isTimeUrgent ? 'text-red-500 animate-pulse' : 'text-[var(--foreground-muted)]'}`}>
                                 {formatTime(timeLeft).split(":")[0]}m
                             </span>
                         </div>
@@ -591,7 +591,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
             </header>
 
             {/* Top progress track on mobile */}
-            <div className="block md:hidden w-full px-6 py-3 border-b border-white/5 bg-[#09090b]/40 backdrop-blur-md">
+            <div className="block md:hidden w-full px-6 py-3 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-md">
                 <ProgressNodeTrack
                     total={questions.length}
                     current={currentIndex}
@@ -614,11 +614,11 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: -280, opacity: 0 }}
                             transition={{ duration: 0.25, ease: "easeOut" }}
-                            className="absolute md:relative left-0 top-0 bottom-0 z-30 w-72 bg-[#0c0c13] border-r border-white/5 flex flex-col p-6 shadow-2xl overflow-y-auto"
+                            className="absolute md:relative left-0 top-0 bottom-0 z-30 w-72 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-6 shadow-2xl overflow-y-auto"
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-[#9673F5]">Question Sheet</h3>
-                                <button onClick={() => setIsDrawerOpen(false)} className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white">
+                                <button onClick={() => setIsDrawerOpen(false)} className="p-1 rounded hover:bg-[var(--surface)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
                                     <X size={14} />
                                 </button>
                             </div>
@@ -636,8 +636,8 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                         cardStyles += isCorrect ? "border-[#2BB288]/40 bg-[#2BB288]/5 text-[#2BB288]" : "border-[#E85D75]/40 bg-[#E85D75]/5 text-[#E85D75]";
                                     }
                                     else if (isFlagged) cardStyles += "border-[#9673F5]/40 bg-[#9673F5]/15 text-[#9673F5]";
-                                    else if (isAnswered) cardStyles += "border-white/20 bg-white/5 text-white/90";
-                                    else cardStyles += "border-white/5 bg-transparent text-white/30 hover:bg-white/5";
+                                    else if (isAnswered) cardStyles += "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]";
+                                    else cardStyles += "border-[var(--border)] bg-transparent text-[var(--foreground-muted)] hover:bg-[var(--surface)]";
 
                                     return (
                                         <button 
@@ -686,16 +686,16 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
 
                         {/* Interactive scratchpad drawing notice or keyboard legend */}
                         {!isReview && (
-                            <div className="hidden md:flex flex-wrap gap-2 items-center text-[10px] text-white/30 font-bold uppercase tracking-wider bg-white/[0.01] border border-white/5 p-4 rounded-2xl max-w-sm">
-                                <span className="text-white/40">Keyboard navigation:</span>
-                                <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-white/60">A-D</span>
+                            <div className="hidden md:flex flex-wrap gap-2 items-center text-[10px] text-[var(--foreground-muted)] font-bold uppercase tracking-wider bg-[var(--surface)] border border-[var(--border)] p-4 rounded-2xl max-w-sm">
+                                <span className="text-[var(--foreground-muted)]">Keyboard navigation:</span>
+                                <span className="bg-[var(--card)] px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--foreground)]">A-D</span>
                                 <span className="text-[8px]">or</span>
-                                <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-white/60">1-4</span>
-                                <span className="text-white/30">Answer</span>
-                                <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-white/60">&larr; &rarr;</span>
-                                <span className="text-white/30">Jump</span>
-                                <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-white/60">Enter</span>
-                                <span className="text-white/30">Submit</span>
+                                <span className="bg-[var(--card)] px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--foreground)]">1-4</span>
+                                <span className="text-[var(--foreground-muted)]">Answer</span>
+                                <span className="bg-[var(--card)] px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--foreground)]">&larr; &rarr;</span>
+                                <span className="text-[var(--foreground-muted)]">Jump</span>
+                                <span className="bg-[var(--card)] px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--foreground)]">Enter</span>
+                                <span className="text-[var(--foreground-muted)]">Submit</span>
                             </div>
                         )}
                     </div>
@@ -728,11 +728,11 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                         }
                                     } else {
                                         if (isSelected) {
-                                            btnBase += "border border-[#E5A93C]/40 bg-[#E5A93C]/10 text-zinc-900 dark:text-zinc-100 shadow-[0_4px_0_rgba(229,169,60,0.2)] translate-y-[1px] ";
-                                            textStyle += "text-zinc-900 dark:text-zinc-100 font-semibold";
+                                            btnBase += "border border-[#E5A93C]/40 bg-[#E5A93C]/10 text-[var(--foreground)] shadow-[0_4px_0_rgba(229,169,60,0.2)] translate-y-[1px] ";
+                                            textStyle += "text-[var(--foreground)] font-semibold";
                                             circleColor = "bg-[#E5A93C] border-[#E5A93C] text-black font-black";
                                         } else {
-                                            btnBase += "bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-white/5 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700/50 shadow-[0_4px_0_rgba(0,0,0,0.02)] active:translate-y-[3px] active:shadow-none hover:translate-y-[1px] hover:shadow-[0_3px_0_rgba(0,0,0,0.02)] ";
+                                            btnBase += "bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--surface)] shadow-sm active:translate-y-[3px] active:shadow-none hover:translate-y-[1px] ";
                                         }
                                     }
 
@@ -768,18 +768,18 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                             <Lightbulb size={13} />
                                             Analyst Feedback
                                         </h4>
-                                        <p className="text-sm text-white/85 leading-relaxed font-serif">{currentQuestion?.explanation}</p>
+                                        <p className="text-sm text-[var(--foreground)] leading-relaxed font-serif">{currentQuestion?.explanation}</p>
                                         
                                         {/* Save to Flashcard stars inside incorrect options */}
                                         {answers[currentIndex] !== currentQuestion.correctIndex && (
-                                            <div className="flex justify-end mt-4 pt-4 border-t border-white/5">
+                                            <div className="flex justify-end mt-4 pt-4 border-t border-[var(--border)]">
                                                 <button
                                                     onClick={() => saveToDecks(currentIndex)}
                                                     disabled={savedQuestions.has(currentIndex) || isSubmittingFlashcard[currentIndex]}
                                                     className={`px-4 py-2 rounded-xl flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider border transition-all ${
                                                         savedQuestions.has(currentIndex)
                                                             ? 'bg-[#E5A93C]/10 border-[#E5A93C]/20 text-[#E5A93C]'
-                                                            : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                                                            : 'bg-[var(--surface)] border-[var(--border)] text-[var(--foreground-muted)] hover:bg-[var(--border)] hover:text-[var(--foreground)]'
                                                     }`}
                                                 >
                                                     {isSubmittingFlashcard[currentIndex] ? (
@@ -837,11 +837,11 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                         </div>
 
                         {/* Navigation controls */}
-                        <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5">
+                        <div className="flex items-center justify-between mt-6 pt-6 border-t border-[var(--border)]">
                             <button 
                                 onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                                 disabled={currentIndex === 0}
-                                className="px-5 py-3 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white disabled:opacity-20 transition-all flex items-center gap-1"
+                                className="px-5 py-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-20 transition-all flex items-center gap-1"
                             >
                                 <ArrowLeft size={13} /> Prev
                             </button>
@@ -855,7 +855,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                             setCurrentIndex(prev => prev + 1);
                                         }
                                     }}
-                                    className="px-6 py-3 rounded-xl bg-white text-zinc-950 font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all flex items-center gap-1"
+                                    className="px-6 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all flex items-center gap-1"
                                 >
                                     {currentIndex === questions.length - 1 ? "Finish Review" : "Next"} <ArrowRight size={13} />
                                 </button>
@@ -869,7 +869,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                             ) : (
                                 <button 
                                     onClick={() => setCurrentIndex(prev => prev + 1)} 
-                                    className="px-6 py-3 rounded-xl bg-white text-zinc-950 font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all flex items-center gap-1"
+                                    className="px-6 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all flex items-center gap-1"
                                 >
                                     Next <ArrowRight size={13} />
                                 </button>
@@ -882,17 +882,17 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
             {/* Submit Confirmation Modal */}
             {showSubmitModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
-                    <div className="max-w-sm w-full bg-[#0c0c13] border border-white/10 rounded-[40px] p-10 flex flex-col items-center text-center gap-6 shadow-2xl relative overflow-hidden">
+                    <div className="max-w-sm w-full bg-[var(--card)] border border-[var(--border)] rounded-[40px] p-10 flex flex-col items-center text-center gap-6 shadow-2xl relative overflow-hidden">
                         <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-[#9673F5]/10 rounded-full blur-2xl pointer-events-none" />
                         <div className="w-16 h-16 rounded-2xl bg-[#9673F5]/10 border border-[#9673F5]/20 flex items-center justify-center">
                             <FileText size={32} className="text-[#9673F5]" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-xl font-bold text-white">Submit Assessment?</h3>
-                            <p className="text-xs text-white/50 leading-relaxed">Your answers will be graded and logged to your personal profile summary.</p>
+                            <h3 className="text-xl font-bold text-[var(--foreground)]">Submit Assessment?</h3>
+                            <p className="text-xs text-[var(--foreground-muted)] leading-relaxed">Your answers will be graded and logged to your personal profile summary.</p>
                         </div>
                         <div className="w-full flex gap-3">
-                            <button onClick={() => setShowSubmitModal(false)} className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/5 font-black uppercase tracking-[0.2em] text-[10px] text-white hover:bg-white/10 transition-all">Cancel</button>
+                            <button onClick={() => setShowSubmitModal(false)} className="flex-1 py-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] font-black uppercase tracking-[0.2em] text-[10px] text-[var(--foreground)] hover:bg-[var(--border)] transition-all">Cancel</button>
                             <button onClick={confirmSubmit} className="flex-1 py-4 rounded-2xl bg-[#9673F5] text-white font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[#8663E5] transition-all">Submit</button>
                         </div>
                     </div>

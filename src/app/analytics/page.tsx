@@ -499,7 +499,7 @@ export default function AnalyticsPage() {
                             className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/30 hover:text-[#E5A93C] transition-all mb-6 group"
                         >
                             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-                            <span>Back to Command Center</span>
+                            <span>Back to Study Lounge</span>
                         </Link>
 
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -621,7 +621,7 @@ export default function AnalyticsPage() {
                                                 }}
                                             />
                                             <p className="font-mono text-[10px] uppercase tracking-widest text-white/25 animate-pulse">
-                                                Synthesizing Card...
+                                                Creating Card...
                                             </p>
                                         </div>
                                     )}

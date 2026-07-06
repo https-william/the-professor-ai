@@ -185,12 +185,12 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-[#12121A] border border-white/5 rounded-3xl w-full max-w-4xl shadow-2xl relative flex flex-col md:flex-row overflow-hidden max-h-full"
+                className="bg-[var(--card)] border border-[var(--border)] rounded-3xl w-full max-w-4xl shadow-2xl relative flex flex-col md:flex-row overflow-hidden max-h-full"
             >
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/5 text-white/40 flex items-center justify-center hover:bg-white/10 transition-all"
+                    className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-[var(--border)] text-[var(--foreground-muted)] flex items-center justify-center hover:bg-[var(--border-2)] transition-all"
                 >
                     <X size={18} strokeWidth={1.5} />
                 </button>
@@ -206,20 +206,20 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                 </div>
 
                 {/* Right: Controls */}
-                <div className="w-full md:w-80 p-6 flex flex-col border-l border-white/5 bg-[#0D0D14]">
-                    <h3 className="text-lg font-bold text-white/90 mb-1">Share Achievement</h3>
-                    <p className="text-[11px] text-white/30 mb-6 uppercase tracking-widest font-black">Customize & Export</p>
+                <div className="w-full md:w-80 p-6 flex flex-col border-l border-[var(--border)] bg-[var(--background-secondary)]">
+                    <h3 className="text-lg font-bold text-[var(--foreground)] mb-1">Share Achievement</h3>
+                    <p className="text-[11px] text-[var(--foreground-muted)] mb-6 uppercase tracking-widest font-black">Customize & Export</p>
 
                     <div className="flex-1 overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/20">Aesthetic Templates ({filteredTemplates.length})</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/60">Aesthetic Templates ({filteredTemplates.length})</label>
                         <div className="grid grid-cols-2 gap-2">
                             {filteredTemplates.slice(0, 20).map((t) => (
                                 <button
                                     key={t.id}
                                     onClick={() => setSelectedTemplateId(t.id)}
                                     className={`p-2 rounded-xl border-2 transition-all text-left group ${selectedTemplateId === t.id
-                                        ? "border-[#F59E0B] bg-[#F59E0B]/5"
-                                        : "border-white/5 bg-white/[0.02] hover:border-white/10"
+                                        ? "border-[var(--amber-border)] bg-[var(--amber-dim)]"
+                                        : "border-[var(--border)] bg-[var(--background)]/20 hover:border-[var(--border-2)]"
                                         }`}
                                 >
                                     <div 
@@ -269,17 +269,17 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                                              <Settings size={14} strokeWidth={1.5} style={{ color: t.previewColor }} />}
                                         </div>
                                         {selectedTemplateId === t.id && (
-                                            <div className="absolute inset-0 bg-[#F59E0B]/10 animate-pulse" />
+                                            <div className="absolute inset-0 bg-[var(--amber-dim)] animate-pulse" />
                                         )}
                                     </div>
-                                    <span className={`text-[9px] font-bold block truncate transition-colors ${selectedTemplateId === t.id ? 'text-[#F59E0B]' : 'text-white/30'}`}>
+                                    <span className={`text-[9px] font-bold block truncate transition-colors ${selectedTemplateId === t.id ? 'text-[var(--amber)]' : 'text-[var(--foreground-muted)]'}`}>
                                         {t.label.split(' (')[0]}
                                     </span>
                                 </button>
                             ))}
                         </div>
                         {filteredTemplates.length > 20 && (
-                            <p className="text-[9px] text-white/10 text-center italic">Scroll for more styles...</p>
+                            <p className="text-[9px] text-[var(--foreground-muted)]/40 text-center italic">Scroll for more styles...</p>
                         )}
                     </div>
 
@@ -287,7 +287,7 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                         <Button
                             onClick={handleNativeShare}
                             variant="jelly"
-                            className="w-full h-14 bg-gradient-to-r from-[var(--accent)] to-[var(--secondary)] text-white shadow-[0_8px_20px_var(--accent-glow)]"
+                            className="btn-skeuo-primary w-full h-14 rounded-2xl font-black text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-98 hover:scale-[1.01] duration-300"
                             disabled={isGenerating}
                         >
                             {isGenerating ? (
@@ -304,7 +304,7 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                             <Button
                                 onClick={handleDownloadImage}
                                 variant="jelly-ghost"
-                                className="h-11"
+                                className="btn-skeuo h-11 rounded-xl"
                                 disabled={isGenerating}
                             >
                                 <FileImage className="w-4 h-4 mr-2 opacity-50" />
@@ -313,7 +313,7 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
                             <Button
                                 onClick={handleExportPDF}
                                 variant="jelly-ghost"
-                                className="h-11"
+                                className="btn-skeuo h-11 rounded-xl"
                                 disabled={isExportingPDF}
                             >
                                 {isExportingPDF ? (
@@ -330,7 +330,7 @@ export default function ShareCard({ isOpen, onClose, data }: ShareCardProps) {
 
                     <PrintLayout data={data} />
 
-                    <p className="text-[9px] text-center text-white/20 mt-4 font-medium italic">
+                    <p className="text-[9px] text-center text-[var(--foreground-muted)]/60 mt-4 font-medium italic">
                         The Professor generates high-fidelity exports locally.
                     </p>
                 </div>

@@ -197,7 +197,7 @@ export default function DailyChallenges({ onComplete }: DailyChallengesProps) {
     setIsOpen(false);
     switch(challenge.type) {
       case "generate":
-        router.push("/create");
+        router.push("/dashboard");
         break;
       case "review":
         router.push("/library");

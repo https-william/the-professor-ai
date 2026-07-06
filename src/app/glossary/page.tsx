@@ -9,15 +9,12 @@ import TiltCard from "@/components/ui/TiltCard";
 export default function GlossaryPage() {
   return (
     <div className="min-h-screen bg-[#09090b] text-[var(--foreground-secondary)] pt-32 pb-20 relative overflow-hidden">
-      {/* Background ambient orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[var(--amber)]/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[var(--violet)]/5 blur-[120px] pointer-events-none" />
-
       <div className="max-w-4xl mx-auto px-6 relative z-10">
         <div className="mb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[var(--amber)] text-[10px] font-black uppercase tracking-widest mb-6">
-             <BookOpen className="w-3 h-3" /> Cognitive Toolkit
-          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--amber)] mb-3 flex items-center justify-center gap-2">
+             <BookOpen className="w-3 h-3" />
+             <span>Cognitive Toolkit</span>
+          </p>
           <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight italic uppercase">
             Study Intelligence Glossary
           </h1>

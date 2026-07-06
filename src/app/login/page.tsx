@@ -136,8 +136,8 @@ function LoginForm() {
         // Detect custom Google OAuth warning
         if (error.includes("registered using Google") || error.includes("linked to a Google account")) {
             return (
-                <div className="flex flex-col gap-1.5 p-4 rounded-2xl mb-5 bg-amber-500/5 border border-amber-500/25 text-amber-400 text-xs shadow-[0_4px_12px_rgba(229,169,60,0.03)] text-left animate-shake">
-                    <div className="flex items-center gap-2 font-black uppercase tracking-wider text-[10px] text-amber-500">
+                <div className="flex flex-col gap-1.5 p-4 rounded-2xl mb-5 bg-[var(--amber-dim)] border border-[var(--amber-border)] text-[var(--amber-text)] text-xs shadow-[0_4px_12px_rgba(229,169,60,0.03)] text-left animate-shake">
+                    <div className="flex items-center gap-2 font-black uppercase tracking-wider text-[10px] text-[var(--amber)]">
                         <span>💡</span> Registered via Google
                     </div>
                     <div className="opacity-85 leading-relaxed font-medium">
@@ -150,8 +150,8 @@ function LoginForm() {
         // Detect unconfirmed email warning
         if (error.includes("confirmation link") || error.includes("confirm your email")) {
             return (
-                <div className="flex flex-col gap-1.5 p-4 rounded-2xl mb-5 bg-violet-500/5 border border-violet-500/25 text-violet-300 text-xs shadow-[0_4px_12px_rgba(150,115,245,0.03)] text-left">
-                    <div className="flex items-center gap-2 font-black uppercase tracking-wider text-[10px] text-violet-400">
+                <div role="alert" aria-live="assertive" className="flex flex-col gap-1.5 p-4 rounded-2xl mb-5 bg-[var(--violet-dim)] border border-[var(--violet-border)] text-[var(--violet-text)] text-xs shadow-[0_4px_12px_rgba(150,115,245,0.03)] text-left">
+                    <div className="flex items-center gap-2 font-black uppercase tracking-wider text-[10px] text-[var(--violet)]">
                         <span>✉️</span> Confirm your email
                     </div>
                     <div className="opacity-85 leading-relaxed font-medium">
@@ -160,12 +160,12 @@ function LoginForm() {
                             (If you registered with Google, use the <strong>Continue with Google</strong> button above instead.)
                         </div>
                     </div>
-                    <div className="mt-2 border-t border-violet-500/10 pt-2 flex flex-col gap-1.5">
+                    <div className="mt-2 border-t border-[var(--violet-border)] pt-2 flex flex-col gap-1.5">
                         <button
                             type="button"
                             onClick={handleResendConfirm}
                             disabled={resending}
-                            className="text-left font-black uppercase tracking-widest text-[9px] text-amber-500 hover:text-amber-400 transition-colors flex items-center gap-1 disabled:opacity-50"
+                            className="text-left font-black uppercase tracking-widest text-[9px] text-[var(--amber)] hover:text-[var(--amber)]/80 transition-colors flex items-center gap-1 disabled:opacity-50"
                         >
                             {resending ? "Sending..." : "Resend confirmation link"}
                         </button>
@@ -180,14 +180,14 @@ function LoginForm() {
         // Default incorrect credentials error (cleaner, structured)
         if (error.toLowerCase().includes("match our notes") || error.toLowerCase().includes("invalid login") || error.toLowerCase().includes("invalid credentials")) {
             return (
-                <div className="flex flex-col gap-2 p-4 rounded-2xl mb-5 bg-rose-500/5 border border-rose-500/20 text-rose-300 text-xs shadow-[0_4px_12px_rgba(232,93,117,0.03)] text-left">
-                    <div className="flex items-center gap-2 font-black uppercase tracking-wider text-[10px] text-rose-400">
+                <div role="alert" aria-live="assertive" className="flex flex-col gap-2 p-4 rounded-2xl mb-5 bg-[var(--crimson-dim)] border border-[var(--crimson-border)] text-[var(--crimson-text)] text-xs shadow-[0_4px_12px_rgba(232,93,117,0.03)] text-left">
+                    <div className="flex items-center gap-2 font-black uppercase tracking-wider text-[10px] text-[var(--crimson)]">
                         <span>⚠️</span> Let's check those details
                     </div>
                     <div className="opacity-85 leading-relaxed font-medium">
                         That email or password doesn't match our notes.
                     </div>
-                    <div className="border-t border-rose-500/10 pt-2 mt-1 flex flex-col gap-1 text-[10px] opacity-75 font-semibold">
+                    <div className="border-t border-[var(--crimson-border)] pt-2 mt-1 flex flex-col gap-1 text-[10px] opacity-75 font-semibold">
                         <div>• Typos in the email address or password?</div>
                         <div>• Registered using Google? Try Google sign-in instead.</div>
                         <div>• Newly signed up? Make sure your email link is confirmed.</div>
@@ -198,7 +198,7 @@ function LoginForm() {
 
         // Standard fallback error
         return (
-            <div className="flex items-center gap-2 p-4 rounded-2xl mb-5 bg-rose-500/5 border border-rose-500/20 text-rose-300 text-xs text-left font-bold">
+            <div role="alert" aria-live="assertive" className="flex items-center gap-2 p-4 rounded-2xl mb-5 bg-[var(--crimson-dim)] border border-[var(--crimson-border)] text-[var(--crimson-text)] text-xs text-left font-bold">
                 ⚠️ {error}
             </div>
         );
@@ -255,7 +255,7 @@ function LoginForm() {
                     onClick={handleGoogleLogin}
                     disabled={loading}
                     className={`w-full bg-[var(--background-secondary)] hover:bg-[var(--border)] border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl py-3.5 flex items-center justify-center gap-3 transition-all duration-150 active:scale-98 font-bold text-sm text-[var(--foreground)] ${
-                        googleHighlight ? "animate-shake border-amber-500/50 shadow-[0_0_15px_rgba(229,169,60,0.1)]" : ""
+                        googleHighlight ? "animate-shake border-[var(--amber-border)] shadow-[var(--amber-glow)]" : ""
                     }`}
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24" className="shrink-0">
@@ -294,7 +294,7 @@ function LoginForm() {
                                 }}
                                 required
                                 autoComplete="email"
-                                className="w-full pl-11 pr-5 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
+                                className="w-full pl-11 pr-5 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-[var(--amber)] focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[var(--amber-glow)]"
                             />
                         </div>
                     </div>
@@ -304,7 +304,7 @@ function LoginForm() {
                             <label htmlFor="login-pass" className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]/80">Password</label>
                             <Link 
                                 href="/forgot-password" 
-                                className="text-[10px] font-black uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors"
+                                className="text-[10px] font-black uppercase tracking-widest text-[var(--amber)]/80 hover:text-[var(--amber)] transition-colors"
                             >
                                 Forgot password?
                             </Link>
@@ -322,7 +322,7 @@ function LoginForm() {
                                 }}
                                 required
                                 autoComplete="current-password"
-                                className="w-full pl-11 pr-12 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-amber-500/50 focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[0_0_15px_rgba(229,169,60,0.15)]"
+                                className="w-full pl-11 pr-12 py-3.5 font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]/40 bg-[var(--border)]/15 hover:bg-[var(--border)]/30 border border-[var(--border-2)] hover:border-[var(--border-3)] rounded-2xl transition-all duration-300 focus:border-[var(--amber)] focus:bg-[var(--border)]/50 focus:scale-[1.01] focus:shadow-[var(--amber-glow)]"
                             />
                             <button
                                 type="button"
@@ -337,7 +337,7 @@ function LoginForm() {
                     <button 
                         type="submit" 
                         disabled={loading} 
-                        className="w-full h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-neutral-900 border border-amber-500/30 hover:shadow-[0_8px_30px_rgba(229,169,60,0.3)] shadow-[0_4px_15px_rgba(229,169,60,0.15)] rounded-2xl font-black text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-98 hover:scale-[1.01] duration-300 mt-4"
+                        className="btn-skeuo-primary w-full h-14 rounded-2xl font-black text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all active:scale-98 hover:scale-[1.01] duration-300 mt-4"
                     >
                         {loading ? (
                             <div className="flex items-center gap-2">
@@ -352,7 +352,7 @@ function LoginForm() {
                     New to The Professor?{" "}
                     <Link 
                         href={`/signup${nextUrl && nextUrl !== "/dashboard" ? `?next=${encodeURIComponent(nextUrl)}` : ""}`} 
-                        className="text-amber-500 font-bold hover:underline transition-all"
+                        className="text-[var(--amber)] font-bold hover:underline transition-all"
                     >
                         Create a free account
                     </Link>
@@ -371,8 +371,8 @@ function LoginForm() {
 export default function LoginPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+            <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-[var(--amber-border)] border-t-[var(--amber)] rounded-full animate-spin" />
             </div>
         }>
             <LoginForm />

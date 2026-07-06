@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {error && (
-          <div className="p-4 rounded-2xl mb-5 bg-rose-500/5 border border-rose-500/20 text-rose-300 text-xs text-left font-bold shadow-[0_4px_12px_rgba(232,93,117,0.03)] leading-relaxed">
+          <div role="alert" aria-live="assertive" className="p-4 rounded-2xl mb-5 bg-rose-500/5 border border-rose-500/20 text-rose-300 text-xs text-left font-bold shadow-[0_4px_12px_rgba(232,93,117,0.03)] leading-relaxed">
             ⚠️ {error}
           </div>
         )}

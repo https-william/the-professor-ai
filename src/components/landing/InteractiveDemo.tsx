@@ -24,7 +24,7 @@ function StudyGuidePanel() {
         <div className="bg-[var(--bg-2)] border border-[var(--border)] rounded-[20px] p-6 relative overflow-hidden h-full flex flex-col justify-between">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-3.5 h-3.5 rounded bg-blue-500 shadow-[0_0_8px_rgba(74,124,245,0.3)]" />
-            <span className="font-sans text-xs font-bold text-[var(--foreground)] truncate">ECO 201 — Lecture Notes.pdf</span>
+            <span className="font-sans text-xs font-bold text-[var(--foreground)] truncate">ECO 201: Lecture Notes.pdf</span>
           </div>
           
           {/* Stylized scanned notes text paragraphs */}
@@ -60,7 +60,7 @@ function StudyGuidePanel() {
           </div>
           
           <div>
-            <div className="font-heading text-base font-black text-[var(--foreground)]">Macroeconomics — ECO 201</div>
+            <div className="font-heading text-base font-black text-[var(--foreground)]">Macroeconomics: ECO 201</div>
             <div className="font-sans text-xs text-[var(--foreground-muted)] mb-4 font-bold">Chapter 3: Aggregate Demand & Supply</div>
             <div className="h-[1px] bg-[var(--border)] mb-4" />
             
@@ -91,9 +91,9 @@ function StudyGuidePanel() {
 /* ─── Summary Panel ─── */
 function SummaryPanel() {
   const paras = [
-    "Aggregate demand (AD) represents the total spending in an economy: household consumption (C), business investment (I), government spending (G), and net exports (X minus M). When AD increases, firms respond by raising output — but only up to the economy's full employment level.",
-    "The multiplier effect means a small injection of spending has an outsized impact on national income. If the Marginal Propensity to Consume (MPC) is 0.8, the multiplier is 5 — meaning every ₦1 of new investment creates ₦5 of income. This is why government spending is a powerful macroeconomic lever.",
-    "Demand-pull inflation occurs when aggregate demand grows faster than productive capacity. Cost-push inflation occurs when supply-side costs rise — typically through oil prices or wage increases. Knowing which type is driving inflation determines the correct policy response.",
+    "Aggregate demand (AD) represents the total spending in an economy: household consumption (C), business investment (I), government spending (G), and net exports (X minus M). When AD increases, firms respond by raising output, but only up to the economy's full employment level.",
+    "The multiplier effect means a small injection of spending has an outsized impact on national income. If the Marginal Propensity to Consume (MPC) is 0.8, the multiplier is 5, meaning every ₦1 of new investment creates ₦5 of income. This is why government spending is a powerful macroeconomic lever.",
+    "Demand-pull inflation occurs when aggregate demand grows faster than productive capacity. Cost-push inflation occurs when supply-side costs rise, typically through oil prices or wage increases. Knowing which type is driving inflation determines the correct policy response.",
   ];
 
   return (
@@ -127,7 +127,7 @@ function QuizPanel() {
     <div className="max-w-xl mx-auto flex flex-col gap-6 animate-fade-in">
       <div className="text-center">
         <p className="font-sans text-[10px] font-extrabold tracking-wider text-blue-400 uppercase mb-1">Test Yourself</p>
-        <p className="font-sans text-xs text-[var(--foreground-muted)] font-bold">Question 2 — Macroeconomics</p>
+        <p className="font-sans text-xs text-[var(--foreground-muted)] font-bold">Question 2: Macroeconomics</p>
       </div>
 
       {/* Progress Bar */}
@@ -259,10 +259,6 @@ export default function InteractiveDemo() {
 
         {/* Tab Content Display Container */}
         <div className="relative overflow-hidden border border-[var(--border)] rounded-[32px] bg-gradient-to-br from-[var(--bg-2)] to-[var(--bg)] p-6 md:p-10 lg:p-12 min-h-[420px] flex flex-col justify-center">
-          
-          {/* Subtle Ambient Radial Glow */}
-          <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-500/5 filter blur-[100px] pointer-events-none rounded-full" />
-          
           <div key={activeTab} className="relative z-10 w-full">
             {activeTab === "Study Guide" && <StudyGuidePanel />}
             {activeTab === "Summary" && <SummaryPanel />}

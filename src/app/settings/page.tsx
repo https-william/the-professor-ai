@@ -179,10 +179,10 @@ export default function SettingsPage() {
                 <StandardContainer narrow>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
                         <div className="space-y-4">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.02] border border-white/5 shadow-inner">
-                                <Sparkles size={11} className="text-[var(--accent)]" />
-                                <p className="text-[9px] font-black tracking-[0.2em] uppercase text-white/40">The Study Lab</p>
-                            </div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)] mb-2 flex items-center gap-2">
+                                <Sparkles size={12} className="text-[var(--accent)]" />
+                                <span>The Study Lab</span>
+                            </p>
                             <h1 className="font-heading text-4xl md:text-5xl font-black tracking-tight italic uppercase">Your Preferences</h1>
                             <p className="text-white/50 max-w-sm text-xs leading-relaxed font-sans">
                                 Make yourself at home. Let's get your study space exactly how you like it.
@@ -585,6 +585,26 @@ export default function SettingsPage() {
                                             <div className={cn(
                                                 "absolute top-0.5 w-3 h-3 rounded-full transition-all shadow-sm",
                                                 preferences?.zen_focus_mode ? "left-5 bg-black" : "left-0.5 bg-white/30"
+                                            )} />
+                                        </button>
+                                    </div>
+
+                                    {/* Late Night Guard */}
+                                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.01] border border-white/5">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-wider font-mono">Late Night Guard</p>
+                                            <p className="text-[9px] text-white/40 font-mono">Soft glare & rest reminders (10pm-6am)</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => updatePreferenceSetting('late_night_guard', !(preferences as any)?.late_night_guard)}
+                                            className={cn(
+                                                "w-9 h-4.5 rounded-full transition-all relative border cursor-pointer",
+                                                (preferences as any)?.late_night_guard ? "bg-[#2BB288] border-transparent" : "bg-white/[0.05] border-white/10"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "absolute top-0.5 w-3 h-3 rounded-full transition-all shadow-sm",
+                                                (preferences as any)?.late_night_guard ? "left-5 bg-black" : "left-0.5 bg-white/30"
                                             )} />
                                         </button>
                                     </div>

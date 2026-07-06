@@ -39,18 +39,18 @@ function PlayContent() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-white">
-                <Loader2 className="animate-spin text-white w-10 h-10 mb-4" />
-                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Loading Pit...</p>
+            <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center text-[var(--foreground)]">
+                <Loader2 className="animate-spin text-[var(--blue)] w-10 h-10 mb-4" />
+                <p className="text-xs font-bold uppercase tracking-widest text-[var(--foreground-muted)]">Entering Study Duel...</p>
             </div>
         );
     }
 
     if (error || !duel) {
         return (
-            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-white p-4">
-                <p className="text-sm font-bold text-red-400 mb-4 uppercase tracking-widest">{error || "Duel not found"}</p>
-                <a href="/arena" className="px-4 py-2 border border-white/10 rounded-lg text-xs font-black uppercase text-zinc-400 hover:text-white transition-colors">
+            <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center text-[var(--foreground)] p-4">
+                <p className="text-sm font-bold text-red-500 mb-4 uppercase tracking-widest">{error || "Duel not found"}</p>
+                <a href="/arena" className="px-5 py-2.5 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-xs font-black uppercase text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all shadow-sm">
                     Back to Arena
                 </a>
             </div>
@@ -74,9 +74,9 @@ function PlayContent() {
 export default function ArenaPlayPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-white">
-                <Loader2 className="animate-spin text-white w-10 h-10 mb-4" />
-                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Loading Pit...</p>
+            <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center text-[var(--foreground)]">
+                <Loader2 className="animate-spin text-[var(--blue)] w-10 h-10 mb-4" />
+                <p className="text-xs font-bold uppercase tracking-widest text-[var(--foreground-muted)]">Entering Study Duel...</p>
             </div>
         }>
             <PlayContent />

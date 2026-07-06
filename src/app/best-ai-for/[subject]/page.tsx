@@ -139,9 +139,10 @@ export default async function SubjectSEOPage({ params }: { params: Promise<{ sub
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] pt-24 pb-20">
       <div className="max-w-4xl mx-auto px-6">
         <header className="mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-bg)] border border-[var(--accent-glow)] text-[var(--accent)] text-[10px] font-black uppercase tracking-widest mb-6">
-             <Trophy className="w-3 h-3" /> Subject Authority
-          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--accent)] mb-3 flex items-center gap-2">
+             <Trophy className="w-3 h-3" />
+             <span>Subject Authority</span>
+          </p>
           <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight text-[var(--foreground)]">
              Best AI for {data.name} Students (2026)
           </h1>

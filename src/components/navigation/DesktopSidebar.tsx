@@ -90,23 +90,23 @@ export default function DesktopSidebar() {
                             <LayoutDashboard size={20} strokeWidth={pathname === "/dashboard" ? 2.5 : 2} />
                         </div>
                         <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
-                            Dashboard
+                            Study Lounge
                         </span>
                     </Link>
 
                     <Link
-                        href="/create"
+                        href="/review"
                         className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/item border ${
-                            pathname === "/create"
+                            pathname === "/review"
                             ? "bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-md"
                             : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--bg-3)]/20 hover:bg-[var(--foreground)]/[0.04] border-[var(--border)]"
                         }`}
                     >
-                        <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname === "/create" ? "scale-110" : "group-hover/item:scale-110"}`}>
-                            <PlusCircle size={20} strokeWidth={pathname === "/create" ? 2.5 : 2} />
+                        <div className={`shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 ${pathname === "/review" ? "scale-110" : "group-hover/item:scale-110"}`}>
+                            <History size={20} strokeWidth={pathname === "/review" ? 2.5 : 2} />
                         </div>
                         <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
-                            Create Studio
+                            Daily Recall
                         </span>
                     </Link>
 
@@ -138,7 +138,7 @@ export default function DesktopSidebar() {
                             <Library size={20} strokeWidth={pathname === "/library" ? 2.5 : 2} />
                         </div>
                         <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
-                            Library
+                            My Library
                         </span>
                     </Link>
 
@@ -154,7 +154,7 @@ export default function DesktopSidebar() {
                             <Swords size={20} strokeWidth={pathname.startsWith("/arena") ? 2.5 : 2} />
                         </div>
                         <span className={`font-sans font-black text-sm tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>
-                            Arena
+                            Focus Lobbies
                         </span>
                     </Link>
                 </nav>

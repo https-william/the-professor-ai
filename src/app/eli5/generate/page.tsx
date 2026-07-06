@@ -23,7 +23,7 @@ export default function Eli5Generate() {
             if (hasStarted.current) return;
             const paramsStr = sessionStorage.getItem("generateParams");
             if (!paramsStr) {
-                router.push("/create");
+                router.push("/dashboard");
                 return;
             }
             hasStarted.current = true;
@@ -88,7 +88,7 @@ export default function Eli5Generate() {
                     The Professor couldn't find a simple enough analogy for this material. Try a shorter excerpt.
                 </p>
                 <button 
-                    onClick={() => router.push("/create")}
+                    onClick={() => router.push("/dashboard")}
                     className="w-full max-w-xs py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-widest"
                 >
                     Return to Studio
@@ -110,14 +110,14 @@ export default function Eli5Generate() {
                         Finding a brilliant analogy...
                     </p>
                     <p className="text-[10px] font-mono font-black text-[var(--blue)] opacity-80">
-                        Synthesizing...
+                        Making it simple...
                     </p>
                 </div>
             </div>
 
             <EndowmentModal 
                 isOpen={isEndowmentOpen} 
-                onClose={() => router.push("/create")}
+                onClose={() => router.push("/dashboard")}
                 currentCredits={user?.credits || 0}
                 requiredCredits={1}
             />

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { useIngestStore } from "@/store/useIngestStore";
@@ -49,7 +49,7 @@ const loadingPhrases = [
     "Reviewing notes & parsing tables...",
     "Translating academic jargon into plain English...",
     "Connecting the dots across chapters...",
-    "Distilling high-yield survival concepts...",
+    "Pulling out the most important concepts...",
     "Almost there. Polishing the wisdom..."
 ];
 
@@ -148,7 +148,7 @@ function getGreeting(userId?: string): string {
         "No notifications. Just core concepts",
         "Make late night hours count",
         "Quick sprint. Clear the deck",
-        "Bed calling. Just one review",
+        "Quiet hours. Smart review",
         "Burning late hours. High marks",
         "Late night clarity. Lock in",
         "Stars out. Study guide out",
@@ -181,7 +181,7 @@ function getGreeting(userId?: string): string {
     return night[idx];
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
     const router = useRouter();
     const { user, refreshUser, recoverStreak, spendCredits } = useUser();
     const { addToast } = useToasts();
@@ -230,6 +230,18 @@ export default function DashboardPage() {
         }
         setActiveTab('text');
     };
+
+    const searchParams = useSearchParams();
+
+    // Check for Day 1 starter kit parameter from Library / Empty states
+    useEffect(() => {
+        const starter = searchParams?.get("starter");
+        if (starter === "bio") {
+            loadDemo("mitosis");
+        } else if (starter === "contract") {
+            loadDemo("contract");
+        }
+    }, [searchParams]);
 
     // Trickle progress animation for file queue
     useEffect(() => {
@@ -706,7 +718,7 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="relative w-full text-[var(--text)]">
+        <div className="relative w-full text-[var(--text)] pt-[96px] md:pt-[104px]">
             {/* Hidden file input for web, fully controlled by fileInputRef */}
             <input 
                 ref={fileInputRef}
@@ -751,5 +763,13 @@ export default function DashboardPage() {
 
             <LateNightGuard />
         </div>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<DashboardSkeleton />}>
+            <DashboardContent />
+        </Suspense>
     );
 }

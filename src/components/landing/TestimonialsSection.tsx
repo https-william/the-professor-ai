@@ -10,7 +10,7 @@ const TESTIMONIALS = [
     initials: "AO",
   },
   {
-    quote: "The quiz exposed everything I thought I knew but actually didn't. That moment of failing your own notes before the real exam — that's the feature. Everything else is a bonus.",
+    quote: "The quiz exposed everything I thought I knew but actually didn't. That moment of failing your own notes before the real exam: that's the feature. Everything else is a bonus.",
     name: "Tomiwa A.",
     detail: "200L · Economics · Covenant University",
     initials: "TA",

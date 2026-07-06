@@ -71,15 +71,12 @@ const THEMES = {
 export default function ExamsClient() {
   return (
     <div className="min-h-screen bg-[#09090b] text-[var(--foreground)] pt-32 pb-20 relative overflow-hidden">
-      {/* Background ambient orbs */}
-      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-[var(--violet)]/5 blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[var(--amber)]/5 blur-[140px] pointer-events-none" />
-
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         <header className="mb-20 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[var(--amber)] text-[10px] font-black uppercase tracking-widest mb-6">
-             <Trophy className="w-3 h-3" /> National & International
-          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--amber)] mb-3 flex items-center justify-center gap-2">
+             <Trophy className="w-3 h-3" />
+             <span>National & International</span>
+          </p>
           <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight italic uppercase">
             The 2026 <br/> Exam Vault
           </h1>

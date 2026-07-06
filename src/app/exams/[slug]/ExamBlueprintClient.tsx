@@ -129,16 +129,13 @@ export default function ExamBlueprintClient({ slug, data }: ExamBlueprintClientP
         <StandardContainer narrow>
           {/* Hero */}
           <div className="text-center mb-20">
-            <div 
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-8 border"
-              style={{ 
-                color: theme.color, 
-                backgroundColor: theme.accentBg, 
-                borderColor: theme.accentBorder 
-              }}
+            <p 
+              className="text-[10px] font-black uppercase tracking-[0.25em] mb-4 flex items-center justify-center gap-2"
+              style={{ color: theme.color }}
             >
-               <Trophy className="w-3 h-3" /> 2026 Exam Pillar
-            </div>
+               <Trophy className="w-3 h-3" />
+               <span>2026 Exam Pillar</span>
+            </p>
             <h1 className="text-5xl sm:text-7xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
                The {data.name} <br/> 
                <span style={{ color: theme.color }}>Weapon.</span>

@@ -25,7 +25,7 @@ export default function SummaryGenerate() {
             const isSprint = sessionStorage.getItem("isExamSprint") === "true";
             
             if (!paramsStr) {
-                router.push("/create");
+                router.push("/dashboard");
                 return;
             }
             hasStarted.current = true;
@@ -113,7 +113,7 @@ export default function SummaryGenerate() {
                         Try Refreshing
                     </button>
                     <button 
-                        onClick={() => router.push("/create")}
+                        onClick={() => router.push("/dashboard")}
                         className="w-full py-4 rounded-2xl bg-white/5 text-white/40 font-black text-xs uppercase tracking-widest border border-white/10"
                     >
                         Return to Studio
@@ -150,7 +150,7 @@ export default function SummaryGenerate() {
 
             <EndowmentModal 
                 isOpen={isEndowmentOpen} 
-                onClose={() => router.push("/create")}
+                onClose={() => router.push("/dashboard")}
                 currentCredits={user?.credits || 0}
                 requiredCredits={2}
             />

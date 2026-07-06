@@ -64,7 +64,7 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center font-sans bg-[var(--text)]/[0.02] rounded-[32px] border border-dashed border-[var(--border)]">
                 <GraduationCap size={32} strokeWidth={1} className="text-[var(--text-3)]/30 mb-4" />
                 <p className="text-[11px] font-black text-[var(--text-3)] uppercase tracking-widest">No Recent Archives</p>
-                <Link href="/create" className="mt-4 text-[10px] font-black text-[var(--blue)] hover:underline tracking-tighter italic">
+                <Link href="/dashboard" className="mt-4 text-[10px] font-black text-[var(--blue)] hover:underline tracking-tighter italic">
                     BEGIN SCHOLARLY JOURNEY →
                 </Link>
             </div>

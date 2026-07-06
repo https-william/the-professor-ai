@@ -294,7 +294,7 @@ function ReviewCardFace({
                         <div className="absolute bottom-7 flex flex-col items-center gap-2">
                             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/15 flex items-center gap-2">
                                 <Hand size={12} strokeWidth={1.5} />
-                                Tap to reveal
+                                Tap or press SPACE to reveal
                             </span>
                         </div>
                         {isHolo && (
@@ -457,12 +457,12 @@ function ReviewContent() {
         setIsShuffled(true);
     };
 
-    const handleFlip = () => {
+    const handleFlip = useCallback(() => {
         if (!isFlipped) playFlip();
-        setIsFlipped(!isFlipped);
-    };
+        setIsFlipped(prev => !prev);
+    }, [isFlipped, playFlip]);
 
-    const handleRate = async (rating: 1 | 2 | 3 | 4) => {
+    const handleRate = useCallback(async (rating: 1 | 2 | 3 | 4) => {
         if (ratingSubmitting || !allCards[currentIndex]) return;
         setRatingSubmitting(true);
         playRating(rating);
@@ -512,7 +512,28 @@ function ReviewContent() {
         } else {
             setTimeout(() => setCurrentIndex(prev => prev + 1), 300);
         }
-    };
+    }, [ratingSubmitting, allCards, currentIndex, playRating, user.streak, refreshUser]);
+
+    // ── Keyboard Hotkeys (Zen Mode) ──
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            if (sessionComplete || !allCards[currentIndex]) return;
+
+            if (e.key === " " || e.key === "Enter") {
+                e.preventDefault();
+                handleFlip();
+            } else if (isFlipped && !ratingSubmitting) {
+                if (e.key === "1") handleRate(1);
+                else if (e.key === "2") handleRate(2);
+                else if (e.key === "3") handleRate(3);
+                else if (e.key === "4") handleRate(4);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isFlipped, ratingSubmitting, currentIndex, allCards, sessionComplete, handleFlip, handleRate]);
 
     const handleEli5 = async (e: React.MouseEvent, text: string, idx: number) => {
         e.stopPropagation();
@@ -621,7 +642,7 @@ function ReviewContent() {
 
                     <div className="flex flex-col gap-3">
                         <button
-                            onClick={() => router.push("/create")}
+                            onClick={() => router.push("/dashboard")}
                             className="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.97]"
                             style={{
                                 background: "linear-gradient(135deg, #E5A93C, #D97706)",
@@ -775,7 +796,10 @@ function ReviewContent() {
                                             background: `${color}18`,
                                         }}
                                     >
-                                        <span className="text-[13px] font-bold" style={{ color }}>{label}</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[13px] font-bold" style={{ color }}>{label}</span>
+                                            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-white/30 border border-white/10">[{rating}]</span>
+                                        </div>
                                         <span className="text-[9px] font-bold text-white/20">{sub}</span>
                                     </motion.button>
                                 ))}
@@ -786,8 +810,10 @@ function ReviewContent() {
 
                 {/* Flip hint when not flipped */}
                 {!isFlipped && currentCard && !sessionComplete && (
-                    <div className="mt-6 text-[9px] font-bold text-white/12 uppercase tracking-[0.3em]">
-                        Tap the card to reveal the answer
+                    <div className="mt-6 text-[9px] font-bold text-white/12 uppercase tracking-[0.3em] flex items-center gap-2">
+                        <span>Tap the card or press</span>
+                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/30 font-mono">SPACE</span>
+                        <span>to reveal answer</span>
                     </div>
                 )}
             </div>

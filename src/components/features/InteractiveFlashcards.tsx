@@ -98,6 +98,7 @@ export const InteractiveFlashcards = ({
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [eli5Text, setEli5Text] = useState<Record<string, string>>({});
   const [isGeneratingEli5, setIsGeneratingEli5] = useState(false);
+  const [xpPopup, setXpPopup] = useState<{ id: number; text: string } | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -322,6 +323,8 @@ export const InteractiveFlashcards = ({
     await submitSRSReview(activeCard.stableId, quality);
 
     if (isCorrect) {
+      setXpPopup({ id: Date.now(), text: "+10 XP" });
+      setTimeout(() => setXpPopup(null), 1500);
       setMasteredSet(prev => {
         const next = new Set(prev);
         next.add(currentCardIndex);
@@ -496,7 +499,7 @@ export const InteractiveFlashcards = ({
     position: "relative",
     width: "100%",
     height: "100%",
-    transition: cardState === 'EVALUATED' ? "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)" : "transform 0.1s ease-out",
+    transition: cardState === 'EVALUATED' ? "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" : "transform 0.08s ease-out",
     transformStyle: "preserve-3d",
     transform: `${cardState === 'IDLE' ? `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` : `rotateX(${rotateX}deg) rotateY(${180 + rotateY}deg)`}`,
   };
@@ -603,11 +606,27 @@ export const InteractiveFlashcards = ({
 
       {/* 3D Stack Card Area */}
       <div className="relative w-full max-w-[400px] md:max-w-[620px] h-[340px] md:h-[400px] [perspective:1000px]">
+        {/* Floating +10 XP Animation */}
+        <AnimatePresence>
+          {xpPopup && (
+            <motion.div
+              key={xpPopup.id}
+              initial={{ opacity: 0, y: 10, scale: 0.8 }}
+              animate={{ opacity: 1, y: -45, scale: 1.1 }}
+              exit={{ opacity: 0, y: -70, scale: 0.8 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              className="absolute z-50 pointer-events-none left-1/2 -translate-x-1/2 top-6 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--amber)] text-[var(--background)] font-black font-mono text-xs shadow-[0_0_25px_rgba(245,158,11,0.6)] border border-[var(--amber)]"
+            >
+              <Sparkles size={14} className="fill-current animate-spin" />
+              <span>{xpPopup.text}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {/* Background stack card 2 */}
         {cardQueue.length - queuePointer > 2 && (
           <div 
-            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-950/40 pointer-events-none transition-all duration-300"
+            className="absolute inset-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/40 pointer-events-none transition-all duration-300"
             style={{
               transform: "translateY(16px) scale(0.94)",
               zIndex: -2,
@@ -619,7 +638,7 @@ export const InteractiveFlashcards = ({
         {/* Background stack card 1 */}
         {cardQueue.length - queuePointer > 1 && (
           <div 
-            className="absolute inset-0 rounded-[28px] border border-white/5 bg-zinc-900/50 pointer-events-none transition-all duration-300"
+            className="absolute inset-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/60 pointer-events-none transition-all duration-300"
             style={{
               transform: "translateY(8px) scale(0.97)",
               zIndex: -1,
@@ -662,42 +681,47 @@ export const InteractiveFlashcards = ({
               <div style={cardFrontStyle}>
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
 
-                {/* Left Top SVG countdown indicator */}
-                <div className="absolute top-5 left-5 flex items-center justify-center">
-                  <svg className="w-7 h-7 transform -rotate-90">
-                    <circle cx="14" cy="14" r="11" stroke="rgba(255,255,255,0.05)" strokeWidth="2" fill="transparent" />
-                    <circle 
-                      cx="14" 
-                      cy="14" 
-                      r="11" 
-                      stroke="var(--amber)" 
-                      strokeWidth="2" 
-                      fill="transparent" 
-                      strokeDasharray={2 * Math.PI * 11}
-                      strokeDashoffset={(2 * Math.PI * 11) * (1 - Math.min(secondsElapsed, 30) / 30)}
-                      className="transition-all duration-1000"
-                    />
-                  </svg>
-                  <span className="absolute text-[8px] font-mono text-[var(--foreground-muted)]">{secondsElapsed}</span>
+                {/* Structured Flexbox Header Bar */}
+                <div className="w-full flex items-center justify-between px-5 pt-5 pb-1 relative z-10 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex items-center justify-center">
+                      <svg className="w-7 h-7 transform -rotate-90">
+                        <circle cx="14" cy="14" r="11" stroke="var(--border)" strokeWidth="2" fill="transparent" />
+                        <circle 
+                          cx="14" 
+                          cy="14" 
+                          r="11" 
+                          stroke="var(--amber)" 
+                          strokeWidth="2" 
+                          fill="transparent" 
+                          strokeDasharray={2 * Math.PI * 11}
+                          strokeDashoffset={(2 * Math.PI * 11) * (1 - Math.min(secondsElapsed, 30) / 30)}
+                          className="transition-all duration-1000"
+                        />
+                      </svg>
+                      <span className="absolute text-[8px] font-mono font-bold text-[var(--foreground-muted)]">{secondsElapsed}</span>
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Active Recall</span>
+                  </div>
+
+                  <button 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePlayTTS(cardFrontText);
+                    }}
+                    className={`p-1.5 rounded-lg border transition-all ${
+                      isPlayingTTS 
+                        ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                        : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                    }`}
+                    title="Read Aloud"
+                  >
+                    <Volume2 size={13} />
+                  </button>
                 </div>
 
-                {/* TTS Reader button */}
-                <button 
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePlayTTS(cardFrontText);
-                  }}
-                  className={`absolute top-5 right-5 p-1.5 rounded-lg border transition-all ${
-                    isPlayingTTS 
-                      ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                      : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-                  }`}
-                >
-                  <Volume2 size={13} />
-                </button>
-
-                <p className={`text-lg md:text-xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-6 ${
+                <p className={`text-lg md:text-xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-4 ${
                   isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-xl' : 'font-serif'
                 }`}>
                   {cardFrontText}
@@ -802,7 +826,7 @@ export const InteractiveFlashcards = ({
             {/* Again */}
             <button 
               onClick={() => handleRate(1)}
-              className="flex flex-col h-14 rounded-xl border border-red-500/20 bg-red-950/20 text-red-400 hover:bg-red-950/30 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+              className="flex flex-col h-14 rounded-xl border-2 border-[var(--crimson)]/40 bg-[var(--crimson)]/10 text-[var(--crimson)] hover:bg-[var(--crimson)]/20 hover:border-[var(--crimson)] hover:shadow-[0_0_20px_rgba(239,68,68,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
             >
               <X size={12} className="mb-0.5" />
               <span className="text-[8px] font-black uppercase tracking-wider">Again</span>
@@ -812,7 +836,7 @@ export const InteractiveFlashcards = ({
             {/* Hard */}
             <button 
               onClick={() => handleRate(2)}
-              className="flex flex-col h-14 rounded-xl border border-[var(--amber-border)] bg-[var(--amber-dim)]/15 text-[var(--amber)] hover:bg-[var(--amber-dim)]/25 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+              className="flex flex-col h-14 rounded-xl border-2 border-[var(--amber)]/40 bg-[var(--amber)]/10 text-[var(--amber)] hover:bg-[var(--amber)]/20 hover:border-[var(--amber)] hover:shadow-[0_0_20px_rgba(245,158,11,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
             >
               <HelpCircle size={12} className="mb-0.5" />
               <span className="text-[8px] font-black uppercase tracking-wider">Hard</span>
@@ -822,7 +846,7 @@ export const InteractiveFlashcards = ({
             {/* Good */}
             <button 
               onClick={() => handleRate(4)}
-              className="flex flex-col h-14 rounded-xl border border-[var(--violet-border)] bg-[var(--violet-dim)]/15 text-[var(--violet)] hover:bg-[var(--violet-dim)]/25 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+              className="flex flex-col h-14 rounded-xl border-2 border-[var(--blue)]/40 bg-[var(--blue)]/10 text-[var(--blue)] hover:bg-[var(--blue)]/20 hover:border-[var(--blue)] hover:shadow-[0_0_20px_rgba(74,124,245,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
             >
               <Check size={12} className="mb-0.5" />
               <span className="text-[8px] font-black uppercase tracking-wider">Good</span>
@@ -832,7 +856,7 @@ export const InteractiveFlashcards = ({
             {/* Easy */}
             <button 
               onClick={() => handleRate(5)}
-              className="flex flex-col h-14 rounded-xl border border-[var(--emerald-border)] bg-[var(--emerald-dim)]/15 text-[var(--emerald)] hover:bg-[var(--emerald-dim)]/25 transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
+              className="flex flex-col h-14 rounded-xl border-2 border-[var(--emerald)]/40 bg-[var(--emerald)]/10 text-[var(--emerald)] hover:bg-[var(--emerald)]/20 hover:border-[var(--emerald)] hover:shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
             >
               <Sparkles size={12} className="mb-0.5" />
               <span className="text-[8px] font-black uppercase tracking-wider">Easy</span>

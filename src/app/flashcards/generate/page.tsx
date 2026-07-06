@@ -19,7 +19,7 @@ export default function FlashcardsGenerate() {
             if (hasStarted.current) return;
             const paramsStr = sessionStorage.getItem("generateParams");
             if (!paramsStr) {
-                router.push("/create");
+                router.push("/dashboard");
                 return;
             }
             hasStarted.current = true;
@@ -71,7 +71,7 @@ export default function FlashcardsGenerate() {
 
             } catch (err: any) {
                 addToast(err.message, "error");
-                router.push("/create");
+                router.push("/dashboard");
             }
         };
 
@@ -82,12 +82,12 @@ export default function FlashcardsGenerate() {
         <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-6">
             <DataDustLoader />
             <p className="mt-8 text-[11px] font-black uppercase tracking-[0.4em] text-[var(--foreground-muted)] opacity-50 animate-pulse">
-                The Professor is synthesizing your intelligence...
+                The Professor is putting your study session together...
             </p>
 
             <EndowmentModal 
                 isOpen={isEndowmentOpen} 
-                onClose={() => router.push("/create")}
+                onClose={() => router.push("/dashboard")}
                 currentCredits={user?.credits || 0}
                 requiredCredits={1}
             />

@@ -40,9 +40,10 @@ export default function PillarPage() {
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground-secondary)] pt-24 pb-20">
       <div className="max-w-5xl mx-auto px-6">
         <div className="mb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-bg)]/20 border border-[var(--accent-glow)] text-[var(--accent)] text-[10px] font-black uppercase tracking-widest mb-6">
-             <Trophy className="w-3 h-3" /> 2026 Definitive Guide
-          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--accent)] mb-3 flex items-center justify-center gap-2">
+             <Trophy className="w-3 h-3" />
+             <span>2026 Definitive Guide</span>
+          </p>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
              Best AI Tools for Students (2026): The Elite Stack
           </h1>
