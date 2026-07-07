@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, Brain, Sparkles, Flame, CheckCircle2, ShieldCheck, Zap, Layers, BookOpen } from "lucide-react";
+import { ArrowRight, Brain, Sparkles, Flame, CheckCircle2, Zap } from "lucide-react";
 import Link from "next/link";
 
 export default function HeroSection() {
@@ -26,9 +26,9 @@ export default function HeroSection() {
             Just the <span className="text-[var(--blue)] drop-shadow-[0_0_30px_rgba(74,124,245,0.35)]">good parts.</span>
           </h1>
 
-          {/* Subtitle */}
+          {/* Subtitle — Short, punchy, witty, brand voice */}
           <p className="font-sans text-base sm:text-lg md:text-xl font-medium text-[var(--foreground-secondary)] opacity-90 max-w-xl leading-relaxed mb-10">
-            Uni is a lot, we get it. Drop your lectures, PDFs, or raw notes here and we&apos;ll transform them into structured study guides, active recall decks, and practice exams—so you can actually enjoy your day and get your sleep back.
+            Upload your lectures, PDFs, or messy slides. We&apos;ll turn them into clean study guides, flashcards, and quizzes in seconds. Less time staring at screens, more time to ignore your group chat.
           </p>
 
           {/* Skeuomorphic 3D Tactile CTA Group */}
@@ -63,66 +63,49 @@ export default function HeroSection() {
 
         </div>
 
-        {/* Right Column — The Scholar's Creed / Academic Architecture (Col-Span 5) */}
-        <div className="lg:col-span-5 w-full flex flex-col gap-6 relative">
+        {/* Right Column — Tactile Active Recall Card (Col-Span 5) */}
+        <div className="lg:col-span-5 w-full flex items-center justify-center relative">
           
-          {/* Editorial Principles Panel */}
-          <div className="p-8 md:p-10 rounded-[32px] bg-[var(--bg-2)]/90 border border-[var(--border)] shadow-[0_30px_70px_rgba(0,0,0,0.35)] flex flex-col gap-8 relative overflow-hidden">
+          <div className="w-full max-w-[380px] p-6 md:p-8 rounded-[32px] bg-[var(--bg-2)]/90 border border-[var(--border)] shadow-[0_30px_70px_rgba(0,0,0,0.35)] flex flex-col justify-between min-h-[350px] relative overflow-hidden group">
             
             {/* Top Accent Line */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--blue)] via-indigo-500 to-emerald-400" />
 
-            <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
-              <span className="font-heading text-xs font-black tracking-[0.2em] text-[var(--foreground)] uppercase">
-                Academic Architecture
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[10px] font-black tracking-wider text-[var(--foreground-muted)] uppercase flex items-center gap-1.5">
+                <Brain size={12} className="text-[var(--blue)]" />
+                Active Recall Card
               </span>
-              <span className="font-mono text-[10px] text-[var(--blue)] font-bold px-2.5 py-1 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20">
-                v2.4 Engine
+              <span className="text-[10px] font-mono font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full border border-orange-400/20">
+                ECO 201
               </span>
             </div>
 
-            {/* Pillar 1: Active Recall */}
-            <div className="flex flex-col gap-2 group">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-black text-[var(--blue)]">01 / ACTIVE RECALL</span>
-                <Brain size={16} className="text-[var(--blue)] opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-              </div>
-              <p className="font-sans text-xs sm:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium">
-                Testing memory retrieval strengthens neural pathways <span className="text-[var(--foreground)] font-bold">300% faster</span> than passive re-reading. We build flashcards that force genuine recall.
+            {/* Question / Content */}
+            <div className="flex-1 flex flex-col justify-center">
+              <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-wider mb-1 block">Question</span>
+              <p className="font-heading text-lg md:text-xl font-black text-[var(--foreground)] leading-snug tracking-tight mb-5">
+                What describes the Multiplier Effect?
               </p>
+              
+              <div className="p-4 rounded-2xl bg-[var(--bg-3)]/90 border border-emerald-500/15 flex gap-3 items-start">
+                <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0 font-sans text-xs font-black">
+                  ✓
+                </div>
+                <div>
+                  <span className="text-[9px] font-mono font-bold text-emerald-400 uppercase tracking-wider block mb-1">Answer (Plain English)</span>
+                  <p className="font-sans text-xs text-[var(--foreground-secondary)] leading-relaxed font-semibold">
+                    A small spark in spending that makes a huge wave. You buy a ₦1,000 lunch, the cook buys transport, the driver buys airtime. That single ₦1,000 creates ₦5,000 of local income.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="h-[1px] bg-[var(--border)]/50" />
-
-            {/* Pillar 2: Spaced Repetition */}
-            <div className="flex flex-col gap-2 group">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-black text-indigo-400">02 / SPACED REPETITION</span>
-                <Layers size={16} className="text-indigo-400 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-              </div>
-              <p className="font-sans text-xs sm:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium">
-                Calibrated review intervals intercept forgetting curves right before memory decay occurs. Your bed misses you; let algorithm timing save your nights.
-              </p>
-            </div>
-
-            <div className="h-[1px] bg-[var(--border)]/50" />
-
-            {/* Pillar 3: Feynman Synthesis */}
-            <div className="flex flex-col gap-2 group">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-black text-emerald-400">03 / FEYNMAN SYNTHESIS</span>
-                <BookOpen size={16} className="text-emerald-400 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-              </div>
-              <p className="font-sans text-xs sm:text-sm text-[var(--foreground-secondary)] leading-relaxed font-medium">
-                Complex lectures distilled into plain-spoken axioms. No academic fluff, no textbook padding—just the core mechanics you need to ace your paper.
-              </p>
-            </div>
-
-            {/* Bottom Status */}
-            <div className="pt-4 border-t border-[var(--border)] flex items-center justify-between text-[11px] text-[var(--foreground-muted)] font-bold">
-              <span>Calibrated for university exams</span>
-              <span className="flex items-center gap-1.5 text-orange-400">
-                <Flame size={14} className="fill-orange-400" /> 98.4% Pass Rate
+            {/* Bottom Meta */}
+            <div className="mt-6 pt-4 border-t border-[var(--border)]/50 flex items-center justify-between text-[9px] text-[var(--foreground-muted)] font-bold uppercase tracking-wider">
+              <span>Calibrated by The Professor</span>
+              <span className="flex items-center gap-1 text-orange-400">
+                <Flame size={12} className="fill-orange-400" /> Your bed misses you
               </span>
             </div>
 
