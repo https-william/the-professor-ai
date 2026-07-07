@@ -1,17 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   Upload, 
   FileText, 
   Sparkles, 
-  Link as LinkIcon, 
   CheckCircle2, 
-  AlertCircle, 
-  Loader2, 
   ArrowRight,
-  ClipboardPaste,
-  BookOpen
+  ClipboardPaste
 } from "lucide-react";
 
 interface HeroIngestionDropzoneProps {
@@ -19,6 +15,46 @@ interface HeroIngestionDropzoneProps {
   onTextSubmit: (text: string, title?: string) => void;
   isProcessing?: boolean;
   processingText?: string;
+}
+
+const PARSING_TOKENS = [
+  "INHALING DOCUMENT BYTESTREAM...",
+  "EXTRACTING COGNITIVE SYNTAX TREES...",
+  "ISOLATING HIGH-YIELD CONCEPTS...",
+  "MAP-REDUCING MULTI-PARAGRAPH ENTITIES...",
+  "CALIBRATING ACTIVE RECALL PROMPTS...",
+  "DECONSTRUCTING INTELLECTUAL BLINDSPOTS...",
+  "COMPUTING SYLLABUS ROADMAP MILESTONES...",
+  "PACKAGING INTERACTIVE STUDY LAB..."
+];
+
+function AnimatedParsingTrack() {
+  const [tokenIdx, setTokenIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTokenIdx(prev => (prev + 1) % PARSING_TOKENS.length);
+    }, 450);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="w-full max-w-md mx-auto mt-6 p-4.5 rounded-2xl bg-zinc-950/90 border border-white/5 font-mono text-[10px] text-emerald-400 text-left space-y-1.5 shadow-inner h-24 overflow-hidden relative">
+      <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-zinc-950 to-transparent pointer-events-none" />
+      <div className="animate-pulse flex items-center gap-1.5 text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1 pb-1 border-b border-white/5">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+        <span>Parsing Live Stream</span>
+      </div>
+      {PARSING_TOKENS.slice(Math.max(0, tokenIdx - 2), tokenIdx + 1).map((tok, idx) => {
+        const isCurrent = idx === Math.min(tokenIdx, 2);
+        return (
+          <div key={idx} className={`transition-all duration-200 ${isCurrent ? "opacity-100 font-bold translate-x-1" : "opacity-35"}`}>
+            &gt; {tok}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function HeroIngestionDropzone({
@@ -52,12 +88,12 @@ export function HeroIngestionDropzone({
     if (isProcessing) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      onFileSelect(file);
+      onFileSelect(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isProcessing) return;
     if (e.target.files && e.target.files.length > 0) {
       onFileSelect(e.target.files[0]);
     }
@@ -66,56 +102,46 @@ export function HeroIngestionDropzone({
   const handlePasteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!pastedText.trim() || isProcessing) return;
-    onTextSubmit(pastedText.trim(), notebookTitle.trim() || "Pasted Lecture Notes");
+    onTextSubmit(pastedText, notebookTitle.trim() || undefined);
   };
 
   return (
-    <div className="w-full relative rounded-3xl bg-[var(--surface)] border border-[var(--border-2)] shadow-xl overflow-hidden transition-all duration-300 group">
-      {/* Background Ambient Glow */}
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-[var(--blue)]/10 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--blue)]/15 transition-all duration-700" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-[var(--violet)]/10 rounded-full blur-3xl pointer-events-none group-hover:bg-[var(--violet)]/15 transition-all duration-700" />
-
-      {/* Header Bar */}
-      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:px-8 border-b border-[var(--border)] bg-[var(--background)]/40 backdrop-blur-md">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="flex h-2 w-2 rounded-full bg-[var(--emerald)] animate-pulse" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--emerald)]">
-              Instant Study Prep
-            </span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-[var(--foreground)] tracking-tight font-heading">
-            Create Study Pack
-          </h2>
+    <div className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-[2rem] overflow-hidden shadow-xs relative">
+      {/* Header Pill Selection */}
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--blue)] animate-pulse" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">
+            Ingestion Hub
+          </span>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex items-center p-1 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+        <div className="flex p-0.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
           <button
             type="button"
             onClick={() => setMode("drop")}
             disabled={isProcessing}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40 ${
               mode === "drop"
-                ? "bg-[var(--blue)] text-white shadow-md"
+                ? "bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border)] shadow-xs"
                 : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            <Upload size={13} />
+            <Upload size={12} />
             <span>Upload File</span>
           </button>
           <button
             type="button"
             onClick={() => setMode("paste")}
             disabled={isProcessing}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40 ${
               mode === "paste"
-                ? "bg-[var(--blue)] text-white shadow-md"
+                ? "bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border)] shadow-xs"
                 : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            <ClipboardPaste size={13} />
-            <span>Paste Text</span>
+            <ClipboardPaste size={12} />
+            <span>Paste Notes</span>
           </button>
         </div>
       </div>
@@ -123,21 +149,24 @@ export function HeroIngestionDropzone({
       {/* Dropzone Canvas or Paste Form */}
       <div className="relative z-10 p-6 sm:p-10">
         {isProcessing ? (
-          <div className="py-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
+          <div className="py-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
             <div className="relative mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center animate-bounce">
                 <Sparkles size={28} className="text-[var(--blue)] animate-spin-slow" />
               </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--emerald)] flex items-center justify-center text-white border-2 border-[var(--background)] animate-bounce">
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--emerald)] flex items-center justify-center text-white border-2 border-[var(--background)] shadow-md">
                 <CheckCircle2 size={12} />
               </div>
             </div>
-            <h3 className="text-lg font-bold text-[var(--foreground)] mb-1">
+            <h3 className="text-lg font-black text-[var(--foreground)] mb-1">
               {processingText}
             </h3>
-            <p className="text-xs text-[var(--foreground-muted)] max-w-sm">
-              We're reading through your notes, setting up flashcards, and building a quick quiz for you...
+            <p className="text-xs text-[var(--foreground-muted)] max-w-sm font-semibold">
+              Preparing your deconstructed study workspace...
             </p>
+            
+            {/* Live Parsing Token Stream */}
+            <AnimatedParsingTrack />
           </div>
         ) : mode === "drop" ? (
           <div
@@ -163,11 +192,11 @@ export function HeroIngestionDropzone({
               <Upload size={24} className="text-[var(--blue)]" />
             </div>
 
-            <h3 className="text-base sm:text-lg font-bold text-[var(--foreground)] mb-1">
+            <h3 className="text-base sm:text-lg font-black text-[var(--foreground)] mb-1">
               Drop your lecture PDF, Syllabus, or Notes here
             </h3>
-            <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-md">
-              Supports <span className="text-[var(--foreground)] font-mono">PDF, DOCX, TXT, MD</span> up to 25MB. OCR enabled for scanned documents.
+            <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-md font-semibold">
+              Supports <span className="text-[var(--foreground)] font-mono">PDF, DOCX, TXT, MD</span> up to 25MB. OCR enabled.
             </p>
 
             <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-wider shadow-lg hover:opacity-90 active:scale-95 transition-all">
@@ -222,4 +251,5 @@ export function HeroIngestionDropzone({
     </div>
   );
 }
+
 export default HeroIngestionDropzone;

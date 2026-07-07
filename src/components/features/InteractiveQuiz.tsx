@@ -338,30 +338,30 @@ export const InteractiveQuiz = ({
             >
                 {/* Score stats header grid */}
                 <div className="grid grid-cols-3 gap-3 shrink-0">
-                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-center backdrop-blur-md">
+                    <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center shadow-xs">
                         <div className="text-2xl font-black text-[#E5A93C]">{scorePercent}%</div>
-                        <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mt-1">Accuracy</div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mt-1">Accuracy</div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-center backdrop-blur-md">
+                    <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center shadow-xs">
                         <div className="flex items-center justify-center gap-1">
                             <span className="text-2xl font-black text-[#2BB288]">{totalCorrect}</span>
-                            <span className="text-xs text-white/30 font-bold">/ {questions.length}</span>
+                            <span className="text-xs text-[var(--foreground-muted)] font-bold">/ {questions.length}</span>
                         </div>
-                        <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mt-1">Correct</div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mt-1">Correct</div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-center backdrop-blur-md">
+                    <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-center shadow-xs">
                         <div className="flex items-center justify-center gap-1.5">
-                            <Clock size={14} className="text-white/40" />
-                            <span className="text-sm font-black text-white">{timeString}</span>
+                            <Clock size={14} className="text-[var(--foreground-muted)]" />
+                            <span className="text-sm font-black text-[var(--foreground)]">{timeString}</span>
                         </div>
-                        <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mt-1">Time Spent</div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mt-1">Time Spent</div>
                     </div>
                 </div>
 
                 {/* Professor verdict */}
-                <div className="px-5 py-3 rounded-2xl bg-[#9673F5]/10 border border-[#9673F5]/20 shrink-0 flex items-center gap-3 backdrop-blur-md">
+                <div className="px-5 py-3 rounded-2xl bg-[#9673F5]/10 border border-[#9673F5]/20 shrink-0 flex items-center gap-3">
                     <Zap size={14} className="text-[#9673F5] shrink-0" />
-                    <p className="text-xs font-serif italic text-white/80 leading-relaxed">
+                    <p className="text-xs font-serif italic text-[var(--foreground-secondary)] leading-relaxed">
                         &ldquo;{getVerdict(user?.firstName || "Scholar", scorePercent)}&rdquo;
                     </p>
                 </div>
@@ -375,7 +375,7 @@ export const InteractiveQuiz = ({
                                     <Sparkles size={12} className="animate-pulse" />
                                     Lock in your progress
                                 </h4>
-                                <p className="text-[11px] text-white/60 leading-relaxed">
+                                <p className="text-[11px] text-[var(--foreground-muted)] leading-relaxed">
                                     Sign up to log your study packs, earn rank points, and unlock full explanations.
                                 </p>
                             </div>
@@ -392,7 +392,7 @@ export const InteractiveQuiz = ({
                 {/* Per-question breakdown sheet */}
                 <div className="space-y-3 overflow-visible">
                     <div className="flex items-center justify-between px-1 shrink-0">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Review Sheet</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Review Sheet</span>
                         {totalCorrect < questions.length && (
                             <button 
                                 onClick={handleRetryMissedOnly}
@@ -431,7 +431,7 @@ export const InteractiveQuiz = ({
                                                 <AlertCircle size={14} className="text-[#E5A93C]" />
                                             )}
                                         </div>
-                                        <p className="text-sm font-bold text-white leading-relaxed flex-1">
+                                        <p className="text-sm font-extrabold text-[var(--foreground)] leading-relaxed flex-1">
                                             {i + 1}. {r.question.question}
                                         </p>
                                     </div>
@@ -473,7 +473,7 @@ export const InteractiveQuiz = ({
                                                         ? "bg-[#2BB288]/10 border-[#2BB288]/30 text-[#2BB288]"
                                                         : isWrongSelected
                                                         ? "bg-[#E85D75]/10 border-[#E85D75]/30 text-[#E85D75]"
-                                                        : "bg-transparent border-transparent text-white/30"
+                                                        : "bg-transparent border-transparent text-[var(--foreground-muted)]"
                                                 )}
                                             >
                                                 <span className={cn(
@@ -497,7 +497,7 @@ export const InteractiveQuiz = ({
                                             <h5 className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#9673F5] mb-1">
                                                 <Lightbulb size={12} /> Base Explanation
                                             </h5>
-                                            <p className="text-sm text-white/85 leading-relaxed">{r.question.explanation}</p>
+                                            <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">{r.question.explanation}</p>
                                         </div>
 
                                         {/* Ask the Professor Analogy Integration */}
@@ -519,7 +519,7 @@ export const InteractiveQuiz = ({
                                                 <h5 className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E5A93C]">
                                                     <Sparkles size={10} /> Professor's Analogy
                                                 </h5>
-                                                <p className="text-sm text-white/90 leading-relaxed font-serif italic">
+                                                <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed font-serif italic">
                                                     &ldquo;{tutorAnalogy[i]}&rdquo;
                                                 </p>
                                             </div>
@@ -535,7 +535,7 @@ export const InteractiveQuiz = ({
                 <div className="flex flex-col sm:flex-row gap-3 w-full shrink-0 mt-4">
                     <button
                         onClick={handleResetAll}
-                        className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/5 text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] text-xs font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--surface)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
                         <RotateCcw size={16} /> Retake Quiz
                     </button>
@@ -617,7 +617,7 @@ export const InteractiveQuiz = ({
                         <div className="flex items-center gap-2">
                             <button 
                                 onClick={handleShareSection}
-                                className="p-2 rounded-xl bg-white/5 border border-white/5 text-white/60 hover:text-white transition-all active:scale-95"
+                                className="p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all active:scale-95"
                                 title="Share Quiz"
                             >
                                 <Share2 size={12} />
@@ -627,7 +627,7 @@ export const InteractiveQuiz = ({
                                     e.stopPropagation();
                                     downloadQuizOffline(title, questions);
                                 }}
-                                className="p-2 rounded-xl bg-white/5 border border-white/5 text-white/60 hover:text-white transition-all active:scale-95"
+                                className="p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all active:scale-95"
                                 title="Download Offline HTML"
                             >
                                 <Download size={12} />
@@ -709,7 +709,7 @@ export const InteractiveQuiz = ({
                                         {flags.has(currentIdx) ? 'Flagged' : 'Flag'}
                                     </button>
                                 </div>
-                                <h4 className="text-base md:text-lg font-semibold leading-relaxed text-[var(--foreground)]">
+                                <h4 className="text-base md:text-lg font-black leading-relaxed text-zinc-950 dark:text-white">
                                     {currentQuestion?.question}
                                 </h4>
                             </div>
@@ -763,7 +763,7 @@ export const InteractiveQuiz = ({
                                             <div className={circleStyle}>
                                                 {String.fromCharCode(65 + i)}
                                             </div>
-                                            <span>{opt}</span>
+                                            <span className="font-extrabold text-zinc-950 dark:text-white">{opt}</span>
                                         </div>
                                     </button>
                                 );
@@ -812,7 +812,7 @@ export const InteractiveQuiz = ({
                                     </div>
 
                                     {currentQuestion?.explanation && (
-                                        <p className="text-xs text-white/80 leading-relaxed font-sans">
+                                        <p className="text-xs text-[var(--foreground-secondary)] leading-relaxed font-sans">
                                             {currentQuestion.explanation}
                                         </p>
                                     )}
@@ -820,7 +820,7 @@ export const InteractiveQuiz = ({
                                     {currentQuestion?.analogy && (
                                         <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-start gap-2">
                                             <Lightbulb size={14} className="text-[#E5A93C] shrink-0 mt-0.5" />
-                                            <p className="text-xs font-serif italic text-white/90 leading-relaxed">
+                                            <p className="text-xs font-serif italic text-[var(--foreground-secondary)] leading-relaxed">
                                                 &ldquo;{currentQuestion.analogy}&rdquo;
                                             </p>
                                         </div>
@@ -831,7 +831,7 @@ export const InteractiveQuiz = ({
                                             <span className="text-[9px] font-black uppercase tracking-widest text-[#9673F5] flex items-center gap-1">
                                                 <GraduationCap size={12} /> The Professor&apos;s Breakdown
                                             </span>
-                                            <p className="text-xs text-white leading-relaxed font-sans">
+                                            <p className="text-xs text-[var(--foreground-secondary)] leading-relaxed font-sans">
                                                 {tutorAnalogy[currentIdx]}
                                             </p>
                                         </div>
@@ -846,7 +846,7 @@ export const InteractiveQuiz = ({
                         <button 
                             onClick={handlePrev} 
                             disabled={currentIdx === 0}
-                            className="px-5 py-3 rounded-xl bg-white/5 border border-white/5 flex items-center gap-1.5 disabled:opacity-20 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-all"
+                            className="px-5 py-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] flex items-center gap-1.5 disabled:opacity-20 text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all"
                         >
                             <ArrowLeft size={14} /> Prev
                         </button>

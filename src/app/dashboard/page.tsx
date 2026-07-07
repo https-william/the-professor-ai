@@ -517,7 +517,9 @@ function DashboardContent() {
                     }, user_id: "guest", savedAt: Date.now()
                 };
                 localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
-                router.push(`/library/pack/${packId}?sprint=true`);
+                setTimeout(() => {
+                    router.push(`/library/pack/${packId}?sprint=true`);
+                }, 3000);
                 return;
             }
 
@@ -530,7 +532,9 @@ function DashboardContent() {
             });
 
             if (dbError) throw dbError;
-            router.push(`/library/pack/${packId}?sprint=true`);
+            setTimeout(() => {
+                router.push(`/library/pack/${packId}?sprint=true`);
+            }, 3000);
         } catch (err) {
             console.error("Failed to create pack in DB, falling back to offline storage:", err);
             const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
@@ -541,7 +545,9 @@ function DashboardContent() {
                 }, user_id: "guest", savedAt: Date.now()
             };
             localStorage.setItem("offline_study_packs", JSON.stringify(offlinePacks));
-            router.push(`/library/pack/${packId}?sprint=true`);
+            setTimeout(() => {
+                router.push(`/library/pack/${packId}?sprint=true`);
+            }, 3000);
         }
     };
 

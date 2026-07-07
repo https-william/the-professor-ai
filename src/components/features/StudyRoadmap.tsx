@@ -233,28 +233,30 @@ export const StudyRoadmap = ({
     return (
         <div className="w-full space-y-6 pb-6 px-2 max-w-3xl mx-auto select-none">
             
-            {/* Symmetrical Header */}
-            <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-                <div className="flex items-center gap-2.5">
-                    <Compass size={16} className="text-[var(--blue)] shrink-0" />
+            {/* Symmetrical Header with open flex layout and padding buffer to eliminate collisions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-5 px-1">
+                <div className="flex items-center gap-3">
+                    <Compass size={18} className="text-[var(--blue)] shrink-0" />
                     <div>
-                        <h2 className="text-sm font-black uppercase tracking-wider text-[var(--foreground)]">
+                        <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-[var(--foreground)]">
                             Study Path
                         </h2>
-                        <p className="text-[10px] text-[var(--foreground-muted)] font-bold">
+                        <p className="text-[10px] sm:text-[11px] text-[var(--foreground-muted)] font-bold">
                             Sequential Timeline
                         </p>
                     </div>
                 </div>
 
-                <button 
-                    onClick={handleExportICS}
-                    className="px-3.5 py-1.5 rounded-xl bg-[var(--blue)]/10 hover:bg-[var(--blue)]/20 border border-[var(--blue)]/20 text-[10px] font-black uppercase tracking-wider text-[var(--blue)] transition-all flex items-center gap-1.5 shadow-sm"
-                    title="Export timeline to Calendar"
-                >
-                    <Download size={12} />
-                    <span>Calendar (.ics)</span>
-                </button>
+                <div className="py-1 shrink-0">
+                    <button 
+                        onClick={handleExportICS}
+                        className="px-4 py-2.5 rounded-xl bg-[var(--blue)]/10 hover:bg-[var(--blue)]/20 border border-[var(--blue)]/25 text-[10px] font-black uppercase tracking-wider text-[var(--blue)] transition-all flex items-center gap-2 shadow-sm"
+                        title="Export timeline to Calendar"
+                    >
+                        <Download size={13} />
+                        <span>Export Calendar (.ics)</span>
+                    </button>
+                </div>
             </div>
 
             {/* Overall Syllabus Progress Bar (Sleek & Compact) */}

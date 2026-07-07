@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { 
   BookOpen, 
@@ -31,6 +31,7 @@ interface NotebooksTableProps {
   onShare?: (id: string) => void;
   isLoading?: boolean;
   onLoadDemo?: (type: 'mitosis' | 'contract') => void;
+  onFileSelect?: (file: File) => void;
 }
 
 export function NotebooksTable({
@@ -38,7 +39,8 @@ export function NotebooksTable({
   onDelete,
   onShare,
   isLoading = false,
-  onLoadDemo
+  onLoadDemo,
+  onFileSelect
 }: NotebooksTableProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,17 +123,48 @@ export function NotebooksTable({
             </p>
           </div>
         ) : (
-          <div className="py-12 px-6 text-center flex flex-col items-center justify-center bg-gradient-to-b from-[var(--surface)] to-[var(--background)]/50">
-            <div className="w-14 h-14 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center mb-4 shadow-inner">
-              <Sparkles size={24} className="text-[var(--blue)] animate-pulse" />
+          <div className="py-10 px-6 flex flex-col items-center justify-center bg-gradient-to-b from-[var(--surface)] to-[var(--background)]/30 rounded-3xl">
+            {/* High-visibility drop zone */}
+            <div 
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && onFileSelect) {
+                  onFileSelect(e.dataTransfer.files[0]);
+                }
+              }}
+              onClick={() => {
+                const fileInput = document.createElement("input");
+                fileInput.type = "file";
+                fileInput.accept = ".pdf,.docx,.txt,.md";
+                fileInput.onchange = (e: any) => {
+                  if (e.target?.files && e.target.files.length > 0 && onFileSelect) {
+                    onFileSelect(e.target.files[0]);
+                  }
+                };
+                fileInput.click();
+              }}
+              className="w-full max-w-2xl py-12 px-6 rounded-2xl border-2 border-dashed border-[var(--border-2)] hover:border-[var(--blue)]/50 bg-[var(--background)]/30 hover:bg-[var(--surface)] flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group mb-10"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center mb-4 shadow-inner group-hover:scale-105 transition-transform">
+                <Sparkles size={24} className="text-[var(--blue)] animate-pulse" />
+              </div>
+              <h4 className="text-base sm:text-lg font-black text-[var(--foreground)] mb-1.5 font-heading">
+                Got an upcoming test?
+              </h4>
+              <p className="text-xs sm:text-sm text-[var(--foreground-muted)] max-w-md mb-6 font-semibold leading-relaxed">
+                Drop your lecture slides or notes here to build your first Exam Sprint pack instantly.
+              </p>
+              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-xs uppercase tracking-wider shadow-md hover:opacity-90 active:scale-95 transition-all">
+                Select File
+              </span>
             </div>
-            <h4 className="text-base sm:text-lg font-black text-[var(--foreground)] mb-1 font-heading">
-              Welcome to your Study Lounge!
-            </h4>
-            <p className="text-xs sm:text-sm text-[var(--foreground-muted)] max-w-md mb-8">
-              You don&apos;t have any study notebooks yet. Drop your syllabus or notes above, or try one of our instant starter kits:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl w-full">
+
+            <div className="w-full border-t border-[var(--border)] pt-8">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] block mb-4 text-left pl-1">
+                Or jump start with a demo pack
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl w-full">
               <div 
                 onClick={() => onLoadDemo?.('mitosis')}
                 className="group p-5 rounded-2xl bg-[var(--background)] border border-[var(--border-2)] hover:border-[var(--blue)] text-left cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 flex flex-col justify-between"
@@ -181,7 +214,8 @@ export function NotebooksTable({
               </div>
             </div>
           </div>
-        )
+        </div>
+      )
       ) : (
         <div className="divide-y divide-[var(--border)]/60">
           {filteredNotebooks.map((nb) => {
@@ -227,22 +261,45 @@ export function NotebooksTable({
                 {/* Right Status & Actions */}
                 <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-[var(--border)]/50">
                   {/* Mastery Badge */}
-                  <div className="flex items-center gap-2">
-                    {score >= 80 ? (
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--emerald)]/10 border border-[var(--emerald)]/30 text-[var(--emerald)] text-xs font-bold font-mono">
-                        <CheckCircle2 size={13} />
-                        <span>{score}% Mastered</span>
+                  {/* Gestalt Progress Ring */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+                      <svg className="w-full h-full -rotate-90" viewBox="0 0 32 32">
+                        {/* Track */}
+                        <circle 
+                          cx="16" 
+                          cy="16" 
+                          r="12" 
+                          fill="transparent" 
+                          stroke="var(--border)" 
+                          strokeWidth="3" 
+                          className="opacity-20 dark:opacity-30" 
+                        />
+                        {/* Progress path */}
+                        <circle 
+                          cx="16" 
+                          cy="16" 
+                          r="12" 
+                          fill="transparent" 
+                          stroke={score >= 80 ? "var(--emerald)" : score > 0 ? "var(--amber)" : "var(--blue)"} 
+                          strokeWidth="3.2" 
+                          strokeLinecap="round"
+                          strokeDasharray={2 * Math.PI * 12}
+                          strokeDashoffset={(2 * Math.PI * 12) * (1 - (score > 0 ? score : 4) / 100)} 
+                        />
+                      </svg>
+                      <span className="absolute text-[8px] font-black font-mono text-[var(--foreground)]">
+                        {score > 0 ? `${score}%` : "0%"}
                       </span>
-                    ) : score > 0 ? (
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--amber)]/10 border border-[var(--amber)]/30 text-[var(--amber)] text-xs font-bold font-mono">
-                        <AlertCircle size={13} />
-                        <span>{score}% Review</span>
+                    </div>
+                    <div className="flex flex-col gap-0.5 text-left shrink-0">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-[var(--foreground)]">
+                        {score >= 80 ? "Mastery" : score > 0 ? "Incomplete" : "Get Started"}
                       </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] text-xs font-mono">
-                        Not Quizzed
+                      <span className="text-[8px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest leading-none">
+                        {score >= 80 ? "Sprint Passed" : score > 0 ? "Needs Review" : "No active session"}
                       </span>
-                    )}
+                    </div>
                   </div>
 
                   {/* Actions */}
