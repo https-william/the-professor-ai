@@ -39,22 +39,22 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
     };
 
     return (
-        <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-6 md:my-8 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 md:p-5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner relative overflow-hidden group/card flex flex-col w-full max-w-3xl mx-auto my-4 animate-in slide-in-from-bottom-4 duration-500">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Volume2 size={40} className="text-[var(--blue)]" />
             </div>
             
             <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)]">Professor's Spot Check</span>
                 </div>
                 
-                <h4 className="text-sm sm:text-base font-black text-[var(--foreground)] mb-5 leading-snug tracking-tight">
+                <h4 className="text-xs sm:text-sm font-black text-[var(--foreground)] mb-4 leading-snug tracking-tight">
                     {data.question}
                 </h4>
 
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2">
                     {data.options.map((opt: string, i: number) => {
                         const isSelected = selectedIndices.includes(i);
                         const isCorrect = i === data.correctIndex;
@@ -66,18 +66,18 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                                 onClick={() => handleSelect(i)}
                                 disabled={isPassed || isSelected}
                                 className={cn(
-                                    "w-full p-4.5 md:p-5 text-left text-xs sm:text-sm font-bold rounded-xl md:rounded-2xl transition-all border flex items-center gap-4 group/opt relative overflow-hidden",
+                                    "w-full p-2.5 px-4 text-left text-xs font-semibold rounded-xl transition-all border flex items-center gap-3 group/opt relative overflow-hidden",
                                     showFeedback 
                                         ? isCorrect 
-                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_8px_32px_rgba(16,185,129,0.1)]" 
-                                            : "bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_8px_32px_rgba(239,68,68,0.1)]"
-                                        : "bg-[var(--background-secondary)] border-white/5 text-[var(--foreground-muted)] hover:bg-[var(--background)] hover:border-[var(--accent)]/30 hover:text-[var(--foreground)] hover:shadow-xl shadow-md"
+                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.08)]" 
+                                            : "bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_4px_16px_rgba(239,68,68,0.08)]"
+                                        : "bg-[var(--background-secondary)] border-white/5 text-[var(--foreground-muted)] hover:bg-[var(--background)] hover:border-[var(--accent)]/30 hover:text-[var(--foreground)] hover:shadow-md shadow-sm"
                                 )}
                             >
                                 <div className={cn(
-                                    "w-8 h-8 rounded-xl flex items-center justify-center border text-xs shrink-0 font-black transition-all",
-                                    showFeedback && isCorrect ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]" :
-                                    isSelected && !isCorrect ? "bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]" :
+                                    "w-6 h-6 rounded-lg flex items-center justify-center border text-[10px] shrink-0 font-black transition-all",
+                                    showFeedback && isCorrect ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]" :
+                                    isSelected && !isCorrect ? "bg-red-500 text-white border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]" :
                                     "bg-white/5 border-white/10 group-hover/opt:border-[var(--blue)]/30"
                                 )}>
                                     {String.fromCharCode(65 + i)}

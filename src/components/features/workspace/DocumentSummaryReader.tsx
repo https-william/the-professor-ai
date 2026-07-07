@@ -46,19 +46,19 @@ function KnowledgeCheck({ data }: KnowledgeCheckProps) {
   };
 
   return (
-    <div className="p-6 md:p-8 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] my-6 flex flex-col w-full shadow-inner relative overflow-hidden group/check">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="p-4 md:p-5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] my-4 flex flex-col w-full shadow-inner relative overflow-hidden group/check">
+      <div className="flex items-center gap-2 mb-3">
         <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--blue)]">Professor&apos;s Spot Check</span>
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)]">Professor&apos;s Spot Check</span>
       </div>
       
-      {/* Question - Increased font size for readability */}
-      <h4 className="text-sm sm:text-base font-black text-[var(--foreground)] mb-5 leading-snug tracking-tight">
+      {/* Question - Compact & Readable */}
+      <h4 className="text-xs sm:text-sm font-black text-[var(--foreground)] mb-4 leading-snug tracking-tight">
         {data.question}
       </h4>
 
-      {/* Options - Increased font size and panel size */}
-      <div className="grid grid-cols-1 gap-3">
+      {/* Options - Compact & Neat */}
+      <div className="grid grid-cols-1 gap-2">
         {data.options.map((opt: string, i: number) => {
           const isSelected = selectedIndices.includes(i);
           const isCorrect = i === data.correctIndex;
@@ -69,17 +69,17 @@ function KnowledgeCheck({ data }: KnowledgeCheckProps) {
               key={i}
               onClick={() => handleSelect(i)}
               disabled={isPassed || isSelected}
-              className={`w-full p-4.5 md:p-5 text-left text-xs sm:text-sm font-bold rounded-xl md:rounded-2xl transition-all border flex items-center gap-4 relative overflow-hidden ${
+              className={`w-full p-2.5 px-4 text-left text-xs font-semibold rounded-xl transition-all border flex items-center gap-3 relative overflow-hidden ${
                 showFeedback 
                   ? isCorrect 
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_8px_32px_rgba(16,185,129,0.1)]" 
-                    : "bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_8px_32px_rgba(239,68,68,0.1)]"
-                  : "bg-[var(--surface)] border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--background)] hover:border-[var(--blue)]/40 hover:text-[var(--foreground)] hover:shadow-md shadow-sm"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/35 shadow-[0_4px_16px_rgba(16,185,129,0.08)]" 
+                    : "bg-red-500/10 text-red-400 border-red-500/35 shadow-[0_4px_16px_rgba(239,68,68,0.08)]"
+                  : "bg-[var(--surface)] border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--background)] hover:border-[var(--blue)]/40 hover:text-[var(--foreground)] hover:shadow-xs shadow-xs"
               }`}
             >
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border text-xs shrink-0 font-black transition-all ${
-                showFeedback && isCorrect ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]" :
-                isSelected && !isCorrect ? "bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]" :
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center border text-[10px] shrink-0 font-black transition-all ${
+                showFeedback && isCorrect ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]" :
+                isSelected && !isCorrect ? "bg-red-500 text-white border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]" :
                 "bg-[var(--background)] border-[var(--border)]"
               }`}>
                 {String.fromCharCode(65 + i)}
@@ -91,7 +91,7 @@ function KnowledgeCheck({ data }: KnowledgeCheckProps) {
       </div>
       
       {selectedIndices.length > 0 && !isPassed && (
-        <p className="mt-4 text-xs text-red-400 font-bold italic animate-pulse">
+        <p className="mt-3 text-[10px] text-red-400 font-bold italic animate-pulse">
           Ah, not quite! Pick another option to sync your understanding.
         </p>
       )}

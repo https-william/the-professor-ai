@@ -1607,12 +1607,12 @@ export default function StudyPackPage() {
                     </div>
                 )}
 
-                {/* Main Split Container: Asymmetric 12-Column CSS Grid */}
+                {/* Main Split Container: Symmetric 12-Column CSS Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">
                     
-                    {/* LEFT COLUMN: Summary / Raw Viewer (5 cols) */}
+                    {/* LEFT COLUMN: Summary / Raw Viewer (6 cols) */}
                     <div className={cn(
-                        "flex flex-col rounded-2xl relative min-h-[550px] max-h-[calc(100vh-140px)] w-full lg:col-span-5",
+                        "flex flex-col rounded-2xl relative min-h-[550px] max-h-[calc(100vh-140px)] w-full lg:col-span-6",
                         mobileActivePane === 'right' ? "hidden lg:flex" : "flex"
                     )}>
                         {phasesData.distill || sourceText ? (
@@ -1634,9 +1634,9 @@ export default function StudyPackPage() {
                         )}
                     </div>
 
-                    {/* RIGHT COLUMN: Interactive Study Decks (7 cols) */}
+                    {/* RIGHT COLUMN: Interactive Study Decks (6 cols) */}
                     <div className={cn(
-                        "flex flex-col bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl relative min-h-[550px] max-h-[calc(100vh-140px)] w-full lg:col-span-7",
+                        "flex flex-col bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl relative min-h-[550px] max-h-[calc(100vh-140px)] w-full lg:col-span-6",
                         mobileActivePane === 'left' ? "hidden lg:flex" : "flex"
                     )}>
                         {/* Header Tabs */}
