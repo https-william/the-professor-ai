@@ -50,7 +50,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)]">Professor's Spot Check</span>
                 </div>
                 
-                <h4 className="text-[13px] font-bold text-[var(--foreground)] mb-4 leading-relaxed">
+                <h4 className="text-sm sm:text-base font-black text-[var(--foreground)] mb-5 leading-snug tracking-tight">
                     {data.question}
                 </h4>
 
@@ -66,7 +66,7 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                                 onClick={() => handleSelect(i)}
                                 disabled={isPassed || isSelected}
                                 className={cn(
-                                    "w-full p-4 md:p-5 text-left text-[10px] md:text-[11px] font-bold rounded-xl md:rounded-2xl transition-all border flex items-center gap-4 group/opt relative overflow-hidden",
+                                    "w-full p-4.5 md:p-5 text-left text-xs sm:text-sm font-bold rounded-xl md:rounded-2xl transition-all border flex items-center gap-4 group/opt relative overflow-hidden",
                                     showFeedback 
                                         ? isCorrect 
                                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_8px_32px_rgba(16,185,129,0.1)]" 
@@ -75,14 +75,14 @@ const KnowledgeCheck = ({ data, onCorrect }: KnowledgeCheckProps) => {
                                 )}
                             >
                                 <div className={cn(
-                                    "w-7 h-7 rounded-xl flex items-center justify-center border text-[10px] shrink-0 font-black transition-all",
+                                    "w-8 h-8 rounded-xl flex items-center justify-center border text-xs shrink-0 font-black transition-all",
                                     showFeedback && isCorrect ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]" :
                                     isSelected && !isCorrect ? "bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]" :
                                     "bg-white/5 border-white/10 group-hover/opt:border-[var(--blue)]/30"
                                 )}>
                                     {String.fromCharCode(65 + i)}
                                 </div>
-                                <span className="relative z-10">{opt}</span>
+                                <span className="relative z-10 leading-snug">{opt}</span>
                                 
                                 {/* Inner Glow Hover */}
                                 {!isSelected && !isPassed && (
