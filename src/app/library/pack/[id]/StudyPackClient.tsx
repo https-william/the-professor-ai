@@ -1506,8 +1506,8 @@ export default function StudyPackPage() {
                         </div>
                     </div>
 
-                    {/* Zone 2: Action Strip — scrollable on mobile, row on desktop */}
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5 pl-9">
+                    {/* Zone 2: Action Strip — relative and visible overflow to prevent settings dropdown clipping */}
+                    <div className="flex items-center gap-2 pb-0.5 pl-9 relative">
                         <ThemeToggle />
 
                         {/* Lab Settings Dropdown */}

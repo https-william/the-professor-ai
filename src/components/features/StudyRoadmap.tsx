@@ -1,76 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import { 
-    Target, 
-    Eye, 
-    AlertTriangle, 
-    Calendar, 
-    ArrowRight, 
-    Sparkles, 
-    CheckCircle2,
-    BookOpen,
-    Zap,
     Compass,
-    Milestone,
-    Flame,
-    ShieldAlert,
-    Volume2,
-    Settings,
-    Download,
-    Baby,
-    Lightbulb,
-    Type,
-    Check,
-    MessageSquare,
-    Sparkle
+    Calendar, 
+    Download, 
+    Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { useUser } from "@/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
-import OdometerCounter from "@/components/ui/OdometerCounter";
-import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
-import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 interface RoadmapData {
     studySchedule?: Record<string, string>;
-    commonMistakes?: string[];
-    commonBlindspots?: string[];
     mostImportantTopics?: string[];
-    roadmap?: string; // Fallback for pure markdown
+    roadmap?: string;
 }
-
-// Local Nigerian Analogies catalog for avoidance map tips
-const NIGERIAN_ANALOGIES: Record<string, string> = {
-    "foundational": "Like building a duplex starting from the parlor ceiling. You must lay the solid block foundation first, otherwise wet season rain will meet you inside.",
-    "cramming": "Like cramming the direction to Balogun market, but you don't know the names of the streets. One road block or Danfo diversion and you are completely lost.",
-    "practice": "Like driving a danfo bus on the Third Mainland Bridge with no brakes. Slow down small, make you no go land inside lagoon.",
-    "testing": "Like bragging that you can dribble like Jay-Jay Okocha because you watch highlights, until they put you on the pitch at National Stadium.",
-    "blindspots": "Like walking past a NEPA pole with naked wires during rainy season. Keep your eyes open, make you no go shock.",
-    "consistency": "Like fetching water into a basket. If you stop halfway, you go come back meet empty basket. Keep the pace steady."
-};
-
-const getAnalogyText = (tip: string): string => {
-    const lower = tip.toLowerCase();
-    if (lower.includes("foundation") || lower.includes("definition") || lower.includes("concept")) {
-        return NIGERIAN_ANALOGIES.foundational;
-    }
-    if (lower.includes("memoriz") || lower.includes("cram") || lower.includes("understand")) {
-        return NIGERIAN_ANALOGIES.cramming;
-    }
-    if (lower.includes("practice") || lower.includes("scenari")) {
-        return NIGERIAN_ANALOGIES.practice;
-    }
-    if (lower.includes("test") || lower.includes("quiz") || lower.includes("exam")) {
-        return NIGERIAN_ANALOGIES.testing;
-    }
-    if (lower.includes("time") || lower.includes("schedule") || lower.includes("sprint")) {
-        return NIGERIAN_ANALOGIES.consistency;
-    }
-    return NIGERIAN_ANALOGIES.blindspots;
-};
 
 export const StudyRoadmap = ({ 
     data, 
@@ -85,23 +32,10 @@ export const StudyRoadmap = ({
 }) => {
     const { user } = useUser();
     const { addToast } = useToasts();
-
-    // Checkbox tracking state
     const [completedPhases, setCompletedPhases] = useState<string[]>([]);
-    
-    // Customization / Adjustment states
-    const [isDyslexiaMode, setIsDyslexiaMode] = useState(false);
-    const [activeAnalogy, setActiveAnalogy] = useState<string | null>(null);
-    const [playingPhaseTTS, setPlayingPhaseTTS] = useState<string | null>(null);
 
-    // AI Plan Adjuster states
-    const [isAdjusting, setIsAdjusting] = useState(false);
-    const [adjustPrompt, setAdjustPrompt] = useState("");
-    const [adjustedScheduleText, setAdjustedScheduleText] = useState<string | null>(null);
-
-    // Normalization logic
     const normalize = (raw: any): RoadmapData => {
-        if (!raw) return { roadmap: "No roadmap data available.", mostImportantTopics: ["Mastering core conceptual relationships"], commonBlindspots: ["Overlooking foundational definitions"], commonMistakes: ["Memorizing without understanding"], studySchedule: { "Phase 01": "Deep Summary & Core Concept Deconstruction" } };
+        if (!raw) return { roadmap: "No roadmap data available.", mostImportantTopics: [], studySchedule: {} };
 
         let mdObj: any = raw;
         if (typeof raw === 'string') {
@@ -115,97 +49,43 @@ export const StudyRoadmap = ({
             mdObj = raw.studyPlan;
         }
 
-        if (mdObj.studySchedule && Object.keys(mdObj.studySchedule).length > 0 && mdObj.mostImportantTopics && mdObj.mostImportantTopics.length > 0) {
+        if (mdObj.studySchedule && Object.keys(mdObj.studySchedule).length > 0) {
             return mdObj;
         }
 
         const mdText = typeof mdObj.roadmap === 'string' ? mdObj.roadmap : typeof raw === 'string' ? raw : JSON.stringify(raw);
         const lines = mdText.split('\n');
         const mostImportantTopics: string[] = [];
-        const commonBlindspots: string[] = [];
-        const commonMistakes: string[] = [];
         const studySchedule: Record<string, string> = {};
-
-        let currentSection = "";
         let scheduleIndex = 1;
 
         lines.forEach((line: string) => {
             const trimmed = line.trim();
             if (!trimmed) return;
 
-            if (/^(#+|\*+)?\s*([🎯📌🔑🚀]|Focus|Key|Important|Topics|Core|Summary|Main)/i.test(trimmed) && !/Blindspot|Mistake|Avoid|Pitfall|Schedule|Timeline/i.test(trimmed)) {
-                currentSection = "topics";
-                return;
-            }
-            if (/^(#+|\*+)?\s*([⚠️👁️]|Blindspot|Gap|Overlook|Missed|Unseen)/i.test(trimmed)) {
-                currentSection = "blindspots";
-                return;
-            }
-            if (/^(#+|\*+)?\s*([🛑❌⚠️]|Mistake|Avoid|Pitfall|Error|Trap|Warning)/i.test(trimmed) && !/Blindspot/i.test(trimmed)) {
-                currentSection = "mistakes";
-                return;
-            }
-            if (/^(#+|\*+)?\s*([📅⏳]|Timeline|Schedule|Sprint|Roadmap|Plan|Days|Weeks|Steps|Phases)/i.test(trimmed)) {
-                currentSection = "schedule";
-                return;
-            }
-
             const cleanText = trimmed.replace(/^[-*•\d.]+\s*/, '').replace(/^[🎯⚠️🔑🛑💡🚀📌📅⏳👁️❌]+\s*/, '').trim();
             if (!cleanText || cleanText.length < 5 || cleanText.startsWith("#")) return;
 
-            if (currentSection === "topics") {
-                mostImportantTopics.push(cleanText);
-            } else if (currentSection === "blindspots") {
-                commonBlindspots.push(cleanText);
-            } else if (currentSection === "mistakes") {
-                commonMistakes.push(cleanText);
-            } else if (currentSection === "schedule") {
+            if (/^(Day \d+|Phase \d+|Step \d+|Week \d+|[\d]+):\s*(.*)/i.test(cleanText)) {
                 const match = cleanText.match(/^(Day \d+|Phase \d+|Step \d+|Week \d+|[\d]+):\s*(.*)/i);
                 if (match) {
                     studySchedule[match[1]] = match[2];
-                } else {
-                    studySchedule[`Phase 0${scheduleIndex}`] = cleanText;
-                    scheduleIndex++;
                 }
             } else {
-                if (/^[🎯🔑📌🚀]/.test(trimmed)) {
-                    mostImportantTopics.push(cleanText);
-                } else if (/^[⚠️👁️]/.test(trimmed)) {
-                    commonBlindspots.push(cleanText);
-                } else if (/^[🛑❌]/.test(trimmed)) {
-                    commonMistakes.push(cleanText);
-                } else if (/^[📅⏳]/.test(trimmed) || /^(Day|Week|Phase) \d+/i.test(trimmed)) {
-                    const match = cleanText.match(/^(Day \d+|Phase \d+|Step \d+|Week \d+|[\d]+):\s*(.*)/i);
-                    if (match) {
-                        studySchedule[match[1]] = match[2];
-                    } else {
-                        studySchedule[`Phase 0${scheduleIndex}`] = cleanText;
-                        scheduleIndex++;
-                    }
-                } else if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
-                    mostImportantTopics.push(cleanText);
-                }
+                studySchedule[`Phase 0${scheduleIndex}`] = cleanText;
+                scheduleIndex++;
             }
         });
 
-        if (mostImportantTopics.length === 0) {
-            mostImportantTopics.push("Mastering core conceptual relationships", "Identifying edge cases and practical applications");
-        }
-        if (commonBlindspots.length === 0) {
-            commonBlindspots.push("Overlooking foundational definitions");
-        }
-        if (commonMistakes.length === 0) {
-            commonMistakes.push("Memorizing without understanding mechanics");
-        }
         if (Object.keys(studySchedule).length === 0) {
-            studySchedule["Phase 01"] = "Deep Summary & Core Concept Deconstruction";
-            studySchedule["Phase 02"] = "Active Recall & Memory Card Reinforcement";
+            studySchedule["Phase 01"] = "Deconstruct Core Lectures & Summarize Key Concepts";
+            studySchedule["Phase 02"] = "Master Core Vocabulary & Active Recall Cards";
+            studySchedule["Phase 03"] = "Complete Concept Spot Checks & Verify Gaps";
+            studySchedule["Phase 04"] = "Take Mock Exam & Final Review";
         }
 
         return {
-            mostImportantTopics,
-            commonBlindspots,
-            commonMistakes,
+            mostImportantTopics: mdObj.mostImportantTopics || ["Core conceptual relationships"],
             studySchedule,
             roadmap: mdText
         };
@@ -213,7 +93,6 @@ export const StudyRoadmap = ({
 
     const roadmap = normalize(data);
 
-    // Synchronize checklist state on mount
     useEffect(() => {
         const loadChecklist = async () => {
             if (!generationId) return;
@@ -246,7 +125,6 @@ export const StudyRoadmap = ({
         loadChecklist();
     }, [generationId, user]);
 
-    // Handle phase checkbox toggle
     const handleTogglePhase = async (phaseKey: string) => {
         const isCompleted = completedPhases.includes(phaseKey);
         const updated = isCompleted 
@@ -285,7 +163,6 @@ export const StudyRoadmap = ({
         }
     };
 
-    // Export to ICS calendar sync utility
     const handleExportICS = () => {
         try {
             const steps = Object.entries(roadmap.studySchedule || {});
@@ -329,489 +206,142 @@ export const StudyRoadmap = ({
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            addToast("ICS Calendar downloaded! Import into Google Calendar or Outlook 📅", "success");
+            addToast("ICS Calendar exported! 📅", "success");
         } catch (e) {
             addToast("Failed to generate calendar file", "error");
         }
     };
 
-    // Text-To-Speech Narrator using browser SpeechSynthesis
-    const handlePlayTTS = (text: string, phaseKey: string) => {
-        if (playingPhaseTTS === phaseKey) {
-            window.speechSynthesis.cancel();
-            setPlayingPhaseTTS(null);
-            return;
-        }
-
-        window.speechSynthesis.cancel();
-        setPlayingPhaseTTS(phaseKey);
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.onend = () => setPlayingPhaseTTS(null);
-        utterance.onerror = () => setPlayingPhaseTTS(null);
-        window.speechSynthesis.speak(utterance);
-    };
-
-    // "Ask the Professor" AI Plan Adjuster
-    const handleAdjustRoadmap = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!user) {
-            addToast("Please sign up or log in to adjust study schedules with AI! 💡", "info");
-            return;
-        }
-        if (!adjustPrompt.trim() || isAdjusting) return;
-        setIsAdjusting(true);
-        setAdjustedScheduleText("");
-
-        try {
-            const res = await fetch("/api/roadmap/adjust", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    schedule: roadmap.studySchedule,
-                    userPrompt: adjustPrompt
-                })
-            });
-
-            if (!res.ok) {
-                if (res.status === 402) {
-                    addToast("Insufficient credits! Please upgrade your plan.", "error");
-                } else {
-                    addToast("Failed to adjust study plan.", "error");
-                }
-                setIsAdjusting(false);
-                return;
-            }
-
-            const reader = res.body?.getReader();
-            if (!reader) {
-                setIsAdjusting(false);
-                return;
-            }
-
-            const decoder = new TextDecoder();
-            let buffer = "";
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                setAdjustedScheduleText(buffer);
-            }
-        } catch (err) {
-            addToast("Error contacting the Professor.", "error");
-        } finally {
-            setIsAdjusting(false);
-        }
-    };
-
-    // Calculate progression metrics
     const scheduleEntries = Object.entries(roadmap.studySchedule || {});
     const totalSteps = scheduleEntries.length;
     const progressPercent = totalSteps > 0 ? Math.round((completedPhases.length / totalSteps) * 100) : 0;
 
-    // Render streaming loader
     if (isStreaming) {
-        const textContent = typeof data === 'string' ? data : (data?.roadmap || JSON.stringify(data || ""));
         return (
-            <div className="p-8 rounded-[36px] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl w-full max-w-4xl mx-auto space-y-6">
-                <div className="flex items-center gap-3 border-b border-[var(--border)] pb-4">
-                    <div className="w-2 h-2 rounded-full bg-[var(--blue-light)] animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)]">Professor's Roadmap Stream</span>
+            <div className="p-6 rounded-2xl bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-md w-full max-w-xl mx-auto space-y-4">
+                <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--blue)] animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">Generating Study Roadmap...</span>
                 </div>
-                <MarkdownRenderer content={textContent} isStreaming={true} />
+                <div className="h-2 w-full bg-[var(--background)] rounded-full overflow-hidden">
+                    <div className="h-full bg-[var(--blue)] animate-pulse w-2/3" />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="w-full space-y-8 pb-12 px-2 sm:px-4 max-w-7xl mx-auto select-none">
+        <div className="w-full space-y-6 pb-6 px-2 max-w-3xl mx-auto select-none">
             
             {/* Symmetrical Header */}
-            <div className="text-center mb-10 relative">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)] mb-3 flex items-center justify-center gap-2">
-                    <Compass size={14} className="text-[var(--blue)] animate-spin-slow" />
-                    <span>Study Plan Blueprint</span>
-                </p>
-                <h2 className="text-4xl sm:text-5xl font-black tracking-tighter italic uppercase leading-none mb-4 text-[var(--foreground)]">
-                    Your <span className="text-[var(--blue)]">Study</span> Path
-                </h2>
-                <p className="text-[var(--foreground-muted)] font-medium max-w-2xl mx-auto text-xs sm:text-sm leading-relaxed opacity-95">
-                    A customized sequential timeline structured to guide your daily revisions, manage traps, and ensure you pass easily.
-                </p>
-            </div>
-
-            {/* Upper Widgets Row */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-5xl mx-auto w-full">
-                
-                {/* Progress Gauge: Apple-style Concentric Rings */}
-                <GlassmorphicCard intensity="medium" className="md:col-span-8 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div className="flex flex-col gap-3 flex-1 w-full">
-                        <div className="flex items-center justify-between sm:justify-start gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Learning Surfaces Mastery</span>
-                            <span className="px-2 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] text-[9px] font-mono font-bold">Concentric Tracker</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3 my-1">
-                            <div className="flex flex-col p-3 rounded-xl bg-[var(--background-secondary)]/80 border border-[var(--border)]">
-                                <div className="flex items-center gap-1.5 text-xs font-black text-[var(--blue)] mb-1">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--blue)] shrink-0 shadow-[0_0_8px_var(--blue)]" />
-                                    <span>Summary</span>
-                                </div>
-                                <span className="text-xs font-mono font-bold text-[var(--foreground)]">{completedPhases.length > 0 ? "100%" : "0%"}</span>
-                            </div>
-                            <div className="flex flex-col p-3 rounded-xl bg-[var(--background-secondary)]/80 border border-[var(--border)]">
-                                <div className="flex items-center gap-1.5 text-xs font-black text-[var(--amber)] mb-1">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--amber)] shrink-0 shadow-[0_0_8px_var(--amber)]" />
-                                    <span>Cards</span>
-                                </div>
-                                <span className="text-xs font-mono font-bold text-[var(--foreground)]">{completedPhases.length > 1 ? "100%" : "0%"}</span>
-                            </div>
-                            <div className="flex flex-col p-3 rounded-xl bg-[var(--background-secondary)]/80 border border-[var(--border)]">
-                                <div className="flex items-center gap-1.5 text-xs font-black text-[#E85D75] mb-1">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-[#E85D75] shrink-0 shadow-[0_0_8px_#E85D75]" />
-                                    <span>Quiz</span>
-                                </div>
-                                <span className="text-xs font-mono font-bold text-[var(--foreground)]">{completedPhases.length > 2 ? "100%" : "0%"}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
-                            <span className="text-xs font-bold text-[var(--foreground-muted)] uppercase tracking-wider">Overall Syllabus Velocity:</span>
-                            <div className="text-2xl font-black text-[var(--blue)] font-mono">
-                                <OdometerCounter value={progressPercent} suffix="%" />
-                            </div>
-                        </div>
-                    </div>
-                    {/* 3 Concentric SVG Progress Arcs */}
-                    <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                            {/* Ring 1 (Summary): Outer. Radius 48 */}
-                            <circle cx="60" cy="60" r="48" fill="transparent" stroke="var(--border)" strokeWidth="8" className="opacity-15 dark:opacity-30" />
-                            <motion.circle 
-                                cx="60" cy="60" r="48" fill="transparent" 
-                                stroke="var(--blue)" strokeWidth="8" strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 48}
-                                initial={{ strokeDashoffset: 2 * Math.PI * 48 }}
-                                animate={{ strokeDashoffset: (2 * Math.PI * 48) * (1 - (completedPhases.length > 0 ? 100 : 0) / 100) }}
-                                transition={{ type: "spring", stiffness: 60, damping: 15 }}
-                            />
-
-                            {/* Ring 2 (Cards): Middle. Radius 36 */}
-                            <circle cx="60" cy="60" r="36" fill="transparent" stroke="var(--border)" strokeWidth="8" className="opacity-15 dark:opacity-30" />
-                            <motion.circle 
-                                cx="60" cy="60" r="36" fill="transparent" 
-                                stroke="var(--amber)" strokeWidth="8" strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 36}
-                                initial={{ strokeDashoffset: 2 * Math.PI * 36 }}
-                                animate={{ strokeDashoffset: (2 * Math.PI * 36) * (1 - (completedPhases.length > 1 ? 100 : 0) / 100) }}
-                                transition={{ type: "spring", stiffness: 60, damping: 15 }}
-                            />
-
-                            {/* Ring 3 (Quiz): Inner. Radius 24 */}
-                            <circle cx="60" cy="60" r="24" fill="transparent" stroke="var(--border)" strokeWidth="8" className="opacity-15 dark:opacity-30" />
-                            <motion.circle 
-                                cx="60" cy="60" r="24" fill="transparent" 
-                                stroke="#E85D75" strokeWidth="8" strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 24}
-                                initial={{ strokeDashoffset: 2 * Math.PI * 24 }}
-                                animate={{ strokeDashoffset: (2 * Math.PI * 24) * (1 - (completedPhases.length > 2 ? 100 : 0) / 100) }}
-                                transition={{ type: "spring", stiffness: 60, damping: 15 }}
-                            />
-                        </svg>
-                    </div>
-                </GlassmorphicCard>
-
-                {/* Toolbar Widgets */}
-                <GlassmorphicCard intensity="medium" className="md:col-span-4 p-6 flex flex-col justify-between gap-4">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
+                <div className="flex items-center gap-2.5">
+                    <Compass size={16} className="text-[var(--blue)] shrink-0" />
                     <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Study Toolkit</span>
-                        <p className="text-xs text-[var(--foreground-muted)]/80 mt-1 leading-relaxed">Export your customized schedule or adjust typography for accessibility.</p>
+                        <h2 className="text-sm font-black uppercase tracking-wider text-[var(--foreground)]">
+                            Study Path
+                        </h2>
+                        <p className="text-[10px] text-[var(--foreground-muted)] font-bold">
+                            Sequential Timeline
+                        </p>
                     </div>
-                    <div className="flex flex-col gap-3 w-full mt-auto">
-                        <button 
-                            onClick={handleExportICS}
-                            className="w-full px-4 py-3 rounded-xl bg-[var(--blue)]/10 hover:bg-[var(--blue)]/20 border border-[var(--blue)]/30 text-xs font-black uppercase tracking-wider text-[var(--blue)] transition-all flex items-center justify-center gap-2 shadow-sm"
-                            title="Export timeline events to Calendar"
-                        >
-                            <Download size={15} />
-                            <span>Export Calendar (.ics)</span>
-                        </button>
-                        <button 
-                            onClick={() => setIsDyslexiaMode(!isDyslexiaMode)}
-                            className={cn("w-full px-4 py-3 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold", 
-                                isDyslexiaMode 
-                                    ? 'bg-[var(--emerald)]/15 border-[var(--emerald)]/40 text-[var(--emerald)]' 
-                                    : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-                            )}
-                            title="Dyslexia typography adjustments"
-                        >
-                            <Type size={16} />
-                            <span>{isDyslexiaMode ? "Dyslexia Font Active" : "Toggle Dyslexia Font"}</span>
-                        </button>
-                    </div>
-                </GlassmorphicCard>
+                </div>
 
+                <button 
+                    onClick={handleExportICS}
+                    className="px-3.5 py-1.5 rounded-xl bg-[var(--blue)]/10 hover:bg-[var(--blue)]/20 border border-[var(--blue)]/20 text-[10px] font-black uppercase tracking-wider text-[var(--blue)] transition-all flex items-center gap-1.5 shadow-sm"
+                    title="Export timeline to Calendar"
+                >
+                    <Download size={12} />
+                    <span>Calendar (.ics)</span>
+                </button>
             </div>
 
-            {/* Split layout: Avoidance Map Left, Timeline Right */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-                
-                {/* Left Column: Avoidance & Pitfalls (5 spans) */}
-                <div className="lg:col-span-5 space-y-6">
-                    
-                    {/* Focus Points Card */}
-                    <GlassmorphicCard intensity="medium" className="p-6 overflow-hidden relative group hover:border-[var(--blue)]/40 transition-all duration-500">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--blue)]/10 via-transparent to-transparent rounded-full blur-2xl pointer-events-none -z-10" />
-                        <div className="absolute top-6 right-6 opacity-5">
-                            <Target size={40} className="text-[var(--blue)]" />
-                        </div>
-                        
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-9 h-9 rounded-xl bg-[var(--blue)]/10 flex items-center justify-center border border-[var(--blue)]/20 shadow-inner">
-                                <Flame size={18} className="text-[var(--blue)]" />
-                            </div>
-                            <div>
-                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground)]">High-Yield Focus</h4>
-                                <p className="text-[9px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest opacity-60">Syllabus priorities</p>
-                            </div>
-                        </div>
+            {/* Overall Syllabus Progress Bar (Sleek & Compact) */}
+            <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                <div className="flex justify-between text-[10px] font-black text-[var(--foreground-muted)] uppercase tracking-wider mb-2">
+                    <span>Syllabus Velocity</span>
+                    <span>{progressPercent}% Complete</span>
+                </div>
+                <div className="w-full h-1.5 bg-[var(--background)] rounded-full overflow-hidden border border-[var(--border)]/45">
+                    <div 
+                        className="h-full bg-gradient-to-r from-[var(--blue)] to-indigo-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(74,124,245,0.3)]"
+                        style={{ width: `${progressPercent}%` }}
+                    />
+                </div>
+            </div>
 
-                        <ul className="space-y-3 relative z-10">
-                            {(roadmap.mostImportantTopics || []).map((topic, i) => (
-                                <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-zinc-950/40 border border-white/5 hover:border-[var(--blue)]/30 hover:bg-[var(--blue)]/5 transition-all duration-300 shadow-sm">
-                                    <div className="w-5 h-5 rounded-lg bg-[var(--blue)]/10 border border-[var(--blue)]/20 flex items-center justify-center shrink-0 mt-0.5">
-                                        <Zap size={10} className="text-[var(--blue)]" />
-                                    </div>
-                                    <span className={cn("text-xs font-semibold text-zinc-200 leading-relaxed", isDyslexiaMode ? "font-sans tracking-wide" : "font-serif")}>
-                                        {topic}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </GlassmorphicCard>
+            {/* High-Yield Topics Tag Panel */}
+            {roadmap.mostImportantTopics && roadmap.mostImportantTopics.length > 0 && (
+                <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] block mb-2.5">Focus Priorities</span>
+                    <div className="flex flex-wrap gap-1.5">
+                        {roadmap.mostImportantTopics.map((topic, i) => (
+                            <span 
+                                key={i}
+                                className="px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[10px] font-semibold text-[var(--foreground-secondary)]"
+                            >
+                                {topic}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
 
-                    {/* Avoidance Map Card */}
-                    <GlassmorphicCard intensity="medium" className="p-6 overflow-hidden relative group hover:border-[var(--amber)]/40 transition-all duration-500">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--amber)]/10 via-transparent to-transparent rounded-full blur-2xl pointer-events-none -z-10" />
-                        <div className="absolute top-6 right-6 opacity-5">
-                            <ShieldAlert size={40} className="text-[var(--amber)]" />
-                        </div>
+            {/* Timeline Checklist */}
+            <div className="relative space-y-4 pl-3">
+                {/* Connector Line */}
+                <div className="absolute left-[21px] top-4 bottom-4 w-[1px] bg-gradient-to-b from-[var(--blue)] via-[var(--blue)]/30 to-transparent pointer-events-none" />
 
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-9 h-9 rounded-xl bg-[var(--amber)]/10 flex items-center justify-center border border-[var(--amber)]/20 shadow-inner">
-                                <AlertTriangle size={18} className="text-[var(--amber)]" />
-                            </div>
-                            <div>
-                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--foreground)]">Avoidance Map</h4>
-                                <p className="text-[9px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest opacity-60">Avoid traps & blindspots</p>
-                            </div>
-                        </div>
+                {scheduleEntries.map(([timeLabel, taskText], i) => {
+                    const isChecked = completedPhases.includes(timeLabel);
 
-                        <div className="space-y-4 relative z-10">
+                    return (
+                        <div key={i} className="relative pl-10 group/node flex items-start gap-4">
                             
-                            {/* Blindspots block */}
-                            <div className="p-4 rounded-2xl bg-zinc-950/40 border border-white/5 hover:border-[var(--amber)]/20 transition-all duration-300">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Eye size={12} className="text-[var(--amber)]" />
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-[var(--amber)]">Cognitive Blindspots</span>
-                                </div>
-                                <div className="space-y-2">
-                                    {(roadmap.commonBlindspots || []).map((b, i) => (
-                                        <div key={i} className="text-xs font-semibold text-zinc-300 flex items-start gap-2 leading-relaxed">
-                                            <button 
-                                                onClick={() => setActiveAnalogy(activeAnalogy === `b_${i}` ? null : `b_${i}`)}
-                                                className="mt-0.5 p-1 rounded bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 shrink-0 hover:bg-[var(--amber)]/20"
-                                                title="View Nigerian Analogy explanation"
-                                            >
-                                                <Lightbulb size={10} />
-                                            </button>
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <span className={isDyslexiaMode ? "font-sans tracking-wide" : "font-serif"}>{b}</span>
-                                                {activeAnalogy === `b_${i}` && (
-                                                    <div className="mt-1.5 p-2.5 rounded-lg bg-[var(--amber)]/5 border border-[var(--amber)]/20 text-[10px] italic text-[var(--amber)] leading-relaxed font-sans animate-in slide-in-from-top-1 duration-200">
-                                                        {getAnalogyText(b)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            {/* Checkbox Node */}
+                            <button 
+                                onClick={() => handleTogglePhase(timeLabel)}
+                                className={cn(
+                                    "absolute left-2 top-1.5 w-5 h-5 rounded-full border z-10 transition-all duration-300 flex items-center justify-center shadow-sm",
+                                    isChecked 
+                                        ? "bg-emerald-500 border-emerald-500 text-zinc-950 scale-105 shadow-[0_0_10px_rgba(43,178,136,0.3)]" 
+                                        : "bg-[var(--background)] border-[var(--border)] text-white hover:border-[var(--blue)]"
+                                )}
+                            >
+                                {isChecked ? (
+                                    <Check size={11} strokeWidth={3.5} />
+                                ) : (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--foreground-muted)]/30 group-hover/node:bg-[var(--blue)]" />
+                                )}
+                            </button>
 
-                            {/* Mistakes block */}
-                            <div className="p-4 rounded-2xl bg-zinc-950/40 border border-white/5 hover:border-[var(--crimson)]/20 transition-all duration-300">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <AlertTriangle size={12} className="text-[var(--crimson)]" />
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-[var(--crimson)]">Fatal Mistakes</span>
-                                </div>
-                                <div className="space-y-2">
-                                    {(roadmap.commonMistakes || []).map((m, i) => (
-                                        <div key={i} className="text-xs font-semibold text-zinc-300 flex items-start gap-2 leading-relaxed">
-                                            <button 
-                                                onClick={() => setActiveAnalogy(activeAnalogy === `m_${i}` ? null : `m_${i}`)}
-                                                className="mt-0.5 p-1 rounded bg-red-950/30 text-red-400 border border-red-500/20 shrink-0 hover:bg-red-950/50"
-                                                title="View Nigerian Analogy explanation"
-                                            >
-                                                <Lightbulb size={10} />
-                                            </button>
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <span className={isDyslexiaMode ? "font-sans tracking-wide" : "font-serif"}>{m}</span>
-                                                {activeAnalogy === `m_${i}` && (
-                                                    <div className="mt-1.5 p-2.5 rounded-lg bg-red-950/10 border border-red-500/10 text-[10px] italic text-red-400 leading-relaxed font-sans animate-in slide-in-from-top-1 duration-200">
-                                                        {getAnalogyText(m)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
+                            {/* Node Card */}
+                            <div className={cn(
+                                "flex-1 p-4.5 rounded-2xl border transition-all duration-200 flex items-center justify-between gap-3 shadow-xs",
+                                isChecked 
+                                    ? "bg-emerald-500/[0.03] border-emerald-500/20 opacity-85" 
+                                    : "bg-[var(--background-secondary)] border-[var(--border)] hover:border-[var(--blue)]/35 hover:bg-[var(--background)]"
+                            )}>
+                                <div className="flex flex-col gap-1 text-left">
+                                    <span className={cn(
+                                        "text-[9px] font-black uppercase tracking-wider font-mono",
+                                        isChecked ? "text-emerald-400" : "text-[var(--blue)]"
+                                    )}>
+                                        {timeLabel}
+                                    </span>
+                                    <p className={cn(
+                                        "text-xs sm:text-sm font-semibold tracking-tight leading-snug",
+                                        isChecked ? "text-zinc-500 line-through" : "text-[var(--foreground-secondary)]"
+                                    )}>
+                                        {taskText}
+                                    </p>
                                 </div>
                             </div>
 
                         </div>
-                    </GlassmorphicCard>
-
-                </div>
-
-                {/* Right Column: Execution Checklist Timeline (7 spans) */}
-                <div className="lg:col-span-7 space-y-6">
-                    
-                    <GlassmorphicCard intensity="heavy" className="p-6 sm:p-8 overflow-hidden relative group hover:border-[var(--blue)]/30 transition-all duration-500">
-                        <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-[var(--blue)]/5 via-transparent to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
-
-                        {/* Title Row */}
-                        <div className="flex items-center justify-between mb-8 pb-5 border-b border-white/5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[var(--blue)]/10 flex items-center justify-center border border-[var(--blue)]/20 shadow-inner">
-                                    <Calendar size={20} className="text-[var(--blue)]" />
-                                </div>
-                                <div>
-                                    <h4 className="text-lg font-black italic uppercase tracking-tight text-[var(--foreground)]">Execution Timeline</h4>
-                                    <p className="text-[9px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest opacity-60">Interactive Study Steps</p>
-                                </div>
-                            </div>
-                            <div className="px-3 py-1 rounded bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--blue)]">
-                                Sprint Protocol
-                            </div>
-                        </div>
-
-                        {/* Interactive Nodes list */}
-                        <div className="relative space-y-6 pl-2 sm:pl-4">
-                            {/* Connector Line */}
-                            <div className="absolute left-[17px] sm:left-[21px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-[var(--blue)] via-[var(--blue)]/30 to-transparent rounded-full pointer-events-none" />
-
-                            {scheduleEntries.map(([timeLabel, taskText], i) => {
-                                const isChecked = completedPhases.includes(timeLabel);
-                                const isPlaying = playingPhaseTTS === timeLabel;
-
-                                return (
-                                    <div key={i} className="relative pl-10 sm:pl-12 group/node flex items-start gap-4">
-                                        
-                                        {/* Clickable timeline checkbox node */}
-                                        <button 
-                                            onClick={() => handleTogglePhase(timeLabel)}
-                                            className={cn(
-                                                "absolute left-2.5 sm:left-3.5 top-1 w-5 h-5 rounded-full border z-10 transition-all duration-300 flex items-center justify-center shadow-md",
-                                                isChecked 
-                                                    ? "bg-[var(--emerald)] border-[var(--emerald)] text-zinc-950 scale-110 shadow-[0_0_10px_rgba(43,178,136,0.3)]" 
-                                                    : "bg-zinc-900 border-white/10 text-white hover:border-[var(--blue)]"
-                                            )}
-                                        >
-                                            {isChecked ? (
-                                                <Check size={12} strokeWidth={3.5} />
-                                            ) : (
-                                                <span className="w-1.5 h-1.5 rounded-full bg-white/25 group-hover/node:bg-white" />
-                                            )}
-                                        </button>
-
-                                        {/* Step card container */}
-                                        <div className={cn(
-                                            "flex-1 p-4 rounded-2xl border transition-all duration-300 shadow-sm flex items-start justify-between gap-3",
-                                            isChecked 
-                                                ? "bg-[var(--emerald-dim)]/5 border-[var(--emerald-border)] opacity-85" 
-                                                : "bg-zinc-950/40 border-white/5 hover:border-[var(--blue)]/30 hover:bg-[var(--blue)]/5"
-                                        )}>
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className={cn(
-                                                    "text-[9px] font-black uppercase tracking-[0.2em]",
-                                                    isChecked ? "text-[var(--emerald)]" : "text-[var(--blue)]"
-                                                )}>
-                                                    {timeLabel}
-                                                </span>
-                                                <h5 className={cn(
-                                                    "text-sm font-bold tracking-tight leading-snug",
-                                                    isChecked ? "text-zinc-400 line-through font-medium" : "text-[var(--foreground)]",
-                                                    isDyslexiaMode ? "font-sans tracking-wide text-base leading-relaxed" : "font-serif"
-                                                )}>
-                                                    {taskText}
-                                                </h5>
-                                            </div>
-
-                                            {/* Audio TTS trigger */}
-                                            <button 
-                                                onClick={() => handlePlayTTS(taskText, timeLabel)}
-                                                className={cn("p-1.5 rounded-lg border transition-all shrink-0 mt-0.5", 
-                                                    isPlaying 
-                                                        ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                                                        : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
-                                                )}
-                                                title="Read phase description"
-                                            >
-                                                <Volume2 size={12} />
-                                            </button>
-                                        </div>
-
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </GlassmorphicCard>
-
-                    {/* AI Plan Adjuster Card */}
-                    <GlassmorphicCard intensity="medium" className="p-6">
-                        <div className="flex items-center gap-3 mb-5 pb-3 border-b border-white/5">
-                            <div className="w-8 h-8 rounded-lg bg-[var(--violet)]/10 flex items-center justify-center border border-[var(--violet)]/20 shadow-inner animate-pulse">
-                                <Sparkle size={16} className="text-[var(--violet)]" />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-black uppercase tracking-wider text-[var(--foreground)]">Ask the Professor</h4>
-                                <p className="text-[9px] font-bold text-[var(--foreground-muted)] uppercase tracking-widest opacity-60">Adjust study timelines via AI</p>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleAdjustRoadmap} className="space-y-4">
-                            <textarea 
-                                value={adjustPrompt}
-                                onChange={e => setAdjustPrompt(e.target.value)}
-                                placeholder="E.g., I only have 3 days instead of 7 to study. Shorten this schedule or show me which steps to skip..."
-                                className="w-full h-18 p-3 rounded-xl bg-zinc-950/60 border border-white/10 text-xs text-[var(--foreground)] placeholder-white/20 focus:outline-none focus:border-[var(--violet)]/40 resize-none"
-                            />
-                            <div className="flex items-center justify-between gap-4">
-                                <span className="text-[8px] text-[var(--foreground-muted)]/50 font-mono">Cost: 1 Credit</span>
-                                <button 
-                                    type="submit"
-                                    disabled={isAdjusting || !adjustPrompt.trim()}
-                                    className="px-4 py-2 rounded-xl bg-[var(--violet)] text-zinc-950 hover:opacity-95 font-black text-[10px] uppercase tracking-wider cursor-pointer active:scale-95 transition-all flex items-center gap-1.5"
-                                >
-                                    <MessageSquare size={12} />
-                                    {isAdjusting ? "Consulting..." : "Consult Professor"}
-                                </button>
-                            </div>
-                        </form>
-
-                        {/* Streamed AI suggestion rendering */}
-                        {adjustedScheduleText && (
-                            <div className="mt-5 p-4 rounded-2xl bg-zinc-950/70 border border-[var(--violet)]/20 text-xs text-zinc-200 leading-relaxed animate-in fade-in duration-300">
-                                <div className="flex items-center gap-1.5 mb-2 text-[9px] font-black uppercase tracking-wider text-[var(--violet)]">
-                                    <Baby size={12} />
-                                    <span>Professor's Response</span>
-                                </div>
-                                <p className={cn("leading-relaxed", isDyslexiaMode ? "font-sans text-sm tracking-wide" : "font-serif text-sm italic")}>
-                                    {adjustedScheduleText}
-                                </p>
-                            </div>
-                        )}
-                    </GlassmorphicCard>
-
-                </div>
-
+                    );
+                })}
             </div>
 
         </div>
