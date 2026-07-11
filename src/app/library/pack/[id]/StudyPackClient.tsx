@@ -53,6 +53,7 @@ import { InteractiveSummary } from "@/components/features/InteractiveSummary";
 import { InteractiveFlashcards } from "@/components/features/InteractiveFlashcards";
 import { InteractiveQuiz } from "@/components/features/InteractiveQuiz";
 import { ExternalResourcesViewer, type YoutubeResource } from "@/components/features/ExternalResourcesViewer";
+import SessionComplete from "@/components/features/SessionComplete";
 import BreakdownViewer from "@/components/features/breakdown/BreakdownViewer";
 import { AnnotatedSourceViewer } from "@/components/features/AnnotatedSourceViewer";
 import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -680,7 +681,13 @@ export default function StudyPackPage() {
         if (isGuest) { setShowGuestModal(true); return; }
         if (isSharedView) { addToast("Only the pack owner can generate phases.", "error"); return; }
 
-        if (phasesData[phase.id]) {
+        const hasExistingData = phasesData[phase.id] && (
+            typeof phasesData[phase.id] === 'string' ? phasesData[phase.id].trim().length > 0 :
+            Array.isArray(phasesData[phase.id]) ? phasesData[phase.id].length > 0 :
+            Object.keys(phasesData[phase.id]).length > 0
+        );
+
+        if (hasExistingData) {
             return;
         }
 
@@ -1438,13 +1445,24 @@ export default function StudyPackPage() {
             case "resources": {
                 const resources: YoutubeResource[] = Array.isArray(data) ? data : [];
                 return (
-                    <div className={cn("w-full", !active && "hidden")}>
+                    <div className={cn("w-full flex flex-col gap-6", !active && "hidden")}>
                         <ExternalResourcesViewer
                             resources={resources}
                             packTitle={packTitle}
                             onGenerateMore={() => handleBeginTask('resources')}
                             isGenerating={isCurrentlyGenerating}
                         />
+                        {resources.length > 0 && (
+                            <div className="mt-8 flex justify-center border-t border-[var(--border)] pt-6">
+                                <button
+                                    onClick={() => setIsAllCompleted(true)}
+                                    className="flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-[var(--blue)] to-[var(--violet)] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-95 active:scale-95 transition-all shadow-xl shadow-[var(--blue-glow)]"
+                                >
+                                    <CheckCircle2 size={14} />
+                                    <span>Finish Study Sprint</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 );
             }
@@ -1756,6 +1774,20 @@ export default function StudyPackPage() {
                 <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] pl-3 hidden sm:inline">Focus Lab</span>
                 <FocusTimer widget={true} />
             </div>
+
+            <SessionComplete
+                isVisible={isAllCompleted}
+                onDismiss={() => {
+                    setIsAllCompleted(false);
+                    router.push('/library');
+                }}
+                xpEarned={100}
+                streak={1}
+                streakIncremented={false}
+                type="summary"
+                title={packTitle}
+                continueHref="/library"
+            />
 
             <GuestSignupModal
                 isOpen={showGuestModal}
