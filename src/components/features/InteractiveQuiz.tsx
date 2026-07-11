@@ -61,6 +61,21 @@ export const InteractiveQuiz = ({
     const [comboStreak, setComboStreak] = useState(0);
 
     const isGuest = !user?.id || !user?.isAuthenticated;
+    const [originalQuestionsCache, setOriginalQuestionsCache] = useState<string>("");
+
+    // Sync questions and reset states when originalQuestions changes
+    useEffect(() => {
+        const questionsString = JSON.stringify(originalQuestions);
+        if (originalQuestions && originalQuestions.length > 0 && questionsString !== originalQuestionsCache) {
+            setOriginalQuestionsCache(questionsString);
+            setQuestions(originalQuestions);
+            setAnswers({});
+            setFlags(new Set());
+            setCurrentIdx(0);
+            setShowResults(false);
+            setEndTime(null);
+        }
+    }, [originalQuestions, originalQuestionsCache]);
 
     // ── 1. LocalStorage Autosave State Recovery ──────────────────
     useEffect(() => {
@@ -731,7 +746,7 @@ export const InteractiveQuiz = ({
                                 const isCorrectOpt = i === currentQuestion?.correctIndex;
                                 const isSelected = answers[currentIdx] === i;
                                 
-                                let btnStyle = "w-full p-4.5 text-left text-sm font-medium transition-all duration-150 rounded-2xl relative overflow-hidden flex items-center justify-between border ";
+                                let btnStyle = "w-full py-2.5 px-4 text-left text-sm font-medium transition-all duration-150 rounded-xl relative overflow-hidden flex items-center justify-between border ";
                                 let circleStyle = "w-6 h-6 rounded-lg flex items-center justify-center border text-[10px] font-bold transition-colors shrink-0 ";
 
                                 if (hasAnswered) {

@@ -29,16 +29,16 @@ export function getFlashcardsHtmlString(title: string, flashcards: any[]): strin
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --background: #050508;
-            --card: #0c0c16;
-            --border: #1a1a2e;
-            --border-hover: #2a2a4e;
+            --background: #09090b;
+            --card: #18181b;
+            --border: #27272a;
+            --border-hover: #3f3f46;
             --blue: #2563eb;
             --blue-dim: rgba(37, 99, 235, 0.1);
             --blue-border: rgba(37, 99, 235, 0.25);
             --blue-light: #60a5fa;
             --text: #ffffff;
-            --text-muted: #8e8e9f;
+            --text-muted: #a1a1aa;
             --accent: #2563eb;
             --crimson: #ef4444;
             --crimson-dim: rgba(239, 68, 68, 0.1);
@@ -56,11 +56,12 @@ export function getFlashcardsHtmlString(title: string, flashcards: any[]): strin
 
         body {
             background-color: var(--background);
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 32px 32px;
             color: var(--text);
             font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
-            flex-col: column;
             flex-direction: column;
             align-items: center;
             user-select: none;
@@ -751,16 +752,16 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --background: #050508;
-            --card: #0c0c16;
-            --border: #1a1a2e;
-            --border-hover: #2a2a4e;
+            --background: #09090b;
+            --card: #18181b;
+            --border: #27272a;
+            --border-hover: #3f3f46;
             --blue: #2563eb;
             --blue-dim: rgba(37, 99, 235, 0.1);
             --blue-border: rgba(37, 99, 235, 0.25);
             --blue-light: #60a5fa;
             --text: #ffffff;
-            --text-muted: #8e8e9f;
+            --text-muted: #a1a1aa;
             --accent: #2563eb;
             --crimson: #ef4444;
             --crimson-dim: rgba(239, 68, 68, 0.1);
@@ -778,6 +779,8 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
 
         body {
             background-color: var(--background);
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 32px 32px;
             color: var(--text);
             font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
@@ -1575,10 +1578,10 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #050508;
-            --bg2: #0c0c16;
-            --bg3: #111120;
-            --border: #1e1e36;
+            --bg: #09090b;
+            --bg2: #18181b;
+            --bg3: #27272a;
+            --border: #27272a;
             --blue: #2563eb;
             --blue-dim: rgba(37, 99, 235, 0.12);
             --blue-border: rgba(37, 99, 235, 0.25);
@@ -1592,9 +1595,9 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
             --violet: #8b5cf6;
             --violet-dim: rgba(139, 92, 246, 0.1);
             --violet-border: rgba(139, 92, 246, 0.2);
-            --text: #f8f8ff;
-            --text-muted: #8e8e9f;
-            --text-dim: rgba(248, 248, 255, 0.7);
+            --text: #ffffff;
+            --text-muted: #a1a1aa;
+            --text-dim: rgba(255, 255, 255, 0.75);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1603,6 +1606,8 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
 
         body {
             background-color: var(--bg);
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 32px 32px;
             color: var(--text);
             font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             min-height: 100vh;

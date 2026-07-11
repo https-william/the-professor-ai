@@ -138,7 +138,7 @@ export function DocumentSummaryReader({
     : fontFamily === "mono" 
     ? "font-mono tracking-tight" 
     : fontFamily === "casual"
-    ? "font-sans tracking-wide leading-relaxed italic text-zinc-300 font-semibold"
+    ? "font-casual"
     : "font-sans tracking-normal";
 
   const sizeClass = fontSize === "sm"

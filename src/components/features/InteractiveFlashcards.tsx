@@ -18,7 +18,10 @@ import {
     Shuffle, 
     Type, 
     MessageSquare,
-    Eye
+    Eye,
+    EyeOff,
+    ArrowLeft,
+    ArrowRight
 } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { downloadFlashcardsOffline } from "@/lib/offline-download";
@@ -818,61 +821,58 @@ export const InteractiveFlashcards = ({
         </AnimatePresence>
       </div>
 
-      {/* 4-tier grading buttons */}
+      {/* Navigation & Flip Controls */}
       <div className="w-full max-w-[400px] md:max-w-[620px] flex flex-col gap-4">
-        {cardState === 'FLIPPED' ? (
-          <div className="grid grid-cols-4 gap-2" onClick={e => e.stopPropagation()}>
-            
-            {/* Again */}
-            <button 
-              onClick={() => handleRate(1)}
-              className="flex flex-col h-14 rounded-xl border-2 border-[var(--crimson)]/40 bg-[var(--crimson)]/10 text-[var(--crimson)] hover:bg-[var(--crimson)]/20 hover:border-[var(--crimson)] hover:shadow-[0_0_20px_rgba(239,68,68,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
-            >
-              <X size={12} className="mb-0.5" />
-              <span className="text-[8px] font-black uppercase tracking-wider">Again</span>
-              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.again}</span>
-            </button>
-
-            {/* Hard */}
-            <button 
-              onClick={() => handleRate(2)}
-              className="flex flex-col h-14 rounded-xl border-2 border-[var(--amber)]/40 bg-[var(--amber)]/10 text-[var(--amber)] hover:bg-[var(--amber)]/20 hover:border-[var(--amber)] hover:shadow-[0_0_20px_rgba(245,158,11,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
-            >
-              <HelpCircle size={12} className="mb-0.5" />
-              <span className="text-[8px] font-black uppercase tracking-wider">Hard</span>
-              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.hard}</span>
-            </button>
-
-            {/* Good */}
-            <button 
-              onClick={() => handleRate(4)}
-              className="flex flex-col h-14 rounded-xl border-2 border-[var(--blue)]/40 bg-[var(--blue)]/10 text-[var(--blue)] hover:bg-[var(--blue)]/20 hover:border-[var(--blue)] hover:shadow-[0_0_20px_rgba(74,124,245,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
-            >
-              <Check size={12} className="mb-0.5" />
-              <span className="text-[8px] font-black uppercase tracking-wider">Good</span>
-              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.good}</span>
-            </button>
-
-            {/* Easy */}
-            <button 
-              onClick={() => handleRate(5)}
-              className="flex flex-col h-14 rounded-xl border-2 border-[var(--emerald)]/40 bg-[var(--emerald)]/10 text-[var(--emerald)] hover:bg-[var(--emerald)]/20 hover:border-[var(--emerald)] hover:shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
-            >
-              <Sparkles size={12} className="mb-0.5" />
-              <span className="text-[8px] font-black uppercase tracking-wider">Easy</span>
-              <span className="text-[7px] font-mono opacity-60">{reviewIntervals.easy}</span>
-            </button>
-
-          </div>
-        ) : (
+        <div className="grid grid-cols-3 gap-3" onClick={e => e.stopPropagation()}>
+          
+          {/* Previous */}
           <button 
-            onClick={handleFlip} 
-            className="w-full h-12 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-1.5 hover:opacity-90 transition-all cursor-pointer shadow-lg"
+            onClick={() => {
+              if (queuePointer > 0) {
+                setQueuePointer(prev => prev - 1);
+                setCardState('IDLE');
+                setExitDirection('left');
+              }
+            }}
+            disabled={queuePointer === 0}
+            className="flex items-center justify-center gap-1.5 h-12 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] font-bold text-xs uppercase tracking-wider hover:bg-[var(--surface)] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
-            <Eye size={14} />
-            <span>Reveal Answer</span>
+            <ArrowLeft size={14} />
+            <span>Prev</span>
           </button>
-        )}
+
+          {/* Reveal / Hide Toggle */}
+          <button 
+            onClick={handleFlip}
+            className="flex items-center justify-center gap-1.5 h-12 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black uppercase tracking-[0.15em] text-xs transition-all cursor-pointer shadow-md"
+          >
+            {cardState === 'FLIPPED' ? <EyeOff size={14} /> : <Eye size={14} />}
+            <span>{cardState === 'FLIPPED' ? "Hide" : "Reveal"}</span>
+          </button>
+
+          {/* Next */}
+          <button 
+            onClick={() => {
+              triggerHaptic('light');
+              setXpPopup({ id: Date.now(), text: "+10 XP" });
+              setTimeout(() => setXpPopup(null), 1500);
+
+              if (queuePointer >= cardQueue.length - 1) {
+                if (onFinish) onFinish({ totalCards: cards.length });
+                addToast("Study pack session complete! 🎉", "success");
+              } else {
+                setQueuePointer(prev => prev + 1);
+                setCardState('IDLE');
+                setExitDirection('right');
+              }
+            }}
+            className="flex items-center justify-center gap-1.5 h-12 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground)] font-bold text-xs uppercase tracking-wider hover:bg-[var(--surface)] transition-all cursor-pointer"
+          >
+            <span>Next</span>
+            <ArrowRight size={14} />
+          </button>
+
+        </div>
 
         {/* Global Footer Actions */}
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--border)]">
@@ -890,7 +890,7 @@ export const InteractiveFlashcards = ({
           </div>
 
           <span className="text-[8px] text-[var(--foreground-muted)]/40 font-mono">
-            Space: flip | 1-4: grade
+            Space: flip
           </span>
         </div>
       </div>
