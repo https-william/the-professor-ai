@@ -18,7 +18,6 @@ import {
   Lightbulb,
   ShieldAlert
 } from "lucide-react";
-import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import { getDailyTip } from "@/lib/education-tips";
 
 interface DashboardCommandCenterProps {
@@ -185,9 +184,8 @@ export default function DashboardCommandCenter({
           />
         </div>
 
-        {/* Right Column: Focus Timer & Daily Wisdom */}
+        {/* Right Column: Daily Wisdom */}
         <div className="space-y-6">
-          <FocusTimer />
 
           {dailyTip && (
             <div className="p-6 rounded-3xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">

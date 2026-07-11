@@ -29,10 +29,10 @@ export function getFlashcardsHtmlString(title: string, flashcards: any[]): strin
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --background: #09090b;
-            --card: #18181b;
-            --border: #27272a;
-            --border-hover: #3f3f46;
+            --background: #070709;
+            --card: #101014;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
             --blue: #2563eb;
             --blue-dim: rgba(37, 99, 235, 0.1);
             --blue-border: rgba(37, 99, 235, 0.25);
@@ -56,8 +56,10 @@ export function getFlashcardsHtmlString(title: string, flashcards: any[]): strin
 
         body {
             background-color: var(--background);
-            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px), 
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 24px 24px;
             color: var(--text);
             font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
@@ -752,10 +754,10 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --background: #09090b;
-            --card: #18181b;
-            --border: #27272a;
-            --border-hover: #3f3f46;
+            --background: #070709;
+            --card: #101014;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
             --blue: #2563eb;
             --blue-dim: rgba(37, 99, 235, 0.1);
             --blue-border: rgba(37, 99, 235, 0.25);
@@ -779,8 +781,10 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
 
         body {
             background-color: var(--background);
-            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px), 
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 24px 24px;
             color: var(--text);
             font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
@@ -1223,6 +1227,84 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
             padding: 0 24px;
         }
 
+        .verdict-title {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            color: var(--blue-light);
+            margin-bottom: 8px;
+        }
+
+        .verdict-score {
+            font-size: 80px;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: #ffffff;
+            line-height: 1;
+            margin: 16px 0;
+        }
+
+        .primary-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 52px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.20em;
+            background: #ffffff;
+            color: #09090b;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .primary-btn:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
+        }
+
+        .primary-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .secondary-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 52px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.20em;
+            background: rgba(255, 255, 255, 0.03);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .secondary-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
         @keyframes pulse {
             from { opacity: 0.8; }
             to { opacity: 1; }
@@ -1297,7 +1379,7 @@ export function getQuizHtmlString(title: string, quizQuestions: any[], timerSeco
         </div>
 
         <button class="primary-btn" id="review-btn">Review Answers</button>
-        <button class="primary-btn" style="margin-top: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: white;" onclick="window.location.reload();">Retake Quiz</button>
+        <button class="secondary-btn" style="margin-top: 16px;" onclick="window.location.reload();">Retake Quiz</button>
     </main>
 
     <div class="modal-overlay" id="submit-modal">
@@ -1578,10 +1660,10 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #09090b;
-            --bg2: #18181b;
-            --bg3: #27272a;
-            --border: #27272a;
+            --bg: #070709;
+            --bg2: #101014;
+            --bg3: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.08);
             --blue: #2563eb;
             --blue-dim: rgba(37, 99, 235, 0.12);
             --blue-border: rgba(37, 99, 235, 0.25);
@@ -1606,8 +1688,10 @@ export function getSummaryHtmlString(title: string, renderedHtml: string): strin
 
         body {
             background-color: var(--bg);
-            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px), 
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 24px 24px;
             color: var(--text);
             font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             min-height: 100vh;

@@ -16,7 +16,6 @@ const TABS = [
     { id: "dashboard", label: "Lounge", href: "/dashboard", icon: LayoutDashboard },
     { id: "library", label: "Library", href: "/library", icon: BookOpen },
     { id: "recall", label: "Recall", href: "/review", icon: Flame, isFloating: true },
-    { id: "arena", label: "Lobbies", href: "/arena", icon: Swords },
 ];
 
 export default function BottomTabs() {

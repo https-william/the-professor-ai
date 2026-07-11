@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import remarkGfm from "remark-gfm";
 import dynamic from "next/dynamic";
+import { SummarySkeleton, QuizQuestionSkeleton, Skeleton } from "@/components/ui/Skeleton";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), {
     ssr: false,
@@ -57,7 +58,6 @@ import SessionComplete from "@/components/features/SessionComplete";
 import BreakdownViewer from "@/components/features/breakdown/BreakdownViewer";
 import { AnnotatedSourceViewer } from "@/components/features/AnnotatedSourceViewer";
 import ThemeToggle from "@/components/ui/ThemeToggle";
-import FocusTimer from "@/components/features/dashboard/FocusTimer";
 import WorkspaceLayout from "@/components/generative/WorkspaceLayout";
 
 interface Phase {
@@ -674,7 +674,7 @@ export default function StudyPackPage() {
         }
     };
 
-    const handleBeginTask = async (phaseId: string) => {
+    const handleBeginTask = async (phaseId: string, force = false) => {
         const phase = phases.find(p => p.id === phaseId);
         if (!phase) return;
 
@@ -687,7 +687,7 @@ export default function StudyPackPage() {
             Object.keys(phasesData[phase.id]).length > 0
         );
 
-        if (hasExistingData) {
+        if (hasExistingData && !force) {
             return;
         }
 
@@ -715,10 +715,12 @@ export default function StudyPackPage() {
                 if (!res.ok || !result.success) {
                     throw new Error(result.error || "Could not find resources.");
                 }
-                setPhasesData(prev => ({ ...prev, resources: result.resources }));
+                const updated = { ...phasesData, resources: result.resources };
+                setPhasesData(updated);
                 setIsLoadingPhase(false);
                 setGeneratingPhases(prev => ({ ...prev, [phase.id]: null }));
                 addToast("Resources generated successfully!", "success");
+                handleMasterPhase(phase.id, undefined, updated);
                 return;
             }
 
@@ -806,6 +808,12 @@ export default function StudyPackPage() {
                     throw new Error("No study materials were generated. Please try again.");
                 }
 
+                const finalData = phase.id === "predict"
+                    ? { title: "Study Roadmap", roadmap: accumulatedText }
+                    : (accumulatedItems.length > 0 ? accumulatedItems : accumulatedText);
+                const updated = { ...phasesData, [phase.id]: finalData };
+                setPhasesData(updated);
+
                 // Prefetch next uncompleted phase
                 const allPhases = ["distill", "test", "retain", "resources"];
                 const nextIdx = allPhases.indexOf(phase.id) + 1;
@@ -813,14 +821,15 @@ export default function StudyPackPage() {
                 if (nextUncompletedId && !phasesData[nextUncompletedId]) {
                     prefetchPhase(nextUncompletedId, sourceText, packId);
                 }
-                handleMasterPhase(phase.id);
+                handleMasterPhase(phase.id, undefined, updated);
                 return;
             }
 
             const result = await res.json();
             if (result.success) {
-                setPhasesData(prev => ({ ...prev, [phase.id]: result.data }));
-                handleMasterPhase(phase.id);
+                const updated = { ...phasesData, [phase.id]: result.data };
+                setPhasesData(updated);
+                handleMasterPhase(phase.id, undefined, updated);
             } else {
                 const errorMsg = typeof result.error === "string" ? result.error : "Generation failed";
                 throw new Error(errorMsg);
@@ -841,11 +850,9 @@ export default function StudyPackPage() {
         }
     };
 
-    const handleMasterPhase = async (phaseId: string, stats?: any) => {
-        const phase = phases.find(p => p.id === phaseId);
-        if (!phase) return;
+    const handleMasterPhase = async (phaseId: string, stats?: any, updatedPhasesData?: Record<string, any>) => {
         if (isGuest) { setShowGuestModal(true); return; }
-        if (isSharedView) { addToast("Only the pack owner can modify this pack.", "error"); return; }
+        if (isSharedView) return;
 
         // Record stats if provided
         if (phaseId === 'test' && stats) {
@@ -869,7 +876,7 @@ export default function StudyPackPage() {
                 body: JSON.stringify({
                     packId,
                     phasesData: {
-                        ...phasesData,
+                        ...(updatedPhasesData || phasesData),
                         _mastered: nextCompleted
                     }
                 })
@@ -1449,7 +1456,7 @@ export default function StudyPackPage() {
                         <ExternalResourcesViewer
                             resources={resources}
                             packTitle={packTitle}
-                            onGenerateMore={() => handleBeginTask('resources')}
+                            onGenerateMore={() => handleBeginTask('resources', true)}
                             isGenerating={isCurrentlyGenerating}
                         />
                         {resources.length > 0 && (
@@ -1473,11 +1480,44 @@ export default function StudyPackPage() {
 
     if (!isMounted || packLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-                <div className="flex flex-col items-center gap-6">
-                    <div className="w-16 h-16 rounded-full border-4 border-[var(--blue)] border-t-transparent animate-spin shadow-[0_0_30px_var(--blue-glow)]" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--foreground-muted)] animate-pulse">Setting up your study lab</span>
-                </div>
+            <div className="min-h-screen bg-[var(--background)] relative">
+                <div className="absolute inset-0 bg-[linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-40 z-0" />
+                <StandardContainer className="pt-16 pb-20 relative z-10 max-w-7xl">
+                    {/* Header */}
+                    <div className="mb-8 flex items-center justify-between">
+                        <div>
+                            <div className="w-48 h-4 bg-white/5 rounded animate-pulse mb-3" />
+                            <div className="w-24 h-2.5 bg-white/5 rounded animate-pulse" />
+                        </div>
+                        <div className="w-32 h-10 bg-white/5 rounded-xl animate-pulse" />
+                    </div>
+
+                    {/* 2-Column Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* Left column: Summary/Text skeleton */}
+                        <div className="lg:col-span-7 space-y-6">
+                            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                                <Skeleton className="h-6 w-1/3" />
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-4/5" />
+                                </div>
+                            </div>
+                            <SummarySkeleton sections={2} />
+                        </div>
+
+                        {/* Right column: Tabs & Active phase skeleton */}
+                        <div className="lg:col-span-5 space-y-6">
+                            <div className="p-1 bg-[var(--background-secondary)] rounded-2xl border border-[var(--border)] flex gap-2">
+                                <div className="h-10 flex-1 bg-white/5 rounded-xl animate-pulse" />
+                                <div className="h-10 flex-1 bg-white/5 rounded-xl animate-pulse" />
+                                <div className="h-10 flex-1 bg-white/5 rounded-xl animate-pulse" />
+                            </div>
+                            <QuizQuestionSkeleton options={3} />
+                        </div>
+                    </div>
+                </StandardContainer>
             </div>
         );
     }
@@ -1769,11 +1809,6 @@ export default function StudyPackPage() {
                 </div>
             )}
 
-            {/* Docked Floating Focus Timer Capsule */}
-            <div className="fixed bottom-6 right-6 z-50 bg-[var(--background-secondary)]/90 backdrop-blur-xl border border-[var(--border-2)] rounded-full p-2 shadow-2xl flex items-center gap-2 hover:scale-[1.02] transition-transform">
-                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] pl-3 hidden sm:inline">Focus Lab</span>
-                <FocusTimer widget={true} />
-            </div>
 
             <SessionComplete
                 isVisible={isAllCompleted}

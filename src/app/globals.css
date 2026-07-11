@@ -1536,8 +1536,14 @@ html.light .nm-inset-glass {
 }
 
 .animate-shimmer-sweep {
-  background-size: 200% auto;
-  animation: shimmer-sweep 4s linear infinite;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.07) 37%,
+    rgba(255, 255, 255, 0.02) 63%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: shimmer-sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
 
 /* ============================================
@@ -2984,14 +2990,21 @@ html.telegram-app #main-scroll-container {
   }
 }
 
-.font-casual {
+.font-casual, .font-casual * {
   font-family: 'Urbanist', 'Outfit', var(--font-sans), sans-serif !important;
   font-weight: 400 !important;
   letter-spacing: 0.02em !important;
   line-height: 1.75 !important;
 }
 
+.font-sans, .font-sans * {
+  font-family: var(--font-sans), sans-serif !important;
+}
 
+.font-serif, .font-serif * {
+  font-family: var(--font-serif), Georgia, serif !important;
+}
 
-
-
+.font-mono, .font-mono * {
+  font-family: var(--font-mono), monospace !important;
+}

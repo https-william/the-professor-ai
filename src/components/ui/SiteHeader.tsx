@@ -74,7 +74,6 @@ const MODES = [
     { id: "DASHBOARD", label: "Lounge", href: "/dashboard", color: "var(--emerald)", glow: "var(--emerald-glow)", icon: LayoutDashboard },
     { id: "RECALL",    label: "Recall",    href: "/review",    color: "var(--blue)",    glow: "var(--blue-glow)",    icon: Flame },
     { id: "LIBRARY",  label: "Library",   href: "/library",   color: "var(--violet)",  glow: "var(--violet-glow)",  icon: Library },
-    { id: "ARENA",    label: "Lobbies",     href: "/arena",     color: "var(--cyan)",    glow: "var(--cyan-glow)",    icon: Swords },
 ] as const;
 
 export type AppMode = (typeof MODES)[number]["id"] | string;
@@ -306,12 +305,11 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                                 { name: "Lounge", href: "/dashboard", icon: LayoutDashboard },
                                 { name: "Recall", href: "/review", icon: Flame },
                                 { name: "Library", href: "/library", icon: Library },
-                                { name: "Lobbies", href: "/arena", icon: Swords },
                                 { name: "Profile", href: "/profile", icon: User },
                             ].map((item) => {
                                 const isActive = item.href === "/dashboard"
                                     ? (pathname === "/dashboard" || pathname === "/")
-                                    : (item.href === "/arena" ? pathname.startsWith("/arena") : pathname.startsWith(item.href));
+                                    : pathname.startsWith(item.href);
                                 
                                 return (
                                     <Link

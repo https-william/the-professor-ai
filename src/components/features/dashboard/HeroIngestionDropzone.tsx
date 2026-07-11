@@ -17,45 +17,6 @@ interface HeroIngestionDropzoneProps {
   processingText?: string;
 }
 
-const PARSING_TOKENS = [
-  "INHALING DOCUMENT BYTESTREAM...",
-  "EXTRACTING COGNITIVE SYNTAX TREES...",
-  "ISOLATING HIGH-YIELD CONCEPTS...",
-  "MAP-REDUCING MULTI-PARAGRAPH ENTITIES...",
-  "CALIBRATING ACTIVE RECALL PROMPTS...",
-  "DECONSTRUCTING INTELLECTUAL BLINDSPOTS...",
-  "COMPUTING SYLLABUS ROADMAP MILESTONES...",
-  "PACKAGING INTERACTIVE STUDY LAB..."
-];
-
-function AnimatedParsingTrack() {
-  const [tokenIdx, setTokenIdx] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTokenIdx(prev => (prev + 1) % PARSING_TOKENS.length);
-    }, 450);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="w-full max-w-md mx-auto mt-6 p-4.5 rounded-2xl dark:bg-zinc-950/90 bg-[var(--background-secondary)] border border-[var(--border)] font-mono text-[10px] dark:text-emerald-400 text-emerald-700 text-left space-y-1.5 shadow-inner h-24 overflow-hidden relative">
-      <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t dark:from-zinc-950 from-[var(--background-secondary)] to-transparent pointer-events-none" />
-      <div className="animate-pulse flex items-center gap-1.5 text-[9px] font-black dark:text-emerald-500 text-emerald-600 uppercase tracking-widest mb-1 pb-1 border-b border-[var(--border)]">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-        <span>Parsing Live Stream</span>
-      </div>
-      {PARSING_TOKENS.slice(Math.max(0, tokenIdx - 2), tokenIdx + 1).map((tok, idx) => {
-        const isCurrent = idx === Math.min(tokenIdx, 2);
-        return (
-          <div key={idx} className={`transition-all duration-200 ${isCurrent ? "opacity-100 font-bold translate-x-1" : "opacity-35"}`}>
-            &gt; {tok}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export function HeroIngestionDropzone({
   onFileSelect,
@@ -149,24 +110,27 @@ export function HeroIngestionDropzone({
       {/* Dropzone Canvas or Paste Form */}
       <div className="relative z-10 p-6 sm:p-10">
         {isProcessing ? (
-          <div className="py-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
+          <div className="py-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
             <div className="relative mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center animate-bounce">
-                <Sparkles size={28} className="text-[var(--blue)] animate-spin-slow" />
+              <div className="w-16 h-16 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center">
+                <Sparkles size={28} className="text-[var(--blue)] animate-pulse" />
               </div>
               <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--emerald)] flex items-center justify-center text-white border-2 border-[var(--background)] shadow-md">
                 <CheckCircle2 size={12} />
               </div>
             </div>
-            <h3 className="text-lg font-black text-[var(--foreground)] mb-1">
+            
+            <h3 className="text-base sm:text-lg font-black text-[var(--foreground)] mb-2 max-w-md leading-snug">
               {processingText}
             </h3>
-            <p className="text-xs text-[var(--foreground-muted)] max-w-sm font-semibold">
+            
+            <p className="text-xs text-[var(--foreground-muted)] max-w-xs font-semibold mb-6">
               Preparing your deconstructed study workspace...
             </p>
-            
-            {/* Live Parsing Token Stream */}
-            <AnimatedParsingTrack />
+
+            <div className="w-full max-w-xs bg-[var(--background)] h-1.5 rounded-full overflow-hidden border border-[var(--border)] relative">
+              <div className="absolute top-0 bottom-0 left-0 bg-[var(--blue)] w-1/2 animate-shimmer-sweep rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]" style={{ width: "65%" }} />
+            </div>
           </div>
         ) : mode === "drop" ? (
           <div

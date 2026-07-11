@@ -330,7 +330,12 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                                         <div className="flex items-center gap-2 truncate pr-2">
                                                             <Loader2 className="w-4 h-4 text-[var(--blue)] animate-spin shrink-0" />
                                                             <p className="text-xs font-bold text-[var(--foreground)] leading-snug truncate">
-                                                                {loadingPhrases[phraseIndex[item.id] || 0]} <span className="italic text-[var(--foreground-muted)]">({item.name})</span>
+                                                                {(trickleProgress[item.id] || item.progress || 20) <= 35 
+                                                                    ? "Reading file structure..." 
+                                                                    : (trickleProgress[item.id] || item.progress || 20) <= 70 
+                                                                    ? "Parsing key formulas & concepts..." 
+                                                                    : "Formatting recall modules..."} 
+                                                                <span className="italic text-[var(--foreground-muted)]"> ({item.name})</span>
                                                             </p>
                                                         </div>
                                                         <span className="text-[10px] font-mono font-black text-[var(--blue)]">{trickleProgress[item.id] || item.progress || 20}%</span>

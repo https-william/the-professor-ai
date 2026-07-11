@@ -102,85 +102,76 @@ const STUDY_FACTS = [
     }
 ];
 
+import { Check, Loader2 } from "lucide-react";
+
 export default function DopamineWaitingRoom({
     mode = "general",
     title,
     progress,
     className = ""
 }: DopamineWaitingRoomProps) {
-    const [pillIdx, setPillIdx] = useState(0);
     const [factIdx, setFactIdx] = useState(0);
 
-    const pills = EXTRACTION_PILLS[mode] || EXTRACTION_PILLS.general;
-
     useEffect(() => {
-        const pillTimer = setInterval(() => {
-            setPillIdx(prev => (prev + 1) % pills.length);
-        }, 3000);
-
         const factTimer = setInterval(() => {
             setFactIdx(prev => (prev + 1) % STUDY_FACTS.length);
         }, 6000);
 
         return () => {
-            clearInterval(pillTimer);
             clearInterval(factTimer);
         };
-    }, [pills.length]);
+    }, []);
 
     const activeFact = STUDY_FACTS[factIdx];
     const FactIcon = activeFact.icon;
 
+    // Premium Generation Steps
+    const currentProgress = typeof progress === "number" ? progress : 40;
+    const steps = [
+        { label: "Opening study archives", threshold: 20 },
+        { label: "Scanning core definitions & formulas", threshold: 40 },
+        { label: "Extracting high-yield concepts", threshold: 60 },
+        { label: "Deconstructing textbook fluff & filler", threshold: 80 },
+        { label: "Packaging interactive study lab", threshold: 100 }
+    ];
+
     return (
         <div className={`flex flex-col items-center justify-center p-6 w-full max-w-lg mx-auto text-center ${className}`}>
             
-            {/* Live Extraction Pill */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={pillIdx}
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/30 text-[var(--blue)] text-xs font-bold shadow-md mb-8"
-                >
-                    <span className="w-2 h-2 rounded-full bg-[var(--blue)] animate-ping" />
-                    <span>{pills[pillIdx]}</span>
-                </motion.div>
-            </AnimatePresence>
-
-            {/* Visualizer: Radar Dial & Pulsing Logo */}
-            <div className="relative w-32 h-32 flex items-center justify-center mb-8">
-                <div className="absolute inset-0 rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-inner" />
-                
-                <motion.div 
-                    className="absolute inset-2 rounded-full border border-dashed border-[var(--border)]"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                />
-
-                <motion.div 
-                    className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-[var(--blue)]/15 to-transparent"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                />
-
-                <div className="w-16 h-16 rounded-2xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center shadow-2xl relative z-10 overflow-hidden">
-                    <BrandLogo size="sm" />
-                    <motion.div 
-                        className="absolute inset-x-0 bottom-0 h-1 bg-[var(--blue)]"
-                        animate={{ y: ["100%", "-200%"] }}
-                        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                </div>
-            </div>
-
-            {/* Title & Progress */}
-            <h3 className="text-base font-black text-[var(--foreground)] mb-1">
+            {/* Title */}
+            <h3 className="text-base font-black text-[var(--foreground)] mb-6">
                 {title || "The Professor is building your study pack..."}
             </h3>
+
+            {/* Checklist Progression */}
+            <div className="w-full max-w-sm mx-auto bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 mb-6 text-left space-y-3 shadow-inner">
+                {steps.map((step, idx) => {
+                    const prevThreshold = idx === 0 ? 0 : steps[idx - 1].threshold;
+                    const isCompleted = currentProgress >= step.threshold;
+                    const isActive = currentProgress >= prevThreshold && currentProgress < step.threshold;
+
+                    return (
+                        <div key={idx} className="flex items-center justify-between text-xs transition-opacity duration-200">
+                            <span className={`font-medium ${isCompleted ? "text-[var(--foreground-muted)] line-through" : isActive ? "text-[var(--blue)] font-bold animate-pulse" : "text-[var(--foreground-muted)] opacity-40"}`}>
+                                {step.label}
+                            </span>
+                            <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
+                                {isCompleted ? (
+                                    <Check size={12} className="text-[var(--emerald)]" strokeWidth={3} />
+                                ) : isActive ? (
+                                    <Loader2 size={12} className="text-[var(--blue)] animate-spin" />
+                                ) : (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--border)]" />
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Progress Bar */}
             {typeof progress === "number" && (
-                <div className="w-full max-w-xs bg-[var(--surface)] h-1.5 rounded-full mt-4 mb-2 overflow-hidden border border-[var(--border)] mx-auto">
+                <div className="w-full max-w-xs bg-[var(--surface)] h-1.5 rounded-full mb-2 overflow-hidden border border-[var(--border)] mx-auto relative">
                     <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}

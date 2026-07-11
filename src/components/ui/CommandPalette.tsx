@@ -88,14 +88,7 @@ export default function CommandPalette({ isOpen: externalIsOpen, onClose: extern
       shortcut: "G L",
       onSelect: () => { router.push("/library"); handleClose(); }
     },
-    {
-      id: "nav-arena",
-      label: "Go to Arena Pomodoro Lobbies",
-      category: "Navigation",
-      icon: <Users size={16} className="text-[var(--cyan)]" />,
-      shortcut: "G A",
-      onSelect: () => { router.push("/arena"); handleClose(); }
-    },
+
     {
       id: "nav-settings",
       label: "Go to Ergonomics & Settings",

@@ -160,6 +160,7 @@ export const InteractiveQuiz = ({
     const currentQuestion = (questions && questions.length > 0) ? (questions[currentIdx] || questions[0]) : null;
 
     const handleSelect = (idx: number) => {
+        if (answers[currentIdx] !== undefined) return;
         const isCorrect = idx === currentQuestion?.correctIndex;
         if (isCorrect) {
             setComboStreak(prev => {
@@ -773,6 +774,7 @@ export const InteractiveQuiz = ({
                                         key={i}
                                         onClick={() => handleSelect(i)}
                                         className={btnStyle}
+                                        disabled={hasAnswered}
                                     >
                                         <div className="flex items-center gap-3.5 flex-1">
                                             <div className={circleStyle}>
@@ -809,21 +811,6 @@ export const InteractiveQuiz = ({
                                                 </span>
                                             )}
                                         </div>
-
-                                        {!tutorAnalogy[currentIdx] && (
-                                            <button
-                                                onClick={() => askProfessorTutor(currentIdx)}
-                                                disabled={isLoadingTutor[currentIdx]}
-                                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#9673F5]/20 border border-[#9673F5]/40 text-[#9673F5] text-[10px] font-bold hover:bg-[#9673F5] hover:text-white transition-all cursor-pointer shrink-0"
-                                            >
-                                                {isLoadingTutor[currentIdx] ? (
-                                                    <Loader2 size={11} className="animate-spin" />
-                                                ) : (
-                                                    <Sparkles size={11} />
-                                                )}
-                                                <span>Ask Professor Why</span>
-                                            </button>
-                                        )}
                                     </div>
 
                                     {currentQuestion?.explanation && (

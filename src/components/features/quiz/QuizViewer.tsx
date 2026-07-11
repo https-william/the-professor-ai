@@ -793,45 +793,7 @@ export default function QuizViewer({ questions: originalQuestions, title, genera
                                         )}
                                     </div>
 
-                                    {/* AI Tutor "Ask the Professor" Analogy */}
-                                    <div className="relative">
-                                        {!tutorAnalogy[currentIndex] ? (
-                                            <button
-                                                onClick={() => askProfessorTutor(currentIndex)}
-                                                disabled={isLoadingTutor[currentIndex]}
-                                                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#E5A93C]/15 to-[#E5A93C]/5 border border-[#E5A93C]/25 text-[#E5A93C] text-[11px] font-bold uppercase tracking-wider hover:from-[#E5A93C]/20 hover:to-[#E5A93C]/10 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(229,169,60,0.05)]"
-                                            >
-                                                {isLoadingTutor[currentIndex] ? (
-                                                    <>
-                                                        <Loader2 size={14} className="animate-spin" />
-                                                        The Professor is drafting...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Sparkles size={14} />
-                                                        Ask the Professor for an Analogy
-                                                    </>
-                                                )}
-                                            </button>
-                                        ) : (
-                                            <motion.div 
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="p-6 rounded-3xl bg-[#E5A93C]/5 border border-[#E5A93C]/20 flex flex-col gap-2 relative shadow-lg"
-                                            >
-                                                {/* Witty speech bubble tail */}
-                                                <div className="absolute top-[-8px] right-8 w-4 h-4 bg-[#E5A93C]/5 border-t border-l border-[#E5A93C]/20 rotate-45 transform" />
-                                                
-                                                <h5 className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E5A93C]">
-                                                    <Sparkles size={12} />
-                                                    Professor's Analogy
-                                                </h5>
-                                                <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed font-serif italic">
-                                                    &ldquo;{tutorAnalogy[currentIndex]}&rdquo;
-                                                </p>
-                                            </motion.div>
-                                        )}
-                                    </div>
+
                                 </div>
                             )}
                         </div>

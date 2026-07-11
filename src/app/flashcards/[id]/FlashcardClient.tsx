@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { FlashcardSkeleton } from "@/components/ui/Skeleton";
+import StandardContainer from "@/components/ui/StandardContainer";
 import FlashcardViewer from "@/components/features/flashcards/FlashcardViewer";
 
 export default function FlashcardClient() {
@@ -41,11 +43,15 @@ export default function FlashcardClient() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-                <div className="flex flex-col items-center gap-6">
-                    <div className="w-16 h-16 rounded-full border-4 border-[var(--blue)] border-t-transparent animate-spin shadow-[0_0_30px_var(--blue-glow)]" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--foreground-muted)] animate-pulse">Loading Flashcards</span>
-                </div>
+            <div className="min-h-screen bg-[var(--background)] relative">
+                <div className="absolute inset-0 bg-[linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-40 z-0" />
+                <StandardContainer className="pt-20 pb-20 relative z-10 max-w-2xl">
+                    <div className="mb-8">
+                        <div className="w-48 h-4 bg-white/5 rounded animate-pulse mb-3" />
+                        <div className="w-24 h-2.5 bg-white/5 rounded animate-pulse" />
+                    </div>
+                    <FlashcardSkeleton />
+                </StandardContainer>
             </div>
         );
     }

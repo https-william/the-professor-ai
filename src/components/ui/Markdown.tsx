@@ -86,29 +86,11 @@ const THINKING_PHRASES = [
 ];
 
 export function BubblyThinkingLoader() {
-    const [phrase, setPhrase] = useState("");
-
-    useEffect(() => {
-        setPhrase(THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)]);
-        const interval = setInterval(() => {
-            setPhrase(prev => {
-                const remaining = THINKING_PHRASES.filter(p => p !== prev);
-                return remaining[Math.floor(Math.random() * remaining.length)];
-            });
-        }, 3500);
-        return () => clearInterval(interval);
-    }, []);
-
     return (
-        <div className="flex flex-col gap-3 py-4 pl-1">
-            <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-white/40 thinking-dot" />
-                <span className="w-2 h-2 rounded-full bg-white/40 thinking-dot" />
-                <span className="w-2 h-2 rounded-full bg-white/40 thinking-dot" />
-            </div>
-            <p className="text-[10px] font-mono font-bold tracking-widest text-[var(--foreground-muted)] uppercase animate-pulse">
-                {phrase}
-            </p>
+        <div className="flex items-center gap-1.5 py-4 pl-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" style={{ animationDuration: "1.4s" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" style={{ animationDuration: "1.4s", animationDelay: "0.2s" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" style={{ animationDuration: "1.4s", animationDelay: "0.4s" }} />
         </div>
     );
 }

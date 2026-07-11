@@ -131,17 +131,12 @@ export default function DataDustLoader({
         <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden"
             style={{ background: "#060608" }}>
 
-            {/* Canvas backdrop */}
-            <div className="absolute inset-0">
-                <InkMoteCanvas />
-            </div>
-
             {/* Radial white glow */}
             <div
                 className="absolute rounded-full pointer-events-none"
                 style={{
-                    width: "320px", height: "320px",
-                    background: "radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%)",
+                    width: "480px", height: "480px",
+                    background: "radial-gradient(circle, rgba(255,255,255,0.015) 0%, transparent 70%)",
                 }}
             />
 
