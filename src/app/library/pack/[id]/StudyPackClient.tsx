@@ -1590,7 +1590,7 @@ export default function StudyPackPage() {
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] text-[8px] font-black uppercase tracking-wider mb-1.5">
                                     <Sparkles size={8} /> SPRINT UNLOCK
                                 </span>
-                                <h2 className="text-xs font-black uppercase tracking-tight text-white mb-0.5">
+                                <h2 className="text-xs font-black uppercase tracking-tight text-[var(--foreground)] mb-0.5">
                                     Unlock Weekly Sprint Pass (₦399)
                                 </h2>
                                 <p className="text-[10px] text-[var(--foreground-muted)] font-medium leading-relaxed max-w-xl">
@@ -1725,7 +1725,7 @@ export default function StudyPackPage() {
             </StandardContainer>
 
             {/* Mobile View Sticky Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--border)] bg-[#070709]/95 backdrop-blur-md py-3 px-6 flex justify-around items-center z-[150] lg:hidden print-hidden shadow-2xl">
+            <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-md py-3 px-6 flex justify-around items-center z-[150] lg:hidden print-hidden shadow-2xl">
                 <button
                     onClick={() => setMobileActivePane('left')}
                     className={cn(
@@ -1752,32 +1752,32 @@ export default function StudyPackPage() {
 
             {phasesData.distill && (
                 <div className="fixed left-[-9999px] top-0 pointer-events-none">
-                    <div id="summary-export-container" className="w-[800px] bg-[#040406] text-[#F2EDE4] p-20 font-sans">
+                    <div id="summary-export-container" className="w-[800px] bg-[var(--background)] text-[var(--foreground)] p-20 font-sans">
                         <style dangerouslySetInnerHTML={{ __html: `
                             #summary-export-container table {
                                 width: 100% !important;
                                 border-collapse: collapse !important;
                                 margin: 32px 0 !important;
-                                border: 1px solid rgba(242, 237, 228, 0.15) !important;
-                                background: rgba(255, 255, 255, 0.01) !important;
+                                border: 1px solid var(--border) !important;
+                                background: var(--background-secondary) !important;
                                 display: table !important;
                             }
                             #summary-export-container th {
-                                background-color: rgba(242, 237, 228, 0.05) !important;
-                                color: #F2EDE4 !important;
+                                background-color: var(--background-secondary) !important;
+                                color: var(--foreground) !important;
                                 font-weight: 800 !important;
                                 text-transform: uppercase !important;
                                 letter-spacing: 0.1em !important;
                                 font-size: 11px !important;
                                 padding: 14px 20px !important;
-                                border-bottom: 2px solid rgba(242, 237, 228, 0.15) !important;
-                                border-right: 1px solid rgba(242, 237, 228, 0.1) !important;
+                                border-bottom: 2px solid var(--border-2) !important;
+                                border-right: 1px solid var(--border) !important;
                             }
                             #summary-export-container td {
                                 padding: 14px 20px !important;
-                                border-bottom: 1px solid rgba(242, 237, 228, 0.1) !important;
-                                border-right: 1px solid rgba(242, 237, 228, 0.05) !important;
-                                color: rgba(242, 237, 228, 0.85) !important;
+                                border-bottom: 1px solid var(--border) !important;
+                                border-right: 1px solid var(--border) !important;
+                                color: var(--foreground-secondary) !important;
                                 font-size: 14px !important;
                             }
                             #summary-export-container tr:last-child td {
@@ -1787,10 +1787,10 @@ export default function StudyPackPage() {
                                 border-right: none !important;
                             }
                             #summary-export-container tr:nth-child(even) {
-                                background-color: rgba(242, 237, 228, 0.02) !important;
+                                background-color: var(--background-secondary) !important;
                             }
                         `}} />
-                        <div className="mb-20 pb-10 border-b border-white/10">
+                        <div className="mb-20 pb-10 border-b border-[var(--border-2)]">
                             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent)] mb-4">Your Study Pack Summary</p>
                             <h1 className="text-5xl font-black tracking-tight leading-tight">{packTitle}</h1>
                         </div>

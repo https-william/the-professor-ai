@@ -368,7 +368,7 @@ export const InteractiveQuiz = ({
 
                 {/* Guest Sign-up CTA Banner */}
                 {isGuest && (
-                    <div className="w-full p-5 rounded-2xl bg-gradient-to-r from-[#E5A93C]/10 to-[#9673F5]/10 border border-white/5 relative overflow-hidden backdrop-blur-md shrink-0">
+                    <div className="w-full p-5 rounded-2xl bg-gradient-to-r from-[#E5A93C]/10 to-[#9673F5]/10 border border-[var(--border)] relative overflow-hidden backdrop-blur-md shrink-0">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div className="space-y-1">
                                 <h4 className="font-black text-[10px] uppercase tracking-widest text-[#E5A93C] flex items-center gap-1.5">
@@ -444,7 +444,7 @@ export const InteractiveQuiz = ({
                                             className={`p-2 rounded-xl border transition-all ${
                                                 savedQuestions.has(i)
                                                     ? 'bg-[#E5A93C]/10 border-[#E5A93C]/20 text-[#E5A93C]'
-                                                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
+                                                    : 'bg-[var(--background-secondary)] border-[var(--border-2)] text-[var(--foreground-muted)]/75 hover:bg-[var(--background-secondary)]/80'
                                             }`}
                                             title="Save to Flashcards"
                                         >
@@ -480,7 +480,7 @@ export const InteractiveQuiz = ({
                                                     "w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold border shrink-0",
                                                     isCorrectOpt ? "bg-[#2BB288]/20 border-[#2BB288]/30 text-[#2BB288]" :
                                                     isWrongSelected ? "bg-[#E85D75]/20 border-[#E85D75]/30 text-[#E85D75]" :
-                                                    "bg-white/5 border-white/10"
+                                                    "bg-[var(--background-secondary)] border-[var(--border-2)] text-[var(--foreground-muted)]"
                                                 )}>
                                                     {String.fromCharCode(65 + optIdx)}
                                                 </span>
@@ -656,11 +656,11 @@ export const InteractiveQuiz = ({
                                 animate={{ x: 0, opacity: 1 }}
                                 exit={{ x: -280, opacity: 0 }}
                                 transition={{ duration: 0.25 }}
-                                className="absolute left-0 top-0 bottom-0 z-30 w-72 bg-[#0c0c13] border-r border-white/5 flex flex-col p-6 shadow-2xl overflow-y-auto rounded-3xl"
+                                className="absolute left-0 top-0 bottom-0 z-30 w-72 bg-[var(--card)] border-r border-[var(--border)] flex flex-col p-6 shadow-2xl overflow-y-auto rounded-3xl"
                             >
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-[#9673F5]">Question Grid</h3>
-                                    <button onClick={() => setIsDrawerOpen(false)} className="p-1 rounded hover:bg-white/5 text-white/50">
+                                    <button onClick={() => setIsDrawerOpen(false)} className="p-1 rounded hover:bg-[var(--background-secondary)] text-[var(--foreground-muted)]">
                                         <X size={14} />
                                     </button>
                                 </div>
@@ -709,7 +709,7 @@ export const InteractiveQuiz = ({
                                         {flags.has(currentIdx) ? 'Flagged' : 'Flag'}
                                     </button>
                                 </div>
-                                <h4 className="text-base md:text-lg font-black leading-relaxed text-zinc-950 dark:text-white">
+                                <h4 className="text-base md:text-lg font-black leading-relaxed text-[var(--foreground)]">
                                     {currentQuestion?.question}
                                 </h4>
                             </div>
@@ -763,7 +763,7 @@ export const InteractiveQuiz = ({
                                             <div className={circleStyle}>
                                                 {String.fromCharCode(65 + i)}
                                             </div>
-                                            <span className="font-extrabold text-zinc-950 dark:text-white">{opt}</span>
+                                            <span className="font-extrabold text-[var(--foreground)]">{opt}</span>
                                         </div>
                                     </button>
                                 );
@@ -818,7 +818,7 @@ export const InteractiveQuiz = ({
                                     )}
 
                                     {currentQuestion?.analogy && (
-                                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-start gap-2">
+                                        <div className="p-2.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] flex items-start gap-2">
                                             <Lightbulb size={14} className="text-[#E5A93C] shrink-0 mt-0.5" />
                                             <p className="text-xs font-serif italic text-[var(--foreground-secondary)] leading-relaxed">
                                                 &ldquo;{currentQuestion.analogy}&rdquo;
@@ -842,7 +842,7 @@ export const InteractiveQuiz = ({
                     </div>
 
                     {/* Navigation bar */}
-                    <div className="w-full flex items-center justify-between gap-3 mt-6 pt-4 border-t border-white/5 shrink-0">
+                    <div className="w-full flex items-center justify-between gap-3 mt-6 pt-4 border-t border-[var(--border)] shrink-0">
                         <button 
                             onClick={handlePrev} 
                             disabled={currentIdx === 0}
@@ -857,7 +857,7 @@ export const InteractiveQuiz = ({
                                 "px-6 py-3 rounded-xl flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-all",
                                 currentIdx === questions.length - 1 
                                     ? "bg-[#9673F5] text-white shadow-lg shadow-[#9673F5]/20 hover:bg-[#8663E5]" 
-                                    : "bg-white text-zinc-950 hover:opacity-90"
+                                    : "bg-[var(--foreground)] text-[var(--background)] hover:opacity-90"
                             )}
                         >
                             {currentIdx === questions.length - 1 ? "Finish" : "Next"}

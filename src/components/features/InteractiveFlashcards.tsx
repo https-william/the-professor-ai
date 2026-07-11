@@ -511,7 +511,7 @@ export const InteractiveFlashcards = ({
     backfaceVisibility: "hidden",
     WebkitBackfaceVisibility: "hidden",
     borderRadius: "28px",
-    border: "1.5px solid rgba(255, 255, 255, 0.08)",
+    border: "1.5px solid var(--border-2)",
     padding: "24px",
     display: "flex",
     flexDirection: "column",
@@ -521,13 +521,13 @@ export const InteractiveFlashcards = ({
 
   const cardFrontStyle: React.CSSProperties = {
     ...cardFaceStyle,
-    background: "rgba(18, 18, 24, 0.8)",
+    background: "var(--card)",
     backdropFilter: "blur(20px)",
   };
 
   const cardBackStyle: React.CSSProperties = {
     ...cardFaceStyle,
-    background: "rgba(12, 12, 16, 0.9)",
+    background: "var(--card)",
     backdropFilter: "blur(25px)",
     transform: "rotateY(180deg)",
   };
@@ -561,7 +561,7 @@ export const InteractiveFlashcards = ({
       <div className="w-full max-w-[400px] md:max-w-[620px] flex items-center justify-end gap-2 shrink-0">
         <button 
           onClick={shuffleDeck}
-          className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-[var(--foreground-muted)] hover:text-white transition-all" 
+          className="p-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all" 
           title="Shuffle Deck"
         >
           <Shuffle size={14} />
@@ -571,7 +571,7 @@ export const InteractiveFlashcards = ({
           className={`p-1.5 rounded-lg border transition-all flex items-center gap-1 text-[10px] font-bold ${
             isReverseMode 
               ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-              : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+              : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
           }`}
           title="Swap Term & Definition"
         >
@@ -583,7 +583,7 @@ export const InteractiveFlashcards = ({
           className={`p-1.5 rounded-lg border transition-all flex items-center gap-1 text-[10px] font-bold ${
             isVerifyTextMode 
               ? 'bg-[var(--violet)]/10 border-[var(--violet)]/30 text-[var(--violet)]' 
-              : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+              : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
           }`}
           title="Type Guess Mode"
         >
@@ -595,7 +595,7 @@ export const InteractiveFlashcards = ({
           className={`p-1.5 rounded-lg border transition-all flex items-center gap-1 text-[10px] font-bold ${
             isDyslexiaMode 
               ? 'bg-[var(--emerald)]/10 border-[var(--emerald)]/30 text-[var(--emerald)]' 
-              : 'bg-white/5 border-white/5 text-[var(--foreground-muted)] hover:text-white'
+              : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
           }`}
           title="Dyslexia Font"
         >
@@ -735,7 +735,7 @@ export const InteractiveFlashcards = ({
                       value={userGuess}
                       onChange={e => setUserGuess(e.target.value)}
                       placeholder="Type your guess..."
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-950/60 border border-white/10 text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/45 transition-colors"
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/45 transition-colors"
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -783,13 +783,13 @@ export const InteractiveFlashcards = ({
                   <div className="flex-1 flex flex-col items-center justify-center px-2 my-2 w-full overflow-y-auto scrollbar-none">
                     
                     {isVerifyTextMode && userGuess && (
-                      <div className="w-full p-2 rounded-lg bg-white/5 border border-white/5 text-left mb-2 shrink-0">
+                      <div className="w-full p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-left mb-2 shrink-0">
                         <span className="text-[7px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/50 block mb-0.5">Your Guess</span>
-                        <span className="text-[11px] font-mono text-zinc-300 line-clamp-2">{userGuess}</span>
+                        <span className="text-[11px] font-mono text-[var(--foreground-secondary)] line-clamp-2">{userGuess}</span>
                       </div>
                     )}
 
-                    <p className={`text-sm md:text-base font-medium text-center text-zinc-100 leading-relaxed ${
+                    <p className={`text-sm md:text-base font-medium text-center text-[var(--foreground)] leading-relaxed ${
                       isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-base' : 'font-serif'
                     }`}>
                       {eli5Text[currentCardIndex] || cardBackText}
@@ -875,14 +875,14 @@ export const InteractiveFlashcards = ({
         )}
 
         {/* Global Footer Actions */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--border)]">
           <div className="flex items-center gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 downloadFlashcardsOffline(title, cards);
               }}
-              className="p-2 rounded-lg bg-white/5 border border-white/5 text-[var(--foreground-muted)] hover:text-white transition-all"
+              className="p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all"
               title="Download offline HTML"
             >
               <Download size={14} />

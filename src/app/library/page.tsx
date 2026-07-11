@@ -483,7 +483,7 @@ export default function LibraryPage() {
     const sprintCount = items.filter(g => g.type === "exam_sprint").length;
 
     return (
-        <div className="bg-transparent text-zinc-100 pb-28 pt-20 relative flex flex-col flex-1 overflow-x-clip">
+        <div className="bg-transparent text-[var(--foreground)] pb-28 pt-20 relative flex flex-col flex-1 overflow-x-clip">
             <SEOHead type="WebApplication" data={getWebApplicationSchema()} />
 
             {/* Grid Line Background */}
@@ -500,15 +500,15 @@ export default function LibraryPage() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
                             <div className="flex items-center gap-2 mb-3">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 shadow-sm">
-                                    <Library size={18} className="text-white" />
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
+                                    <Library size={18} className="text-[var(--foreground)]" />
                                 </div>
-                                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-zinc-500">Unified Storage</span>
+                                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-[var(--foreground-muted)]">Unified Storage</span>
                             </div>
                             <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-[0.9] uppercase italic font-sans">
                                 Study <span className="text-[#E5A93C] drop-shadow-[0_0_15px_rgba(229,169,60,0.15)]">Vault</span>
                             </h1>
-                            <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em] mt-1.5 opacity-80">
+                            <p className="text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em] mt-1.5 opacity-80">
                                 {isOfflineView ? "Local Device Storage · Zero Latency" : "Real-time Cloud Synchronization"}
                             </p>
                         </div>
@@ -517,12 +517,12 @@ export default function LibraryPage() {
                         <div className="flex flex-wrap items-center gap-3">
                             <ThemeToggle />
                             {/* Offline Toggle */}
-                            <div className="flex items-center p-1 rounded-xl bg-zinc-950/40 border border-white/5 backdrop-blur-md shadow-inner">
+                            <div className="flex items-center p-1 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] backdrop-blur-md shadow-inner">
                                 <button
                                     onClick={() => { playResultsSound("click"); setIsOfflineView(false); exitSelectionMode(); }}
                                     className={cn(
                                         "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
-                                        !isOfflineView ? "bg-white text-zinc-950 shadow-md" : "text-zinc-400 hover:text-white"
+                                        !isOfflineView ? "bg-[var(--foreground)] text-[var(--background)] shadow-md" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
                                     )}
                                 >
                                     <Cloud size={13} /> Cloud History
@@ -531,7 +531,7 @@ export default function LibraryPage() {
                                     onClick={() => { playResultsSound("click"); setIsOfflineView(true); exitSelectionMode(); }}
                                     className={cn(
                                         "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer border border-transparent",
-                                        isOfflineView ? "bg-[#2BB288]/20 text-[#2BB288] border-[#2BB288]/30 shadow-md" : "text-zinc-400 hover:text-white"
+                                        isOfflineView ? "bg-[#2BB288]/20 text-[#2BB288] border-[#2BB288]/30 shadow-md" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
                                     )}
                                 >
                                     <WifiOff size={13} /> Offline Vault ({offlineItems.length})
@@ -563,11 +563,11 @@ export default function LibraryPage() {
                                         >
                                             <s.icon size={16} strokeWidth={2} />
                                         </div>
-                                        <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Active</span>
+                                        <span className="text-[9px] font-black text-[var(--foreground-muted)] uppercase tracking-widest">Active</span>
                                     </div>
                                     <div>
-                                        <div className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight mb-1">{s.count}</div>
-                                        <div className="text-[9px] text-zinc-400 font-black uppercase tracking-[0.2em]">{s.label}</div>
+                                        <div className="text-2xl sm:text-3xl font-black text-[var(--foreground)] leading-none tracking-tight mb-1">{s.count}</div>
+                                        <div className="text-[9px] text-[var(--foreground-muted)] font-black uppercase tracking-[0.2em]">{s.label}</div>
                                     </div>
                                 </GlassmorphicCard>
                             ))}
@@ -592,8 +592,8 @@ export default function LibraryPage() {
                                             isActive
                                                 ? isOfflineView 
                                                     ? "bg-[#2BB288]/10 text-[#2BB288] border-[#2BB288]/30 shadow-[0_0_15px_rgba(43,178,136,0.15)]"
-                                                    : "bg-white/10 text-white border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-                                                : "bg-white/5 text-zinc-400 hover:text-white border-white/5 hover:border-white/10"
+                                                    : "bg-[var(--foreground)]/10 text-[var(--foreground)] border-[var(--border-2)] shadow-[0_8px_32px_rgba(0,0,0,0.1)]"
+                                                : "bg-[var(--background-secondary)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] border-[var(--border)] hover:border-[var(--border-hover)]"
                                         )}
                                     >
                                         <f.icon size={13} />
@@ -605,25 +605,25 @@ export default function LibraryPage() {
 
                         {/* Sort Dropdown */}
                         <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-500">Sort by</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)]">Sort by</span>
                             <select
                                 value={sortOption}
                                 onChange={(e) => {
                                     playResultsSound("click");
                                     setSortOption(e.target.value as any);
                                 }}
-                                className="px-3.5 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] bg-white/5 text-zinc-400 hover:text-white border border-white/5 hover:border-white/10 outline-none cursor-pointer transition-all"
+                                className="px-3.5 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] bg-[var(--background-secondary)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--border-hover)] outline-none cursor-pointer transition-all"
                             >
-                                <option value="date" className="bg-[#09090b] text-white">Date Created</option>
-                                <option value="title" className="bg-[#09090b] text-white">Title</option>
-                                <option value="type" className="bg-[#09090b] text-white">Type</option>
+                                <option value="date" className="bg-[var(--background-secondary)] text-[var(--foreground)]">Date Created</option>
+                                <option value="title" className="bg-[var(--background-secondary)] text-[var(--foreground)]">Title</option>
+                                <option value="type" className="bg-[var(--background-secondary)] text-[var(--foreground)]">Type</option>
                             </select>
                         </div>
                     </div>
 
                     {/* Subject Tags Bar */}
                     <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mt-4">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 shrink-0 mr-1 flex items-center gap-1">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] shrink-0 mr-1 flex items-center gap-1">
                             <Tag size={11} className="text-[#E5A93C]" /> Subjects:
                         </span>
                         {[
@@ -651,7 +651,7 @@ export default function LibraryPage() {
                                         "px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer shrink-0 border",
                                         isSelected || isAll
                                             ? "bg-[#E5A93C]/15 text-[#E5A93C] border-[#E5A93C]/40 shadow-xs"
-                                            : "bg-white/5 text-zinc-400 hover:text-white border-white/5 hover:border-white/10"
+                                            : "bg-[var(--background-secondary)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] border-[var(--border)] hover:border-[var(--border-hover)]"
                                     )}
                                 >
                                     {sub.label}
@@ -661,8 +661,8 @@ export default function LibraryPage() {
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative mb-6 rounded-2xl border border-white/5 focus-within:border-[#E5A93C]/30 focus-within:shadow-[0_0_15px_rgba(229,169,60,0.08)] transition-all bg-zinc-950/40 overflow-hidden">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-white/40">
+                    <div className="relative mb-6 rounded-2xl border border-[var(--border)] focus-within:border-[#E5A93C]/30 focus-within:shadow-[0_0_15px_rgba(229,169,60,0.08)] transition-all bg-[var(--background-secondary)]/50 overflow-hidden">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-[var(--foreground-muted)]/50">
                             {searchQuery.includes("type:") ? <Filter size={16} /> : <Search size={16} />}
                         </div>
                         <input
@@ -672,24 +672,24 @@ export default function LibraryPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setShowSearch(true)}
                             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-                            className="w-full pl-11 pr-14 py-4 text-xs font-bold text-white placeholder:text-zinc-600 outline-none transition-all bg-transparent font-sans"
+                            className="w-full pl-11 pr-14 py-4 text-xs font-bold text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]/50 outline-none transition-all bg-transparent font-sans"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery("")}
-                                    className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                                    className="p-1.5 rounded-lg text-[var(--foreground-muted)]/50 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5 transition-all cursor-pointer"
                                     title="Clear search"
                                 >
                                     <X size={15} />
                                 </button>
                             )}
-                            <div className="w-px h-4 bg-white/5 mx-0.5" />
+                            <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
                             <button 
                                 onClick={() => setSearchQuery(prev => prev.includes("type:") ? "" : "type:")}
                                 className={cn(
                                     "p-1.5 rounded-lg transition-all cursor-pointer",
-                                    searchQuery.includes("type:") ? "text-zinc-950 bg-white" : "text-white/40 hover:text-white"
+                                    searchQuery.includes("type:") ? "text-[var(--background)] bg-[var(--foreground)]" : "text-[var(--foreground-muted)]/50 hover:text-[var(--foreground)]"
                                 )}
                                 title="Filter by type"
                             >
@@ -708,7 +708,7 @@ export default function LibraryPage() {
                                 >
                                     <GlassmorphicCard intensity="heavy" radius="20px" className="p-6 space-y-4">
                                         <div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2 flex items-center gap-1.5">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] mb-2 flex items-center gap-1.5">
                                                 <Clock size={11} /> Recent Study Packs
                                             </h4>
                                             <div className="flex flex-col gap-1.5">
@@ -716,18 +716,18 @@ export default function LibraryPage() {
                                                     <button
                                                         key={item.id}
                                                         onClick={() => handleOpen(item)}
-                                                        className="text-left text-xs font-bold text-zinc-300 hover:text-white transition-colors truncate cursor-pointer"
+                                                        className="text-left text-xs font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors truncate cursor-pointer"
                                                     >
                                                         {item.title || "Untitled Study Pack"}
                                                     </button>
                                                 ))}
                                                 {activeItems.length === 0 && (
-                                                    <span className="text-xs text-zinc-600 italic">No packs generated yet.</span>
+                                                    <span className="text-xs text-[var(--foreground-muted)]/60 italic">No packs generated yet.</span>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <div className="border-t border-white/5 pt-3">
+                                        <div className="border-t border-[var(--border)] pt-3">
                                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E5A93C] mb-2 flex items-center gap-1.5">
                                                 <Sparkles size={11} /> Highly Reviewed Core Concepts
                                             </h4>
@@ -736,7 +736,7 @@ export default function LibraryPage() {
                                                     <button
                                                         key={concept}
                                                         onClick={() => { playResultsSound("click"); setSearchQuery(concept); }}
-                                                        className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-zinc-300 hover:text-white hover:border-white/20 transition-all cursor-pointer"
+                                                        className="px-2.5 py-1 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[10px] font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] transition-all cursor-pointer"
                                                     >
                                                         {concept}
                                                     </button>
@@ -744,15 +744,15 @@ export default function LibraryPage() {
                                             </div>
                                         </div>
 
-                                        <div className="border-t border-white/5 pt-3">
+                                        <div className="border-t border-[var(--border)] pt-3">
                                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#9673F5] mb-2 flex items-center gap-1.5">
                                                 <BellRing size={11} /> Flagged Exam Questions
                                             </h4>
-                                            <div className="flex flex-col gap-1.5 text-xs text-zinc-400 font-medium">
-                                                <button onClick={() => { playResultsSound("click"); setSearchQuery("murmur"); }} className="text-left hover:text-white transition-colors truncate cursor-pointer">
+                                            <div className="flex flex-col gap-1.5 text-xs text-[var(--foreground-muted)] font-medium">
+                                                <button onClick={() => { playResultsSound("click"); setSearchQuery("murmur"); }} className="text-left hover:text-[var(--foreground)] transition-colors truncate cursor-pointer">
                                                     Q: "What is the classic murmur triad?"
                                                 </button>
-                                                <button onClick={() => { playResultsSound("click"); setSearchQuery("action potential"); }} className="text-left hover:text-white transition-colors truncate cursor-pointer">
+                                                <button onClick={() => { playResultsSound("click"); setSearchQuery("action potential"); }} className="text-left hover:text-[var(--foreground)] transition-colors truncate cursor-pointer">
                                                     Q: "Explain phase 0 depolarization dynamics."
                                                 </button>
                                             </div>
@@ -767,7 +767,7 @@ export default function LibraryPage() {
                     {loading && !isOfflineView ? (
                         <div className="space-y-3">
                             {[0, 1, 2, 3].map(i => (
-                                <div key={i} className="h-18 rounded-2xl animate-pulse bg-white/5 border border-white/5 shadow-sm" />
+                                <div key={i} className="h-18 rounded-2xl animate-pulse bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm" />
                             ))}
                         </div>
                     ) : sortedAndFiltered.length === 0 ? (
@@ -814,11 +814,11 @@ export default function LibraryPage() {
                                                                 exit={{ scale: 0, opacity: 0 }}
                                                                 className="w-5 h-5 rounded-lg border flex items-center justify-center mr-1 shadow-xs flex-shrink-0"
                                                                 style={{ 
-                                                                    borderColor: isSelected ? "white" : "rgba(255,255,255,0.1)",
-                                                                    background: isSelected ? "white" : "transparent"
+                                                                    borderColor: isSelected ? "var(--foreground)" : "var(--border-2)",
+                                                                    background: isSelected ? "var(--foreground)" : "transparent"
                                                                 }}
                                                             >
-                                                                {isSelected && <Check size={13} strokeWidth={3} className="text-zinc-950" />}
+                                                                {isSelected && <Check size={13} strokeWidth={3} className="text-[var(--background)]" />}
                                                             </motion.div>
                                                         )}
                                                     </AnimatePresence>
@@ -832,7 +832,7 @@ export default function LibraryPage() {
 
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <span className="text-xs sm:text-sm font-black text-white truncate group-hover:text-white/80 transition-colors uppercase italic tracking-tight font-sans">
+                                                            <span className="text-xs sm:text-sm font-black text-[var(--foreground)] truncate group-hover:text-[var(--foreground)]/80 transition-colors uppercase italic tracking-tight font-sans">
                                                                 {item.title || "Untitled Scholarly Work"}
                                                             </span>
                                                             <span 
@@ -852,14 +852,14 @@ export default function LibraryPage() {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="flex items-center gap-2.5 text-[11px] font-bold text-zinc-500 truncate">
+                                                        <div className="flex items-center gap-2.5 text-[11px] font-bold text-[var(--foreground-muted)] truncate">
                                                             {count && <span className="flex items-center gap-1 shrink-0"><BookOpen size={12} /> {count}</span>}
-                                                            {count && <span className="text-zinc-800 shrink-0">•</span>}
+                                                            {count && <span className="text-[var(--border-3)] shrink-0">•</span>}
                                                             <span className="flex items-center gap-1 truncate"><Clock size={12} className="shrink-0" /> {itemDate}</span>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-white transition-colors shrink-0 group-hover:opacity-0 opacity-100 duration-200">
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors shrink-0 group-hover:opacity-0 opacity-100 duration-200">
                                                         Open <ExternalLink size={13} />
                                                     </div>
                                                 </button>
@@ -886,7 +886,7 @@ export default function LibraryPage() {
                                                                 navigator.clipboard.writeText(url);
                                                                 addToast("Share link copied to clipboard!", "success");
                                                             }}
-                                                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--emerald)]/45 hover:bg-[var(--emerald)]/10 text-zinc-400 hover:text-[var(--emerald)] transition-all shadow-md cursor-pointer"
+                                                            className="p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] hover:border-[var(--emerald)]/45 hover:bg-[var(--emerald)]/10 text-[var(--foreground-muted)] hover:text-[var(--emerald)] transition-all shadow-md cursor-pointer"
                                                             title="Copy Share Link"
                                                         >
                                                             <ExternalLink size={13} />
@@ -898,7 +898,7 @@ export default function LibraryPage() {
                                                                 setRenameItem(item);
                                                                 setRenameTitle(item.title || "");
                                                             }}
-                                                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--amber)]/45 hover:bg-[var(--amber)]/10 text-zinc-400 hover:text-[var(--amber)] transition-all shadow-md cursor-pointer"
+                                                            className="p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] hover:border-[var(--amber)]/45 hover:bg-[var(--amber)]/10 text-[var(--foreground-muted)] hover:text-[var(--amber)] transition-all shadow-md cursor-pointer"
                                                             title="Rename"
                                                         >
                                                             <Edit2 size={13} />
@@ -909,7 +909,7 @@ export default function LibraryPage() {
                                                                 playResultsSound("click");
                                                                 setDeleteItem(item);
                                                             }}
-                                                            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-all shadow-md cursor-pointer"
+                                                            className="p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] hover:border-red-500/40 hover:bg-red-500/10 text-[var(--foreground-muted)] hover:text-red-400 transition-all shadow-md cursor-pointer"
                                                             title="Delete"
                                                         >
                                                             <Trash2 size={13} />
@@ -935,35 +935,35 @@ export default function LibraryPage() {
                         exit={{ y: 100, x: "-50%", opacity: 0 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-40px)] max-w-xl"
                     >
-                        <GlassmorphicCard intensity="heavy" radius="32px" className="p-5 flex items-center justify-between shadow-[0_24px_80px_rgba(0,0,0,0.9)] overflow-hidden relative">
-                            <div className="flex items-center gap-4 pl-3">
-                                <div className="w-10 h-10 rounded-2xl bg-white text-zinc-950 flex items-center justify-center font-black text-sm shadow-lg">
-                                    {selectedIds.length}
+                        <GlassmorphicCard intensity="heavy" radius="32px" className="p-5 flex items-center justify-between shadow-[0_24px_80px_rgba(0,0,0,0.15)] overflow-hidden relative">
+                                <div className="flex items-center gap-4 pl-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-[var(--foreground)] text-[var(--background)] flex items-center justify-center font-black text-sm shadow-lg">
+                                        {selectedIds.length}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-black text-[var(--foreground)] leading-none uppercase tracking-wider">Items Selected</span>
+                                        <span className="text-[9px] text-[var(--foreground-muted)] font-black uppercase tracking-widest mt-1.5">Batch Management Active</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-black text-white leading-none uppercase tracking-wider">Items Selected</span>
-                                    <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mt-1.5">Batch Management Active</span>
-                                </div>
-                            </div>
 
-                            <div className="flex items-center gap-3">
-                                {!isOfflineView && (
-                                    <button onClick={handleBatchExport}
-                                        className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white transition-all shadow-md cursor-pointer">
-                                        <FileDown size={20} />
+                                <div className="flex items-center gap-3">
+                                    {!isOfflineView && (
+                                        <button onClick={handleBatchExport}
+                                            className="p-3 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] hover:bg-[var(--background-secondary)]/80 text-[var(--foreground)] transition-all shadow-md cursor-pointer">
+                                            <FileDown size={20} />
+                                        </button>
+                                    )}
+                                    <button onClick={handleBatchDelete} disabled={isProcessing}
+                                        className="p-3 px-5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all shadow-md disabled:opacity-50 flex items-center gap-2 font-black text-[10px] uppercase tracking-wider cursor-pointer">
+                                        {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                        Delete
                                     </button>
-                                )}
-                                <button onClick={handleBatchDelete} disabled={isProcessing}
-                                    className="p-3 px-5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all shadow-md disabled:opacity-50 flex items-center gap-2 font-black text-[10px] uppercase tracking-wider cursor-pointer">
-                                    {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                                    Delete
-                                </button>
-                                <div className="w-px h-8 bg-white/10 mx-1" />
-                                <button onClick={exitSelectionMode}
-                                    className="px-5 py-3 rounded-2xl bg-white text-zinc-950 hover:bg-white/95 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer">
-                                    Cancel
-                                </button>
-                            </div>
+                                    <div className="w-px h-8 bg-[var(--border-2)] mx-1" />
+                                    <button onClick={exitSelectionMode}
+                                        className="px-5 py-3 rounded-2xl bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer">
+                                        Cancel
+                                    </button>
+                                </div>
                         </GlassmorphicCard>
                     </motion.div>
                 )}
@@ -984,7 +984,7 @@ export default function LibraryPage() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setRenameItem(null)}
-                            className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xl"
+                            className="absolute inset-0 dark:bg-zinc-950/85 bg-zinc-950/40 backdrop-blur-xl"
                         />
 
                         {/* Modal Content */}
@@ -993,32 +993,32 @@ export default function LibraryPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
                             className="relative w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl overflow-hidden z-10 p-8"
-                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.3)" }}
+                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.15)" }}
                         >
                             <button 
                                 onClick={() => setRenameItem(null)}
-                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                className="absolute top-6 right-6 p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer"
                             >
                                 <X size={14} />
                             </button>
 
                             <div className="mb-6">
-                                <h3 className="text-lg font-black uppercase tracking-tight italic text-white flex items-center gap-2">
+                                <h3 className="text-lg font-black uppercase tracking-tight italic text-[var(--foreground)] flex items-center gap-2">
                                     <Edit2 size={16} className="text-[var(--amber)]" />
                                     Rename Item
                                 </h3>
-                                <p className="text-[11px] text-zinc-400 font-medium mt-1">Update the name of your study materials</p>
+                                <p className="text-[11px] text-[var(--foreground-muted)] font-medium mt-1">Update the name of your study materials</p>
                             </div>
 
                             <div className="space-y-4">
-                                <div className="relative rounded-2xl border border-white/5 focus-within:border-[var(--amber)]/30 transition-all bg-zinc-950/40 overflow-hidden px-4 py-3">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block mb-1">New Title</label>
+                                <div className="relative rounded-2xl border border-[var(--border)] focus-within:border-[var(--amber)]/30 transition-all bg-[var(--background-secondary)] overflow-hidden px-4 py-3">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] block mb-1">New Title</label>
                                     <input
                                         type="text"
                                         value={renameTitle}
                                         onChange={(e) => setRenameTitle(e.target.value)}
                                         placeholder="Enter new title..."
-                                        className="w-full bg-transparent text-xs font-bold text-white outline-none border-none p-0"
+                                        className="w-full bg-transparent text-xs font-bold text-[var(--foreground)] outline-none border-none p-0"
                                         autoFocus
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") handleRenameSubmit();
@@ -1029,7 +1029,7 @@ export default function LibraryPage() {
                                 <div className="flex gap-3 pt-2">
                                     <button
                                         onClick={() => setRenameItem(null)}
-                                        className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                        className="flex-1 py-3.5 rounded-xl border border-[var(--border-2)] hover:bg-[var(--background-secondary)] text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1064,7 +1064,7 @@ export default function LibraryPage() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setDeleteItem(null)}
-                            className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xl"
+                            className="absolute inset-0 dark:bg-zinc-950/85 bg-zinc-950/40 backdrop-blur-xl"
                         />
 
                         {/* Modal Content */}
@@ -1073,11 +1073,11 @@ export default function LibraryPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
                             className="relative w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl overflow-hidden z-10 p-8"
-                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.3)" }}
+                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.15)" }}
                         >
                             <button 
                                 onClick={() => setDeleteItem(null)}
-                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                className="absolute top-6 right-6 p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer"
                             >
                                 <X size={14} />
                             </button>
@@ -1087,11 +1087,11 @@ export default function LibraryPage() {
                                     <Trash2 size={22} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black uppercase tracking-tight italic text-white">
+                                    <h3 className="text-lg font-black uppercase tracking-tight italic text-[var(--foreground)]">
                                         Delete Study Set?
                                     </h3>
-                                    <p className="text-[11px] text-zinc-400 font-medium mt-1 leading-relaxed">
-                                        Are you sure you want to delete <span className="text-white font-bold">"{deleteItem.title}"</span>? This action is permanent and cannot be undone.
+                                    <p className="text-[11px] text-[var(--foreground-muted)] font-medium mt-1 leading-relaxed">
+                                        Are you sure you want to delete <span className="text-[var(--foreground)] font-bold">"{deleteItem.title}"</span>? This action is permanent and cannot be undone.
                                     </p>
                                 </div>
                             </div>
@@ -1099,7 +1099,7 @@ export default function LibraryPage() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setDeleteItem(null)}
-                                    className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                    className="flex-1 py-3.5 rounded-xl border border-[var(--border-2)] hover:bg-[var(--background-secondary)] text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer"
                                 >
                                     Keep Item
                                 </button>
@@ -1133,7 +1133,7 @@ export default function LibraryPage() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setShowBatchDeleteModal(false)}
-                            className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xl"
+                            className="absolute inset-0 dark:bg-zinc-950/85 bg-zinc-950/40 backdrop-blur-xl"
                         />
 
                         {/* Modal Content */}
@@ -1142,11 +1142,11 @@ export default function LibraryPage() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
                             className="relative w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-[32px] shadow-2xl overflow-hidden z-10 p-8"
-                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.3)" }}
+                            style={{ boxShadow: "inset 0 1px 1px var(--accent-glow), 0 24px 64px rgba(0,0,0,0.15)" }}
                         >
                             <button 
                                 onClick={() => setShowBatchDeleteModal(false)}
-                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                className="absolute top-6 right-6 p-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer"
                             >
                                 <X size={14} />
                             </button>
@@ -1156,11 +1156,11 @@ export default function LibraryPage() {
                                     <Trash2 size={22} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black uppercase tracking-tight italic text-white">
+                                    <h3 className="text-lg font-black uppercase tracking-tight italic text-[var(--foreground)]">
                                         Delete {selectedIds.length} Items?
                                     </h3>
-                                    <p className="text-[11px] text-zinc-400 font-medium mt-1 leading-relaxed">
-                                        Are you sure you want to permanently delete these <span className="text-white font-bold">{selectedIds.length} selected items</span>? This action cannot be undone.
+                                    <p className="text-[11px] text-[var(--foreground-muted)] font-medium mt-1 leading-relaxed">
+                                        Are you sure you want to permanently delete these <span className="text-[var(--foreground)] font-bold">{selectedIds.length} selected items</span>? This action cannot be undone.
                                     </p>
                                 </div>
                             </div>
@@ -1168,7 +1168,7 @@ export default function LibraryPage() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setShowBatchDeleteModal(false)}
-                                    className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all cursor-pointer"
+                                    className="flex-1 py-3.5 rounded-xl border border-[var(--border-2)] hover:bg-[var(--background-secondary)] text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer"
                                 >
                                     Keep Items
                                 </button>

@@ -39,9 +39,9 @@ function AnimatedParsingTrack() {
   }, []);
 
   return (
-    <div className="w-full max-w-md mx-auto mt-6 p-4.5 rounded-2xl bg-zinc-950/90 border border-white/5 font-mono text-[10px] text-emerald-400 text-left space-y-1.5 shadow-inner h-24 overflow-hidden relative">
-      <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-zinc-950 to-transparent pointer-events-none" />
-      <div className="animate-pulse flex items-center gap-1.5 text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1 pb-1 border-b border-white/5">
+    <div className="w-full max-w-md mx-auto mt-6 p-4.5 rounded-2xl dark:bg-zinc-950/90 bg-[var(--background-secondary)] border border-[var(--border)] font-mono text-[10px] dark:text-emerald-400 text-emerald-700 text-left space-y-1.5 shadow-inner h-24 overflow-hidden relative">
+      <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t dark:from-zinc-950 from-[var(--background-secondary)] to-transparent pointer-events-none" />
+      <div className="animate-pulse flex items-center gap-1.5 text-[9px] font-black dark:text-emerald-500 text-emerald-600 uppercase tracking-widest mb-1 pb-1 border-b border-[var(--border)]">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
         <span>Parsing Live Stream</span>
       </div>
