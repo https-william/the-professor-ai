@@ -26,6 +26,7 @@ export interface YoutubeResource {
     searchQuery: string;
     youtubeUrl: string;
     videoId?: string | null;
+    thumbnail?: string | null;
 }
 
 interface ExternalResourcesViewerProps {
@@ -112,13 +113,23 @@ function ResourceCard({ resource, index }: { resource: YoutubeResource; index: n
                     style={{ minHeight: "160px" }}
                     aria-label={`Search YouTube for: ${resource.title}`}
                 >
-                    {/* YouTube-red gradient glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#FF0000]/20 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300" />
+                    {/* Real thumbnail as background if available */}
+                    {resource.thumbnail ? (
+                        <img
+                            src={resource.thumbnail}
+                            alt={resource.title}
+                            className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-300"
+                        />
+                    ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#FF0000]/20 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300" />
+                    )}
+                    {/* Dark overlay */}
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                     <div className="flex flex-col items-center gap-3 relative z-10">
                         <div className="w-14 h-14 rounded-2xl bg-[#FF0000] flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-200">
                             <Play size={24} className="text-white ml-1" fill="white" />
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white/70 group-hover:text-white/90 transition-colors">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-white/80 group-hover:text-white transition-colors">
                             Search on YouTube
                         </span>
                     </div>

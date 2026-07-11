@@ -697,6 +697,24 @@ export default function StudyPackPage() {
         setIsLoadingPhase(true);
         setGeneratingPhases(prev => ({ ...prev, [phase.id]: 'loading' }));
         try {
+            // ── Resources phase: dedicated YouTube API route (not Hydra stream) ──
+            if (phase.id === 'resources') {
+                const res = await fetch("/api/resources/search", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ packId, sourceText }),
+                });
+                const result = await res.json();
+                if (!res.ok || !result.success) {
+                    throw new Error(result.error || "Could not find resources.");
+                }
+                setPhasesData(prev => ({ ...prev, resources: result.resources }));
+                setIsLoadingPhase(false);
+                setGeneratingPhases(prev => ({ ...prev, [phase.id]: null }));
+                handleMasterPhase(phase.id);
+                return;
+            }
+
             const res = await smartFetch("/api/generate/pack-phase", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
