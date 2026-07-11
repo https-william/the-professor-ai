@@ -718,7 +718,7 @@ export default function StudyPackPage() {
                 setPhasesData(prev => ({ ...prev, resources: result.resources }));
                 setIsLoadingPhase(false);
                 setGeneratingPhases(prev => ({ ...prev, [phase.id]: null }));
-                handleMasterPhase(phase.id);
+                addToast("Resources generated successfully!", "success");
                 return;
             }
 
@@ -1455,7 +1455,7 @@ export default function StudyPackPage() {
                         {resources.length > 0 && (
                             <div className="mt-8 flex justify-center border-t border-[var(--border)] pt-6">
                                 <button
-                                    onClick={() => setIsAllCompleted(true)}
+                                    onClick={() => handleMasterPhase('resources')}
                                     className="flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-[var(--blue)] to-[var(--violet)] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-95 active:scale-95 transition-all shadow-xl shadow-[var(--blue-glow)]"
                                 >
                                     <CheckCircle2 size={14} />
