@@ -720,7 +720,22 @@ export default function StudyPackPage() {
                 setIsLoadingPhase(false);
                 setGeneratingPhases(prev => ({ ...prev, [phase.id]: null }));
                 addToast("Resources generated successfully!", "success");
-                handleMasterPhase(phase.id, undefined, updated);
+                // Save to DB but DO NOT call handleMasterPhase (which would end the sprint)
+                try {
+                    await fetch("/api/library/update-pack", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            packId,
+                            phasesData: {
+                                ...updated,
+                                _mastered: completedPhases
+                            }
+                        })
+                    });
+                } catch (err) {
+                    console.error("Failed to save resources:", err);
+                }
                 return;
             }
 
