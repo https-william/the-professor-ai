@@ -11,6 +11,7 @@ import {
     buildFlashcardsPrompt, 
     buildQuizPrompt,
     buildRoadmapPrompt,
+    buildResourcesPrompt,
     guardContentSize
 } from "@/lib/ai/prompts";
 import { MASTER_SYSTEM_PROMPT } from "@/lib/ai/professor-prompt";
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
 
         // 2. Generate based on Phase
         let prompt = "";
-        let isChatStream = true; // true for markdown (breakdown, distill, predict), false for json stream (retain, test)
+        let isChatStream = true; // true for markdown (breakdown, distill), false for json stream (retain, test, resources)
 
         switch (phaseId) {
             case "breakdown":
@@ -90,8 +91,13 @@ export async function POST(req: NextRequest) {
                 isChatStream = false;
                 break;
             case "predict":
+                // Legacy roadmap — kept for backward compat with existing saved packs
                 prompt = buildRoadmapPrompt(safeContent);
                 isChatStream = true;
+                break;
+            case "resources":
+                prompt = buildResourcesPrompt(safeContent);
+                isChatStream = false;
                 break;
             default:
                 return NextResponse.json({ error: "Invalid phase" }, { status: 400 });
@@ -106,8 +112,9 @@ export async function POST(req: NextRequest) {
                     { feature: "study_pack", timeoutMs: 60_000 }
                 );
             } else {
+                const featureLabel = phaseId === "retain" ? "flashcards" : phaseId === "resources" ? "resources" : "quiz";
                 aiStream = await hydraGenerateStream(prompt, {
-                    feature: phaseId === "retain" ? "flashcards" : "quiz",
+                    feature: featureLabel,
                     timeoutMs: 60_000,
                 });
             }

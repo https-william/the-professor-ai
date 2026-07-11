@@ -386,3 +386,37 @@ End with our identity nudge: "Your notes. Just the good parts."
 
 Write the Roadmap now in plain markdown. Do NOT return JSON. Start directly with the roadmap markdown headings.`;
 }
+
+// ─── External Resources (YouTube Tutorials) ───────────────────────────────────
+export function buildResourcesPrompt(content: string): string {
+    const { content: safeContent } = guardContentSize(content);
+    return `You are The Professor — an elite study advisor and educational resource curator. Use "We" and "Our".
+
+Your task: Analyze the student's study material below and recommend 4 to 6 specific, high-yield YouTube video tutorials and learning topics that will clarify the exact concepts and gap areas in these notes.
+
+STUDENT'S NOTES:
+<REPRESENTATIVE_STUDY_MATERIAL_DATA>
+${safeContent}
+</REPRESENTATIVE_STUDY_MATERIAL_DATA>
+
+CURATION RULES:
+1. Identify the most critical and challenging topics in the notes where visual animations, lectures, or step-by-step walkthroughs are essential.
+2. Recommend authoritative YouTube educational channels (e.g., Khan Academy, CrashCourse, Organic Chemistry Tutor, Ninja Nerd, 3Blue1Brown, MIT OpenCourseWare, or domain-specific experts).
+3. Provide precise, actionable search queries ('searchQuery') and direct YouTube search links ('youtubeUrl').
+4. If you know a famous, evergreen educational YouTube video ID for the concept (e.g., 'dQw4w9WgXcQ' format - 11 character alphanumeric ID), include it in 'videoId' so it can be embedded directly. If unsure of an exact ID, leave 'videoId' as null or empty string.
+5. In 'reasonToWatch', explain specifically why this tutorial unlocks or clarifies a concept from the notes in our conversational, Nigerian campus energy tone (e.g., "Breaks down the sodium-potassium pump step-by-step—if you got stuck on page 2 of your notes, this 12-minute animation will make it click instantly").
+
+Return exactly a JSON array of objects with this shape:${JSON_ONLY}
+[
+  {
+    "title": "Clear, descriptive title of the tutorial or topic",
+    "channel": "Recommended channel name(s)",
+    "duration": "~10-15 mins",
+    "difficulty": "Concept Intro | Deep Dive | Exam Prep",
+    "reasonToWatch": "Why this specifically helps master the material in our tone",
+    "searchQuery": "exact search query string",
+    "youtubeUrl": "https://www.youtube.com/results?search_query=exact+search+query+string",
+    "videoId": "11_char_ID_or_null"
+  }
+]`;
+}

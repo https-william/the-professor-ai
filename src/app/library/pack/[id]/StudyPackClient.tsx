@@ -16,7 +16,6 @@ import {
     FileText,
     Layers,
     Sword,
-    Map as MapIcon,
     Share2,
     Sparkles,
     CheckCircle2,
@@ -32,7 +31,9 @@ import {
     Terminal,
     Target,
     Settings,
-    Loader2
+    Loader2,
+    Youtube,
+    ExternalLink,
 } from "lucide-react";
 import { cn, cleanDocumentTitle } from "@/lib/utils";
 import StandardContainer from "@/components/ui/StandardContainer";
@@ -51,7 +52,7 @@ import { useCitationHighlight } from "@/hooks/useCitationHighlight";
 import { InteractiveSummary } from "@/components/features/InteractiveSummary";
 import { InteractiveFlashcards } from "@/components/features/InteractiveFlashcards";
 import { InteractiveQuiz } from "@/components/features/InteractiveQuiz";
-import { StudyRoadmap } from "@/components/features/StudyRoadmap";
+import { ExternalResourcesViewer, type YoutubeResource } from "@/components/features/ExternalResourcesViewer";
 import BreakdownViewer from "@/components/features/breakdown/BreakdownViewer";
 import { AnnotatedSourceViewer } from "@/components/features/AnnotatedSourceViewer";
 import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -138,36 +139,24 @@ export default function StudyPackPage() {
         finishTime: null as number | null
     });
 
-    const [leftTab, setLeftTab] = useState<'summary' | 'raw'>('summary');
-    const [rightTab, setRightTab] = useState<'flashcards' | 'quiz' | 'roadmap'>('flashcards');
-    const [mobileActivePane, setMobileActivePane] = useState<'left' | 'right'>('left');
-    const [leftPaneWidth, setLeftPaneWidth] = useState(50);
+    // Unified page-by-page phase navigation
+    const [activePhase, setActivePhase] = useState<'distill' | 'test' | 'retain' | 'resources'>('distill');
     const [highlightedParagraph, setHighlightedParagraph] = useState<number | null>(null);
 
     const packId = params.id as string;
 
     const phaseContainerRef = useRef<HTMLDivElement>(null);
     const { highlightSnippet } = useCitationHighlight(phaseContainerRef);
-    // Lazy-mount refs: right-pane tabs only render their component trees on first visit
-    const hasVisitedQuiz = useRef(false);
-    const hasVisitedRoadmap = useRef(false);
 
-    /** Switch to a raw-notes paragraph from a citation badge click in the summary. */
+    /** Navigate to summary page when a citation badge is clicked. */
     const handleCitationClick = useCallback((paragraphIndex: number | string) => {
-        setLeftTab('raw');
+        setActivePhase('distill');
         if (typeof paragraphIndex === 'number') {
             setTimeout(() => setHighlightedParagraph(paragraphIndex), 80);
         } else {
             setTimeout(() => highlightSnippet(paragraphIndex), 80);
         }
     }, [highlightSnippet]);
-
-    /** Switch right tab and mark it as visited for lazy mounting. */
-    const handleRightTabChange = useCallback((tab: 'flashcards' | 'quiz' | 'roadmap') => {
-        if (tab === 'quiz') hasVisitedQuiz.current = true;
-        if (tab === 'roadmap') hasVisitedRoadmap.current = true;
-        setRightTab(tab);
-    }, []);
 
 
 
@@ -308,12 +297,12 @@ export default function StudyPackPage() {
             content: "### Final Check\n\nThis quiz helps you find any areas you might need to review again."
         },
         {
-            id: "predict",
-            title: "Study Roadmap",
-            icon: MapIcon,
-            color: "var(--emerald)",
-            desc: "A simple guide to help you master the subject.",
-            content: "### Study Plan\n\nA simple plan for your remaining study time."
+            id: "resources",
+            title: "External Resources",
+            icon: Youtube,
+            color: "#FF0000",
+            desc: "Curated YouTube videos to deepen understanding.",
+            content: "### External Resources\n\nHand-picked video tutorials matched to your notes."
         },
     ];
 
@@ -864,7 +853,7 @@ export default function StudyPackPage() {
             console.error("Phase Persistence Error:", err);
         }
 
-        const isLastPhase = phaseId === 'predict';
+        const isLastPhase = phaseId === 'resources';
 
         if (nextCompleted.length === phases.length || isLastPhase) {
             setSessionStats(prev => ({ ...prev, finishTime: Date.now() }));
@@ -895,13 +884,13 @@ export default function StudyPackPage() {
                 }).then(() => refreshUser()).catch((err: any) => console.error("XP error:", err));
             }).catch((err: any) => console.error("Session fetch error for activity:", err));
 
-            // Auto-advance tabs
+            // Auto-advance to next phase
             if (phaseId === 'distill') {
-                setRightTab('flashcards');
-            } else if (phaseId === 'retain') {
-                setRightTab('quiz');
+                setActivePhase('test');
             } else if (phaseId === 'test') {
-                setRightTab('roadmap');
+                setActivePhase('retain');
+            } else if (phaseId === 'retain') {
+                setActivePhase('resources');
             }
             addToast(`Phase Mastered!`, "success");
         }
@@ -992,15 +981,18 @@ export default function StudyPackPage() {
         }
         md += `---\n\n`;
 
-        // 4. Roadmap
-        md += `## 4. Revision Roadmap & Avoidance Map\n\n`;
-        if (phasesData.predict) {
-            const roadmapText = typeof phasesData.predict === 'string'
-                ? phasesData.predict
-                : (phasesData.predict.roadmap || phasesData.predict.content || JSON.stringify(phasesData.predict));
-            md += roadmapText + `\n\n`;
+        // 4. External Resources
+        md += `## 4. Curated YouTube Learning Resources\n\n`;
+        if (phasesData.resources && Array.isArray(phasesData.resources) && phasesData.resources.length > 0) {
+            phasesData.resources.forEach((r: YoutubeResource, idx: number) => {
+                md += `### ${idx + 1}. ${r.title}\n`;
+                md += `- **Channel:** ${r.channel}\n`;
+                md += `- **Duration:** ${r.duration} | **Level:** ${r.difficulty}\n`;
+                md += `- **Why watch:** ${r.reasonToWatch}\n`;
+                md += `- **Watch/Search:** [${r.searchQuery}](${r.youtubeUrl})\n\n`;
+            });
         } else {
-            md += `*Phase not generated yet. Click "Revision Roadmap" in your study steps to generate.*\n\n`;
+            md += `*External resources not generated yet.*\n\n`;
         }
 
         return md;
@@ -1346,19 +1338,19 @@ export default function StudyPackPage() {
                         {phaseId === 'distill' && <FileText size={24} />}
                         {phaseId === 'retain' && <Layers size={24} className="text-[var(--amber)]" />}
                         {phaseId === 'test' && <Sword size={24} className="text-[var(--crimson)]" />}
-                        {phaseId === 'predict' && <MapIcon size={24} className="text-[var(--emerald)]" />}
+                        {phaseId === 'resources' && <Youtube size={24} className="text-[#FF0000]" />}
                     </div>
                     <h3 className="text-base font-black uppercase tracking-tight text-[var(--foreground)] mb-2">
                         {phaseId === 'distill' && "Deep Summary"}
                         {phaseId === 'retain' && "Memory Cards"}
                         {phaseId === 'test' && "Practice Quiz"}
-                        {phaseId === 'predict' && "Study Roadmap"}
+                        {phaseId === 'resources' && "External Resources"}
                     </h3>
                     <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-xs leading-relaxed">
                         {phaseId === 'distill' && "Get a clean, simple summary of your notes with the most important parts."}
                         {phaseId === 'retain' && "Study flashcards with easy memory hooks to lock in core terms."}
                         {phaseId === 'test' && "Test your knowledge with practice questions customized to your notes."}
-                        {phaseId === 'predict' && "Generate a custom step-by-step roadmap to guide your learning path."}
+                        {phaseId === 'resources' && "Find the best YouTube tutorials matched to your exact topics."}
                     </p>
                     <button
                         onClick={() => handleBeginTask(phaseId)}
@@ -1425,14 +1417,15 @@ export default function StudyPackPage() {
                     </div>
                 );
             }
-            case "predict": {
+            case "resources": {
+                const resources: YoutubeResource[] = Array.isArray(data) ? data : [];
                 return (
                     <div className={cn("w-full", !active && "hidden")}>
-                        <StudyRoadmap 
-                            data={data} 
-                            isStreaming={isStreamingPhase && phaseId === "predict"} 
-                            generationId={packId} 
-                            title={packTitle + " - Roadmap"} 
+                        <ExternalResourcesViewer
+                            resources={resources}
+                            packTitle={packTitle}
+                            onGenerateMore={() => handleBeginTask('resources')}
+                            isGenerating={isCurrentlyGenerating}
                         />
                     </div>
                 );
@@ -1607,146 +1600,79 @@ export default function StudyPackPage() {
                     </div>
                 )}
 
-                {/* Main Split Container: Symmetric 12-Column CSS Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">
-                    
-                    {/* LEFT COLUMN: Summary / Raw Viewer (6 cols) */}
-                    <div className={cn(
-                        "flex flex-col rounded-2xl relative min-h-[550px] max-h-[calc(100vh-140px)] w-full lg:col-span-6",
-                        mobileActivePane === 'right' ? "hidden lg:flex" : "flex"
-                    )}>
-                        {phasesData.distill || sourceText ? (
-                            <DocumentSummaryReader
-                                title={packTitle || "Study Pack Summary"}
-                                summaryText={
-                                    typeof phasesData.distill === 'string'
-                                        ? phasesData.distill
-                                        : (phasesData.distill?.summary ? (typeof phasesData.distill.summary === 'string' ? phasesData.distill.summary : JSON.stringify(phasesData.distill.summary)) : (isPerforming ? "Preparing your study summary..." : "No summary available."))
-                                }
-                                rawText={sourceText || ""}
-                                onCitationClick={handleCitationClick}
-                                containerRef={phaseContainerRef}
-                            />
-                        ) : (
-                            <div className="flex-grow flex flex-col p-4 bg-[var(--surface)] border border-[var(--border-2)] rounded-3xl">
-                                {renderPhaseContent('distill', true)}
-                            </div>
-                        )}
+                {/* ── In-Sprint Phase Navigation Bar ── */}
+                <div className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="relative flex items-center gap-1 p-1.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
+                        {([
+                            { id: 'distill',   label: 'Summary',    icon: FileText, color: 'var(--blue)',    activeClass: 'bg-[var(--blue)]/15 border-[var(--blue)]/30 text-[var(--blue)]' },
+                            { id: 'test',      label: 'Quiz',       icon: Sword,    color: 'var(--crimson)', activeClass: 'bg-[var(--crimson)]/15 border-[var(--crimson)]/30 text-[var(--crimson)]' },
+                            { id: 'retain',    label: 'Flashcards', icon: Layers,   color: 'var(--amber)',   activeClass: 'bg-[var(--amber)]/15 border-[var(--amber)]/30 text-[var(--amber)]' },
+                            { id: 'resources', label: 'Resources',  icon: Youtube,  color: '#FF0000',        activeClass: 'bg-[#FF0000]/10 border-[#FF0000]/25 text-[#FF0000]' },
+                        ] as const).map((tab) => {
+                            const isActive = activePhase === tab.id;
+                            const isDone = completedPhases.includes(tab.id);
+                            const Icon = tab.icon;
+                            return (
+                                <motion.button
+                                    key={tab.id}
+                                    onClick={() => setActivePhase(tab.id)}
+                                    layoutId={`sprint-tab-${tab.id}`}
+                                    className={cn(
+                                        "relative flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border",
+                                        isActive
+                                            ? tab.activeClass
+                                            : "border-transparent text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)]/60"
+                                    )}
+                                >
+                                    <Icon size={11} className="shrink-0" />
+                                    <span className="hidden sm:inline">{tab.label}</span>
+                                    {isDone && (
+                                        <CheckCircle2 size={9} className="shrink-0 opacity-80" />
+                                    )}
+                                </motion.button>
+                            );
+                        })}
                     </div>
-
-                    {/* RIGHT COLUMN: Interactive Study Decks (6 cols) */}
-                    <div className={cn(
-                        "flex flex-col bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl relative min-h-[550px] max-h-[calc(100vh-140px)] w-full lg:col-span-6",
-                        mobileActivePane === 'left' ? "hidden lg:flex" : "flex"
-                    )}>
-                        {/* Header Tabs */}
-                        <div className="px-4 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/80 backdrop-blur-sm shrink-0 gap-2">
-                            <div className="flex gap-1.5">
-                                <button
-                                    onClick={() => setRightTab('flashcards')}
-                                    className={cn(
-                                        "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
-                                        rightTab === 'flashcards' 
-                                            ? "bg-[var(--amber)]/15 border border-[var(--amber)]/30 text-[var(--amber)]" 
-                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
-                                    )}
-                                >
-                                    <Layers size={11} />
-                                    <span>Cards</span>
-                                </button>
-                                <button
-                                    onClick={() => handleRightTabChange('quiz')}
-                                    className={cn(
-                                        "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
-                                        rightTab === 'quiz' 
-                                            ? "bg-[var(--crimson)]/15 border border-[var(--crimson)]/30 text-[var(--crimson)]" 
-                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
-                                    )}
-                                >
-                                    <Sword size={11} />
-                                    <span>Quiz</span>
-                                </button>
-                                <button
-                                    onClick={() => handleRightTabChange('roadmap')}
-                                    className={cn(
-                                        "px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1",
-                                        rightTab === 'roadmap' 
-                                            ? "bg-[var(--emerald)]/15 border border-[var(--emerald)]/30 text-[var(--emerald)]" 
-                                            : "text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)]"
-                                    )}
-                                >
-                                    <MapIcon size={11} />
-                                    <span>Roadmap</span>
-                                </button>
-                            </div>
-
-                            {/* Right Tab Actions */}
-                            {rightTab === 'flashcards' && phasesData.retain && (
-                                <button
-                                    onClick={() => {
-                                        const rawCards = phasesData.retain ? (Array.isArray(phasesData.retain) ? phasesData.retain : (phasesData.retain.flashcards || phasesData.retain.cards || [])) : [];
-                                        const cards = rawCards.map((c: any) => ({
-                                            front: c?.front || c?.question || (typeof c === 'string' ? c : "Term"),
-                                            back: c?.back || c?.answer || (typeof c === 'string' ? c : "Definition"),
-                                            topic: c?.topic || "Active Recall"
-                                        }));
-                                        downloadFlashcardsOffline(packTitle + " - Flashcards", cards);
-                                    }}
-                                    className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-md"
-                                >
-                                    <Download size={12} />
-                                    <span>Download</span>
-                                </button>
-                            )}
-
-                            {rightTab === 'quiz' && phasesData.test && (
-                                <button
-                                    onClick={() => {
-                                        const quizQuestions = Array.isArray(phasesData.test) ? phasesData.test : (phasesData.test.questions || [phasesData.test]);
-                                        downloadQuizOffline(packTitle + " - Quiz", quizQuestions);
-                                    }}
-                                    className="px-2.5 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-1.5 shadow-md"
-                                >
-                                    <Download size={12} />
-                                    <span>Download</span>
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Right Tab Content */}
-                        <div className="flex-grow p-4 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-200px)] min-h-[400px] custom-scrollbar flex flex-col">
-                            {renderPhaseContent('retain', rightTab === 'flashcards')}
-                            {(hasVisitedQuiz.current || rightTab === 'quiz') && renderPhaseContent('test', rightTab === 'quiz')}
-                            {(hasVisitedRoadmap.current || rightTab === 'roadmap') && renderPhaseContent('predict', rightTab === 'roadmap')}
-                        </div>
-                    </div>
-
                 </div>
+
+                {/* ── Single-Column Full-Width Phase Content ── */}
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activePhase}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                        className="w-full"
+                        ref={phaseContainerRef}
+                    >
+                        {activePhase === 'distill' && (
+                            phasesData.distill ? (
+                                <DocumentSummaryReader
+                                    title={packTitle || "Study Pack Summary"}
+                                    summaryText={
+                                        typeof phasesData.distill === 'string'
+                                            ? phasesData.distill
+                                            : (phasesData.distill?.summary ? (typeof phasesData.distill.summary === 'string' ? phasesData.distill.summary : JSON.stringify(phasesData.distill.summary)) : (isPerforming ? "Preparing your study summary..." : "No summary available."))
+                                    }
+                                    rawText={sourceText || ""}
+                                    onCitationClick={handleCitationClick}
+                                    containerRef={phaseContainerRef}
+                                />
+                            ) : (
+                                renderPhaseContent('distill', true)
+                            )
+                        )}
+                        {activePhase === 'test' && renderPhaseContent('test', true)}
+                        {activePhase === 'retain' && renderPhaseContent('retain', true)}
+                        {activePhase === 'resources' && renderPhaseContent('resources', true)}
+                    </motion.div>
+                </AnimatePresence>
+
             </StandardContainer>
 
-            {/* Mobile View Sticky Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-md py-3 px-6 flex justify-around items-center z-[150] lg:hidden print-hidden shadow-2xl">
-                <button
-                    onClick={() => setMobileActivePane('left')}
-                    className={cn(
-                        "flex flex-col items-center gap-1 transition-all",
-                        mobileActivePane === 'left' ? "text-[var(--blue)] scale-105" : "text-[var(--foreground-muted)] opacity-70"
-                    )}
-                >
-                    <FileText size={18} />
-                    <span className="text-[8px] font-black uppercase tracking-wider">Notes & Summary</span>
-                </button>
-                <button
-                    onClick={() => setMobileActivePane('right')}
-                    className={cn(
-                        "flex flex-col items-center gap-1 transition-all",
-                        mobileActivePane === 'right' ? "text-[var(--blue)] scale-105" : "text-[var(--foreground-muted)] opacity-70"
-                    )}
-                >
-                    <Layers size={18} />
-                    <span className="text-[8px] font-black uppercase tracking-wider">Study Deck</span>
-                </button>
-            </div>
+
+
 
 
 
