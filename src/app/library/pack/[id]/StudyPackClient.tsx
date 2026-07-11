@@ -521,7 +521,7 @@ export default function StudyPackPage() {
                     setIsGuest(unauthenticated);
 
                     if (!notOwner && !unauthenticated && navigator.onLine && packData.source_text) {
-                        const allPhases = ["distill", "retain", "test", "predict"];
+                        const allPhases = ["distill", "test", "retain", "resources"];
                         const nextUncompleted = allPhases.find(pId => !completed.includes(pId) && !(packData.phases_data || {})[pId]);
                         if (nextUncompleted) {
                             prefetchPhase(nextUncompleted, packData.source_text, packId);
@@ -807,7 +807,7 @@ export default function StudyPackPage() {
                 }
 
                 // Prefetch next uncompleted phase
-                const allPhases = ["distill", "retain", "test", "predict"];
+                const allPhases = ["distill", "test", "retain", "resources"];
                 const nextIdx = allPhases.indexOf(phase.id) + 1;
                 const nextUncompletedId = allPhases[nextIdx];
                 if (nextUncompletedId && !phasesData[nextUncompletedId]) {
