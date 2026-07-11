@@ -74,6 +74,7 @@ function DifficultyBadge({ difficulty }: { difficulty: string }) {
 }
 
 function ResourceCard({ resource, index }: { resource: YoutubeResource; index: number }) {
+    const [isPlaying, setIsPlaying] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
     const hasEmbed = Boolean(resource.videoId && resource.videoId.length === 11);
@@ -84,6 +85,9 @@ function ResourceCard({ resource, index }: { resource: YoutubeResource; index: n
         setTimeout(() => setCopied(false), 2000);
     };
 
+    // Construct high-res or medium-res YouTube thumbnail URL if videoId is valid
+    const ytThumbnailUrl = resource.thumbnail || (resource.videoId ? `https://img.youtube.com/vi/${resource.videoId}/mqdefault.jpg` : null);
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -91,17 +95,36 @@ function ResourceCard({ resource, index }: { resource: YoutubeResource; index: n
             transition={{ delay: index * 0.07, duration: 0.35, ease: "easeOut" }}
             className="flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm hover:shadow-md hover:border-[var(--border-2)] transition-all duration-200"
         >
-            {/* Embedded YouTube iframe or thumbnail placeholder */}
+            {/* Embedded YouTube iframe (loaded on click) or thumbnail placeholder */}
             {hasEmbed ? (
-                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                    <iframe
-                        className="absolute inset-0 w-full h-full"
-                        src={`https://www.youtube-nocookie.com/embed/${resource.videoId}?rel=0&modestbranding=1`}
-                        title={resource.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        loading="lazy"
-                    />
+                <div className="relative w-full overflow-hidden bg-black" style={{ paddingBottom: "56.25%" }}>
+                    {isPlaying ? (
+                        <iframe
+                            className="absolute inset-0 w-full h-full border-0"
+                            src={`https://www.youtube.com/embed/${resource.videoId}?autoplay=1&rel=0&modestbranding=1`}
+                            title={resource.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    ) : (
+                        <button
+                            onClick={() => setIsPlaying(true)}
+                            className="absolute inset-0 w-full h-full group flex items-center justify-center overflow-hidden"
+                            aria-label={`Play: ${resource.title}`}
+                        >
+                            {ytThumbnailUrl && (
+                                <img
+                                    src={ytThumbnailUrl}
+                                    alt={resource.title}
+                                    className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 group-hover:opacity-90 transition-all duration-300"
+                                />
+                            )}
+                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors" />
+                            <div className="w-16 h-11 rounded-xl bg-[#FF0000] flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-[#CC0000] transition-all duration-200 relative z-10">
+                                <Play size={20} className="text-white ml-0.5" fill="white" />
+                            </div>
+                        </button>
+                    )}
                 </div>
             ) : (
                 /* Fallback: clickable thumbnail-style banner that opens YouTube search */
@@ -113,17 +136,15 @@ function ResourceCard({ resource, index }: { resource: YoutubeResource; index: n
                     style={{ minHeight: "160px" }}
                     aria-label={`Search YouTube for: ${resource.title}`}
                 >
-                    {/* Real thumbnail as background if available */}
-                    {resource.thumbnail ? (
+                    {ytThumbnailUrl ? (
                         <img
-                            src={resource.thumbnail}
+                            src={ytThumbnailUrl}
                             alt={resource.title}
                             className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-300"
                         />
                     ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-[#FF0000]/20 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300" />
                     )}
-                    {/* Dark overlay */}
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                     <div className="flex flex-col items-center gap-3 relative z-10">
                         <div className="w-14 h-14 rounded-2xl bg-[#FF0000] flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-200">
