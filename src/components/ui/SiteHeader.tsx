@@ -232,23 +232,7 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
             {/* ── CENTER: Context-aware nav ── */}
             <div className="flex items-center justify-center">
                 <AnimatePresence mode="wait">
-                    {isPill && (isActive || timeLeft < (mode === "focus" ? 25*60 : 5*60)) ? (
-                        <motion.div
-                            key="stealth-timer"
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="flex items-center gap-3 px-5 py-2 rounded-full bg-[var(--background-secondary)] backdrop-blur-md border border-[var(--accent)] shadow-[0_0_15px_var(--accent-glow)]"
-                        >
-                            <span className="flex h-2 w-2 relative">
-                                {isActive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />}
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]" />
-                            </span>
-                            <span className="font-mono font-black tabular-nums tracking-tighter text-sm text-[var(--foreground)]">
-                                {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
-                            </span>
-                        </motion.div>
-                    ) : isLanding ? (
+                    {isLanding ? (
                         <div className="hidden lg:flex items-center gap-10">
                             <Link
                                 href="/blog"

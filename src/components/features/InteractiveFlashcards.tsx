@@ -122,6 +122,11 @@ export const InteractiveFlashcards = ({
     }
   }, [cards]);
 
+  // Reset drag position on card change
+  useEffect(() => {
+    dragX.set(0);
+  }, [queuePointer, dragX]);
+
   // Time ticker
   useEffect(() => {
     if (cardState !== 'EVALUATED' && cardQueue.length > 0) {
