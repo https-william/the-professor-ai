@@ -68,7 +68,7 @@ async function searchYouTube(query: string) {
 // ─── Main handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
     try {
-        const { packId, sourceText } = await req.json();
+        const { packId, sourceText, refresh } = await req.json();
 
         if (!packId || !sourceText) {
             return NextResponse.json({ error: "Missing packId or sourceText" }, { status: 400 });
@@ -83,20 +83,22 @@ export async function POST(req: NextRequest) {
 
         const { content: safeContent } = guardContentSize(sourceText);
 
-        // 1. Check DB cache first
+        // 1. Check DB cache first (unless refresh is requested)
         const supabase = supabaseAdmin;
-        try {
-            const { data } = await supabase
-                .from("study_packs")
-                .select("phases_data")
-                .eq("id", packId)
-                .single();
+        if (!refresh) {
+            try {
+                const { data } = await supabase
+                    .from("study_packs")
+                    .select("phases_data")
+                    .eq("id", packId)
+                    .single();
 
-            const cached = data?.phases_data?.resources;
-            if (cached && Array.isArray(cached) && cached.length > 0) {
-                return NextResponse.json({ success: true, resources: cached });
-            }
-        } catch {}
+                const cached = data?.phases_data?.resources;
+                if (cached && Array.isArray(cached) && cached.length > 0) {
+                    return NextResponse.json({ success: true, resources: cached });
+                }
+            } catch {}
+        }
 
         // 2. Extract topics via Hydra (uses existing key rotation: G4F → OpenRouter → Groq)
         const topics = await extractTopics(safeContent);

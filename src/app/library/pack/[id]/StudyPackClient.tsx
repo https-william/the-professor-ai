@@ -709,7 +709,7 @@ export default function StudyPackPage() {
                 const res = await fetch("/api/resources/search", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ packId, sourceText }),
+                    body: JSON.stringify({ packId, sourceText, refresh: force }),
                 });
                 const result = await res.json();
                 if (!res.ok || !result.success) {
