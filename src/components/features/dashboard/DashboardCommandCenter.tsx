@@ -28,6 +28,7 @@ interface DashboardCommandCenterProps {
   onTextSubmit: (text: string, title?: string) => void;
   isProcessing?: boolean;
   processingText?: string;
+  progress?: number;
   onLoadDemo?: (type: 'mitosis' | 'contract') => void;
 }
 
@@ -39,6 +40,7 @@ export default function DashboardCommandCenter({
   onTextSubmit,
   isProcessing = false,
   processingText,
+  progress = 0,
   onLoadDemo
 }: DashboardCommandCenterProps) {
   const router = useRouter();
@@ -169,6 +171,7 @@ export default function DashboardCommandCenter({
         onTextSubmit={onTextSubmit}
         isProcessing={isProcessing}
         processingText={processingText}
+        progress={progress}
       />
 
       {/* Grid: Notebooks Table & Side Widgets */}

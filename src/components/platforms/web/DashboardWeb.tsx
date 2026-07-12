@@ -45,6 +45,7 @@ interface DashboardWebProps {
     customStatusMsg: Record<string, string>;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     processingText?: string;
+    progress?: number;
 }
 
 export default function DashboardWeb({
@@ -59,7 +60,8 @@ export default function DashboardWeb({
     isGeneratingPack,
     queue,
     loadDemo,
-    processingText
+    processingText,
+    progress = 0
 }: DashboardWebProps) {
     const { addFiles } = useIngestStore();
 
@@ -90,6 +92,7 @@ export default function DashboardWeb({
             onTextSubmit={handleTextSubmit}
             isProcessing={isProcessing}
             processingText={processingText}
+            progress={progress}
             onLoadDemo={loadDemo}
         />
     );

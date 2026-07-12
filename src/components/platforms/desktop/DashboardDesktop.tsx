@@ -45,6 +45,7 @@ interface DashboardDesktopProps {
     customStatusMsg: Record<string, string>;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     processingText?: string;
+    progress?: number;
 }
 
 export default function DashboardDesktop({
@@ -59,7 +60,8 @@ export default function DashboardDesktop({
     isGeneratingPack,
     queue,
     loadDemo,
-    processingText
+    processingText,
+    progress = 0
 }: DashboardDesktopProps) {
     const { addFiles } = useIngestStore();
 
@@ -90,6 +92,7 @@ export default function DashboardDesktop({
             onTextSubmit={handleTextSubmit}
             isProcessing={isProcessing}
             processingText={processingText}
+            progress={progress}
             onLoadDemo={loadDemo}
         />
     );

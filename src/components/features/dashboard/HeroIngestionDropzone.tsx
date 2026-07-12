@@ -9,12 +9,14 @@ import {
   ArrowRight,
   ClipboardPaste
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface HeroIngestionDropzoneProps {
   onFileSelect: (file: File) => void;
   onTextSubmit: (text: string, title?: string) => void;
   isProcessing?: boolean;
   processingText?: string;
+  progress?: number;
 }
 
 
@@ -22,7 +24,8 @@ export function HeroIngestionDropzone({
   onFileSelect,
   onTextSubmit,
   isProcessing = false,
-  processingText = "Getting your study notes ready..."
+  processingText = "Getting your study notes ready...",
+  progress = 0
 }: HeroIngestionDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [mode, setMode] = useState<"drop" | "paste">("drop");
@@ -125,11 +128,17 @@ export function HeroIngestionDropzone({
             </h3>
             
             <p className="text-xs text-[var(--foreground-muted)] max-w-xs font-semibold mb-6">
-              Preparing your deconstructed study workspace...
+              Preparing your deconstructed study workspace... <span className="font-mono font-black text-[var(--blue)]">{progress}%</span>
             </p>
 
             <div className="w-full max-w-xs bg-[var(--background)] h-1.5 rounded-full overflow-hidden border border-[var(--border)] relative">
-              <div className="absolute top-0 bottom-0 left-0 bg-[var(--blue)] w-1/2 animate-shimmer-sweep rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]" style={{ width: "65%" }} />
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ type: "spring", stiffness: 60, damping: 15 }}
+                className="absolute top-0 bottom-0 left-0 bg-[var(--blue)] rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
             </div>
           </div>
         ) : mode === "drop" ? (

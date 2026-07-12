@@ -530,6 +530,7 @@ function DashboardContent() {
             const success = await spendCredits(10);
             if (!success) {
                 setSetupError("Insufficient credits for Exam Sprint. Please acquire more credits.");
+                addToast("Insufficient credits for Exam Sprint. Please acquire more credits.", "error");
                 return;
             }
         }
@@ -782,6 +783,11 @@ function DashboardContent() {
         customStatusMsg,
         fileInputRef,
         processingText,
+        progress: activeQueueItem 
+            ? (activeQueueItem.status === 'uploading' 
+                ? activeQueueItem.progress 
+                : (trickleProgress[activeQueueItem.id] || activeQueueItem.progress || 0))
+            : 0,
     };
 
     return (

@@ -45,6 +45,7 @@ interface DashboardMobileProps {
     customStatusMsg: Record<string, string>;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     processingText?: string;
+    progress?: number;
 }
 
 export default function DashboardMobile({
@@ -59,7 +60,8 @@ export default function DashboardMobile({
     isGeneratingPack,
     queue,
     loadDemo,
-    processingText
+    processingText,
+    progress = 0
 }: DashboardMobileProps) {
     const { addFiles } = useIngestStore();
 
@@ -90,6 +92,7 @@ export default function DashboardMobile({
             onTextSubmit={handleTextSubmit}
             isProcessing={isProcessing}
             processingText={processingText}
+            progress={progress}
             onLoadDemo={loadDemo}
         />
     );
