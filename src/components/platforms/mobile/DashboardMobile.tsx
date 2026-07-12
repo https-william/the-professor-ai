@@ -79,7 +79,7 @@ export default function DashboardMobile({
         }, 100);
     };
 
-    const isProcessing = isGeneratingPack || queue.some(i => i.status === "reading" || i.status === "learning");
+    const isProcessing = isGeneratingPack || queue.some(i => i.status === "uploading" || i.status === "reading" || i.status === "learning");
 
     return (
         <DashboardCommandCenter

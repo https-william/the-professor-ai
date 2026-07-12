@@ -282,14 +282,14 @@ function DashboardContent() {
     useEffect(() => {
         const processNext = async () => {
             // Sequential execution guard:
-            // Check if any item in the queue is currently actively parsing (reading or learning)
+            // Check if any item in the queue is currently actively parsing (uploading, reading or learning)
             const isAnyParsing = queue.some(item => 
-                (item.status === 'reading' || item.status === 'learning') && 
+                (item.status === 'uploading' || item.status === 'reading' || item.status === 'learning') && 
                 processedIds.current.has(item.id)
             );
             if (isAnyParsing) return;
 
-            const nextItem = queue.find(item => item.status === 'reading' && !processedIds.current.has(item.id));
+            const nextItem = queue.find(item => (item.status === 'uploading' || item.status === 'reading') && !processedIds.current.has(item.id));
             if (!nextItem || (!nextItem.file && !nextItem.path)) return;
 
             processedIds.current.add(nextItem.id);
@@ -317,15 +317,49 @@ function DashboardContent() {
             }
 
             try {
-                updateFileStatus(nextItem.id, 'reading', 20);
+                updateFileStatus(nextItem.id, 'uploading', 5);
                 const formData = new FormData();
                 formData.append("file", nextItem.file!);
-                const res = await fetch("/api/parse", { method: "POST", body: formData });
-                const result = await res.json().catch(() => ({ error: "Parser failed to respond" }));
+
+                const uploadFile = () => {
+                    return new Promise<{ text?: string; isOcrRequired?: boolean; images?: { data: string; ext: string }[]; baseText?: string; error?: string; isOcrLimited?: boolean; ocrLimitCount?: number }>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", "/api/parse");
+
+                        xhr.upload.onprogress = (event) => {
+                            if (event.lengthComputable) {
+                                const percentComplete = Math.min(99, Math.round((event.loaded / event.total) * 100));
+                                updateFileStatus(nextItem.id, 'uploading', percentComplete);
+                            }
+                        };
+
+                        xhr.onload = () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    resolve(result);
+                                } catch (e) {
+                                    reject(new Error("Parser returned invalid response."));
+                                }
+                            } else {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    reject(new Error(result.error || "Failed to upload document."));
+                                } catch {
+                                    reject(new Error("Failed to upload document."));
+                                }
+                            }
+                        };
+
+                        xhr.onerror = () => reject(new Error("Network connection error during upload."));
+                        xhr.send(formData);
+                    });
+                };
+
+                const result = await uploadFile();
                 
-                if (!res.ok || result.error) {
-                    throw new Error(result.error || "Failed to process document");
-                }
+                // Now we enter the 'reading' (AI processing) phase
+                updateFileStatus(nextItem.id, 'reading', 0);
 
                 let finalWeightText = result.text || "";
 
@@ -429,7 +463,7 @@ function DashboardContent() {
     }, [user.isAuthenticated, user.isLoading]);
 
     const hasSuccess = queue.some(item => item.status === 'success') || inputText.trim().length > 50;
-    const isQueueProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
+    const isQueueProcessing = queue.some(item => item.status === 'uploading' || item.status === 'reading' || item.status === 'learning');
     const showConfigAndActions = inputText.trim().length > 0 || queue.length > 0;
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -697,7 +731,7 @@ function DashboardContent() {
 
     const firstName = user.firstName || (user.name !== "Scholar" ? user.name?.split(" ")[0] : null) || user.username || user.email?.split("@")[0] || "Scholar";
 
-    const activeQueueItem = queue.find(i => i.status === "reading" || i.status === "learning");
+    const activeQueueItem = queue.find(i => i.status === "uploading" || i.status === "reading" || i.status === "learning");
     const processingText = isGeneratingPack 
         ? "Generating comprehensive study sprint from your notes..."
         : activeQueueItem && customStatusMsg[activeQueueItem.id]
