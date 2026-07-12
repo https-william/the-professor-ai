@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIngestStore } from "@/store/useIngestStore";
 import { performOCR } from "@/lib/ocr-bridge";
-import { X, Upload, CheckCircle2, Loader2, AlertCircle, Sparkles, MessageCircle, Type, Zap } from "lucide-react";
+import { X, Upload, CheckCircle2, Loader2, AlertCircle, MessageCircle, Type, Zap, BookOpen, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ═══ Claymorphic style helpers ═══ */
@@ -40,7 +40,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
     const processedIds = useRef<Set<string>>(new Set());
 
     const hasSuccess = queue.some(item => item.status === 'success');
-    const isProcessing = queue.some(item => item.status === 'reading' || item.status === 'learning');
+    const isProcessing = queue.some(item => item.status === 'uploading' || item.status === 'reading' || item.status === 'learning');
 
     // Prevent scroll when open
     useEffect(() => {
@@ -107,28 +107,58 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
     // Real Processor
     useEffect(() => {
         const processNext = async () => {
-            const nextItem = queue.find(item => item.status === 'reading' && !processedIds.current.has(item.id));
+            const nextItem = queue.find(item => item.status === 'uploading' && !processedIds.current.has(item.id));
             if (!nextItem || !nextItem.file) return;
 
             processedIds.current.add(nextItem.id);
 
             try {
                 // Initial progress bump
-                updateFileStatus(nextItem.id, 'reading', 20);
+                updateFileStatus(nextItem.id, 'uploading', 5);
 
                 const formData = new FormData();
                 formData.append("file", nextItem.file);
 
-                const res = await fetch("/api/parse", {
-                    method: "POST",
-                    body: formData,
-                });
+                // Use XMLHttpRequest to get real upload progress!
+                const uploadFile = () => {
+                    return new Promise<{ text?: string; isOcrRequired?: boolean; images?: { data: string; ext: string }[]; baseText?: string; error?: string }>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", "/api/parse");
 
-                const result = await res.json().catch(() => ({ error: "Parser failed to respond" }));
+                        xhr.upload.onprogress = (event) => {
+                            if (event.lengthComputable) {
+                                const percentComplete = Math.min(99, Math.round((event.loaded / event.total) * 100));
+                                updateFileStatus(nextItem.id, 'uploading', percentComplete);
+                            }
+                        };
+
+                        xhr.onload = () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    resolve(result);
+                                } catch (e) {
+                                    reject(new Error("Parser returned invalid response."));
+                                }
+                            } else {
+                                try {
+                                    const result = JSON.parse(xhr.responseText);
+                                    reject(new Error(result.error || "Failed to upload document."));
+                                } catch {
+                                    reject(new Error("Failed to upload document."));
+                                }
+                            }
+                        };
+
+                        xhr.onerror = () => reject(new Error("Network connection error during upload."));
+                        xhr.send(formData);
+                    });
+                };
+
+                const result = await uploadFile();
                 
-                if (!res.ok || result.error) {
-                    throw new Error(result.error || "Failed to process document");
-                }
+                // Now we enter the 'reading' (AI processing) phase
+                updateFileStatus(nextItem.id, 'reading', 0);
 
                 let finalWeightText = result.text || "";
 
@@ -212,7 +242,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                 "w-10 h-10 rounded-xl flex items-center justify-center border transition-all",
                                 isSprint ? "bg-[var(--blue)] border-[var(--blue)] text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]" : "bg-[var(--accent-bg)] border-[var(--accent-glow)] text-[var(--accent)]"
                             )}>
-                                {isSprint ? <Zap className="w-5 h-5 fill-current" /> : <Sparkles className="w-5 h-5" />}
+                                {isSprint ? <Zap className="w-5 h-5 fill-current" /> : <BookOpen className="w-5 h-5" />}
                             </div>
                             <div>
                                 <h3 className="text-lg font-black text-[var(--foreground)] tracking-tight">
@@ -297,7 +327,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                         !pastedText.trim() || isPasting ? 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border)] opacity-50' : 'bg-[var(--blue)] text-white hover-scale-sm active:scale-[0.98] shadow-[0_8px_24px_rgba(59,130,246,0.3)]'
                                     )}
                                 >
-                                    {isPasting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    {isPasting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                                     Process Material
                                 </button>
                             </div>
@@ -330,25 +360,49 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                                         <div className="flex items-center gap-2 truncate pr-2">
                                                             <Loader2 className="w-4 h-4 text-[var(--blue)] animate-spin shrink-0" />
                                                             <p className="text-xs font-bold text-[var(--foreground)] leading-snug truncate">
-                                                                {(trickleProgress[item.id] || item.progress || 20) <= 35 
-                                                                    ? "Reading file structure..." 
-                                                                    : (trickleProgress[item.id] || item.progress || 20) <= 70 
-                                                                    ? "Parsing key formulas & concepts..." 
-                                                                    : "Formatting recall modules..."} 
+                                                                {item.status === 'uploading' ? (
+                                                                    <span>Uploading document ({item.progress}%)</span>
+                                                                ) : (
+                                                                    <span>
+                                                                        {item.status === 'learning' ? (
+                                                                            "Performing optical character recognition (OCR)..."
+                                                                        ) : (
+                                                                            (trickleProgress[item.id] || 0) <= 35 
+                                                                                ? "Reading file structure..." 
+                                                                                : (trickleProgress[item.id] || 0) <= 70 
+                                                                                ? "Parsing key formulas & concepts..." 
+                                                                                : "Formatting recall modules..."
+                                                                        )}
+                                                                    </span>
+                                                                )}
                                                                 <span className="italic text-[var(--foreground-muted)]"> ({item.name})</span>
                                                             </p>
                                                         </div>
-                                                        <span className="text-[10px] font-mono font-black text-[var(--blue)]">{trickleProgress[item.id] || item.progress || 20}%</span>
+                                                        <span className="text-[10px] font-mono font-black text-[var(--blue)]">
+                                                            {item.status === 'uploading' ? item.progress : (trickleProgress[item.id] || item.progress || 0)}%
+                                                        </span>
                                                     </div>
                                                     <div className="w-full bg-[var(--background)] rounded-full h-2 overflow-hidden border border-[var(--border)] shadow-inner relative">
                                                         <motion.div 
                                                             initial={{ width: 0 }}
-                                                            animate={{ width: `${trickleProgress[item.id] || item.progress || 20}%` }}
+                                                            animate={{ width: `${item.status === 'uploading' ? item.progress : (trickleProgress[item.id] || item.progress || 0)}%` }}
                                                             transition={{ type: "spring", stiffness: 60, damping: 15 }}
-                                                            className="h-full bg-[var(--blue)] rounded-full shadow-[0_0_12px_var(--blue-glow)]"
+                                                            className={cn(
+                                                                "h-full rounded-full transition-all duration-300",
+                                                                item.status === 'uploading' 
+                                                                    ? "bg-gradient-to-r from-[var(--blue)] to-[var(--violet)] shadow-[0_0_12px_var(--blue-glow)]"
+                                                                    : "bg-gradient-to-r from-[var(--amber)] to-[var(--blue)] shadow-[0_0_12px_var(--amber)]"
+                                                            )}
                                                         />
                                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
                                                     </div>
+                                                    
+                                                    {/* High-Anticipation Phrase Display */}
+                                                    {item.status !== 'uploading' && (
+                                                        <p className="text-[10px] font-medium text-[var(--foreground-muted)] italic pl-6 animate-pulse">
+                                                            {loadingPhrases[phraseIndex[item.id] || 0]}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -383,7 +437,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                 )}
                             >
                                 {isSprint ? "START SPRINT" : "GENERATE"}
-                                <Sparkles className="w-4 h-4 fill-current" />
+                                <ArrowRight className="w-4 h-4" />
                             </button>
                          </div>
                     </div>

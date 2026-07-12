@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { 
   Upload, 
   FileText, 
-  Sparkles, 
+  Loader2, 
   CheckCircle2, 
   ArrowRight,
   ClipboardPaste
@@ -113,7 +113,7 @@ export function HeroIngestionDropzone({
           <div className="py-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
             <div className="relative mb-6">
               <div className="w-16 h-16 rounded-2xl bg-[var(--blue)]/10 border border-[var(--blue)]/30 flex items-center justify-center">
-                <Sparkles size={28} className="text-[var(--blue)] animate-pulse" />
+                <Loader2 size={28} className="text-[var(--blue)] animate-spin" />
               </div>
               <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--emerald)] flex items-center justify-center text-white border-2 border-[var(--background)] shadow-md">
                 <CheckCircle2 size={12} />
@@ -205,7 +205,7 @@ export function HeroIngestionDropzone({
                 disabled={!pastedText.trim()}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--blue)] text-white font-black text-xs uppercase tracking-wider shadow-[0_4px_14px_rgba(74,124,245,0.35)] hover:bg-[var(--blue-light)] disabled:opacity-50 disabled:pointer-events-none active:scale-95 transition-all"
               >
-                <Sparkles size={14} />
+                <ArrowRight size={14} />
                 <span>Create Study Pack</span>
               </button>
             </div>

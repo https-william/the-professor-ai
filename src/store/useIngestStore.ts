@@ -3,7 +3,7 @@ import { create } from 'zustand';
 interface IngestFile {
   id: string;
   name: string;
-  status: 'reading' | 'learning' | 'success' | 'error';
+  status: 'queued' | 'uploading' | 'reading' | 'learning' | 'success' | 'error';
   progress: number;
   errorMessage?: string;
   file?: File; // Store the actual file object
@@ -37,7 +37,7 @@ export const useIngestStore = create<IngestState>((set) => ({
       ...files.map((f, i) => ({
         id: explicitIds ? explicitIds[i] : Math.random().toString(36).substring(7),
         name: f.name,
-        status: 'reading' as const,
+        status: 'uploading' as const,
         progress: 0,
         file: f,
       }))
@@ -63,7 +63,7 @@ export const useIngestStore = create<IngestState>((set) => ({
     const newQueue = state.queue.map(f => 
       f.id === id ? { ...f, status, progress: progress ?? f.progress, errorMessage: error } : f
     );
-    const stillProcessing = newQueue.some(f => f.status === 'reading' || f.status === 'learning');
+    const stillProcessing = newQueue.some(f => f.status === 'uploading' || f.status === 'reading' || f.status === 'learning');
     
     return {
       queue: newQueue,

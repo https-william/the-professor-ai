@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { 
     Volume2, 
@@ -58,6 +58,291 @@ const cardVariants = {
     }),
 };
 
+interface FlashcardItemProps {
+  cardIndex: number;
+  originalIndex: number;
+  stableId: string;
+  cardFrontText: string;
+  cardBackText: string;
+  cardState: 'IDLE' | 'FLIPPED' | 'EVALUATED';
+  exitDirection: 'left' | 'right' | null;
+  cardVariants: any;
+  handleRate: (quality: number) => void;
+  handleFlip: () => void;
+  secondsElapsed: number;
+  isPlayingTTS: boolean;
+  handlePlayTTS: (text: string) => void;
+  isVerifyTextMode: boolean;
+  userGuess: string;
+  setUserGuess: (s: string) => void;
+  eli5Text: string | undefined;
+  handleEli5: (e: React.MouseEvent, text: string, index: number) => void;
+  isGeneratingEli5: boolean;
+  isDyslexiaMode: boolean;
+  currentCardIndex: number;
+}
+
+const FlashcardItem = ({
+  cardIndex,
+  originalIndex,
+  stableId,
+  cardFrontText,
+  cardBackText,
+  cardState,
+  exitDirection,
+  cardVariants,
+  handleRate,
+  handleFlip,
+  secondsElapsed,
+  isPlayingTTS,
+  handlePlayTTS,
+  isVerifyTextMode,
+  userGuess,
+  setUserGuess,
+  eli5Text,
+  handleEli5,
+  isGeneratingEli5,
+  isDyslexiaMode,
+  currentCardIndex,
+}: FlashcardItemProps) => {
+  const dragX = useMotionValue(0);
+  const rotate = useTransform(dragX, [-200, 200], [-15, 15]);
+
+  // 3D Tilt mouse state
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left - width / 2;
+    const mouseY = e.clientY - rect.top - height / 2;
+    
+    const calcY = (mouseX / (width / 2)) * 10;
+    const calcX = -(mouseY / (height / 2)) * 10;
+
+    setRotateX(calcX);
+    setRotateY(calcY);
+  };
+
+  const handleMouseLeave = () => {
+    setRotateX(0);
+    setRotateY(0);
+  };
+
+  const cardInnerStyle: React.CSSProperties = {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+    transition: cardState === 'EVALUATED' ? "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" : "transform 0.08s ease-out",
+    transformStyle: "preserve-3d",
+    transform: `${cardState === 'IDLE' ? `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` : `rotateX(${rotateX}deg) rotateY(${180 + rotateY}deg)`}`,
+  };
+
+  const cardFaceStyle: React.CSSProperties = {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    backfaceVisibility: "hidden",
+    WebkitBackfaceVisibility: "hidden",
+    borderRadius: "28px",
+    border: "1.5px solid var(--border-2)",
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const cardFrontStyle: React.CSSProperties = {
+    ...cardFaceStyle,
+    background: "var(--card)",
+    backdropFilter: "blur(20px)",
+  };
+
+  const cardBackStyle: React.CSSProperties = {
+    ...cardFaceStyle,
+    background: "var(--card)",
+    backdropFilter: "blur(25px)",
+    transform: "rotateY(180deg)",
+  };
+
+  return (
+    <motion.div
+      key={cardIndex}
+      custom={exitDirection}
+      variants={cardVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{
+        x: { type: "spring", stiffness: 350, damping: 26 },
+        y: { type: "spring", stiffness: 350, damping: 26 },
+        opacity: { duration: 0.18 },
+      }}
+      className="w-full h-full relative cursor-pointer flex-shrink-0"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.8}
+      style={{ transformStyle: "preserve-3d", x: dragX, rotate }}
+      onDragEnd={(event, info) => {
+        const threshold = 120;
+        if (info.offset.x > threshold) {
+          handleRate(4);
+        } else if (info.offset.x < -threshold) {
+          handleRate(1);
+        } else {
+          animate(dragX, 0, { type: "spring", stiffness: 350, damping: 26 });
+        }
+      }}
+      onTap={handleFlip}
+    >
+      <div style={cardInnerStyle}>
+        {/* Front Side */}
+        <div style={cardFrontStyle}>
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
+
+          {/* Structured Flexbox Header Bar */}
+          <div className="w-full flex items-center justify-between px-5 pt-5 pb-1 relative z-10 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="relative flex items-center justify-center">
+                <svg className="w-7 h-7 transform -rotate-90">
+                  <circle cx="14" cy="14" r="11" stroke="var(--border)" strokeWidth="2" fill="transparent" />
+                  <circle 
+                    cx="14" 
+                    cy="14" 
+                    r="11" 
+                    stroke="var(--amber)" 
+                    strokeWidth="2" 
+                    fill="transparent" 
+                    strokeDasharray={2 * Math.PI * 11}
+                    strokeDashoffset={(2 * Math.PI * 11) * (1 - Math.min(secondsElapsed, 30) / 30)}
+                    className="transition-all duration-1000"
+                  />
+                </svg>
+                <span className="absolute text-[8px] font-mono font-bold text-[var(--foreground-muted)]">{secondsElapsed}</span>
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Active Recall</span>
+            </div>
+
+            <button 
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlayTTS(cardFrontText);
+              }}
+              className={`p-1.5 rounded-lg border transition-all ${
+                isPlayingTTS 
+                  ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                  : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+              }`}
+              title="Read Aloud"
+            >
+              <Volume2 size={13} />
+            </button>
+          </div>
+
+          <p className={`text-lg md:text-xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-4 ${
+            isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-xl' : 'font-serif'
+          }`}>
+            {cardFrontText}
+          </p>
+
+          {/* Text guess verification input */}
+          {isVerifyTextMode && (
+            <div className="w-full max-w-xs mt-4 px-2 relative z-20" onClick={e => e.stopPropagation()}>
+              <input 
+                type="text"
+                value={userGuess}
+                onChange={e => setUserGuess(e.target.value)}
+                placeholder="Type your guess..."
+                className="w-full px-3 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/45 transition-colors"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleFlip();
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          <div className="absolute bottom-5 flex flex-col items-center gap-1">
+            <span className="text-[8px] font-bold uppercase tracking-[0.25em] opacity-40">
+              Tap to flip card
+            </span>
+          </div>
+        </div>
+
+        {/* Back Side */}
+        <div style={cardBackStyle}>
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
+
+          <div className="flex flex-col items-center justify-between w-full h-full py-3 relative z-10">
+            {/* Header row */}
+            <div className="w-full flex items-center justify-between px-1 shrink-0">
+              <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/75">
+                Concept Definition
+              </span>
+              <button 
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePlayTTS(eli5Text || cardBackText);
+                }}
+                className={`p-1.5 rounded-lg border transition-all ${
+                  isPlayingTTS 
+                    ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
+                    : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                }`}
+              >
+                <Volume2 size={13} />
+              </button>
+            </div>
+
+            {/* Definition Body */}
+            <div className="flex-1 flex flex-col items-center justify-center px-2 my-2 w-full overflow-y-auto scrollbar-none">
+              
+              {isVerifyTextMode && userGuess && (
+                <div className="w-full p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-left mb-2 shrink-0">
+                  <span className="text-[7px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/50 block mb-0.5">Your Guess</span>
+                  <span className="text-[11px] font-mono text-[var(--foreground-secondary)] line-clamp-2">{userGuess}</span>
+                </div>
+              )}
+
+              <p className={`text-sm md:text-base font-medium text-center text-[var(--foreground)] leading-relaxed ${
+                isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-base' : 'font-serif'
+              }`}>
+                {eli5Text || cardBackText}
+              </p>
+            </div>
+
+            {/* Metaphor trigger */}
+            <div className="flex flex-col items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+              {!eli5Text && (
+                <button 
+                  onClick={(e) => handleEli5(e, cardBackText, currentCardIndex)} 
+                  className="flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 text-[8px] font-black uppercase tracking-wider hover:bg-[var(--amber)]/25 transition-all cursor-pointer"
+                >
+                  <Baby size={11} />
+                  {isGeneratingEli5 ? "Simplifying..." : "ELI5 Metaphor"}
+                </button>
+              )}
+              <span className="text-[7px] font-black uppercase tracking-[0.25em] opacity-35">
+                Press [Space] to flip back
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 export const InteractiveFlashcards = ({
   cards = [
     {
@@ -81,8 +366,7 @@ export const InteractiveFlashcards = ({
   const { addToast } = useToasts();
   const { triggerHaptic } = useTelegram();
 
-  const dragX = useMotionValue(0);
-  const rotate = useTransform(dragX, [-200, 200], [-15, 15]);
+
 
   // Core queue states
   const [cardQueue, setCardQueue] = useState<number[]>([]);
@@ -122,10 +406,7 @@ export const InteractiveFlashcards = ({
     }
   }, [cards]);
 
-  // Reset drag position on card change
-  useEffect(() => {
-    dragX.set(0);
-  }, [queuePointer, dragX]);
+
 
   // Time ticker
   useEffect(() => {
@@ -449,29 +730,7 @@ export const InteractiveFlashcards = ({
     });
   };
 
-  // 3D Tilt mouse state
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const rect = card.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left - width / 2;
-    const mouseY = e.clientY - rect.top - height / 2;
-    
-    const calcY = (mouseX / (width / 2)) * 10;
-    const calcX = -(mouseY / (height / 2)) * 10;
-
-    setRotateX(calcX);
-    setRotateY(calcY);
-  };
-
-  const handleMouseLeave = () => {
-    setRotateX(0);
-    setRotateY(0);
-  };
 
   if (cards.length === 0 || cardQueue.length === 0) {
     return (
@@ -503,42 +762,7 @@ export const InteractiveFlashcards = ({
   const srsStatus = activeSRS?.status || "new";
   const reviewIntervals = getCardIntervalPreviews(currentCard.stableId);
 
-  const cardInnerStyle: React.CSSProperties = {
-    position: "relative",
-    width: "100%",
-    height: "100%",
-    transition: cardState === 'EVALUATED' ? "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" : "transform 0.08s ease-out",
-    transformStyle: "preserve-3d",
-    transform: `${cardState === 'IDLE' ? `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` : `rotateX(${rotateX}deg) rotateY(${180 + rotateY}deg)`}`,
-  };
 
-  const cardFaceStyle: React.CSSProperties = {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    backfaceVisibility: "hidden",
-    WebkitBackfaceVisibility: "hidden",
-    borderRadius: "28px",
-    border: "1.5px solid var(--border-2)",
-    padding: "24px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
-  const cardFrontStyle: React.CSSProperties = {
-    ...cardFaceStyle,
-    background: "var(--card)",
-    backdropFilter: "blur(20px)",
-  };
-
-  const cardBackStyle: React.CSSProperties = {
-    ...cardFaceStyle,
-    background: "var(--card)",
-    backdropFilter: "blur(25px)",
-    transform: "rotateY(180deg)",
-  };
 
     return (
     <div className="relative w-full min-h-[500px] flex flex-col items-center justify-start sm:justify-center p-2 sm:p-4 cursor-default overflow-visible gap-6">
@@ -655,174 +879,30 @@ export const InteractiveFlashcards = ({
           />
         )}
         <AnimatePresence mode="popLayout" custom={exitDirection} initial={false}>
-          <motion.div
+          <FlashcardItem
             key={queuePointer}
-            custom={exitDirection}
-            variants={cardVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 350, damping: 26 },
-              y: { type: "spring", stiffness: 350, damping: 26 },
-              opacity: { duration: 0.18 },
-            }}
-            className="w-full h-full relative cursor-pointer flex-shrink-0"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.8}
-            style={{ transformStyle: "preserve-3d", x: dragX, rotate }}
-            onDragEnd={(event, info) => {
-              const threshold = 120;
-              if (info.offset.x > threshold) {
-                handleRate(4);
-              } else if (info.offset.x < -threshold) {
-                handleRate(1);
-              }
-            }}
-            onTap={handleFlip}
-          >
-            <div style={cardInnerStyle}>
-              {/* Front Side */}
-              <div style={cardFrontStyle}>
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
-
-                {/* Structured Flexbox Header Bar */}
-                <div className="w-full flex items-center justify-between px-5 pt-5 pb-1 relative z-10 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex items-center justify-center">
-                      <svg className="w-7 h-7 transform -rotate-90">
-                        <circle cx="14" cy="14" r="11" stroke="var(--border)" strokeWidth="2" fill="transparent" />
-                        <circle 
-                          cx="14" 
-                          cy="14" 
-                          r="11" 
-                          stroke="var(--amber)" 
-                          strokeWidth="2" 
-                          fill="transparent" 
-                          strokeDasharray={2 * Math.PI * 11}
-                          strokeDashoffset={(2 * Math.PI * 11) * (1 - Math.min(secondsElapsed, 30) / 30)}
-                          className="transition-all duration-1000"
-                        />
-                      </svg>
-                      <span className="absolute text-[8px] font-mono font-bold text-[var(--foreground-muted)]">{secondsElapsed}</span>
-                    </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">Active Recall</span>
-                  </div>
-
-                  <button 
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePlayTTS(cardFrontText);
-                    }}
-                    className={`p-1.5 rounded-lg border transition-all ${
-                      isPlayingTTS 
-                        ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                        : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-                    }`}
-                    title="Read Aloud"
-                  >
-                    <Volume2 size={13} />
-                  </button>
-                </div>
-
-                <p className={`text-lg md:text-xl font-bold text-center leading-tight tracking-tight text-[var(--text)] px-4 mt-4 ${
-                  isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-xl' : 'font-serif'
-                }`}>
-                  {cardFrontText}
-                </p>
-
-                {/* Text guess verification input */}
-                {isVerifyTextMode && (
-                  <div className="w-full max-w-xs mt-4 px-2 relative z-20" onClick={e => e.stopPropagation()}>
-                    <input 
-                      type="text"
-                      value={userGuess}
-                      onChange={e => setUserGuess(e.target.value)}
-                      placeholder="Type your guess..."
-                      className="w-full px-3 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border-2)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--amber)]/45 transition-colors"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleFlip();
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-
-                <div className="absolute bottom-5 flex flex-col items-center gap-1">
-                  <span className="text-[8px] font-bold uppercase tracking-[0.25em] opacity-40">
-                    Tap to flip card
-                  </span>
-                </div>
-              </div>
-
-              {/* Back Side */}
-              <div style={cardBackStyle}>
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[28px]" />
-
-                <div className="flex flex-col items-center justify-between w-full h-full py-3 relative z-10">
-                  {/* Header row */}
-                  <div className="w-full flex items-center justify-between px-1 shrink-0">
-                    <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/75">
-                      Concept Definition
-                    </span>
-                    <button 
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePlayTTS(eli5Text[currentCardIndex] || cardBackText);
-                      }}
-                      className={`p-1.5 rounded-lg border transition-all ${
-                        isPlayingTTS 
-                          ? 'bg-[var(--amber)]/10 border-[var(--amber)]/30 text-[var(--amber)]' 
-                          : 'bg-[var(--background-secondary)] border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-                      }`}
-                    >
-                      <Volume2 size={13} />
-                    </button>
-                  </div>
-
-                  {/* Definition Body */}
-                  <div className="flex-1 flex flex-col items-center justify-center px-2 my-2 w-full overflow-y-auto scrollbar-none">
-                    
-                    {isVerifyTextMode && userGuess && (
-                      <div className="w-full p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-left mb-2 shrink-0">
-                        <span className="text-[7px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]/50 block mb-0.5">Your Guess</span>
-                        <span className="text-[11px] font-mono text-[var(--foreground-secondary)] line-clamp-2">{userGuess}</span>
-                      </div>
-                    )}
-
-                    <p className={`text-sm md:text-base font-medium text-center text-[var(--foreground)] leading-relaxed ${
-                      isDyslexiaMode ? 'font-sans tracking-wide leading-loose text-base' : 'font-serif'
-                    }`}>
-                      {eli5Text[currentCardIndex] || cardBackText}
-                    </p>
-                  </div>
-
-                  {/* Metaphor trigger */}
-                  <div className="flex flex-col items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    {!eli5Text[currentCardIndex] && (
-                      <button 
-                        onClick={(e) => handleEli5(e, cardBackText, currentCardIndex)} 
-                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 text-[8px] font-black uppercase tracking-wider hover:bg-[var(--amber)]/25 transition-all cursor-pointer"
-                      >
-                        <Baby size={11} />
-                        {isGeneratingEli5 ? "Simplifying..." : "ELI5 Metaphor"}
-                      </button>
-                    )}
-                    <span className="text-[7px] font-black uppercase tracking-[0.25em] opacity-35">
-                      Press [Space] to flip back
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+            cardIndex={queuePointer}
+            originalIndex={currentCard.originalIndex}
+            stableId={currentCard.stableId}
+            cardFrontText={cardFrontText}
+            cardBackText={cardBackText}
+            cardState={cardState}
+            exitDirection={exitDirection}
+            cardVariants={cardVariants}
+            handleRate={handleRate}
+            handleFlip={handleFlip}
+            secondsElapsed={secondsElapsed}
+            isPlayingTTS={isPlayingTTS}
+            handlePlayTTS={handlePlayTTS}
+            isVerifyTextMode={isVerifyTextMode}
+            userGuess={userGuess}
+            setUserGuess={setUserGuess}
+            eli5Text={eli5Text[currentCardIndex]}
+            handleEli5={handleEli5}
+            isGeneratingEli5={isGeneratingEli5}
+            isDyslexiaMode={isDyslexiaMode}
+            currentCardIndex={currentCardIndex}
+          />
         </AnimatePresence>
       </div>
 
