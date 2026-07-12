@@ -27,17 +27,21 @@ export async function POST(req: NextRequest) {
         if (isOcrTarget) {
             console.log(`[Parser] Target for image extraction: ${file.name}`);
             
-            // ── OPTIMIZATION: Check if it's a digital PDF first by calling MarkItDown ──
             let mdText = "";
-            try {
-                const markitdownUrl = `${new URL(req.url).origin}/api/markitdown`;
-                const mdResponse = await fetch(markitdownUrl, { method: "POST", body: formData });
-                if (mdResponse.ok) {
-                    const mdData = await mdResponse.json().catch(() => ({ text: "" }));
-                    mdText = mdData.text || "";
+            // If the PDF is digital (has selectable text), return it immediately and skip OCR!
+            if (process.env.NODE_ENV === "development") {
+                console.log(`[Parser] Development mode: Skipping local dev self-fetch digital PDF check.`);
+            } else {
+                try {
+                    const markitdownUrl = `${new URL(req.url).origin}/api/markitdown`;
+                    const mdResponse = await fetch(markitdownUrl, { method: "POST", body: formData });
+                    if (mdResponse.ok) {
+                        const mdData = await mdResponse.json().catch(() => ({ text: "" }));
+                        mdText = mdData.text || "";
+                    }
+                } catch (mdErr) {
+                    console.error("[Parser] MarkItDown pre-extraction failed:", mdErr);
                 }
-            } catch (mdErr) {
-                console.error("[Parser] MarkItDown pre-extraction failed:", mdErr);
             }
 
             // If the PDF is digital (has selectable text), return it immediately and skip OCR!
@@ -55,33 +59,37 @@ export async function POST(req: NextRequest) {
             }
 
             // Otherwise, it is scanned or image-heavy. Call extraction service for OCR.
-            const extractUrl = `${new URL(req.url).origin}/api/extract_images`;
-            try {
-                const extractResponse = await fetch(extractUrl, {
-                    method: "POST",
-                    body: formData,
-                });
-
-                if (extractResponse.ok) {
-                    const { images, count } = await extractResponse.json();
-                    console.log(`[Parser] Extracted ${count} images from ${file.name}`);
-                    
-                    // Limit to first 15 images to avoid browser memory crash or long waiting times
-                    const limitedImages = images.slice(0, 15);
-                    const isLimited = count > 15;
-
-                    return NextResponse.json({ 
-                        success: true, 
-                        images: limitedImages, 
-                        baseText: mdText || "",
-                        isOcrRequired: true,
-                        isOcrLimited: isLimited,
-                        ocrLimitCount: 15,
-                        fileType: filename.split('.').pop()?.toUpperCase()
+            if (process.env.NODE_ENV === "development") {
+                console.log(`[Parser] Development mode: Skipping local dev self-fetch scanned PDF image extraction.`);
+            } else {
+                const extractUrl = `${new URL(req.url).origin}/api/extract_images`;
+                try {
+                    const extractResponse = await fetch(extractUrl, {
+                        method: "POST",
+                        body: formData,
                     });
+
+                    if (extractResponse.ok) {
+                        const { images, count } = await extractResponse.json();
+                        console.log(`[Parser] Extracted ${count} images from ${file.name}`);
+                        
+                        // Limit to first 15 images to avoid browser memory crash or long waiting times
+                        const limitedImages = images.slice(0, 15);
+                        const isLimited = count > 15;
+
+                        return NextResponse.json({ 
+                            success: true, 
+                            images: limitedImages, 
+                            baseText: mdText || "",
+                            isOcrRequired: true,
+                            isOcrLimited: isLimited,
+                            ocrLimitCount: 15,
+                            fileType: filename.split('.').pop()?.toUpperCase()
+                        });
+                    }
+                } catch (e) {
+                    console.error("[Parser] Extraction service failed:", e);
                 }
-            } catch (e) {
-                console.error("[Parser] Extraction service failed:", e);
             }
         }
 
@@ -97,9 +105,11 @@ export async function POST(req: NextRequest) {
         }
 
         // Default MarkItDown for other types or as fallback
-        const markitdownUrl = `${new URL(req.url).origin}/api/markitdown`;
-        
         try {
+            if (process.env.NODE_ENV === "development") {
+                throw new Error("Local development: skip Python API self-fetch");
+            }
+            const markitdownUrl = `${new URL(req.url).origin}/api/markitdown`;
             const pythonResponse = await fetch(markitdownUrl, {
                 method: "POST",
                 body: formData, // Forward the original formData
