@@ -526,7 +526,7 @@ function DashboardContent() {
         if (!inputText.trim()) return;
         const customTitle = missionTitle || "";
 
-        if (user.isAuthenticated) {
+        if (user.isAuthenticated && process.env.NODE_ENV !== "development") {
             const success = await spendCredits(10);
             if (!success) {
                 setSetupError("Insufficient credits for Exam Sprint. Please acquire more credits.");
