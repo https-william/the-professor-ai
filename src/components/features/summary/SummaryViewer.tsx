@@ -20,7 +20,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Info,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 
 import Markdown from "@/components/ui/Markdown";
@@ -553,6 +554,53 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
     addToast("Link copied to clipboard", "success");
   };
 
+  const [isGeneratingPPTX, setIsGeneratingPPTX] = useState(false);
+
+  const handleExportPPTX = async () => {
+    if (isGeneratingPPTX) return;
+    setIsGeneratingPPTX(true);
+    addToast("Generating presentation deck...", "info");
+
+    try {
+      const response = await fetch("/api/generate-ppt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: title,
+          summaryText: fullMarkdownContent,
+          theme: "theme08"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate slide deck");
+      }
+
+      const result = await response.json();
+      if (result.pptxUrl) {
+        // Trigger download
+        const link = document.createElement("a");
+        link.href = result.pptxUrl;
+        link.download = `${title.replace(/\\s+/g, "_")}_Presentation.pptx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        addToast("PowerPoint deck generated successfully!", "success");
+        trackEvent(EVENT_TYPES.SUMMARY_EXPORTED, { packId: generationId || undefined, metadata: { format: "pptx" } });
+      } else {
+        throw new Error("Export URL missing");
+      }
+    } catch (error) {
+      console.error(error);
+      addToast("Failed to generate PowerPoint presentation", "error");
+    } finally {
+      setIsGeneratingPPTX(false);
+    }
+  };
+
   if (processedChapters.length === 0 || !currentChapter) return null;
 
 
@@ -904,6 +952,21 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                   >
                     <Download size={11} />
                     <span>Download HTML</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDownloadMenu(false);
+                      handleExportPPTX();
+                    }}
+                    disabled={isGeneratingPPTX}
+                    className="w-full px-3 py-2 rounded-lg text-left text-[9px] font-black uppercase tracking-wider text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                  >
+                    {isGeneratingPPTX ? (
+                      <Loader2 size={11} className="animate-spin text-[var(--amber)]" />
+                    ) : (
+                      <Sparkles size={11} className="text-[var(--amber)]" />
+                    )}
+                    <span>Download PowerPoint</span>
                   </button>
                 </motion.div>
               </>
