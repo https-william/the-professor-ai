@@ -154,7 +154,7 @@ export default function DashboardCommandCenter({
               <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20">
                 <SpriteAnimator 
                   sheetUrl="/streak_fire_spritesheet.jpg" 
-                  frameWidth={14} 
+                  frameWidth={5} 
                   frameHeight={14} 
                   totalFrames={5} 
                   durationMs={600} 
