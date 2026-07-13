@@ -6,7 +6,7 @@ import { useUser } from "@/context/UserContext";
 import ShareCard from "@/components/ShareCard";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import SessionComplete from "@/components/features/SessionComplete";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import { 
     Share2, 
     ChevronLeft, 
@@ -515,28 +515,40 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         });
     };
 
-    // 3D Parallax Mouse coordinates
-    const [rotateX, setRotateX] = useState(0);
-    const [rotateY, setRotateY] = useState(0);
+    // Framer Motion values for performance and interruptible spring animation
+    const parallaxX = useMotionValue(0);
+    const parallaxY = useMotionValue(0);
+    const cardRotateY = useMotionValue(0);
+
+    useEffect(() => {
+        // Animate the 3D flip via hardware-accelerated spring
+        animate(cardRotateY, cardState === 'IDLE' ? 0 : 180, {
+            type: "spring",
+            stiffness: 180,
+            damping: 24
+        });
+    }, [cardState, cardRotateY]);
+
+    // Combine Y base rotation and interactive Y parallax
+    const finalRotateY = useTransform([cardRotateY, parallaxY], ([baseY, pY]) => {
+        // When card is flipped, invert parallax Y to match visual direction
+        const multiplier = cardState === 'IDLE' ? 1 : -1;
+        return (baseY as number) + multiplier * (pY as number);
+    });
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         const card = e.currentTarget;
         const rect = card.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
-        const mouseX = e.clientX - rect.left - width / 2;
-        const mouseY = e.clientY - rect.top - height / 2;
+        const mouseX = e.clientX - rect.left - rect.width / 2;
+        const mouseY = e.clientY - rect.top - rect.height / 2;
         
-        const calcY = (mouseX / (width / 2)) * 12;
-        const calcX = -(mouseY / (height / 2)) * 12;
-
-        setRotateX(calcX);
-        setRotateY(calcY);
+        parallaxY.set((mouseX / (rect.width / 2)) * 12);
+        parallaxX.set(-(mouseY / (rect.height / 2)) * 12);
     };
 
     const handleMouseLeave = () => {
-        setRotateX(0);
-        setRotateY(0);
+        animate(parallaxX, 0, { duration: 0.15 });
+        animate(parallaxY, 0, { duration: 0.15 });
     };
 
     if (flashcards.length === 0 || cardQueue.length === 0) return null;
@@ -561,9 +573,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         position: "relative",
         width: "100%",
         height: "100%",
-        transition: cardState === 'EVALUATED' ? "transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)" : "transform 0.1s ease-out",
         transformStyle: "preserve-3d",
-        transform: `${cardState === 'IDLE' ? `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` : `rotateX(${rotateX}deg) rotateY(${180 + rotateY}deg)`}`,
     };
 
     const cardFaceStyle: React.CSSProperties = {
@@ -761,15 +771,16 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             style={{ x: dragX, rotate }}
                             onDragEnd={(event, info) => {
                                 const threshold = 120;
-                                if (info.offset.x > threshold) {
+                                const velocityThreshold = 500; // pixels per second
+                                if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
                                     handleRate(4); // Good
-                                } else if (info.offset.x < -threshold) {
+                                } else if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
                                     handleRate(1); // Again
                                 }
                             }}
                             onTap={handleFlip}
                         >
-                            <div style={cardInnerStyle}>
+                            <motion.div style={{ ...cardInnerStyle, rotateX: parallaxX, rotateY: finalRotateY }}>
                                 
                                 {/* Front Panel */}
                                 <div style={cardFrontStyle}>
@@ -911,7 +922,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                     </div>
                                 </div>
 
-                             </div>
+                             </motion.div>
                         </motion.div>
                     </AnimatePresence>
                 </div>

@@ -200,7 +200,16 @@ function MatchGamePanel() {
           return (
             <div 
               key={i} 
-              className={`h-16 rounded-xl border flex items-center justify-center p-3 text-center cursor-pointer font-sans text-[11px] font-black leading-snug transition-all select-none ${
+              role="button"
+              tabIndex={isMatched ? -1 : 0}
+              aria-pressed={isSelected}
+              aria-label={`Match card: ${c.text}${isMatched ? " (Matched)" : ""}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                }
+              }}
+              className={`h-16 rounded-xl border flex items-center justify-center p-3 text-center cursor-pointer font-sans text-[11px] font-black leading-snug transition-all select-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none ${
                 isMatched 
                   ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-default" 
                   : isSelected 

@@ -166,12 +166,12 @@ export default function CommandPalette({ isOpen: externalIsOpen, onClose: extern
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
         onClick={handleClose}
       />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-xl rounded-2xl bg-[var(--background)] border border-[var(--border-2)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-xl rounded-2xl bg-[var(--background)] border border-[var(--border-2)] shadow-2xl overflow-hidden">
         {/* Search Bar */}
         <div className="flex items-center px-4 py-3.5 border-b border-[var(--border)] bg-[var(--surface)]">
           <Search size={18} className="text-[var(--foreground-muted)] mr-3 shrink-0" />

@@ -19,7 +19,7 @@ export const PillNav = ({ items, activeId, onSelect, className }: PillNavProps) 
                     key={item.id}
                     onClick={() => onSelect(item.id)}
                     className={cn(
-                        "relative px-4 py-2 rounded-full text-sm font-medium transition-colors z-10",
+                        "relative px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-[0.96] duration-100 ease-out z-10",
                         activeId === item.id ? "text-white" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
                     )}
                 >
@@ -27,7 +27,7 @@ export const PillNav = ({ items, activeId, onSelect, className }: PillNavProps) 
                         <motion.div
                             layoutId="pill-nav"
                             className="absolute inset-0 bg-[var(--accent)] rounded-full -z-10 shadow-lg shadow-[var(--accent)]/20"
-                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
                         />
                     )}
                     <span className="flex items-center gap-2">

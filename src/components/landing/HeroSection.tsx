@@ -3,6 +3,7 @@
 import React from "react";
 import { ArrowRight, Brain, Sparkles, Flame, CheckCircle2, Zap } from "lucide-react";
 import Link from "next/link";
+import SpriteAnimator from "@/components/ui/SpriteAnimator";
 
 export default function HeroSection() {
   return (
@@ -104,8 +105,17 @@ export default function HeroSection() {
             {/* Bottom Meta */}
             <div className="mt-6 pt-4 border-t border-[var(--border)]/50 flex items-center justify-between text-[9px] text-[var(--foreground-muted)] font-bold uppercase tracking-wider">
               <span>Calibrated by The Professor</span>
-              <span className="flex items-center gap-1 text-orange-400">
-                <Flame size={12} className="fill-orange-400" /> Your bed misses you
+              <span className="flex items-center gap-1.5 text-orange-400">
+                <SpriteAnimator 
+                  sheetUrl="/streak_fire_spritesheet.jpg" 
+                  frameWidth={16} 
+                  frameHeight={16} 
+                  totalFrames={5} 
+                  durationMs={600} 
+                  mixBlendMode="screen"
+                  className="shrink-0"
+                /> 
+                <span>Your bed misses you</span>
               </span>
             </div>
 
