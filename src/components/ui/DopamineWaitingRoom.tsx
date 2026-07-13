@@ -103,6 +103,7 @@ const STUDY_FACTS = [
 ];
 
 import { Check, Loader2 } from "lucide-react";
+import SpriteAnimator from "@/components/ui/SpriteAnimator";
 
 export default function DopamineWaitingRoom({
     mode = "general",
@@ -159,7 +160,15 @@ export default function DopamineWaitingRoom({
                                 {isCompleted ? (
                                     <Check size={12} className="text-[var(--emerald)]" strokeWidth={3} />
                                 ) : isActive ? (
-                                    <Loader2 size={12} className="text-[var(--blue)] animate-spin" />
+                                    <SpriteAnimator 
+                                        sheetUrl="/quill_scribble_spritesheet.jpg" 
+                                        frameWidth={5} 
+                                        frameHeight={16} 
+                                        totalFrames={6} 
+                                        durationMs={600} 
+                                        mixBlendMode="screen"
+                                        className="shrink-0 scale-125"
+                                    />
                                 ) : (
                                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--border)]" />
                                 )}

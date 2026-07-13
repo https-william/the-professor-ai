@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
+import SpriteAnimator from "@/components/ui/SpriteAnimator";
 
 interface ThemeToggleProps {
     className?: string;
@@ -61,8 +62,8 @@ function ThemeButton({ theme, toggleTheme, className = "" }: { theme: string; to
                     }}
                 >
                     {theme === "dark"
-                        ? <Moon size={17} strokeWidth={2} />
-                        : <Sun  size={17} strokeWidth={2} />}
+                        ? <SpriteAnimator sheetUrl="/moon_spritesheet.jpg" frameWidth={5} frameHeight={16} totalFrames={6} durationMs={700} mixBlendMode="screen" className="shrink-0 scale-125" />
+                        : <SpriteAnimator sheetUrl="/sun_spritesheet.jpg" frameWidth={5} frameHeight={16} totalFrames={6} durationMs={700} mixBlendMode="screen" className="shrink-0 scale-125" />}
                 </motion.div>
             </AnimatePresence>
         </motion.button>
