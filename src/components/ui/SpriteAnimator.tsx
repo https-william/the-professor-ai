@@ -12,6 +12,8 @@ interface SpriteAnimatorProps {
   isPlaying?: boolean;
   className?: string;
   mixBlendMode?: "normal" | "screen" | "lighten" | "color-dodge";
+  renderWidth?: number;
+  renderHeight?: number;
 }
 
 export default function SpriteAnimator({
@@ -24,14 +26,17 @@ export default function SpriteAnimator({
   isPlaying = true,
   className = "",
   mixBlendMode = "screen",
+  renderWidth,
+  renderHeight,
 }: SpriteAnimatorProps) {
   // Using background-position-x animation stepped frame-by-frame
   const animationStyle: React.CSSProperties = {
-    width: `${frameWidth}px`,
-    height: `${frameHeight}px`,
+    width: `${renderWidth ?? frameWidth}px`,
+    height: `${renderHeight ?? frameHeight}px`,
     backgroundImage: `url(${sheetUrl})`,
     backgroundRepeat: "no-repeat",
     backgroundSize: `${frameWidth * totalFrames}px ${frameHeight}px`,
+    backgroundPosition: "0px center", // Crop vertically by centering background
     mixBlendMode: mixBlendMode,
     animation: isPlaying
       ? `sprite-step ${durationMs}ms steps(${totalFrames - 1}) ${loop ? "infinite" : "forwards"}`

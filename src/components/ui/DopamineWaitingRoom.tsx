@@ -162,12 +162,14 @@ export default function DopamineWaitingRoom({
                                 ) : isActive ? (
                                     <SpriteAnimator 
                                         sheetUrl="/quill_scribble_spritesheet.jpg" 
-                                        frameWidth={5} 
-                                        frameHeight={16} 
+                                        frameWidth={10} 
+                                        frameHeight={32} 
+                                        renderWidth={10}
+                                        renderHeight={14}
                                         totalFrames={6} 
                                         durationMs={600} 
                                         mixBlendMode="screen"
-                                        className="shrink-0 scale-125"
+                                        className="shrink-0"
                                     />
                                 ) : (
                                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--border)]" />

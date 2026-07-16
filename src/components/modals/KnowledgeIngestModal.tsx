@@ -379,13 +379,17 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                                             </p>
                                                         </div>
                                                         <span className="text-[10px] font-mono font-black text-[var(--blue)]">
-                                                            {item.status === 'uploading' ? item.progress : (trickleProgress[item.id] || item.progress || 0)}%
+                                                            {item.status === 'uploading' 
+                                                                ? Math.round(item.progress * 0.3) 
+                                                                : Math.round(30 + (trickleProgress[item.id] || item.progress || 0) * 0.65)}%
                                                         </span>
                                                     </div>
                                                     <div className="w-full bg-[var(--background)] rounded-full h-2 overflow-hidden border border-[var(--border)] shadow-inner relative">
                                                         <motion.div 
                                                             initial={{ width: 0 }}
-                                                            animate={{ width: `${item.status === 'uploading' ? item.progress : (trickleProgress[item.id] || item.progress || 0)}%` }}
+                                                            animate={{ width: `${item.status === 'uploading' 
+                                                                ? Math.round(item.progress * 0.3) 
+                                                                : Math.round(30 + (trickleProgress[item.id] || item.progress || 0) * 0.65)}%` }}
                                                             transition={{ type: "spring", stiffness: 60, damping: 15 }}
                                                             className={cn(
                                                                 "h-full rounded-full transition-all duration-300",

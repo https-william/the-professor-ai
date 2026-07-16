@@ -108,8 +108,10 @@ export default function HeroSection() {
               <span className="flex items-center gap-1.5 text-orange-400">
                 <SpriteAnimator 
                   sheetUrl="/streak_fire_spritesheet.jpg" 
-                  frameWidth={6} 
-                  frameHeight={16} 
+                  frameWidth={11} 
+                  frameHeight={32} 
+                  renderWidth={11}
+                  renderHeight={14}
                   totalFrames={5} 
                   durationMs={600} 
                   mixBlendMode="screen"

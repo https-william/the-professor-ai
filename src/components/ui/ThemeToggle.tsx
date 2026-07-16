@@ -62,8 +62,8 @@ function ThemeButton({ theme, toggleTheme, className = "" }: { theme: string; to
                     }}
                 >
                     {theme === "dark"
-                        ? <SpriteAnimator sheetUrl="/moon_spritesheet.jpg" frameWidth={5} frameHeight={16} totalFrames={6} durationMs={700} mixBlendMode="screen" className="shrink-0 scale-125" />
-                        : <SpriteAnimator sheetUrl="/sun_spritesheet.jpg" frameWidth={5} frameHeight={16} totalFrames={6} durationMs={700} mixBlendMode="screen" className="shrink-0 scale-125" />}
+                        ? <SpriteAnimator sheetUrl="/moon_spritesheet.jpg" frameWidth={12} frameHeight={40} renderWidth={12} renderHeight={20} totalFrames={6} durationMs={700} mixBlendMode="screen" className="shrink-0" />
+                        : <SpriteAnimator sheetUrl="/sun_spritesheet.jpg" frameWidth={12} frameHeight={40} renderWidth={12} renderHeight={20} totalFrames={6} durationMs={700} mixBlendMode="screen" className="shrink-0" />}
                 </motion.div>
             </AnimatePresence>
         </motion.button>

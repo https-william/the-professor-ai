@@ -391,11 +391,18 @@ function DashboardContent() {
 
                 updateFileStatus(nextItem.id, 'success', 100);
                 if (finalWeightText) {
+                    const fileHeader = `\n\n--- DOCUMENT: ${nextItem.name} ---\n`;
+                    let newText = "";
                     setInputText(prev => {
-                        const fileHeader = `\n\n--- DOCUMENT: ${nextItem.name} ---\n`;
                         const nextVal = prev ? `${prev}${fileHeader}${finalWeightText}` : `${fileHeader}${finalWeightText}`;
-                        return nextVal.substring(0, MAX_CHARS);
+                        newText = nextVal.substring(0, MAX_CHARS);
+                        return newText;
                     });
+                    
+                    // Directly trigger generation to bypass React's batch state update race conditions
+                    autoGenTriggered.current = true;
+                    addToast("Notes extracted successfully! Generating your study sprint...", "success");
+                    handleGenerate(15, 15, newText || `${fileHeader}${finalWeightText}`);
                 }
             } catch (err: any) {
                 console.error("Ingestion Error:", err);
@@ -522,8 +529,9 @@ function DashboardContent() {
         }
     };
 
-    const handleGenerate = async (cardCount: number = 10, quizCount: number = 15) => {
-        if (!inputText.trim()) return;
+    const handleGenerate = async (cardCount: number = 10, quizCount: number = 15, overrideText?: string) => {
+        const textToUse = overrideText || inputText;
+        if (!textToUse.trim()) return;
         const customTitle = missionTitle || "";
 
         if (user.isAuthenticated && process.env.NODE_ENV !== "development") {
@@ -535,18 +543,20 @@ function DashboardContent() {
             }
         }
 
-        sessionStorage.setItem("examSprintContent", inputText);
+        sessionStorage.setItem("examSprintContent", textToUse);
         setIsGeneratingPack(true);
 
-        const packId = crypto.randomUUID();
-        const cleanTitle = customTitle || (inputText.trim() ? inputText.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : `STUDY PACK: ${new Date().toLocaleDateString()}`);
+        const packId = (typeof crypto !== "undefined" && crypto.randomUUID) 
+            ? crypto.randomUUID() 
+            : Math.random().toString(36).substring(2) + Date.now().toString(36);
+        const cleanTitle = customTitle || (textToUse.trim() ? textToUse.trim().replace(/^[^a-zA-Z0-9]+/, '').split(/\s+/).slice(0, 6).join(" ").toUpperCase() : `STUDY PACK: ${new Date().toLocaleDateString()}`);
         
         try {
             const { data: { user: authUser } } = await supabase.auth.getUser();
             if (!authUser) {
                 const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
                 offlinePacks[packId] = {
-                    id: packId, title: cleanTitle, source_text: inputText,
+                    id: packId, title: cleanTitle, source_text: textToUse,
                     phases_data: {
                         _config: { cardCount, quizCount }
                     }, user_id: "guest", savedAt: Date.now()
@@ -561,7 +571,7 @@ function DashboardContent() {
             const { error: dbError } = await supabase.from("study_packs").insert({
                 id: packId, user_id: authUser.id, title: cleanTitle,
                 description: "Comprehensive study sprint generated from your notes.",
-                source_text: inputText, phases_data: {
+                source_text: textToUse, phases_data: {
                     _config: { cardCount, quizCount }
                 },
             });
@@ -574,7 +584,7 @@ function DashboardContent() {
             console.error("Failed to create pack in DB, falling back to offline storage:", err);
             const offlinePacks = JSON.parse(localStorage.getItem("offline_study_packs") || "{}");
             offlinePacks[packId] = {
-                id: packId, title: cleanTitle, source_text: inputText,
+                id: packId, title: cleanTitle, source_text: textToUse,
                 phases_data: {
                     _config: { cardCount, quizCount }
                 }, user_id: "guest", savedAt: Date.now()
@@ -783,11 +793,13 @@ function DashboardContent() {
         customStatusMsg,
         fileInputRef,
         processingText,
-        progress: activeQueueItem 
-            ? (activeQueueItem.status === 'uploading' 
-                ? activeQueueItem.progress 
-                : (trickleProgress[activeQueueItem.id] || activeQueueItem.progress || 0))
-            : 0,
+        progress: isGeneratingPack
+            ? 100
+            : activeQueueItem 
+                ? (activeQueueItem.status === 'uploading' 
+                    ? Math.round(activeQueueItem.progress * 0.3) 
+                    : Math.round(30 + (trickleProgress[activeQueueItem.id] || activeQueueItem.progress || 0) * 0.65))
+                : 0,
     };
 
     return (
