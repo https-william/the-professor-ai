@@ -8,8 +8,8 @@ import { useUser } from "@/context/UserContext";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Loader2, BookOpen, Link2, Check } from "lucide-react";
+import { cn, cleanDocumentTitle } from "@/lib/utils";
 
 function ShareContent() {
     const searchParams = useSearchParams();
@@ -291,56 +291,38 @@ function ShareContent() {
                 <div className="absolute bottom-[20%] right-[10%] w-[600px] h-[600px] bg-indigo-500/[0.02] rounded-full blur-[150px]" />
             </div>
 
-            {/* Header */}
-            <header className="absolute top-0 w-full h-16 flex items-center justify-between px-6 z-50">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--amber)] to-indigo-600 flex items-center justify-center shadow-lg shadow-[var(--amber)]/10">
-                        <span className="material-symbols-outlined text-white text-base">school</span>
-                    </div>
-                    <span className="font-semibold tracking-tight">The Professor AI</span>
-                </div>
-                <div className="flex items-center gap-4">
-                    <ThemeToggle />
-                    {!user.isAuthenticated && (
-                        <>
-                            <Link href={`/login?next=${encodeURIComponent(window.location.href)}`} className="text-xs font-black uppercase tracking-wider text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">Log in</Link>
-                            <Link
-                                href={`/signup?next=${encodeURIComponent(window.location.href)}`}
-                                className="px-4 py-2 rounded-xl bg-[var(--foreground)] text-[var(--background)] text-xs font-black uppercase tracking-wider hover:opacity-90 transition-colors shadow-md"
-                            >
-                                Sign up
-                            </Link>
-                        </>
-                    )}
-                </div>
-            </header>
-
             {/* Main Content */}
-            <main className="relative pt-28 px-4 max-w-3xl mx-auto z-10">
+            <main className="relative pt-24 px-4 max-w-3xl mx-auto z-10">
                 <div className="text-center mb-10">
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--foreground-muted)] mb-3 flex items-center justify-center gap-2">
-                        <span className="text-[var(--amber)] font-bold">[{content.avatar}]</span>
-                        <span>Prepared by {content.author}</span>
-                    </p>
-                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight uppercase italic mb-3 bg-gradient-to-br from-[var(--foreground)] to-[var(--foreground-muted)] bg-clip-text text-transparent leading-none">
-                        {content.title}
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                        <span className="w-5 h-5 rounded-full bg-[var(--amber)]/10 border border-[var(--amber)]/20 text-[var(--amber)] text-[10px] font-black flex items-center justify-center">
+                            {content.avatar}
+                        </span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--foreground-muted)]">
+                            Prepared by {content.author}
+                        </span>
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--foreground)] mb-3 leading-tight max-w-2xl mx-auto">
+                        {cleanDocumentTitle(content.title)}
                     </h1>
                     <div className="flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider text-[var(--foreground-muted)]">
-                        <span className="flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[var(--amber)] text-sm">menu_book</span>
-                            {content.type}
+                        <span className="flex items-center gap-1.5">
+                            <BookOpen size={11} className="text-[var(--amber)]" />
+                            <span>{content.type}</span>
                         </span>
                         <span>•</span>
                         <span>{content.count} items</span>
                         <span>•</span>
                         <button
                             onClick={handleCopy}
-                            className="flex items-center gap-1 hover:text-[var(--foreground)] transition-colors"
+                            className="flex items-center gap-1.5 hover:text-[var(--foreground)] transition-colors"
                         >
-                            <span className="material-symbols-outlined text-sm">
-                                {copied ? "check" : "link"}
-                            </span>
-                            {copied ? "Copied" : "Copy link"}
+                            {copied ? (
+                                <Check size={11} className="text-[var(--emerald)]" />
+                            ) : (
+                                <Link2 size={11} />
+                            )}
+                            <span>{copied ? "Copied" : "Copy link"}</span>
                         </button>
                     </div>
                 </div>
@@ -418,59 +400,53 @@ function ShareContent() {
                         ))
                     )}
 
-                    {/* Blurred Card Overlay & Save CTA */}
-                    <div className="relative">
-                        <div className="p-6 rounded-2xl bg-zinc-950/20 border border-white/[0.04] blur-[3px] opacity-25 select-none pointer-events-none">
-                            <p className="text-zinc-600 text-[8px] font-black uppercase tracking-wider mb-2">Term</p>
-                            <h3 className="text-sm font-black text-white mb-6">What is the Feynman Technique?</h3>
-                            <div className="h-px w-full bg-white/[0.02] mb-6" />
-                            <p className="text-zinc-600 text-[8px] font-black uppercase tracking-wider mb-2">Definition</p>
-                            <p className="text-zinc-400 text-xs leading-relaxed">A method of learning that focuses on explaining a concept in simple terms to identify gaps in understanding...</p>
-                        </div>
+                    {/* Blurred Card Overlay */}
+                    <div className="p-6 rounded-2xl bg-zinc-950/20 border border-white/[0.04] blur-[3px] opacity-25 select-none pointer-events-none mb-6">
+                        <p className="text-zinc-600 text-[8px] font-black uppercase tracking-wider mb-2">Term</p>
+                        <h3 className="text-sm font-black text-white mb-6">What is the Feynman Technique?</h3>
+                        <div className="h-px w-full bg-white/[0.02] mb-6" />
+                        <p className="text-zinc-600 text-[8px] font-black uppercase tracking-wider mb-2">Definition</p>
+                        <p className="text-zinc-400 text-xs leading-relaxed">A method of learning that focuses on explaining a concept in simple terms to identify gaps in understanding...</p>
+                    </div>
 
-                        {/* CTA Overlay Card */}
-                        <div className="absolute inset-x-0 bottom-0 h-[280px] bg-gradient-to-t from-[var(--background)] via-[var(--background)]/95 to-transparent flex flex-col items-center justify-end pb-2">
-                            <div className="text-center max-w-sm mx-auto px-4">
-                                <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic mb-2 bg-gradient-to-r from-[var(--amber)] to-indigo-400 bg-clip-text text-transparent">
-                                    Unlock all {content.count} items
-                                </h3>
-                                <p className="text-[10px] text-[var(--foreground-muted)] font-bold uppercase tracking-wider mb-8 leading-normal max-w-xs mx-auto">
-                                    Import this study set to your own library to review cards, practice quizzes, and access the deep summary.
-                                </p>
-                                
-                                {user.isAuthenticated ? (
-                                    <button
-                                        onClick={clonePack}
-                                        disabled={isCloning}
-                                        className="btn-skeuo-primary w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                                    >
-                                        {isCloning ? (
-                                            <>
-                                                <Loader2 size={12} className="animate-spin" />
-                                                <span>Importing...</span>
-                                            </>
-                                        ) : (
-                                            <span>Import to Library</span>
-                                        )}
-                                    </button>
+                    {/* Centered CTA Section (Non-absolute) */}
+                    <div className="py-8 border border-[var(--border)] bg-[var(--background-secondary)]/30 rounded-2xl p-6 text-center max-w-md mx-auto shadow-sm">
+                        <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight italic mb-2 bg-gradient-to-r from-[var(--amber)] to-indigo-400 bg-clip-text text-transparent">
+                            Unlock all {content.count} items
+                        </h3>
+                        <p className="text-[9px] text-[var(--foreground-muted)] font-bold uppercase tracking-wider mb-6 leading-normal max-w-xs mx-auto">
+                            Import this study set to your own library to review cards, practice quizzes, and access the deep summary.
+                        </p>
+                        
+                        {user.isAuthenticated ? (
+                            <button
+                                onClick={clonePack}
+                                disabled={isCloning}
+                                className="btn-skeuo-primary w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                                {isCloning ? (
+                                    <>
+                                        <Loader2 size={12} className="animate-spin" />
+                                        <span>Importing...</span>
+                                    </>
                                 ) : (
-                                    <Link
-                                        href={`/signup?next=${encodeURIComponent(`/share?id=${content.id}`)}`}
-                                        className="btn-skeuo-primary block w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all text-center"
-                                    >
-                                        Save to my Profile
-                                    </Link>
+                                    <span>Import to Library</span>
                                 )}
-                                
-                                <p className="mt-4 text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-wider">
-                                    {!user.isAuthenticated && (
-                                        <>
-                                            Already a Scholar? <Link href={`/login?next=${encodeURIComponent(`/share?id=${content.id}`)}`} className="text-[var(--foreground)] hover:underline">Log in</Link>
-                                        </>
-                                    )}
-                                </p>
-                            </div>
-                        </div>
+                            </button>
+                        ) : (
+                            <Link
+                                href={`/signup?next=${encodeURIComponent(`/share?id=${content.id}`)}`}
+                                className="btn-skeuo-primary block w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all text-center"
+                            >
+                                Save to my Profile
+                            </Link>
+                        )}
+                        
+                        {!user.isAuthenticated && (
+                            <p className="mt-4 text-[10px] text-[var(--foreground-muted)] font-black uppercase tracking-wider">
+                                Already a Scholar? <Link href={`/login?next=${encodeURIComponent(`/share?id=${content.id}`)}`} className="text-[var(--foreground)] hover:underline">Log in</Link>
+                            </p>
+                        )}
                     </div>
                 </div>
             </main>

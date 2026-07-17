@@ -383,13 +383,22 @@ export default function StudyPackPage() {
                     }
                 }
             } else {
+                if (!res.ok) {
+                    const result = await res.json().catch(() => ({}));
+                    const errorMsg = result.error || `Failed to generate phase (HTTP status: ${res.status})`;
+                    throw new Error(errorMsg);
+                }
                 const result = await res.json();
                 if (result.success) {
                     setPhasesData(prev => ({ ...prev, [targetPhaseId]: result.data }));
                 }
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Prefetch Phase Error:", err);
+            const errMsg = err?.message || String(err);
+            if (navigator.onLine) {
+                addToast(`Background Generation failed: ${errMsg}`, "error");
+            }
         } finally {
             setGeneratingPhases(prev => ({ ...prev, [targetPhaseId]: null }));
         }
@@ -851,6 +860,11 @@ export default function StudyPackPage() {
                 return;
             }
 
+            if (!res.ok) {
+                const result = await res.json().catch(() => ({}));
+                const errorMsg = result.error || `Generation failed (HTTP status: ${res.status})`;
+                throw new Error(errorMsg);
+            }
             const result = await res.json();
             if (result.success) {
                 const updated = { ...phasesData, [phase.id]: result.data };
@@ -1386,6 +1400,11 @@ export default function StudyPackPage() {
                     }
                 }
             } else {
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    const errorMsg = data.error || `Generation failed (HTTP status: ${res.status})`;
+                    throw new Error(errorMsg);
+                }
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
                 setPhasesData(prev => ({ ...prev, [phaseId]: data }));
