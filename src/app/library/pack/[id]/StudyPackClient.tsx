@@ -98,6 +98,17 @@ export function convertKnowledgeChecksToMarkdown(text: string): string {
     return processed.replace(/\[KNOWLEDGE_CHECK\]/g, "");
 }
 
+const THEME_OPTIONS = [
+  { key: "theme08", name: "Midnight Scholar" },
+  { key: "theme02", name: "Neon Cyberpunk" },
+  { key: "theme07", name: "Academic White" },
+  { key: "theme03", name: "Developer Code" },
+  { key: "theme04", name: "Glass Candy" },
+  { key: "theme09", name: "Deep Blue Magazine" },
+  { key: "theme05", name: "Chroma Data" },
+  { key: "theme11", name: "Minimalist Geek" },
+];
+
 export default function StudyPackPage() {
     const params = useParams();
     const router = useRouter();
@@ -953,6 +964,8 @@ export default function StudyPackPage() {
 
     const [showDownloadMenu, setShowDownloadMenu] = useState(false);
     const [isExportingPDF, setIsExportingPDF] = useState(false);
+    const [selectedTheme, setSelectedTheme] = useState("theme08");
+    const [isGeneratingPPTX, setIsGeneratingPPTX] = useState(false);
 
     const [showFullExportMenu, setShowFullExportMenu] = useState(false);
     const [isExportingFullPDF, setIsExportingFullPDF] = useState(false);
@@ -1222,6 +1235,57 @@ export default function StudyPackPage() {
             addToast("HTML Download successful", "success");
         } catch (error) {
             addToast("Failed to compile HTML", "error");
+        }
+    };
+
+    const handleExportPPTX = async () => {
+        if (!phasesData.distill) {
+            addToast("Generate the Deep Summary first to download your presentation.", "warn");
+            return;
+        }
+        if (isGeneratingPPTX) return;
+        setIsGeneratingPPTX(true);
+        addToast("Generating presentation deck...", "info");
+
+        try {
+            const summaryData = phasesData.distill;
+            const summaryText = typeof summaryData === 'string' 
+                ? summaryData 
+                : (summaryData.summary ? (typeof summaryData.summary === 'string' ? summaryData.summary : JSON.stringify(summaryData.summary)) : "");
+
+            const response = await fetch("/api/generate-ppt", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    title: packTitle,
+                    summaryText: summaryText,
+                    theme: selectedTheme
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to generate slide deck");
+            }
+
+            const result = await response.json();
+            if (result.pptxUrl) {
+                const link = document.createElement("a");
+                link.href = result.pptxUrl;
+                link.download = `${packTitle.replace(/\s+/g, "_")}_Presentation.pptx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                addToast("PowerPoint deck generated successfully!", "success");
+            } else {
+                throw new Error("Export URL missing");
+            }
+        } catch (error) {
+            console.error(error);
+            addToast("Failed to generate PowerPoint presentation", "error");
+        } finally {
+            setIsGeneratingPPTX(false);
         }
     };
 
@@ -1594,20 +1658,34 @@ export default function StudyPackPage() {
                     <div className="flex items-center gap-2 pb-0.5 pl-9 relative">
                         <ThemeToggle />
 
-                        {/* Lab Settings Dropdown */}
+                        {/* Share Button */}
+                        <button
+                            onClick={handleShare}
+                            className="px-3 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:border-[var(--blue)]/40 hover:bg-[var(--blue)]/5 transition-all flex items-center gap-1.5 shadow-sm shrink-0"
+                            title="Share Study Lab"
+                        >
+                            <Share2 size={12} className="text-[var(--blue)]" />
+                            <span>Share</span>
+                        </button>
+
+                        {/* Export Dropdown */}
                         <div className="relative shrink-0">
                             <button
-                                onClick={() => setShowOptionsDropdown(prev => !prev)}
+                                onClick={() => setShowDownloadMenu(prev => !prev)}
                                 className="px-3 py-1.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all flex items-center gap-1.5 shadow-sm"
-                                title="Lab Settings"
+                                title="Export options"
                             >
-                                <Settings size={12} />
-                                <span>Lab Settings</span>
+                                {isExportingPDF || isGeneratingPPTX || isExportingFullPDF ? (
+                                    <Loader2 size={12} className="animate-spin text-[var(--amber)]" />
+                                ) : (
+                                    <Download size={12} />
+                                )}
+                                <span>Export</span>
                             </button>
                             <AnimatePresence>
-                                {showOptionsDropdown && (
+                                {showDownloadMenu && (
                                     <>
-                                        <div className="fixed inset-0 z-[100]" onClick={() => setShowOptionsDropdown(false)} />
+                                        <div className="fixed inset-0 z-[100]" onClick={() => setShowDownloadMenu(false)} />
                                         <motion.div
                                             initial={{ opacity: 0, y: 8, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1617,7 +1695,7 @@ export default function StudyPackPage() {
                                         >
                                             <button
                                                 onClick={() => {
-                                                    setShowOptionsDropdown(false);
+                                                    setShowDownloadMenu(false);
                                                     handleSaveOffline();
                                                 }}
                                                 className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
@@ -1628,7 +1706,52 @@ export default function StudyPackPage() {
                                             <div className="h-[1px] bg-[var(--border)] my-1" />
                                             <button
                                                 onClick={async () => {
-                                                    setShowOptionsDropdown(false);
+                                                    setShowDownloadMenu(false);
+                                                    await handleExportPDF();
+                                                }}
+                                                className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
+                                            >
+                                                <FileText size={12} className="text-[var(--amber)] shrink-0" />
+                                                <span>Export PDF Summary</span>
+                                            </button>
+                                            
+                                            {/* PPTX Theme Selector */}
+                                            <div className="px-3 py-1.5 border-t border-b border-white/5 my-1 bg-white/[0.01]" onClick={e => e.stopPropagation()}>
+                                                <span className="text-[8px] font-black uppercase tracking-wider text-white/40 block mb-1">PPTX Theme</span>
+                                                <select
+                                                    value={selectedTheme}
+                                                    onChange={(e) => setSelectedTheme(e.target.value)}
+                                                    className="w-full bg-[var(--background-secondary)] border border-white/10 rounded px-1.5 py-0.5 text-[9px] font-bold text-white/80 outline-none focus:border-[var(--amber)] transition-all cursor-pointer"
+                                                >
+                                                    {THEME_OPTIONS.map(theme => (
+                                                        <option key={theme.key} value={theme.key} className="bg-[#141416] text-white">
+                                                            {theme.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Download as presentation */}
+                                            <button
+                                                onClick={() => {
+                                                    setShowDownloadMenu(false);
+                                                    handleExportPPTX();
+                                                }}
+                                                disabled={isGeneratingPPTX}
+                                                className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2 disabled:opacity-50"
+                                            >
+                                                {isGeneratingPPTX ? (
+                                                    <Loader2 size={12} className="animate-spin text-[var(--amber)]" />
+                                                ) : (
+                                                    <Sparkles size={12} className="text-[var(--amber)] shrink-0" />
+                                                )}
+                                                <span>Download as presentation</span>
+                                            </button>
+                                            
+                                            <div className="h-[1px] bg-[var(--border)] my-1" />
+                                            <button
+                                                onClick={async () => {
+                                                    setShowDownloadMenu(false);
                                                     await handleExportFullPackPDF();
                                                 }}
                                                 className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
@@ -1638,24 +1761,13 @@ export default function StudyPackPage() {
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    setShowOptionsDropdown(false);
+                                                    setShowDownloadMenu(false);
                                                     handleExportFullPackMarkdown();
                                                 }}
                                                 className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
                                             >
                                                 <Terminal size={12} className="text-[var(--amber)] shrink-0" />
                                                 <span>Export Markdown (.md)</span>
-                                            </button>
-                                            <div className="h-[1px] bg-[var(--border)] my-1" />
-                                            <button
-                                                onClick={() => {
-                                                    setShowOptionsDropdown(false);
-                                                    handleShare();
-                                                }}
-                                                className="w-full px-3 py-2.5 rounded-lg text-left text-[10px] font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-all flex items-center gap-2"
-                                            >
-                                                <Share2 size={12} className="text-[var(--blue)] shrink-0" />
-                                                <span>Share Study Lab</span>
                                             </button>
                                         </motion.div>
                                     </>
