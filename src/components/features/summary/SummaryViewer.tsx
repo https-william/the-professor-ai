@@ -56,6 +56,17 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useCognitiveFatigue } from "@/hooks/useCognitiveFatigue";
 import { EVENT_TYPES, HighlightColor } from "@/lib/design-tokens";
 
+const THEME_OPTIONS = [
+  { key: "theme08", name: "Midnight Scholar" },
+  { key: "theme02", name: "Neon Cyberpunk" },
+  { key: "theme07", name: "Academic White" },
+  { key: "theme03", name: "Developer Code" },
+  { key: "theme04", name: "Glass Candy" },
+  { key: "theme09", name: "Deep Blue Magazine" },
+  { key: "theme05", name: "Chroma Data" },
+  { key: "theme11", name: "Minimalist Geek" },
+];
+
 interface SummaryViewerProps {
   data: string;
   title: string;
@@ -555,6 +566,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
   };
 
   const [isGeneratingPPTX, setIsGeneratingPPTX] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState("theme08");
 
   const handleExportPPTX = async () => {
     if (isGeneratingPPTX) return;
@@ -570,7 +582,7 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
         body: JSON.stringify({
           title: title,
           summaryText: fullMarkdownContent,
-          theme: "theme08"
+          theme: selectedTheme
         }),
       });
 
@@ -953,6 +965,20 @@ export default function SummaryViewer({ data, title, generationId }: SummaryView
                     <Download size={11} />
                     <span>Download HTML</span>
                   </button>
+                  <div className="px-3 py-1.5 border-t border-b border-white/5 my-1 bg-white/[0.01]" onClick={e => e.stopPropagation()}>
+                    <span className="text-[8px] font-black uppercase tracking-wider text-white/40 block mb-1">PPTX Theme</span>
+                    <select
+                      value={selectedTheme}
+                      onChange={(e) => setSelectedTheme(e.target.value)}
+                      className="w-full bg-[var(--background-secondary)] border border-white/10 rounded px-1.5 py-0.5 text-[9px] font-bold text-white/80 outline-none focus:border-[var(--amber)] transition-all cursor-pointer"
+                    >
+                      {THEME_OPTIONS.map(theme => (
+                        <option key={theme.key} value={theme.key} className="bg-[#141416] text-white">
+                          {theme.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <button
                     onClick={() => {
                       setShowDownloadMenu(false);

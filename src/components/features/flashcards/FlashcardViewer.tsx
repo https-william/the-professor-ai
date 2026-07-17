@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 import { sm2, type SM2Card, formatInterval } from "@/lib/spaced-repetition";
 import ProgressNodeTrack from "@/components/ui/ProgressNodeTrack";
 import GlassmorphicCard from "@/components/ui/GlassmorphicCard";
+import SpriteAnimator from "@/components/ui/SpriteAnimator";
 
 interface Flashcard {
     id?: string;
@@ -127,6 +128,26 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
     const [sessionComplete, setSessionComplete] = useState(false);
     const [sessionStats, setSessionStats] = useState({ xp: 0, streak: 0, incremented: false });
     const [xpPopup, setXpPopup] = useState<{ id: number; text: string } | null>(null);
+
+    const [isHoveredEli5, setIsHoveredEli5] = useState(false);
+    const [sparks, setSparks] = useState<{ id: number; x: number; y: number; color: string; size: number; vx: number; vy: number }[]>([]);
+
+    useEffect(() => {
+        if (sparks.length === 0) return;
+        const frame = requestAnimationFrame(() => {
+            setSparks(prev => prev
+                .map(s => ({
+                    ...s,
+                    x: s.x + s.vx,
+                    y: s.y + s.vy,
+                    vy: s.vy + 0.15,
+                    size: Math.max(0, s.size - 0.15),
+                }))
+                .filter(s => s.size > 0)
+            );
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [sparks]);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -227,22 +248,10 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                     }
                     break;
                 case '2':
-                    e.preventDefault();
-                    if (cardState === 'FLIPPED') {
-                        handleRate(2); // Hard
-                    }
-                    break;
-                case '3':
                 case 'k':
                     e.preventDefault();
                     if (cardState === 'FLIPPED') {
-                        handleRate(4); // Good
-                    }
-                    break;
-                case '4':
-                    e.preventDefault();
-                    if (cardState === 'FLIPPED') {
-                        handleRate(5); // Easy
+                        handleRate(4); // Hard (maps to quality 4 internally)
                     }
                     break;
                 case 'escape':
@@ -359,6 +368,25 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
         const isCorrect = quality >= 3;
         setExitDirection(isCorrect ? 'right' : 'left');
         setCardState('EVALUATED');
+
+        // Trigger particle explosion sparks
+        const burstColor = isCorrect ? 'rgba(52, 211, 153, 0.9)' : 'rgba(248, 113, 113, 0.9)'; // emerald / crimson
+        const startX = typeof window !== 'undefined' ? window.innerWidth / 2 : 500;
+        const startY = typeof window !== 'undefined' ? window.innerHeight / 2 : 400;
+        const newSparks = Array.from({ length: 24 }).map((_, i) => {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 8;
+            return {
+                id: Date.now() + i + Math.random(),
+                x: startX,
+                y: startY,
+                color: burstColor,
+                size: 4 + Math.random() * 6,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 2, // offset upwards
+            };
+        });
+        setSparks(newSparks);
 
         // Stop any active TTS audio
         if (isPlayingTTS) {
@@ -908,10 +936,24 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                                             {!eli5Text[currentCardIndex] && (
                                                 <button 
                                                     onClick={(e) => handleEli5(e, cardBackText, currentCardIndex)} 
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 text-[9px] font-black uppercase tracking-wider hover:bg-[var(--amber)]/25 transition-all cursor-pointer"
+                                                    onMouseEnter={() => setIsHoveredEli5(true)}
+                                                    onMouseLeave={() => setIsHoveredEli5(false)}
+                                                    disabled={isGeneratingEli5}
+                                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--amber)]/10 text-[var(--amber)] border border-[var(--amber)]/20 text-[9px] font-black uppercase tracking-wider hover:bg-[var(--amber)]/25 transition-all cursor-pointer disabled:opacity-50"
                                                 >
-                                                    <Baby size={12} />
-                                                    {isGeneratingEli5 ? "Simplifying..." : "ELI5 Metaphor"}
+                                                    <SpriteAnimator
+                                                        sheetUrl="/lightbulb_spritesheet.jpg"
+                                                        frameWidth={275}
+                                                        frameHeight={768}
+                                                        totalFrames={5}
+                                                        durationMs={600}
+                                                        loop={isGeneratingEli5}
+                                                        isPlaying={isGeneratingEli5 || isHoveredEli5}
+                                                        renderWidth={12}
+                                                        renderHeight={14}
+                                                        mixBlendMode="screen"
+                                                    />
+                                                    <span>{isGeneratingEli5 ? "Simplifying..." : "ELI5 Metaphor"}</span>
                                                 </button>
                                             )}
                                             
@@ -930,7 +972,7 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                 {/* Spaced Repetition Grading controls */}
                 <div className="w-full max-w-md flex flex-col gap-6 mt-4">
                     {cardState === 'FLIPPED' ? (
-                        <div className="grid grid-cols-4 gap-2 animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             
                             {/* Again Button */}
                             <button 
@@ -944,32 +986,12 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
 
                             {/* Hard Button */}
                             <button 
-                                onClick={() => handleRate(2)}
+                                onClick={() => handleRate(4)}
                                 className="flex flex-col h-16 rounded-xl border-2 border-[var(--amber)]/40 bg-[var(--amber)]/10 text-[var(--amber)] hover:bg-[var(--amber)]/20 hover:border-[var(--amber)] hover:shadow-[0_0_20px_rgba(245,158,11,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
                             >
                                 <HelpCircle size={14} className="mb-0.5" />
                                 <span className="text-[9px] font-black uppercase tracking-wider">Hard (2)</span>
-                                <span className="text-[8px] font-medium opacity-65 font-mono">{reviewIntervals.hard}</span>
-                            </button>
-
-                            {/* Good Button */}
-                            <button 
-                                onClick={() => handleRate(4)}
-                                className="flex flex-col h-16 rounded-xl border-2 border-[var(--blue)]/40 bg-[var(--blue)]/10 text-[var(--blue)] hover:bg-[var(--blue)]/20 hover:border-[var(--blue)] hover:shadow-[0_0_20px_rgba(74,124,245,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
-                            >
-                                <Check size={14} className="mb-0.5" />
-                                <span className="text-[9px] font-black uppercase tracking-wider">Good (3)</span>
                                 <span className="text-[8px] font-medium opacity-65 font-mono">{reviewIntervals.good}</span>
-                            </button>
-
-                            {/* Easy Button */}
-                            <button 
-                                onClick={() => handleRate(5)}
-                                className="flex flex-col h-16 rounded-xl border-2 border-[var(--emerald)]/40 bg-[var(--emerald)]/10 text-[var(--emerald)] hover:bg-[var(--emerald)]/20 hover:border-[var(--emerald)] hover:shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all items-center justify-center p-1 cursor-pointer active:scale-95 shadow-inner"
-                            >
-                                <Sparkles size={14} className="mb-0.5" />
-                                <span className="text-[9px] font-black uppercase tracking-wider">Easy (4)</span>
-                                <span className="text-[8px] font-medium opacity-65 font-mono">{reviewIntervals.easy}</span>
                             </button>
 
                         </div>
@@ -989,13 +1011,32 @@ export default function FlashcardViewer({ flashcards, title, generationId }: Fla
                             <kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">Space</kbd> Flip
                         </span>
                         <span className="flex items-center gap-1">
-                            <kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">1-4</kbd> Grade
+                            <kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">1-2</kbd> Grade
                         </span>
                         <span className="flex items-center gap-1">
                             <kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">Esc</kbd> Exit
                         </span>
                     </div>
                 </div>
+
+                {/* Sparks particles overlay */}
+                {sparks.map(s => (
+                    <div
+                        key={s.id}
+                        style={{
+                            position: 'fixed',
+                            left: s.x,
+                            top: s.y,
+                            width: s.size,
+                            height: s.size,
+                            backgroundColor: s.color,
+                            borderRadius: '50%',
+                            pointerEvents: 'none',
+                            zIndex: 9999,
+                            boxShadow: `0 0 10px ${s.color}`,
+                        }}
+                    />
+                ))}
             </main>
 
             <SessionComplete

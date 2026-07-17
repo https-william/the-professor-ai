@@ -316,6 +316,44 @@ function DashboardContent() {
                 return;
             }
 
+            // Check if the file can be processed entirely on the client side (.txt, .md)
+            const isTextFile = nextItem.file && (nextItem.name.endsWith('.txt') || nextItem.name.endsWith('.md'));
+            if (isTextFile) {
+                try {
+                    updateFileStatus(nextItem.id, 'reading', 30);
+                    const reader = new FileReader();
+                    const text = await new Promise<string>((resolve, reject) => {
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = () => reject(new Error("Failed to read local text file."));
+                        reader.readAsText(nextItem.file!);
+                    });
+                    
+                    updateFileStatus(nextItem.id, 'success', 100);
+                    
+                    const finalWeightText = text.trim();
+                    if (finalWeightText) {
+                        const fileHeader = `\n\n--- DOCUMENT: ${nextItem.name} ---\n`;
+                        let newText = "";
+                        setInputText(prev => {
+                            const nextVal = prev ? `${prev}${fileHeader}${finalWeightText}` : `${fileHeader}${finalWeightText}`;
+                            newText = nextVal.substring(0, MAX_CHARS);
+                            return newText;
+                        });
+                        
+                        autoGenTriggered.current = true;
+                        addToast("Notes extracted successfully! Generating your study sprint...", "success");
+                        handleGenerate(15, 15, newText || `${fileHeader}${finalWeightText}`);
+                    } else {
+                        throw new Error("Text file is empty.");
+                    }
+                } catch (err: any) {
+                    console.error("Local Ingestion Error:", err);
+                    updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to process text file locally");
+                    addToast(`Failed to process text file: ${err.message}`, "error");
+                }
+                return;
+            }
+
             try {
                 updateFileStatus(nextItem.id, 'uploading', 5);
                 const formData = new FormData();
@@ -346,12 +384,18 @@ function DashboardContent() {
                                     const result = JSON.parse(xhr.responseText);
                                     reject(new Error(result.error || "Failed to upload document."));
                                 } catch {
-                                    reject(new Error("Failed to upload document."));
+                                    if (xhr.status === 413) {
+                                        reject(new Error("File is too large for the server. Try converting it to TXT or splitting it into smaller files."));
+                                    } else if (xhr.status === 406) {
+                                        reject(new Error("The file format is unacceptable or headers are mismatched."));
+                                    } else {
+                                        reject(new Error(`Failed to upload document (HTTP status code: ${xhr.status}).`));
+                                    }
                                 }
                             }
                         };
 
-                        xhr.onerror = () => reject(new Error("Network connection error during upload."));
+                        xhr.onerror = () => reject(new Error("Network connection error during upload. Please check your connection."));
                         xhr.send(formData);
                     });
                 };
@@ -476,8 +520,18 @@ function DashboardContent() {
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const files = Array.from(e.target.files);
-            const explicitIds = await Promise.all(files.map(f => computeFileHash(f)));
-            addFiles(files, explicitIds);
+            const validFiles: File[] = [];
+            for (const file of files) {
+                if (file.size > 10 * 1024 * 1024) {
+                    addToast(`File ${file.name} is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please upload files under 10MB.`, "error");
+                } else {
+                    validFiles.push(file);
+                }
+            }
+            if (validFiles.length > 0) {
+                const explicitIds = await Promise.all(validFiles.map(f => computeFileHash(f)));
+                addFiles(validFiles, explicitIds);
+            }
         }
     };
 
@@ -491,8 +545,18 @@ function DashboardContent() {
                 const explicitIds = await Promise.all(localPaths.map(p => computeStringHash(p.path + p.name)));
                 addLocalPaths(localPaths, explicitIds);
             } else {
-                const explicitIds = await Promise.all(files.map(f => computeFileHash(f)));
-                addFiles(files, explicitIds);
+                const validFiles: File[] = [];
+                for (const file of files) {
+                    if (file.size > 10 * 1024 * 1024) {
+                        addToast(`File ${file.name} is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please upload files under 10MB.`, "error");
+                    } else {
+                        validFiles.push(file);
+                    }
+                }
+                if (validFiles.length > 0) {
+                    const explicitIds = await Promise.all(validFiles.map(f => computeFileHash(f)));
+                    addFiles(validFiles, explicitIds);
+                }
             }
         }
     };

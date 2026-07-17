@@ -6,6 +6,7 @@ import { useIngestStore } from "@/store/useIngestStore";
 import { performOCR } from "@/lib/ocr-bridge";
 import { X, Upload, CheckCircle2, Loader2, AlertCircle, MessageCircle, Type, Zap, BookOpen, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToasts } from "@/components/ui/GlobalToasts";
 
 /* ═══ Claymorphic style helpers ═══ */
 const clay = {
@@ -33,6 +34,7 @@ interface KnowledgeIngestModalProps {
 
 export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, description, isSprint }: KnowledgeIngestModalProps) {
     const { isModalOpen, closeModal, queue, addFiles, updateFileStatus } = useIngestStore();
+    const { addToast } = useToasts();
     const [dragActive, setDragActive] = useState(false);
     const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
     const [pastedText, setPastedText] = useState("");
@@ -112,6 +114,36 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
 
             processedIds.current.add(nextItem.id);
 
+            // Check if the file can be processed entirely on the client side (.txt, .md)
+            const isTextFile = nextItem.file && (nextItem.name.endsWith('.txt') || nextItem.name.endsWith('.md'));
+            if (isTextFile) {
+                try {
+                    updateFileStatus(nextItem.id, 'reading', 30);
+                    const reader = new FileReader();
+                    const text = await new Promise<string>((resolve, reject) => {
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = () => reject(new Error("Failed to read local text file."));
+                        reader.readAsText(nextItem.file!);
+                    });
+                    
+                    updateFileStatus(nextItem.id, 'success', 100);
+                    
+                    const finalWeightText = text.trim();
+                    if (finalWeightText) {
+                        if (onSuccess) {
+                            onSuccess(finalWeightText);
+                        }
+                    } else {
+                        throw new Error("Text file is empty.");
+                    }
+                } catch (err: any) {
+                    console.error("Local Ingestion Error:", err);
+                    updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to process text file locally");
+                    addToast(`Failed to process text file: ${err.message}`, "error");
+                }
+                return;
+            }
+
             try {
                 // Initial progress bump
                 updateFileStatus(nextItem.id, 'uploading', 5);
@@ -145,12 +177,18 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
                                     const result = JSON.parse(xhr.responseText);
                                     reject(new Error(result.error || "Failed to upload document."));
                                 } catch {
-                                    reject(new Error("Failed to upload document."));
+                                    if (xhr.status === 413) {
+                                        reject(new Error("File is too large for the server. Try converting it to TXT or splitting it into smaller files."));
+                                    } else if (xhr.status === 406) {
+                                        reject(new Error("The file format is unacceptable or headers are mismatched."));
+                                    } else {
+                                        reject(new Error(`Failed to upload document (HTTP status code: ${xhr.status}).`));
+                                    }
                                 }
                             }
                         };
 
-                        xhr.onerror = () => reject(new Error("Network connection error during upload."));
+                        xhr.onerror = () => reject(new Error("Network connection error during upload. Please check your connection."));
                         xhr.send(formData);
                     });
                 };
@@ -177,6 +215,7 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
             } catch (err: any) {
                 console.error("Ingestion Error:", err);
                 updateFileStatus(nextItem.id, 'error', 0, err.message || "Failed to parse file");
+                addToast(err.message || "Failed to parse file", "error");
             }
         };
 
@@ -186,13 +225,35 @@ export default function KnowledgeIngestModal({ onSuccess, onStartSprint, title, 
     }, [queue, isProcessing, updateFileStatus, onSuccess]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) addFiles(Array.from(e.target.files));
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            const validFiles: File[] = [];
+            for (const file of files) {
+                if (file.size > 10 * 1024 * 1024) {
+                    addToast(`File ${file.name} is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please upload files under 10MB.`, "error");
+                } else {
+                    validFiles.push(file);
+                }
+            }
+            if (validFiles.length > 0) addFiles(validFiles);
+        }
     };
 
     const onDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragActive(false);
-        if (e.dataTransfer.files) addFiles(Array.from(e.dataTransfer.files));
+        if (e.dataTransfer.files) {
+            const files = Array.from(e.dataTransfer.files);
+            const validFiles: File[] = [];
+            for (const file of files) {
+                if (file.size > 10 * 1024 * 1024) {
+                    addToast(`File ${file.name} is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please upload files under 10MB.`, "error");
+                } else {
+                    validFiles.push(file);
+                }
+            }
+            if (validFiles.length > 0) addFiles(validFiles);
+        }
     };
 
     const handleTextSubmit = async () => {
