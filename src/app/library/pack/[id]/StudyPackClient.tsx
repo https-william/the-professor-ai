@@ -35,6 +35,8 @@ import {
     Loader2,
     Youtube,
     ExternalLink,
+    AlertCircle,
+    RefreshCw,
 } from "lucide-react";
 import { cn, cleanDocumentTitle } from "@/lib/utils";
 import StandardContainer from "@/components/ui/StandardContainer";
@@ -185,6 +187,7 @@ export default function StudyPackPage() {
     const [isLoadingPhase, setIsLoadingPhase] = useState(false);
     const [isStreamingPhase, setIsStreamingPhase] = useState(false);
     const [generatingPhases, setGeneratingPhases] = useState<Record<string, 'loading' | 'streaming' | null>>({});
+    const [phaseErrors, setPhaseErrors] = useState<Record<string, string | null>>({});
     const [sourceText, setSourceText] = useState("");
     const [packTitle, setPackTitle] = useState("Study Pack");
 
@@ -1455,47 +1458,253 @@ export default function StudyPackPage() {
 
     const studyArchetype = getStudyArchetype();
 
+    function PhaseSkeleton({ className }: { className?: string }) {
+        return <div className={cn("animate-pulse bg-[var(--border)]", className)} />;
+    }
+
+    function PhaseLoadingView({ phaseId }: { phaseId: string }) {
+        const [msgIndex, setMsgIndex] = useState(0);
+
+        const phaseMessages: Record<string, string[]> = {
+            distill: [
+                "Deconstructing source notes & structural headings...",
+                "Filtering noise to isolate high-yield concepts...",
+                "Synthesizing clear Feynman-style summary & formulas...",
+                "Formatting interactive reading layout..."
+            ],
+            retain: [
+                "Scanning document for key terminology & definitions...",
+                "Forging active-recall front/back memory pairs...",
+                "Calibrating spaced-repetition intervals...",
+                "Assembling your interactive flashcard deck..."
+            ],
+            test: [
+                "Analyzing document topics & concept relationships...",
+                "Formulating realistic practice exam questions...",
+                "Drafting tutor analogies & explanation keys...",
+                "Verifying answer validation hashes..."
+            ],
+            resources: [
+                "Searching top educational video repositories...",
+                "Filtering high-yield YouTube lectures matched to your text...",
+                "Extracting channel metadata & duration benchmarks...",
+                "Curating your custom video study playlist..."
+            ]
+        };
+
+        const messages = phaseMessages[phaseId] || [
+            "Analyzing document structure...",
+            "Generating high-rigor study materials...",
+            "Finalizing content formatting..."
+        ];
+
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setMsgIndex(prev => (prev + 1) % messages.length);
+            }, 2600);
+            return () => clearInterval(interval);
+        }, [messages]);
+
+        return (
+            <div className="w-full max-w-xl mx-auto my-auto p-8 sm:p-10 rounded-3xl bg-[var(--background-secondary)]/70 backdrop-blur-2xl border border-[var(--border)] shadow-2xl flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
+                <div className="relative mb-5">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--amber)]/20 to-[var(--blue)]/20 border border-[var(--amber)]/30 flex items-center justify-center text-[var(--amber)] shadow-lg shadow-[var(--amber)]/10 animate-pulse">
+                        {phaseId === 'distill' && <FileText size={28} className="animate-bounce text-[var(--blue)]" />}
+                        {phaseId === 'retain' && <Layers size={28} className="animate-bounce text-[var(--amber)]" />}
+                        {phaseId === 'test' && <Sword size={28} className="animate-bounce text-[var(--crimson)]" />}
+                        {phaseId === 'resources' && <Youtube size={28} className="animate-bounce text-[#FF0000]" />}
+                    </div>
+                </div>
+
+                <h3 className="text-base font-black uppercase tracking-tight text-[var(--foreground)] mb-1">
+                    Generating {phaseId === 'distill' ? 'Deep Summary' : phaseId === 'retain' ? 'Memory Cards' : phaseId === 'test' ? 'Practice Quiz' : 'Curated Resources'}
+                </h3>
+
+                <div className="h-7 flex items-center justify-center mb-6">
+                    <AnimatePresence mode="wait">
+                        <motion.p
+                            key={msgIndex}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.2 }}
+                            className="text-xs font-bold text-[var(--amber)] flex items-center gap-2"
+                        >
+                            <Loader2 size={12} className="animate-spin shrink-0 text-[var(--amber)]" />
+                            <span>{messages[msgIndex]}</span>
+                        </motion.p>
+                    </AnimatePresence>
+                </div>
+
+                <div className="w-full bg-[var(--background)]/60 border border-[var(--border)] rounded-2xl p-4 shadow-inner space-y-3">
+                    {phaseId === 'distill' && (
+                        <div className="space-y-2.5">
+                            <PhaseSkeleton className="h-4 w-3/4 rounded-lg bg-[var(--border)]" />
+                            <PhaseSkeleton className="h-3.5 w-full rounded-lg bg-[var(--border)]/70" />
+                            <PhaseSkeleton className="h-3.5 w-5/6 rounded-lg bg-[var(--border)]/70" />
+                            <PhaseSkeleton className="h-3.5 w-4/5 rounded-lg bg-[var(--border)]/70" />
+                        </div>
+                    )}
+                    {phaseId === 'retain' && (
+                        <div className="flex flex-col items-center py-2 space-y-2">
+                            <PhaseSkeleton className="h-20 w-full rounded-xl border border-[var(--border)] bg-[var(--border)]/60" />
+                            <div className="flex gap-2">
+                                <PhaseSkeleton className="h-3 w-16 rounded-full bg-[var(--border)]/70" />
+                                <PhaseSkeleton className="h-3 w-16 rounded-full bg-[var(--border)]/70" />
+                            </div>
+                        </div>
+                    )}
+                    {phaseId === 'test' && (
+                        <div className="space-y-2 text-left">
+                            <PhaseSkeleton className="h-4 w-2/3 rounded-lg mb-3 bg-[var(--border)]" />
+                            <div className="grid grid-cols-2 gap-2">
+                                <PhaseSkeleton className="h-8 w-full rounded-lg bg-[var(--border)]/70" />
+                                <PhaseSkeleton className="h-8 w-full rounded-lg bg-[var(--border)]/70" />
+                                <PhaseSkeleton className="h-8 w-full rounded-lg bg-[var(--border)]/70" />
+                                <PhaseSkeleton className="h-8 w-full rounded-lg bg-[var(--border)]/70" />
+                            </div>
+                        </div>
+                    )}
+                    {phaseId === 'resources' && (
+                        <div className="grid grid-cols-3 gap-3">
+                            <PhaseSkeleton className="h-16 w-full rounded-xl bg-[var(--border)]/70" />
+                            <PhaseSkeleton className="h-16 w-full rounded-xl bg-[var(--border)]/70" />
+                            <PhaseSkeleton className="h-16 w-full rounded-xl bg-[var(--border)]/70" />
+                        </div>
+                    )}
+                </div>
+
+                <p className="text-[10px] text-[var(--foreground-muted)] font-medium mt-5 tracking-wide">
+                    💡 <span className="font-bold">Professor Tip:</span> Active recall study routines improve test scores by up to 150%.
+                </p>
+            </div>
+        );
+    }
+
+    function PhaseErrorView({ phaseId, errorMsg, onRetry }: { phaseId: string; errorMsg: string; onRetry: () => void }) {
+        return (
+            <div className="w-full max-w-xl mx-auto my-auto p-8 rounded-3xl bg-[var(--background-secondary)]/80 backdrop-blur-2xl border border-[var(--crimson)]/40 shadow-2xl flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-[var(--crimson)]/10 border border-[var(--crimson)]/30 flex items-center justify-center text-[var(--crimson)] mb-4 shadow-lg shadow-[var(--crimson)]/10">
+                    <AlertCircle size={26} />
+                </div>
+                <h3 className="text-base font-black uppercase tracking-tight text-[var(--foreground)] mb-1">
+                    Generation Interrupted
+                </h3>
+                <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-sm leading-relaxed">
+                    {errorMsg || "The Professor encountered a momentary connection drop while parsing this phase."}
+                </p>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={onRetry}
+                        className="px-6 py-2.5 rounded-xl bg-[var(--amber)] text-black font-black text-[9px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-[var(--amber)]/20 cursor-pointer"
+                    >
+                        <RefreshCw size={12} />
+                        <span>Try Again</span>
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    function PhasePreGenView({ phaseId, onGenerate }: { phaseId: string; onGenerate: () => void }) {
+        return (
+            <div className="p-8 sm:p-10 rounded-3xl bg-[var(--background-secondary)]/50 backdrop-blur-xl border border-[var(--border)] text-center flex flex-col items-center justify-center min-h-[380px] w-full max-w-xl mx-auto my-auto shadow-2xl transition-all hover:border-[var(--border-2)]">
+                <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner mb-4 text-[var(--amber)]">
+                    {phaseId === 'distill' && <FileText size={26} className="text-[var(--blue)]" />}
+                    {phaseId === 'retain' && <Layers size={26} className="text-[var(--amber)]" />}
+                    {phaseId === 'test' && <Sword size={26} className="text-[var(--crimson)]" />}
+                    {phaseId === 'resources' && <Youtube size={26} className="text-[#FF0000]" />}
+                </div>
+                <h3 className="text-lg font-black uppercase tracking-tight text-[var(--foreground)] mb-1">
+                    {phaseId === 'distill' && "Deep Summary"}
+                    {phaseId === 'retain' && "Memory Cards"}
+                    {phaseId === 'test' && "Practice Quiz"}
+                    {phaseId === 'resources' && "External Resources"}
+                </h3>
+                <p className="text-xs text-[var(--foreground-muted)] mb-5 max-w-sm leading-relaxed font-medium">
+                    {phaseId === 'distill' && "Get a clean, high-yield summary of your document with key takeaways and formulas."}
+                    {phaseId === 'retain' && "Study active recall flashcards with memory hooks tailored to your exact notes."}
+                    {phaseId === 'test' && "Test your retention with custom practice exam questions and tutor explanation keys."}
+                    {phaseId === 'resources' && "Discover hand-picked educational YouTube tutorials matched to your document topics."}
+                </p>
+                
+                {/* Feature Pills */}
+                <div className="flex flex-wrap justify-center gap-2 mb-6 max-w-md">
+                    {phaseId === 'distill' && (
+                        <>
+                            <span className="px-2.5 py-1 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] text-[9px] font-bold">⚡ Key Takeaways</span>
+                            <span className="px-2.5 py-1 rounded-full bg-[var(--amber)]/10 border border-[var(--amber)]/20 text-[var(--amber)] text-[9px] font-bold">📖 Feynman Analogies</span>
+                            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[var(--foreground-muted)] text-[9px] font-bold">⏱️ ~15s Generation</span>
+                        </>
+                    )}
+                    {phaseId === 'retain' && (
+                        <>
+                            <span className="px-2.5 py-1 rounded-full bg-[var(--amber)]/10 border border-[var(--amber)]/20 text-[var(--amber)] text-[9px] font-bold">⚡ Spaced Repetition</span>
+                            <span className="px-2.5 py-1 rounded-full bg-[var(--emerald)]/10 border border-[var(--emerald)]/20 text-[var(--emerald)] text-[9px] font-bold">🧠 Memory Hooks</span>
+                            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[var(--foreground-muted)] text-[9px] font-bold">⏱️ ~10s Generation</span>
+                        </>
+                    )}
+                    {phaseId === 'test' && (
+                        <>
+                            <span className="px-2.5 py-1 rounded-full bg-[var(--crimson)]/10 border border-[var(--crimson)]/20 text-[var(--crimson)] text-[9px] font-bold">⚡ Practice Exam</span>
+                            <span className="px-2.5 py-1 rounded-full bg-[var(--violet)]/10 border border-[var(--violet)]/20 text-[var(--violet)] text-[9px] font-bold">💡 Tutor Keys</span>
+                            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[var(--foreground-muted)] text-[9px] font-bold">⏱️ ~15s Generation</span>
+                        </>
+                    )}
+                    {phaseId === 'resources' && (
+                        <>
+                            <span className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-bold">⚡ Curated Videos</span>
+                            <span className="px-2.5 py-1 rounded-full bg-[var(--blue)]/10 border border-[var(--blue)]/20 text-[var(--blue)] text-[9px] font-bold">📺 Topic Playlist</span>
+                            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[var(--foreground-muted)] text-[9px] font-bold">⏱️ Instant Match</span>
+                        </>
+                    )}
+                </div>
+
+                <button
+                    onClick={onGenerate}
+                    className="px-7 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-xl cursor-pointer"
+                >
+                    <span>Generate Now</span>
+                    <ArrowRight size={12} />
+                </button>
+            </div>
+        );
+    }
+
     const renderPhaseContent = (phaseId: string, active: boolean) => {
         const data = phasesData[phaseId];
         const isPhaseLoading = isLoadingPhase || generatingPhases[phaseId] === 'loading';
         const isPhaseStreaming = isStreamingPhase || generatingPhases[phaseId] === 'streaming';
         const isCurrentlyGenerating = isPhaseLoading || isPhaseStreaming;
+        const phaseErr = phaseErrors[phaseId];
         
+        if (phaseErr && !isCurrentlyGenerating) {
+            return (
+                <div className={cn("w-full flex justify-center py-6", !active && "hidden")}>
+                    <PhaseErrorView 
+                        phaseId={phaseId} 
+                        errorMsg={phaseErr} 
+                        onRetry={() => handleRetryPhase(phaseId)} 
+                    />
+                </div>
+            );
+        }
+
         if (!data && !isCurrentlyGenerating) {
             return (
-                <div className={cn("p-8 rounded-3xl bg-[var(--background-secondary)]/40 border border-[var(--border)] text-center flex flex-col items-center justify-center min-h-[350px] w-full max-w-xl mx-auto my-auto", !active && "hidden")}>
-                    <div className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] shadow-inner mb-4 text-[var(--blue)]">
-                        {phaseId === 'distill' && <FileText size={24} />}
-                        {phaseId === 'retain' && <Layers size={24} className="text-[var(--amber)]" />}
-                        {phaseId === 'test' && <Sword size={24} className="text-[var(--crimson)]" />}
-                        {phaseId === 'resources' && <Youtube size={24} className="text-[#FF0000]" />}
-                    </div>
-                    <h3 className="text-base font-black uppercase tracking-tight text-[var(--foreground)] mb-2">
-                        {phaseId === 'distill' && "Deep Summary"}
-                        {phaseId === 'retain' && "Memory Cards"}
-                        {phaseId === 'test' && "Practice Quiz"}
-                        {phaseId === 'resources' && "External Resources"}
-                    </h3>
-                    <p className="text-xs text-[var(--foreground-muted)] mb-6 max-w-xs leading-relaxed">
-                        {phaseId === 'distill' && "Get a clean, simple summary of your notes with the most important parts."}
-                        {phaseId === 'retain' && "Study flashcards with easy memory hooks to lock in core terms."}
-                        {phaseId === 'test' && "Test your knowledge with practice questions customized to your notes."}
-                        {phaseId === 'resources' && "Find the best YouTube tutorials matched to your exact topics."}
-                    </p>
-                    <button
-                        onClick={() => handleBeginTask(phaseId)}
-                        className="px-6 py-2.5 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-black text-[9px] uppercase tracking-widest hover-scale-md active:scale-95 transition-all flex items-center gap-2 shadow-lg"
-                    >
-                        Generate Now <ArrowRight size={10} />
-                    </button>
+                <div className={cn("w-full flex justify-center py-6", !active && "hidden")}>
+                    <PhasePreGenView 
+                        phaseId={phaseId} 
+                        onGenerate={() => handleBeginTask(phaseId)} 
+                    />
                 </div>
             );
         }
 
         if (isCurrentlyGenerating && (!data || (Array.isArray(data) && data.length === 0) || (typeof data === 'string' && data.length === 0))) {
             return (
-                <div className={cn("p-12 rounded-[2.5rem] bg-[var(--background-secondary)]/80 backdrop-blur-xl border border-[var(--border)] shadow-2xl flex items-center justify-center min-h-[350px] w-full max-w-xl mx-auto my-auto", !active && "hidden")}>
-                    <BubblyThinkingLoader />
+                <div className={cn("w-full flex justify-center py-6", !active && "hidden")}>
+                    <PhaseLoadingView phaseId={phaseId} />
                 </div>
             );
         }
