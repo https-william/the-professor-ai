@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
     X, 
     Share2, 
-    Zap, 
     Copy, 
     Check, 
     MessageSquare, 
@@ -16,7 +15,7 @@ import {
     Users, 
     Sparkles,
     ArrowRight,
-    Radio
+    ExternalLink
 } from "lucide-react";
 import { useToasts } from "@/components/ui/GlobalToasts";
 import { useUser } from "@/context/UserContext";
@@ -35,7 +34,7 @@ export default function GrowthStudioModal({ isOpen, onClose, packTitle, packId }
     const [copiedLink, setCopiedLink] = useState(false);
     const [copiedPost, setCopiedPost] = useState(false);
     const [selectedPlatform, setSelectedPlatform] = useState<'whatsapp' | 'telegram' | 'twitter' | 'linkedin'>('whatsapp');
-    const [autoPromoting, setAutoPromoting] = useState(false);
+    const [sharing, setSharing] = useState(false);
 
     // Stats & Referral URLs
     const referralCode = user.id ? user.id.substring(0, 8) : "SCHOLAR100";
@@ -45,14 +44,14 @@ export default function GrowthStudioModal({ isOpen, onClose, packTitle, packId }
 
     const defaultTitle = packTitle || "My Course Notes & Study Sets";
 
-    // Templates tailored for viral student acquisition (Global & Nigerian student context)
+    // Friendly messages tailored for classmates and study groups
     const postTemplates = {
-        whatsapp: `🔥 Yo! I just transformed ${defaultTitle} into interactive flashcards, quizzes & deep summaries in 10 seconds with The Professor AI. 
+        whatsapp: `🔥 Yo! I just turned ${defaultTitle} into interactive flashcards, quizzes & deep summaries in 10 seconds on The Professor AI.
 
 Study smarter, pass exams faster. Check out my study set here and claim +500 free bonus study XP:
 👉 ${shareUrl}`,
 
-        telegram: `📚 *The Professor AI - Automated Study Pack*
+        telegram: `📚 *The Professor AI - Shared Study Pack*
 
 I created a complete study set for *${defaultTitle}*! 
 Features included:
@@ -82,14 +81,14 @@ Here is my latest public study set: ${shareUrl}
     const handleCopyLink = () => {
         navigator.clipboard.writeText(shareUrl);
         setCopiedLink(true);
-        addToast("Referral link copied to clipboard!", "success");
+        addToast("Study link copied to clipboard!", "success");
         setTimeout(() => setCopiedLink(false), 2000);
     };
 
     const handleCopyPost = () => {
         navigator.clipboard.writeText(currentPostText);
         setCopiedPost(true);
-        addToast("Viral post text copied!", "success");
+        addToast("Message text copied!", "success");
         setTimeout(() => setCopiedPost(false), 2000);
     };
 
@@ -115,12 +114,12 @@ Here is my latest public study set: ${shareUrl}
 
         if (targetUrl) {
             window.open(targetUrl, '_blank');
-            addToast(`Opening ${platform.toUpperCase()}... Share to bring in new scholars!`, "info");
+            addToast(`Opening ${platform.toUpperCase()}... Share with your classmates!`, "info");
         }
     };
 
     const handleAutoPromoteBroadcast = async () => {
-        setAutoPromoting(true);
+        setSharing(true);
         try {
             const res = await fetch("/api/growth/auto-promote", {
                 method: "POST",
@@ -133,15 +132,15 @@ Here is my latest public study set: ${shareUrl}
                 })
             });
             const data = await res.json();
-            if (data.success) {
-                addToast("1-Click Auto Growth Broadcast Sent successfully!", "success");
+            if (data.success && data.broadcast === "telegram_channel") {
+                addToast("Broadcast sent to your connected study channel!", "success");
             } else {
                 handle1ClickShare(selectedPlatform);
             }
         } catch (err) {
             handle1ClickShare(selectedPlatform);
         } finally {
-            setAutoPromoting(false);
+            setSharing(false);
         }
     };
 
@@ -174,24 +173,24 @@ Here is my latest public study set: ${shareUrl}
 
                         {/* Title */}
                         <div className="flex items-center gap-2">
-                            <Zap size={18} className="text-[var(--amber)]" />
+                            <Share2 size={18} className="text-[var(--blue)]" />
                             <h2 className="text-base font-black uppercase tracking-tight text-[var(--foreground)]">
-                                Growth Studio & Auto-Marketing Engine
+                                Share Notes & Earn Study XP
                             </h2>
                         </div>
 
                         {/* Banner / Value Prop */}
-                        <div className="p-4 rounded-2xl bg-gradient-to-r from-[var(--amber)]/15 via-[var(--blue)]/15 to-purple-500/10 border border-[var(--amber)]/30 relative overflow-hidden shadow-lg">
+                        <div className="p-4 rounded-2xl bg-gradient-to-r from-[var(--blue)]/15 via-[var(--amber)]/15 to-purple-500/10 border border-[var(--blue)]/30 relative overflow-hidden shadow-lg">
                             <div className="flex items-center gap-2.5 mb-1.5">
-                                <div className="p-1.5 rounded-lg bg-[var(--amber)] text-black font-black">
-                                    <Zap size={14} />
+                                <div className="p-1.5 rounded-lg bg-[var(--blue)] text-white font-black">
+                                    <Sparkles size={14} />
                                 </div>
                                 <h3 className="text-xs font-black uppercase tracking-tight text-[var(--foreground)]">
-                                    1-Click Viral Growth Engine
+                                    Share Study Set with Classmates
                                 </h3>
                             </div>
                             <p className="text-[11px] text-[var(--foreground-muted)] leading-relaxed font-medium">
-                                Tap one button to broadcast your study sets to WhatsApp study groups, Telegram channels, and X. Every new scholar who joins gives you <span className="font-bold text-[var(--amber)]">+500 Bonus XP</span>.
+                                Share your flashcards and summaries with your course WhatsApp group, Telegram channel, or X. Earn <span className="font-bold text-[var(--amber)]">+500 Bonus XP</span> whenever a classmate joins!
                             </p>
                         </div>
 
@@ -200,7 +199,7 @@ Here is my latest public study set: ${shareUrl}
                             <div className="p-3.5 rounded-xl bg-[var(--background)]/60 border border-[var(--border)] text-center">
                                 <div className="flex items-center justify-center gap-1.5 text-[var(--amber)] text-[10px] font-black uppercase mb-1">
                                     <Trophy size={12} />
-                                    <span>Referral XP</span>
+                                    <span>Bonus XP</span>
                                 </div>
                                 <p className="text-lg font-black text-[var(--foreground)]">
                                     {((user as any)?.referral_count || 0) * 500}
@@ -209,7 +208,7 @@ Here is my latest public study set: ${shareUrl}
                             <div className="p-3.5 rounded-xl bg-[var(--background)]/60 border border-[var(--border)] text-center">
                                 <div className="flex items-center justify-center gap-1.5 text-[var(--blue)] text-[10px] font-black uppercase mb-1">
                                     <Users size={12} />
-                                    <span>Scholars Invited</span>
+                                    <span>Classmates Joined</span>
                                 </div>
                                 <p className="text-lg font-black text-[var(--foreground)]">
                                     {(user as any)?.referral_count || 0}
@@ -218,7 +217,7 @@ Here is my latest public study set: ${shareUrl}
                             <div className="p-3.5 rounded-xl bg-[var(--background)]/60 border border-[var(--border)] text-center">
                                 <div className="flex items-center justify-center gap-1.5 text-[var(--emerald)] text-[10px] font-black uppercase mb-1">
                                     <Sparkles size={12} />
-                                    <span>Your Ref Code</span>
+                                    <span>Your Code</span>
                                 </div>
                                 <p className="text-xs font-mono font-bold text-[var(--amber)] truncate mt-1">
                                     {referralCode}
@@ -229,7 +228,7 @@ Here is my latest public study set: ${shareUrl}
                         {/* Platform Selector Tabs */}
                         <div>
                             <label className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)] mb-2 block">
-                                Select Target Channel
+                                Choose Where to Share
                             </label>
                             <div className="grid grid-cols-4 gap-2">
                                 <button
@@ -279,18 +278,18 @@ Here is my latest public study set: ${shareUrl}
                             </div>
                         </div>
 
-                        {/* Pre-formatted Post Preview Box */}
+                        {/* Pre-formatted Message Preview Box */}
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[var(--foreground-muted)]">
-                                    Auto-Generated Viral Post Copy
+                                    Pre-formatted Message for Classmates
                                 </label>
                                 <button
                                     onClick={handleCopyPost}
                                     className="text-[9px] font-bold uppercase tracking-wider text-[var(--amber)] hover:underline flex items-center gap-1 cursor-pointer"
                                 >
                                     {copiedPost ? <Check size={10} /> : <Copy size={10} />}
-                                    <span>{copiedPost ? "Copied Post" : "Copy Text"}</span>
+                                    <span>{copiedPost ? "Copied Message" : "Copy Text"}</span>
                                 </button>
                             </div>
                             <div className="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-mono text-[11px] text-[var(--foreground-secondary)] leading-relaxed relative overflow-hidden max-h-36 overflow-y-auto">
@@ -298,15 +297,15 @@ Here is my latest public study set: ${shareUrl}
                             </div>
                         </div>
 
-                        {/* 1-Click Action Buttons */}
+                        {/* Action Buttons */}
                         <div className="pt-2 space-y-2.5">
                             <button
                                 onClick={handleAutoPromoteBroadcast}
-                                disabled={autoPromoting}
-                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[var(--amber)] via-amber-500 to-orange-500 text-black font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-[var(--amber)]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                disabled={sharing}
+                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[var(--blue)] via-indigo-600 to-[var(--violet)] text-white font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-[var(--blue)]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                             >
-                                <Radio size={14} className="animate-pulse" />
-                                <span>1-Click Launch Auto Broadcast to {selectedPlatform.toUpperCase()}</span>
+                                <ExternalLink size={14} />
+                                <span>Share to {selectedPlatform.toUpperCase()}</span>
                                 <ArrowRight size={14} />
                             </button>
 
@@ -316,7 +315,7 @@ Here is my latest public study set: ${shareUrl}
                                     className="flex-1 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-bold text-[9px] uppercase tracking-widest hover:bg-[var(--background)]/80 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                                 >
                                     {copiedLink ? <Check size={12} className="text-[var(--emerald)]" /> : <Copy size={12} />}
-                                    <span>{copiedLink ? "Link Copied" : "Copy Referral Link"}</span>
+                                    <span>{copiedLink ? "Link Copied" : "Copy Study Link"}</span>
                                 </button>
                             </div>
                         </div>

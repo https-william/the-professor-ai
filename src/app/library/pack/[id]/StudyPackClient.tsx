@@ -1889,14 +1889,14 @@ export default function StudyPackPage() {
                     <div className="flex items-center gap-2 pb-0.5 pl-9 relative">
                         <ThemeToggle />
 
-                        {/* 1-Click Auto-Market Button */}
+                        {/* Share & Earn Button */}
                         <button
                             onClick={() => setShowGrowthStudio(true)}
                             className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[var(--amber)]/20 to-orange-500/20 border border-[var(--amber)]/40 text-[9px] font-black uppercase tracking-widest text-[var(--amber)] hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer"
-                            title="Open 1-Click Growth Engine & Auto-Market"
+                            title="Share Notes with Classmates & Earn XP"
                         >
-                            <Zap size={12} className="text-[var(--amber)] shrink-0" />
-                            <span>Auto-Market</span>
+                            <Sparkles size={12} className="text-[var(--amber)] shrink-0" />
+                            <span>Share & Earn</span>
                         </button>
 
                         {/* Share Button */}
