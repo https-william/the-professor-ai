@@ -37,6 +37,7 @@ import {
     ExternalLink,
     AlertCircle,
     RefreshCw,
+    Radio,
 } from "lucide-react";
 import { cn, cleanDocumentTitle } from "@/lib/utils";
 import StandardContainer from "@/components/ui/StandardContainer";
@@ -61,6 +62,7 @@ import BreakdownViewer from "@/components/features/breakdown/BreakdownViewer";
 import { AnnotatedSourceViewer } from "@/components/features/AnnotatedSourceViewer";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import WorkspaceLayout from "@/components/generative/WorkspaceLayout";
+import GrowthStudioModal from "@/components/features/growth/GrowthStudioModal";
 
 interface Phase {
     id: string;
@@ -125,6 +127,7 @@ export default function StudyPackPage() {
     const [isGuest, setIsGuest] = useState(false);
     const [isSharedView, setIsSharedView] = useState(false);
     const [showGuestModal, setShowGuestModal] = useState(false);
+    const [showGrowthStudio, setShowGrowthStudio] = useState(false);
 
     const [isSprint, setIsSprint] = useState(false);
     const [isGenerativeMode, setIsGenerativeMode] = useState(false);
@@ -1886,6 +1889,16 @@ export default function StudyPackPage() {
                     <div className="flex items-center gap-2 pb-0.5 pl-9 relative">
                         <ThemeToggle />
 
+                        {/* 1-Click Auto-Market Button */}
+                        <button
+                            onClick={() => setShowGrowthStudio(true)}
+                            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[var(--amber)]/20 to-orange-500/20 border border-[var(--amber)]/40 text-[9px] font-black uppercase tracking-widest text-[var(--amber)] hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer"
+                            title="Open 1-Click Growth Engine & Auto-Market"
+                        >
+                            <Zap size={12} className="text-[var(--amber)] shrink-0" />
+                            <span>Auto-Market</span>
+                        </button>
+
                         {/* Share Button */}
                         <button
                             onClick={handleShare}
@@ -2183,6 +2196,13 @@ export default function StudyPackPage() {
                 isOpen={showGuestModal}
                 onClose={() => setShowGuestModal(false)}
                 packTitle={packTitle}
+            />
+
+            <GrowthStudioModal
+                isOpen={showGrowthStudio}
+                onClose={() => setShowGrowthStudio(false)}
+                packTitle={packTitle}
+                packId={packId}
             />
         </div>
     );
