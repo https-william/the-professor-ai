@@ -376,13 +376,14 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setToastsOpen(true)}
-                        className="relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full transition-all bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)] active:scale-95"
+                        aria-label="Notifications"
+                        className="relative flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full transition-all bg-[var(--bg-3)]/40 backdrop-blur-2xl border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)] active:scale-95 min-w-[44px] min-h-[44px]"
                     >
-                        <Bell size={15} strokeWidth={2.5} className="text-[var(--foreground)] w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <Bell size={16} strokeWidth={2.5} className="text-[var(--foreground)] w-4 h-4" />
                         {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 md:h-4 md:w-4">
+                            <span className="absolute -top-1 -right-1 flex h-4 w-4">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
-                                <span className="relative flex items-center justify-center rounded-full h-3.5 w-3.5 md:h-4 md:w-4 bg-[var(--accent)] text-[8px] md:text-[9px] font-black text-white">
+                                <span className="relative flex items-center justify-center rounded-full h-4 w-4 bg-[var(--accent)] text-[9px] font-black text-white">
                                     {unreadCount}
                                 </span>
                             </span>
@@ -393,19 +394,20 @@ export default function SiteHeader({ activeMode, onModeChange, showLogo, leftSlo
                 {isLanding && !user.isAuthenticated && (
                     <Link
                         href="/login"
-                        className="px-6 py-2.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[11px] font-black uppercase tracking-widest hover-scale-lg active:scale-[0.85] transition-all shadow-xl"
+                        className="px-6 py-2.5 rounded-2xl bg-[var(--foreground)] text-[var(--background)] text-[11px] font-black uppercase tracking-widest hover-scale-lg active:scale-[0.85] transition-all shadow-xl min-h-[44px] flex items-center justify-center"
                     >
                         Login
                     </Link>
                 )}
                 
                 {user.isAuthenticated && (
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative flex items-center" ref={menuRef}>
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setShowUserMenu(!showUserMenu)}
+                            aria-label="User account menu"
                             className={cn(
-                                "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all border border-[var(--border)] shadow-sm overflow-hidden active:scale-95",
+                                "w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all border border-[var(--border)] shadow-sm overflow-hidden active:scale-95 min-w-[44px] min-h-[44px]",
                                 isApp ? "bg-[var(--bg-3)]/40 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-[var(--border-hover)]" : "hover:border-[var(--border-hover)]"
                             )}
                         >

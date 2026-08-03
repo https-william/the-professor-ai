@@ -2899,3 +2899,56 @@ html.telegram-app #main-scroll-container {
   from { background-position-x: 0px; }
   to { background-position-x: 100%; }
 }
+
+/* ═══════════════════════════════════════════════════
+   CONTEXT ADAPTATION UTILITIES (TOUCH & DEVICE CONTEXT)
+   Rethinking interaction patterns for touchscreen vs pointer
+   ═══════════════════════════════════════════════════ */
+
+/* Safe area insets for notches, home bars, and dynamic islands */
+.safe-pb {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.safe-pt {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.safe-px {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* Touch-first adaptation for coarse pointers (smartphones, tablets) */
+@media (pointer: coarse) {
+  /* Enforce minimum 44x44px touch target bounds on interactive elements */
+  button, 
+  a, 
+  input[type="button"], 
+  input[type="submit"], 
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Provide tactile tap feedback on touch devices */
+  .touch-tactile:active {
+    transform: scale(0.96);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Fine-pointer (mouse/trackpad) hover protection to prevent stuck states on mobile */
+@media (hover: none) {
+  .hover-only {
+    display: none !important;
+  }
+}
+
+@media (hover: hover) {
+  .hover-trigger:hover .hover-content {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+

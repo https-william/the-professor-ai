@@ -64,13 +64,13 @@ export default function DesktopSidebar() {
     };
 
     const HIDDEN_PATHS = ["/login", "/signup", "/forgot-password", "/onboarding", "/library/pack"];
-    const isHidden = HIDDEN_PATHS.some(p => pathname.startsWith(p)) || pathname === "/" || !isDesktop;
+    const isHidden = HIDDEN_PATHS.some(p => pathname.startsWith(p)) || pathname === "/";
 
     if (isHidden) return null;
 
     return (
-        <aside className="fixed left-0 top-0 bottom-0 w-14 md:w-20 md:hover:w-64 group bg-[var(--background)]/90 backdrop-blur-lg border-r border-[var(--border)] z-50 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.1)]">
-            <div className="flex flex-col h-full py-4 md:py-8">
+        <aside className="fixed left-0 top-0 bottom-0 w-14 lg:w-20 lg:hover:w-64 group bg-[var(--background)]/90 backdrop-blur-lg border-r border-[var(--border)] z-50 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.1)] hidden lg:flex flex-col">
+            <div className="flex flex-col h-full py-4 lg:py-8">
                 {/* Logo Section */}
                 <div className="px-2 md:px-5 mb-6 md:mb-8 flex justify-center">
                     <BrandLogo size="sm" />

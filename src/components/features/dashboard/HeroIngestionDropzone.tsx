@@ -85,26 +85,28 @@ export function HeroIngestionDropzone({
             type="button"
             onClick={() => setMode("drop")}
             disabled={isProcessing}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40 ${
+            aria-label="Upload File"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40 min-h-[44px] touch-tactile ${
               mode === "drop"
                 ? "bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border)] shadow-xs"
                 : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            <Upload size={12} />
+            <Upload size={14} />
             <span>Upload File</span>
           </button>
           <button
             type="button"
             onClick={() => setMode("paste")}
             disabled={isProcessing}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40 ${
+            aria-label="Paste Notes"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40 min-h-[44px] touch-tactile ${
               mode === "paste"
                 ? "bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border)] shadow-xs"
                 : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            <ClipboardPaste size={12} />
+            <ClipboardPaste size={14} />
             <span>Paste Notes</span>
           </button>
         </div>
